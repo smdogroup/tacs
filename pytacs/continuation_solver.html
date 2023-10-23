@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>ContinuationSolver &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="NewtonSolver" href="newton_solver.html" />
+    <link rel="prev" title="Solver classes" href="solvers.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="newton_solver.html" title="NewtonSolver"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="solvers.html" title="Solver classes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="solvers.html" accesskey="U">Solver classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ContinuationSolver</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-tacs.solvers.continuation">
+<span id="continuationsolver"></span><h1>ContinuationSolver<a class="headerlink" href="#module-tacs.solvers.continuation" title="Permalink to this heading">¶</a></h1>
+<section id="tacs-nonlinear-continuation-solver">
+<h2>TACS Nonlinear Continuation Solver<a class="headerlink" href="#tacs-nonlinear-continuation-solver" title="Permalink to this heading">¶</a></h2>
+<p>This continuation solver uses a predictor-corrector scheme to increment the load scale in nonlinear problems.
+Each iteration of the continuation solver consists of three steps:</p>
+<ol class="arabic simple">
+<li><p>Predictor computation: If enabled, the solver will use the solutions from previous continuation steps to extrapolate the equilibrium path to the current load scale, which should provide a good initial guess for the inner solver.</p></li>
+<li><p>Corrector computation: The continuation solver calls an inner solver to solve the nonlinear problem at the current load scale.</p></li>
+<li><p>Load scale update: The continuation solver increments the load scale, the size of the step taken is adapted each iteration to try and achieve a target number of inner solver iterations.</p></li>
+</ol>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
+<p>Options can be set using the <a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOption" title="tacs.solvers.ContinuationSolver.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.setOption</span></code></a> and <a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOptions" title="tacs.solvers.ContinuationSolver.setOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.setOptions</span></code></a> methods.
+Current option values for a class instance can be printed out using the <a class="reference internal" href="#tacs.solvers.ContinuationSolver.printOptions" title="tacs.solvers.ContinuationSolver.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.printOptions</span></code></a> method.
+The following options, their default values and descriptions are listed below:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+|  ContinuationSolver default options:   |
++----------------------------------------+
+&#39;MaxLambda&#39;: 1.0
+	 Final continuation parameter value to aim for.
+&#39;AbsTol&#39;: 1e-08
+	 Convergence criteria for the nonlinear residual norm.
+&#39;RelTol&#39;: 1e-08
+	 Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.
+&#39;CoarseAbsTol&#39;: 0.0001
+	 Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.
+&#39;CoarseRelTol&#39;: 0.0001
+	 Relative residual norm criteria for intermediate load increments.
+&#39;TargetIter&#39;: 8
+	 Target number of Newton iterations for each continuation increment.
+&#39;MaxIter&#39;: 30
+	 Maximum number of continuation steps.
+&#39;InitialStep&#39;: 0.2
+	 Initial continuation step size.
+&#39;MinStep&#39;: 0.0001
+	 Minimum continuation step size.
+&#39;MaxStep&#39;: inf
+	 Maximum continuation step size.
+&#39;MinStepFactor&#39;: 0.5
+	 The minimum factor by which the continuation step size can decrease in a single step.
+&#39;MaxStepFactor&#39;: 2.0
+	 The maximum factor by which the continuation step size can increase in a single step.
+&#39;RetractionFactor&#39;: 0.5
+	 The factor by which the continuation step size is reduced when the Newton solver fails to converge.
+&#39;UsePredictor&#39;: False
+	 Flag for using predictor step in continuation.
+&#39;NumPredictorStates&#39;: 2
+	 Number of previous equilibrium states to use in computing the predictor step.
+</pre></div>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.solvers.</span></span><span class="sig-name descname"><span class="pre">ContinuationSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jacFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pcUpdateFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">KSM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setLambdaFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">getLambdaFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">innerSolver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="base_solver.html#tacs.solvers.BaseSolver" title="tacs.solvers.base.BaseSolver"><span class="pre">BaseSolver</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Comm.html#mpi4py.MPI.Comm" title="(in MPI for Python v3.1)"><span class="pre">Comm</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a continuation solver instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>jacFunc</strong> (<em>function</em>) -- Function to update the residual Jacobian at the current state, with signature <cite>jacFunc() -&gt; None</cite></p></li>
+<li><p><strong>pcUpdateFunc</strong> (<em>function</em>) -- Function to update the residual Jacobian preconditioner at the current state, with signature <cite>pcUpdateFunc() -&gt; None</cite></p></li>
+<li><p><strong>linearSolver</strong> (<em>tacs.TACS.KSM</em>) -- TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner</p></li>
+<li><p><strong>setLambdaFunc</strong> (<em>function</em>) -- Function to set the continuation parameter, with signature <cite>setLambdaFunc(lambda:float) -&gt; None</cite></p></li>
+<li><p><strong>setLambdaFunc</strong> -- Function to get the current continuation parameter, with signature <cite>getLambdaFunc() -&gt; float</cite></p></li>
+<li><p><strong>innerSolver</strong> (<em>TACS Nonlinear Solver</em>) -- A Solver object to use for the corrector solve in each increment (e.g a NewtonSolver object)</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>, </em><em>optional</em>) -- Dictionary holding solver-specific option parameters (case-insensitive)., by default None</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a><em>, </em><em>optional</em>) -- The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.getHistoryVariables">
+<span class="sig-name descname"><span class="pre">getHistoryVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.getHistoryVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.getHistoryVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the variables to be stored in the solver history</p>
+<p>This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>, Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.setOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.setConvergenceTolerance">
+<span class="sig-name descname"><span class="pre">setConvergenceTolerance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.setConvergenceTolerance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.setConvergenceTolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the convergence tolerance of the solver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>absTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Absolute tolerance, not changed if no value is provided</p></li>
+<li><p><strong>relTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Relative tolerance, not changed if no value is provided</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.initializeSolve">
+<span class="sig-name descname"><span class="pre">initializeSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.initializeSolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.initializeSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform any initialization required before the solve</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the residual equations r(u) = 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u0</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Initial guess, by default uses the current state</p></li>
+<li><p><strong>result</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Vector in which to store the solution, by default None.
+The problem's state is updated with the solution whether or not this is provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.computeForceVectors">
+<span class="sig-name descname"><span class="pre">computeForceVectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/continuation.html#ContinuationSolver.computeForceVectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.ContinuationSolver.computeForceVectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the current forcing vector</p>
+<p>The continuation solver is based on the assumption that the residual takes the following form:</p>
+<p>r(u, lambda) = F_int(u) + lambda * F_ext(u, lambda)</p>
+<p>This function computes fInt and fExt using two residual evaluations at lambda=0 and lambda=1:
+f_int = r(u, 0)
+f_ext = r(u, 1) - f_int</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.fatalFailure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fatalFailure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.ContinuationSolver.fatalFailure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has failed, set as a property rather than an attribute so that it is read-only</p>
+<p>Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.getOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.hasConverged">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hasConverged</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.ContinuationSolver.hasConverged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has converged, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.iterationCount">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">iterationCount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.solvers.ContinuationSolver.iterationCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of iterations performed, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.printOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the solver</p>
+<p>Currently this just zeros out the state vector, but more functionality may be added in future</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.setCallback">
+<span class="sig-name descname"><span class="pre">setCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.setCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a callback function to be called at each iteration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>callback</strong> (<em>callable</em><em>, </em><em>optional</em>) -- Callback function, should have the following signature:
+callback(solver: tacs.solver, u: tacs.TACS.Vec, res: tacs.TACS.Vec, monitorVars: dict) -&gt; None
+Where:
+- <code class="docutils literal notranslate"><span class="pre">solver</span></code> is the solver object
+- <code class="docutils literal notranslate"><span class="pre">u</span></code> is the current state vector
+- <code class="docutils literal notranslate"><span class="pre">res</span></code> is the current residual vector
+- <code class="docutils literal notranslate"><span class="pre">monitorVars</span></code> is a dictionary of variables to monitor, which can be specified through the <code class="docutils literal notranslate"><span class="pre">&quot;nonlinearSolverMonitorVars&quot;</span></code> option</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.setRefNorm">
+<span class="sig-name descname"><span class="pre">setRefNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.setRefNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the reference norm used to compute relative convergence measures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Reference norm</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">ContinuationSolver</a><ul>
+<li><a class="reference internal" href="#tacs-nonlinear-continuation-solver">TACS Nonlinear Continuation Solver</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.getHistoryVariables"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.getHistoryVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOption"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.setConvergenceTolerance"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.setConvergenceTolerance()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.initializeSolve"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.initializeSolve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.solve"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.computeForceVectors"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.computeForceVectors()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.dtype"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.fatalFailure"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.fatalFailure</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.getOption"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.hasConverged"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.hasConverged</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.iterationCount"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.iterationCount</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.printModifiedOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.printOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.reset"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.reset()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.setCallback"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.setCallback()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.setOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.setRefNorm"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.setRefNorm()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="solvers.html"
+                          title="previous chapter">Solver classes</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="newton_solver.html"
+                          title="next chapter">NewtonSolver</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="newton_solver.html" title="NewtonSolver"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="solvers.html" title="Solver classes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="solvers.html" >Solver classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">ContinuationSolver</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

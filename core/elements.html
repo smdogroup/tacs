@@ -640,7 +640,13 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Quad4NonlinearShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearShell</span></span><a class="headerlink" href="#tacs.elements.Quad4NonlinearShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 4-node quad shell element for general geometric nonlinear elastic analysis.</p>
+<p>A 4-node quad shell element for general geometric nonlinear elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -668,7 +674,13 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Quad9NonlinearShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad9NonlinearShell</span></span><a class="headerlink" href="#tacs.elements.Quad9NonlinearShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 9-node quad shell element for general geometric nonlinear elastic analysis.</p>
+<p>A 9-node quad shell element for general geometric nonlinear elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -696,7 +708,13 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Quad16NonlinearShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad16NonlinearShell</span></span><a class="headerlink" href="#tacs.elements.Quad16NonlinearShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 16-node quad shell element for general geometric nonlinear elastic analysis.</p>
+<p>A 16-node quad shell element for general geometric nonlinear elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -724,7 +742,13 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Tri3NonlinearShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Tri3NonlinearShell</span></span><a class="headerlink" href="#tacs.elements.Tri3NonlinearShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 3-node triangular shell element for geometric elastic analysis.</p>
+<p>A 3-node triangular shell element for geometric elastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -752,7 +776,13 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Quad4NonlinearThermalShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4NonlinearThermalShell</span></span><a class="headerlink" href="#tacs.elements.Quad4NonlinearThermalShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 4-node quad shell element for general linear thermoelastic analysis.</p>
+<p>A 4-node quad shell element for general nonlinear thermoelastic analysis.
+The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../theory/shell_element.html#director-parametrization"><span class="std std-ref">Director parametrization</span></a></p>
+</div>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">
@@ -864,7 +894,7 @@ components (MITC) method to avoid shear locking problems.</p>
 <dt class="sig sig-object py" id="tacs.elements.Quad4ThermalShell">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.elements.</span></span><span class="sig-name descname"><span class="pre">Quad4ThermalShell</span></span><a class="headerlink" href="#tacs.elements.Quad4ThermalShell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code></p>
-<p>A 4-node quad shell element for general linear thermoelastic analysis.</p>
+<p>A 4-node quad shell element for linear thermoelastic analysis.</p>
 <p>This element employs a mixed interpolation of tensorial (strain)
 components (MITC) method to avoid shear locking problems.</p>
 <div class="admonition seealso">

@@ -117,6 +117,8 @@ The following options, their default values and descriptions are listed below:</
 	 Family separator character used for condensing groups in f5 file.
 &#39;printTiming&#39;: False
 	 Flag for printing out timing information for class procedures.
+&#39;linearityTol&#39;: 1e-14
+	 When created, pyTACS will check if the model is linear or nonlinear by checking whether (res(2*u) - res(0)) - 2 * (res(u) - res(0)) == 0 this tolerance controls how close to zero the residual must be to be considered linear.
 </pre></div>
 </div>
 </section>
@@ -321,6 +323,12 @@ len(scaleList) = dvNum</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.isNonlinear">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.pytacs.pyTACS.isNonlinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.addGlobalDV">
 <span class="sig-name descname"><span class="pre">addGlobalDV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">descript</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.addGlobalDV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.addGlobalDV" title="Permalink to this definition">¶</a></dt>
@@ -850,6 +858,17 @@ Defaults to False.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.setBCsInVec">
+<span class="sig-name descname"><span class="pre">setBCsInVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.setBCsInVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.setBCsInVec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets dirichlet boundary condition values in the input vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- Vector to set boundary conditions in.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createStaticProblem">
 <span class="sig-name descname"><span class="pre">createStaticProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createStaticProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createStaticProblem" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new staticProblem for modeling a static load cases.
@@ -1129,6 +1148,13 @@ options to the stdout</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.pytacs.pyTACS.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.printOptions">
 <span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.pytacs.pyTACS.printOptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
@@ -1145,6 +1171,17 @@ options to the stdout on the root processor</p>
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
 <li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.pytacs.pyTACS.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1183,6 +1220,7 @@ options to the stdout on the root processor</p>
 </li>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS"><code class="docutils literal notranslate"><span class="pre">pyTACS</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.isNonlinear"><code class="docutils literal notranslate"><span class="pre">pyTACS.isNonlinear</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.addGlobalDV"><code class="docutils literal notranslate"><span class="pre">pyTACS.addGlobalDV()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalDVs"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalDVs()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalDVKeys"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalDVKeys()</span></code></a></li>
@@ -1208,6 +1246,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.createVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">pyTACS.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.applyBCsToVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.applyBCsToVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.setBCsInVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.setBCsInVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createStaticProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createTransientProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createTransientProblem()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createModalProblem"><code class="docutils literal notranslate"><span class="pre">pyTACS.createModalProblem()</span></code></a></li>
@@ -1222,8 +1261,10 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.dtype"><code class="docutils literal notranslate"><span class="pre">pyTACS.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOption()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.printOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.setOption"><code class="docutils literal notranslate"><span class="pre">pyTACS.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.setOptions"><code class="docutils literal notranslate"><span class="pre">pyTACS.setOptions()</span></code></a></li>
 </ul>
 </li>
 </ul>

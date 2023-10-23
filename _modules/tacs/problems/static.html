@@ -52,13 +52,15 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
 
 <span class="kn">import</span> <span class="nn">tacs.TACS</span>
 <span class="kn">import</span> <span class="nn">tacs.elements</span>
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+<span class="kn">import</span> <span class="nn">tacs.solvers</span>
+<span class="kn">from</span> <span class="nn">tacs.problems.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
 
 
 <div class="viewcode-block" id="StaticProblem"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem">[docs]</a><span class="k">class</span> <span class="nc">StaticProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
@@ -66,10 +68,15 @@
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
         <span class="c1"># Solution Options</span>
-        <span class="s2">&quot;KSMSolver&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;linearSolver&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">str</span><span class="p">,</span>
             <span class="s2">&quot;GMRES&quot;</span><span class="p">,</span>
             <span class="s2">&quot;Krylov subspace method to use for linear solver. Currently only supports &#39;GMRES&#39;&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;nonlinearSolver&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">str</span><span class="p">,</span>
+            <span class="s2">&quot;Continuation&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Convergence method to use for nonlinear solver. Currently only supports &#39;Continuation&#39;&quot;</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="s2">&quot;orderingType&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
@@ -128,6 +135,11 @@
             <span class="kc">True</span><span class="p">,</span>
             <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
+        <span class="s2">&quot;writeNLIterSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag to save a solution file at every nonlinear solver iterations.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">True</span><span class="p">,</span>
@@ -138,6 +150,14 @@
             <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;Flag for printing out timing information for class procedures.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
+        <span class="s2">&quot;printLevel&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;Print level for nonlinear solver.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Accepts:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   0 : No printing.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   1 : Print nonlinear iterations.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -147,6 +167,7 @@
         <span class="n">comm</span><span class="p">,</span>
         <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">isNonlinear</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -178,17 +199,76 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Set linear solver to None, until we set it up later</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Set solvers to None, until we set them up later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
-        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">)</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">isNonlinear</span>
+        <span class="p">)</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
 
+        <span class="c1"># Setup solver and solver history objects for nonlinear problems</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">:</span>
+            <span class="c1"># TODO: I&#39;d like to have an option to specify other NL solvers in future</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nonlinearSolver&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;Continuation&quot;</span><span class="p">:</span>
+                <span class="c1"># Give the nonlinear solvers their own linear solvers</span>
+                <span class="n">newtonLinearSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;flexible&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">newtonLinearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">continuationLinearSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;flexible&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">continuationLinearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Create Newton solver, the inner solver for the continuation solver</span>
+                <span class="n">newtonSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">solvers</span><span class="o">.</span><span class="n">NewtonSolver</span><span class="p">(</span>
+                    <span class="n">assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+                    <span class="n">setStateFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">setVariables</span><span class="p">,</span>
+                    <span class="n">resFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">,</span>
+                    <span class="n">jacFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">updateJacobian</span><span class="p">,</span>
+                    <span class="n">pcUpdateFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">updatePreconditioner</span><span class="p">,</span>
+                    <span class="n">linearSolver</span><span class="o">=</span><span class="n">newtonLinearSolver</span><span class="p">,</span>
+                    <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="c1"># And now create the continuation solver</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">solvers</span><span class="o">.</span><span class="n">ContinuationSolver</span><span class="p">(</span>
+                    <span class="n">jacFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">updateJacobian</span><span class="p">,</span>
+                    <span class="n">pcUpdateFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">updatePreconditioner</span><span class="p">,</span>
+                    <span class="n">linearSolver</span><span class="o">=</span><span class="n">continuationLinearSolver</span><span class="p">,</span>
+                    <span class="n">setLambdaFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">,</span>
+                    <span class="n">getLambdaFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getLoadScale</span><span class="p">,</span>
+                    <span class="n">innerSolver</span><span class="o">=</span><span class="n">newtonSolver</span><span class="p">,</span>
+                    <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nonlinearCallback</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
+                    <span class="s2">&quot;Unknown nonlinearSolver option. Valid options are &quot;</span>
+                    <span class="s2">&quot;&#39;Continuation&#39;&quot;</span>
+                <span class="p">)</span>
+
     <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal to create the variable required by TACS&quot;&quot;&quot;</span>
+
+        <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span>
 
         <span class="c1"># Generic residual vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
@@ -199,6 +279,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dIduList</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dvSensList</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xptSensList</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+
         <span class="c1"># Temporary vector for adjoint solve</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
@@ -206,9 +287,15 @@
         <span class="c1"># Load vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">F_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
         <span class="c1"># State variable vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+
+        <span class="c1"># Vectors used to decompose residual into external and internal forces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">externalForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">internalForce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+
         <span class="c1"># Auxiliary element object for applying tractions/pressure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
         <span class="c1"># Counter for number of calls to `solve` method</span>
@@ -221,8 +308,6 @@
 
         <span class="c1"># Load scaling factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span> <span class="o">=</span> <span class="mf">1.0</span>
-
-        <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span>
 
         <span class="c1"># Tangent Stiffness --- process the ordering option here:</span>
         <span class="n">ordering</span> <span class="o">=</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;orderingType&quot;</span><span class="p">)</span>
@@ -277,8 +362,8 @@
         <span class="p">)</span>
 
         <span class="c1"># Operator, fill level, fill ratio, msub, rtol, ataol</span>
-        <span class="k">if</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;KSMSolver&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;GMRES&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;linearSolver&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;GMRES&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">,</span>
                 <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">),</span>
@@ -286,28 +371,29 @@
                 <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;flexible&quot;</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="c1"># TODO: Fix this</span>
-        <span class="c1"># elif opt(&#39;KSMSolver&#39;).upper() == &#39;GCROT&#39;:</span>
+        <span class="c1"># elif opt(&#39;linearSolver&#39;).upper() == &#39;GCROT&#39;:</span>
         <span class="c1">#    self.KSM = tacs.TACS.GCROT(</span>
         <span class="c1">#        self.K, self.PC, opt(&#39;subSpaceSize&#39;), opt(&#39;subSpaceSize&#39;),</span>
         <span class="c1">#        opt(&#39;nRestarts&#39;), opt(&#39;flexible&#39;))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                <span class="s2">&quot;Unknown KSMSolver option. Valid options are &quot;</span> <span class="s2">&quot;&#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span>
+                <span class="s2">&quot;Unknown linearSolver option. Valid options are &quot;</span> <span class="s2">&quot;&#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span>
             <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">opt</span><span class="p">(</span><span class="s2">&quot;useMonitor&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">setMonitor</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setMonitor</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
-                <span class="n">_descript</span><span class="o">=</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;KSMSolver&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+                <span class="n">_descript</span><span class="o">=</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;linearSolver&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
                 <span class="n">freq</span><span class="o">=</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;monitorFrequency&quot;</span><span class="p">),</span>
             <span class="p">)</span>
 
         <span class="c1"># Linear solver factor flag</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="StaticProblem.setOption"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -321,26 +407,41 @@
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Updated deprecated option</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ksmsolver&quot;</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;linearSolver&quot;</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;&#39;KSMSolver&#39; option will be deprecated starting in tacs 3.7.0. &quot;</span>
+                <span class="s2">&quot;Please use `linearSolver` option instead.&quot;</span><span class="p">,</span>
+                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+            <span class="p">)</span>
+
         <span class="c1"># Default setOption for common problem class objects</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">createVariables</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Update tolerances</span>
             <span class="k">if</span> <span class="s2">&quot;l2convergence&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
+                <span class="n">createVariables</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">),</span>
                 <span class="p">)</span>
+
             <span class="c1"># No need to reset solver for output options</span>
-            <span class="k">elif</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
                 <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;writenlitersolutions&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
             <span class="p">]:</span>
-                <span class="k">pass</span>
+                <span class="n">createVariables</span> <span class="o">=</span> <span class="kc">False</span>
+
             <span class="c1"># Reset solver for all other option changes</span>
-            <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">createVariables</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
 
     <span class="nd">@property</span>
@@ -383,8 +484,20 @@
 <span class="sd">            Value to set the load scale to</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span> <span class="o">=</span> <span class="n">value</span></div>
+
+<div class="viewcode-block" id="StaticProblem.getLoadScale"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getLoadScale">[docs]</a>    <span class="k">def</span> <span class="nf">getLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current load scale</span>
+
+<span class="sd">        This function is required by the continuation solver</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Current load scale</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loadScale</span></div>
 
 <div class="viewcode-block" id="StaticProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -430,20 +543,20 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="StaticProblem.setNodes"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setNodes">[docs]</a>    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+<div class="viewcode-block" id="StaticProblem.setNodes"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setNodes">[docs]</a>    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the mesh coordinates of the structure.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        coords : numpy.ndarray</span>
+<span class="sd">        Xpts : numpy.ndarray</span>
 <span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
 <span class="sd">            the number of structural nodes on this processor.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">True</span></div>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span></div>
 
     <span class="c1">####### Load adding methods ########</span>
 
@@ -745,23 +858,8 @@
 <span class="sd">        loadCase. The stiffness matrix is assembled and factored.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span><span class="p">:</span>
-            <span class="c1"># Assemble residual and stiffness matrix (w/o artificial terms)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
-                <span class="n">loadScale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="c1"># Stiffness matrix must include artificial terms before pc factor</span>
-            <span class="c1"># to prevent factorization issues w/ zero-diagonals</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbeArtificialStiffness</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
-            <span class="c1"># Remove artificial stiffness terms to get true stiffness mat</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbeArtificialStiffness</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_factorOnNext</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updateJacobian</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">updatePreconditioner</span><span class="p">()</span>
 
 <div class="viewcode-block" id="StaticProblem.solve"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -770,18 +868,14 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        Optional Arguments:</span>
-
-<span class="sd">        Fext : numpy.ndarray or tacs.TACS.Vec</span>
+<span class="sd">        Fext : numpy.ndarray or tacs.TACS.Vec, optional</span>
 <span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
-<span class="sd">            to applied to RHS of the static problem.</span>
+<span class="sd">            to applied to RHS of the static problem, by default None</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
-
-        <span class="n">setupProblemTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># Set problem vars to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
@@ -791,6 +885,56 @@
 
         <span class="n">initSolveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">:</span>
+            <span class="n">hasConverged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solveNonlinear</span><span class="p">(</span><span class="n">Fext</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hasConverged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_solveLinear</span><span class="p">(</span><span class="n">Fext</span><span class="p">)</span>
+
+        <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Get updated residual</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finalNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
+
+        <span class="n">finalNormTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
+        <span class="c1"># print this information automatically if prinititerations was requested.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Solve Times:&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Init Time&quot;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
+                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Solution Time&quot;</span><span class="p">,</span> <span class="n">finalNormTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">hasConverged</span></div>
+
+    <span class="k">def</span> <span class="nf">_solveLinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a linear StaticProblem for a given external force vector</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Fext : numpy.ndarray or tacs.TACS.Vec, optional</span>
+<span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
+<span class="sd">            to applied to RHS of the static problem, by default None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            Flag indicating whether the solver converged</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Get current residual</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">)</span>
 
@@ -804,12 +948,12 @@
         <span class="c1"># Starting Norm for this computation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">startNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
 
-        <span class="n">initNormTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
         <span class="c1"># Solve Linear System for the update</span>
-        <span class="n">success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+        <span class="n">hasConverged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+        <span class="c1"># Convert from int to bool</span>
+        <span class="n">hasConverged</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">hasConverged</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">hasConverged</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
                 <span class="s2">&quot;Linear solver failed to converge. &quot;</span>
                 <span class="s2">&quot;This is likely a sign that the problem is ill-conditioned. &quot;</span>
@@ -818,59 +962,123 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
         <span class="c1"># Update State Variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
 
-        <span class="n">stateUpdateTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">hasConverged</span>
 
-        <span class="c1"># Get updated residual</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">finalNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
+    <span class="k">def</span> <span class="nf">_solveNonlinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a nonlinear StaticProblem for a given external force vector</span>
 
-        <span class="n">finalNormTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Fext : numpy.ndarray or tacs.TACS.Vec, optional</span>
+<span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
+<span class="sd">            to applied to RHS of the static problem, by default None</span>
 
-        <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
-        <span class="c1"># print this information automatically if print iterations was requested.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Solve Times:&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Setup Time&quot;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Init Time&quot;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Init Norm Time&quot;</span><span class="p">,</span> <span class="n">initNormTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initNormTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS State Update Time&quot;</span><span class="p">,</span> <span class="n">stateUpdateTime</span> <span class="o">-</span> <span class="n">solveTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Final Norm Time&quot;</span><span class="p">,</span> <span class="n">finalNormTime</span> <span class="o">-</span> <span class="n">stateUpdateTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Solution Time&quot;</span><span class="p">,</span> <span class="n">finalNormTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            Flag indicating whether the solver converged</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Compute the internal and external force components of the residual at the current point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getForces</span><span class="p">(</span>
+            <span class="n">externalForceVec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">externalForce</span><span class="p">,</span>
+            <span class="n">internalForceVec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">internalForce</span><span class="p">,</span>
+            <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">externalForce</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
 
-        <span class="k">return</span></div>
+        <span class="c1"># We need to update the residual function handle used by the nonlinear solver based on the current external force vector</span>
+        <span class="k">def</span> <span class="nf">resFunc</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">resFunc</span> <span class="o">=</span> <span class="n">resFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">setRefNorm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">initNorm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">u0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+
+        <span class="c1"># Since the state has changed, we need to flag that the jacobian and preconditioner should be before the next primal or adjoint solve</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Finally return a bool indicating whether the solve was successful</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">hasConverged</span>
+
+    <span class="k">def</span> <span class="nf">_nonlinearCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback function to be called by the nonlinear solver at each iteration</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        solver : pyTACS solver object</span>
+<span class="sd">            The solver</span>
+<span class="sd">        u : tacs.TACS.Vec</span>
+<span class="sd">            Current state vector</span>
+<span class="sd">        res : tacs.TACS.Vec</span>
+<span class="sd">            Current residual vector</span>
+<span class="sd">        monitorVars : dict</span>
+<span class="sd">            Dictionary of variables to monitor, the values the solver should include can be</span>
+<span class="sd">            specified through the ``&quot;nonlinearSolverMonitorVars&quot;`` option.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">iteration</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Figure out the iteration number</span>
+            <span class="n">iteration</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">getIter</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">iteration</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">printHeader</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">printData</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">iteration</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeNLIterSolutions&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">(</span>
+                <span class="n">baseName</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">-NLIter&quot;</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="n">iteration</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="StaticProblem.updateJacobian"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.updateJacobian">[docs]</a>    <span class="k">def</span> <span class="nf">updateJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the Jacobian (a.k.a stiffness) matrix</span>
+
+<span class="sd">        The Jacobian will only actually be updated if the</span>
+<span class="sd">        ``_jacobianUpdateRequired`` flag is set to True.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        res : tacs.TACS.Vec, optional</span>
+<span class="sd">            If provided, the residual is also computed and stored in this vector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span><span class="p">:</span>
+            <span class="c1"># Assemble residual and stiffness matrix (w/o artificial terms)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleJacobian</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">,</span>
+                <span class="n">res</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
+                <span class="n">loadScale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="StaticProblem.updatePreconditioner"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.updatePreconditioner">[docs]</a>    <span class="k">def</span> <span class="nf">updatePreconditioner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the Jacobian (a.k.a stiffness) matrix preconditioner</span>
+
+<span class="sd">        By default, the static problem uses a full LU factorization of the</span>
+<span class="sd">        Jacobian matrix as a preconditioner, which means that this step is</span>
+<span class="sd">        typically the most expensive operation in the solution process.</span>
+
+<span class="sd">        The preconditioner will only actually be updated if the</span>
+<span class="sd">        ``_preconditionerUpdateRequired`` flag is set to True. This occurs</span>
+<span class="sd">        whenever the Jacobian is updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span><span class="p">:</span>
+            <span class="c1"># Stiffness matrix must include artificial terms before pc factor</span>
+            <span class="c1"># to prevent factorization issues w/ zero-diagonals</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbeArtificialStiffness</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
+            <span class="c1"># Remove artificial stiffness terms to get true stiffness mat</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rbeArtificialStiffness</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">False</span></div>
 
     <span class="c1">####### Function eval/sensitivity methods ########</span>
 
@@ -1063,39 +1271,39 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Adjoint Times:&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Sens Setup Problem Time&quot;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
                 <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Adjoint RHS Time&quot;</span><span class="p">,</span> <span class="n">adjointRHSTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                     <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
                     <span class="o">%</span> <span class="p">(</span>
                         <span class="s2">&quot;TACS Adjoint Solve Time - </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">),</span>
                         <span class="n">adjointEndTime</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">-</span> <span class="n">adjointStartTime</span><span class="p">[</span><span class="n">f</span><span class="p">],</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
                 <span class="o">%</span> <span class="p">(</span>
                     <span class="s2">&quot;Total Sensitivity Time&quot;</span><span class="p">,</span>
                     <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">adjointFinishedTime</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
                 <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
                 <span class="o">%</span> <span class="p">(</span>
                     <span class="s2">&quot;Complete Sensitivity Time&quot;</span><span class="p">,</span>
                     <span class="n">totalSensitivityTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="StaticProblem.addSVSens"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addSVSens">[docs]</a>    <span class="k">def</span> <span class="nf">addSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1379,6 +1587,56 @@
         <span class="k">if</span> <span class="n">resArray</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">resArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="StaticProblem.getForces"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getForces">[docs]</a>    <span class="k">def</span> <span class="nf">getForces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">externalForceVec</span><span class="p">,</span> <span class="n">internalForceVec</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the internal and external forces acting on the structure</span>
+
+<span class="sd">        The computations here are based on the residual equation:</span>
+<span class="sd">            r(u, loadScale) = -(Fint(u) + loadScale * Fext(u))</span>
+<span class="sd">        Thus, the internal forces are given by:</span>
+<span class="sd">            Fint(u) = -r(u, 0)</span>
+<span class="sd">        And the external forces are given by:</span>
+<span class="sd">            Fext(u) = -r(u, 1) - Fi(u)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        externalForceVec : TACS BVec or numpy array</span>
+<span class="sd">            Vector/array to store external forces in</span>
+<span class="sd">        internalForceVec : TACS BVec or numpy array</span>
+<span class="sd">            Vector/array to store internal forces in</span>
+<span class="sd">        Fext : TACS BVec or numpy array, optional</span>
+<span class="sd">            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)</span>
+<span class="sd">            to applied to RHS of the static problem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">loadScale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">Fext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="n">loadScale</span><span class="p">)</span>
+
+        <span class="c1"># Compute internal forces</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">internalForceVec</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">internalForceVec</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">internalForceVec</span><span class="p">[:]</span>
+
+        <span class="c1"># Compute external forces</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="n">externalForceVec</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">externalForceVec</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">externalForceVec</span><span class="p">[:]</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="n">externalForceVec</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">internalForceVec</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">externalForceVec</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">externalForceVec</span><span class="p">[:]</span> <span class="o">-</span> <span class="n">internalForceVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">externalForceVec</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">externalForceVec</span><span class="p">[:]</span> <span class="o">-</span> <span class="n">internalForceVec</span><span class="p">[:]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">externalForceVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+                <span class="n">externalForceVec</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToVec</span><span class="p">(</span><span class="n">internalForceVec</span><span class="p">))</span></div>
+
 <div class="viewcode-block" id="StaticProblem.getJacobian"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getJacobian">[docs]</a>    <span class="k">def</span> <span class="nf">getJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the problem&#39;s Jacobian in sciPy sparse matrix format</span>
 
@@ -1489,7 +1747,7 @@
         <span class="n">bcTerms</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
 
         <span class="c1"># Solve Linear System</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">KSM</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
         <span class="c1"># Add bc terms back in</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">bcTerms</span><span class="p">)</span>
@@ -1537,10 +1795,49 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">states</span><span class="p">[:]</span>
-        <span class="c1"># Apply boundary conditions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="c1"># Set states to assembler</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
+
+        <span class="c1"># If this is a nonlinear problem then changing the state will change the jacobian</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="StaticProblem.getOutputFileName"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getOutputFileName">[docs]</a>    <span class="k">def</span> <span class="nf">getOutputFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Figure out a base path/name for output files</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str, optional</span>
+<span class="sd">            Directory to write file to, by default uses the &#39;outputDir&#39; option</span>
+<span class="sd">        baseName : str, optional</span>
+<span class="sd">            Case name, by default uses self.name</span>
+<span class="sd">        number : int, optional</span>
+<span class="sd">            A number to append to the filename, by default uses the call-count of the problem</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        str</span>
+<span class="sd">            Full path to output file (excluding any extension)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check input</span>
+        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="c1"># If we are numbering solution, it saving the sequence of</span>
+        <span class="c1"># calls, add the call number</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># We need number based on the provided number:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
+            <span class="c1"># number solutions, use internal counter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="StaticProblem.writeSolution"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeSolution">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1565,28 +1862,32 @@
         <span class="c1"># Make sure assembler variables are up to date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
-        <span class="c1"># Check input</span>
-        <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
-
-        <span class="c1"># If we are numbering solution, it saving the sequence of</span>
-        <span class="c1"># calls, add the call number</span>
-        <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># We need number based on the provided number:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># if number is none, i.e. standalone, but we need to</span>
-            <span class="c1"># number solutions, use internal counter</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
-                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+        <span class="c1"># Figure out the output file base name</span>
+        <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputFileName</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
 
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
-            <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">base</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StaticProblem.writeSolutionHistory"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeSolutionHistory">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolutionHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the nonlinear solver history to a file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        outputDir : str or None</span>
+<span class="sd">            Use the supplied output directory</span>
+<span class="sd">        baseName : str or None</span>
+<span class="sd">            Use this supplied string for the base filename. Typically</span>
+<span class="sd">            only used from an external solver.</span>
+<span class="sd">        number : int or None</span>
+<span class="sd">            Use the user supplied number to index solution. Again, only</span>
+<span class="sd">            typically used from an external solver</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Figure out the output file base name</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOutputFileName</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">baseName</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="StaticProblem.writeLoadToBDF"><a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeLoadToBDF">[docs]</a>    <span class="k">def</span> <span class="nf">writeLoadToBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdfFile</span><span class="p">,</span> <span class="n">loadCaseID</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1631,7 +1932,7 @@
                     <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;SUBTITLE=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
                 <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">add_parameter_to_local_subcase</span><span class="p">(</span>
-                    <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;ANALYSIS=STATICS&quot;</span>
+                    <span class="n">loadCaseID</span><span class="p">,</span> <span class="s2">&quot;ANALYSIS=STATICS&quot;</span>
                 <span class="p">)</span>
                 <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">case_control_deck</span><span class="o">.</span><span class="n">add_parameter_to_local_subcase</span><span class="p">(</span>
                     <span class="n">loadCaseID</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;LOAD=</span><span class="si">{</span><span class="n">loadCaseID</span><span class="si">}</span><span class="s2">&quot;</span>

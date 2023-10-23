@@ -389,6 +389,13 @@ options to the stdout</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.printOptions">
 <span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printOptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
@@ -413,7 +420,7 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+<dd class="field-odd"><p><strong>Xpts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
 </dd>
 </dl>
@@ -429,6 +436,17 @@ the number of structural nodes on this processor.</p>
 <li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
 <li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
 </dd>
 </dl>
 </dd></dl>
@@ -483,10 +501,12 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getOption"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getOption()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setDesignVars"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setNodes"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setOption"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setVarName"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setVarName()</span></code></a></li>
 </ul>
 </li>

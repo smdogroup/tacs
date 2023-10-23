@@ -14,7 +14,7 @@
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Constraint classes" href="constraints.html" />
+    <link rel="next" title="Solver classes" href="solvers.html" />
     <link rel="prev" title="ModalProblem" href="modal.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -27,7 +27,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="constraints.html" title="Constraint classes"
+          <a href="solvers.html" title="Solver classes"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="modal.html" title="ModalProblem"
@@ -98,7 +98,7 @@ The following options, their default values and descriptions are listed below:</
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.problems.BucklingProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">BucklingProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">BucklingProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem" title="Permalink to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createBucklingProblem instead.</p>
 <dl class="field-list simple">
@@ -705,11 +705,24 @@ on this processor</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.isNonlinear">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.BucklingProblem.isNonlinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.BucklingProblem.printDefaultOptions">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
 </dd></dl>
 
 <dl class="py method">
@@ -737,8 +750,19 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+<dd class="field-odd"><p><strong>Xpts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
 </dd>
 </dl>
 </dd></dl>
@@ -824,10 +848,13 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.getNumVariables"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.getOption"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getOption()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.isNonlinear"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.isNonlinear</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.setNodes"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.setOptions"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.setVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.writeSensFile"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.writeSensFile()</span></code></a></li>
 </ul>
@@ -846,8 +873,8 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="constraints.html"
-                          title="next chapter">Constraint classes</a></p>
+    <p class="topless"><a href="solvers.html"
+                          title="next chapter">Solver classes</a></p>
   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -873,7 +900,7 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="constraints.html" title="Constraint classes"
+          <a href="solvers.html" title="Solver classes"
              >next</a> |</li>
         <li class="right" >
           <a href="modal.html" title="ModalProblem"

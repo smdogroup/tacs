@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>BaseSolver &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BaseSolver</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-tacs.solvers.base">
+<span id="basesolver"></span><h1>BaseSolver<a class="headerlink" href="#module-tacs.solvers.base" title="Permalink to this heading">¶</a></h1>
+<section id="tacs-base-solver-class">
+<h2>TACS: Base Solver Class<a class="headerlink" href="#tacs-base-solver-class" title="Permalink to this heading">¶</a></h2>
+<p>This is the base class from which all other TACS solvers are derived.
+It is an abstract class, so cannot be used directly. Instead, it defines
+the methods that all solvers must implement.</p>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.solvers.</span></span><span class="sig-name descname"><span class="pre">BaseSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assembler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="tacs.TACS.Assembler"><span class="pre">Assembler</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">setStateFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">resFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stateVec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resVec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Comm.html#mpi4py.MPI.Comm" title="(in MPI for Python v3.1)"><span class="pre">Comm</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a solver instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="tacs.TACS.Assembler"><em>tacs.TACS.Assembler</em></a>) -- TACS assembler object related to the problem being solved, required in order for the solver to create it's own vectors</p></li>
+<li><p><strong>setStateFunc</strong> (<em>function</em>) -- Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -&gt; None</p></li>
+<li><p><strong>resFunc</strong> (<em>function</em>) -- Function to evaluate the residual at the current state, with signature <cite>resFunc(resVec: tacs.TACS.Vec) -&gt; None</cite></p></li>
+<li><p><strong>stateVec</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- Vector to store the state in, by default the solver will create it's own but these can be passed to save additional allocations</p></li>
+<li><p><strong>resVec</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- Vector to store the residual in, by default the solver will create it's own but these can be passed to save additional allocations</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>, </em><em>optional</em>) -- Dictionary holding solver-specific option parameters (case-insensitive)., by default None</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a><em>, </em><em>optional</em>) -- The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.getHistoryVariables">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">getHistoryVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.getHistoryVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.getHistoryVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the variables to be stored in the solver history</p>
+<p>This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>, Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.hasConverged">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hasConverged</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.BaseSolver.hasConverged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has converged, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.fatalFailure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fatalFailure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.BaseSolver.fatalFailure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has failed, set as a property rather than an attribute so that it is read-only</p>
+<p>Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.iterationCount">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">iterationCount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.solvers.BaseSolver.iterationCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of iterations performed, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.solve">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the residual equations r(u) = 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u0</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Initial guess, by default uses the current state</p></li>
+<li><p><strong>result</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Vector in which to store the solution, by default None.
+The problem's state is updated with the solution whether or not this is provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.setConvergenceTolerance">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setConvergenceTolerance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.setConvergenceTolerance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.setConvergenceTolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the convergence tolerance of the solver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>absTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Absolute tolerance, not changed if no value is provided</p></li>
+<li><p><strong>relTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Relative tolerance, not changed if no value is provided</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.initializeSolve">
+<span class="sig-name descname"><span class="pre">initializeSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.initializeSolve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.initializeSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform any initialization required before the solve</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>u0</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Initial guess, by default uses the current state</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the solver</p>
+<p>Currently this just zeros out the state vector, but more functionality may be added in future</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.setRefNorm">
+<span class="sig-name descname"><span class="pre">setRefNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.setRefNorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.setRefNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the reference norm used to compute relative convergence measures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Reference norm</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.setCallback">
+<span class="sig-name descname"><span class="pre">setCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/base.html#BaseSolver.setCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.BaseSolver.setCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a callback function to be called at each iteration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>callback</strong> (<em>callable</em><em>, </em><em>optional</em>) -- Callback function, should have the following signature:
+callback(solver: tacs.solver, u: tacs.TACS.Vec, res: tacs.TACS.Vec, monitorVars: dict) -&gt; None
+Where:
+- <code class="docutils literal notranslate"><span class="pre">solver</span></code> is the solver object
+- <code class="docutils literal notranslate"><span class="pre">u</span></code> is the current state vector
+- <code class="docutils literal notranslate"><span class="pre">res</span></code> is the current residual vector
+- <code class="docutils literal notranslate"><span class="pre">monitorVars</span></code> is a dictionary of variables to monitor, which can be specified through the <code class="docutils literal notranslate"><span class="pre">&quot;nonlinearSolverMonitorVars&quot;</span></code> option</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.solvers.BaseSolver.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.getOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.printOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.setOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.BaseSolver.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.BaseSolver.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">BaseSolver</a><ul>
+<li><a class="reference internal" href="#tacs-base-solver-class">TACS: Base Solver Class</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver"><code class="docutils literal notranslate"><span class="pre">BaseSolver</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.getHistoryVariables"><code class="docutils literal notranslate"><span class="pre">BaseSolver.getHistoryVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.hasConverged"><code class="docutils literal notranslate"><span class="pre">BaseSolver.hasConverged</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.fatalFailure"><code class="docutils literal notranslate"><span class="pre">BaseSolver.fatalFailure</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.iterationCount"><code class="docutils literal notranslate"><span class="pre">BaseSolver.iterationCount</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.solve"><code class="docutils literal notranslate"><span class="pre">BaseSolver.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.setConvergenceTolerance"><code class="docutils literal notranslate"><span class="pre">BaseSolver.setConvergenceTolerance()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.initializeSolve"><code class="docutils literal notranslate"><span class="pre">BaseSolver.initializeSolve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.reset"><code class="docutils literal notranslate"><span class="pre">BaseSolver.reset()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.setRefNorm"><code class="docutils literal notranslate"><span class="pre">BaseSolver.setRefNorm()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.setCallback"><code class="docutils literal notranslate"><span class="pre">BaseSolver.setCallback()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.dtype"><code class="docutils literal notranslate"><span class="pre">BaseSolver.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.getOption"><code class="docutils literal notranslate"><span class="pre">BaseSolver.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">BaseSolver.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">BaseSolver.printModifiedOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.printOptions"><code class="docutils literal notranslate"><span class="pre">BaseSolver.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.setOption"><code class="docutils literal notranslate"><span class="pre">BaseSolver.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.BaseSolver.setOptions"><code class="docutils literal notranslate"><span class="pre">BaseSolver.setOptions()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">BaseSolver</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

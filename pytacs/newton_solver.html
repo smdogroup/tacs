@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>NewtonSolver &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Constraint classes" href="constraints.html" />
+    <link rel="prev" title="ContinuationSolver" href="continuation_solver.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraints.html" title="Constraint classes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="continuation_solver.html" title="ContinuationSolver"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="solvers.html" accesskey="U">Solver classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">NewtonSolver</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-tacs.solvers.newton">
+<span id="newtonsolver"></span><h1>NewtonSolver<a class="headerlink" href="#module-tacs.solvers.newton" title="Permalink to this heading">¶</a></h1>
+<section id="tacs-nonlinear-newton-solver">
+<h2>TACS Nonlinear Newton Solver<a class="headerlink" href="#tacs-nonlinear-newton-solver" title="Permalink to this heading">¶</a></h2>
+<p>This is a fairly standard Newton solver with a critical point (or minimum
+energy) line search.
+The convergence of the linear solution in each iteration can be controlled
+adaptively using the Eisenstat-Walker method (specifically variant (b)
+described on page 50 of <a class="reference external" href="https://doi.org/10.1016/j.cam.2005.12.030">this paper</a> by An, Mo and Liu)</p>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
+<p>Options can be set using the <a class="reference internal" href="#tacs.solvers.NewtonSolver.setOption" title="tacs.solvers.NewtonSolver.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.setOption</span></code></a> and <a class="reference internal" href="#tacs.solvers.NewtonSolver.setOptions" title="tacs.solvers.NewtonSolver.setOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.setOptions</span></code></a> methods.
+Current option values for a class instance can be printed out using the <a class="reference internal" href="#tacs.solvers.NewtonSolver.printOptions" title="tacs.solvers.NewtonSolver.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.printOptions</span></code></a> method.
+The following options, their default values and descriptions are listed below:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+|     NewtonSolver default options:      |
++----------------------------------------+
+&#39;MaxIter&#39;: 40
+	 Maximum number of Newton iterations.
+&#39;ForceFirstIter&#39;: False
+	 Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.
+&#39;AbsTol&#39;: 1e-08
+	 Convergence criteria for the nonlinear residual norm.
+&#39;RelTol&#39;: 1e-08
+	 Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.
+&#39;DivergenceTol&#39;: 10000000000.0
+	 Residual norm at which the nonlinear solver is jugded to have diverged
+&#39;AbsLinTol&#39;: 1e-12
+	 Linear solver residual tolerance.
+&#39;RelLinTol&#39;: 1e-12
+	 Linear solver relative residual tolerance.
+&#39;MaxLinIters&#39;: 0
+	 If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.
+&#39;UseEW&#39;: False
+	 Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method.
+&#39;EWMaxTol&#39;: 0.01
+	 Eisenstat-Walker max allowable linear solver tolerance.
+&#39;EWGamma&#39;: 1.0
+	 Eisenstat-Walker gamma parameter.
+&#39;EWAlpha&#39;: 1.618033988749895
+	 Eisenstat-Walker alpha parameter.
+&#39;UseLineSearch&#39;: True
+	 Flag for using line search in the nonlinear solver.
+&#39;PrintLineSearchIters&#39;: False
+	 Flag for printing out line search information.
+&#39;SkipFirstNLineSearch&#39;: 0
+	 Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness
+&#39;LineSearchMaxIter&#39;: 25
+	 Maximum number of linesearch iterations.
+&#39;LineSearchExpectedDecrease&#39;: 0.0001
+	 Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.
+&#39;LineSearchMaxStep&#39;: 2.0
+	 Maximum step size for the linesearch, as a fraction of the Newton step
+&#39;LineSearchMinStep&#39;: 0.01
+	 Minimum step size for the linesearch, as a fraction of the Newton step
+&#39;LineSearchMaxStepChange&#39;: 0.5
+	 Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.
+&#39;LineSearchFallbackStepLimit&#39;: 0.9
+	 Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.
+&#39;monitorVars&#39;: [&#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;lineSearchIters&#39;]
+	 List of variables to include in nonlinear solver monitor output. Choose from &#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;EWTol&#39;, and &#39;lineSearchIters&#39;.
+</pre></div>
+</div>
+</section>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.solvers.</span></span><span class="sig-name descname"><span class="pre">NewtonSolver</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">assembler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="tacs.TACS.Assembler"><span class="pre">Assembler</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">setStateFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">resFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">jacFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pcUpdateFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">linearSolver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">KSM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stateVec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resVec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Comm.html#mpi4py.MPI.Comm" title="(in MPI for Python v3.1)"><span class="pre">Comm</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/solvers/newton.html#NewtonSolver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.NewtonSolver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Newton solver instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="tacs.TACS.Assembler"><em>tacs.TACS.Assembler</em></a>) -- TACS assembler object related to the problem being solved, required in order for the solver to create it's own vectors</p></li>
+<li><p><strong>setStateFunc</strong> (<em>function</em>) -- Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -&gt; None</p></li>
+<li><p><strong>resFunc</strong> (<em>function</em>) -- Function to evaluate the residual at the current state, with signature resFunc(resVec: tacs.TACS.Vec) -&gt; None</p></li>
+<li><p><strong>jacFunc</strong> (<em>function</em>) -- Function to update the residual Jacobian at the current state, with signature jacFunc() -&gt; None</p></li>
+<li><p><strong>pcUpdateFunc</strong> (<em>function</em>) -- Function to update the residual Jacobian preconditioner at the current state, with signature pcUpdateFunc() -&gt; None</p></li>
+<li><p><strong>linearSolver</strong> (<em>tacs.TACS.KSM</em>) -- TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner</p></li>
+<li><p><strong>stateVec</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- Vector to store the state in, by default the solver will create it's own but these can be passed to save additional allocations</p></li>
+<li><p><strong>resVec</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- Vector to store the residual in, by default the solver will create it's own but these can be passed to save additional allocations</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a><em>, </em><em>optional</em>) -- Dictionary holding solver-specific option parameters (case-insensitive)., by default None</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v3.1)"><em>mpi4py.MPI.Intracomm</em></a><em>, </em><em>optional</em>) -- The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/solvers/newton.html#NewtonSolver.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.NewtonSolver.setOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>A thin wrapper around the base setOption method that makes necessary changes when certain options are changed</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.getHistoryVariables">
+<span class="sig-name descname"><span class="pre">getHistoryVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.12)"><span class="pre">Dict</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tacs/solvers/newton.html#NewtonSolver.getHistoryVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.NewtonSolver.getHistoryVariables" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the variables to be stored in the solver history</p>
+<p>This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)">str</a>, Dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.setConvergenceTolerance">
+<span class="sig-name descname"><span class="pre">setConvergenceTolerance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">absTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relTol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/newton.html#NewtonSolver.setConvergenceTolerance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.NewtonSolver.setConvergenceTolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the convergence tolerance of the solver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>absTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Absolute tolerance, not changed if no value is provided</p></li>
+<li><p><strong>relTol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Relative tolerance, not changed if no value is provided</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/solvers/newton.html#NewtonSolver.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.solvers.NewtonSolver.solve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the residual equations r(u) = 0</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u0</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Initial guess, by default uses the current state</p></li>
+<li><p><strong>result</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Vector in which to store the solution, by default None.
+The problem's state is updated with the solution whether or not this is provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.solvers.NewtonSolver.dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.fatalFailure">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">fatalFailure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.NewtonSolver.fatalFailure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has failed, set as a property rather than an attribute so that it is read-only</p>
+<p>Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.NewtonSolver.getOption" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.hasConverged">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hasConverged</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.NewtonSolver.hasConverged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Whether the solver has converged, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.initializeSolve">
+<span class="sig-name descname"><span class="pre">initializeSolve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Vec</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.NewtonSolver.initializeSolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform any initialization required before the solve</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>u0</strong> (<em>TACS vector</em><em>, </em><em>optional</em>) -- Initial guess, by default uses the current state</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.iterationCount">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">iterationCount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.solvers.NewtonSolver.iterationCount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of iterations performed, set as a property rather than an attribute so that it is read-only</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.NewtonSolver.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.NewtonSolver.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.NewtonSolver.printOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.NewtonSolver.reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the solver</p>
+<p>Currently this just zeros out the state vector, but more functionality may be added in future</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.setCallback">
+<span class="sig-name descname"><span class="pre">setCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.12)"><span class="pre">Callable</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.NewtonSolver.setCallback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set a callback function to be called at each iteration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>callback</strong> (<em>callable</em><em>, </em><em>optional</em>) -- Callback function, should have the following signature:
+callback(solver: tacs.solver, u: tacs.TACS.Vec, res: tacs.TACS.Vec, monitorVars: dict) -&gt; None
+Where:
+- <code class="docutils literal notranslate"><span class="pre">solver</span></code> is the solver object
+- <code class="docutils literal notranslate"><span class="pre">u</span></code> is the current state vector
+- <code class="docutils literal notranslate"><span class="pre">res</span></code> is the current residual vector
+- <code class="docutils literal notranslate"><span class="pre">monitorVars</span></code> is a dictionary of variables to monitor, which can be specified through the <code class="docutils literal notranslate"><span class="pre">&quot;nonlinearSolverMonitorVars&quot;</span></code> option</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.NewtonSolver.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.NewtonSolver.setRefNorm">
+<span class="sig-name descname"><span class="pre">setRefNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.12)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#tacs.solvers.NewtonSolver.setRefNorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the reference norm used to compute relative convergence measures</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) -- Reference norm</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">NewtonSolver</a><ul>
+<li><a class="reference internal" href="#tacs-nonlinear-newton-solver">TACS Nonlinear Newton Solver</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver"><code class="docutils literal notranslate"><span class="pre">NewtonSolver</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.setOption"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.getHistoryVariables"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.getHistoryVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.setConvergenceTolerance"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.setConvergenceTolerance()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.solve"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.dtype"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.fatalFailure"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.fatalFailure</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.getOption"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.hasConverged"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.hasConverged</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.initializeSolve"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.initializeSolve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.iterationCount"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.iterationCount</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.printModifiedOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.printOptions"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.reset"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.reset()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.setCallback"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.setCallback()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.setOptions"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.setOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.NewtonSolver.setRefNorm"><code class="docutils literal notranslate"><span class="pre">NewtonSolver.setRefNorm()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="continuation_solver.html"
+                          title="previous chapter">ContinuationSolver</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="constraints.html"
+                          title="next chapter">Constraint classes</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="constraints.html" title="Constraint classes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="continuation_solver.html" title="ContinuationSolver"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="solvers.html" >Solver classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">NewtonSolver</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

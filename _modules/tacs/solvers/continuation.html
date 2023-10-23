@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.solvers.continuation &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.continuation</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.solvers.continuation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">TACS Nonlinear Continuation Solver</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">This continuation solver uses a predictor-corrector scheme to increment the load scale in nonlinear problems.</span>
+<span class="sd">Each iteration of the continuation solver consists of three steps:</span>
+
+<span class="sd">#. Predictor computation: If enabled, the solver will use the solutions from previous continuation steps to extrapolate the equilibrium path to the current load scale, which should provide a good initial guess for the inner solver.</span>
+<span class="sd">#. Corrector computation: The continuation solver calls an inner solver to solve the nonlinear problem at the current load scale.</span>
+<span class="sd">#. Load scale update: The continuation solver increments the load scale, the size of the step taken is adapted each iteration to try and achieve a target number of inner solver iterations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Standard Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># External Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">mpi4py</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Extension modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">from</span> <span class="nn">tacs.solvers</span> <span class="kn">import</span> <span class="n">BaseSolver</span>
+
+
+<span class="k">def</span> <span class="nf">lagrangeInterp</span><span class="p">(</span><span class="n">xKnown</span><span class="p">,</span> <span class="n">yKnown</span><span class="p">,</span> <span class="n">xQuery</span><span class="p">,</span> <span class="n">yQuery</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolate an array using lagrange polynomials</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    xKnown : iterable of length n</span>
+<span class="sd">        scalar x values of known points</span>
+<span class="sd">    yKnown : iterable of n np.ndarrays</span>
+<span class="sd">        arrays at known points</span>
+<span class="sd">    xQuery : float</span>
+<span class="sd">        x value to interpolate at</span>
+<span class="sd">    yQuery : np.ndarray</span>
+<span class="sd">        array to store interpolated result in</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">numPoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xKnown</span><span class="p">)</span>
+    <span class="n">yQuery</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">yTemp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">yQuery</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+        <span class="n">yTemp</span><span class="p">[:]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">for</span> <span class="n">mm</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numPoints</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">mm</span> <span class="o">!=</span> <span class="n">jj</span><span class="p">:</span>
+                <span class="n">yTemp</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">yTemp</span><span class="p">[:]</span> <span class="o">*</span> <span class="p">(</span><span class="n">xQuery</span> <span class="o">-</span> <span class="n">xKnown</span><span class="p">[</span><span class="n">mm</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">xKnown</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">-</span> <span class="n">xKnown</span><span class="p">[</span><span class="n">mm</span><span class="p">])</span>
+        <span class="n">yQuery</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">yQuery</span><span class="p">[:]</span> <span class="o">+</span> <span class="n">yKnown</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">*</span> <span class="n">yTemp</span>
+
+
+<div class="viewcode-block" id="ContinuationSolver"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver">[docs]</a><span class="k">class</span> <span class="nc">ContinuationSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;MaxLambda&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">&quot;Final continuation parameter value to aim for.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;AbsTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s2">&quot;Convergence criteria for the nonlinear residual norm.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RelTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s2">&quot;Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;CoarseAbsTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s2">&quot;Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;CoarseRelTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s2">&quot;Relative residual norm criteria for intermediate load increments.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;TargetIter&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">8</span><span class="p">,</span>
+            <span class="s2">&quot;Target number of Newton iterations for each continuation increment.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;MaxIter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;Maximum number of continuation steps.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;InitialStep&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;Initial continuation step size.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;MinStep&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="s2">&quot;Minimum continuation step size.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;MaxStep&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="s2">&quot;Maximum continuation step size.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;MinStepFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">&quot;The minimum factor by which the continuation step size can decrease in a single step.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;MaxStepFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">2.0</span><span class="p">,</span>
+            <span class="s2">&quot;The maximum factor by which the continuation step size can increase in a single step.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RetractionFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">&quot;The factor by which the continuation step size is reduced when the Newton solver fails to converge.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># Predictor step options</span>
+        <span class="s2">&quot;UsePredictor&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for using predictor step in continuation.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;NumPredictorStates&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">&quot;Number of previous equilibrium states to use in computing the predictor step.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># &quot;predictorUseDerivative&quot;: [</span>
+        <span class="c1">#     bool,</span>
+        <span class="c1">#     False,</span>
+        <span class="c1">#     &quot;Whether to use the equilibrium path slope in the computation of the predictor step. This requires a linear solve and thus greatly increases the cost of the predictor step computation.&quot;,</span>
+        <span class="c1"># ],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">jacFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">pcUpdateFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">linearSolver</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">,</span>
+        <span class="n">setLambdaFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">getLambdaFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">innerSolver</span><span class="p">:</span> <span class="n">BaseSolver</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mpi4py</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">Comm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a continuation solver instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        jacFunc : function</span>
+<span class="sd">            Function to update the residual Jacobian at the current state, with signature `jacFunc() -&gt; None`</span>
+<span class="sd">        pcUpdateFunc : function</span>
+<span class="sd">            Function to update the residual Jacobian preconditioner at the current state, with signature `pcUpdateFunc() -&gt; None`</span>
+<span class="sd">        linearSolver : tacs.TACS.KSM</span>
+<span class="sd">            TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner</span>
+<span class="sd">        setLambdaFunc : function</span>
+<span class="sd">            Function to set the continuation parameter, with signature `setLambdaFunc(lambda:float) -&gt; None`</span>
+<span class="sd">        setLambdaFunc : function</span>
+<span class="sd">            Function to get the current continuation parameter, with signature `getLambdaFunc() -&gt; float`</span>
+<span class="sd">        innerSolver : TACS Nonlinear Solver</span>
+<span class="sd">            A Solver object to use for the corrector solve in each increment (e.g a NewtonSolver object)</span>
+<span class="sd">        options : dict, optional</span>
+<span class="sd">            Dictionary holding solver-specific option parameters (case-insensitive)., by default None</span>
+<span class="sd">        comm : mpi4py.MPI.Intracomm, optional</span>
+<span class="sd">            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">jacFunc</span> <span class="o">=</span> <span class="n">jacFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span> <span class="o">=</span> <span class="n">pcUpdateFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="o">=</span> <span class="n">linearSolver</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span> <span class="o">=</span> <span class="n">setLambdaFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">getLambdaFunc</span> <span class="o">=</span> <span class="n">getLambdaFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span> <span class="o">=</span> <span class="n">innerSolver</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">BaseSolver</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="n">setStateFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">,</span>
+            <span class="n">resFunc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">resFunc</span><span class="p">,</span>
+            <span class="n">stateVec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">stateVec</span><span class="p">,</span>
+            <span class="n">resVec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span>
+            <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+            <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create additional vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fInt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fExt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">du_e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">du_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predictorStep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">resFunc</span>
+
+    <span class="nd">@resFunc</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">resFunc</span> <span class="o">=</span> <span class="n">resFunc</span>
+
+<div class="viewcode-block" id="ContinuationSolver.getHistoryVariables"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.getHistoryVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
+
+<span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Dict[str, Dict]</span>
+<span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Increment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Lambda&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;SubIter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+        <span class="c1"># Add the variables from the inner solver</span>
+        <span class="n">variables</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">getHistoryVariables</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">variables</span></div>
+
+    <span class="k">def</span> <span class="nf">_setupPredictorVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the structures containing the data for computing the predictor steps&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UsePredictor&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;NumPredictorStates&quot;</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContinuationSolver.setOption"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">BaseSolver</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Update the predictor computation data structures if the relevant options are changed</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="s2">&quot;usepredictor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;numpredictorstates&quot;</span><span class="p">,</span>
+        <span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_setupPredictorVectors</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ContinuationSolver.setConvergenceTolerance"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setConvergenceTolerance">[docs]</a>    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        absTol : float, optional</span>
+<span class="sd">            Absolute tolerance, not changed if no value is provided</span>
+<span class="sd">        relTol : float, optional</span>
+<span class="sd">            Relative tolerance, not changed if no value is provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">absTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">,</span> <span class="n">absTol</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">relTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">,</span> <span class="n">relTol</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ContinuationSolver.initializeSolve"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.initializeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform any initialization required before the solve&quot;&quot;&quot;</span>
+        <span class="n">BaseSolver</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UsePredictor&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;NumPredictorStates&quot;</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ContinuationSolver.solve"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">MAX_LAMBDA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxLambda&quot;</span><span class="p">)</span>
+        <span class="n">TARGET_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;TargetIter&quot;</span><span class="p">)</span>
+        <span class="n">INIT_STEP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;InitialStep&quot;</span><span class="p">)</span>
+        <span class="n">MIN_STEP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MinStep&quot;</span><span class="p">)</span>
+        <span class="n">MAX_STEP</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxStep&quot;</span><span class="p">)</span>
+        <span class="n">MAX_INCREMENTS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxIter&quot;</span><span class="p">)</span>
+        <span class="n">MIN_STEP_FACTOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MinStepFactor&quot;</span><span class="p">)</span>
+        <span class="n">MAX_STEP_FACTOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxStepFactor&quot;</span><span class="p">)</span>
+        <span class="n">STEP_RETRACT_FACTOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RetractionFactor&quot;</span><span class="p">)</span>
+
+        <span class="n">ABS_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">)</span>
+        <span class="n">REL_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">)</span>
+        <span class="n">COARSE_ABS_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;CoarseAbsTol&quot;</span><span class="p">)</span>
+        <span class="n">COARSE_REL_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;CoarseRelTol&quot;</span><span class="p">)</span>
+
+        <span class="n">USE_PREDICTOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UsePredictor&quot;</span><span class="p">)</span>
+        <span class="c1"># PREDICTOR_USE_DERIVATIVE = self.getOption(&quot;predictorUseDerivative&quot;)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">u0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
+
+        <span class="c1"># Compute the internal and external forcing vectors at the current point</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">computeForceVectors</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">du_e</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setRefNorm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="o">.</span><span class="n">norm</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setRefNorm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">norm</span><span class="p">()))</span>
+
+        <span class="c1"># ==============================================================================</span>
+        <span class="c1"># Compute the initial load scale</span>
+        <span class="c1"># ==============================================================================</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">INIT_STEP</span><span class="p">)</span>
+        <span class="n">loadStepDirection</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># If we&#39;re restarting from a previous solution we should compute the optimum load scale</span>
+        <span class="c1"># to restart from. This is done by computing the load scale that minimizes the work</span>
+        <span class="c1"># done by the resulting Newton step:</span>
+        <span class="c1"># optLoadScale = (Fe^T dUi + Fi^T dUe) / (-2 Fe^T dUe)</span>
+        <span class="c1"># Where: Fe = external force, Fi = internal force, dUi = inv(K) * Fi, dUe = inv(K) * Fe</span>
+        <span class="n">isRestartIncrement</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jacFunc</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">du_e</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fInt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">du_i</span><span class="p">)</span>
+            <span class="n">FeUe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">du_e</span><span class="p">))</span>
+            <span class="n">FeUi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">du_i</span><span class="p">))</span>
+            <span class="n">FiUe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fInt</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">du_e</span><span class="p">))</span>
+            <span class="n">optLoadScale</span> <span class="o">=</span> <span class="p">(</span><span class="n">FeUi</span> <span class="o">+</span> <span class="n">FiUe</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">FeUe</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">optLoadScale</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">MAX_LAMBDA</span> <span class="ow">or</span> <span class="n">optLoadScale</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="c1"># If the optimum load scale is more than double the max load scale we&#39;re aiming for, or if it&#39;s</span>
+                <span class="c1"># negative then the loading/structure has changed so much that we&#39;ll be closer to the final</span>
+                <span class="c1"># solution if we just reset the displacements to zero and start the solver from there</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+                <span class="n">optLoadScale</span> <span class="o">=</span> <span class="n">INIT_STEP</span>
+            <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">optLoadScale</span> <span class="o">-</span> <span class="n">MAX_LAMBDA</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-2</span><span class="p">:</span>
+                <span class="c1"># If the optimum load scale is close to the max load scale then we&#39;ll just use the max load scale</span>
+                <span class="n">optLoadScale</span> <span class="o">=</span> <span class="n">MAX_LAMBDA</span>
+                <span class="n">isRestartIncrement</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Otherwise choose the maximum of the ideal load scale and the default initial load scale</span>
+                <span class="n">optLoadScale</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">optLoadScale</span><span class="p">,</span> <span class="n">INIT_STEP</span><span class="p">)</span>
+                <span class="n">isRestartIncrement</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># If the optimum load scale is greater than the max we want to get to then we need to reverse the</span>
+                <span class="c1"># direction of load incrementation</span>
+                <span class="k">if</span> <span class="n">optLoadScale</span> <span class="o">&gt;</span> <span class="n">MAX_LAMBDA</span><span class="p">:</span>
+                    <span class="n">loadStepDirection</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">optLoadScale</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c1"># If the external force is zero then the load scale doesn&#39;t mean anything and we can just set it to 1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># If starting from zero, we can assume that u=0, lambda=0 is an equilibrium state</span>
+        <span class="k">if</span> <span class="n">USE_PREDICTOR</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+        <span class="n">stepSize</span> <span class="o">=</span> <span class="n">INIT_STEP</span>
+        <span class="n">currentLambda</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLambdaFunc</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">increment</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_INCREMENTS</span><span class="p">):</span>
+            <span class="c1"># Save displacement at start of this increment, this is what</span>
+            <span class="c1"># we&#39;ll reset to if the increment diverges</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+            <span class="c1"># --- Compute predictor step ---</span>
+            <span class="c1"># TODO: Adapt this to enable use of equilibrium path slope</span>
+            <span class="c1"># We only compute a predictor step if we have at least 3 equilibrium states so that we can do a nonlinear extrapolation</span>
+            <span class="n">numValidPredictorStates</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">numValidPredictorStates</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">stateArrays</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="p">[</span><span class="o">-</span><span class="n">numValidPredictorStates</span><span class="p">:]</span>
+                <span class="p">]</span>
+                <span class="n">lagrangeInterp</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">[</span><span class="o">-</span><span class="n">numValidPredictorStates</span><span class="p">:],</span>
+                    <span class="n">stateArrays</span><span class="p">,</span>
+                    <span class="n">currentLambda</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+            <span class="c1"># --- Call inner solver for corrector step ---</span>
+            <span class="k">if</span> <span class="n">currentLambda</span> <span class="o">==</span> <span class="n">MAX_LAMBDA</span><span class="p">:</span>
+                <span class="n">rtol</span> <span class="o">=</span> <span class="n">REL_TOL</span>
+                <span class="n">atol</span> <span class="o">=</span> <span class="n">ABS_TOL</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rtol</span> <span class="o">=</span> <span class="n">COARSE_REL_TOL</span>
+                <span class="n">atol</span> <span class="o">=</span> <span class="n">COARSE_ABS_TOL</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">setConvergenceTolerance</span><span class="p">(</span><span class="n">absTol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">relTol</span><span class="o">=</span><span class="n">rtol</span><span class="p">)</span>
+
+            <span class="c1"># Before calling the inner solver we need to create a callback function so that we can store data in this solver&#39;s history file at every iteration of the inner solver</span>
+            <span class="k">def</span> <span class="nf">continuationcallBack</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">):</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;SubIter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">iterationCount</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Increment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">increment</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lambda&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">currentLambda</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">monitorVars</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">setCallback</span><span class="p">(</span><span class="n">continuationcallBack</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">setRefNorm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span> <span class="o">*</span> <span class="n">currentLambda</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">hasConverged</span>
+            <span class="n">numIters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">iterationCount</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span> <span class="o">+=</span> <span class="n">numIters</span>
+
+            <span class="c1"># --- Check convergence ---</span>
+            <span class="n">isLastIncrement</span> <span class="o">=</span> <span class="n">increment</span> <span class="o">==</span> <span class="n">MAX_INCREMENTS</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+                <span class="c1"># If this increment failed then we should probably erase any saved states used for the predictor steps because they&#39;re clearly not working well</span>
+                <span class="k">if</span> <span class="n">USE_PREDICTOR</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">)):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+                <span class="c1"># If this was the first increment restarting from a previous solution then we don&#39;t have a safe state to reset to, so we just have to do a full reset</span>
+                <span class="k">if</span> <span class="n">isRestartIncrement</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+                    <span class="n">stepSize</span> <span class="o">=</span> <span class="n">INIT_STEP</span>
+                    <span class="n">currentLambda</span> <span class="o">=</span> <span class="mf">0.0</span>
+                    <span class="n">loadStepDirection</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="c1"># If the inner solve failed then we&#39;ll reduce the step size and try again, unless we&#39;ve hit the increment or step size limits</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="n">isLastIncrement</span> <span class="ow">and</span> <span class="n">stepSize</span> <span class="o">&gt;</span> <span class="n">MIN_STEP</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span><span class="p">)</span>
+                    <span class="n">currentLambda</span> <span class="o">-=</span> <span class="n">stepSize</span> <span class="o">*</span> <span class="n">loadStepDirection</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
+                    <span class="n">stepSize</span> <span class="o">*=</span> <span class="n">STEP_RETRACT_FACTOR</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">fatalFailure</span>
+                    <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># If inner solver converged and we&#39;re at the max load scale then we&#39;re done</span>
+                <span class="k">if</span> <span class="n">currentLambda</span> <span class="o">==</span> <span class="n">MAX_LAMBDA</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">numIters</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">stepChangeFactor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">TARGET_ITERS</span> <span class="o">/</span> <span class="n">numIters</span><span class="p">)</span>
+                        <span class="n">stepSize</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+                            <span class="n">stepChangeFactor</span><span class="p">,</span> <span class="n">MIN_STEP_FACTOR</span><span class="p">,</span> <span class="n">MAX_STEP_FACTOR</span>
+                        <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">USE_PREDICTOR</span><span class="p">:</span>
+                        <span class="n">stateToOverwrite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="n">stateToOverwrite</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stateToOverwrite</span><span class="p">)</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
+
+            <span class="n">maxStep</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">MAX_LAMBDA</span> <span class="o">-</span> <span class="n">currentLambda</span><span class="p">),</span> <span class="n">MAX_STEP</span><span class="p">)</span>
+            <span class="n">stepSize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">stepSize</span><span class="p">,</span> <span class="n">MIN_STEP</span><span class="p">,</span> <span class="n">maxStep</span><span class="p">)</span>
+            <span class="n">currentLambda</span> <span class="o">+=</span> <span class="n">loadStepDirection</span> <span class="o">*</span> <span class="n">stepSize</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
+
+            <span class="n">isRestartIncrement</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="ContinuationSolver.computeForceVectors"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.computeForceVectors">[docs]</a>    <span class="k">def</span> <span class="nf">computeForceVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the current forcing vector</span>
+
+<span class="sd">        The continuation solver is based on the assumption that the residual takes the following form:</span>
+
+<span class="sd">        r(u, lambda) = F_int(u) + lambda * F_ext(u, lambda)</span>
+
+<span class="sd">        This function computes fInt and fExt using two residual evaluations at lambda=0 and lambda=1:</span>
+<span class="sd">        f_int = r(u, 0)</span>
+<span class="sd">        f_ext = r(u, 1) - f_int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">currentLambda</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getLambdaFunc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fInt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fInt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
+        <span class="k">return</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.continuation</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

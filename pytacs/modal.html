@@ -98,7 +98,7 @@ The following options, their default values and descriptions are listed below:</
 <h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">ModalProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">ModalProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numEigs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/modal.html#ModalProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.ModalProblem" title="Permalink to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createModalProblem instead.</p>
 <dl class="field-list simple">
@@ -413,11 +413,24 @@ on this processor</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.isNonlinear">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.ModalProblem.isNonlinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem.printDefaultOptions">
 <em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.ModalProblem.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.ModalProblem.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
 </dd></dl>
 
 <dl class="py method">
@@ -445,8 +458,19 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+<dd class="field-odd"><p><strong>Xpts</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.26)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.ModalProblem.setOptions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.12)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
 </dd>
 </dl>
 </dd></dl>
@@ -518,10 +542,13 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getNumVariables"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getOption"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getOption()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.isNonlinear"><code class="docutils literal notranslate"><span class="pre">ModalProblem.isNonlinear</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">ModalProblem.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">ModalProblem.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">ModalProblem.printOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.setNodes"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.setOptions"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">ModalProblem.setVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.writeSensFile"><code class="docutils literal notranslate"><span class="pre">ModalProblem.writeSensFile()</span></code></a></li>
 </ul>

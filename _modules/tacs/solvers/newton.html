@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.solvers.newton &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.newton</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.solvers.newton</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">TACS Nonlinear Newton Solver</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">This is a fairly standard Newton solver with a critical point (or minimum</span>
+<span class="sd">energy) line search.</span>
+<span class="sd">The convergence of the linear solution in each iteration can be controlled</span>
+<span class="sd">adaptively using the Eisenstat-Walker method (specifically variant (b)</span>
+<span class="sd">described on page 50 of `this paper</span>
+<span class="sd">&lt;https://doi.org/10.1016/j.cam.2005.12.030&gt;`_ by An, Mo and Liu)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Standard Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># External Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">mpi4py</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Extension modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">from</span> <span class="nn">tacs.solvers</span> <span class="kn">import</span> <span class="n">BaseSolver</span>
+
+
+<div class="viewcode-block" id="NewtonSolver"><a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver">[docs]</a><span class="k">class</span> <span class="nc">NewtonSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
+    <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;MaxIter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">&quot;Maximum number of Newton iterations.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;ForceFirstIter&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;AbsTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s2">&quot;Convergence criteria for the nonlinear residual norm.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;RelTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-8</span><span class="p">,</span>
+            <span class="s2">&quot;Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;DivergenceTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e10</span><span class="p">,</span>
+            <span class="s2">&quot;Residual norm at which the nonlinear solver is jugded to have diverged&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;AbsLinTol&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="s2">&quot;Linear solver residual tolerance.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;RelLinTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-12</span><span class="p">,</span>
+            <span class="s2">&quot;Linear solver relative residual tolerance.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;MaxLinIters&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;UseEW&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;EWMaxTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.01</span><span class="p">,</span>
+            <span class="s2">&quot;Eisenstat-Walker max allowable linear solver tolerance.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;EWGamma&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;Eisenstat-Walker gamma parameter.&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;EWAlpha&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">)),</span>
+            <span class="s2">&quot;Eisenstat-Walker alpha parameter.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="c1"># Line search options</span>
+        <span class="s2">&quot;UseLineSearch&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for using line search in the nonlinear solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;PrintLineSearchIters&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Flag for printing out line search information.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;SkipFirstNLineSearch&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchMaxIter&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">,</span>
+            <span class="mi">25</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum number of linesearch iterations.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchExpectedDecrease&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-4</span><span class="p">,</span>
+            <span class="s2">&quot;Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchMaxStep&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">2.0</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum step size for the linesearch, as a fraction of the Newton step&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchMinStep&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-2</span><span class="p">,</span>
+            <span class="s2">&quot;Minimum step size for the linesearch, as a fraction of the Newton step&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchMaxStepChange&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">&quot;Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;LineSearchFallbackStepLimit&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">0.9</span><span class="p">,</span>
+            <span class="s2">&quot;Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="s2">&quot;monitorVars&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">list</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="s2">&quot;linSolverIters&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;linSolverRes&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;lineSearchStep&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;lineSearchIters&quot;</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;List of variables to include in nonlinear solver monitor output. Choose from &#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;EWTol&#39;, and &#39;lineSearchIters&#39;.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Assembler</span><span class="p">,</span>
+        <span class="n">setStateFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">resFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">jacFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">pcUpdateFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">linearSolver</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">,</span>
+        <span class="n">stateVec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resVec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mpi4py</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">Comm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Newton solver instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        assembler : tacs.TACS.Assembler</span>
+<span class="sd">            TACS assembler object related to the problem being solved, required in order for the solver to create it&#39;s own vectors</span>
+<span class="sd">        setStateFunc : function</span>
+<span class="sd">            Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -&gt; None</span>
+<span class="sd">        resFunc : function</span>
+<span class="sd">            Function to evaluate the residual at the current state, with signature resFunc(resVec: tacs.TACS.Vec) -&gt; None</span>
+<span class="sd">        jacFunc : function</span>
+<span class="sd">            Function to update the residual Jacobian at the current state, with signature jacFunc() -&gt; None</span>
+<span class="sd">        pcUpdateFunc : function</span>
+<span class="sd">            Function to update the residual Jacobian preconditioner at the current state, with signature pcUpdateFunc() -&gt; None</span>
+<span class="sd">        linearSolver : tacs.TACS.KSM</span>
+<span class="sd">            TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner</span>
+<span class="sd">        stateVec : tacs.TACS.Vec, optional</span>
+<span class="sd">            Vector to store the state in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">        resVec : tacs.TACS.Vec, optional</span>
+<span class="sd">            Vector to store the residual in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">        options : dict, optional</span>
+<span class="sd">            Dictionary holding solver-specific option parameters (case-insensitive)., by default None</span>
+<span class="sd">        comm : mpi4py.MPI.Intracomm, optional</span>
+<span class="sd">            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BaseSolver</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">assembler</span><span class="o">=</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="n">setStateFunc</span><span class="o">=</span><span class="n">setStateFunc</span><span class="p">,</span>
+            <span class="n">resFunc</span><span class="o">=</span><span class="n">resFunc</span><span class="p">,</span>
+            <span class="n">stateVec</span><span class="o">=</span><span class="n">stateVec</span><span class="p">,</span>
+            <span class="n">resVec</span><span class="o">=</span><span class="n">resVec</span><span class="p">,</span>
+            <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">,</span>
+            <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jacFunc</span> <span class="o">=</span> <span class="n">jacFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span> <span class="o">=</span> <span class="n">pcUpdateFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="o">=</span> <span class="n">linearSolver</span>
+
+        <span class="c1"># Create additional vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+
+<div class="viewcode-block" id="NewtonSolver.setOption"><a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A thin wrapper around the base setOption method that makes necessary changes when certain options are changed</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of option to modify</span>
+<span class="sd">        value : depends on option</span>
+<span class="sd">            New option value to set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">BaseSolver</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># May need to re-create the solver history if the monitor variables have changed, if not then we still need to clear the options we set as metadata</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;monitorvars&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_createSolverHistory</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">clearMetadata</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="NewtonSolver.getHistoryVariables"><a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.getHistoryVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
+
+<span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Dict[str, Dict]</span>
+<span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">numType</span> <span class="o">=</span> <span class="nb">float</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">else</span> <span class="nb">complex</span>
+
+        <span class="n">monitorVars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;monitorVars&quot;</span><span class="p">)]</span>
+
+        <span class="c1"># Einstat walker linear solver tolerance</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseEW&quot;</span><span class="p">):</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;EW Tol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;ewtol&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="c1"># Number of linear solver iterations</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Lin iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linsolveriters&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="c1"># Linear solver residual norm</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Lin res&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linsolverres&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="c1"># Residual norm (absolute and relative)</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Res norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Rel res norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="c1"># state norm</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;U norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseLineSearch&quot;</span><span class="p">):</span>
+            <span class="c1"># Line search step size</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;LS step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linesearchstep&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="c1"># Num line search iterations</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;LS iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linesearchiters&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="c1"># Flags</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Flags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">variables</span></div>
+
+<div class="viewcode-block" id="NewtonSolver.setConvergenceTolerance"><a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.setConvergenceTolerance">[docs]</a>    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        absTol : float, optional</span>
+<span class="sd">            Absolute tolerance, not changed if no value is provided</span>
+<span class="sd">        relTol : float, optional</span>
+<span class="sd">            Relative tolerance, not changed if no value is provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">absTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">,</span> <span class="n">absTol</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">relTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">,</span> <span class="n">relTol</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+<div class="viewcode-block" id="NewtonSolver.solve"><a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve the residual equations r(u) = 0</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u0 : TACS vector, optional</span>
+<span class="sd">            Initial guess, by default uses the current state</span>
+<span class="sd">        result : TACS vector, optional</span>
+<span class="sd">            Vector in which to store the solution, by default None.</span>
+<span class="sd">            The problem&#39;s state is updated with the solution whether or not this is provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">USE_LINESEARCH</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseLineSearch&quot;</span><span class="p">)</span>
+        <span class="n">LINESEARCH_SKIP_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;SkipFirstNLineSearch&quot;</span><span class="p">)</span>
+        <span class="n">MAX_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxIter&quot;</span><span class="p">)</span>
+        <span class="n">MAX_RES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;DivergenceTol&quot;</span><span class="p">)</span>
+        <span class="n">MAX_LIN_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxLinIters&quot;</span><span class="p">)</span>
+        <span class="n">FORCE_FIRST_ITER</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;ForceFirstIter&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Linear solver convergence options</span>
+        <span class="n">USE_EW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseEW&quot;</span><span class="p">)</span>
+        <span class="n">LIN_SOLVE_TOL_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWMaxTol&quot;</span><span class="p">)</span>
+        <span class="n">LIN_SOLVE_TOL_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RelLinTol&quot;</span><span class="p">)</span>
+        <span class="n">EW_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWAlpha&quot;</span><span class="p">)</span>
+        <span class="n">EW_GAMMA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWGamma&quot;</span><span class="p">)</span>
+        <span class="n">linCovergenceRel</span> <span class="o">=</span> <span class="n">LIN_SOLVE_TOL_MAX</span> <span class="k">if</span> <span class="n">USE_EW</span> <span class="k">else</span> <span class="n">LIN_SOLVE_TOL_MIN</span>
+
+        <span class="n">ABS_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">)</span>
+        <span class="n">REL_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
+
+        <span class="n">flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_ITERS</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span> <span class="o">=</span> <span class="n">iteration</span>
+            <span class="n">prevLinCovergenceRel</span> <span class="o">=</span> <span class="n">linCovergenceRel</span>
+
+            <span class="c1"># Compute residual and norms</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">prevResNorm</span> <span class="o">=</span> <span class="n">resNorm</span>
+            <span class="n">resNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
+            <span class="n">uNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
+
+            <span class="c1"># Test convergence</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">FORCE_FIRST_ITER</span> <span class="ow">or</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">REL_TOL</span>
+                    <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ABS_TOL</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MAX_RES</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span><span class="p">:</span>
+                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;C&quot;</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fatalFailure</span><span class="p">:</span>
+                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;D&quot;</span>
+
+            <span class="c1"># Write data to history</span>
+            <span class="n">monitorVars</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Res norm&quot;</span><span class="p">:</span> <span class="n">resNorm</span><span class="p">,</span>
+                <span class="s2">&quot;Rel res norm&quot;</span><span class="p">:</span> <span class="n">resNorm</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span><span class="p">,</span>
+                <span class="s2">&quot;U norm&quot;</span><span class="p">:</span> <span class="n">uNorm</span><span class="p">,</span>
+                <span class="s2">&quot;Flags&quot;</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lin iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">linearSolveIterations</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lin res&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">linearSolveResNorm</span><span class="p">)</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;LS step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;LS iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lineSearchIters</span>
+                <span class="k">if</span> <span class="n">USE_EW</span><span class="p">:</span>
+                    <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;EW Tol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prevLinCovergenceRel</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">monitorVars</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">)</span>
+
+            <span class="n">flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="c1"># exit if converged/diverged</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasConverged</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">fatalFailure</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="c1"># Update Jacobian</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">jacFunc</span><span class="p">()</span>
+
+            <span class="c1"># Update preconditioner, or skip if last linear solve converged in few enough iterations</span>
+            <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">linearSolveIterations</span> <span class="o">&lt;=</span> <span class="n">MAX_LIN_ITERS</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;P&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span><span class="p">()</span>
+
+            <span class="c1"># Update linear solver convergence tolerance using Einstat-Walker method b)</span>
+            <span class="k">if</span> <span class="n">USE_EW</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">zeta</span> <span class="o">=</span> <span class="n">EW_GAMMA</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">resNorm</span> <span class="o">/</span> <span class="n">prevResNorm</span><span class="p">)</span> <span class="o">**</span> <span class="n">EW_ALPHA</span>
+                    <span class="n">threshold</span> <span class="o">=</span> <span class="n">EW_GAMMA</span> <span class="o">*</span> <span class="n">prevLinCovergenceRel</span><span class="o">**</span><span class="n">EW_ALPHA</span>
+                    <span class="k">if</span> <span class="n">threshold</span> <span class="o">&lt;=</span> <span class="mf">0.1</span><span class="p">:</span>
+                        <span class="n">linCovergenceRel</span> <span class="o">=</span> <span class="n">zeta</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">linCovergenceRel</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zeta</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+                <span class="n">linCovergenceRel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+                    <span class="n">linCovergenceRel</span><span class="p">,</span> <span class="n">LIN_SOLVE_TOL_MIN</span><span class="p">,</span> <span class="n">LIN_SOLVE_TOL_MAX</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">linCovergenceRel</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;AbsLinTol&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Compute Newton step</span>
+            <span class="n">linSolveConverged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+            <span class="n">linSolveConverged</span> <span class="o">=</span> <span class="n">linSolveConverged</span> <span class="o">==</span> <span class="mi">1</span>
+
+            <span class="c1"># If we didn&#39;t converge because the preconditioner isn&#39;t up to date, update preconditioner and try again</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">linSolveConverged</span> <span class="ow">and</span> <span class="s2">&quot;P&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span><span class="p">()</span>
+                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;P&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+
+            <span class="c1"># Check data from linear solve</span>
+            <span class="n">linearSolveIterations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">getIterCount</span><span class="p">()</span>
+            <span class="n">linearSolveResNorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">getResidualNorm</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">USE_LINESEARCH</span> <span class="ow">and</span> <span class="n">iteration</span> <span class="o">&gt;=</span> <span class="n">LINESEARCH_SKIP_ITERS</span><span class="p">:</span>
+                <span class="c1"># Do linesearch</span>
+                <span class="n">alpha</span><span class="p">,</span> <span class="n">lineSearchIters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">energyLineSearch</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="n">lineSearchIters</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">energyLineSearch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">MAX_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxIter&quot;</span><span class="p">)</span>
+        <span class="n">LINESEARCH_MU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchExpectedDecrease&quot;</span><span class="p">)</span>
+        <span class="n">LINESEARCH_ALPHA_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMinStep&quot;</span><span class="p">)</span>
+        <span class="n">LINESEARCH_ALPHA_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxStep&quot;</span><span class="p">)</span>
+        <span class="n">LINESEARCH_MAX_STEP_CHANGE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxStepChange&quot;</span><span class="p">)</span>
+        <span class="n">FALLBACK_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchFallbackStepLimit&quot;</span><span class="p">)</span>
+        <span class="n">PRINT_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;PrintLineSearchIters&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">slope</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">slope</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Compute residual and merit function at u0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">)</span>
+        <span class="n">f0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">stepDir</span><span class="p">))</span>
+        <span class="n">fOld</span> <span class="o">=</span> <span class="n">f0</span>
+        <span class="n">alphaOld</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">uNorm</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">PRINT_LINESEARCH_ITERS</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Line search iter  0: alpha = </span><span class="si">{</span><span class="mi">0</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">,   f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># 3. Set $\alpha = 1$</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">alphaNew</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_LINESEARCH_ITERS</span><span class="p">):</span>
+            <span class="c1"># 4. Increment state, $u = u + \alpha \Delta u$</span>
+            <span class="n">u</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+
+            <span class="c1"># 5. Compute residual, $r = r(u)$</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">)</span>
+
+            <span class="c1"># 6. Compute merit function,  $f(\alpha)=f(u, r, \Delta u)$</span>
+            <span class="n">fNew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">stepDir</span><span class="p">))</span>
+
+            <span class="c1"># 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f&#39;_0$:</span>
+            <span class="c1">#     exit</span>
+            <span class="n">uNorm</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">PRINT_LINESEARCH_ITERS</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Line search iter </span><span class="si">{</span><span class="p">(</span><span class="n">iteration</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: alpha = </span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, f/f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">fNew</span><span class="o">/</span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="n">u</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">)</span>
+            <span class="n">fReduction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fNew</span> <span class="o">/</span> <span class="n">f0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fReduction</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">LINESEARCH_MU</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">slope</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># 8. Update $\alpha$ (based on search method)</span>
+                <span class="k">if</span> <span class="n">iteration</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">alphaMin</span> <span class="o">=</span> <span class="n">FALLBACK_ALPHA</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">alphaMin</span> <span class="o">=</span> <span class="n">LINESEARCH_ALPHA_MIN</span>
+                <span class="k">if</span> <span class="n">fNew</span> <span class="o">==</span> <span class="n">fOld</span><span class="p">:</span>
+                    <span class="n">alphaNew</span> <span class="o">=</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">LINESEARCH_ALPHA_MIN</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">alphaNew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span>
+                        <span class="n">alpha</span> <span class="o">-</span> <span class="n">fNew</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">-</span> <span class="n">alphaOld</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">fNew</span> <span class="o">-</span> <span class="n">fOld</span><span class="p">),</span>
+                        <span class="n">alphaMin</span><span class="p">,</span>
+                        <span class="n">LINESEARCH_ALPHA_MAX</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">alphaNew</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">LINESEARCH_MAX_STEP_CHANGE</span><span class="p">:</span>
+                    <span class="n">alphaNew</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">alpha</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">alphaNew</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">LINESEARCH_MAX_STEP_CHANGE</span>
+                    <span class="p">)</span>
+                <span class="n">alphaOld</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="n">alpha</span> <span class="o">=</span> <span class="n">alphaNew</span>
+                <span class="n">fOld</span> <span class="o">=</span> <span class="n">fNew</span>
+            <span class="c1"># 9. return to step 4</span>
+        <span class="k">return</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">iteration</span> <span class="o">+</span> <span class="mi">1</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.newton</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

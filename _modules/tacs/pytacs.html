@@ -76,7 +76,7 @@
 <span class="kn">import</span> <span class="nn">tacs.functions</span>
 <span class="kn">import</span> <span class="nn">tacs.problems</span>
 <span class="kn">from</span> <span class="nn">tacs.pymeshloader</span> <span class="kn">import</span> <span class="n">pyMeshLoader</span>
-<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span>
+<span class="kn">from</span> <span class="nn">tacs.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span>
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
 
@@ -188,6 +188,11 @@
             <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;Flag for printing out timing information for class procedures.&quot;</span><span class="p">,</span>
         <span class="p">],</span>
+        <span class="s2">&quot;linearityTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">,</span>
+            <span class="mf">1e-14</span><span class="p">,</span>
+            <span class="s2">&quot;When created, pyTACS will check if the model is linear or nonlinear by checking whether (res(2*u) - res(0)) - 2 * (res(u) - res(0)) == 0 this tolerance controls how close to zero the residual must be to be considered linear.&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
     <span class="p">}</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdf</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvNum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">scaleList</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -269,6 +274,9 @@
         <span class="c1"># TACS assembler object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="kc">None</span>
 
+        <span class="c1"># Nonlinear flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isNonlinear</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="n">initFinishTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
@@ -296,6 +304,11 @@
                 <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Initialization Time&quot;</span><span class="p">,</span> <span class="n">initFinishTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">isNonlinear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_isNonlinear</span>
 
 <div class="viewcode-block" id="pyTACS.addGlobalDV"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.addGlobalDV">[docs]</a>    <span class="nd">@preinitialize_method</span>
     <span class="k">def</span> <span class="nf">addGlobalDV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descript</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
@@ -834,7 +847,53 @@
         <span class="c1"># Store design variable upper/lower-bounds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">xlb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xlb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xub</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xlb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xub</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isNonlinear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkNonlinearity</span><span class="p">()</span></div>
+
+    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">_checkNonlinearity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the finite element model is nonlinear</span>
+
+<span class="sd">        This check works by checking whether the residual is nonlinear w.r.t the states using 3 residual evaluations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the problem is nonlinear, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">res0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="n">res1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="n">res2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+
+        <span class="c1"># Evaluate r(0)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="n">res0</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate r(u) - r(0)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">setRand</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setBCsInVec</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="n">res1</span><span class="p">)</span>
+        <span class="n">res1</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">res0</span><span class="p">)</span>
+
+        <span class="c1"># Evaluate r(2u) -  r(0)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setBCsInVec</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="n">res2</span><span class="p">)</span>
+        <span class="n">res2</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">res0</span><span class="p">)</span>
+
+        <span class="c1"># Reset the state variables</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+
+        <span class="c1"># Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)</span>
+        <span class="n">resNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res1</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
+        <span class="n">res2</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">res1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">/</span> <span class="n">resNorm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;linearityTol&quot;</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_elemCallBackFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1414,6 +1473,30 @@
             <span class="c1"># Copy values back to array</span>
             <span class="n">array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="pyTACS.setBCsInVec"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.setBCsInVec">[docs]</a>    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span> <span class="nf">setBCsInVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vec</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets dirichlet boundary condition values in the input vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vec : numpy.ndarray or tacs.TACS.Vec</span>
+<span class="sd">            Vector to set boundary conditions in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if input is a BVec or numpy array</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">vec</span>
+            <span class="c1"># Create temporary BVec</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+            <span class="c1"># Copy array values to BVec</span>
+            <span class="n">vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">array</span>
+            <span class="c1"># Apply BCs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
+            <span class="c1"># Copy values back to array</span>
+            <span class="n">array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="pyTACS.createStaticProblem"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem">[docs]</a>    <span class="nd">@postinitialize_method</span>
     <span class="k">def</span> <span class="nf">createStaticProblem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1435,7 +1518,13 @@
 <span class="sd">            StaticProblem object used for modeling and solving static cases.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">problem</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">problems</span><span class="o">.</span><span class="n">static</span><span class="o">.</span><span class="n">StaticProblem</span><span class="p">(</span>
-            <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span> <span class="n">options</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
         <span class="n">problem</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
@@ -1477,6 +1566,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">,</span>
             <span class="n">options</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
@@ -1517,6 +1607,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">,</span>
             <span class="n">options</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
@@ -1557,6 +1648,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNonlinear</span><span class="p">,</span>
             <span class="n">options</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>

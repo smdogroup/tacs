@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.solvers.base &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.base</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.solvers.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">TACS: Base Solver Class</span>
+<span class="sd">==============================================================================</span>
+<span class="sd">This is the base class from which all other TACS solvers are derived.</span>
+<span class="sd">It is an abstract class, so cannot be used directly. Instead, it defines</span>
+<span class="sd">the methods that all solvers must implement.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Standard Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># External Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">mpi4py</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Extension modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span> <span class="nn">tacs.TACS</span>
+<span class="kn">from</span> <span class="nn">tacs.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span><span class="p">,</span> <span class="n">SolverHistory</span>
+
+
+<div class="viewcode-block" id="BaseSolver"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver">[docs]</a><span class="k">class</span> <span class="nc">BaseSolver</span><span class="p">(</span><span class="n">BaseUI</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Assembler</span><span class="p">,</span>
+        <span class="n">setStateFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">resFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+        <span class="n">stateVec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">resVec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mpi4py</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">Comm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a solver instance</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        assembler : tacs.TACS.Assembler</span>
+<span class="sd">            TACS assembler object related to the problem being solved, required in order for the solver to create it&#39;s own vectors</span>
+<span class="sd">        setStateFunc : function</span>
+<span class="sd">            Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -&gt; None</span>
+<span class="sd">        resFunc : function</span>
+<span class="sd">            Function to evaluate the residual at the current state, with signature `resFunc(resVec: tacs.TACS.Vec) -&gt; None`</span>
+<span class="sd">        stateVec : tacs.TACS.Vec, optional</span>
+<span class="sd">            Vector to store the state in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">        resVec : tacs.TACS.Vec, optional</span>
+<span class="sd">            Vector to store the residual in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">        options : dict, optional</span>
+<span class="sd">            Dictionary holding solver-specific option parameters (case-insensitive)., by default None</span>
+<span class="sd">        comm : mpi4py.MPI.Intracomm, optional</span>
+<span class="sd">            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span> <span class="o">=</span> <span class="n">assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span> <span class="o">=</span> <span class="n">setStateFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span> <span class="o">=</span> <span class="n">resFunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span> <span class="o">=</span> <span class="n">stateVec</span> <span class="k">if</span> <span class="n">stateVec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resVec</span> <span class="o">=</span> <span class="n">resVec</span> <span class="k">if</span> <span class="n">resVec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">BaseUI</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">comm</span><span class="p">)</span>
+
+        <span class="c1"># No solver history for now</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_createSolverHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the solver history object based on the current options</span>
+
+<span class="sd">        The solver history is only created on the root processor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">histVars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getHistoryVariables</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">SolverHistory</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">varName</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">histVars</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">addVariable</span><span class="p">(</span>
+                    <span class="n">varName</span><span class="p">,</span> <span class="n">variable</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span> <span class="n">printVar</span><span class="o">=</span><span class="n">variable</span><span class="p">[</span><span class="s2">&quot;print&quot;</span><span class="p">]</span>
+                <span class="p">)</span>
+
+<div class="viewcode-block" id="BaseSolver.getHistoryVariables"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.getHistoryVariables">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
+
+<span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Dict[str, Dict]</span>
+<span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">hasConverged</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether the solver has converged, set as a property rather than an attribute so that it is read-only&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fatalFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether the solver has failed, set as a property rather than an attribute so that it is read-only</span>
+
+<span class="sd">        Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">iterationCount</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of iterations performed, set as a property rather than an attribute so that it is read-only&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span>
+
+<div class="viewcode-block" id="BaseSolver.solve"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.solve">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve the residual equations r(u) = 0</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u0 : TACS vector, optional</span>
+<span class="sd">            Initial guess, by default uses the current state</span>
+<span class="sd">        result : TACS vector, optional</span>
+<span class="sd">            Vector in which to store the solution, by default None.</span>
+<span class="sd">            The problem&#39;s state is updated with the solution whether or not this is provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseSolver.setConvergenceTolerance"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setConvergenceTolerance">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        absTol : float, optional</span>
+<span class="sd">            Absolute tolerance, not changed if no value is provided</span>
+<span class="sd">        relTol : float, optional</span>
+<span class="sd">            Relative tolerance, not changed if no value is provided</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="BaseSolver.initializeSolve"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.initializeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform any initialization required before the solve</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        u0 : TACS vector, optional</span>
+<span class="sd">            Initial guess, by default uses the current state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Initialize the state vector and set the boundary conditions</span>
+        <span class="k">if</span> <span class="n">u0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
+
+        <span class="c1"># Reset the solver history and store the solver options as metadata</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_createSolverHistory</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="k">if</span> <span class="s2">&quot;options&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">getMetadata</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">addMetadata</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseSolver.reset"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the solver</span>
+
+<span class="sd">        Currently this just zeros out the state vector, but more functionality may be added in future</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseSolver.setRefNorm"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setRefNorm">[docs]</a>    <span class="k">def</span> <span class="nf">setRefNorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the reference norm used to compute relative convergence measures</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        norm : float</span>
+<span class="sd">            Reference norm</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span> <span class="o">=</span> <span class="n">norm</span></div>
+
+<div class="viewcode-block" id="BaseSolver.setCallback"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setCallback">[docs]</a>    <span class="k">def</span> <span class="nf">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a callback function to be called at each iteration</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        callback : callable, optional</span>
+<span class="sd">            Callback function, should have the following signature:</span>
+<span class="sd">            callback(solver: tacs.solver, u: tacs.TACS.Vec, res: tacs.TACS.Vec, monitorVars: dict) -&gt; None</span>
+<span class="sd">            Where:</span>
+<span class="sd">            - ``solver`` is the solver object</span>
+<span class="sd">            - ``u`` is the current state vector</span>
+<span class="sd">            - ``res`` is the current residual vector</span>
+<span class="sd">            - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``&quot;nonlinearSolverMonitorVars&quot;`` option</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="o">=</span> <span class="n">callback</span></div></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.solvers.base</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
