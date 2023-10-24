@@ -82,4 +82,4 @@ jobs:
           conda config --set anaconda_upload no;
           cd ${TACS_DIR}/conda;
           conda build --variants "{scalar: ${{ matrix.SCALAR }}}" -c conda-forge -c smdogroup $BUILD_ARGS --output-folder . .;
-          anaconda upload --label LABEL ${{ matrix.TARGET }}/*.tar.bz2 --force;
+          anaconda upload --label $LABEL ${{ matrix.TARGET }}/*.tar.bz2 --force;
