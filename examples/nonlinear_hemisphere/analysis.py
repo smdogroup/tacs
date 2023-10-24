@@ -94,9 +94,9 @@ continuationOptions = {
     "InitialStep": 1.0,
 }
 newtonOptions = {
-    "newtonSolverMaxIter": 50,
-    "newtonSolverUseEW": True,
-    "newtonSolverMaxLinIters": 10,
+    "MaxIter": 50,
+    "UseEW": True,
+    "MaxLinIters": 10,
 }
 
 problem = FEAAssembler.createStaticProblem("RadialForces", options=probOptions)
@@ -168,4 +168,3 @@ problem.writeSolutionHistory(outputDir=os.path.dirname(__file__))
 
 if COMM.rank == 0:
     pprint(funcs)
-    pprint(funcsSens)
