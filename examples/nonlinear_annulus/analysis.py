@@ -91,8 +91,7 @@ probOptions = {
     "printLevel": 1,
 }
 newtonOptions = {
-    "MaxIter": 50,
-    "MaxLinIters": 5,
+    "MaxLinIters": 10,
     "UseEW": True,
 }
 continuationOptions = {
@@ -100,7 +99,8 @@ continuationOptions = {
     "TargetIter": 6,
     "RelTol": 1e-7,
     "UsePredictor": True,
-    "NumPredictorStates": 8,
+    "NumPredictorStates": 6,
+    "MaxIter": 60,
 }
 problem = FEAAssembler.createStaticProblem("Annulus", options=probOptions)
 problem.nonlinearSolver.setOptions(continuationOptions)
