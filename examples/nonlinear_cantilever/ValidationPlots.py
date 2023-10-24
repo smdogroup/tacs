@@ -28,9 +28,6 @@ from TipForceReferenceResults import AlphaS4R, WtipS4R
 
 LENGTH = 10.0
 
-# plt.style.use(niceplots.get_style())
-# colours = niceplots.get_colors()
-
 alphaTest = np.arange(0.05, 1.01, 0.05) * 4
 alphaPlot = np.linspace(0.0, 1.0, 101) * 4
 
