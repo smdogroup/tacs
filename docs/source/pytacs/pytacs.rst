@@ -32,4 +32,5 @@ repeated until the optimization criteria are satisfied.
 
   pytacs_module
   problems
+  solvers
   constraints

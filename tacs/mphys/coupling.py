@@ -2,7 +2,11 @@ import numpy as np
 
 import openmdao.api as om
 
-from mphys import MaskedConverter, UnmaskedConverter, MaskedVariableDescription
+from mphys.mask_converter import (
+    MaskedConverter,
+    UnmaskedConverter,
+    MaskedVariableDescription,
+)
 
 from .solver import TacsSolver
 

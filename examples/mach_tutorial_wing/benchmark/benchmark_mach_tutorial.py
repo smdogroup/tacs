@@ -13,15 +13,15 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "StructAnalysis_compliance": 155457.77449517886,
-    "StructAnalysis_l_skin_ksFailure": 0.6688990169113461,
+    "StructAnalysis_compliance": 155444.88138037617,
+    "StructAnalysis_l_skin_ksFailure": 0.6688691183266002,
     "StructAnalysis_l_skin_mass": 1056.704174594214,
     "StructAnalysis_mass": 3196.8719514874,
-    "StructAnalysis_rib_ksFailure": 0.25352002232016596,
+    "StructAnalysis_rib_ksFailure": 0.25350286472639316,
     "StructAnalysis_rib_mass": 686.2303380471093,
-    "StructAnalysis_spar_ksFailure": 0.6336362974489301,
-    "StructAnalysis_spar_mass": 400.0665693788245,
-    "StructAnalysis_u_skin_ksFailure": 0.46504728373719834,
+    "StructAnalysis_spar_ksFailure": 0.6336086764475523,
+    "StructAnalysis_spar_mass": 400.06656937882445,
+    "StructAnalysis_u_skin_ksFailure": 0.46502733574612126,
     "StructAnalysis_u_skin_mass": 1053.8708694672512,
     "AdjCon_L_SKIN_panelThicknessAdj": np.zeros(21),
     "AdjCon_L_SKIN_stiffenerHeightAdj": np.zeros(21),
