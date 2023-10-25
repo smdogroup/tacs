@@ -86,18 +86,21 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 FEAAssembler.initialize(elemCallBack)
 
 probOptions = {
-    "printTiming": True,
     "nRestarts": 3,
     "subSpaceSize": 20,
     "printLevel": 1,
 }
-continuationOptions = {
-    "InitialStep": 0.25,
-}
 newtonOptions = {
-    "MaxLinIters": 0,
-    "SkipFirstNLineSearch": 0,
-    "MaxIter": 100,
+    "MaxLinIters": 10,
+    "UseEW": True,
+}
+continuationOptions = {
+    "InitialStep": 0.05,
+    "TargetIter": 6,
+    "RelTol": 1e-7,
+    "UsePredictor": True,
+    "NumPredictorStates": 4,
+    "MaxIter": 60,
 }
 
 problem = FEAAssembler.createStaticProblem("TipForce", options=probOptions)
