@@ -76,7 +76,7 @@ assign a design variable number for the thickness parameter, and return a :class
       # Set one thickness dv for every property group
       con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, w=w, tNum=dvNum)
 
-      # Defines local y/width direction for beam
+      # Defines local y/thickness direction for beam
       refAxis = np.array([0.0, 1.0, 0.0])
       transform = elements.BeamRefAxisTransform(refAxis)
 
@@ -203,12 +203,16 @@ Finally, we can plot the optimized thickness distribution using matplotlib and c
   # Get analytical solution
   t_exact = np.sqrt(6 * (L - x) * V / w / ys)
 
+  # Compute max thickness value
+  t0 = np.sqrt(6 * L * V / w / ys)
+
   # Plot results for solution
-  plt.plot(x, t_opt, "o", x, t_exact)
+  plt.plot(x / L, t_opt / t0, "o", x, t_exact / t0)
   plt.legend(["optimized", "analytical"])
-  plt.ylabel("t(x)")
-  plt.xlabel("x")
+  plt.ylabel(r"$\frac{t(x)}{t_0}$", fontsize=16)
+  plt.xlabel(r"$\frac{x}{L}$", fontsize=16, labelpad=-5)
   plt.title("Optimal beam thickness profile")
+  plt.text(0.05, 0.25, r"$t_0 = \sqrt{\frac{6VL}{w\sigma_y}}$", fontsize=12)
   plt.show()
 
 .. image:: images/beam_plot.png
