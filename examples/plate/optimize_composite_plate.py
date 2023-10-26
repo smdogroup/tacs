@@ -145,7 +145,7 @@ model = prob.model
 
 # Declare design variables, objective, and constraint
 model.add_design_var("dv_struct", lower=0.0, upper=1.0)
-model.add_objective("pressure_load.compliance", scaler=1.0)
+model.add_objective("pressure_load.compliance")
 model.add_constraint("pressure_load.ply_fractions.sum", equals=1.0, linear=True)
 
 # Configure optimizer
