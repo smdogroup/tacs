@@ -3,10 +3,6 @@ Composite plate optimization with MPhys
 .. note:: The script for this example can be found under the `examples/plate/` directory.
 
 This example further demonstrates TACS structural optimization capabilities through :ref:`mphys/mphys:MPhys`.
-The beam model that we will be using for this problem is a rectangular beam,
-cantilevered, with a shear load applied at the tip. The beam is discretized using
-100 beam elements along it's span.
-
 In this example a composite plate compliance minimization problem, based off of one originally proposed by Lund and Stegmann [`1`_], is solved.
 A 1 m x 1 m x 0.05 m composite plate is clamped on all edges and subjected to
 a uniform pressure of 100 kPa loading on the top.
