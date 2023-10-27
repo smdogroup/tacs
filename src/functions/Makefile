@@ -13,6 +13,7 @@ CXX_OBJS = TACSFunction.o \
 	TACSMomentOfInertia.o \
 	TACSEnclosedVolume.o \
 	TACSKSFailure.o \
+	TACSMaxFailure.o \
 	TACSKSDisplacement.o \
 	TACSCompliance.o \
 	TACSAverageTemperature.o \

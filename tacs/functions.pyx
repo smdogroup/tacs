@@ -274,6 +274,29 @@ cdef class KSTemperature(Function):
     def setParameter(self, double ksparam):
         self.kstptr.setParameter(ksparam)
 
+cdef class MaxFailure(Function):
+    cdef TACSMaxFailure *funcptr
+
+    def __cinit__(self, Assembler assembler, **kwargs):
+        """
+        Wrap the function MaxFailure
+        """
+
+        cdef double alpha = 1.0
+        cdef double safetyFactor = 1.0
+
+        if 'alpha' in kwargs:
+            alpha = kwargs['alpha']
+
+        if 'safetyFactor' in kwargs:
+            safetyFactor = kwargs['safetyFactor']
+
+        self.funcptr = new TACSMaxFailure(assembler.ptr, alpha, safetyFactor)
+        self.ptr = self.funcptr
+        self.ptr.incref()
+
+        return
+
 cdef class KSFailure(Function):
     """
     The following class implements the methods necessary to calculate

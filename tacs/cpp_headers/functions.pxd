@@ -60,6 +60,11 @@ cdef extern from "TACSKSTemperature.h":
         void setParameter(double)
         void setMaxFailOffset(TacsScalar)
 
+cdef extern from "TACSMaxFailure.h":
+
+    cdef cppclass TACSMaxFailure(TACSFunction):
+        TACSMaxFailure(TACSAssembler*, double, double)
+
 cdef extern from "TACSKSFailure.h":
     enum KSFailureType"TACSKFailure::KSFailureType":
         KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"
