@@ -14,6 +14,7 @@ CXX_OBJS = TACSFunction.o \
 	TACSEnclosedVolume.o \
 	TACSKSFailure.o \
 	TACSMaxFailure.o \
+	TACSAggregateFunction.o\
 	TACSKSDisplacement.o \
 	TACSCompliance.o \
 	TACSAverageTemperature.o \

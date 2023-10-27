@@ -21,17 +21,6 @@ from libc.string cimport const_char
 from tacs.cpp_headers.constitutive cimport *
 from tacs.cpp_headers.TACS cimport *
 
-cdef extern from "TACSElementTypes.h":
-    const int TACS_ELEMENT_DENSITY
-    const int TACS_STRAIN_ENERGY_DENSITY
-    const int TACS_FAILURE_INDEX
-    const int TACS_HEAT_FLUX
-    const int TACS_TEMPERATURE
-    const int TACS_TOTAL_STRAIN_ENERGY_DENSITY
-    const int TACS_ELEMENT_DISPLACEMENT
-    const int TACS_ELEMENT_STRAIN
-    const int TACS_ELEMENT_STRESS
-
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasisFunctions(TACSElementBasis*, double, int, double, double)
     int TacsTestElementBasisFaceNormals(TACSElementBasis*, double, int, double, double)
