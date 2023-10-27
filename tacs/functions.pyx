@@ -322,7 +322,7 @@ cdef class KSFailure(Function):
             Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
             Case-insensitive, defaults to 'continuous'.
     """
-    cdef TACSKSFailure *ksptr
+    cdef TACSAggregateFunction *ksptr
     def __cinit__(self, Assembler assembler, **kwargs):
         """
         Wrap the function KSFailure
@@ -330,6 +330,7 @@ cdef class KSFailure(Function):
         cdef double ksWeight = 80.0
         cdef double alpha = 1.0
         cdef double safetyFactor = 1.0
+        cdef int outputType = 3
 
         if 'ksWeight' in kwargs:
             ksWeight = kwargs['ksWeight']
@@ -340,7 +341,8 @@ cdef class KSFailure(Function):
         if 'safetyFactor' in kwargs:
             safetyFactor = kwargs['safetyFactor']
 
-        self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha, safetyFactor)
+        # self.ksptr = new TACSKSFailure(assembler.ptr, ksWeight, alpha, safetyFactor)
+        self.ksptr = new TACSAggregateFunction(assembler.ptr, outputType, ksWeight, alpha, safetyFactor)
         self.ptr = self.ksptr
         self.ptr.incref()
 
@@ -348,20 +350,20 @@ cdef class KSFailure(Function):
             ftype = kwargs['ftype']
         else:
             ftype = 'continuous'
-        self.setKSFailureType(ftype)
+        self.setAggregationType(ftype)
 
         return
 
-    def setKSFailureType(self, ftype='discrete'):
+    def setAggregationType(self, ftype='discrete'):
         ftype = ftype.lower()
         if ftype == 'discrete':
-            self.ksptr.setKSFailureType(KS_FAILURE_DISCRETE)
+            self.ksptr.setAggregationType(KS_FAILURE_DISCRETE)
         elif ftype == 'continuous':
-            self.ksptr.setKSFailureType(KS_FAILURE_CONTINUOUS)
+            self.ksptr.setAggregationType(KS_FAILURE_CONTINUOUS)
         elif ftype == 'pnorm-discrete':
-            self.ksptr.setKSFailureType(PNORM_FAILURE_DISCRETE)
+            self.ksptr.setAggregationType(PNORM_FAILURE_DISCRETE)
         elif ftype == 'pnorm-continuous':
-            self.ksptr.setKSFailureType(PNORM_FAILURE_CONTINUOUS)
+            self.ksptr.setAggregationType(PNORM_FAILURE_CONTINUOUS)
         return
 
     def setParameter(self, double ksparam):

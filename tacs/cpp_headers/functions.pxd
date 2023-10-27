@@ -66,7 +66,7 @@ cdef extern from "TACSMaxFailure.h":
         TACSMaxFailure(TACSAssembler*, double, double)
 
 cdef extern from "TACSKSFailure.h":
-    enum KSFailureType"TACSKFailure::KSFailureType":
+    enum AggregationType"TACSKSFailure::KSFailureType":
         KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"
         KS_FAILURE_CONTINUOUS"TACSKSFailure::CONTINUOUS"
         PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
@@ -74,10 +74,24 @@ cdef extern from "TACSKSFailure.h":
 
     cdef cppclass TACSKSFailure(TACSFunction):
         TACSKSFailure(TACSAssembler*, double, double, double)
-        void setKSFailureType(KSFailureType ftype)
+        void setKSFailureType(AggregationType ftype)
         double getParameter()
         void setParameter(double)
         void setMaxFailOffset(TacsScalar)
+
+cdef extern from "TACSAggregateFunction.h":
+    enum AggregationType"TACSAggregateFunction::KSFailureType":
+        KS_FAILURE_DISCRETE"TACSAggregateFunction::DISCRETE"
+        KS_FAILURE_CONTINUOUS"TACSAggregateFunction::CONTINUOUS"
+        PNORM_FAILURE_DISCRETE"TACSAggregateFunction::PNORM_DISCRETE"
+        PNORM_FAILURE_CONTINUOUS"TACSAggregateFunction::PNORM_CONTINUOUS"
+
+    cdef cppclass TACSAggregateFunction(TACSFunction):
+        TACSAggregateFunction(TACSAssembler*, TACSOutputType, double, double, double)
+        void setAggregationType(AggregationType ftype)
+        double getParameter()
+        void setParameter(double)
+        void setMaxValOffset(TacsScalar)
 
 cdef extern from "TACSKSDisplacement.h":
     enum KSDisplacementType"TACSKDisplacement::KSDisplacementType":

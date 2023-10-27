@@ -24,6 +24,30 @@ from libcpp cimport bool
 include "TacsTypedefs.pxi"
 
 cdef extern from "TACSElementTypes.h":
+    const int TACS_ELEMENT_DENSITY
+    const int TACS_STRAIN_ENERGY_DENSITY
+    const int TACS_FAILURE_INDEX
+    const int TACS_HEAT_FLUX
+    const int TACS_TEMPERATURE
+    const int TACS_TOTAL_STRAIN_ENERGY_DENSITY
+    const int TACS_ELEMENT_DISPLACEMENT
+    const int TACS_ELEMENT_STRAIN
+    const int TACS_ELEMENT_STRESS
+
+    # enum:
+    #     TACS_ELEMENT_DENSITY
+    #     TACS_STRAIN_ENERGY_DENSITY
+    #     TACS_FAILURE_INDEX
+    #     TACS_HEAT_FLUX
+    #     TACS_TEMPERATURE
+    #     TACS_TOTAL_STRAIN_ENERGY_DENSITY
+    #     TACS_ELEMENT_DISPLACEMENT
+    #     TACS_ELEMENT_STRAIN
+    #     TACS_ELEMENT_STRESS
+    #     TACS_ELEMENT_DENSITY_MOMENT
+    #     TACS_ELEMENT_MOMENT_OF_INERTIA
+    #     TACS_ELEMENT_ENCLOSED_VOLUME
+
     enum:
         TACS_OUTPUT_CONNECTIVITY
         TACS_OUTPUT_NODES
