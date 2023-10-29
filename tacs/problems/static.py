@@ -354,6 +354,14 @@ class StaticProblem(TACSProblem):
                 freq=opt("monitorFrequency"),
             )
 
+        # Pass new matrix and preconditioner to nonlinear solver linear solvers
+        if self.nonlinearSolver is not None:
+            self.nonlinearSolver.linearSolver.setOperators(self.K, self.PC)
+            try:
+                self.nonlinearSolver.innerSolver.linearSolver.setOperators(self.K, self.PC)
+            except AttributeError:
+                pass
+
         # Linear solver factor flag
         self._jacobianUpdateRequired = True
         self._preconditionerUpdateRequired = True
