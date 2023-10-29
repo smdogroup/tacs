@@ -34,6 +34,10 @@ despmtr rib_a1 1.0
 despmtr rib_a2 0.0
 set rib_a3 1.0-rib_a1-rib_a2
 
+# composite material coordinate system
+dimension compositeCoord 9 1 0
+set compositeCoord "0;0;0;0.0;1.0;0.0;1.0;0.0;0.0;"
+
 
 # Depedendent parameters
 set sspan span/2.0
@@ -181,6 +185,7 @@ attribute capsMesh $OML
 
 # add AIM attribute to specify the analyses to use
 select body
+csystem   wing   compositeCoord
 ATTRIBUTE AFLR4_Cmp_ID 1
 attribute capsMeshLength 1.0
 attribute capsAIM $aflr4AIM;tacsAIM;egadsTessAIM

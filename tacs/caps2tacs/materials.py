@@ -209,6 +209,21 @@ class Isotropic(Material):
             cp=526.3,
             kappa=6.7,
         )
+    
+    @classmethod
+    def aluminum_alloy(cls):
+        # Aluminum alloy Al-MS89
+        return cls(
+            name="aluminum-alloy",
+            E=90e9,
+            rho=2.92e3,
+            nu=0.3,
+            T1=420e6,
+            C1=420e6,
+            alpha=19.0e-6,
+            kappa=115.0,
+            cp=903, # guessed the cp (not provided in data sheet)
+        )
 
     @classmethod
     def steel(cls):
@@ -301,4 +316,51 @@ class Orthotropic(Material):
             kappa2=4.8, #W/m-K
             kappa3=4.8, #W/m-K
             cp=1130.0 # J / kg-K
+        )
+    
+    @classmethod
+    def smeared_stringer(cls, isotropic:Isotropic, area_ratio:float):
+        """
+        By: Sean Engelstad
+        Adapted from paper "Smeared Stiffeners in Panel for Mesh Simplification at
+        Conceptual Design Phase" by Denis Walch1, Simon Tetreault2, and Franck Dervault3
+
+        Here area_ratio = Astiff / (Askin+Astiff) in the cross-section which is "assumed 
+        to be in the range 0.25 to 0.66 for most aircraft structures"
+        """
+        # get the isotropic properties
+        E = isotropic._E1
+        nu = isotropic._nu12
+        rho = isotropic._rho
+        T1 = isotropic._T1
+        C1 = isotropic._C1
+        alpha = isotropic._alpha1
+        kappa = isotropic._kappa1
+        cp = isotropic._cp
+        assert (0.0 < area_ratio) and (area_ratio < 1.0)
+        # get area_ratio2 = Astiff / Askin
+        area_ratio2 = area_ratio / (1 - area_ratio)
+        # new moduli (stiffened in spanwise direction)
+        Ex = E
+        Ey = E / (1 - nu**2 * area_ratio)
+        nu_xy = nu
+        nu_yx = nu / (1 + area_ratio2 * (1 - nu**2))
+        Gxy = Ex * nu_yx / (1 - nu_xy * nu_yx)
+        return cls(
+            name=f"smeared-stringer-{isotropic.name}",
+            E1=Ex,
+            E2=Ey,
+            G12=Gxy,
+            nu12=nu_xy,
+            T1=T1,
+            C1=C1,
+            T2=T1,
+            C2=C1,
+            rho=rho*(1+area_ratio2),
+            alpha1 = alpha,
+            alpha2=alpha,
+            kappa1= kappa,
+            kappa2=kappa,
+            kappa3=kappa,
+            cp=cp,
         )
