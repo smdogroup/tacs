@@ -1259,6 +1259,13 @@ cdef class KSM:
             self.ptr.decref()
         return
 
+    def setOperators(self, Mat mat, Pc pc):
+        """
+        Set the matrix and preconditioner operators
+        """
+        self.ptr.setOperators(mat.ptr, pc.ptr)
+        return
+
     def solve(self, Vec b, Vec x, int zero_guess=1):
         """
         Try to solve the linear system using GMRES.
