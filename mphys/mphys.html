@@ -47,9 +47,16 @@
 <h1>MPhys<a class="headerlink" href="#mphys" title="Permalink to this heading">¶</a></h1>
 <p><a class="reference external" href="https://pypi.org/project/mphys/">MPhys</a> is a package that standardizes high-fidelity multiphysics problems in OpenMDAO.
 MPhys provides a convenient interface for connecting TACS problems to optimizers and other physics disciplinary solvers for coupled analysis.
-The TACS MPhys interface consists of one main classes: a builder class called <a class="reference internal" href="builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a>.
+MPhys is an optional TACS dependency, so in order to use the module within TACS it will need to be installed manually along with its dependencies.
+Assuming the user has already installed TACS, the only additional dependency the user will need to install would be <a class="reference external" href="https://pypi.org/project/petsc4py/">petsc4py</a>.
+These packages can be installed easily in a conda environment using the commands below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">mphys</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">petsc4py</span>
+</pre></div>
+</div>
+<p>The TACS MPhys interface consists of one main classes: a builder class called <a class="reference internal" href="builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a>.
 For more information on the general MPhys interface users should see the MPhys <a class="reference external" href="https://openmdao.github.io/mphys/">docs</a>.
-The details of the interfaces will be discussed in the sections below.</p>
+The details of the <a class="reference internal" href="builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> interface will be discussed in the sections below.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="builder.html">TacsBuilder class</a></li>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html lang="python">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Composite plate optimization with MPhys &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="prev" title="Beam optimization with MPhys" href="Example-Beam_Optimization.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Example-Beam_Optimization.html" title="Beam optimization with MPhys"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Composite plate optimization with MPhys</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="composite-plate-optimization-with-mphys">
+<h1>Composite plate optimization with MPhys<a class="headerlink" href="#composite-plate-optimization-with-mphys" title="Permalink to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The script for this example can be found under the <cite>examples/plate/</cite> directory.</p>
+</div>
+<p>This example further demonstrates TACS structural optimization capabilities through <a class="reference internal" href="../mphys/mphys.html#mphys"><span class="std std-ref">MPhys</span></a>.
+In this example a compliance minimization problem for a composite plate, based off of one originally proposed by Lund and Stegmann [<a class="reference internal" href="#id1">1</a>], is solved.
+A 1 m x 1 m x 0.05 m composite plate is clamped on all edges and subjected to
+a uniform pressure of 100 kPa loading on the top.
+The plate is discretized into 100 quad shell elements, each having its own independent laminate layup.
+The goal of this example will be to optimize the layup of each element in the plate in order to minimize the total compliance energy.
+A diagram of the problem is shown below.</p>
+<a class="reference internal image-reference" href="../_images/plate_pressure.png"><img alt="Plate problem" src="../_images/plate_pressure.png" style="width: 800px;" /></a>
+<p>To make this problem tractable for gradient-based optimization we will make the following simplifications:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>For each layup we can ony select plies of the following angles: <span class="math notranslate nohighlight">\(0^\circ, 45^\circ, -45^\circ, 90^\circ\)</span>.</p></li>
+<li><p>We will neglect the discrete nature of the plies and the effects of stacking sequence. Instead, we homogenize or &quot;smear&quot; each ply angle's contribution to laminate stiffness based on its proportion of plies in the layup or &quot;ply fraction&quot;.</p></li>
+</ol>
+</div></blockquote>
+<p>The optimization problem can now be summarized as follows:</p>
+<a class="reference internal image-reference" href="../_images/comp_opt_def.png"><img alt="Optimization problem" src="../_images/comp_opt_def.png" style="width: 800px;" /></a>
+<p>To begin we first import required libraries, define the model bdf file, and define important problem constants:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">openmdao.api</span> <span class="k">as</span> <span class="nn">om</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mphys</span> <span class="kn">import</span> <span class="n">Multipoint</span>
+<span class="kn">from</span> <span class="nn">mphys.scenario_structural</span> <span class="kn">import</span> <span class="n">ScenarioStructural</span>
+
+<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
+<span class="kn">from</span> <span class="nn">tacs.mphys</span> <span class="kn">import</span> <span class="n">TacsBuilder</span>
+
+<span class="c1"># BDF file containing mesh</span>
+<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;partitioned_plate.bdf&quot;</span><span class="p">)</span>
+
+<span class="c1"># Material properties</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">1550.0</span>
+<span class="n">E1</span> <span class="o">=</span> <span class="mf">54e9</span>
+<span class="n">E2</span> <span class="o">=</span> <span class="mf">18e9</span>
+<span class="n">nu12</span> <span class="o">=</span> <span class="mf">0.25</span>
+<span class="n">G12</span> <span class="o">=</span> <span class="mf">9e9</span>
+<span class="n">G13</span> <span class="o">=</span> <span class="mf">9e9</span>
+<span class="n">Xt</span> <span class="o">=</span> <span class="mf">2410.0e6</span>
+<span class="n">Xc</span> <span class="o">=</span> <span class="mf">1040.0e6</span>
+<span class="n">Yt</span> <span class="o">=</span> <span class="mf">73.0e6</span>
+<span class="n">Yc</span> <span class="o">=</span> <span class="mf">173.0e6</span>
+<span class="n">S12</span> <span class="o">=</span> <span class="mf">71.0e6</span>
+
+<span class="c1"># Shell thickness</span>
+<span class="n">ply_thickness</span> <span class="o">=</span> <span class="mf">1.25e-3</span>  <span class="c1"># m</span>
+<span class="n">plate_thickness</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
+<span class="n">tMin</span> <span class="o">=</span> <span class="mf">0.002</span>  <span class="c1"># m</span>
+<span class="n">tMax</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
+
+<span class="c1"># Ply angles/initial ply fractions</span>
+<span class="n">ply_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">45.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">45.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">])</span>
+<span class="n">ply_fractions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">])</span>
+
+<span class="c1"># Pressure load to apply to plate</span>
+<span class="n">P</span> <span class="o">=</span> <span class="mf">100e3</span>
+</pre></div>
+</div>
+<p>Next, we define an <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> function for setting up the TACS elements and design variables.
+We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive" title="tacs.constitutive.SmearedCompositeShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a> class here for the constitutive properties, and
+assign four design variable numbers to each element (one for each ply fraction), and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a> element class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
+<span class="k">def</span> <span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Create ply object</span>
+    <span class="n">ortho_prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span>
+        <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
+        <span class="n">E1</span><span class="o">=</span><span class="n">E1</span><span class="p">,</span>
+        <span class="n">E2</span><span class="o">=</span><span class="n">E2</span><span class="p">,</span>
+        <span class="n">nu12</span><span class="o">=</span><span class="n">nu12</span><span class="p">,</span>
+        <span class="n">G12</span><span class="o">=</span><span class="n">G12</span><span class="p">,</span>
+        <span class="n">G13</span><span class="o">=</span><span class="n">G13</span><span class="p">,</span>
+        <span class="n">G23</span><span class="o">=</span><span class="n">G13</span><span class="p">,</span>
+        <span class="n">Xt</span><span class="o">=</span><span class="n">Xt</span><span class="p">,</span>
+        <span class="n">Xc</span><span class="o">=</span><span class="n">Xc</span><span class="p">,</span>
+        <span class="n">Yt</span><span class="o">=</span><span class="n">Yt</span><span class="p">,</span>
+        <span class="n">Yc</span><span class="o">=</span><span class="n">Yc</span><span class="p">,</span>
+        <span class="n">S12</span><span class="o">=</span><span class="n">S12</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ortho_ply</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">OrthotropicPly</span><span class="p">(</span><span class="n">ply_thickness</span><span class="p">,</span> <span class="n">ortho_prop</span><span class="p">)</span>
+    <span class="c1"># Create the layup list (one for each angle)</span>
+    <span class="n">ortho_layup</span> <span class="o">=</span> <span class="p">[</span><span class="n">ortho_ply</span><span class="p">,</span> <span class="n">ortho_ply</span><span class="p">,</span> <span class="n">ortho_ply</span><span class="p">,</span> <span class="n">ortho_ply</span><span class="p">]</span>
+    <span class="c1"># Assign each ply fraction a unique DV</span>
+    <span class="n">ply_fraction_dv_nums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">dvNum</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dvNum</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dvNum</span> <span class="o">+</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">intc</span>
+    <span class="p">)</span>
+    <span class="c1"># Create smeared stiffness object based on ply angles/fractions</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">SmearedCompositeShellConstitutive</span><span class="p">(</span>
+        <span class="n">ortho_layup</span><span class="p">,</span>
+        <span class="n">plate_thickness</span><span class="p">,</span>
+        <span class="n">ply_angles</span><span class="p">,</span>
+        <span class="n">ply_fractions</span><span class="p">,</span>
+        <span class="n">ply_fraction_dv_nums</span><span class="o">=</span><span class="n">ply_fraction_dv_nums</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Define reference axis to define local 0 deg direction</span>
+    <span class="n">refAxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">ShellRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+
+    <span class="c1"># Pass back the appropriate tacs element object</span>
+    <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Quad4Shell</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">elem</span>
+</pre></div>
+</div>
+<p>We define a <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> to add fixed loads and eval functions.
+Here we specify the plate compliance energy (<a class="reference internal" href="../core/functions.html#tacs.functions.Compliance" title="tacs.functions.Compliance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compliance</span></code></a>) as an output for our analysis
+and add our 100 kPa pressure load.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to add fixed forces and eval functions</span>
+<span class="sd">    to structural problems used in tacs builder</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Add TACS Functions</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;compliance&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">Compliance</span><span class="p">)</span>
+
+    <span class="c1"># Add forces to static problem</span>
+    <span class="n">allComponents</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">()</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addPressureToComponents</span><span class="p">(</span><span class="n">allComponents</span><span class="p">,</span> <span class="n">P</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For our last helper function we define a <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> function.
+This function can be used to add additional relational constraints to the design variables we defined in the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>.
+In particular, we want to enforce a new constraint (100 in total) such that the ply fractions within each element should sum to unity.
+We can accomplish this by utilizing the <a class="reference internal" href="../pytacs/dvcon.html#tacs.constraints.DVConstraint" title="tacs.constraints.DVConstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">DVConstraint</span></code></a> class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraint_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Helper function to setup tacs constraint classes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">constr</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">createDVConstraint</span><span class="p">(</span><span class="s2">&quot;ply_fractions&quot;</span><span class="p">)</span>
+    <span class="n">allComponents</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">()</span>
+    <span class="n">constr</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span>
+        <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="n">allComponents</span><span class="p">,</span> <span class="n">dvIndices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dvWeights</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">constraint_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Fianlly, we define our <code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code> class.
+To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> we defined above.
+We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
+We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PlateModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">struct_builder</span> <span class="o">=</span> <span class="n">TacsBuilder</span><span class="p">(</span>
+            <span class="n">mesh_file</span><span class="o">=</span><span class="n">bdf_file</span><span class="p">,</span>
+            <span class="n">element_callback</span><span class="o">=</span><span class="n">element_callback</span><span class="p">,</span>
+            <span class="n">problem_setup</span><span class="o">=</span><span class="n">problem_setup</span><span class="p">,</span>
+            <span class="n">constraint_setup</span><span class="o">=</span><span class="n">constraint_setup</span><span class="p">,</span>
+            <span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">check_partials</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">struct_builder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
+        <span class="n">dv_array</span> <span class="o">=</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_initial_dvs</span><span class="p">()</span>
+
+        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;dvs&quot;</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">])</span>
+        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mphys_add_scenario</span><span class="p">(</span>
+            <span class="s2">&quot;pressure_load&quot;</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mphys_connect_scenario_coordinate_source</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="s2">&quot;pressure_load&quot;</span><span class="p">,</span> <span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="s2">&quot;pressure_load.dv_struct&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>At this point we setup the OpenMDAO <code class="docutils literal notranslate"><span class="pre">Problem</span></code> class that we will use to perform our optimization.
+We assign our <code class="docutils literal notranslate"><span class="pre">PlateModel</span></code> to the problem class and set <code class="docutils literal notranslate"><span class="pre">ScipyOptimizeDriver</span></code>.
+We define our design variables, constraint, and objective.
+Finally, we run the problem driver to optimize the problem.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">prob</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">Problem</span><span class="p">()</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">PlateModel</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">model</span>
+
+<span class="c1"># Declare design variables, objective, and constraint</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">&quot;pressure_load.compliance&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">&quot;pressure_load.ply_fractions.sum&quot;</span><span class="p">,</span> <span class="n">equals</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Configure optimizer</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;objs&quot;</span><span class="p">,</span> <span class="s2">&quot;nl_cons&quot;</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;SLSQP&quot;</span>
+
+<span class="c1"># Setup OpenMDAO problem</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+
+<span class="c1"># Output N2 representation of OpenMDAO model</span>
+<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">&quot;tacs_struct.html&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run optimization</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">run_driver</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After the optimization completes the user should see a print out to screen like shown below.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Optimization</span> <span class="n">terminated</span> <span class="n">successfully</span>    <span class="p">(</span><span class="n">Exit</span> <span class="n">mode</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Current</span> <span class="n">function</span> <span class="n">value</span><span class="p">:</span> <span class="mf">8.571649588963465</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Iterations</span><span class="p">:</span> <span class="mi">34</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Function</span> <span class="n">evaluations</span><span class="p">:</span> <span class="mi">34</span>
+<span class="gp">&gt;&gt;&gt; </span>            <span class="n">Gradient</span> <span class="n">evaluations</span><span class="p">:</span> <span class="mi">34</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Optimization</span> <span class="n">Complete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">-----------------------------------</span>
+</pre></div>
+</div>
+<p>Once the optimization is complete we can post-process results.
+The <code class="docutils literal notranslate"><span class="pre">f5</span></code> solution file at each optimization iteration can also be converted to a Tecplot or Paraview files using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> or <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>, respectively.
+The optimized ply fraction distributions for each angle can be visualized by plotting the contours of the following variables in Tecplot or Paraview: <code class="docutils literal notranslate"><span class="pre">dv2</span></code>, <code class="docutils literal notranslate"><span class="pre">dv3</span></code>, <code class="docutils literal notranslate"><span class="pre">dv4</span></code>, <code class="docutils literal notranslate"><span class="pre">dv5</span></code>.
+A visualization of the optimized result is shown below:</p>
+<a class="reference internal image-reference" href="../_images/pf_opt.png"><img alt="Plate optimization solution" src="../_images/pf_opt.png" style="width: 800px;" /></a>
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id1" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Lund, E. and Stegmann, J., “On structural optimization of composite shell structures using a discrete constitutive parametrization,” Wind Energy, Vol. 8, No. 1, 2005, pp. 109–124.</p>
+</aside>
+</aside>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Example-Beam_Optimization.html"
+                          title="previous chapter">Beam optimization with MPhys</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../theory/theory.html"
+                          title="next chapter">Theory</a></p>
+  </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Example-Beam_Optimization.html" title="Beam optimization with MPhys"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Composite plate optimization with MPhys</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

@@ -15,7 +15,7 @@
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="next" title="Composite plate optimization with MPhys" href="Example-Composite_Optimization.html" />
     <link rel="prev" title="Battery pack during thermal runaway" href="Example-Transient_Battery.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -28,7 +28,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../theory/theory.html" title="Theory"
+          <a href="Example-Composite_Optimization.html" title="Composite plate optimization with MPhys"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
@@ -109,7 +109,7 @@ assign a design variable number for the thickness parameter, and return a <a cla
     <span class="c1"># Set one thickness dv for every property group</span>
     <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">IsoRectangleBeamConstitutive</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=</span><span class="n">dvNum</span><span class="p">)</span>
 
-    <span class="c1"># Defines local y/width direction for beam</span>
+    <span class="c1"># Defines local y/thickness direction for beam</span>
     <span class="n">refAxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
     <span class="n">transform</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
 
@@ -226,12 +226,16 @@ The <code class="docutils literal notranslate"><span class="pre">f5</span></code
 <span class="c1"># Get analytical solution</span>
 <span class="n">t_exact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">V</span> <span class="o">/</span> <span class="n">w</span> <span class="o">/</span> <span class="n">ys</span><span class="p">)</span>
 
+<span class="c1"># Compute max thickness value</span>
+<span class="n">t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">L</span> <span class="o">*</span> <span class="n">V</span> <span class="o">/</span> <span class="n">w</span> <span class="o">/</span> <span class="n">ys</span><span class="p">)</span>
+
 <span class="c1"># Plot results for solution</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t_opt</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t_exact</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">L</span><span class="p">,</span> <span class="n">t_opt</span> <span class="o">/</span> <span class="n">t0</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t_exact</span> <span class="o">/</span> <span class="n">t0</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;optimized&quot;</span><span class="p">,</span> <span class="s2">&quot;analytical&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;t(x)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\frac{t(x)}</span><span class="si">{t_0}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{x}{L}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Optimal beam thickness profile&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$t_0 = \sqrt{\frac</span><span class="si">{6VL}</span><span class="s2">{w\sigma_y}}$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -252,8 +256,8 @@ The <code class="docutils literal notranslate"><span class="pre">f5</span></code
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="../theory/theory.html"
-                          title="next chapter">Theory</a></p>
+    <p class="topless"><a href="Example-Composite_Optimization.html"
+                          title="next chapter">Composite plate optimization with MPhys</a></p>
   </div>
 <div id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -279,7 +283,7 @@ The <code class="docutils literal notranslate"><span class="pre">f5</span></code
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../theory/theory.html" title="Theory"
+          <a href="Example-Composite_Optimization.html" title="Composite plate optimization with MPhys"
              >next</a> |</li>
         <li class="right" >
           <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
