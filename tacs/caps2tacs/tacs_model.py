@@ -300,6 +300,11 @@ class TacsModel:
                 for f2f_var in shape_vars_dict:
                     for tacs_var in self.tacs_aim.shape_variables:
                         if f2f_var.name == tacs_var.name:
+                            # update design variable values in case we read from a F2F design file
+                            if f2f_var.value != tacs_var.value:
+                                tacs_var.value = f2f_var.value
+                                
+                            # copy the value list to the new dictionary
                             shape_vars_dict2[tacs_var] = shape_vars_dict[f2f_var]
                             break # go to next variable
 
