@@ -31,13 +31,21 @@ from tacs import elements, constitutive, functions
 # We import the setup functions and reference output values from the existing nonlinear
 # hemisphere test so that we are comparing the output from the TACS MPhys wrapper to
 # the output from standalone pyTACS.
-from test_shell_hemisphere_nonlinear import bdf_file, setupHemisphereProblem, elemCallBack, hemisphereProbRefFuncs
+from test_shell_hemisphere_nonlinear import (
+    bdf_file,
+    setupHemisphereProblem,
+    elemCallBack,
+    hemisphereProbRefFuncs,
+)
 
 
 # We need to rename the reference functions to match the names used in the TACS MPhys wrapper
-FUNC_REFS = {name.replace("_", "."): value for name, value in hemisphereProbRefFuncs.items()}
+FUNC_REFS = {
+    name.replace("_", "."): value for name, value in hemisphereProbRefFuncs.items()
+}
 
-wrt = ["dv_struct"]
+wrt = ["dv_struct", "mesh.x_struct0"]
+
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
@@ -60,6 +68,9 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             Helper function to add fixed forces and eval functions
             to structural problems used in tacs builder
             """
+            # Set convergence to be tight for test
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
             return setupHemisphereProblem(fea_assembler, problem)
 
         class Top(Multipoint):
@@ -101,6 +112,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         to test their sensitivities with respect to.
         """
         return FUNC_REFS, wrt
+
 
 if __name__ == "__main__":
     import unittest
