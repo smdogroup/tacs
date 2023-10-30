@@ -935,3 +935,46 @@ class TACSProblem(TACSSystem):
                                 hdl.write("1\n")
                                 hdl.write(f"{struct_sens[idx].real}\n")
             return
+
+    def writeDummySensFile(self, tacsAim):
+        """
+        write a blank / dummy SensFile for caps2tacs to enable animating shape variables
+        using GIF animations (without having to run an analysis just building each mesh)
+
+        Parameters
+        ----------
+        tacsAim : tacs.caps2tacs.TacsAIM
+            class which handles the sensitivity file writing for ESP/CAPS shape derivatives
+
+        """
+
+        num_funcs = 1
+        assert tacsAim is not None
+        num_struct_dvs = len(tacsAim.thickness_variables)
+        num_nodes = self.meshLoader.bdfInfo.nnodes
+
+        if self.comm.rank == 0:
+            # open the sens file nastran_CAPS.sens and write coordinate derivatives
+            # and any other struct derivatives to it
+            with open(tacsAim.sens_file_path, "w") as hdl:
+                for func_name in ["mass"]:
+                    hdl.write(f"{num_funcs} {num_struct_dvs}\n")
+
+                    # write the func name, value and nnodes
+                    hdl.write(f"{func_name}\n")
+                    hdl.write(f"{0.0}\n")
+                    hdl.write(f"{num_nodes}\n")
+
+                    # write the coordinate derivatives for the given function
+                    for bdf_ind in range(num_nodes):
+                        nastran_node = bdf_ind + 1
+                        hdl.write(f"{nastran_node} 0.0 0.0 0.0\n")
+
+                    # write any struct derivatives if there are struct derivatives
+                    if num_struct_dvs > 0:
+                        for idx, thick_var in enumerate(tacsAim.thickness_variables):
+                            # assumes these are sorted in tacs aim wrapper
+                            hdl.write(f"{thick_var.name}\n")
+                            hdl.write("1\n")
+                            hdl.write("0.0\n")
+            return

@@ -273,6 +273,59 @@ class TacsModel:
                     )
         return self.SPs
 
+    def animate_shape_vars(self, shape_vars_dict: dict):
+        """
+        Animate the shape variables in ESP/CAPS.
+
+        Parameters
+        ----------
+        shape_vars_dict: dict[ShapeVariable : list[float]]
+            dict of the list of values for each shape variable to take
+
+        e.g. if you wish to animate over the ShapeVariable objects var1, and var2
+        create the following shape_vars_dict
+        shape_vars_dict = {
+          var1 : [_*0.1 for _ in range(1,4)],
+          var2 : [_*0.05 for _ in range(-3,4)],
+        }
+        """
+        # make an analysis function if none have been made
+        if len(self.analysis_functions) == 0:
+            if self.comm.rank == 0:
+                print(
+                    "Adding mass analysis function to enable caps2tacs postAnalysis for animating shape variables..."
+                )
+            AnalysisFunction.mass().register_to(self)
+
+        # initialize all function and derivatives as zero
+
+        for shape_var in shape_vars_dict:
+            value_list = shape_vars_dict[shape_var]
+            for i, value in enumerate(value_list):
+                shape_var.value = value
+                self.geometry.despmtr[shape_var.name].value = value
+
+                self.tacs_aim.pre_analysis()
+                self.SPs = self.createTACSProbs(addFunctions=True)
+                for caseID in self.SPs:
+                    # note we don't solve the forward / adjoint analysis here
+                    # as we only care about visualizing the change in the structural shape / mesh
+                    # not the actual structural analysis results
+
+                    self.SPs[caseID].writeSolution(
+                        baseName=shape_var.name,
+                        outputDir=self.tacs_aim.analysis_dir,
+                        number=i,
+                    )
+                    self.SPs[caseID].writeDummySensFile(
+                        tacsAim=self.tacs_aim,
+                    )
+                self.tacs_aim.post_analysis()
+        print(
+            f"Done animating caps2tacs shape variables.. the f5 files are found in {self.tacs_aim.analysis_dir}."
+        )
+        print("Use the GifWriter script in examples/caps_wing/archive to ")
+
     def pre_analysis(self):
         """
         call tacs aim pre_analysis to build TACS input files and mesh
