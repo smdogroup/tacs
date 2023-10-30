@@ -180,7 +180,7 @@ class Isotropic(Material):
             cp=903,
             kappa=237,
         )
-    
+
     @classmethod
     def titanium(cls):
         return cls(
@@ -282,8 +282,8 @@ class Orthotropic(Material):
             alpha1=-0.3e-6,
             alpha2=28e-6,
             rho=1.6e3,
-            kappa1=14.5, #W/m-K
-            kappa2=4.8, #W/m-K
-            kappa3=4.8, #W/m-K
-            cp=1130.0 # J / kg-K
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
         )
