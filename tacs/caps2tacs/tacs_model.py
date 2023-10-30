@@ -369,6 +369,8 @@ class TacsModel:
                     self.SPs[caseID].writeSensFile(
                         evalFuncs=None, tacsAim=self.tacs_aim,
                     )
+
+                del self.SPs
                 self.tacs_aim.post_analysis()
 
             # make the shape variable inactive again
