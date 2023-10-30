@@ -35,7 +35,7 @@ bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
 hemisphereProbRefFuncs = {
     "RadialForces_Compliance": 2.6494721992914414,
-    "RadialForces_KSFailure": 19712.437307213724,
+    "RadialForces_KSFailure": 1.0556239359444923,
     "RadialForces_MaxYDisp": 0.009149055834342421,
     "RadialForces_MaxZDisp": 0.10767040623825054,
 }
@@ -67,7 +67,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     E = 6.825e7  # Young's modulus
     NU = 0.3  # Poisson's ratio
     RHO = 1.0  # density
-    YIELD_STRESS = 1.0  # yield stress
+    YIELD_STRESS = 20e3  # yield stress
     THICKNESS = 0.04  # Shell thickness
     matProps = constitutive.MaterialProperties(rho=RHO, E=E, nu=NU, ys=YIELD_STRESS)
     con = constitutive.IsoShellConstitutive(
@@ -87,10 +87,10 @@ def setupHemisphereProblem(FEAAssembler, problem):
     probOptions = {
         "nRestarts": 3,
         "subSpaceSize": 20,
-        "maxLinIters": 10,
         "printLevel": 1,
     }
-    continuationOptions = {"InitialStep": 1.0}
+    continuationOptions = {"InitialStep": 1.0,
+        "RelTol": 1e-12,}
     newtonOptions = {
         "MaxIter": 50,
         "UseEW": True,
@@ -136,7 +136,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
 
     # KS approximation of the maximum failure value
     problem.addFunction(
-        "KSFailure", functions.KSFailure, ksWeight=80.0, ftype="discrete"
+        "KSFailure", functions.KSFailure, ksWeight=10.0, ftype="discrete"
     )
 
     # Maximum displacement in the y and z-directions (KS with a very large weight to get a true max)
