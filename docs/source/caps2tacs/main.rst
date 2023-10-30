@@ -9,7 +9,7 @@ won't work until after the full install so you can ignore that if you source it 
 
    export ESP_ROOT=~/packages/ESP123/EngSketchPad
    export PYTHONPATH=${PYTHONPATH}:$ESP_ROOT/pyESP
-   source $ESP_ROOT/ESPenv.shell
+   source $ESP_ROOT/ESPenv.sh
    alias csm='$ESP_ROOT/bin/serveCSM'
 
 The installation on a Linux machine proceeds as follows. Note if the ESP/OpenCASCADE version changes
@@ -39,13 +39,13 @@ Important things to include in your CSM file are included below (for reference s
 * Configuration parameters such as ``cfgpmtr nribs 10`` which are integer variables usually fixed during optimization.
 * Design parameters such as ``despmtr span 10`` which are real number variables that can be tied to a TACS shape variable.
 * ``capsGroup`` attributes define regions of the geometry with the same property cars, denoted ``capsGroup $rib1``, etc. 
-We often use pattern statements to define these, and sometimes a user-defined primitive ``udprim editAttr``.
-* ``capsConstraint`` attributes define regions of the geometry intended to have the same structural constraints, e.g. ``capsConstraint fix``.
-These constraints include Temperature and elastic constraints as of right now.
-* ``capsLoad`` attributes define regions of the geometry with the same fixed loads. This is useful in simple structural analyses. 
-Note that aerodynamic loads cannot be setup this way (see the funtofem github for how to do this).
-* ``capsAIM`` attribute - this specifies for a body the analysis tools or AIMs using this CSM file. Note that we often add the 
-``tacsAIM, egadsTessAIM`` here for structural analyses. 
+    We often use pattern statements to define these, and sometimes a user-defined primitive ``udprim editAttr``.
+* ``capsConstraint`` attributes define regions of the geometry intended to have the same structural constraints, e.g. ``capsConstraint fix``. 
+    These constraints include Temperature and elastic constraints as of right now.
+* ``capsLoad`` attributes define regions of the geometry with the same fixed loads. 
+    This is useful in simple structural analyses. Note that aerodynamic loads cannot be setup this way (see the funtofem github for how to do this).
+* ``capsAIM`` attribute - this specifies for a body the analysis tools or AIMs using this CSM file. 
+    Note that we often add the ``tacsAIM, egadsTessAIM`` here for structural analyses. 
 * Occasionally ``capsMesh`` attribute - which can be used to set alternative auto-mesh settings on different sections of the geometry.
 
 The main ``TacsModel`` object supervises the process of TACS analysis and geometry updates for optimization.
@@ -73,18 +73,17 @@ hyperparameters by running a small analysis / using egadsAIM view routine until 
 There are certain objects that must be setup and registered to the tacs model before running a TACS analysis.
 If these are not correctly specified, then the tacs model will throw an error in the setup check phase.
 
-* Material properties - you must setup one or more material objects for use in the element property definitions.
-Available material types include Isotropic and Orthotropic (Anisotropic can be added directly through the underlying tacsAIM).
-Several common materials are saved as class methods such as aluminum, steel, titanium, carbon fiber.
+* Material properties - you must setup one or more material objects for use in the element property definitions. 
+   Available material types include Isotropic and Orthotropic (Anisotropic can be added directly through the underlying tacsAIM). Several common materials are saved as class methods such as aluminum, steel, titanium, carbon fiber.
 * Element Properties - currently caps2tacs only supports shell elements for use in aerodynamic structures. 
-Element properties can be setup directly through a `ShellProperty` object or indirectly through the `ThicknessVariable` object.
-The names of shell properties or the thickness variables must be tied to a `capsGroup` setup in the CSM file.
+   Element properties can be setup directly through a `ShellProperty` object or indirectly through the `ThicknessVariable` object. 
+   The names of shell properties or the thickness variables must be tied to a `capsGroup` setup in the CSM file.
 * Constraints - elastic and thermal constraints are available in caps2tacs. Common instances are the ``PinConstraint`` and ``TemperatureConstraint``.
-The name/capsConstraint input to these constraint objects must match the ``capsConstraint`` attributes in the CSM file.
+   The name/capsConstraint input to these constraint objects must match the ``capsConstraint`` attributes in the CSM file.
 * Loads - for static problems ``GridForce`` and ``Pressure`` load objects are available whose names must match the ``capsLoad`` attributes.
-Note that for aerodynamic structures only coupling with a CFD software such as through the ``FUNtoFEM repo (see below`` can setup aerodynamic loads.
+   Note that for aerodynamic structures only coupling with a CFD software such as through the ``FUNtoFEM repo (see below`` can setup aerodynamic loads.
 * Output Functionals for optimization - functionals such as ``ksfailure``, ``mass``, ``temperature``, ``compliance``
-are available for use in structural optimizations.
+   are available for use in structural optimizations.
 
 Once all of the above structural analysis setup objects are provided, the TacsModel is ready for analysis. You can
 then run the setup method which completes the setup phase. Then, the routines ``pre_analysis()`` generates a mesh, 
@@ -106,7 +105,7 @@ on a coarse mesh of a symmetric NACA 0012 wing structure.
 2. An unsteady analysis with a vertical distributed load varying sinusoidally in time.
 3. A sizing optimization which finds the optimal panel thicknesses to hold fixed aero loads.
 4. A sizing and shape optimization which optimizes the panel thicknesses and location of ribs
-and spars inside the wing to hold fixed aero loads.
+    and spars inside the wing to hold fixed aero loads.
 5. A steady analysis, using the AFLR AIM for meshing, with a vertical distributed load.
 
 The sizing optimization shown below resulted in about a 40\% drop in weight from the equal thickness design. Notice 
