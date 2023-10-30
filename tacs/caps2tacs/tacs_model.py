@@ -297,10 +297,18 @@ class TacsModel:
                 )
             AnalysisFunction.mass().register_to(self)
 
-        # initialize all function and derivatives as zero
+        # set all shape variables inactive
+        for shape_var in self.tacs_aim.shape_variables:
+            shape_var._active = False
 
         for shape_var in shape_vars_dict:
             value_list = shape_vars_dict[shape_var]
+
+            # want only this shape variable to be active so that it doesn't
+            # try to do extra mesh sensitivity chain rule products in tacsAIM
+            shape_var._active = True
+            self.tacs_aim.setup_aim()
+
             for i, value in enumerate(value_list):
                 shape_var.value = value
                 self.geometry.despmtr[shape_var.name].value = value
@@ -317,10 +325,13 @@ class TacsModel:
                         outputDir=self.tacs_aim.analysis_dir,
                         number=i,
                     )
-                    self.SPs[caseID].writeDummySensFile(
-                        tacsAim=self.tacs_aim,
+                    self.SPs[caseID].writeSensFile(
+                        evalFuncs=None, tacsAim=self.tacs_aim,
                     )
                 self.tacs_aim.post_analysis()
+
+            # make the shape variable inactive again
+            shape_var._active = False
         print(
             f"Done animating caps2tacs shape variables.. the f5 files are found in {self.tacs_aim.analysis_dir}."
         )
