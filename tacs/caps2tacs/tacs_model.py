@@ -14,6 +14,10 @@ from .aflr_aim import AflrAim
 from typing import List
 from tacs.pytacs import pyTACS
 
+# optional funtofem dependency for shape variable animations
+# will still work without funtofem
+import importlib
+f2f_loader = importlib.util.find_spec("funtofem")
 
 class TacsModel:
     MESH_AIMS = ["egads", "aflr"]
@@ -273,6 +277,41 @@ class TacsModel:
                     )
         return self.SPs
 
+    def _convert_shape_vars_dict(self, shape_vars_dict:dict):
+        """convert the shape variable dict keys from str or funtofem variables to Tacs Shape Variables if necessary"""
+        # convert shape variable dict to caps2tacs ShapeVariable keys if necessary
+        shape_vars_dict2 = {}
+        first_key = list(shape_vars_dict.keys())[0]
+        if isinstance(first_key, ShapeVariable):
+            shape_vars_dict2 = shape_vars_dict
+        elif isinstance(first_key, str):
+            # get matching caps2tacs shape variable for each string
+            for key in shape_vars_dict:
+                for var in self.tacs_aim.shape_variables:
+                    if var.name == key:
+                        shape_vars_dict2[var] = shape_vars_dict[key]
+                        break # go to next key
+        elif f2f_loader is not None: # optional funtofem dependency
+            # import has to go here to prevent circular import
+            from funtofem import Variable
+
+            if isinstance(first_key, Variable):
+                # get matching caps2tacs shape variable for each F2F shape variable
+                for f2f_var in shape_vars_dict:
+                    for tacs_var in self.tacs_aim.shape_variables:
+                        if f2f_var.name == tacs_var.name:
+                            
+                            # copy the value list to the new dictionary
+                            shape_vars_dict2[tacs_var] = shape_vars_dict[f2f_var]
+                            break # go to next variable
+
+            else:
+                raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
+        else:
+            raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
+    
+        return shape_vars_dict2
+
     def animate_shape_vars(self, shape_vars_dict: dict):
         """
         Animate the shape variables in ESP/CAPS.
@@ -284,6 +323,7 @@ class TacsModel:
 
         e.g. if you wish to animate over the ShapeVariable objects var1, and var2
         create the following shape_vars_dict
+        NOTE : the keys can be str, ShapeVariable or funtofem variable objects objects
         shape_vars_dict = {
           var1 : [_*0.1 for _ in range(1,4)],
           var2 : [_*0.05 for _ in range(-3,4)],
@@ -301,6 +341,9 @@ class TacsModel:
         for shape_var in self.tacs_aim.shape_variables:
             shape_var._active = False
 
+        # convert the shape variables dict keys from str or F2F variable to Tacs Shape Variables
+        shape_vars_dict = self._convert_shape_vars_dict(shape_vars_dict)
+
         for shape_var in shape_vars_dict:
             value_list = shape_vars_dict[shape_var]
 
@@ -308,6 +351,9 @@ class TacsModel:
             # try to do extra mesh sensitivity chain rule products in tacsAIM
             shape_var._active = True
             self.tacs_aim.setup_aim()
+
+            # save the original value
+            orig_value = shape_var.value * 1.0
 
             for i, value in enumerate(value_list):
                 shape_var.value = value
@@ -328,7 +374,13 @@ class TacsModel:
                     self.SPs[caseID].writeSensFile(
                         evalFuncs=None, tacsAim=self.tacs_aim,
                     )
+
+                del self.SPs
                 self.tacs_aim.post_analysis()
+
+            # return to the original value
+            shape_var.value = orig_value
+            self.geometry.despmtr[shape_var.name].value = orig_value
 
             # make the shape variable inactive again
             shape_var._active = False
