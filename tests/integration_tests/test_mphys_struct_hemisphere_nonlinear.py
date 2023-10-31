@@ -44,7 +44,7 @@ FUNC_REFS = {
     name.replace("_", "."): value for name, value in hemisphereProbRefFuncs.items()
 }
 
-wrt = ["dv_struct", "mesh.x_struct0"]
+wrt = ["dv_struct", "mesh.fea_mesh.x_struct0"]
 
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
@@ -58,7 +58,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         # Overwrite default tolerances
         if dtype == complex:
             self.rtol = 1e-7
-            self.dh = 1e-50
+            self.dh = 1e-200
         else:
             self.rtol = 1e-2
             self.dh = 1e-8

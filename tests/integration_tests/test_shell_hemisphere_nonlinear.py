@@ -33,11 +33,12 @@ from pytacs_analysis_base_test import PyTACSTestCase
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
+# nonlinear quadratic
 hemisphereProbRefFuncs = {
-    "RadialForces_Compliance": 2.6494721992914414,
+    "RadialForces_Compliance": 2.649472220880527,
     "RadialForces_KSFailure": 1.0556239359444923,
-    "RadialForces_MaxYDisp": 0.009149055834342421,
-    "RadialForces_MaxZDisp": 0.10767040623825054,
+    "RadialForces_MaxYDisp": 0.3562486391168941,
+    "RadialForces_MaxZDisp": 0.41708019029965454,
 }
 
 STRAIN_TYPE = "nonlinear"
@@ -89,8 +90,10 @@ def setupHemisphereProblem(FEAAssembler, problem):
         "subSpaceSize": 20,
         "printLevel": 1,
     }
-    continuationOptions = {"InitialStep": 1.0,
-        "RelTol": 1e-12,}
+    continuationOptions = {
+        "InitialStep": 1.0,
+        "RelTol": 1e-12,
+    }
     newtonOptions = {
         "MaxIter": 50,
         "UseEW": True,
@@ -144,7 +147,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         "MaxYDisp",
         functions.KSDisplacement,
         direction=np.array([0.0, 1.0, 0.0]),
-        ksWeight=1e20,
+        ksWeight=10.0,
         ftype="discrete",
     )
 
@@ -152,7 +155,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         "MaxZDisp",
         functions.KSDisplacement,
         direction=np.array([0.0, 0.0, 1.0]),
-        ksWeight=1e20,
+        ksWeight=10.0,
         ftype="discrete",
     )
 
