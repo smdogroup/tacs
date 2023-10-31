@@ -53,7 +53,7 @@ can be useful if one is running <code class="docutils literal notranslate"><span
 won't work until after the full install so you can ignore that if you source it immediately.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export ESP_ROOT=~/packages/ESP123/EngSketchPad
 export PYTHONPATH=${PYTHONPATH}:$ESP_ROOT/pyESP
-source $ESP_ROOT/ESPenv.shell
+source $ESP_ROOT/ESPenv.sh
 alias csm=&#39;$ESP_ROOT/bin/serveCSM&#39;
 </pre></div>
 </div>
@@ -81,16 +81,28 @@ Important things to include in your CSM file are included below (for reference s
 <ul class="simple">
 <li><p>Configuration parameters such as <code class="docutils literal notranslate"><span class="pre">cfgpmtr</span> <span class="pre">nribs</span> <span class="pre">10</span></code> which are integer variables usually fixed during optimization.</p></li>
 <li><p>Design parameters such as <code class="docutils literal notranslate"><span class="pre">despmtr</span> <span class="pre">span</span> <span class="pre">10</span></code> which are real number variables that can be tied to a TACS shape variable.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">capsGroup</span></code> attributes define regions of the geometry with the same property cars, denoted <code class="docutils literal notranslate"><span class="pre">capsGroup</span> <span class="pre">$rib1</span></code>, etc.</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">capsGroup</span></code> attributes define regions of the geometry with the same property cars, denoted <code class="docutils literal notranslate"><span class="pre">capsGroup</span> <span class="pre">$rib1</span></code>, etc.</dt><dd><p>We often use pattern statements to define these, and sometimes a user-defined primitive <code class="docutils literal notranslate"><span class="pre">udprim</span> <span class="pre">editAttr</span></code>.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">capsConstraint</span></code> attributes define regions of the geometry intended to have the same structural constraints, e.g. <code class="docutils literal notranslate"><span class="pre">capsConstraint</span> <span class="pre">fix</span></code>.</dt><dd><p>These constraints include Temperature and elastic constraints as of right now.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">capsLoad</span></code> attributes define regions of the geometry with the same fixed loads.</dt><dd><p>This is useful in simple structural analyses. Note that aerodynamic loads cannot be setup this way (see the funtofem github for how to do this).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">capsAIM</span></code> attribute - this specifies for a body the analysis tools or AIMs using this CSM file.</dt><dd><p>Note that we often add the <code class="docutils literal notranslate"><span class="pre">tacsAIM,</span> <span class="pre">egadsTessAIM</span></code> here for structural analyses.</p>
+</dd>
+</dl>
+</li>
+<li><p>Occasionally <code class="docutils literal notranslate"><span class="pre">capsMesh</span></code> attribute - which can be used to set alternative auto-mesh settings on different sections of the geometry.</p></li>
 </ul>
-<p>We often use pattern statements to define these, and sometimes a user-defined primitive <code class="docutils literal notranslate"><span class="pre">udprim</span> <span class="pre">editAttr</span></code>.
-* <code class="docutils literal notranslate"><span class="pre">capsConstraint</span></code> attributes define regions of the geometry intended to have the same structural constraints, e.g. <code class="docutils literal notranslate"><span class="pre">capsConstraint</span> <span class="pre">fix</span></code>.
-These constraints include Temperature and elastic constraints as of right now.
-* <code class="docutils literal notranslate"><span class="pre">capsLoad</span></code> attributes define regions of the geometry with the same fixed loads. This is useful in simple structural analyses.
-Note that aerodynamic loads cannot be setup this way (see the funtofem github for how to do this).
-* <code class="docutils literal notranslate"><span class="pre">capsAIM</span></code> attribute - this specifies for a body the analysis tools or AIMs using this CSM file. Note that we often add the
-<code class="docutils literal notranslate"><span class="pre">tacsAIM,</span> <span class="pre">egadsTessAIM</span></code> here for structural analyses.
-* Occasionally <code class="docutils literal notranslate"><span class="pre">capsMesh</span></code> attribute - which can be used to set alternative auto-mesh settings on different sections of the geometry.</p>
 <p>The main <code class="docutils literal notranslate"><span class="pre">TacsModel</span></code> object supervises the process of TACS analysis and geometry updates for optimization.
 Caps2tacs supports MPI / parallel processing which is a feature not directly available in ESP/CAPS.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
@@ -112,19 +124,33 @@ hyperparameters by running a small analysis / using egadsAIM view routine until 
 <p>There are certain objects that must be setup and registered to the tacs model before running a TACS analysis.
 If these are not correctly specified, then the tacs model will throw an error in the setup check phase.</p>
 <ul class="simple">
-<li><p>Material properties - you must setup one or more material objects for use in the element property definitions.</p></li>
+<li><dl class="simple">
+<dt>Material properties - you must setup one or more material objects for use in the element property definitions.</dt><dd><p>Available material types include Isotropic and Orthotropic (Anisotropic can be added directly through the underlying tacsAIM). Several common materials are saved as class methods such as aluminum, steel, titanium, carbon fiber.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Element Properties - currently caps2tacs only supports shell elements for use in aerodynamic structures.</dt><dd><p>Element properties can be setup directly through a <cite>ShellProperty</cite> object or indirectly through the <cite>ThicknessVariable</cite> object.
+The names of shell properties or the thickness variables must be tied to a <cite>capsGroup</cite> setup in the CSM file.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Constraints - elastic and thermal constraints are available in caps2tacs. Common instances are the <code class="docutils literal notranslate"><span class="pre">PinConstraint</span></code> and <code class="docutils literal notranslate"><span class="pre">TemperatureConstraint</span></code>.</dt><dd><p>The name/capsConstraint input to these constraint objects must match the <code class="docutils literal notranslate"><span class="pre">capsConstraint</span></code> attributes in the CSM file.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Loads - for static problems <code class="docutils literal notranslate"><span class="pre">GridForce</span></code> and <code class="docutils literal notranslate"><span class="pre">Pressure</span></code> load objects are available whose names must match the <code class="docutils literal notranslate"><span class="pre">capsLoad</span></code> attributes.</dt><dd><p>Note that for aerodynamic structures only coupling with a CFD software such as through the <code class="docutils literal notranslate"><span class="pre">FUNtoFEM</span> <span class="pre">repo</span> <span class="pre">(see</span> <span class="pre">below</span></code> can setup aerodynamic loads.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Output Functionals for optimization - functionals such as <code class="docutils literal notranslate"><span class="pre">ksfailure</span></code>, <code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature</span></code>, <code class="docutils literal notranslate"><span class="pre">compliance</span></code></dt><dd><p>are available for use in structural optimizations.</p>
+</dd>
+</dl>
+</li>
 </ul>
-<p>Available material types include Isotropic and Orthotropic (Anisotropic can be added directly through the underlying tacsAIM).
-Several common materials are saved as class methods such as aluminum, steel, titanium, carbon fiber.
-* Element Properties - currently caps2tacs only supports shell elements for use in aerodynamic structures.
-Element properties can be setup directly through a <cite>ShellProperty</cite> object or indirectly through the <cite>ThicknessVariable</cite> object.
-The names of shell properties or the thickness variables must be tied to a <cite>capsGroup</cite> setup in the CSM file.
-* Constraints - elastic and thermal constraints are available in caps2tacs. Common instances are the <code class="docutils literal notranslate"><span class="pre">PinConstraint</span></code> and <code class="docutils literal notranslate"><span class="pre">TemperatureConstraint</span></code>.
-The name/capsConstraint input to these constraint objects must match the <code class="docutils literal notranslate"><span class="pre">capsConstraint</span></code> attributes in the CSM file.
-* Loads - for static problems <code class="docutils literal notranslate"><span class="pre">GridForce</span></code> and <code class="docutils literal notranslate"><span class="pre">Pressure</span></code> load objects are available whose names must match the <code class="docutils literal notranslate"><span class="pre">capsLoad</span></code> attributes.
-Note that for aerodynamic structures only coupling with a CFD software such as through the <code class="docutils literal notranslate"><span class="pre">FUNtoFEM</span> <span class="pre">repo</span> <span class="pre">(see</span> <span class="pre">below</span></code> can setup aerodynamic loads.
-* Output Functionals for optimization - functionals such as <code class="docutils literal notranslate"><span class="pre">ksfailure</span></code>, <code class="docutils literal notranslate"><span class="pre">mass</span></code>, <code class="docutils literal notranslate"><span class="pre">temperature</span></code>, <code class="docutils literal notranslate"><span class="pre">compliance</span></code>
-are available for use in structural optimizations.</p>
 <p>Once all of the above structural analysis setup objects are provided, the TacsModel is ready for analysis. You can
 then run the setup method which completes the setup phase. Then, the routines <code class="docutils literal notranslate"><span class="pre">pre_analysis()</span></code> generates a mesh,
 the routine <code class="docutils literal notranslate"><span class="pre">run_analysis</span></code> runs the structural analysis and writes output solution files.
@@ -143,9 +169,13 @@ on a coarse mesh of a symmetric NACA 0012 wing structure.
 1. A steady analysis, using the EGADS AIM for meshing, with a vertical distributed load.
 2. An unsteady analysis with a vertical distributed load varying sinusoidally in time.
 3. A sizing optimization which finds the optimal panel thicknesses to hold fixed aero loads.
-4. A sizing and shape optimization which optimizes the panel thicknesses and location of ribs
-and spars inside the wing to hold fixed aero loads.
-5. A steady analysis, using the AFLR AIM for meshing, with a vertical distributed load.</p>
+4. A sizing and shape optimization which optimizes the panel thicknesses and location of ribs</p>
+<blockquote>
+<div><p>and spars inside the wing to hold fixed aero loads.</p>
+</div></blockquote>
+<ol class="arabic simple" start="5">
+<li><p>A steady analysis, using the AFLR AIM for meshing, with a vertical distributed load.</p></li>
+</ol>
 <p>The sizing optimization shown below resulted in about a 40% drop in weight from the equal thickness design. Notice
 the optimal design has the largest panel thicknesses near the root as this is related to a beam bending problem
 with clamped root.</p>
