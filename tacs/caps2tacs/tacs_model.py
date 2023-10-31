@@ -352,10 +352,10 @@ class TacsModel:
             shape_var._active = True
             self.tacs_aim.setup_aim()
 
-            for i, value in enumerate(value_list):
-                # save the original value
-                orig_value = shape_var.value
+            # save the original value
+            orig_value = shape_var.value * 1.0
 
+            for i, value in enumerate(value_list):
                 shape_var.value = value
                 self.geometry.despmtr[shape_var.name].value = value
 
@@ -378,8 +378,9 @@ class TacsModel:
                 del self.SPs
                 self.tacs_aim.post_analysis()
 
-                # return to the original value
-                shape_var.value = orig_value
+            # return to the original value
+            shape_var.value = orig_value
+            self.geometry.despmtr[shape_var.name].value = orig_value
 
             # make the shape variable inactive again
             shape_var._active = False
