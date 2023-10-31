@@ -300,6 +300,8 @@ class TacsModel:
                 for f2f_var in shape_vars_dict:
                     for tacs_var in self.tacs_aim.shape_variables:
                         if f2f_var.name == tacs_var.name:
+                            
+                            # copy the value list to the new dictionary
                             shape_vars_dict2[tacs_var] = shape_vars_dict[f2f_var]
                             break # go to next variable
 
@@ -350,6 +352,9 @@ class TacsModel:
             shape_var._active = True
             self.tacs_aim.setup_aim()
 
+            # save the original value
+            orig_value = shape_var.value * 1.0
+
             for i, value in enumerate(value_list):
                 shape_var.value = value
                 self.geometry.despmtr[shape_var.name].value = value
@@ -372,6 +377,10 @@ class TacsModel:
 
                 del self.SPs
                 self.tacs_aim.post_analysis()
+
+            # return to the original value
+            shape_var.value = orig_value
+            self.geometry.despmtr[shape_var.name].value = orig_value
 
             # make the shape variable inactive again
             shape_var._active = False
