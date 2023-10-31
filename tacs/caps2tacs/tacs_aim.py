@@ -5,7 +5,7 @@ import os, numpy as np
 from .proc_decorator import root_proc, root_broadcast
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty, Property
+from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
@@ -68,10 +68,10 @@ class TacsAim:
         elif isinstance(obj, ThicknessVariable):
             self._design_variables.append(obj)
             if obj.can_make_shell:
-                self._properties.append(obj.shell_property)
+                self._properties.append(obj.auto_property)
         elif isinstance(obj, ShapeVariable):
             self._design_variables.append(obj)
-        elif isinstance(obj, Property):
+        elif isinstance(obj, BaseProperty):
             self._properties.append(obj)
         elif isinstance(obj, Constraint):
             self._constraints.append(obj)
@@ -124,6 +124,8 @@ class TacsAim:
             }
 
             # add properties to tacsAim
+            for prop in self._properties:
+                print(f"caps group {prop.caps_group}, dict = {prop.dictionary}")
             self.aim.input.Property = {
                 prop.caps_group: prop.dictionary for prop in self._properties
             }
@@ -274,7 +276,7 @@ class TacsAim:
         # update property thicknesses by the modified thickness variables
         for property in self._properties:
             for dv in self._design_variables:
-                if isinstance(property, ShellProperty) and isinstance(
+                if isinstance(property, Property) and isinstance(
                     dv, ThicknessVariable
                 ):
                     if property.caps_group == dv.caps_group:
