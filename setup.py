@@ -104,6 +104,7 @@ optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
     "mphys": ["mphys>=1.1.0", "openmdao>=3.25.0"],
+    "f2f-caps-animation" : ["funtofem>=0.3.2", "imageio>=2.16.1"],
 }
 
 # Add an optional dependency that concatenates all others
