@@ -408,6 +408,7 @@ class StaticProblem(TACSProblem):
                 "printtiming",
                 "numbersolutions",
                 "outputdir",
+                "printLevel",
             ]:
                 createVariables = False
 
