@@ -363,7 +363,7 @@ class Orthotropic(Material):
             T2=T1,
             C2=C1,
             S1=S1,
-            rho=rho*(1+area_ratio2),
+            rho=rho*0.5*(1+area_ratio2), # get double mass from CompositeShellConstitutive so correction for that
             alpha1 = alpha,
             alpha2=alpha,
             kappa1= kappa,

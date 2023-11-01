@@ -6,7 +6,7 @@ from .egads_aim import EgadsAim
 from .analysis_function import AnalysisFunction, Derivative
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty
+from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
@@ -104,7 +104,7 @@ class TacsModel:
             Material,
             ThicknessVariable,
             ShapeVariable,
-            ShellProperty,
+            BaseProperty,
             Constraint,
             Load,
             EgadsAim,
