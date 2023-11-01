@@ -124,8 +124,6 @@ class TacsAim:
             }
 
             # add properties to tacsAim
-            for prop in self._properties:
-                print(f"caps group {prop.caps_group}, dict = {prop.dictionary}")
             self.aim.input.Property = {
                 prop.caps_group: prop.dictionary for prop in self._properties
             }
@@ -276,7 +274,7 @@ class TacsAim:
         # update property thicknesses by the modified thickness variables
         for property in self._properties:
             for dv in self._design_variables:
-                if isinstance(property, Property) and isinstance(
+                if isinstance(property, BaseProperty) and isinstance(
                     dv, ThicknessVariable
                 ):
                     if property.caps_group == dv.caps_group:
