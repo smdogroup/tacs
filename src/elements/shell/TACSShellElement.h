@@ -1,6 +1,8 @@
 #ifndef TACS_SHELL_ELEMENT_H
 #define TACS_SHELL_ELEMENT_H
 
+#include <typeinfo>
+
 #include "TACSDirector.h"
 #include "TACSElement.h"
 #include "TACSElementAlgebra.h"

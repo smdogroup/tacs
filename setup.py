@@ -84,6 +84,7 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
             libraries=libs,
             library_dirs=lib_dirs,
             runtime_library_dirs=runtime_lib_dirs,
+            extra_compile_args=["-std=c++11"],
         )
     )
 
