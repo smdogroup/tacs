@@ -14,10 +14,10 @@
 
 #include "TACSElementVerification.h"
 
+#include <string.h>
+
 #include "TACSElementAlgebra.h"
 #include "tacslapack.h"
-
-#include <string.h>
 
 /*
   Helper function to get the matrix type name from the ElementMatrixType enum
