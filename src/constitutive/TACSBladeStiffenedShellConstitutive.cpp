@@ -220,76 +220,76 @@ TACSBladeStiffenedShellConstitutive::~TACSBladeStiffenedShellConstitutive() {
   this->stiffenerPly->decref();
 
   delete[] this->panelPlyAngles;
-  this->panelPlyAngles = NULL;
+  this->panelPlyAngles = nullptr;
 
   delete[] this->panelPlyFracs;
-  this->panelPlyFracs = NULL;
+  this->panelPlyFracs = nullptr;
 
   delete[] this->panelPlyFracNums;
-  this->panelPlyFracNums = NULL;
+  this->panelPlyFracNums = nullptr;
 
   delete[] this->panelPlyFracLocalNums;
-  this->panelPlyFracLocalNums = NULL;
+  this->panelPlyFracLocalNums = nullptr;
 
   delete[] this->stiffenerPlyAngles;
-  this->stiffenerPlyAngles = NULL;
+  this->stiffenerPlyAngles = nullptr;
 
   delete[] this->stiffenerPlyFracs;
-  this->stiffenerPlyFracs = NULL;
+  this->stiffenerPlyFracs = nullptr;
 
   delete[] this->stiffenerPlyFracNums;
-  this->stiffenerPlyFracNums = NULL;
+  this->stiffenerPlyFracNums = nullptr;
 
   delete[] this->stiffenerPlyFracLocalNums;
-  this->stiffenerPlyFracLocalNums = NULL;
+  this->stiffenerPlyFracLocalNums = nullptr;
 
   delete[] this->panelPlyFracLowerBounds;
-  this->panelPlyFracLowerBounds = NULL;
+  this->panelPlyFracLowerBounds = nullptr;
 
   delete[] this->panelPlyFracUpperBounds;
-  this->panelPlyFracUpperBounds = NULL;
+  this->panelPlyFracUpperBounds = nullptr;
 
   delete[] this->stiffenerPlyFracLowerBounds;
-  this->stiffenerPlyFracLowerBounds = NULL;
+  this->stiffenerPlyFracLowerBounds = nullptr;
 
   delete[] this->stiffenerPlyFracUpperBounds;
-  this->stiffenerPlyFracUpperBounds = NULL;
+  this->stiffenerPlyFracUpperBounds = nullptr;
 
   delete[] this->panelPlyFailValues;
-  this->panelPlyFailValues = NULL;
+  this->panelPlyFailValues = nullptr;
 
   delete[] this->stiffenerPlyFailValues;
-  this->stiffenerPlyFailValues = NULL;
+  this->stiffenerPlyFailValues = nullptr;
 
   for (int ii = 0; ii < 2 * this->numPanelPlies; ii++) {
     delete[] this->panelPlyFailStrainSens[ii];
-    this->panelPlyFailStrainSens[ii] = NULL;
+    this->panelPlyFailStrainSens[ii] = nullptr;
   }
   delete[] this->panelPlyFailStrainSens;
-  this->panelPlyFailStrainSens = NULL;
+  this->panelPlyFailStrainSens = nullptr;
 
   for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
     delete[] this->stiffenerPlyFailStrainSens[ii];
-    this->stiffenerPlyFailStrainSens[ii] = NULL;
+    this->stiffenerPlyFailStrainSens[ii] = nullptr;
   }
   delete[] this->stiffenerPlyFailStrainSens;
-  this->stiffenerPlyFailStrainSens = NULL;
+  this->stiffenerPlyFailStrainSens = nullptr;
 
   delete[] this->panelPlyFailSens;
-  this->panelPlyFailSens = NULL;
+  this->panelPlyFailSens = nullptr;
 
   delete[] this->stiffenerPlyFailSens;
-  this->stiffenerPlyFailSens = NULL;
+  this->stiffenerPlyFailSens = nullptr;
 
   delete[] this->panelQMats;
-  this->panelQMats = NULL;
+  this->panelQMats = nullptr;
   delete[] this->panelAbarMats;
-  this->panelAbarMats = NULL;
+  this->panelAbarMats = nullptr;
 
   delete[] this->stiffenerQMats;
-  this->stiffenerQMats = NULL;
+  this->stiffenerQMats = nullptr;
   delete[] this->stiffenerAbarMats;
-  this->stiffenerAbarMats = NULL;
+  this->stiffenerAbarMats = nullptr;
 }
 
 // ==============================================================================
