@@ -21,6 +21,9 @@ class TacsAim:
     Wrapper class for TacsAim with default build setting in different scenarios
     applies default settings and spits it back out at the end
     only supports shell properties at the moment
+
+    Supports parallel instances of the tacsAIM for building structure meshes in ESP/CAPS
+    and getting shape derivatives of the parametric geometry.
     """
 
     def __init__(
@@ -90,14 +93,18 @@ class TacsAim:
                 "Object could not be registered to TacsAim as it is not an appropriate type."
             )
 
-    def get_proc_with_shape_var(self, shape_var: ShapeVariable):
+    def get_proc_with_shape_var(self, shape_var: ShapeVariable or str):
         """get the proc index that has a certain shape variable"""
         n_procs = len(self.active_procs)
         for ishape, this_shape_var in enumerate(self.shape_variables):
             iproc = ishape % n_procs
             rank = self.active_procs[iproc]
-            if shape_var == this_shape_var:
-                return rank
+            if isinstance(this_shape_var, str):
+                if shape_var.name == this_shape_var:
+                    return rank
+            elif isinstance(this_shape_var, ShapeVariable):
+                if shape_var == this_shape_var:
+                    return rank
         # failed to find one, should trigger error elsewhere
         return None
 
@@ -280,11 +287,19 @@ class TacsAim:
         return analysisDir
 
     @property
+    def root_analysis_dir(self) -> str:
+        return self.analysis_dir(self.root_proc_ind)
+
+    @property
     def dat_file(self) -> str:
         return self.project_name + ".dat"
 
     def dat_file_path(self, proc: int = 0) -> str:
         return os.path.join(self.analysis_dir(proc), self.dat_file)
+    
+    @property
+    def root_dat_file(self):
+        return self.dat_file_path(self.root_proc_ind)
 
     @property
     def sens_file(self) -> str:
@@ -292,6 +307,10 @@ class TacsAim:
 
     def sens_file_path(self, proc: int = 0) -> str:
         return os.path.join(self.analysis_dir(proc), self.sens_file)
+
+    @property
+    def root_sens_file(self):
+        return self.sens_file_path(self.root_proc_ind)
 
     @property
     def is_setup(self) -> bool:

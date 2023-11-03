@@ -1210,17 +1210,19 @@ class pyMeshLoader(BaseUI):
         """
 
         self._nastranToLocalNodeIDMap()
-        local_maps = self.comm.gather(self._local_map, root=0)
-        full_map_list = []
-        for local_map in local_maps:
-            full_map_list += local_map
         all_struct_ids = None
+        local_maps = self.comm.gather(self._local_map, root=0)
         if self.comm.rank == 0:
-            all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
-            for map in full_map_list:
-                for key in map:
-                    all_struct_ids[int(key)] = map[int(key)]
-            all_struct_ids = list(all_struct_ids)
+            full_map_list = []
+            for local_map in local_maps:
+                full_map_list += local_map
+            all_struct_ids = None
+            if self.comm.rank == 0:
+                all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
+                for map in full_map_list:
+                    for key in map:
+                        all_struct_ids[int(key)] = map[int(key)]
+                all_struct_ids = list(all_struct_ids)
         # broadcast to other procs
         all_struct_ids = self.comm.bcast(all_struct_ids, root=0)
         return all_struct_ids

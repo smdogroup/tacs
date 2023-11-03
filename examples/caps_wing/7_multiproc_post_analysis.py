@@ -117,5 +117,6 @@ for func in tacs_model.analysis_functions:
 
 # print out timing results (compare serial to parallel instances of tacsAIM)
 mins_elapsed = (time.time() - start_time) / 60.0
+naims = len(tacs_model.active_procs)
 if comm.rank == 0:
-    print(f"Elapsed time with {size} procs is {mins_elapsed} mins using 4 shape vars.")
+    print(f"Elapsed time with {naims} procs is {mins_elapsed} mins using 4 shape vars.")
