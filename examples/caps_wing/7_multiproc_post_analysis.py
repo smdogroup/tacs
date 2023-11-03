@@ -1,12 +1,28 @@
 """
-Sean Engelstad, Febuary 2023
+Sean Engelstad, November 2023
 GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
+
+To call mpi version use (e.g. with 4 procs):
+    mpirun -n 4 python 7_multiproc_post_analysis.py
+* For local machine I use conda-mpirun alias instead of mpirun to point to my mpich from conda-forge mpi4py
+
+Timing data comparison for different # of procs to show speedup 
+    of optimization iterations with shape derivative on multi-procs:
+    NOTE : I still run with 4 procs (so TACS analysis takes same amount of time)
+    but use different # of active procs in the TacsModel input.
+--------------------------------------------------------------------
+1 proc - 
+2 proc - 
+3 proc - 
+4 proc -
 """
 
+import time
 from tacs import caps2tacs
 from mpi4py import MPI
-import openmdao.api as om
+
+start_time = time.time()
 
 # --------------------------------------------------------------#
 # Setup CAPS Problem
@@ -61,40 +77,45 @@ caps2tacs.AnalysisFunction.ksfailure(safetyFactor=1.5, ksWeight=50.0).register_t
 )
 
 # run the pre analysis to build tacs input files
+print(f"design 1 - setup tacs model on rank {comm.rank}", flush=True)
 tacs_model.setup(include_aim=True)
 
-# ---------------------------------------------------------------------------------#
-# Setup OpenMDAO Problem
-# ---------------------------------------------------------------------------------#
+# run analysis with one design
+print(f"design 1  on rank {comm.rank}", flush=True)
+tacs_model.pre_analysis()
+tacs_model.run_analysis()
+tacs_model.post_analysis()
 
-# setup the OpenMDAO problem object
-prob = om.Problem()
+# update the shape variables in the design
+print(f"design 2 on rank {comm.rank}", flush=True)
+tacs_model.update_design(input_dict={"rib_a1" : 0.8, "rib_a2" : 0.2, "spar_a1" : 0.9, "spar_a2" : -0.2})
 
-# Create the OpenMDAO component
-tacs_system = caps2tacs.TacsStaticComponent(
-    tacs_model=tacs_model, write_f5=True, track_history=True
-)
-prob.model.add_subsystem("tacsSystem", tacs_system)
+# run analysis with the second design
+tacs_model.pre_analysis()
+tacs_model.run_analysis()
+tacs_model.post_analysis()
 
-# setup the optimizer settings # COBYLA for auto-FDing
-prob.driver = om.ScipyOptimizeDriver(optimizer="SLSQP", tol=1.0e-9, disp=True)
+# update the shape variables in the design
+print(f"design 3 on rank {comm.rank}", flush=True)
+tacs_model.update_design(input_dict={"rib_a1" : 1.2, "rib_a2" : -0.2, "spar_a1" : 1.0, "spar_a2" : 0.2})
 
-# add design variables to the model
-for thick_var in tacs_model.thickness_variables:
-    prob.model.add_design_var(
-        f"tacsSystem.{thick_var.name}", lower=0.001, upper=0.5, scaler=100.0
-    )
+# run analysis with the third design
+tacs_model.pre_analysis()
+tacs_model.run_analysis()
+tacs_model.post_analysis()
 
-# add objectives & constraints to the model
-prob.model.add_objective("tacsSystem.mass", scaler=1.0e-2)
-prob.model.add_constraint("tacsSystem.ksfailure", upper=0.267)
+# print out the derivatives => make sure shape derivatives are nonzero
+comm.Barrier()
+print("Tacs model static analysis outputs...\n")
+for func in tacs_model.analysis_functions:
+    print(f"func {func.name} = {func.value}")
 
-prob.model.add_design_var("tacsSystem.rib_a1", lower=0.6, upper=1.4)
-prob.model.add_design_var("tacsSystem.rib_a2", lower=-0.3, upper=0.3)
-prob.model.add_design_var("tacsSystem.spar_a1", lower=0.6, upper=1.4)
-prob.model.add_design_var("tacsSystem.spar_a2", lower=-0.3, upper=0.3)
+    for var in tacs_model.variables:
+        derivative = func.get_derivative(var)
+        print(f"\td{func.name}/d{var.name} = {derivative}")
+    print("\n")
 
-# Start the optimization
-print("\n==> Starting Optimization...")
-prob.setup()
-prob.run_driver()
+# print out timing results (compare serial to parallel instances of tacsAIM)
+mins_elapsed = (time.time() - start_time) / 60.0
+if comm.rank == 0:
+    print(f"Elapsed time with {size} procs is {mins_elapsed} mins using 4 shape vars.")

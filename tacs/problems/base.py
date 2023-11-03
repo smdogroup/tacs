@@ -883,7 +883,7 @@ class TACSProblem(TACSSystem):
                     auxElems, elemID, trac, faceIndex, nastranOrdering=True
                 )
 
-    def writeSensFile(self, evalFuncs, tacsAim):
+    def writeSensFile(self, evalFuncs, tacsAim, proc:int=0):
         """
         write an ESP/CAPS .sens file from the tacs aim
         Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
@@ -894,7 +894,8 @@ class TACSProblem(TACSSystem):
             names of TACS functions to be evaluated
         tacsAim : tacs.caps2tacs.TacsAIM
             class which handles the sensitivity file writing for ESP/CAPS shape derivatives
-
+        proc: int
+            which processor (in case of parallel tacsAIM instances) to write the sens file to
         """
 
         is_dummy_file = evalFuncs is None
@@ -914,10 +915,10 @@ class TACSProblem(TACSSystem):
         num_nodes = self.meshLoader.bdfInfo.nnodes
         node_ids = self.meshLoader.allLocalNodeIDs
 
-        if self.comm.rank == 0:
+        if self.comm.rank == proc:
             # open the sens file nastran_CAPS.sens and write coordinate derivatives
             # and any other struct derivatives to it
-            with open(tacsAim.sens_file_path, "w") as hdl:
+            with open(tacsAim.sens_file_path(proc), "w") as hdl:
                 for func_name in evalFuncs:
                     hdl.write(f"{num_funcs} {num_struct_dvs}\n")
 

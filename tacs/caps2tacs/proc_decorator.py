@@ -12,7 +12,7 @@ def parallel(method):
         else:
 
             def empty_function(self):
-                return
+                return self  # for potential method cascading
 
             return empty_function
 

@@ -1,6 +1,7 @@
 __all__ = ["EgadsAim"]
 
 from typing import TYPE_CHECKING, List
+from .proc_decorator import parallel
 
 
 class EgadsAim:
@@ -13,13 +14,16 @@ class EgadsAim:
     egadsAim.input.Tess_Params = [.25,.01,15]
     """
 
-    def __init__(self, caps_problem, comm):
+    def __init__(self, caps_problem, comm, active_procs: list = [0]):
         self.comm = comm
+        self.active_procs = active_procs
 
         self._dictOptions = None
 
-        if comm is None or comm.rank == 0:
-            self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
+        self._aim = None
+        for proc in self.active_procs:
+            if comm.rank == proc:
+                self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
         self._is_setup = False
 
     def set_mesh(
@@ -34,15 +38,16 @@ class EgadsAim:
         """
         cascaded method to set the mesh input settings to the egadsAim
         """
-        if self.comm.rank == 0:
-            self._aim.input.Edge_Point_Min = edge_pt_min
-            self._aim.input.Edge_Point_Max = edge_pt_max
-            self._aim.input.Mesh_Elements = mesh_elements
-            self._aim.input.Tess_Params = [
-                global_mesh_size,
-                max_surf_offset,
-                max_dihedral_angle,
-            ]
+        for proc in self.active_procs:
+            if self.comm.rank == proc:
+                self._aim.input.Edge_Point_Min = edge_pt_min
+                self._aim.input.Edge_Point_Max = edge_pt_max
+                self._aim.input.Mesh_Elements = mesh_elements
+                self._aim.input.Tess_Params = [
+                    global_mesh_size,
+                    max_surf_offset,
+                    max_dihedral_angle,
+                ]
         self._is_setup = True
         return self
 
@@ -58,17 +63,14 @@ class EgadsAim:
 
         return self
 
+    @parallel
     def _set_dict_options(self):
         """
         Set EGADS options via dictionaries.
         """
         dictOptions = self._dictOptions
-
-        if self.root_proc:
-            for ind, option in enumerate(dictOptions["egadsTessAIM"]):
-                self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
-
-        return self
+        for option in dictOptions["egadsTessAIM"]:
+            self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
 
     @property
     def is_setup(self) -> bool:

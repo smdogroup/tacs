@@ -1,8 +1,12 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
+
 __all__ = ["TacsAim"]
 
 from typing import TYPE_CHECKING, List
 import os, numpy as np
-from .proc_decorator import root_proc, root_broadcast, parallel
+from .proc_decorator import root_broadcast, parallel
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty, Property
@@ -86,6 +90,17 @@ class TacsAim:
                 "Object could not be registered to TacsAim as it is not an appropriate type."
             )
 
+    def get_proc_with_shape_var(self, shape_var: ShapeVariable):
+        """get the proc index that has a certain shape variable"""
+        n_procs = len(self.active_procs)
+        for ishape, this_shape_var in enumerate(self.shape_variables):
+            iproc = ishape % n_procs
+            rank = self.active_procs[iproc]
+            if shape_var == this_shape_var:
+                return rank
+        # failed to find one, should trigger error elsewhere
+        return None
+
     @property
     def local_shape_vars(self) -> list:
         """
@@ -112,6 +127,8 @@ class TacsAim:
         assert len(self._properties) > 0
         assert len(self._constraints) > 0
         assert self._mesh_aim is not None
+
+        local_shape_vars = self.local_shape_vars
 
         for proc in self.active_procs:
             if self.comm.rank == proc:
@@ -174,12 +191,12 @@ class TacsAim:
                     }
 
                 # distribute the shape variables that are active on each proc
-                if len(self.local_shape_vars) > 0:
-                    self.aim.input.Design_Variable = {
-                        dv.name: dv.DV_dictionary
-                        for dv in self.local_shape_vars
-                        if dv._active
-                    }
+                if len(local_shape_vars) > 0:
+                    DV_dict = self.aim.input.Design_Variable
+                    for dv in local_shape_vars:
+                        if dv._active:
+                            DV_dict[dv.name] = dv.DV_dictionary
+                    self.aim.input.Design_Variable = DV_dict
 
         if self._dict_options is not None:
             self._set_dict_options()
@@ -188,6 +205,9 @@ class TacsAim:
 
         # note that setup is finished now
         self._setup = True
+
+        # have other procs wait til this is done
+        self.comm.Barrier()
         return self  # return object for method cascading
 
     @parallel
@@ -251,27 +271,27 @@ class TacsAim:
                     break
         return sorted_dvs
 
-    def analysis_dir(self, proc) -> str:
+    def analysis_dir(self, proc: int = 0) -> str:
         analysisDir = None
         if self.comm.rank == proc:
             analysisDir = self.aim.analysisDir
+        # broadcast this analysis directory to other processors
+        analysisDir = self.comm.bcast(analysisDir, root=proc)
         return analysisDir
 
     @property
     def dat_file(self) -> str:
         return self.project_name + ".dat"
 
-    @property
-    def dat_file_path(self) -> str:
-        return os.path.join(self.analysis_dir, self.dat_file)
+    def dat_file_path(self, proc: int = 0) -> str:
+        return os.path.join(self.analysis_dir(proc), self.dat_file)
 
     @property
     def sens_file(self) -> str:
         return self.project_name + ".sens"
 
-    @property
-    def sens_file_path(self) -> str:
-        return os.path.join(self.analysis_dir, self.sens_file)
+    def sens_file_path(self, proc: int = 0) -> str:
+        return os.path.join(self.analysis_dir(proc), self.sens_file)
 
     @property
     def is_setup(self) -> bool:
@@ -291,6 +311,7 @@ class TacsAim:
         """
         return len(self.shape_variables) > 0
 
+    @parallel
     def update_properties(self):
         """
         update thickness properties and design variables in ESP/CAPS inputs
@@ -310,16 +331,15 @@ class TacsAim:
                         property.membrane_thickness == dv.value
                         break
 
-        if self.comm is None or self.comm.rank == 0:
-            # input new design var and property cards
-            self.aim.input.Design_Variable = {
-                dv.name: dv.DV_dictionary for dv in self._design_variables
-            }
-            self.aim.input.Property = {
-                prop.caps_group: prop.dictionary for prop in self._properties
-            }
+        # input new design var and property cards
+        self.aim.input.Design_Variable = {
+            dv.name: dv.DV_dictionary for dv in self._design_variables
+        }
+        self.aim.input.Property = {
+            prop.caps_group: prop.dictionary for prop in self._properties
+        }
 
-        return
+        return self
 
     def save_dict_options(self, aimOptions: dict = None):
         """
@@ -334,30 +354,26 @@ class TacsAim:
 
         return self
 
-    @root_proc
+    @parallel
     def _set_dict_options(self):
         """
         Set any options that were specified through dictionaries.
         """
         aimOptions = self._dict_options
-
-        for ind, option in enumerate(aimOptions["tacsAim"]):
+        for option in aimOptions["tacsAim"]:
             self.aim.input[option].value = aimOptions["tacsAim"][option]
-
         return self
 
-    @root_proc
+    @parallel
     def pre_analysis(self):
         """
         provide access to the tacs aim preAnalysis for generating TACS input files and mesh
         """
         assert self._setup
         self.aim.preAnalysis()
-
-        # return this object for method cascading
         return self
 
-    @root_proc
+    @parallel
     def post_analysis(self):
         """
         provide access to the tacs aim postAnalysis for collecting analysis outputs - functions and derivatives
@@ -365,6 +381,7 @@ class TacsAim:
         self.aim.postAnalysis()
         return self
 
+    @parallel
     def unlink(self):
-        if self.comm.rank == 0:
-            self.aim.input["Mesh"].unlink()
+        self.aim.input["Mesh"].unlink()
+        return self
