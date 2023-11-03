@@ -57,6 +57,7 @@ class TacsModel:
         comm=None,
         mesh="egads",
         tacs_project="tacs",
+        active_procs: list = [0],
         problem_name: str = "capsStruct",
         mesh_morph: bool = False,
     ):
@@ -73,18 +74,24 @@ class TacsModel:
 
         caps_problem = None
         assert mesh in cls.MESH_AIMS
-        if comm is None or comm.rank == 0:
-            caps_problem = pyCAPS.Problem(
-                problemName=problem_name, capsFile=csm_file, outLevel=1
-            )
+        for iproc in active_procs:
+            if comm.rank == iproc:
+                caps_problem = pyCAPS.Problem(
+                    problemName=problem_name, capsFile=csm_file, outLevel=1
+                )
+
         tacs_aim = TacsAim(
-            caps_problem, comm, project_name=tacs_project, mesh_morph=mesh_morph
+            caps_problem,
+            comm,
+            project_name=tacs_project,
+            mesh_morph=mesh_morph,
+            active_procs=active_procs,
         )
         mesh_aim = None
         if mesh == "egads":
-            mesh_aim = EgadsAim(caps_problem, comm)
+            mesh_aim = EgadsAim(caps_problem, comm, active_procs=active_procs)
         elif mesh == "aflr":
-            mesh_aim = AflrAim(caps_problem, comm)
+            mesh_aim = AflrAim(caps_problem, comm, active_procs=active_procs)
         return cls(tacs_aim, mesh_aim, comm)
 
     def get_config_parameter(self, param_name: str):
