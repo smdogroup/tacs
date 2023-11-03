@@ -16,7 +16,9 @@ class GifWriter:
         call on current path to create gif of given filename
         """
         gif_filepath = os.path.join(path, gif_filename)
-        with imageio.get_writer(gif_filepath, mode="I", duration=self._duration) as writer:
+        with imageio.get_writer(
+            gif_filepath, mode="I", duration=self._duration
+        ) as writer:
             path_dir = os.listdir(path)
             path_dir = sorted(path_dir)
             for image_file in path_dir:

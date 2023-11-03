@@ -9,7 +9,7 @@ class ShapeVariable:
     shape variables in ESP/CAPS are design parameters that affect the structural geometry
     """
 
-    def __init__(self, name: str, value=None, active:bool=True):
+    def __init__(self, name: str, value=None, active: bool = True):
         """
         ESP/CAPS shape variable controls a design parameter in the CSM file
             name: corresponds to the design parameter in the CSM file
@@ -53,7 +53,7 @@ class ThicknessVariable:
         upper_bound: float = None,
         max_delta: float = None,
         material: Material = None,
-        active:bool=True,
+        active: bool = True,
     ):
         """
         ESP/CAPS Thickness variable sets the thickness over a portion of the geometry in the CSM file

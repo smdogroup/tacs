@@ -151,7 +151,9 @@ class TacsAim:
                 }
             if len(self.variables) > 0:
                 self.aim.input.Design_Variable = {
-                    dv.name: dv.DV_dictionary for dv in self._design_variables if dv._active
+                    dv.name: dv.DV_dictionary
+                    for dv in self._design_variables
+                    if dv._active
                 }
 
             if self._dict_options is not None:

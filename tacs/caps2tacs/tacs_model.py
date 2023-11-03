@@ -17,7 +17,9 @@ from tacs.pytacs import pyTACS
 # optional funtofem dependency for shape variable animations
 # will still work without funtofem
 import importlib
+
 f2f_loader = importlib.util.find_spec("funtofem")
+
 
 class TacsModel:
     MESH_AIMS = ["egads", "aflr"]
@@ -277,7 +279,7 @@ class TacsModel:
                     )
         return self.SPs
 
-    def _convert_shape_vars_dict(self, shape_vars_dict:dict):
+    def _convert_shape_vars_dict(self, shape_vars_dict: dict):
         """convert the shape variable dict keys from str or funtofem variables to Tacs Shape Variables if necessary"""
         # convert shape variable dict to caps2tacs ShapeVariable keys if necessary
         shape_vars_dict2 = {}
@@ -290,8 +292,8 @@ class TacsModel:
                 for var in self.tacs_aim.shape_variables:
                     if var.name == key:
                         shape_vars_dict2[var] = shape_vars_dict[key]
-                        break # go to next key
-        elif f2f_loader is not None: # optional funtofem dependency
+                        break  # go to next key
+        elif f2f_loader is not None:  # optional funtofem dependency
             # import has to go here to prevent circular import
             from funtofem import Variable
 
@@ -300,16 +302,19 @@ class TacsModel:
                 for f2f_var in shape_vars_dict:
                     for tacs_var in self.tacs_aim.shape_variables:
                         if f2f_var.name == tacs_var.name:
-                            
                             # copy the value list to the new dictionary
                             shape_vars_dict2[tacs_var] = shape_vars_dict[f2f_var]
-                            break # go to next variable
+                            break  # go to next variable
 
             else:
-                raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
+                raise AssertionError(
+                    f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries."
+                )
         else:
-            raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
-    
+            raise AssertionError(
+                f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries."
+            )
+
         return shape_vars_dict2
 
     def animate_shape_vars(self, shape_vars_dict: dict):
@@ -372,7 +377,8 @@ class TacsModel:
                         number=i,
                     )
                     self.SPs[caseID].writeSensFile(
-                        evalFuncs=None, tacsAim=self.tacs_aim,
+                        evalFuncs=None,
+                        tacsAim=self.tacs_aim,
                     )
 
                 del self.SPs
