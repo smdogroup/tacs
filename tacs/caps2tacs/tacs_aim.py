@@ -96,6 +96,8 @@ class TacsAim:
     def get_proc_with_shape_var(self, shape_var: ShapeVariable or str):
         """get the proc index that has a certain shape variable"""
         n_procs = len(self.active_procs)
+        assert n_procs > 0
+        assert len(self.shape_variables) > 0
         for ishape, this_shape_var in enumerate(self.shape_variables):
             iproc = ishape % n_procs
             rank = self.active_procs[iproc]
