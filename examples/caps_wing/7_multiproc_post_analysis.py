@@ -16,9 +16,14 @@ The # of parallel tacsAIMs is controlled through the active_procs input to the T
 --------------------------------------------------------------------
 post_analysis time (4 shape variables, 4 procs)
 1 tacsAIM  - 2.611 mins
-2 tacsAIMs - 
-3 tacsAIMs - 
+2 tacsAIMs - 1.252 mins
+3 tacsAIMs - 1.157 mins
 4 tacsAIMs - 0.591 mins
+
+NOTE : with 2 tacsAIMs - both tacsAIMs have 2 shape vars while 
+    with 3 tacsAIMs - 2 AIMs have 1 shape var and 1 has 2 shape vars
+    so the runtime for 2 or 3 instances is the same. It's not until 4 instances
+    that we reach full 4x speedup.
 """
 
 import time
@@ -31,7 +36,7 @@ start_time1 = time.time()
 # Setup CAPS Problem
 # --------------------------------------------------------------#
 comm = MPI.COMM_WORLD
-tacs_model = caps2tacs.TacsModel.build(csm_file="large_naca_wing.csm", comm=comm, active_procs=[0,1,2])
+tacs_model = caps2tacs.TacsModel.build(csm_file="large_naca_wing.csm", comm=comm, active_procs=[0,1])
 tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
     edge_pt_min=15,
     edge_pt_max=20,
