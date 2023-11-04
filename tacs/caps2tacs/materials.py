@@ -346,8 +346,12 @@ class Orthotropic(Material):
         # get area_ratio2 = Astiff / Askin
         area_ratio2 = area_ratio / (1 - area_ratio)
         # new moduli (stiffened in spanwise direction)
-        Ex = E
-        Ey = E / (1 - nu**2 * area_ratio)
+        # it makes more sense to me that the stress should be lower in the 1 or x-direction
+        # as there is more area with an actual load path in that direction (and the same overall x-load)
+        # whereas the stringers have no loadpath in the 2 or y-direction
+        # the out-of-plane modulus does not matter.
+        Ex = E / (1 - nu**2 * area_ratio)
+        Ey = E 
         nu_xy = nu
         nu_yx = nu / (1 + area_ratio2 * (1 - nu**2))
         Gxy = Ex * nu_yx / (1 - nu_xy * nu_yx)
