@@ -81,7 +81,9 @@ class TacsModel:
         for iproc in active_procs:
             if comm.rank == iproc:
                 caps_problem = pyCAPS.Problem(
-                    problemName=problem_name + str(iproc), capsFile=csm_file, outLevel=1
+                    problemName=problem_name + "_" + str(iproc),
+                    capsFile=csm_file,
+                    outLevel=1,
                 )
 
         tacs_aim = TacsAim(
@@ -403,8 +405,7 @@ class TacsModel:
                         number=i,
                     )
                     self.SPs[caseID].writeSensFile(
-                        evalFuncs=None,
-                        tacsAim=self.tacs_aim,
+                        evalFuncs=None, tacsAim=self.tacs_aim, root=0, proc=0
                     )
 
                 del self.SPs
@@ -469,6 +470,7 @@ class TacsModel:
                     self.SPs[caseID].writeSensFile(
                         evalFuncs=self.function_names,
                         tacsAim=self.tacs_aim,
+                        root=0,
                         proc=proc,
                     )
             else:  # only call evalFunctions and evalFunctionSens if not shape change else redundant
@@ -484,7 +486,9 @@ class TacsModel:
                     self._tacs_sens = None
 
                 # broadcast from root proc to other procs the sens
-                # since some derivatives are missing here
+                #    since some derivatives are missing here
+                # don't care about the Xpts sens which is distributed since
+                #    this is the case with no shape variables
                 self._tacs_funcs = self.comm.bcast(self._tacs_funcs, root=0)
                 self._tacs_sens = self.comm.bcast(self._tacs_sens, root=0)
 
@@ -539,9 +543,9 @@ class TacsModel:
 
                 for func in self.analysis_functions:
                     if self.comm.rank == c_root:
-                        c_deriv_dict[func.name] = self.tacs_aim.dynout[func.name].deriv(
-                            var.name
-                        )
+                        c_deriv_dict[func.name] = self.tacs_aim.aim.dynout[
+                            func.name
+                        ].deriv(var.name)
 
                 # broadcast c_deriv_dict to the other processors
                 c_deriv_dict = self.comm.bcast(c_deriv_dict, root=c_root)

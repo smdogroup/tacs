@@ -183,6 +183,7 @@ class TacsAim:
                 self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
 
                 # add the design variables to the DesignVariable and DesignVariableRelation properties
+                DV_dict = {}
                 if len(self.thickness_variables) > 0:
                     self.aim.input.Design_Variable_Relation = {
                         dv.name: dv.DVR_dictionary
@@ -191,19 +192,18 @@ class TacsAim:
                     }
 
                     # register all thickness variables to each proc
-                    self.aim.input.Design_Variable = {
-                        dv.name: dv.DV_dictionary
-                        for dv in self._design_variables
-                        if dv._active and isinstance(dv, ThicknessVariable)
-                    }
+                    for dv in self._design_variables:
+                        if dv._active and isinstance(dv, ThicknessVariable):
+                            DV_dict[dv.name] = dv.DV_dictionary
 
                 # distribute the shape variables that are active on each proc
                 if len(local_shape_vars) > 0:
-                    DV_dict = self.aim.input.Design_Variable
                     for dv in local_shape_vars:
                         if dv._active:
                             DV_dict[dv.name] = dv.DV_dictionary
-                    self.aim.input.Design_Variable = DV_dict
+
+                # update the DV dict
+                self.aim.input.Design_Variable = DV_dict
 
         if self._dict_options is not None:
             self._set_dict_options()
@@ -296,7 +296,7 @@ class TacsAim:
 
     def dat_file_path(self, proc: int = 0) -> str:
         return os.path.join(self.analysis_dir(proc), self.dat_file)
-    
+
     @property
     def root_dat_file(self):
         return self.dat_file_path(self.root_proc_ind)
