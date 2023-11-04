@@ -9,7 +9,7 @@ class ShapeVariable:
     shape variables in ESP/CAPS are design parameters that affect the structural geometry
     """
 
-    def __init__(self, name: str, value=None, active:bool=True):
+    def __init__(self, name: str, value=None, active: bool = True):
         """
         ESP/CAPS shape variable controls a design parameter in the CSM file
             name: corresponds to the design parameter in the CSM file
@@ -53,8 +53,8 @@ class ThicknessVariable:
         upper_bound: float = None,
         max_delta: float = None,
         material: Material = None,
-        ply_angle:float=None,
-        active:bool=True,
+        ply_angle: float = None,
+        active: bool = True,
     ):
         """
         ESP/CAPS Thickness variable sets the thickness over a portion of the geometry in the CSM file
@@ -149,7 +149,9 @@ class ThicknessVariable:
                 material=self._material,
                 membrane_thickness=self.value,
             )
-        elif isinstance(self._material, Orthotropic) and ("stringer" in self._material.name):
+        elif isinstance(self._material, Orthotropic) and (
+            "stringer" in self._material.name
+        ):
             # auto-making a stringer based CompositeProperty (for ease of use in large cases with metal + smeared stringer models)
             return CompositeProperty(
                 caps_group=self.caps_group,
@@ -158,9 +160,11 @@ class ThicknessVariable:
                 ply_angles=[self.ply_angle],
             )
         else:
-            raise AssertionError(f"Can't directly make a thickness variable {self.name} from a composite material."+\
-                                 "Don't provide a material => just give the caps_group for the thickness variable"+\
-                                 " and separately make the composite property (registering each to the tacs model or tacs aim).")
+            raise AssertionError(
+                f"Can't directly make a thickness variable {self.name} from a composite material."
+                + "Don't provide a material => just give the caps_group for the thickness variable"
+                + " and separately make the composite property (registering each to the tacs model or tacs aim)."
+            )
 
     def register_to(self, tacs_aim):
         """

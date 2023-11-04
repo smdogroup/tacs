@@ -191,7 +191,7 @@ class Isotropic(Material):
             rho=4.51e3,
             T1=2.4e7,
             C1=2.4e7,
-            S1=0.6 * 2.4e7, # estimated shear strength
+            S1=0.6 * 2.4e7,  # estimated shear strength
             alpha=8.41e-6,
             cp=522.3,
             kappa=11.4,
@@ -207,12 +207,12 @@ class Isotropic(Material):
             rho=4.43e3,
             T1=880e6,
             C1=970e6,
-            S1=0.6*880e6, #estimated shear strength
+            S1=0.6 * 880e6,  # estimated shear strength
             alpha=9.2e-6,
             cp=526.3,
             kappa=6.7,
         )
-    
+
     @classmethod
     def aluminum_alloy(cls):
         # Aluminum alloy Al-MS89
@@ -223,10 +223,10 @@ class Isotropic(Material):
             nu=0.3,
             T1=420e6,
             C1=420e6,
-            S1=0.6*420e6, # estimated
+            S1=0.6 * 420e6,  # estimated
             alpha=19.0e-6,
             kappa=115.0,
-            cp=903, # guessed the cp (not provided in data sheet)
+            cp=903,  # guessed the cp (not provided in data sheet)
         )
 
     @classmethod
@@ -238,7 +238,7 @@ class Isotropic(Material):
             rho=7.8e3,
             T1=1.0e9,
             C1=1.7e9,
-            S1=0.6*1.0e9,#estimated
+            S1=0.6 * 1.0e9,  # estimated
             alpha=11.5e-6,
             kappa=45,
             cp=420,
@@ -322,15 +322,15 @@ class Orthotropic(Material):
             kappa3=4.8,  # W/m-K
             cp=1130.0,  # J / kg-K
         )
-    
+
     @classmethod
-    def smeared_stringer(cls, isotropic:Isotropic, area_ratio:float):
+    def smeared_stringer(cls, isotropic: Isotropic, area_ratio: float):
         """
         By: Sean Engelstad
         Adapted from paper "Smeared Stiffeners in Panel for Mesh Simplification at
         Conceptual Design Phase" by Denis Walch1, Simon Tetreault2, and Franck Dervault3
 
-        Here area_ratio = Astiff / (Askin+Astiff) in the cross-section which is "assumed 
+        Here area_ratio = Astiff / (Askin+Astiff) in the cross-section which is "assumed
         to be in the range 0.25 to 0.66 for most aircraft structures"
         """
         # get the isotropic properties
@@ -346,16 +346,19 @@ class Orthotropic(Material):
         # get area_ratio2 = Astiff / Askin
         area_ratio2 = area_ratio / (1 - area_ratio)
         # new moduli (stiffened in spanwise direction)
-        # it makes more sense to me that the stress should be lower in the 1 or x-direction
-        # as there is more area with an actual load path in that direction (and the same overall x-load)
-        # whereas the stringers have no loadpath in the 2 or y-direction
-        # the out-of-plane modulus does not matter.
-        Ex = E / (1 - nu**2 * area_ratio)
-        Ey = E 
+        # added longitudinal boost to modulus in longitudinal direction not included in paper
+        # out-of-plane modulus E3 or Ez not modified
+        Ex = E / area_ratio
+        Ey = E / (1 - nu**2 * area_ratio)
         nu_xy = nu
         nu_yx = nu / (1 + area_ratio2 * (1 - nu**2))
         Gxy = Ex * nu_yx / (1 - nu_xy * nu_yx)
         S1 = isotropic._S1
+        print(f"rho = {rho}", flush=True)
+        print(
+            f"new rho = {rho*0.5*(1+area_ratio2)}, area_ratio2 = {area_ratio2}",
+            flush=True,
+        )
         return cls(
             name=f"smeared-stringer-{isotropic.name}",
             E1=Ex,
@@ -367,10 +370,10 @@ class Orthotropic(Material):
             T2=T1,
             C2=C1,
             S1=S1,
-            rho=rho*0.5*(1+area_ratio2), # get double mass from CompositeShellConstitutive so correction for that
-            alpha1 = alpha,
+            rho=rho * (1 + area_ratio2),
+            alpha1=alpha,
             alpha2=alpha,
-            kappa1= kappa,
+            kappa1=kappa,
             kappa2=kappa,
             kappa3=kappa,
             cp=cp,

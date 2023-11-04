@@ -27,7 +27,9 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
 
 use_stringers = False
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
-aluminum_w_stringer = caps2tacs.Orthotropic.smeared_stringer(aluminum, area_ratio=0.5).register_to(tacs_model)
+aluminum_w_stringer = caps2tacs.Orthotropic.smeared_stringer(
+    aluminum, area_ratio=0.5
+).register_to(tacs_model)
 if use_stringers:
     material = aluminum_w_stringer
 else:
