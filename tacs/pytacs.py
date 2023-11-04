@@ -856,7 +856,10 @@ class pyTACS(BaseUI):
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        return (np.real(res2.norm()) / resNorm) > self.getOption("linearityTol")
+        if resNorm == 0.0: # degenerate case
+            return False
+        else:
+            return (np.real(res2.norm()) / resNorm) > self.getOption("linearityTol")
 
     def _elemCallBackFromBDF(self):
         """
