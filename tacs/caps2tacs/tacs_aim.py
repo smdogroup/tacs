@@ -101,14 +101,14 @@ class TacsAim:
         for ishape, this_shape_var in enumerate(self.shape_variables):
             iproc = ishape % n_procs
             rank = self.active_procs[iproc]
-            if isinstance(this_shape_var, str):
-                if shape_var.name == this_shape_var:
+            if isinstance(shape_var, str):
+                if shape_var == this_shape_var.name:
                     return rank
-            elif isinstance(this_shape_var, ShapeVariable):
-                if shape_var == this_shape_var:
+            elif isinstance(shape_var, ShapeVariable):
+                if shape_var.name == this_shape_var.name:
                     return rank
-        # failed to find one, should trigger error elsewhere
-        return None
+        # if not found in for loop trigger error
+        raise AssertionError(f"failed to find shape var {shape_var} on rank {self.comm.rank}")
 
     @property
     def local_shape_vars(self) -> list:
