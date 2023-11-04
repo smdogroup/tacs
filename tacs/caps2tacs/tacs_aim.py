@@ -128,6 +128,7 @@ class TacsAim:
         self,
         large_format: bool = True,
         static: bool = True,
+        barrier:bool=True,
     ):
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
@@ -214,7 +215,8 @@ class TacsAim:
         self._setup = True
 
         # have other procs wait til this is done
-        self.comm.Barrier()
+        if barrier:
+            self.comm.Barrier()
         return self  # return object for method cascading
 
     @parallel
@@ -285,6 +287,14 @@ class TacsAim:
         # broadcast this analysis directory to other processors
         analysisDir = self.comm.bcast(analysisDir, root=proc)
         return analysisDir
+
+    @property
+    def root_proc_ind(self) -> int:
+        return self.active_procs[0]
+
+    @property
+    def root_proc(self) -> bool:
+        return self.comm.rank == self.root_proc_ind
 
     @property
     def root_analysis_dir(self) -> str:
