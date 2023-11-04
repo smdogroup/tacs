@@ -78,6 +78,8 @@ class TacsModel:
         assert 0 in active_procs
         caps_problem = None
         assert mesh in cls.MESH_AIMS
+        assert max(active_procs)+1 <= comm.Get_size()
+
         for iproc in active_procs:
             if comm.rank == iproc:
                 caps_problem = pyCAPS.Problem(

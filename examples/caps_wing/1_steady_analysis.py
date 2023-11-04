@@ -46,6 +46,9 @@ caps2tacs.ThicknessVariable(
     caps_group="OML", value=0.03, material=aluminum
 ).register_to(tacs_model)
 
+# SHAPE VAR FOR DEBUGGING, CAN REMOVE THIS
+caps2tacs.ShapeVariable("rib_a1", value=1.0).register_to(tacs_model)
+
 # add constraints and loads
 caps2tacs.PinConstraint("root").register_to(tacs_model)
 caps2tacs.GridForce("OML", direction=[0, 0, 1.0], magnitude=100).register_to(tacs_model)

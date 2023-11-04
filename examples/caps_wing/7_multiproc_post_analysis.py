@@ -9,26 +9,29 @@ To call mpi version use (e.g. with 4 procs):
 
 Timing data comparison for different # of procs to show speedup 
     of optimization iterations with shape derivative on multi-procs:
-    NOTE : I still run with 4 procs (so TACS analysis takes same amount of time)
-    but use different # of active procs in the TacsModel input.
+    but use different # of active procs in the TacsModel inputs
+The # of parallel tacsAIMs is controlled through the active_procs input to the TacsModel i.e. if len(active_procs) == 3
+    then there are 3 active tacsAIMs running in parallel. The post_analysis() scales by the # of shape variables due to finite
+    differencing, so by running parallel tacsAIMs and distributing the shape variable FD responsibility, we speed up the post_analysis.
 --------------------------------------------------------------------
-1 proc - 
-2 proc - 
-3 proc - 
-4 proc -
+post_analysis time (4 shape variables, 4 procs)
+1 tacsAIM  - 2.611 mins
+2 tacsAIMs - 
+3 tacsAIMs - 
+4 tacsAIMs - 0.591 mins
 """
 
 import time
 from tacs import caps2tacs
 from mpi4py import MPI
 
-start_time = time.time()
+start_time1 = time.time()
 
 # --------------------------------------------------------------#
 # Setup CAPS Problem
 # --------------------------------------------------------------#
 comm = MPI.COMM_WORLD
-tacs_model = caps2tacs.TacsModel.build(csm_file="large_naca_wing.csm", comm=comm, active_procs=[0])
+tacs_model = caps2tacs.TacsModel.build(csm_file="large_naca_wing.csm", comm=comm, active_procs=[0,1,2])
 tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
     edge_pt_min=15,
     edge_pt_max=20,
@@ -38,6 +41,7 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
 ).register_to(
     tacs_model
 )
+tacs_aim = tacs_model.tacs_aim
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 
@@ -84,25 +88,11 @@ tacs_model.setup(include_aim=True)
 print(f"design 1  on rank {comm.rank}", flush=True)
 tacs_model.pre_analysis()
 tacs_model.run_analysis()
+comm.Barrier()
+start_time = time.time()
 tacs_model.post_analysis()
-
-# update the shape variables in the design
-print(f"design 2 on rank {comm.rank}", flush=True)
-tacs_model.update_design(input_dict={"rib_a1" : 0.8, "rib_a2" : 0.2, "spar_a1" : 0.9, "spar_a2" : -0.2})
-
-# run analysis with the second design
-tacs_model.pre_analysis()
-tacs_model.run_analysis()
-tacs_model.post_analysis()
-
-# update the shape variables in the design
-print(f"design 3 on rank {comm.rank}", flush=True)
-tacs_model.update_design(input_dict={"rib_a1" : 1.2, "rib_a2" : -0.2, "spar_a1" : 1.0, "spar_a2" : 0.2})
-
-# run analysis with the third design
-tacs_model.pre_analysis()
-tacs_model.run_analysis()
-tacs_model.post_analysis()
+comm.Barrier()
+post_analysis_time = time.time() - start_time
 
 # print out the derivatives => make sure shape derivatives are nonzero
 comm.Barrier()
@@ -113,10 +103,11 @@ for func in tacs_model.analysis_functions:
     for var in tacs_model.variables:
         derivative = func.get_derivative(var)
         print(f"\td{func.name}/d{var.name} = {derivative}")
-    print("\n")
+    print("\n", flush=True)
 
 # print out timing results (compare serial to parallel instances of tacsAIM)
-mins_elapsed = (time.time() - start_time) / 60.0
+mins_elapsed = (time.time() - start_time1) / 60.0
 naims = len(tacs_model.active_procs)
 if comm.rank == 0:
     print(f"Elapsed time with {naims} procs is {mins_elapsed} mins using 4 shape vars.")
+    print(f"Also each post analysis took {post_analysis_time/60.0:.4f} min", flush=True)
