@@ -836,6 +836,7 @@ class pyTACS(BaseUI):
         self.assembler.assembleRes(res0)
 
         # Evaluate r(u) - r(0)
+        state.initRand()
         state.setRand()
         self.setBCsInVec(state)
         self.assembler.setVariables(state, state, state)
