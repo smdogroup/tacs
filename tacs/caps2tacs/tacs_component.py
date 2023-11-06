@@ -1,3 +1,6 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
 __all__ = ["TacsStaticComponent"]
 
 import os, numpy as np, matplotlib.pyplot as plt
@@ -58,7 +61,11 @@ class TacsStaticComponent(om.ExplicitComponent):
             # design history file
             if tacs_model.root_proc:
                 self._design_hdl = open(
-                    os.path.join(tacs_model.analysis_dir, "design_hist.txt"), "w"
+                    os.path.join(
+                        tacs_model.analysis_dir(tacs_model.root_proc_ind),
+                        "design_hist.txt",
+                    ),
+                    "w",
                 )
 
     def setup_partials(self):
@@ -145,7 +152,8 @@ class TacsStaticComponent(om.ExplicitComponent):
 
         if tacs_model.root_proc:
             self._plot_history(
-                directory=tacs_model.analysis_dir, filename="opt_history.png"
+                directory=tacs_model.analysis_dir(tacs_model.root_proc_ind),
+                filename="opt_history.png",
             )
 
     def _function_report(self):

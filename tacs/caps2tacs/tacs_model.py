@@ -1,3 +1,6 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
 __all__ = ["TacsModel"]
 
 import pyCAPS
@@ -17,7 +20,9 @@ from tacs.pytacs import pyTACS
 # optional funtofem dependency for shape variable animations
 # will still work without funtofem
 import importlib
+
 f2f_loader = importlib.util.find_spec("funtofem")
+
 
 class TacsModel:
     MESH_AIMS = ["egads", "aflr"]
@@ -55,6 +60,7 @@ class TacsModel:
         comm=None,
         mesh="egads",
         tacs_project="tacs",
+        active_procs: list = [0],
         problem_name: str = "capsStruct",
         mesh_morph: bool = False,
     ):
@@ -69,21 +75,36 @@ class TacsModel:
             MPI communicator
         """
 
+        assert 0 in active_procs
         caps_problem = None
         assert mesh in cls.MESH_AIMS
-        if comm is None or comm.rank == 0:
-            caps_problem = pyCAPS.Problem(
-                problemName=problem_name, capsFile=csm_file, outLevel=1
-            )
+        assert max(active_procs)+1 <= comm.Get_size()
+
+        for iproc in active_procs:
+            if comm.rank == iproc:
+                caps_problem = pyCAPS.Problem(
+                    problemName=problem_name + "_" + str(iproc),
+                    capsFile=csm_file,
+                    outLevel=1,
+                )
+
         tacs_aim = TacsAim(
-            caps_problem, comm, project_name=tacs_project, mesh_morph=mesh_morph
+            caps_problem,
+            comm,
+            project_name=tacs_project,
+            mesh_morph=mesh_morph,
+            active_procs=active_procs,
         )
         mesh_aim = None
         if mesh == "egads":
-            mesh_aim = EgadsAim(caps_problem, comm)
+            mesh_aim = EgadsAim(caps_problem, comm, active_procs=active_procs)
         elif mesh == "aflr":
-            mesh_aim = AflrAim(caps_problem, comm)
+            mesh_aim = AflrAim(caps_problem, comm, active_procs=active_procs)
         return cls(tacs_aim, mesh_aim, comm)
+
+    @property
+    def active_procs(self) -> list:
+        return self.tacs_aim.active_procs
 
     def get_config_parameter(self, param_name: str):
         return self.tacs_aim.get_config_parameter(param_name=param_name)
@@ -161,9 +182,8 @@ class TacsModel:
         """
         return [func.name for func in self.analysis_functions]
 
-    @property
-    def analysis_dir(self) -> str:
-        return self.tacs_aim.analysis_dir
+    def analysis_dir(self, proc: int = 0) -> str:
+        return self.tacs_aim.analysis_dir(proc)
 
     @property
     def mesh_morph(self) -> bool:
@@ -197,8 +217,12 @@ class TacsModel:
         return self.tacs_aim.thickness_variables
 
     @property
+    def root_proc_ind(self) -> int:
+        return self.active_procs[0]
+
+    @property
     def root_proc(self) -> bool:
-        return self.comm is None or self.comm.rank == 0
+        return self.comm.rank == self.root_proc_ind
 
     def update_design(self, input_dict: dict = None):
         """
@@ -217,17 +241,22 @@ class TacsModel:
                     shape_var.value = float(input_dict[shape_var.name])
 
                 # update the CAD geometry on root proc / serial since ESP/CAPS doesn't handle MPI directly
-                if self.root_proc:
-                    if self.geometry.despmtr[shape_var.name].value != shape_var.value:
-                        changed_design = True
-                        if shape_var.value is not None:
-                            self.geometry.despmtr[
-                                shape_var.name
-                            ].value = shape_var.value
-                        else:
-                            shape_var.value = self.geometry.despmtr[
-                                shape_var.name
-                            ].value
+                for proc in self.active_procs:
+                    # apply geometry changes to all procs even if that shape variable is differentiated on that processor
+                    if self.comm.rank == proc:
+                        if (
+                            self.geometry.despmtr[shape_var.name].value
+                            != shape_var.value
+                        ):
+                            changed_design = True
+                            if shape_var.value is not None:
+                                self.geometry.despmtr[
+                                    shape_var.name
+                                ].value = shape_var.value
+                            else:
+                                shape_var.value = self.geometry.despmtr[
+                                    shape_var.name
+                                ].value
 
         # change all thickness variables in TacsAim
         for thick_var in self.thickness_variables:
@@ -250,9 +279,9 @@ class TacsModel:
     @property
     def fea_solver(self) -> pyTACS:
         """
-        build pyTACS from nastran dat file and comm
+        build pyTACS from nastran dat file on the root proc
         """
-        return pyTACS(self.tacs_aim.dat_file_path, self.comm)
+        return pyTACS(self.tacs_aim.dat_file_path(self.root_proc_ind), self.comm)
 
     def createTACSProbs(self, addFunctions: bool = True):
         """
@@ -277,7 +306,7 @@ class TacsModel:
                     )
         return self.SPs
 
-    def _convert_shape_vars_dict(self, shape_vars_dict:dict):
+    def _convert_shape_vars_dict(self, shape_vars_dict: dict):
         """convert the shape variable dict keys from str or funtofem variables to Tacs Shape Variables if necessary"""
         # convert shape variable dict to caps2tacs ShapeVariable keys if necessary
         shape_vars_dict2 = {}
@@ -290,8 +319,8 @@ class TacsModel:
                 for var in self.tacs_aim.shape_variables:
                     if var.name == key:
                         shape_vars_dict2[var] = shape_vars_dict[key]
-                        break # go to next key
-        elif f2f_loader is not None: # optional funtofem dependency
+                        break  # go to next key
+        elif f2f_loader is not None:  # optional funtofem dependency
             # import has to go here to prevent circular import
             from funtofem import Variable
 
@@ -300,16 +329,19 @@ class TacsModel:
                 for f2f_var in shape_vars_dict:
                     for tacs_var in self.tacs_aim.shape_variables:
                         if f2f_var.name == tacs_var.name:
-                            
                             # copy the value list to the new dictionary
                             shape_vars_dict2[tacs_var] = shape_vars_dict[f2f_var]
-                            break # go to next variable
+                            break  # go to next variable
 
             else:
-                raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
+                raise AssertionError(
+                    f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries."
+                )
         else:
-            raise AssertionError(f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries.")
-    
+            raise AssertionError(
+                f"The datatype {type(first_key)} is not allowed in caps2tacs shape variable dictionaries."
+            )
+
         return shape_vars_dict2
 
     def animate_shape_vars(self, shape_vars_dict: dict):
@@ -357,7 +389,10 @@ class TacsModel:
 
             for i, value in enumerate(value_list):
                 shape_var.value = value
-                self.geometry.despmtr[shape_var.name].value = value
+                # update geometry on all active procs
+                for proc in self.active_procs:
+                    if self.comm.rank == proc:
+                        self.geometry.despmtr[shape_var.name].value = value
 
                 self.tacs_aim.pre_analysis()
                 self.SPs = self.createTACSProbs(addFunctions=True)
@@ -368,19 +403,21 @@ class TacsModel:
 
                     self.SPs[caseID].writeSolution(
                         baseName=shape_var.name,
-                        outputDir=self.tacs_aim.analysis_dir,
+                        outputDir=self.tacs_aim.analysis_dir(self.root_proc_ind),
                         number=i,
                     )
                     self.SPs[caseID].writeSensFile(
-                        evalFuncs=None, tacsAim=self.tacs_aim,
+                        evalFuncs=None, tacsAim=self.tacs_aim, root=0, proc=0
                     )
 
                 del self.SPs
                 self.tacs_aim.post_analysis()
 
             # return to the original value
+            for proc in self.active_procs:
+                if self.comm.rank == proc:
+                    self.geometry.despmtr[shape_var.name].value = orig_value
             shape_var.value = orig_value
-            self.geometry.despmtr[shape_var.name].value = orig_value
 
             # make the shape variable inactive again
             shape_var._active = False
@@ -389,7 +426,7 @@ class TacsModel:
         )
         print("Use the GifWriter script in examples/caps_wing/archive to ")
 
-    def pre_analysis(self):
+    def pre_analysis(self, mpi_barrier: bool = True):
         """
         call tacs aim pre_analysis to build TACS input files and mesh
         only regenerate the mesh each time if there are shape variables
@@ -397,7 +434,14 @@ class TacsModel:
         if self.tacs_aim.change_shape:
             self.tacs_aim.pre_analysis()
 
-    def run_analysis(self, write_f5: bool = True, iteration: float = 0):
+        # other procs wait on the active procs to finish
+        if mpi_barrier:
+            self.comm.Barrier()
+        return self
+
+    def run_analysis(
+        self, write_f5: bool = True, iteration: float = 0, mpi_barrier: bool = True
+    ):
         """
         run the static problem analysis
         """
@@ -413,19 +457,24 @@ class TacsModel:
         for caseID in self.SPs:
             # write in the new thickness variables for sizing only case
             if not self.tacs_aim.change_shape:
-                xarray = self.SPs[caseID].x.getArray()
-                for ithick, thick_var in enumerate(self.thickness_variables):
-                    xarray[ithick] = float(thick_var.value)
+                if self.comm.rank == 0:  # only change TACS design vars on root proc
+                    xarray = self.SPs[caseID].x.getArray()
+                    for ithick, thick_var in enumerate(self.thickness_variables):
+                        xarray[ithick] = float(thick_var.value)
 
             self.SPs[caseID].solve()
 
             if (
                 self.tacs_aim.change_shape
             ):  # if the shape changes write a sensitivity file to the tacsAim directory
-                self.SPs[caseID].writeSensFile(
-                    evalFuncs=self.function_names,
-                    tacsAim=self.tacs_aim,
-                )
+                for proc in self.active_procs:
+                    # write a sens file to each of the capsStruct directories
+                    self.SPs[caseID].writeSensFile(
+                        evalFuncs=self.function_names,
+                        tacsAim=self.tacs_aim,
+                        root=0,
+                        proc=proc,
+                    )
             else:  # only call evalFunctions and evalFunctionSens if not shape change else redundant
                 self.SPs[caseID].evalFunctions(
                     self._tacs_funcs, evalFuncs=self.function_names
@@ -434,45 +483,78 @@ class TacsModel:
                     self._tacs_sens, evalFuncs=self.function_names
                 )
 
+                if self.comm.rank != 0:
+                    self._tacs_funcs = None
+                    self._tacs_sens = None
+
+                # broadcast from root proc to other procs the sens
+                #    since some derivatives are missing here
+                # don't care about the Xpts sens which is distributed since
+                #    this is the case with no shape variables
+                self._tacs_funcs = self.comm.bcast(self._tacs_funcs, root=0)
+                self._tacs_sens = self.comm.bcast(self._tacs_sens, root=0)
+
             if write_f5:
                 self.SPs[caseID].writeSolution(
                     baseName="tacs_output",
-                    outputDir=self.tacs_aim.analysis_dir,
+                    outputDir=self.tacs_aim.analysis_dir(self.root_proc_ind),
                     number=iteration,
                 )
+
+        # other procs wait on the active procs to finish
+        if mpi_barrier:
+            self.comm.Barrier()
 
         # return this object for method cascading
         return self
 
-    def post_analysis(self):
+    def post_analysis(self, mpi_barrier=True):
         """
         call tacs aim wrapper postAnalysis and update analysis functions and gradients
         """
 
         if self.tacs_aim.change_shape:
-            # call serial tacsAim postAnalysis if shape changes
-            functions_dict = None
-            gradients_dict = None
+            self.tacs_aim.post_analysis()
 
-            if self.root_proc:
-                self.tacs_aim.post_analysis()
-                functions_dict = {}
-                gradients_dict = {}
-                # update functions and gradients on root proc from tacsAim dynout of ESP/CAPS serial
+            functions_dict = {}
+            gradients_dict = {}
+            # get shape variable derivatives from each processor
+            for func in self.analysis_functions:
+                func_value = None
+                if self.comm.rank == self.root_proc_ind:
+                    func_value = self.tacs_aim.aim.dynout[func.name].value
+
+                # broadcast and save function value on other procs
+                func_value = self.comm.bcast(func_value, root=self.root_proc_ind)
+                functions_dict[func.name] = func_value
+                gradients_dict[func.name] = {}
+
+            for var in self.variables:
+                # get derivative from one of the processors that has it and broadcast
+                c_deriv_dict = (
+                    {}
+                )  # key is func name, holds derivatives for current variable
+                if isinstance(var, ThicknessVariable):
+                    c_root = self.root_proc_ind
+                elif isinstance(var, ShapeVariable):
+                    c_root = self.tacs_aim.get_proc_with_shape_var(var)
+                else:
+                    raise AssertionError(
+                        f"caps2tacs - var {type(var)} is not a thickness or shape variable.."
+                    )
+
                 for func in self.analysis_functions:
-                    functions_dict[func.name] = self.tacs_aim.aim.dynout[
-                        func.name
-                    ].value
-                    gradients_dict[func.name] = {}
-                    for var in self.variables:
-                        gradients_dict[func.name][var.name] = self.tacs_aim.aim.dynout[
+                    if self.comm.rank == c_root:
+                        c_deriv_dict[func.name] = self.tacs_aim.aim.dynout[
                             func.name
                         ].deriv(var.name)
 
-            # broadcast functions and gradients dict to all other processors from root proc
-            if self.comm is not None:
-                functions_dict = self.comm.bcast(functions_dict, root=0)
-                gradients_dict = self.comm.bcast(gradients_dict, root=0)
+                # broadcast c_deriv_dict to the other processors
+                c_deriv_dict = self.comm.bcast(c_deriv_dict, root=c_root)
+
+                # update the gradients dict
+                for func in self.analysis_functions:
+                    gradients_dict[func.name][var.name] = c_deriv_dict[func.name]
 
             # update functions and gradients into the tacsAim analysis_functions
             for func in self.analysis_functions:
@@ -497,5 +579,9 @@ class TacsModel:
 
         if self.mesh_morph:
             self.tacs_aim.unlink()
+
+        # other procs wait on the active procs to finish
+        if mpi_barrier:
+            self.comm.Barrier()
 
         return self
