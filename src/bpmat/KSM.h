@@ -108,6 +108,7 @@ class TACSVec : public TACSObject {
   // Additional useful member functions
   // ----------------------------------
   virtual void setRand(double lower = -1.0, double upper = 1.0) {}
+  virtual void initRand() {}
   virtual void applyBCs(TACSBcMap *map, TACSVec *vec = NULL) {}
   virtual void setBCs(TACSBcMap *map) {}
 };
