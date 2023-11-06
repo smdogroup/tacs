@@ -893,7 +893,10 @@
         <span class="c1"># Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)</span>
         <span class="n">resNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res1</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
         <span class="n">res2</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">res1</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">/</span> <span class="n">resNorm</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;linearityTol&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resNorm</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">/</span> <span class="n">resNorm</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;linearityTol&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span> <span class="c1"># not nonlinear case</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span> <span class="c1"># nonlinear case</span>
 
     <span class="k">def</span> <span class="nf">_elemCallBackFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

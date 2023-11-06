@@ -782,7 +782,7 @@ optimization</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.BucklingProblem.writeSensFile">
-<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.writeSensFile" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.BucklingProblem.writeSensFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>write an ESP/CAPS .sens file from the tacs aim
 Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</p>
 <dl class="field-list simple">
@@ -790,6 +790,8 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em>]</em>) -- names of TACS functions to be evaluated</p></li>
 <li><p><strong>tacsAim</strong> (<em>tacs.caps2tacs.TacsAIM</em>) -- class which handles the sensitivity file writing for ESP/CAPS shape derivatives</p></li>
+<li><p><strong>proc</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- which processor (in case of parallel tacsAIM instances) to write the sens file to</p></li>
+<li><p><strong>root</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- which processor we get the data from (usually proc 0)</p></li>
 </ul>
 </dd>
 </dl>
