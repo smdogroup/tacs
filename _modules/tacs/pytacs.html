@@ -873,6 +873,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleRes</span><span class="p">(</span><span class="n">res0</span><span class="p">)</span>
 
         <span class="c1"># Evaluate r(u) - r(0)</span>
+        <span class="n">state</span><span class="o">.</span><span class="n">initRand</span><span class="p">()</span>
         <span class="n">state</span><span class="o">.</span><span class="n">setRand</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setBCsInVec</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
