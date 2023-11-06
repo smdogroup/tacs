@@ -9,11 +9,12 @@ You'll need to use f5tovtk to convert to *.vtk files and open up each group of s
 using the .. shortcut which opens up a group of files at once. For each of these groups of vtk files,
 click file -> save animation and save all the png files in a subfolder. Then, either use the GifWriter in the
 caps2tacs module or copy the GifWriter script into that directory and use it to make a gif. Repeat for each shape variable.
+
+NOTE : this is meant to be done on one processor, but could be parallelized better in the future.
 """
 
 from tacs import caps2tacs
 from mpi4py import MPI
-import openmdao.api as om
 
 # --------------------------------------------------------------#
 # Setup CAPS Problem

@@ -1,8 +1,12 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
+
 __all__ = ["TacsAim"]
 
 from typing import TYPE_CHECKING, List
 import os, numpy as np
-from .proc_decorator import root_proc, root_broadcast
+from .proc_decorator import root_broadcast, parallel
 from .materials import Material
 from .constraints import Constraint
 from .property import ShellProperty, Property
@@ -17,12 +21,21 @@ class TacsAim:
     Wrapper class for TacsAim with default build setting in different scenarios
     applies default settings and spits it back out at the end
     only supports shell properties at the moment
+
+    Supports parallel instances of the tacsAIM for building structure meshes in ESP/CAPS
+    and getting shape derivatives of the parametric geometry.
     """
 
     def __init__(
-        self, caps_problem, comm=None, project_name="tacs", mesh_morph: bool = False
+        self,
+        caps_problem,
+        comm=None,
+        project_name="tacs",
+        mesh_morph: bool = False,
+        active_procs: list = [0],
     ):
         self.comm = comm
+        self.active_procs = active_procs
 
         # geometry and design parameters to change the design of the CSM file during an optimization
         self._aim = None
@@ -45,13 +58,7 @@ class TacsAim:
         self._first_setup = True
         self._mesh_morph = mesh_morph
 
-        # broadcast TacsAimMetadata from root proc to other processors
-        self._analysis_dir = None
-        if self.comm.rank == 0:
-            self._analysis_dir = self.aim.analysisDir
-        self._analysis_dir = self.comm.bcast(self._analysis_dir, root=0)
-
-    @root_proc
+    @parallel
     def _build_aim(self, caps_problem):
         """
         build the TacsAim pyCAPS object inside our wrapper class on root proc
@@ -86,10 +93,44 @@ class TacsAim:
                 "Object could not be registered to TacsAim as it is not an appropriate type."
             )
 
+    def get_proc_with_shape_var(self, shape_var: ShapeVariable or str):
+        """get the proc index that has a certain shape variable"""
+        n_procs = len(self.active_procs)
+        assert n_procs > 0
+        assert len(self.shape_variables) > 0
+        for ishape, this_shape_var in enumerate(self.shape_variables):
+            iproc = ishape % n_procs
+            rank = self.active_procs[iproc]
+            if isinstance(shape_var, str):
+                if shape_var == this_shape_var.name:
+                    return rank
+            elif isinstance(shape_var, ShapeVariable):
+                if shape_var.name == this_shape_var.name:
+                    return rank
+        # if not found in for loop trigger error
+        raise AssertionError(f"failed to find shape var {shape_var} on rank {self.comm.rank}")
+
+    @property
+    def local_shape_vars(self) -> list:
+        """
+        local shape variables assigned to each processor
+        goal is to distribute them as evenly as possible among each of the active procs
+        so that the tacsAIM postAnalysis() is less expensive (in terms of runtime)
+        """
+        local_shape_vars = []
+        n_procs = len(self.active_procs)
+        for ishape, shape_var in enumerate(self.shape_variables):
+            iproc = ishape % n_procs
+            rank = self.active_procs[iproc]
+            if self.comm.rank == rank:
+                local_shape_vars += [shape_var]
+        return local_shape_vars
+
     def setup_aim(
         self,
         large_format: bool = True,
         static: bool = True,
+        barrier:bool=True,
     ):
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
@@ -97,73 +138,90 @@ class TacsAim:
         assert len(self._constraints) > 0
         assert self._mesh_aim is not None
 
-        # this part runs on serial
-        if self.comm is None or self.comm.rank == 0:
-            # write in the original shape variable values into the pyCAPS geometry
-            for shape_var in self.shape_variables:
-                if shape_var.value is not None:
-                    self.geometry.despmtr[shape_var.name].value = shape_var.value
+        local_shape_vars = self.local_shape_vars
 
-            # increase the precision in the BDF file
-            self.aim.input.File_Format = "Large" if large_format else "Small"
-            self.aim.input.Mesh_File_Format = "Large" if large_format else "Small"
+        for proc in self.active_procs:
+            if self.comm.rank == proc:
+                # write in the original shape variable values into the pyCAPS geometry
+                for shape_var in self.shape_variables:
+                    if shape_var.value is not None:
+                        self.geometry.despmtr[shape_var.name].value = shape_var.value
 
-            # set the analysis type
-            if static:
-                self.aim.input.Analysis_Type = "Static"
-            else:
-                raise AssertionError(
-                    "Analysis types other than static analyses for tacsAim are not supported yet."
-                )
+                # increase the precision in the BDF file
+                self.aim.input.File_Format = "Large" if large_format else "Small"
+                self.aim.input.Mesh_File_Format = "Large" if large_format else "Small"
 
-            self.aim.input.Proj_Name = self._project_name
+                # set the analysis type
+                if static:
+                    self.aim.input.Analysis_Type = "Static"
+                else:
+                    raise AssertionError(
+                        "Analysis types other than static analyses for tacsAim are not supported yet."
+                    )
 
-            # add materials to tacsAim
-            self.aim.input.Material = {
-                material.name: material.dictionary for material in self._materials
-            }
+                self.aim.input.Proj_Name = self._project_name
 
-            # add properties to tacsAim
-            self.aim.input.Property = {
-                prop.caps_group: prop.dictionary for prop in self._properties
-            }
-
-            # add constraints to tacsAim
-            self.aim.input.Constraint = {
-                con.name: con.dictionary for con in self._constraints
-            }
-
-            # add loads to tacsAim
-            if len(self._loads) > 0:
-                self.aim.input.Load = {
-                    load.name: load.dictionary for load in self._loads
+                # add materials to tacsAim
+                self.aim.input.Material = {
+                    material.name: material.dictionary for material in self._materials
                 }
 
-            # link the egads aim to the tacs aim
-            self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
-
-            # add the design variables to the DesignVariable and DesignVariableRelation properties
-            if len(self.thickness_variables) > 0:
-                self.aim.input.Design_Variable_Relation = {
-                    dv.name: dv.DVR_dictionary
-                    for dv in self._design_variables
-                    if isinstance(dv, ThicknessVariable)
-                }
-            if len(self.variables) > 0:
-                self.aim.input.Design_Variable = {
-                    dv.name: dv.DV_dictionary for dv in self._design_variables if dv._active
+                # add properties to tacsAim
+                self.aim.input.Property = {
+                    prop.caps_group: prop.dictionary for prop in self._properties
                 }
 
-            if self._dict_options is not None:
-                self._set_dict_options()
+                # add constraints to tacsAim
+                self.aim.input.Constraint = {
+                    con.name: con.dictionary for con in self._constraints
+                }
+
+                # add loads to tacsAim
+                if len(self._loads) > 0:
+                    self.aim.input.Load = {
+                        load.name: load.dictionary for load in self._loads
+                    }
+
+                # link the egads aim to the tacs aim
+                self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
+
+                # add the design variables to the DesignVariable and DesignVariableRelation properties
+                DV_dict = {}
+                if len(self.thickness_variables) > 0:
+                    self.aim.input.Design_Variable_Relation = {
+                        dv.name: dv.DVR_dictionary
+                        for dv in self._design_variables
+                        if isinstance(dv, ThicknessVariable)
+                    }
+
+                    # register all thickness variables to each proc
+                    for dv in self._design_variables:
+                        if dv._active and isinstance(dv, ThicknessVariable):
+                            DV_dict[dv.name] = dv.DV_dictionary
+
+                # distribute the shape variables that are active on each proc
+                if len(local_shape_vars) > 0:
+                    for dv in local_shape_vars:
+                        if dv._active:
+                            DV_dict[dv.name] = dv.DV_dictionary
+
+                # update the DV dict
+                self.aim.input.Design_Variable = DV_dict
+
+        if self._dict_options is not None:
+            self._set_dict_options()
 
         # end of serial or root proc section
 
         # note that setup is finished now
         self._setup = True
+
+        # have other procs wait til this is done
+        if barrier:
+            self.comm.Barrier()
         return self  # return object for method cascading
 
-    @root_proc
+    @parallel
     def set_config_parameter(self, param_name: str, value: float):
         self.geometry.cfgpmtr[param_name].value = value
         return
@@ -224,25 +282,47 @@ class TacsAim:
                     break
         return sorted_dvs
 
+    def analysis_dir(self, proc: int = 0) -> str:
+        analysisDir = None
+        if self.comm.rank == proc:
+            analysisDir = self.aim.analysisDir
+        # broadcast this analysis directory to other processors
+        analysisDir = self.comm.bcast(analysisDir, root=proc)
+        return analysisDir
+
     @property
-    def analysis_dir(self) -> str:
-        return self._analysis_dir
+    def root_proc_ind(self) -> int:
+        return self.active_procs[0]
+
+    @property
+    def root_proc(self) -> bool:
+        return self.comm.rank == self.root_proc_ind
+
+    @property
+    def root_analysis_dir(self) -> str:
+        return self.analysis_dir(self.root_proc_ind)
 
     @property
     def dat_file(self) -> str:
         return self.project_name + ".dat"
 
+    def dat_file_path(self, proc: int = 0) -> str:
+        return os.path.join(self.analysis_dir(proc), self.dat_file)
+
     @property
-    def dat_file_path(self) -> str:
-        return os.path.join(self.analysis_dir, self.dat_file)
+    def root_dat_file(self):
+        return self.dat_file_path(self.root_proc_ind)
 
     @property
     def sens_file(self) -> str:
         return self.project_name + ".sens"
 
+    def sens_file_path(self, proc: int = 0) -> str:
+        return os.path.join(self.analysis_dir(proc), self.sens_file)
+
     @property
-    def sens_file_path(self) -> str:
-        return os.path.join(self.analysis_dir, self.sens_file)
+    def root_sens_file(self):
+        return self.sens_file_path(self.root_proc_ind)
 
     @property
     def is_setup(self) -> bool:
@@ -262,6 +342,7 @@ class TacsAim:
         """
         return len(self.shape_variables) > 0
 
+    @parallel
     def update_properties(self):
         """
         update thickness properties and design variables in ESP/CAPS inputs
@@ -281,16 +362,15 @@ class TacsAim:
                         property.membrane_thickness == dv.value
                         break
 
-        if self.comm is None or self.comm.rank == 0:
-            # input new design var and property cards
-            self.aim.input.Design_Variable = {
-                dv.name: dv.DV_dictionary for dv in self._design_variables
-            }
-            self.aim.input.Property = {
-                prop.caps_group: prop.dictionary for prop in self._properties
-            }
+        # input new design var and property cards
+        self.aim.input.Design_Variable = {
+            dv.name: dv.DV_dictionary for dv in self._design_variables
+        }
+        self.aim.input.Property = {
+            prop.caps_group: prop.dictionary for prop in self._properties
+        }
 
-        return
+        return self
 
     def save_dict_options(self, aimOptions: dict = None):
         """
@@ -305,30 +385,26 @@ class TacsAim:
 
         return self
 
-    @root_proc
+    @parallel
     def _set_dict_options(self):
         """
         Set any options that were specified through dictionaries.
         """
         aimOptions = self._dict_options
-
-        for ind, option in enumerate(aimOptions["tacsAim"]):
+        for option in aimOptions["tacsAim"]:
             self.aim.input[option].value = aimOptions["tacsAim"][option]
-
         return self
 
-    @root_proc
+    @parallel
     def pre_analysis(self):
         """
         provide access to the tacs aim preAnalysis for generating TACS input files and mesh
         """
         assert self._setup
         self.aim.preAnalysis()
-
-        # return this object for method cascading
         return self
 
-    @root_proc
+    @parallel
     def post_analysis(self):
         """
         provide access to the tacs aim postAnalysis for collecting analysis outputs - functions and derivatives
@@ -336,6 +412,7 @@ class TacsAim:
         self.aim.postAnalysis()
         return self
 
+    @parallel
     def unlink(self):
-        if self.comm.rank == 0:
-            self.aim.input["Mesh"].unlink()
+        self.aim.input["Mesh"].unlink()
+        return self

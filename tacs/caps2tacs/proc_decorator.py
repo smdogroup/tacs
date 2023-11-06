@@ -1,6 +1,22 @@
-__all__ = ["root_proc"]
+__all__ = ["root_proc", "parallel", "root_broadcast"]
 
 from functools import wraps
+
+
+# do something on all active procs
+def parallel(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.comm.rank in self.active_procs:
+            return method(self, *args, **kwargs)
+        else:
+
+            def empty_function(self):
+                return self  # for potential method cascading
+
+            return empty_function
+
+    return wrapped_method
 
 
 # Define a root proc decorator so that certain ESP/CAPS method like pre and post analysis
@@ -8,7 +24,7 @@ from functools import wraps
 def root_proc(method):
     @wraps(method)
     def wrapped_method(self, *args, **kwargs):
-        if self.comm is None or self.comm.rank == 0:
+        if self.comm.rank == self.active_procs[0]:
             return method(self, *args, **kwargs)
         else:
 
@@ -28,9 +44,10 @@ def root_broadcast(method):
             return method(self, *args, **kwargs)
         else:
             output = None
-            if self.comm.rank == 0:
+            root = self.active_procs[0]
+            if self.comm.rank == root:
                 output = method(self, *args, **kwargs)
-            output = self.comm.bcast(output, root=0)
+            output = self.comm.bcast(output, root=root)
             return output
 
     return wrapped_method

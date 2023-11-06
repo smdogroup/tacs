@@ -36,9 +36,9 @@ Kennedy, G. J., "Strategies for adaptive optimization with aggregation constrain
 The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
 available for MacOS and Linux platforms. To get started, run the following in a conda terminal:
 
-    conda create -n TACS python=3.8
+    conda create -n TACS -c conda-forge python=3.8 mamba
     conda activate TACS
-    conda install -c conda-forge -c smdogroup tacs
+    mamba install -c conda-forge -c smdogroup tacs
     
 This will create an environment named "TACS" and install the `tacs` package and all
 necessary dependencies. Once installed, the user will have access to all TACS C++ and python libraries. 
