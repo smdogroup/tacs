@@ -296,6 +296,11 @@ cdef class Element:
         TACSElement.setFiniteDifferenceOrder(order)
         return
 
+    @classmethod
+    def setFiniteDifferenceStepSize(cls, double dh):
+        TACSElement.setFiniteDifferenceStepSize(dh)
+        return
+
     def getNumNodes(self):
         if self.ptr != NULL:
             return self.ptr.getNumNodes()
