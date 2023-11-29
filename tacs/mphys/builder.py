@@ -26,6 +26,7 @@ class TacsBuilder(Builder):
         coupled=True,
         write_solution=True,
         separate_mass_dvs=False,
+        res_ref=None,
     ):
         """
         Create the Builder responsible for creating MPhys Scenario's based on TACS Analyses.
@@ -109,6 +110,9 @@ class TacsBuilder(Builder):
         separate_mass_dvs : bool, optional
             Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
             split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.
+        res_ref : float, optional
+            Reference residual norm to be used by OpenMDAO's residual scaling. Can be useful for ensuring residuals
+            from different coupled disciplines are of a similar order of magnitude. Defaults to None.
 
         Examples
         --------
@@ -229,6 +233,7 @@ class TacsBuilder(Builder):
         self.coupled = coupled
         self.write_solution = write_solution
         self.separate_mass_dvs = separate_mass_dvs
+        self.res_ref = res_ref
 
     def initialize(self, comm):
         """
@@ -275,6 +280,7 @@ class TacsBuilder(Builder):
             coupled=self.coupled,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
+            res_ref=self.res_ref,
         )
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
