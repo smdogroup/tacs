@@ -130,3 +130,6 @@ class TacsPostcouplingGroup(om.Group):
                 con_group.add_subsystem(
                     constraint.name, con_comp, promotes_inputs=promotes_inputs
                 )
+
+    def writeSolution(self):
+        self.eval_funcs.writeSolution()
