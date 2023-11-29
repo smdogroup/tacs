@@ -63,6 +63,7 @@
         <span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">write_solution</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">separate_mass_dvs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">res_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create the Builder responsible for creating MPhys Scenario&#39;s based on TACS Analyses.</span>
@@ -146,6 +147,9 @@
 <span class="sd">        separate_mass_dvs : bool, optional</span>
 <span class="sd">            Flag to determine if TACS&#39; mass dvs should be lumped into the struct_dv input vector (False) or</span>
 <span class="sd">            split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.</span>
+<span class="sd">        res_ref : float, optional</span>
+<span class="sd">            Reference residual norm to be used by OpenMDAO&#39;s residual scaling. Can be useful for ensuring residuals</span>
+<span class="sd">            from different coupled disciplines are of a similar order of magnitude. Defaults to None.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -266,6 +270,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">coupled</span> <span class="o">=</span> <span class="n">coupled</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span> <span class="o">=</span> <span class="n">write_solution</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">separate_mass_dvs</span> <span class="o">=</span> <span class="n">separate_mass_dvs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res_ref</span> <span class="o">=</span> <span class="n">res_ref</span>
 
 <div class="viewcode-block" id="TacsBuilder.initialize"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -312,6 +317,7 @@
             <span class="n">coupled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled</span><span class="p">,</span>
             <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
             <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
+            <span class="n">res_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">res_ref</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 <div class="viewcode-block" id="TacsBuilder.get_mesh_coordinate_subsystem"><a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem">[docs]</a>    <span class="k">def</span> <span class="nf">get_mesh_coordinate_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>

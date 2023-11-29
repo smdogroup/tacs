@@ -124,6 +124,8 @@ Defaults to False.</p></li>
 <li><p><strong>write_solution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.</p></li>
 <li><p><strong>separate_mass_dvs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
 split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.</p></li>
+<li><p><strong>res_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a><em>, </em><em>optional</em>) -- Reference residual norm to be used by OpenMDAO's residual scaling. Can be useful for ensuring residuals
+from different coupled disciplines are of a similar order of magnitude. Defaults to None.</p></li>
 </ul>
 </dd>
 </dl>
