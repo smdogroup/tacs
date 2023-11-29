@@ -84,6 +84,11 @@ class TacsFunctions(om.ExplicitComponent):
         self.sp.setNodes(inputs["x_struct0"])
         self.sp.setVariables(inputs[self.states_name])
 
+    def writeSolution(self):
+        # write the solution files.
+        self.sp.writeSolution(number=self.solution_counter)
+        self.solution_counter += 1
+
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -96,9 +101,7 @@ class TacsFunctions(om.ExplicitComponent):
             outputs[func_name] = funcs[key]
 
         if self.write_solution:
-            # write the solution files.
-            self.sp.writeSolution(number=self.solution_counter)
-            self.solution_counter += 1
+            self.write_solution()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
