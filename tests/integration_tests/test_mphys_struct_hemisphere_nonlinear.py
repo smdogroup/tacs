@@ -60,7 +60,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.rtol = 1e-7
             self.dh = 1e-200
         else:
-            self.rtol = 1e-2
+            self.rtol = 1e-4
             self.dh = 1e-8
 
         def problem_setup(scenario_name, fea_assembler, problem):
