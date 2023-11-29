@@ -101,7 +101,7 @@ class TacsFunctions(om.ExplicitComponent):
             outputs[func_name] = funcs[key]
 
         if self.write_solution:
-            self.write_solution()
+            self.writeSolution()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
