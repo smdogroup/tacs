@@ -20,7 +20,9 @@ comm = MPI.COMM_WORLD
 
 print(f"proc on rank {comm.rank}")
 
-tacs_model = caps2tacs.TacsModel.build(csm_file="simple_naca_wing.csm", comm=comm, active_procs=[0])
+tacs_model = caps2tacs.TacsModel.build(
+    csm_file="simple_naca_wing.csm", comm=comm, active_procs=[0]
+)
 tacs_model.mesh_aim.set_mesh(
     edge_pt_min=15,
     edge_pt_max=20,
