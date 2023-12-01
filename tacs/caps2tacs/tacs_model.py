@@ -63,7 +63,7 @@ class TacsModel:
         active_procs: list = [0],
         problem_name: str = "capsStruct",
         mesh_morph: bool = False,
-        verbosity:int=0,
+        verbosity: int = 0,
     ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
@@ -79,7 +79,7 @@ class TacsModel:
         tacs_project: str
             project name for all ESP/CAPS work directory files (affects filenames)
         active_procs: list
-            list of active procs for parallel tacsAIM instances. Ex: if you want to use 5 
+            list of active procs for parallel tacsAIM instances. Ex: if you want to use 5
             parallel tacsAIMs you can choose active_procs=[_ for _ in range(5)] or
             equivalently active_procs=[0,1,2,3,4]
         problem_name: str
@@ -93,7 +93,7 @@ class TacsModel:
         assert 0 in active_procs
         caps_problem = None
         assert mesh in cls.MESH_AIMS
-        assert max(active_procs)+1 <= comm.Get_size()
+        assert max(active_procs) + 1 <= comm.Get_size()
 
         for iproc in active_procs:
             if comm.rank == iproc:
@@ -291,19 +291,18 @@ class TacsModel:
 
         return changed_design
 
-    @property
-    def fea_solver(self) -> pyTACS:
+    def fea_solver(self, root=0) -> pyTACS:
         """
         build pyTACS from nastran dat file on the root proc
         """
-        return pyTACS(self.tacs_aim.dat_file_path(self.root_proc_ind), self.comm)
+        return pyTACS(self.tacs_aim.dat_file_path(root), self.comm)
 
-    def createTACSProbs(self, addFunctions: bool = True):
+    def createTACSProbs(self, root=0, addFunctions: bool = True):
         """
         creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
         most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
         """
-        fea_solver = self.fea_solver
+        fea_solver = self.fea_solver(root)
         fea_solver.initialize()
         SPs = fea_solver.createTACSProbsFromBDF()
         self.SPs = SPs  # store the static problems as well
