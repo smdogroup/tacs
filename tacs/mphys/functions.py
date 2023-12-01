@@ -31,7 +31,7 @@ class TacsFunctions(om.ExplicitComponent):
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
-        self.write_solution = self.options["write_solution"]
+        self.auto_write_solution = self.options["write_solution"]
         self.conduction = self.options["conduction"]
         self.solution_counter = 0
 
@@ -84,6 +84,11 @@ class TacsFunctions(om.ExplicitComponent):
         self.sp.setNodes(inputs["x_struct0"])
         self.sp.setVariables(inputs[self.states_name])
 
+    def write_solution(self):
+        # write the solution files.
+        self.sp.writeSolution(number=self.solution_counter)
+        self.solution_counter += 1
+
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -95,10 +100,8 @@ class TacsFunctions(om.ExplicitComponent):
             key = self.sp.name + "_" + func_name
             outputs[func_name] = funcs[key]
 
-        if self.write_solution:
-            # write the solution files.
-            self.sp.writeSolution(number=self.solution_counter)
-            self.solution_counter += 1
+        if self.auto_write_solution:
+            self.write_solution()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
