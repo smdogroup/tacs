@@ -135,7 +135,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 stiffenerPitchNum=dv_num + 1,
                 panelThickNum=dv_num + 2,
                 panelPlyFracNums=np.array([dv_num + 3], dtype=np.intc),
-                tiffenerHeightNum=dv_num + 4,
+                stiffenerHeightNum=dv_num + 4,
                 stiffenerThickNum=dv_num + 5,
                 stiffenerPlyFracNums=np.array([dv_num + 6], dtype=np.intc),
             )
