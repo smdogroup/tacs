@@ -863,6 +863,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         Array of ply angles for the stiffener
     stiffenerPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions for the stiffener
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
     panelLengthNum : int, optional
         Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     stiffenerPitchNum : int, optional
@@ -877,10 +881,6 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
-    kcorr : float or complex, optional
-        Shear correction factor, defaults to 5.0/6.0
-    flangeFraction : float, optional
-        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
 
     Raises
     ------
@@ -902,15 +902,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         TacsScalar stiffenerThick,
         np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
         np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
         int panelLengthNum = -1,
         int stiffenerPitchNum = -1,
         int panelThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
-        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
-        TacsScalar kcorr = 5.0/6.0,
-        TacsScalar flangeFraction = 1.0
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None
         ):
 
         numPanelPlies = len(panelPlyAngles)
