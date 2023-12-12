@@ -63,6 +63,7 @@ class TacsModel:
         active_procs: list = [0],
         problem_name: str = "capsStruct",
         mesh_morph: bool = False,
+        verbosity:int=0,
     ):
         """
         make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
@@ -73,6 +74,20 @@ class TacsModel:
             filename / full path of ESP/CAPS Constructive Solid Model or .CSM file
         comm : MPI.COMM
             MPI communicator
+        mesh: str
+            whether to use "egads" or "aflr" meshing tool
+        tacs_project: str
+            project name for all ESP/CAPS work directory files (affects filenames)
+        active_procs: list
+            list of active procs for parallel tacsAIM instances. Ex: if you want to use 5 
+            parallel tacsAIMs you can choose active_procs=[_ for _ in range(5)] or
+            equivalently active_procs=[0,1,2,3,4]
+        problem_name: str
+            the folder name for the ESP/CAPS work directory (rename this to avoid conflicts)
+        mesh_morph: bool
+            whether to engage structural mesh morphing (usually not necessary)
+        verbosity: int
+            0 to suppress print statements to terminal, 1 to allow them.
         """
 
         assert 0 in active_procs
@@ -85,7 +100,7 @@ class TacsModel:
                 caps_problem = pyCAPS.Problem(
                     problemName=problem_name + "_" + str(iproc),
                     capsFile=csm_file,
-                    outLevel=1,
+                    outLevel=verbosity,
                 )
 
         tacs_aim = TacsAim(
