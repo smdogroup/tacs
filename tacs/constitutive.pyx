@@ -870,15 +870,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     panelLengthNum : int, optional
         Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     stiffenerPitchNum : int, optional
-        DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     panelThickNum : int, optional
-        DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     panelPlyFracNums : numpy.ndarray[np.intc], optional
         Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
     stiffenerHeightNum : int, optional
-        DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     stiffenerThickNum : int, optional
-        DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
 
