@@ -79,8 +79,6 @@ jobs:
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
-          # zlib 1.2.12 apparently breaks this install, so we pin an older version
-          conda install zlib=1.2.11;
           conda install -c anaconda openmpi -q -y;
           conda install gxx_linux-64=9.3.0 -q -y;
           conda install -c anaconda openblas -q -y;
