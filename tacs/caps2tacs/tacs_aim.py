@@ -208,7 +208,8 @@ class TacsAim:
                             DV_dict[dv.name] = dv.DV_dictionary
 
                 # update the DV dict
-                self.aim.input.Design_Variable = DV_dict
+                if DV_dict:
+                    self.aim.input.Design_Variable = DV_dict
 
         if self._dict_options is not None:
             self._set_dict_options()
