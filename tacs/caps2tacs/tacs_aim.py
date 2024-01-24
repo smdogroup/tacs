@@ -108,7 +108,9 @@ class TacsAim:
                 if shape_var.name == this_shape_var.name:
                     return rank
         # if not found in for loop trigger error
-        raise AssertionError(f"failed to find shape var {shape_var} on rank {self.comm.rank}")
+        raise AssertionError(
+            f"failed to find shape var {shape_var} on rank {self.comm.rank}"
+        )
 
     @property
     def local_shape_vars(self) -> list:
@@ -130,7 +132,7 @@ class TacsAim:
         self,
         large_format: bool = True,
         static: bool = True,
-        barrier:bool=True,
+        barrier: bool = True,
     ):
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
@@ -206,7 +208,8 @@ class TacsAim:
                             DV_dict[dv.name] = dv.DV_dictionary
 
                 # update the DV dict
-                self.aim.input.Design_Variable = DV_dict
+                if DV_dict:
+                    self.aim.input.Design_Variable = DV_dict
 
         if self._dict_options is not None:
             self._set_dict_options()
