@@ -163,6 +163,10 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
         void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
         void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
         void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
+        void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
+        TacsScalar computeEffectiveThickness()
 
 cdef extern from "TACSBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):

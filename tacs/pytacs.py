@@ -1822,31 +1822,40 @@ class pyTACS(BaseUI):
             transObjs = {}
             matObjs = []
             conObjs = []
+            propToMatIDMap = {}
             for compID, propID in enumerate(self.bdfInfo.properties):
+
                 # Get TACS element object
                 elemObj = self.meshLoader.getElementObject(compID, 0)
+
                 # get dv nums for element
                 dvNums = elemObj.getDesignVarNums(0)
+
                 # Update design variable values
                 dvVals = dv_bvec.getValues(dvNums)
                 elemObj.setDesignVars(0, dvVals)
+
                 # Get TACS constitutive object for element (if applicable)
                 conObj = elemObj.getConstitutive()
                 if conObj is not None:
                     # Set the property ID number for the class to be used in the Nastran card
                     conObj.setNastranID(propID)
                     conObjs.append(conObj)
+                    propToMatIDMap[propID] = []
                     # Get TACS material properties object for constitutive (if applicable)
                     matObj = conObj.getMaterialProperties()
-                    # May be a single object...
-                    if isinstance(matObj, tacs.constitutive.MaterialProperties):
-                        if matObj not in matObjs:
-                            matObjs.append(matObj)
-                    # or a list (plys for composite classes)
-                    elif isinstance(matObj, list):
-                        for mat_i in matObj:
-                            if mat_i not in matObjs:
-                                matObjs.append(mat_i)
+                    # May be a single object or a list of objects
+                    if not isinstance(matObj, list):
+                        matObj = [matObj]
+                    for mat_i in matObj:
+                        if mat_i not in matObjs:
+                            matID = len(matObjs) + 1
+                            mat_i.setNastranID(matID)
+                            matObjs.append(mat_i)
+                        else:
+                            matID = mat_i.getNastranID()
+                        propToMatIDMap[propID].append(matID)
+
                 # Get TACS transform object for element (if applicable)
                 transObj = elemObj.getTransform()
                 if transObj is not None:
@@ -1854,15 +1863,13 @@ class pyTACS(BaseUI):
 
             # Write material cards from TACS MaterialProperties class
             for i, matObj in enumerate(matObjs):
-                matID = i + 1
-                matObj.setNastranID(matID)
-                newBDFInfo.materials[matID] = matObj.generateBDFCard()
+                newBDFInfo.materials[i+1] = matObj.generateBDFCard()
 
             # Write property/element cards from TACSConstitutive/TACSElement classes
             curCoordID = 1
             for compID, conObj in enumerate(conObjs):
                 propID = conObj.getNastranID()
-                propCard = conObj.generateBDFCard()
+                propCard = conObj.generateBDFCard(mat_ids=propToMatIDMap[propID])
                 if propCard is not None:
                     # Copy property comment (may include component name info)
                     # Make sure to remove comment `$` from string
@@ -1872,6 +1879,7 @@ class pyTACS(BaseUI):
                 elemIDs = self.meshLoader.getGlobalElementIDsForComps(
                     [compID], nastranOrdering=True
                 )
+
                 # Convert any transform objects to nastran COORD2R cards, if necessary
                 transObj = transObjs.get(compID, None)
                 if isinstance(
@@ -1895,15 +1903,18 @@ class pyTACS(BaseUI):
                         add=True,
                     )
                     curCoordID += 1
+
                 # We just need the ref vector for these types
                 elif isinstance(
                     transObj, tacs.elements.BeamRefAxisTransform
                 ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
                     vec = transObj.getRefAxis()
                     vec = np.real(vec)
+
                 # Otherwise, there's no transform associated with this element, use default
                 else:
                     coordID = None
+
                 # Copy and update element cards
                 for elemID in elemIDs:
                     # Create copy of card
@@ -2003,7 +2014,6 @@ class pyTACS(BaseUI):
             )
             # Set solution type to static (101)
             newBDFInfo.sol = 101
-
         else:
             newBDFInfo = None
 

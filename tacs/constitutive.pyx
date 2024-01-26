@@ -478,23 +478,42 @@ cdef class MaterialProperties:
         """
         self.ptr.setSpecificHeat(specific_heat)
 
+cdef class MAT2MaterialProperties(MaterialProperties):
+    """This class only exists so that BladeStiffenedShellConstitutive objects can return a TACS MaterialProperties
+    instance that generates the necessary MAT2 nastran cards
+    """
+    def __cinit__(self, E1, G12, G13, E2, G23, E3, rho=0.0):
+        self.ptr = NULL
+        self.E1 = E1
+        self.G12 = G12
+        self.G13 = G13
+        self.E2 = E2
+        self.G23 = G23
+        self.E3 = E3
+        self.rho = rho
+        self.nastranID = 0
+
+    def generateBDFCard(self):
+        return nastran_cards.materials.MAT2(self.nastranID, np.real(self.E1), np.real(self.G12), np.real(self.G13),
+                                            np.real(self.E2), np.real(self.G23), np.real(self.E3), np.real(self.rho))
+
 cdef class OrthotropicPly:
     """
-      The following class holds the material stiffness and strength
-      properties for an orthotropic ply. This class is used by several
-      constitutive classes within TACS.
+    The following class holds the material stiffness and strength
+    properties for an orthotropic ply. This class is used by several
+    constitutive classes within TACS.
 
-      The interaction coefficient for the Tsai-Wu failure criterion is set
-      to zero by default. If a value of C, the failure stress under
-      combined in-plane loading, is supplied, the interaction coefficient
-      is determined. Be careful - the value can easily fall outside
-      acceptable bounds - these are tested during initialization.
+    The interaction coefficient for the Tsai-Wu failure criterion is set
+    to zero by default. If a value of C, the failure stress under
+    combined in-plane loading, is supplied, the interaction coefficient
+    is determined. Be careful - the value can easily fall outside
+    acceptable bounds - these are tested during initialization.
 
-      Args:
-          ply_thickness (float or complex): The ply thickness.
-          props (MaterialProperties): The ply material property.
-          max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use max strength).
+    Args:
+        ply_thickness (float or complex): The ply thickness.
+        props (MaterialProperties): The ply material property.
+        max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
+        Defaults to False (i.e. use max strength).
     """
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
@@ -1097,6 +1116,119 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             if len(upperBound) != self.blade_ptr.getNumPanelPlies():
                 raise ValueError('upperBound must have length numPanelPlies')
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def getEffectiveSectionProperties(self):
+        cdef np.ndarray mass = np.zeros(3, dtype)
+        if self.blade_ptr:
+            # We elso need the mass moments and density
+            self.blade_ptr.evalMassMoments(0, NULL, NULL, <TacsScalar*>mass.data)
+            rho = self.blade_ptr.evalDensity(0, NULL, NULL)
+
+            # Now we can compute the equivalent thicknesses needed for the MAT2 cards
+            tEff = self.blade_ptr.computeEffectiveThickness()
+            tFact = 12.0*mass[2] / (rho * tEff**3)
+            return tEff, tFact, rho
+
+    def getMaterialProperties(self):
+        """Get the material properties objects
+
+        The closest NASTRAN propoerty type to the blade stiffened shell model is the PSHELL card. For this we
+        essentially define the A, B, D and As matrices directly as NASTRAN MAT2 entries.
+        """
+        cdef np.ndarray C = np.zeros(21, dtype)
+        cdef np.ndarray mass = np.zeros(3, dtype)
+        if self.blade_ptr:
+            matProps = []
+            # First thing we need to do is compute the stiffness matrix
+            self.blade_ptr.evalTangentStiffness(0, NULL, NULL, <TacsScalar*>C.data)
+            A = C[0:6]
+            B = C[6:12]
+            D = C[12:18]
+            As = C[18:]
+
+            t, tFact, rho = self.getEffectiveSectionProperties()
+            t2 = t**2
+            t3 = t**3 * tFact
+
+            # MAT2 entry for membrane stiffness, a.k.a the A matrix
+            matProps.append(MAT2MaterialProperties(
+                    E1=np.real(A[0]/t),
+                    G12=np.real(A[1]/t),
+                    G13=np.real(A[2]/t),
+                    E2=np.real(A[3]/t),
+                    G23=np.real(A[4]/t),
+                    E3=np.real(A[5]/t),
+                    rho=np.real(rho)
+                )
+            )
+
+            # MAT2 entry for bending stiffness, a.k.a the D matrix
+            matProps.append(MAT2MaterialProperties(
+                    E1=np.real(12.0*D[0]/t3),
+                    G12=np.real(12.0*D[1]/t3),
+                    G13=np.real(12.0*D[2]/t3),
+                    E2=np.real(12.0*D[3]/t3),
+                    G23=np.real(12.0*D[4]/t3),
+                    E3=np.real(12.0*D[5]/t3)
+                )
+            )
+
+            # MAT2 entry for transverse shear stiffness, a.k.a the As matrix
+            matProps.append(MAT2MaterialProperties(
+                    E1=np.real(As[0]/t),
+                    G12=np.real(As[1]/t),
+                    G13=np.real(0.0),
+                    E2=np.real(As[2]/t),
+                    G23=np.real(0.0),
+                    E3=np.real(0.0)
+                )
+            )
+
+            # MAT2 entry for coupling stiffness, a.k.a the B matrix
+            matProps.append(MAT2MaterialProperties(
+                    E1=np.real(B[0]/t2),
+                    G12=np.real(B[1]/t2),
+                    G13=np.real(B[2]/t2),
+                    E2=np.real(B[3]/t2),
+                    G23=np.real(B[4]/t2),
+                    E3=np.real(B[5]/t2)
+                )
+            )
+
+            return matProps
+
+    def generateBDFCard(self, mat_ids):
+        """Generate pyNASTRAN card class based on current design variable values.
+
+        Returns
+        -------
+        card : pyNastran.bdf.cards.properties.shell.PSHELL
+            pyNastran card holding property information
+        """
+
+        if self.blade_ptr:
+            tEff, tFact, rho = self.getEffectiveSectionProperties()
+            # Get the panel thickness, stiffener thickness and stiffener height values so we can compute the extreme
+            # fiber locations for stress calculations
+            tPanel = self.blade_ptr.evalDesignFieldValue(0, NULL, NULL, 4)
+            tStiff = self.blade_ptr.evalDesignFieldValue(0, NULL, NULL, 6)
+            hStiff = self.blade_ptr.evalDesignFieldValue(0, NULL, NULL, 5)
+            z1 = -0.5 * tPanel - tStiff - hStiff
+            z2 = 0.5 * tPanel
+
+            card =  nastran_cards.properties.shell.PSHELL(
+                pid=self.nastranID,
+                mid1=mat_ids[0],
+                t=np.real(tEff),
+                mid2=mat_ids[1],
+                twelveIt3=np.real(tFact),
+                mid3=mat_ids[2],
+                tst=1.0,
+                mid4=mat_ids[3],
+                z1=np.real(z1),
+                z2=np.real(z2)
+            )
+            return card
 
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """
