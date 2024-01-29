@@ -1822,7 +1822,7 @@ class pyTACS(BaseUI):
             transObjs = {}
             matObjs = []
             conObjs = []
-            propToMatIDMap = {}
+            propToMatIDMap = {} # propToMatIDMap[i] returns the list of material card IDs used by property card i
             for compID, propID in enumerate(self.bdfInfo.properties):
 
                 # Get TACS element object
@@ -1842,18 +1842,22 @@ class pyTACS(BaseUI):
                     conObj.setNastranID(propID)
                     conObjs.append(conObj)
                     propToMatIDMap[propID] = []
-                    # Get TACS material properties object for constitutive (if applicable)
+                    # Get TACS material properties object(s) for constitutive (if applicable)
                     matObj = conObj.getMaterialProperties()
-                    # May be a single object or a list of objects
+                    # If only one material property object is returned, turn it into a list
                     if not isinstance(matObj, list):
                         matObj = [matObj]
+                    # For each returned material property, check if we already have it in our list.
                     for mat_i in matObj:
                         if mat_i not in matObjs:
+                            # If we don't, then assign it a new ID number and add it to the list
                             matID = len(matObjs) + 1
                             mat_i.setNastranID(matID)
                             matObjs.append(mat_i)
                         else:
+                            # If we do already have it, then just get its ID number
                             matID = mat_i.getNastranID()
+                        # Assign the material ID number to the property ID number
                         propToMatIDMap[propID].append(matID)
 
                 # Get TACS transform object for element (if applicable)
