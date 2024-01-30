@@ -187,13 +187,14 @@ class TacsAim:
                 # link the egads aim to the tacs aim
                 self.aim.input["Mesh"].link(self._mesh_aim.aim.output["Surface_Mesh"])
 
-                # add the design variables to the DesignVariable and DesignVariableRelation properties
+                # Add the design variables to the DesignVariable and DesignVariableRelation properties
+                # for active variables only.
                 DV_dict = {}
-                if len(self.thickness_variables) > 0:
+                if len(self.active_thickness_variables) > 0:
                     self.aim.input.Design_Variable_Relation = {
                         dv.name: dv.DVR_dictionary
                         for dv in self._design_variables
-                        if isinstance(dv, ThicknessVariable)
+                        if isinstance(dv, ThicknessVariable) and dv._active
                     }
 
                     # register all thickness variables to each proc
@@ -269,9 +270,16 @@ class TacsAim:
         return [dv for dv in self.variables if isinstance(dv, ShapeVariable)]
 
     @property
+    def active_thickness_variables(self) -> List[ThicknessVariable]:
+        """
+        Return only active sorted thickness variables.
+        """
+        return [dv for dv in self.thickness_variables if dv._active]
+
+    @property
     def thickness_variables(self) -> List[ThicknessVariable]:
         """
-        return sorted thickness vars so that the TACS derivatives can be appropriately obtained
+        Return sorted thickness vars so that the TACS derivatives can be appropriately obtained.
         """
         thick_var_names = [
             dv.name for dv in self.variables if isinstance(dv, ThicknessVariable)
@@ -362,13 +370,14 @@ class TacsAim:
                     dv, ThicknessVariable
                 ):
                     if property.caps_group == dv.caps_group:
-                        property.membrane_thickness == dv.value
+                        property.membrane_thickness = dv.value
                         break
 
         # input new design var and property cards
-        self.aim.input.Design_Variable = {
-            dv.name: dv.DV_dictionary for dv in self._design_variables
-        }
+        if len([_ for _ in self._design_variables if _._active]) > 0:
+            self.aim.input.Design_Variable = {
+                dv.name: dv.DV_dictionary for dv in self._design_variables
+            }
         self.aim.input.Property = {
             prop.caps_group: prop.dictionary for prop in self._properties
         }
