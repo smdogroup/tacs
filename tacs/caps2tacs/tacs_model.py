@@ -281,8 +281,7 @@ class TacsModel:
                     changed_design = True
 
         # update thickness prop cards in t
-        if self.tacs_aim.change_shape:
-            self.tacs_aim.update_properties()
+        self.tacs_aim.update_properties()
 
         # record whether the design has changed & first analysis flag as well
         if self._first_analysis:
