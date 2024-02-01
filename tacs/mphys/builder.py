@@ -448,7 +448,7 @@ class TacsBuilder(Builder):
             )
             # Pick out any node IDs in supplied tags
             global_node_ids = [
-                comp_name for comp_name in tags if isinstance(comp_name, int)
+                comp_name for comp_name in tags if isinstance(comp_name, (int, np.integer))
             ]
             # Select local node IDs from global node IDs
             local_node_ids = self.fea_assembler.getLocalNodeIDsFromGlobal(
