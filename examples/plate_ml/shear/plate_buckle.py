@@ -31,14 +31,14 @@ FEAAssembler = pyTACS(bdfFile, comm=comm)
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     # Set constitutive properties
     rho = 4540.0  # density, kg/m^3
-    E = 118e9  # elastic modulus, Pa 118e9
-    nu = 0.325  # poisson's ratio
+    E = 70e9  # elastic modulus, Pa 118e9
+    nu = 0.33  # poisson's ratio
     ys = 1050e6  # yield stress, Pa
     kappa = 6.89
     specific_heat = 463.0
 
     # Plate geometry
-    tplate = 0.005  # 5 mm
+    tplate = 0.007  # 5 mm
 
     # Setup property and constitutive objects
     mat = constitutive.MaterialProperties(
@@ -71,6 +71,14 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 
 # Set up constitutive objects and elements
 FEAAssembler.initialize(elemCallBack)
+
+# debug the static problem first
+run_static = False
+if run_static:
+    SP = FEAAssembler.createStaticProblem(name="static")
+    SP.solve()
+    SP.writeSolution(outputDir=os.path.dirname(__file__))
+    exit()
 
 # Setup static problem
 bucklingProb = FEAAssembler.createBucklingProblem(name="buckle", sigma=10.0, numEigs=5)
