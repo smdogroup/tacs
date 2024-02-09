@@ -683,7 +683,7 @@ class pyTACS(BaseUI):
         if compIDs is None:
             return copy.deepcopy(self.compDescripts)
         # Convert to list
-        elif isinstance(compIDs, int):
+        elif isinstance(compIDs, (int, np.integer)):
             compIDs = [compIDs]
         # Make sure list is flat
         else:
