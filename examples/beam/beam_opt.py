@@ -56,7 +56,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     # Set one thickness dv for every property group
     con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, w=w, tNum=dvNum)
 
-    # Defines local y/width direction for beam
+    # Defines local y/thickness direction for beam
     refAxis = np.array([0.0, 1.0, 0.0])
     transform = elements.BeamRefAxisTransform(refAxis)
 

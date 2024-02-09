@@ -84,6 +84,7 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
             libraries=libs,
             library_dirs=lib_dirs,
             runtime_library_dirs=runtime_lib_dirs,
+            extra_compile_args=["-std=c++11"],
         )
     )
 
@@ -104,6 +105,7 @@ optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
     "mphys": ["mphys>=1.1.0", "openmdao>=3.25.0"],
+    "caps2tacs": ["imageio>=2.16.1"],
 }
 
 # Add an optional dependency that concatenates all others
@@ -117,7 +119,7 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.5.0",
+    version="3.6.0",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
