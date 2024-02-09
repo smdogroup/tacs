@@ -456,6 +456,8 @@ class TacsBuilder(Builder):
             local_node_ids = self.fea_assembler.getLocalNodeIDsFromGlobal(
                 global_node_ids, nastranOrdering=True
             )
+            # getLocalNodeIDsFromGlobal returns -1 for nodes not on this processor, so remove those
+            local_node_ids[:] = [id for id in local_node_ids if id >= 0]
             masked_local_nodes += local_node_ids
             masked_local_nodes = np.unique(masked_local_nodes)
 
