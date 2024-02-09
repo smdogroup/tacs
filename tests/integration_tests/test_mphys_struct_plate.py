@@ -109,17 +109,19 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             constr_list = [constr]
             return constr_list
 
+        tacs_builder = tacs.mphys.TacsBuilder(
+            mesh_file=bdf_file,
+            element_callback=element_callback,
+            problem_setup=problem_setup,
+            constraint_setup=constraint_setup,
+            check_partials=True,
+            coupled=True,
+            write_solution=False,
+        )
+        self.tacs_builder = tacs_builder
+
         class Top(Multipoint):
             def setup(self):
-                tacs_builder = tacs.mphys.TacsBuilder(
-                    mesh_file=bdf_file,
-                    element_callback=element_callback,
-                    problem_setup=problem_setup,
-                    constraint_setup=constraint_setup,
-                    check_partials=True,
-                    coupled=True,
-                    write_solution=False,
-                )
                 tacs_builder.initialize(self.comm)
 
                 dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
@@ -176,15 +178,17 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             taggedIndIDs = self.tacs_builder.get_tagged_indices(compName)
             self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
 
-            nastranIDs = meshloader.getGlobalNodeIDsForComps([compID], nastranOrdering=True)
+            nastranIDs = meshloader.getGlobalNodeIDsForComps(
+                [compID], nastranOrdering=True
+            )
             taggedIndIDs = self.tacs_builder.get_tagged_indices(nastranIDs)
             self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
 
         # now test a mix of comp_ids and NASTRAN node IDs, we'll use the name of the first compID and the NASTRAN node
         # IDs of the last compID
-        tags = FEAAssembler.getCompNames(compIDs[0]) + meshloader.getGlobalNodeIDsForComps([compIDs[-1]], nastranOrdering=True)
+        tags = FEAAssembler.getCompNames(
+            compIDs[0]
+        ) + meshloader.getGlobalNodeIDsForComps([compIDs[-1]], nastranOrdering=True)
         trueNodeIDs = FEAAssembler.getLocalNodeIDsForComps([compIDs[0], compIDs[-1]])
         taggedIndIDs = self.tacs_builder.get_tagged_indices(tags)
         self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
-
-
