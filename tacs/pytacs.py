@@ -683,7 +683,7 @@ class pyTACS(BaseUI):
         if compIDs is None:
             return copy.deepcopy(self.compDescripts)
         # Convert to list
-        elif isinstance(compIDs, int):
+        elif isinstance(compIDs, (int, np.integer)):
             compIDs = [compIDs]
         # Make sure list is flat
         else:
@@ -743,6 +743,31 @@ class pyTACS(BaseUI):
             compIDs = list(range(self.nComp))
 
         return self.meshLoader.getLocalNodeIDsForComps(compIDs)
+
+    def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
+        """
+        Given a list of node IDs in global (non-partitioned) ordering
+        returns the local (partitioned) node IDs on each processor.
+        If a requested node is not included on this processor,
+        an entry of -1 will be returned.
+
+        Parameters
+        ----------
+        globalIDs : int or list[int]
+            List of global node IDs.
+
+        nastranOrdering : bool
+            Flag signaling whether globalIDs is in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        localIDs : list[int]
+            List of local node IDs for each entry in globalIDs.
+            If the node is not owned by this processor, its index is filled with a value of -1.
+        """
+
+        return self.meshLoader.getLocalNodeIDsFromGlobal(globalIDs, nastranOrdering)
 
     def initialize(self, elemCallBack=None):
         """
@@ -857,10 +882,12 @@ class pyTACS(BaseUI):
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption("linearityTol"):
-            return False # not nonlinear case
+        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption(
+            "linearityTol"
+        ):
+            return False  # not nonlinear case
         else:
-            return True # nonlinear case
+            return True  # nonlinear case
 
     def _elemCallBackFromBDF(self):
         """
