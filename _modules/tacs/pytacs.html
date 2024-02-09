@@ -720,7 +720,7 @@
         <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">)</span>
         <span class="c1"># Convert to list</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compIDs</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">compIDs</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
             <span class="n">compIDs</span> <span class="o">=</span> <span class="p">[</span><span class="n">compIDs</span><span class="p">]</span>
         <span class="c1"># Make sure list is flat</span>
         <span class="k">else</span><span class="p">:</span>
@@ -780,6 +780,31 @@
             <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsForComps</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="pyTACS.getLocalNodeIDsFromGlobal"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal">[docs]</a>    <span class="k">def</span> <span class="nf">getLocalNodeIDsFromGlobal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">globalIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a list of node IDs in global (non-partitioned) ordering</span>
+<span class="sd">        returns the local (partitioned) node IDs on each processor.</span>
+<span class="sd">        If a requested node is not included on this processor,</span>
+<span class="sd">        an entry of -1 will be returned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        globalIDs : int or list[int]</span>
+<span class="sd">            List of global node IDs.</span>
+
+<span class="sd">        nastranOrdering : bool</span>
+<span class="sd">            Flag signaling whether globalIDs is in TACS (default) or NASTRAN (grid IDs in bdf file) ordering</span>
+<span class="sd">            Defaults to False.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        localIDs : list[int]</span>
+<span class="sd">            List of local node IDs for each entry in globalIDs.</span>
+<span class="sd">            If the node is not owned by this processor, its index is filled with a value of -1.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsFromGlobal</span><span class="p">(</span><span class="n">globalIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="pyTACS.initialize"><a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize">[docs]</a>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elemCallBack</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -894,10 +919,12 @@
         <span class="c1"># Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)</span>
         <span class="n">resNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res1</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
         <span class="n">res2</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">res1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">resNorm</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">/</span> <span class="n">resNorm</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;linearityTol&quot;</span><span class="p">):</span>
-            <span class="k">return</span> <span class="kc">False</span> <span class="c1"># not nonlinear case</span>
+        <span class="k">if</span> <span class="n">resNorm</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">res2</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">/</span> <span class="n">resNorm</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span>
+            <span class="s2">&quot;linearityTol&quot;</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># not nonlinear case</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">True</span> <span class="c1"># nonlinear case</span>
+            <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># nonlinear case</span>
 
     <span class="k">def</span> <span class="nf">_elemCallBackFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

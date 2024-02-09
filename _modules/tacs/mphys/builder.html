@@ -460,7 +460,8 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        tags : list[str]</span>
+<span class="sd">        tags : list[str, int]</span>
+<span class="sd">            list of component names or node IDs to include in body</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -473,13 +474,29 @@
             <span class="c1"># Select all node IDs</span>
             <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">nnodes</span><span class="p">)</span>
 
-        <span class="c1"># Get the compIDs associated with tags</span>
+        <span class="c1"># Get the node IDs associated with tags</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">tagged_comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
-            <span class="c1"># Select local node IDs for tags</span>
+            <span class="c1"># Pick out any component names in supplied tags</span>
+            <span class="n">comp_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp_name</span> <span class="k">for</span> <span class="n">comp_name</span> <span class="ow">in</span> <span class="n">tags</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)]</span>
+            <span class="n">tagged_comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="n">comp_names</span><span class="p">)</span>
+            <span class="c1"># Select local node IDs for components</span>
             <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getLocalNodeIDsForComps</span><span class="p">(</span>
                 <span class="n">tagged_comps</span>
             <span class="p">)</span>
+            <span class="c1"># Pick out any node IDs in supplied tags</span>
+            <span class="n">global_node_ids</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">comp_name</span>
+                <span class="k">for</span> <span class="n">comp_name</span> <span class="ow">in</span> <span class="n">tags</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">comp_name</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span>
+            <span class="p">]</span>
+            <span class="c1"># Select local node IDs from global node IDs</span>
+            <span class="n">local_node_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getLocalNodeIDsFromGlobal</span><span class="p">(</span>
+                <span class="n">global_node_ids</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="c1"># getLocalNodeIDsFromGlobal returns -1 for nodes not on this processor, so remove those</span>
+            <span class="n">local_node_ids</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">id</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">local_node_ids</span> <span class="k">if</span> <span class="nb">id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">masked_local_nodes</span> <span class="o">+=</span> <span class="n">local_node_ids</span>
+            <span class="n">masked_local_nodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">masked_local_nodes</span><span class="p">)</span>
 
         <span class="c1"># Select local node IDs and multiplier node IDs</span>
         <span class="n">local_mnodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">getLocalMultiplierNodeIDs</span><span class="p">()</span>

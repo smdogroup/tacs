@@ -619,6 +619,31 @@ Defaults to None.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal">
+<span class="sig-name descname"><span class="pre">getLocalNodeIDsFromGlobal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">globalIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getLocalNodeIDsFromGlobal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of node IDs in global (non-partitioned) ordering
+returns the local (partitioned) node IDs on each processor.
+If a requested node is not included on this processor,
+an entry of -1 will be returned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>globalIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a><em>]</em>) -- List of global node IDs.</p></li>
+<li><p><strong>nastranOrdering</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.12)"><em>bool</em></a>) -- Flag signaling whether globalIDs is in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>localIDs</strong> -- List of local node IDs for each entry in globalIDs.
+If the node is not owned by this processor, its index is filled with a value of -1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.12)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.initialize">
 <span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemCallBack</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.initialize" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is the 'last' method to be called during the setup. The
@@ -1232,6 +1257,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getCompNames"><code class="docutils literal notranslate"><span class="pre">pyTACS.getCompNames()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalNodeIDsForComps()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsForComps()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsFromGlobal()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.initialize"><code class="docutils literal notranslate"><span class="pre">pyTACS.initialize()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">pyTACS.getDesignVarRange()</span></code></a></li>
