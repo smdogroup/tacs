@@ -63,23 +63,29 @@ for j in range(0, nodes.shape[1] - 1, 2):
 # Set up the plate BCs so that it has u = uhat, for shear disp control
 # u = eps * y, v = eps * x, w = 0
 eps = 1e-3
-for j in range(2*ny+1):
+for j in range(2 * ny + 1):
     for i in range(2 * nx + 1):
         # check on boundary
         on_bndry = False
-        if i == 0 or i == 2*nx:
+        if i == 0 or i == 2 * nx:
             on_bndry = True
-        if j == 0 or j == 2*ny:
+        if j == 0 or j == 2 * ny:
             on_bndry = True
         if on_bndry:
-            fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", eps * y[j])) # u = eps * y
-            fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", eps * x[i])) # v = eps * x
-            fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3", 0.0)) # w = 0
+            fp.write(
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", eps * y[j])
+            )  # u = eps * y
+            fp.write(
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", eps * x[i])
+            )  # v = eps * x
+            fp.write(
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3", 0.0)
+            )  # w = 0
 
-            # x-rot, y-rot = 0 from paper 6 
+            # x-rot, y-rot = 0 from paper 6
             # "An Adaptive Model reduction strategy for post-buckling analysis of stiffened structures"
-            fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "4", 0.0)) # w = 0
-            fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "5", 0.0)) # w = 0
+            # fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "4", 0.0)) # w = 0
+            # fp.write("%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "5", 0.0)) # w = 0
 
 fp.write("ENDDATA")
 fp.close()
