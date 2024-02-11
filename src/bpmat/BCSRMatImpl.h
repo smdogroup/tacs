@@ -131,6 +131,76 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
   These should provide better performance.
 */
 
+// ==============================================================================
+// Templated implementations
+// ==============================================================================
+// Templated versions
+template <int blockSize>
+void BCSRBlockMatVecMult(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  TacsScalar *a = data->A;
+
+  for (int i = 0; i < nrows; i++) {
+    int end = rowp[i + 1];
+
+    for (int l = 0; l < blockSize; l++) {
+      y[l] = 0.0;
+    }
+
+    for (int k = rowp[i]; k < end; k++) {
+      int j = blockSize * cols[k];
+
+      for (int l = 0; l < blockSize; l++) {
+        for (int m = 0; m < blockSize; m++) {
+          y[l] += a[l * blockSize + m] * x[j + m];
+        }
+      }
+
+      a += blockSize * blockSize;
+    }
+
+    y += blockSize;
+  }
+
+  TacsAddFlops(2 * blockSize * blockSize * rowp[nrows]);
+}
+
+template <int blockSize>
+void BCSRBlockMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
+                            TacsScalar *z) {
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  TacsScalar *a = data->A;
+
+  for (int i = 0; i < nrows; i++) {
+    int end = rowp[i + 1];
+
+    for (int l = 0; l < blockSize; l++) {
+      z[l] = y[l];
+    }
+
+    for (int k = rowp[i]; k < end; k++) {
+      int j = blockSize * cols[k];
+
+      for (int l = 0; l < blockSize; l++) {
+        for (int m = 0; m < blockSize; m++) {
+          z[l] += a[l * blockSize + m] * x[j + m];
+        }
+      }
+
+      a += blockSize * blockSize;
+    }
+
+    y += blockSize;
+    z += blockSize;
+  }
+
+  TacsAddFlops(2 * blockSize * blockSize * rowp[nrows]);
+}
+
 // The bsize == 1 code
 void BCSRMatVecMult1(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
 void BCSRMatVecMultAdd1(BCSRMatData *A, TacsScalar *x, TacsScalar *y,
