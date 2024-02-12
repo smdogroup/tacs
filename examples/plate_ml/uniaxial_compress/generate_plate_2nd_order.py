@@ -54,6 +54,9 @@ for j in range(ny):
         )
         elem += 1
 
+# bool mode for displacement vs load control
+displacement_control = False
+
 # Set up the plate BCs so that it has u = uhat, for shear disp control
 # u = eps * y, v = eps * x, w = 0
 eps = 1e-3
@@ -61,28 +64,56 @@ for j in range(ny + 1):
     for i in range(nx + 1):
         # check on boundary
         uhat = 0.001
-        if j == 0:
+        if i == 0 and j == 0: # node 1
             fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", 0.0)
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "12", 0.0)
+            ) # u = v = w = theta_x = theta_y = theta_z = 0 on right edge
+        elif j == 0:
+            fp.write(
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "236", 0.0)
             )  # v = 0 on bottom edge
-        if i == 0:
+        elif i == 0:
+            # if displacement_control:
+            #     fp.write(
+            #         "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", uhat)
+            #     ) # u = uhat on left edge
             fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", uhat)
-            ) # u = uhat on left edge
-        if i == nx:
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+            )  # w = theta_z = 0 on all edges
+    
+        if i == nx and j != 0:
             fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", 0.0)
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "136", 0.0)
             ) # u = 0 on right edge
 
-        on_bndry = False
+        if j == ny:
+            if displacement_control:
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", -0.001)
+                ) # v = vhat on top edge
+            if i != 0  and i != nx:
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                ) # w = theta_z = 0
+
+# apply LOAD cards on upper and lower edges..
+# since v = 0 on lower edge, first try just on upper edge
+if not displacement_control:
+    for i in range(nx+1):
         if i == 0 or i == nx:
-            on_bndry = True
-        if j == 0 or j == ny:
-            on_bndry = True
-        if on_bndry:
-            fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3", 0.0)
-            )  # w = 0 on all edges
+            Fy = 1000.0
+        else:
+            Fy = 2000.0
+        # j = 0
+        # don't need top edge since it's constrained there
+        # fp.write(
+        #     "%-8s%8d%8d%8d%8.1f%8.1f%8.2f%8.2f\n" % ("FORCE", 1, nodes[i,j], 0, 1.0, 0, Fy, 0)
+        # ) # bottom edge
+
+        j = ny
+        fp.write(
+            "%-8s%8d%8d%8d%8.1f%8.1f%8.2f%8.2f\n" % ("FORCE", 1, nodes[i,j], 0, 1.0, 0, -Fy, 0)
+        ) # top edge
 
 # plot the mesh to make sure it makes sense
 X,Y = np.meshgrid(x,y)

@@ -75,7 +75,11 @@ FEAAssembler.initialize(elemCallBack)
 bucklingProb = FEAAssembler.createBucklingProblem(name="buckle", sigma=10.0, numEigs=5)
 bucklingProb.setOption("printLevel", 2)
 # Add Loads
-# bucklingProb.addLoadFromBDF(loadID=1)
+displacement_control = False
+
+# comment out if using displacement control
+if not displacement_control:
+    bucklingProb.addLoadFromBDF(loadID=1)
 
 # exit()
 
