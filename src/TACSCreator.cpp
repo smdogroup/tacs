@@ -444,6 +444,8 @@ TACSAssembler *TACSCreator::createTACS() {
     partitionMesh(size);
   }
 
+  printf("C++ - start TACS creator\n");
+
   // The number of local and owned nodes and the number of
   // elements for each processor in the mesh
   num_owned_nodes = 0;
@@ -538,6 +540,7 @@ TACSAssembler *TACSCreator::createTACS() {
       dep_node_flags[i] = -1;
     }
 
+    printf("C++ - TACS creator start connectivity\n");
     // Loop over all the processors on the root processor and
     // create the local connectivity, element info, and dependent node
     // data for the k-th processor. Then send it to processor k, except
@@ -625,6 +628,7 @@ TACSAssembler *TACSCreator::createTACS() {
         }
       }
 
+      printf("C++ - TACS creator node ids\n");
       // Copy over the node data from the old indices
       for (int i = 0, j = start_node; j < end_node; i++, j++) {
         int node = inv_new_nodes[j];
@@ -785,16 +789,19 @@ TACSAssembler *TACSCreator::createTACS() {
     MPI_Bcast(bc_vals, bc_ptr[num_bcs], TACS_MPI_TYPE, root_rank, comm);
   }
 
+  printf("C++ - TACS creator - make assembler\n");
   TACSAssembler *tacs =
       new TACSAssembler(comm, vars_per_node, num_owned_nodes,
                         num_owned_elements, num_local_dep_nodes);
 
+  printf("C++ - TACS creator - set dependent nodes\n");
   // Set the dependent node data
   if (num_local_dep_nodes > 0) {
     tacs->setDependentNodes(local_dep_node_ptr, local_dep_node_conn,
                             local_dep_node_weights);
   }
 
+  printf("C++ - TACS creator - set element connectivity\n");
   // Set the connectivity
   tacs->setElementConnectivity(local_elem_node_ptr, local_elem_node_conn);
 

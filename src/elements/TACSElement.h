@@ -57,6 +57,12 @@ class TACSElement : public TACSObject {
   int getComponentNum() { return componentNum; }
 
   /**
+   * get average stresses in the element
+  */
+  void getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar *avgStresses) {return;}
+
+  /**
     Get a string representation of the element name
 
     @return The name of the element

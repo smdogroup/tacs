@@ -6037,3 +6037,32 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
   *_len = len;
   *_data = data;
 }
+
+/* get average output stress resultants from TACS*/
+void TACSAssembler::getAverageStresses(ElementType elem_type, TacsScalar *avgStresses) {
+  // TacsScalar *avgStresses = new TacsScalar[9];
+  // memset(avgStresses, 0, 9);
+  int nvals;
+
+  // Retrieve pointers to temporary storage
+  TacsScalar *elemXpts, *vars, *dvars, *ddvars;
+  getDataPointers(elementData, &vars, &dvars, &ddvars, NULL, &elemXpts, NULL,
+                  NULL, NULL);
+
+  for (int i = 0; i < numElements; i++) {
+    int ptr = elementNodeIndex[i];
+    int len = elementNodeIndex[i + 1] - ptr;
+    const int *nodes = &elementTacsNodes[ptr];
+    xptVec->getValues(len, nodes, elemXpts);
+    varsVec->getValues(len, nodes, vars);
+    dvarsVec->getValues(len, nodes, dvars);
+    ddvarsVec->getValues(len, nodes, ddvars);
+
+    elements[i]->getAverageStresses(i, elem_type, elemXpts, vars, dvars,
+                               ddvars, &avgStresses[0]);
+  }
+
+  for (int j = 0; j < 9; j++) {
+    avgStresses[j] /= numElements;
+  }
+}

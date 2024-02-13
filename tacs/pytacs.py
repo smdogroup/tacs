@@ -788,15 +788,20 @@ class pyTACS(BaseUI):
 
         """
 
+        print(f"pytacs initialize", flush=True)
+
         if elemCallBack is None:
             elemCallBack = self._elemCallBackFromBDF()
         self._createOutputGroups()
+        print(f"pytacs create elements", flush=True)
         self._createElements(elemCallBack)
 
+        print(f"pytacs create assembler", flush=True)
         self.assembler = self.meshLoader.createTACSAssembler(
             self.varsPerNode, self.massDVs
         )
 
+        print(f"pytacs create output viewer", flush=True)
         self._createOutputViewer()
 
         # Store original node locations read in from bdf file
