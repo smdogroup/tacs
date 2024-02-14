@@ -59,8 +59,8 @@ class TACSElement : public TACSObject {
   /**
    * get average stresses in the element
   */
-  void getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar *avgStresses) {return;}
+  virtual void getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar *avgStresses) {}
 
   /**
     Get a string representation of the element name
