@@ -31,7 +31,7 @@ nu = 0.33
 D = E * thick**3 / 12.0 / (1 - nu**2)
 # for log_Ly in np.linspace(-1.0, 1.0, 10):
 #    Ly = 10**log_Ly
-for Ly in np.linspace(1.0, 10.0, 100):
+for Ly in np.linspace(1.0, 10.0, 1000):
     # collect input data
     data_dict["Lx"] += [Lx]
     data_dict["Ly"] += [Ly]
