@@ -23,6 +23,7 @@ from mpi4py import MPI
 from tacs import pyTACS, constitutive, elements
 
 comm = MPI.COMM_WORLD
+displacement_control = False
 
 # Instantiate FEAAssembler
 bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
@@ -73,8 +74,13 @@ FEAAssembler.initialize(elemCallBack)
 
 # debug the static problem first
 SP = FEAAssembler.createStaticProblem(name="static")
+# comment out if using displacement control
+if not displacement_control:
+    SP.addLoadFromBDF(loadID=1)
 SP.solve()
 SP.writeSolution(outputDir=os.path.dirname(__file__))
+
+
 
 # test the average stresses routine
 avgStresses = FEAAssembler.assembler.getAverageStresses()

@@ -1295,7 +1295,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
       loc_avgStresses[i] = 0.0;
     }
 
-    printf("num vis nodes = %d\n", num_vis_nodes);
+    //printf("num vis nodes = %d\n", num_vis_nodes);
 
     // Loop over each quadrature point and add the residual contribution
     for (int index = 0; index < num_vis_nodes; index++) {
@@ -1337,7 +1337,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
       con->evalStress(elemIndex, pt, X, e, s);
 
       for (int i = 0; i < 9; i++) {
-        printf("s[%d] = %.6f\n", i, s[i]);
+        //printf("s[%d] = %.6f\n", i, s[i]);
         loc_avgStresses[i] += s[i];
       }
     }
@@ -1345,7 +1345,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
     // average the average stresses among the quadrature points
     for (int i = 0; i < 9; i++) {
       loc_avgStresses[i] /= num_vis_nodes;
-      printf("loc avg Stresses = %.5f\n", loc_avgStresses);
+      //printf("loc avg Stresses = %.5f\n", loc_avgStresses);
       avgStresses[i] += loc_avgStresses[i];
     }
   }
