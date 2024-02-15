@@ -43,16 +43,16 @@ y_train = np.reshape(y_train, newshape=(n_train, 1))
 model = tf.keras.models.Sequential(
     [
         tf.keras.Input(shape=(1,)),
-        tf.keras.layers.Dense(128, activation="tanh"),  #'relu'
-        tf.keras.layers.Dropout(0.2),
-        tf.keras.layers.Dense(20, activation="tanh"),  #'relu'
+        tf.keras.layers.Dense(300, activation="tanh"),  #'relu'
+        tf.keras.layers.Dense(200, activation="tanh"),  #'relu'
+        tf.keras.layers.Dense(100, activation="tanh"),  #'relu'
         tf.keras.layers.Dense(1),
     ]
 )
 # tf.keras.layers.Dropout(0.2),
 
 # https://github.com/keras-team/tf-keras/issues/501 - mean squared error worse in training step than in compiled version
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
 loss_fn = tf.keras.losses.MeanSquaredError()
 model.compile(
     optimizer=optimizer,
@@ -72,12 +72,13 @@ plt.plot(history.history["loss"])
 plt.title("training history")
 plt.ylabel("loss")
 plt.xlabel("epoch")
+plt.yscale('log')
 plt.savefig("training-hist.png", dpi=400)
 plt.close("training-hist")
 
 # plot the 1D model function
 plt.figure("model-compare")
-AR2 = np.linspace(0.0, 10.0, 300)
+AR2 = np.linspace(1.0, 10.0, 300)
 AR2 = np.reshape(AR2, newshape=(300, 1))
 eig1_pred = model.predict(AR2)
 plt.plot(x_train, y_train, label="data")
