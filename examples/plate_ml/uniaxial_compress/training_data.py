@@ -1,4 +1,5 @@
 from generate_plate_2nd_order import generate_plate
+from static_analysis import run_static_analysis
 from buckling_analysis import run_buckling_analysis
 import pandas as pd
 import numpy as np
@@ -13,6 +14,9 @@ data_dict = {
     "E": [],
     "nu": [],
     "D": [],
+    "Sx": [],
+    "Sxy": [],
+    "Sy": [],
     "eig1": [],
     "eig2": [],
     "eig3": [],
@@ -38,11 +42,19 @@ for Ly in np.linspace(1.0, 10.0, 100):
     data_dict["D"] += [D]
 
     generate_plate(Lx=Lx, Ly=Ly, nx=12, ny=12, displacement_control=False)
+    avgStresses = run_static_analysis(
+        thickness=thick, E=E, nu=nu, displacement_control=False
+    )
     funcs = run_buckling_analysis(
         thickness=thick, E=E, nu=nu, sigma=30.0, num_eig=20, displacement_control=False
     )
     print(f"training data funcs = {funcs}")
 
+    # save the average mid-plane stresses in the plate
+    for i, key in enumerate(["Sx", "Sy", "Sxy"]):
+        data_dict[key] = avgStresses[i]
+
+    # save the first 5 eigenvalues
     for i in range(5):
         data_dict[f"eig{i+1}"] += [funcs[i]]
 
