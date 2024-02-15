@@ -24,12 +24,20 @@ from tacs import pyTACS, constitutive, elements
 
 comm = MPI.COMM_WORLD
 
-def run_buckling_analysis(thickness=0.007, E=70e9, nu=0.33, sigma=30.0, num_eig=5, displacement_control=False):
 
+def run_buckling_analysis(
+    thickness=0.007,
+    E=70e9,
+    nu=0.33,
+    sigma=30.0,
+    num_eig=5,
+    write_soln=False,
+    derivatives=False,
+    displacement_control=False,
+):
     # Instantiate FEAAssembler
     bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
     FEAAssembler = pyTACS(bdfFile, comm=comm)
-
 
     def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
         # Set constitutive properties
@@ -41,7 +49,7 @@ def run_buckling_analysis(thickness=0.007, E=70e9, nu=0.33, sigma=30.0, num_eig=
         specific_heat = 463.0
 
         # Plate geometry
-        tplate = thickness # 5 mm
+        tplate = thickness  # 5 mm
 
         # Setup property and constitutive objects
         mat = constitutive.MaterialProperties(
@@ -69,12 +77,13 @@ def run_buckling_analysis(thickness=0.007, E=70e9, nu=0.33, sigma=30.0, num_eig=
         scale = [100.0]
         return elemList, scale
 
-
     # Set up constitutive objects and elements
     FEAAssembler.initialize(elemCallBack)
 
     # Setup buckling problem
-    bucklingProb = FEAAssembler.createBucklingProblem(name="buckle", sigma=sigma, numEigs=num_eig)
+    bucklingProb = FEAAssembler.createBucklingProblem(
+        name="buckle", sigma=sigma, numEigs=num_eig
+    )
     bucklingProb.setOption("printLevel", 2)
     # Add Loads
     displacement_control = False
@@ -90,12 +99,27 @@ def run_buckling_analysis(thickness=0.007, E=70e9, nu=0.33, sigma=30.0, num_eig=
     funcsSens = {}
     bucklingProb.solve()
     bucklingProb.evalFunctions(funcs)
-    bucklingProb.evalFunctionsSens(funcsSens)
-    bucklingProb.writeSolution(outputDir=os.path.dirname(__file__))
+    if derivatives:
+        bucklingProb.evalFunctionsSens(funcsSens)
+    if write_soln:
+        bucklingProb.writeSolution(outputDir=os.path.dirname(__file__))
 
     if comm.rank == 0:
         pprint(funcs)
-        pprint(funcsSens)
+        # pprint(funcsSens)
 
-if __name__=="__main__":
-    run_buckling_analysis(thickness=0.007, E=70e9, nu=0.33, sigma=10.0, num_eig=5, displacement_control=False)
+    # return the eigenvalues here
+    funcs_list = [funcs[key] for key in funcs]
+    return funcs_list
+
+
+if __name__ == "__main__":
+    run_buckling_analysis(
+        thickness=0.007,
+        E=70e9,
+        nu=0.33,
+        sigma=10.0,
+        num_eig=5,
+        write_soln=True,
+        displacement_control=False,
+    )

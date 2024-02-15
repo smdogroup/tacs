@@ -74,11 +74,11 @@ for j in range(2 * ny + 1):
         if i == 0:
             fp.write(
                 "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", uhat)
-            ) # u = uhat on left edge
+            )  # u = uhat on left edge
         if i == 2 * nx:
             fp.write(
                 "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", 0.0)
-            ) # u = 0 on right edge
+            )  # u = 0 on right edge
 
         on_bndry = False
         if i == 0 or i == 2 * nx:

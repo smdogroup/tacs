@@ -81,7 +81,6 @@ SP.solve()
 SP.writeSolution(outputDir=os.path.dirname(__file__))
 
 
-
 # test the average stresses routine
 avgStresses = FEAAssembler.assembler.getAverageStresses()
 print(f"avg Stresses = {avgStresses}")
