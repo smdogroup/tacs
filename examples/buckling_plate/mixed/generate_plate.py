@@ -63,16 +63,9 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
         for i in range(nx + 1):
             # check on boundary
             fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3", 0.0)
-            )  # w = 0
-            if i == 0 and j == 0:  # node 1
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "12456", 0.0)
-                )  # u = v = theta_x = theta_y = theta_z = 0 on right edge
-            elif j == 0 or i == 0:
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
-                )  # w = theta_z = 0
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "345", 0.0)
+            )  # w = theta_x = theta_y
+            if j == 0 or i == 0:
                 fp.write(
                     "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
                 )  # u = eps_xy * y
@@ -81,18 +74,12 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
                 )  # v = eps_xy * x
             elif i == nx: # right side
                 fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
-                )  # w = theta_z = 0
-                fp.write(
                     "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j] - exx * Lx)
                 )  # u = eps_xy * y - exx * Lx (so + exx compressive)
                 fp.write(
                     "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i])
                 )  # v = eps_xy * x
             elif j == ny: # top side
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
-                )  # w = theta_z = 0
                 fp.write(
                     "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
                 )  # u = eps_xy * y
@@ -117,4 +104,4 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
 
 
 if __name__ == "__main__":
-    generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.001)
+    generate_plate(Lx=1.0, Ly=0.7, nx=12, ny=12, exx=0.0, eyy=0.0, exy=0.001)

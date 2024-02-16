@@ -33,7 +33,6 @@ def run_buckling_analysis(
     num_eig=5,
     write_soln=False,
     derivatives=False,
-    displacement_control=False,
 ):
     # Instantiate FEAAssembler
     bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
@@ -85,12 +84,6 @@ def run_buckling_analysis(
         name="buckle", sigma=sigma, numEigs=num_eig
     )
     bucklingProb.setOption("printLevel", 2)
-    # Add Loads
-    displacement_control = False
-
-    # comment out if using displacement control
-    if not displacement_control:
-        bucklingProb.addLoadFromBDF(loadID=1)
 
     # exit()
 
@@ -121,5 +114,4 @@ if __name__ == "__main__":
         sigma=10.0,
         num_eig=5,
         write_soln=True,
-        displacement_control=False,
     )
