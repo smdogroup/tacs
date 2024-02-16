@@ -239,6 +239,10 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
       assembler->applyBCs(path);
     } else {
       pc->factor();
+
+      // set BCs associated with displacements (displacement control)
+      assembler->setBCs(path);
+      assembler->setVariables(path);
       assembler->assembleRes(res);
 
       // If need to add rhs
@@ -247,9 +251,11 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
         assembler->applyBCs(res);
       }
 
+      
       // Solve for the load path and set the variables
       solver->solve(res, path);
       path->scale(-1.0);
+      assembler->setBCs(path);
     }
 
     assembler->setVariables(path);
