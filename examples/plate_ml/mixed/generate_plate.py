@@ -1,0 +1,120 @@
+# Generate a plate mesh with CQUAD4 elements
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
+    """
+    create mixed compression and shear load problem with 
+    """
+
+    nodes = np.arange(1, (nx + 1) * (ny + 1) + 1, dtype=np.int32).reshape(
+        nx + 1, ny + 1
+    )
+
+    x = Lx * np.linspace(-0.5, 0.5, nx + 1)
+    y = Ly * np.linspace(-0.5, 0.5, ny + 1)
+
+    fp = open("plate.bdf", "w")
+    fp.write("$ Input file for a square shear-disp BC plate\n")
+    fp.write("SOL 103\nCEND\nBEGIN BULK\n")
+
+    # Write the grid points to a file
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            # Write the nodal data
+            spc = " "
+            coord_disp = 0
+            coord_id = 0
+            seid = 0
+
+            fp.write(
+                "%-8s%16d%16d%16.9e%16.9e*       \n"
+                % ("GRID*", nodes[i, j], coord_id, x[i], y[j])
+            )
+            fp.write(
+                "*       %16.9e%16d%16s%16d        \n" % (0.0, coord_disp, spc, seid)
+            )
+
+    # Output 2nd order elements
+    elem = 1
+    part_id = 1
+    for j in range(ny):
+        for i in range(nx):
+            # Write the connectivity data
+            # CQUAD4 elem id n1 n2 n3 n4
+            fp.write(
+                "%-8s%8d%8d%8d%8d%8d%8d\n"
+                % (
+                    "CQUAD4",
+                    elem,
+                    part_id,
+                    nodes[i, j],
+                    nodes[i + 1, j],
+                    nodes[i + 1, j + 1],
+                    nodes[i, j + 1],
+                )
+            )
+            elem += 1
+
+    # Set up the plate BCs so that it has u = uhat, for shear disp control
+    # u = eps * y, v = eps * x, w = 0
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            # check on boundary
+            fp.write(
+                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3", 0.0)
+            )  # w = 0
+            if i == 0 and j == 0:  # node 1
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "12456", 0.0)
+                )  # u = v = theta_x = theta_y = theta_z = 0 on right edge
+            elif j == 0 or i == 0:
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                )  # w = theta_z = 0
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
+                )  # u = eps_xy * y
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i])
+                )  # v = eps_xy * x
+            elif i == nx: # right side
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                )  # w = theta_z = 0
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j] - exx * Lx)
+                )  # u = eps_xy * y - exx * Lx (so + exx compressive)
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i])
+                )  # v = eps_xy * x
+            elif j == ny: # top side
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                )  # w = theta_z = 0
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
+                )  # u = eps_xy * y
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i] - eyy * Ly)
+                )  # v = eps_xy * x - eps_yy * Ly (so + eyy compressive)
+
+    # # plot the mesh to make sure it makes sense
+    # X, Y = np.meshgrid(x, y)
+    # W = X * 0.0
+    # for j in range(ny + 1):
+    #     for i in range(nx + 1):
+    #         if i == 0 or i == nx or j == 0 or j == ny:
+    #             W[i, j] = 1.0
+
+    # plt.scatter(X,Y)
+    # plt.contour(X,Y,W, corner_mask=True, antialiased=True)
+    # plt.show()
+
+    fp.write("ENDDATA")
+    fp.close()
+
+
+if __name__ == "__main__":
+    generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.001)
