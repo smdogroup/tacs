@@ -61,31 +61,27 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
     # u = eps * y, v = eps * x, w = 0
     for j in range(ny + 1):
         for i in range(nx + 1):
+            u = exy*y[j]
+            v = exy*x[i]
+            if i == 0 or j == 0:
+                pass
+            elif i == nx:
+                u -= exx * Lx
+            elif j == ny:
+                v -= eyy * Ly
+
             # check on boundary
-            fp.write(
-                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "345", 0.0)
-            )  # w = theta_x = theta_y
-            if j == 0 or i == 0:
+            if i == 0 or j == 0 or i == nx or j == ny:
                 fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "345", 0.0)
+                )  # w = theta_x = theta_y
+                fp.write(
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", u)
                 )  # u = eps_xy * y
                 fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i])
+                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", v)
                 )  # v = eps_xy * x
-            elif i == nx: # right side
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j] - exx * Lx)
-                )  # u = eps_xy * y - exx * Lx (so + exx compressive)
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i])
-                )  # v = eps_xy * x
-            elif j == ny: # top side
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", exy*y[j])
-                )  # u = eps_xy * y
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", exy*x[i] - eyy * Ly)
-                )  # v = eps_xy * x - eps_yy * Ly (so + eyy compressive)
+            
 
     # # plot the mesh to make sure it makes sense
     # X, Y = np.meshgrid(x, y)
@@ -104,4 +100,4 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
 
 
 if __name__ == "__main__":
-    generate_plate(Lx=1.0, Ly=0.7, nx=12, ny=12, exx=0.0, eyy=0.0, exy=0.001)
+    generate_plate(Lx=1.0, Ly=0.7, nx=50, ny=50, exx=0.001, eyy=0.0, exy=0.001)
