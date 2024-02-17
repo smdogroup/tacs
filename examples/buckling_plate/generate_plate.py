@@ -3,9 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
+def generate_plate(
+    Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0, clamped=True
+):
     """
-    create mixed compression and shear load problem with 
+    create mixed compression and shear load problem with
     """
 
     nodes = np.arange(1, (nx + 1) * (ny + 1) + 1, dtype=np.int32).reshape(
@@ -61,27 +63,34 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
     # u = eps * y, v = eps * x, w = 0
     for j in range(ny + 1):
         for i in range(nx + 1):
-            u = exy*y[j]
-            v = exy*x[i]
-            if i == 0 or j == 0:
-                pass
-            elif i == nx:
+            u = exy * y[j]
+            v = exy * x[i]
+
+            if i == nx:
                 u -= exx * Lx
             elif j == ny:
                 v -= eyy * Ly
+            elif i == 0 or j == 0:
+                pass
 
             # check on boundary
             if i == 0 or j == 0 or i == nx or j == ny:
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "345", 0.0)
-                )  # w = theta_x = theta_y
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", u)
-                )  # u = eps_xy * y
-                fp.write(
-                    "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", v)
-                )  # v = eps_xy * x
-            
+                if clamped or (i == 0 and j == 0):
+                    fp.write(
+                        "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "3456", 0.0)
+                    )  # w = theta_x = theta_y
+                else:
+                    fp.write(
+                        "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                    )  # w = theta_x = theta_y
+                if exy != 0 or i == 0 or i == nx:
+                    fp.write(
+                        "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", u)
+                    )  # u = eps_xy * y
+                if exy != 0.0 or j == 0:
+                    fp.write(
+                        "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", v)
+                    )  # v = eps_xy * x
 
     # # plot the mesh to make sure it makes sense
     # X, Y = np.meshgrid(x, y)
@@ -100,4 +109,6 @@ def generate_plate(Lx=1.0, Ly=1.0, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0):
 
 
 if __name__ == "__main__":
-    generate_plate(Lx=1.0, Ly=0.7, nx=50, ny=50, exx=0.001, eyy=0.0, exy=0.001)
+    generate_plate(
+        Lx=1.0, Ly=0.7, nx=30, ny=20, exx=0.0, eyy=0.0, exy=0.001, clamped=True
+    )

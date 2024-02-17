@@ -22,18 +22,10 @@ from mpi4py import MPI
 # ==============================================================================
 from tacs import pyTACS, constitutive, elements
 
-comm = MPI.COMM_WORLD
 
+def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
+    comm = MPI.COMM_WORLD
 
-def run_buckling_analysis(
-    thickness=0.007,
-    E=70e9,
-    nu=0.33,
-    sigma=30.0,
-    num_eig=5,
-    write_soln=False,
-    derivatives=False,
-):
     # Instantiate FEAAssembler
     bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
     FEAAssembler = pyTACS(bdfFile, comm=comm)
@@ -48,7 +40,8 @@ def run_buckling_analysis(
         specific_heat = 463.0
 
         # Plate geometry
-        tplate = thickness  # 5 mm
+        tplate = thickness
+        # tplate = 0.007  # 5 mm
 
         # Setup property and constitutive objects
         mat = constitutive.MaterialProperties(
@@ -79,39 +72,17 @@ def run_buckling_analysis(
     # Set up constitutive objects and elements
     FEAAssembler.initialize(elemCallBack)
 
-    # Setup buckling problem
-    bucklingProb = FEAAssembler.createBucklingProblem(
-        name="buckle", sigma=sigma, numEigs=num_eig
-    )
-    bucklingProb.setOption("printLevel", 2)
-
-    # exit()
-
-    # solve and evaluate functions/sensitivities
-    funcs = {}
-    funcsSens = {}
-    bucklingProb.solve()
-    bucklingProb.evalFunctions(funcs)
-    if derivatives:
-        bucklingProb.evalFunctionsSens(funcsSens)
+    # debug the static problem first
+    SP = FEAAssembler.createStaticProblem(name="static")
+    SP.solve()
     if write_soln:
-        bucklingProb.writeSolution(outputDir=os.path.dirname(__file__))
+        SP.writeSolution(outputDir=os.path.dirname(__file__))
 
-    if comm.rank == 0:
-        pprint(funcs)
-        # pprint(funcsSens)
-
-    # return the eigenvalues here
-    funcs_list = [funcs[key] for key in funcs]
-    return funcs_list
+    # test the average stresses routine
+    avgStresses = FEAAssembler.assembler.getAverageStresses()
+    print(f"avg Stresses = {avgStresses}")
+    return avgStresses
 
 
 if __name__ == "__main__":
-    run_buckling_analysis(
-        thickness=0.007,
-        E=70e9,
-        nu=0.33,
-        sigma=10.0,
-        num_eig=5,
-        write_soln=True,
-    )
+    run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=True)

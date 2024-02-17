@@ -22,12 +22,18 @@ from mpi4py import MPI
 # ==============================================================================
 from tacs import pyTACS, constitutive, elements
 
+comm = MPI.COMM_WORLD
 
-def run_static_analysis(
-    thickness=0.01, E=70e9, nu=0.33, write_soln=False, displacement_control=False
+
+def run_buckling_analysis(
+    thickness=0.007,
+    E=70e9,
+    nu=0.33,
+    sigma=30.0,
+    num_eig=5,
+    write_soln=False,
+    derivatives=False,
 ):
-    comm = MPI.COMM_WORLD
-
     # Instantiate FEAAssembler
     bdfFile = os.path.join(os.path.dirname(__file__), "plate.bdf")
     FEAAssembler = pyTACS(bdfFile, comm=comm)
@@ -42,8 +48,7 @@ def run_static_analysis(
         specific_heat = 463.0
 
         # Plate geometry
-        tplate = thickness
-        # tplate = 0.007  # 5 mm
+        tplate = thickness  # 5 mm
 
         # Setup property and constitutive objects
         mat = constitutive.MaterialProperties(
@@ -74,22 +79,39 @@ def run_static_analysis(
     # Set up constitutive objects and elements
     FEAAssembler.initialize(elemCallBack)
 
-    # debug the static problem first
-    SP = FEAAssembler.createStaticProblem(name="static")
-    # comment out if using displacement control
-    if not displacement_control:
-        SP.addLoadFromBDF(loadID=1)
-    SP.solve()
-    if write_soln:
-        SP.writeSolution(outputDir=os.path.dirname(__file__))
+    # Setup buckling problem
+    bucklingProb = FEAAssembler.createBucklingProblem(
+        name="buckle", sigma=sigma, numEigs=num_eig
+    )
+    bucklingProb.setOption("printLevel", 2)
 
-    # test the average stresses routine
-    avgStresses = FEAAssembler.assembler.getAverageStresses()
-    print(f"avg Stresses = {avgStresses}")
-    return avgStresses
+    # exit()
+
+    # solve and evaluate functions/sensitivities
+    funcs = {}
+    funcsSens = {}
+    bucklingProb.solve()
+    bucklingProb.evalFunctions(funcs)
+    if derivatives:
+        bucklingProb.evalFunctionsSens(funcsSens)
+    if write_soln:
+        bucklingProb.writeSolution(outputDir=os.path.dirname(__file__))
+
+    if comm.rank == 0:
+        pprint(funcs)
+        # pprint(funcsSens)
+
+    # return the eigenvalues here
+    funcs_list = [funcs[key] for key in funcs]
+    return funcs_list
 
 
 if __name__ == "__main__":
-    run_static_analysis(
-        thickness=0.01, E=70e9, nu=0.33, write_soln=True, displacement_control=False
+    run_buckling_analysis(
+        thickness=0.07,  # 0.01
+        E=70e9,
+        nu=0.33,
+        sigma=30.0,  # 1.0
+        num_eig=12,
+        write_soln=True,
     )
