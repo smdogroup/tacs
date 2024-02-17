@@ -2,9 +2,9 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
-from .generate_plate import generate_plate
-from .static_analysis import run_static_analysis
-from .buckling_analysis import run_buckling_analysis
+from ._generate_plate import generate_plate
+from ._static_analysis import run_static_analysis
+from ._buckling_analysis import run_buckling_analysis
 
 # 3 main verification cases for the buckling analysis
 # 1, 2, 3
