@@ -72,7 +72,7 @@ plt.plot(history.history["loss"])
 plt.title("training history")
 plt.ylabel("loss")
 plt.xlabel("epoch")
-plt.yscale('log')
+plt.yscale("log")
 plt.savefig("training-hist.png", dpi=400)
 plt.close("training-hist")
 
