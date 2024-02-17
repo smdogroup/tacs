@@ -9,7 +9,7 @@ import numpy as np
 
 # 3 main verification cases for the buckling analysis
 # 1, 2, 3
-case = 2
+case = 3
 run_static = False
 
 # case 1 - simply supported, uniaxial compression buckling
@@ -70,18 +70,17 @@ if case == 3:
         thickness=0.07, E=70e9, nu=0.33, sigma=40.0, num_eig=12, write_soln=True
     )
 
-    # every other shear mode has negative eigenvalue (since reverse shear load will still cause failure by sym)
-    pos_tacs_eigvals = tacs_eigvals[::2]
-
     # eigenvalues from Abaqus for comparison
-    #abaqus_eigvals = np.array([111.79, 115.45, 169.71, 181.02, 236.06, 242.07])
-    rel_error = (pos_tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
+    abaqus_eigvals = np.array([42.237, 42.290, 59.616, 68.999, 88.243, 91.976])
+    rel_error = (tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
 
-    print(f"\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n")
+    print(
+        f"\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n"
+    )
     for i in range(6):
         print(f"mode {i+1} eigenvalues:")
         print(
-            f"\ttacs = {pos_tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
+            f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
         )
 
 # run the static analysis for debugging the resulting displacement field

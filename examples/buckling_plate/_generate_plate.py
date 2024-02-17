@@ -66,8 +66,8 @@ def generate_plate(
             u = exy * y[j]
             v = exy * x[i]
 
-            if i == nx:
-                u -= exx * Lx
+            if i == nx or exy != 0:
+                u -= exx * x[i]
             elif j == ny:
                 v -= eyy * Ly
             elif i == 0 or j == 0:
