@@ -106,8 +106,7 @@ def run_buckling_analysis(
         # pprint(funcsSens)
 
     # return the eigenvalues here
-    funcs_list = [funcs[key] for key in funcs]
-    return funcs_list
+    return np.array([funcs[key] for key in funcs])
 
 
 if __name__ == "__main__":

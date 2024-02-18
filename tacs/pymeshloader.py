@@ -793,7 +793,6 @@ class pyMeshLoader(BaseUI):
         massDVs : dict
             Dictionary holding dv info for point masses.
         """
-        print(f"meshloader init TACS creator", flush=True)
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
         # Append RBE elements to element list, these are not setup by the user
@@ -817,7 +816,6 @@ class pyMeshLoader(BaseUI):
         self._unattachedNodeCheck()
 
         # Setup element connectivity and boundary condition info on root processor
-        print(f"meshloader set element connectivity", flush=True)
         if self.comm.rank == 0:
             # Set connectivity for all elements
             ptr = np.array(self.elemConnectivityPointer, dtype=np.intc)
@@ -830,7 +828,6 @@ class pyMeshLoader(BaseUI):
             )
 
             # Set up the boundary conditions
-            print(f"meshloader create BCs dict", flush=True)
             bcDict = {}
             for spc_id in self.bdfInfo.spcs:
                 for spc in self.bdfInfo.spcs[spc_id]:
@@ -893,23 +890,18 @@ class pyMeshLoader(BaseUI):
             bcptr = np.array(bcptr, dtype=np.intc)
             bcvals = np.array(bcvals, dtype=self.dtype)
             # Set boundary conditions in tacs
-            print(f"meshloader - creator set BCs", flush=True)
             self.creator.setBoundaryConditions(bcnodes, bcptr, bcdofs, bcvals)
 
             # Set node locations
             Xpts = self.bdfInfo.get_xyz_in_coord(fdtype=self.dtype, sort_ids=False)
-            print(f"meshloader - creator set nodes", flush=True)
             self.creator.setNodes(Xpts.flatten())
 
         # Set the elements for each component
-        print(f"meshloader - creator set elements", flush=True)
         self.creator.setElements(self.elemObjects)
 
-        print(f"meshloader make TACS creator", flush=True)
         self.assembler = self.creator.createTACS()
 
         # errored here
-        print(f"meshloader global to local element dict", flush=True)
         self.globalToLocalElementIDDict = self.getGlobalToLocalElementIDDict()
 
         # If any multiplier nodes were added, record their local processor indices
