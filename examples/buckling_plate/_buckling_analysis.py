@@ -95,7 +95,11 @@ def run_buckling_analysis(
     if derivatives:
         bucklingProb.evalFunctionsSens(funcsSens)
     if write_soln:
-        bucklingProb.writeSolution(outputDir=os.path.dirname(__file__))
+        cpath = os.path.dirname(__file__)
+        buckling_folder = os.path.join(cpath, "buckling")
+        if not os.path.exists(buckling_folder):
+            os.mkdir(buckling_folder)
+        bucklingProb.writeSolution(outputDir=buckling_folder)
 
     if comm.rank == 0:
         pprint(funcs)

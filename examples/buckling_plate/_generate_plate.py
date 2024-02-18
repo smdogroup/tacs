@@ -110,5 +110,5 @@ def generate_plate(
 
 if __name__ == "__main__":
     generate_plate(
-        Lx=1.0, Ly=0.7, nx=30, ny=20, exx=0.0, eyy=0.0, exy=0.001, clamped=True
+        Lx=1.0, Ly=0.7, nx=30, ny=20, exx=0.0, eyy=0.0, exy=0.001, clamped=False
     )

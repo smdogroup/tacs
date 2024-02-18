@@ -22,7 +22,6 @@ from mpi4py import MPI
 # ==============================================================================
 from tacs import pyTACS, constitutive, elements
 
-
 def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
     comm = MPI.COMM_WORLD
 
@@ -76,7 +75,11 @@ def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
     SP = FEAAssembler.createStaticProblem(name="static")
     SP.solve()
     if write_soln:
-        SP.writeSolution(outputDir=os.path.dirname(__file__))
+        cpath = os.path.dirname(__file__)
+        static_folder = os.path.join(cpath, "static")
+        if not os.path.exists(static_folder):
+            os.mkdir(static_folder)
+        SP.writeSolution(outputDir=static_folder)
 
     # test the average stresses routine
     avgStresses = FEAAssembler.assembler.getAverageStresses()
