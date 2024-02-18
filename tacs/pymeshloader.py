@@ -835,10 +835,10 @@ class pyMeshLoader(BaseUI):
                     for j, nastranNode in enumerate(spc.nodes):
                         # If constrained node doesn't exist in bdf
                         if nastranNode not in self.bdfInfo.node_ids:
-                            self._TACSWarning(
-                                f"Node ID {nastranNode} (Nastran ordering) is referenced by an SPC,  "
-                                "but the node was not defined in the BDF file. Skipping SPC."
-                            )
+                            # self._TACSWarning(
+                            #     f"Node ID {nastranNode} (Nastran ordering) is referenced by an SPC,  "
+                            #     "but the node was not defined in the BDF file. Skipping SPC."
+                            # )
                             continue
 
                         # Convert to TACS node ID

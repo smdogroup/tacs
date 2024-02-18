@@ -14,8 +14,8 @@ def generate_plate(
         nx + 1, ny + 1
     )
 
-    x = Lx * np.linspace(-0.5, 0.5, nx + 1)
-    y = Ly * np.linspace(-0.5, 0.5, ny + 1)
+    x = Lx * np.linspace(0.0, 1.0, nx + 1)
+    y = Ly * np.linspace(0.0, 1.0, ny + 1)
 
     fp = open("plate.bdf", "w")
     fp.write("$ Input file for a square shear-disp BC plate\n")
@@ -69,7 +69,7 @@ def generate_plate(
             if i == nx or exy != 0:
                 u -= exx * x[i]
             elif j == ny:
-                v -= eyy * Ly
+                v -= eyy * y[j]
             elif i == 0 or j == 0:
                 pass
 

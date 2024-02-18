@@ -45,7 +45,7 @@ if case == 2:
     )
 
     # every other shear mode has negative eigenvalue (since reverse shear load will still cause failure by sym)
-    pos_tacs_eigvals = tacs_eigvals[::2]
+    pos_tacs_eigvals = [eigval for eigval in tacs_eigvals if eigval > 0.0]
 
     # eigenvalues from Abaqus for comparison
     abaqus_eigvals = np.array([111.79, 115.45, 169.71, 181.02, 236.06, 242.07])
