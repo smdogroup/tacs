@@ -22,6 +22,7 @@ from mpi4py import MPI
 # ==============================================================================
 from tacs import pyTACS, constitutive, elements
 
+
 def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
     comm = MPI.COMM_WORLD
 
