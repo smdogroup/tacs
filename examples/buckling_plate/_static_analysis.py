@@ -1,7 +1,5 @@
 """
-This problem performs a buckling analysis on a 4m x 3m flat plate.
-The perimeter of the plate is pinned and loaded in compression (20kN/m) on its horizontal edges.
-We use TACS buckling eigenvalue solver through the pyTACS BucklingProblem interface.
+perform the static analysis of a flat plate with 
 """
 # ==============================================================================
 # Standard Python modules
@@ -20,10 +18,12 @@ from mpi4py import MPI
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import pyTACS, constitutive, elements
+from tacs import pyTACS, constitutive, elements, utilities
+
+dtype = utilities.BaseUI.dtype
 
 
-def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
+def run_static_analysis(thickness, E11, nu12, E22=None, G12=None, G23=None, G13=None, write_soln=False):
     comm = MPI.COMM_WORLD
 
     # Instantiate FEAAssembler
@@ -32,24 +32,33 @@ def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
 
     def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
         # Set constitutive properties
-        rho = 4540.0  # density, kg/m^3
-        # E = 70e9  # elastic modulus, Pa 118e9
-        # nu = 0.33  # poisson's ratio
-        ys = 1050e6  # yield stress, Pa
-        kappa = 6.89
-        specific_heat = 463.0
+        # rho = 4540.0  # density, kg/m^3
+        # # E = 70e9  # elastic modulus, Pa 118e9
+        # # nu = 0.33  # poisson's ratio
+        # ys = 1050e6  # yield stress, Pa
+        # kappa = 6.89
+        # specific_heat = 463.0
 
-        # Plate geometry
-        tplate = thickness
-        # tplate = 0.007  # 5 mm
+        # if E22 not provided, isotropic
+        isotropic = E22 is None
 
         # Setup property and constitutive objects
-        mat = constitutive.MaterialProperties(
-            rho=rho, specific_heat=specific_heat, kappa=kappa, E=E, nu=nu, ys=ys
-        )
+        if isotropic:
+            mat = constitutive.MaterialProperties(E=E11, nu=nu12)
 
-        # Set one thickness dv for every component
-        con = constitutive.IsoShellConstitutive(mat, t=tplate)
+            # Set one thickness dv for every component
+            con = constitutive.IsoShellConstitutive(mat, t=thickness)
+
+        else:  # orthotropic
+            # assume G23, G13 = G12
+            G23 = G12 if G23 is None else G23
+            G13 = G12 if G13 is None else G13
+            mat = constitutive.MaterialProperties(E1=E11, E2=E22, nu12=nu12, G12=G12, G23=G23, G13=G13)
+
+            # one play composite constitutive model
+            con = constitutive.CompositeShellConstitutive(
+                [mat], np.array([thickness],dtype=dtype), np.array([0], dtype=dtype), tOffset=0.0
+            )
 
         # For each element type in this component,
         # pass back the appropriate tacs element object
@@ -89,4 +98,7 @@ def run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=False):
 
 
 if __name__ == "__main__":
-    run_static_analysis(thickness=0.01, E=70e9, nu=0.33, write_soln=True)
+    # isotropic case
+    run_static_analysis(
+        thickness=0.01, E11=70e9, nu12=0.33, E22=None, G12=None, write_soln=True
+    )

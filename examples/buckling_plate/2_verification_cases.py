@@ -18,7 +18,7 @@ if case == 1:
         Lx=1.0, Ly=0.7, nx=30, ny=20, exx=0.001, eyy=0.0, exy=0.0, clamped=False
     )
     tacs_eigvals = run_buckling_analysis(
-        thickness=0.07, E=70e9, nu=0.33, sigma=30.0, num_eig=12, write_soln=True
+        thickness=0.07, E11=70e9, nu12=0.33, sigma=30.0, num_eig=12, write_soln=True
     )
 
     # eigenvalues from Abaqus for comparison
@@ -41,7 +41,7 @@ if case == 2:
     )
     # run_static_analysis(thickness=0.07, E=70e9, nu=0.33, write_soln=True)
     tacs_eigvals = run_buckling_analysis(
-        thickness=0.07, E=70e9, nu=0.33, sigma=30.0, num_eig=12, write_soln=True
+        thickness=0.07, E11=70e9, nu12=0.33, sigma=30.0, num_eig=12, write_soln=True
     )
 
     # every other shear mode has negative eigenvalue (since reverse shear load will still cause failure by sym)
@@ -67,7 +67,7 @@ if case == 3:
     )
     # run_static_analysis(thickness=0.07, E=70e9, nu=0.33, write_soln=True)
     tacs_eigvals = run_buckling_analysis(
-        thickness=0.07, E=70e9, nu=0.33, sigma=40.0, num_eig=12, write_soln=True
+        thickness=0.07, E11=70e9, nu12=0.33, sigma=40.0, num_eig=12, write_soln=True
     )
 
     # eigenvalues from Abaqus for comparison
@@ -85,4 +85,4 @@ if case == 3:
 
 # run the static analysis for debugging the resulting displacement field
 if run_static:
-    run_static_analysis(thickness=0.07, E=70e9, nu=0.33, write_soln=True)
+    run_static_analysis(thickness=0.07, E11=70e9, nu12=0.33, write_soln=True)
