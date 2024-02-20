@@ -12,7 +12,7 @@ E = 70e9
 nu = 0.33
 a = 1.0
 b = 0.2
-nx = 30
+nx = 50
 ny = 20
 exx = 0.001
 h = 0.01
@@ -22,7 +22,7 @@ E11 = E
 D = E * h**3 / 12.0 / (1 - nu**2)
 D11 = D
 D22 = D
-E22 = E
+E22 = E/2.0
 G12 = E / 2.0 / (1 + nu)
 
 # affine transformation to compute k_{x0} buckling coefficients
