@@ -30,8 +30,8 @@ def run_buckling_analysis(
     nu12,
     E22=None,
     G12=None,
-    G23=None,
-    G13=None,
+    _G23=None,
+    _G13=None,
     sigma=30.0,
     num_eig=5,
     write_soln=False,
@@ -64,13 +64,20 @@ def run_buckling_analysis(
 
         else:  # orthotropic
             # assume G23, G13 = G12
-            G23 = G12 if G23 is None else G23
-            G13 = G12 if G13 is None else G13
-            mat = constitutive.MaterialProperties(E1=E11, E2=E22, nu12=nu12, G12=G12, G23=G23, G13=G13)
+            G23 = G12 if _G23 is None else _G23
+            G13 = G12 if _G13 is None else _G13
+            ortho_prop = constitutive.MaterialProperties(
+                E1=E11, E2=E22, nu12=nu12, G12=G12, G23=G23, G13=G13
+            )
+
+            ortho_ply = constitutive.OrthotropicPly(thickness, ortho_prop)
 
             # one play composite constitutive model
             con = constitutive.CompositeShellConstitutive(
-                [mat], np.array([thickness],dtype=dtype), np.array([0],dtype=dtype), tOffset=0.0
+                [ortho_ply],
+                np.array([thickness], dtype=dtype),
+                np.array([0], dtype=dtype),
+                tOffset=0.0,
             )
 
         # For each element type in this component,
