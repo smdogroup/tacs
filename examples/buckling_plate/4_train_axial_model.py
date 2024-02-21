@@ -13,6 +13,8 @@ Output: k_x0
 df = pd.read_csv("data/Nxcrit.csv")
 
 # extract only the model columns
+# TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
+# or also log(E11/G12)
 X = df[["Dstar", "a0/b0", "b/h"]].to_numpy()
 Y = df["kx_0"].to_numpy()
 Y = np.reshape(Y, newshape=(Y.shape[0],1))

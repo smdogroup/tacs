@@ -5,6 +5,9 @@ GT SMDO Lab
 from tacs import buckling_surrogate
 import numpy as np
 import unittest
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
 
 # 3 main verification cases for the buckling analysis
 # 1, 2, 3
@@ -15,6 +18,7 @@ run_static = False
 class TestPlateCases(unittest.TestCase):
     # use the same flat plate geometry and material through all three test cases
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
+        comm=comm,
         bdf_file="plate.bdf",
         a=1.0,
         b=0.7,

@@ -3,7 +3,6 @@ __all__ = ["FlatPlateAnalysis"]
 import numpy as np
 import matplotlib.pyplot as plt
 from tacs import pyTACS, constitutive, elements, utilities
-from mpi4py import MPI
 import os
 from pprint import pprint
 
@@ -12,8 +11,10 @@ dtype = utilities.BaseUI.dtype
 
 class FlatPlateAnalysis:
     def __init__(
-        self, bdf_file, a, b, h, E11, nu12, E22=None, G12=None, _G23=None, _G13=None
+        self, comm, bdf_file, a, b, h, E11, nu12, E22=None, G12=None, _G23=None, _G13=None
     ):
+        self.comm = comm
+
         # geometry properties
         self.a = a  # Lx
         self.b = b  # Ly
@@ -130,107 +131,107 @@ class FlatPlateAnalysis:
         x = self.a * np.linspace(0.0, 1.0, nx + 1)
         y = self.b * np.linspace(0.0, 1.0, ny + 1)
 
-        fp = open(self.bdf_file, "w")
-        fp.write("$ Input file for a square axial/shear-disp BC plate\n")
-        fp.write("SOL 103\nCEND\nBEGIN BULK\n")
+        if self.comm.rank == 0:
+            fp = open(self.bdf_file, "w")
+            fp.write("$ Input file for a square axial/shear-disp BC plate\n")
+            fp.write("SOL 103\nCEND\nBEGIN BULK\n")
 
-        # Write the grid points to a file
-        for j in range(ny + 1):
-            for i in range(nx + 1):
-                # Write the nodal data
-                spc = " "
-                coord_disp = 0
-                coord_id = 0
-                seid = 0
+            # Write the grid points to a file
+            for j in range(ny + 1):
+                for i in range(nx + 1):
+                    # Write the nodal data
+                    spc = " "
+                    coord_disp = 0
+                    coord_id = 0
+                    seid = 0
 
-                fp.write(
-                    "%-8s%16d%16d%16.9e%16.9e*       \n"
-                    % ("GRID*", nodes[i, j], coord_id, x[i], y[j])
-                )
-                fp.write(
-                    "*       %16.9e%16d%16s%16d        \n"
-                    % (0.0, coord_disp, spc, seid)
-                )
-
-        # Output 2nd order elements
-        elem = 1
-        part_id = 1
-        for j in range(ny):
-            for i in range(nx):
-                # Write the connectivity data
-                # CQUAD4 elem id n1 n2 n3 n4
-                fp.write(
-                    "%-8s%8d%8d%8d%8d%8d%8d\n"
-                    % (
-                        "CQUAD4",
-                        elem,
-                        part_id,
-                        nodes[i, j],
-                        nodes[i + 1, j],
-                        nodes[i + 1, j + 1],
-                        nodes[i, j + 1],
+                    fp.write(
+                        "%-8s%16d%16d%16.9e%16.9e*       \n"
+                        % ("GRID*", nodes[i, j], coord_id, x[i], y[j])
                     )
-                )
-                elem += 1
+                    fp.write(
+                        "*       %16.9e%16d%16s%16d        \n"
+                        % (0.0, coord_disp, spc, seid)
+                    )
 
-        # Set up the plate BCs so that it has u = uhat, for shear disp control
-        # u = eps * y, v = eps * x, w = 0
-        for j in range(ny + 1):
-            for i in range(nx + 1):
-                u = exy * y[j]
-                v = exy * x[i]
+            # Output 2nd order elements
+            elem = 1
+            part_id = 1
+            for j in range(ny):
+                for i in range(nx):
+                    # Write the connectivity data
+                    # CQUAD4 elem id n1 n2 n3 n4
+                    fp.write(
+                        "%-8s%8d%8d%8d%8d%8d%8d\n"
+                        % (
+                            "CQUAD4",
+                            elem,
+                            part_id,
+                            nodes[i, j],
+                            nodes[i + 1, j],
+                            nodes[i + 1, j + 1],
+                            nodes[i, j + 1],
+                        )
+                    )
+                    elem += 1
 
-                if i == nx or exy != 0:
-                    u -= exx * x[i]
-                elif j == ny:
-                    v -= eyy * y[j]
-                elif i == 0 or j == 0:
-                    pass
+            # Set up the plate BCs so that it has u = uhat, for shear disp control
+            # u = eps * y, v = eps * x, w = 0
+            for j in range(ny + 1):
+                for i in range(nx + 1):
+                    u = exy * y[j]
+                    v = exy * x[i]
 
-                # check on boundary
-                if i == 0 or j == 0 or i == nx or j == ny:
-                    if clamped or (i == 0 and j == 0):
-                        fp.write(
-                            "%-8s%8d%8d%8s%8.6f\n"
-                            % ("SPC", 1, nodes[i, j], "3456", 0.0)
-                        )  # w = theta_x = theta_y
-                    else:
-                        fp.write(
-                            "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
-                        )  # w = theta_x = theta_y
-                    if exy != 0 or i == 0 or i == nx:
-                        fp.write(
-                            "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", u)
-                        )  # u = eps_xy * y
-                    if exy != 0.0 or j == 0:
-                        fp.write(
-                            "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", v)
-                        )  # v = eps_xy * x
+                    if i == nx or exy != 0:
+                        u -= exx * x[i]
+                    elif j == ny:
+                        v -= eyy * y[j]
+                    elif i == 0 or j == 0:
+                        pass
 
-        # # plot the mesh to make sure it makes sense
-        # X, Y = np.meshgrid(x, y)
-        # W = X * 0.0
-        # for j in range(ny + 1):
-        #     for i in range(nx + 1):
-        #         if i == 0 or i == nx or j == 0 or j == ny:
-        #             W[i, j] = 1.0
+                    # check on boundary
+                    if i == 0 or j == 0 or i == nx or j == ny:
+                        if clamped or (i == 0 and j == 0):
+                            fp.write(
+                                "%-8s%8d%8d%8s%8.6f\n"
+                                % ("SPC", 1, nodes[i, j], "3456", 0.0)
+                            )  # w = theta_x = theta_y
+                        else:
+                            fp.write(
+                                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                            )  # w = theta_x = theta_y
+                        if exy != 0 or i == 0 or i == nx:
+                            fp.write(
+                                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "1", u)
+                            )  # u = eps_xy * y
+                        if exy != 0.0 or j == 0:
+                            fp.write(
+                                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "2", v)
+                            )  # v = eps_xy * x
 
-        # plt.scatter(X,Y)
-        # plt.contour(X,Y,W, corner_mask=True, antialiased=True)
-        # plt.show()
+            # # plot the mesh to make sure it makes sense
+            # X, Y = np.meshgrid(x, y)
+            # W = X * 0.0
+            # for j in range(ny + 1):
+            #     for i in range(nx + 1):
+            #         if i == 0 or i == nx or j == 0 or j == ny:
+            #             W[i, j] = 1.0
 
-        fp.write("ENDDATA")
-        fp.close()
+            # plt.scatter(X,Y)
+            # plt.contour(X,Y,W, corner_mask=True, antialiased=True)
+            # plt.show()
+
+            fp.write("ENDDATA")
+            fp.close()
 
     def run_static_analysis(self, base_path=None, write_soln=False):
         """
         run a linear static analysis on the flat plate with either isotropic or composite materials
         return the average stresses in the plate => to compute in-plane loads Nx, Ny, Nxy
         """
-        comm = MPI.COMM_WORLD
 
         # Instantiate FEAAssembler
-        FEAAssembler = pyTACS(self.bdf_file, comm=comm)
+        FEAAssembler = pyTACS(self.bdf_file, comm=self.comm)
 
         def elemCallBack(
             dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
@@ -325,10 +326,8 @@ class FlatPlateAnalysis:
         return the sorted eigenvalues of the plate => would like to include M
         """
 
-        comm = MPI.COMM_WORLD
-
         # Instantiate FEAAssembler
-        FEAAssembler = pyTACS(self.bdf_file, comm=comm)
+        FEAAssembler = pyTACS(self.bdf_file, comm=self.comm)
 
         def elemCallBack(
             dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
@@ -418,7 +417,7 @@ class FlatPlateAnalysis:
                 os.mkdir(buckling_folder)
             bucklingProb.writeSolution(outputDir=buckling_folder)
 
-        if comm.rank == 0:
+        if self.comm.rank == 0:
             pprint(funcs)
             # pprint(funcsSens)
 

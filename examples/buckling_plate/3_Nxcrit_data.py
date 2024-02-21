@@ -11,8 +11,12 @@ import pandas as pd
 import os, niceplots
 import matplotlib.pyplot as plt
 
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+
 # model inputs
-N = 4000
+N = 10000
 
 # start of computations
 data_dict_list = []
@@ -20,7 +24,7 @@ data_dict_list = []
 # make a folder for the pandas data
 cpath = os.path.dirname(__file__)
 data_folder = os.path.join(cpath, "data")
-if not os.path.exists(data_folder):
+if not os.path.exists(data_folder) and comm.rank == 0:
     os.mkdir(data_folder)
 
 # TODO : change this to a Monte carlo simulation over uniform scales or uniform log scales
@@ -33,7 +37,7 @@ _clear_data = False
 
 csv_file = os.path.join(data_folder, "Nxcrit.csv")
 if _clear_data:
-    if os.path.exists(csv_file):
+    if os.path.exists(csv_file) and comm.rank == 0:
         os.remove(csv_file)
 
 accepted_ct = 0
@@ -59,6 +63,7 @@ while accepted_ct < N:  # until has generated this many samples
 
     # make the flat plate
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
+        comm,
         bdf_file="plate.bdf",
         a=a,
         b=b,
@@ -80,7 +85,7 @@ while accepted_ct < N:  # until has generated this many samples
 
     # check the model parameter ranges are reasonable
     valid_Dstar = 0 <= Dstar <= 1.0
-    valid_a_b = 0.05 <= a_b <= 20.0
+    valid_a_b = 0.05 <= a_b <= 10.0
     valid_a0_b0 = 0.05 <= a0_b0 <= 20.0
     valid_bh = 5 <= slenderR <= 100
 
@@ -105,10 +110,10 @@ while accepted_ct < N:  # until has generated this many samples
 
     # select number of elements
     if AR > 1.0:
-        nx = np.min([int(AR * 30), 80])
+        nx = np.min([int(AR * 30), 100])
         ny = 30
     else:  # AR < 1.0
-        ny = np.min([int(AR * 30), 80])
+        ny = np.min([int(AR * 30), 100])
         nx = 30
 
     _run_buckling = True
@@ -161,7 +166,7 @@ while accepted_ct < N:  # until has generated this many samples
         # write to the csv file
         # convert to a pandas dataframe and save it in the data folder
         df = pd.DataFrame(data_dict)
-        if accepted_ct == 1 and not (os.path.exists(csv_file)):
+        if accepted_ct == 1 and not (os.path.exists(csv_file)) and comm.rank == 0:
             df.to_csv(csv_file, mode="w", index=False)
         else:
             df.to_csv(csv_file, mode="a", index=False, header=False)
@@ -176,7 +181,7 @@ print(f"fraction of good models: {accepted_ct} / {ct} = {frac_good_models}")
 # check the model parameter ranges were covered
 _check_params = False
 plt.style.use(niceplots.get_style())
-if _check_params:
+if _check_params and comm.rank == 0:
     plt.figure("Dstar-AR")
     plt.plot(
         [_["Dstar"] for _ in data_dict_list], [_["a0/b0"] for _ in data_dict_list], "ko"
