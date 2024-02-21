@@ -125,9 +125,55 @@ class TestPlateCases(unittest.TestCase):
 
         assert np.max(np.abs(rel_error)) < 0.1
 
+    def test_affine_simply_supported(self):
+        flat_plate = buckling_surrogate.FlatPlateAnalysis(
+        bdf_file="plate.bdf",
+            a=1.0,
+            b=1.0,
+            h=0.005, # very slender => so near thin plate limit
+            E11=70e9,
+            nu12=0.33,
+            E22=None,  # set to None if isotropic
+            G12=None,  # set to None if isotropic
+        )
+
+        flat_plate.generate_bdf(
+            nx=20,
+            ny=20,
+            exx=flat_plate.affine_exx,
+            eyy=0.0,
+            exy=0.0,
+            clamped=False,
+        )
+
+        # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals = flat_plate.run_buckling_analysis(sigma=10.0, num_eig=12, write_soln=True)
+
+        # expect to get ~4.5
+        # since k0-2D* = (m a_0/b_0)^2 + (b_0/a_0/m)^2
+        # in affine space and D*=1 and k0-2D* = 2.5 in Brunelle paper (buckling-analysis section)
+        # "Generic Buckling Curves For Specially Orthotropic Rectangular Plates"
+        # but only works in thin plate limit (very thin)
+
+        kx_0 = tacs_eigvals[0] # exx_affine was scaled so that lambda = kx_0
+        # the non-dimensional buckling coefficient
+
+
+        kx_0_exact = 2.5 + 2.0 * flat_plate.Dstar
+        rel_err = (kx_0 - kx_0_exact) / kx_0_exact
+
+        print(f"Case 4 - Compare affine curve simply supported uniaxial compression..")
+        print(f"\tDstar = {flat_plate.Dstar}, b/h = {flat_plate.slenderness} (near thin plate limit)")
+        print(f"\tkx0 pred = {kx_0}")
+        print(f"\tkx0 exact = {kx_0_exact}")
+        print(f"\tkx0 rel error = {rel_err}")
+
+        assert abs(rel_err) < 0.05 # less than 5% error
+
 
 if __name__ == "__main__":
-    test = "all"
+    test = 4
 
     # run all cases with this
     if test == "all":
@@ -145,3 +191,7 @@ if __name__ == "__main__":
     elif test == 3:
         tester = TestPlateCases()
         tester.test_combined_axial_shear_clamped()
+
+    elif test == 4:
+        tester = TestPlateCases()
+        tester.test_affine_simply_supported()

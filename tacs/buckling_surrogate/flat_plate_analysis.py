@@ -22,8 +22,8 @@ class FlatPlateAnalysis:
         # material properties
         self.E11 = E11
         self.nu12 = nu12
-        self.E22 = E22
-        self.G12 = G12
+        self._E22 = E22
+        self._G12 = G12
         self._G23 = _G23
         self._G13 = _G13
 
@@ -41,6 +41,20 @@ class FlatPlateAnalysis:
     def nu21(self) -> float:
         """reversed 12 Poisson's ratio"""
         return self.nu12 * self.E22 / self.E11
+
+    @property
+    def E22(self) -> float:
+        if self._E22 is None:
+            return self.E11
+        else:
+            return self._E22
+        
+    @property
+    def G12(self) -> float:
+        if self._G12 is None:
+            return self.E11 / 2.0 / (1 + self.nu12)
+        else:
+            return self._G12
 
     @property
     def D11(self) -> float:
@@ -81,7 +95,7 @@ class FlatPlateAnalysis:
     @property
     def affine_aspect_ratio(self):
         """a0/b0 aspect ratio in the affine space"""
-        return (self.E22 / self.E11) ** 0.25 * self.aspect_ratio
+        return (self.D22 / self.D11) ** 0.25 * self.aspect_ratio
     
     @property
     def Dstar(self):
@@ -230,7 +244,7 @@ class FlatPlateAnalysis:
             # specific_heat = 463.0
 
             # if E22 not provided, isotropic
-            isotropic = self.E22 is None
+            isotropic = self._E22 is None
 
             # Setup property and constitutive objects
             if isotropic:
@@ -328,7 +342,7 @@ class FlatPlateAnalysis:
             # specific_heat = 463.0
 
             # if E22 not provided, isotropic
-            isotropic = self.E22 is None
+            isotropic = self._E22 is None
 
             # Setup property and constitutive objects
             if isotropic:

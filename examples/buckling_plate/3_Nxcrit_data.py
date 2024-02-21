@@ -125,7 +125,9 @@ while accepted_ct < N:  # until has generated this many samples
 
         # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals = flat_plate.run_buckling_analysis(sigma=10.0, num_eig=12, write_soln=True)
+        tacs_eigvals = flat_plate.run_buckling_analysis(
+            sigma=10.0, num_eig=12, write_soln=True
+        )
 
         kx_0 = tacs_eigvals[0]
 
@@ -159,7 +161,7 @@ while accepted_ct < N:  # until has generated this many samples
         # write to the csv file
         # convert to a pandas dataframe and save it in the data folder
         df = pd.DataFrame(data_dict)
-        if accepted_ct == 1 and not(os.path.exists(csv_file)):
+        if accepted_ct == 1 and not (os.path.exists(csv_file)):
             df.to_csv(csv_file, mode="w", index=False)
         else:
             df.to_csv(csv_file, mode="a", index=False, header=False)
