@@ -856,10 +856,12 @@ class pyTACS(BaseUI):
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption("linearityTol"):
-            return False # not nonlinear case
+        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption(
+            "linearityTol"
+        ):
+            return False  # not nonlinear case
         else:
-            return True # nonlinear case
+            return True  # nonlinear case
 
     def _elemCallBackFromBDF(self):
         """

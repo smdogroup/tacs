@@ -2,45 +2,31 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
-from _generate_plate import generate_plate
-from _static_analysis import run_static_analysis
-from _buckling_analysis import run_buckling_analysis
+from tacs import buckling_surrogate
 import numpy as np
 
-# model inputs
-E = 70e9
-nu = 0.33
-a = 1.0
-b = 0.2
-nx = 50
-ny = 20
-exx = 0.001
-h = 0.01
-
-# if isotropic it's just the following
-E11 = E
-D = E * h**3 / 12.0 / (1 - nu**2)
-D11 = D
-D22 = D
-E22 = E/2.0
-G12 = E / 2.0 / (1 + nu)
-
-# affine transformation to compute k_{x0} buckling coefficients
-# with this transformation => output lambda = k_{x0}
-exx_T = np.pi**2 * np.sqrt(D11 * D22) / b**2 / h / E11
-
-generate_plate(Lx=a, Ly=b, nx=nx, ny=ny, exx=exx_T, eyy=0.0, exy=0.0, clamped=False)
-# run_static_analysis(thickness=h, E=E, nu=nu, write_soln=True)
-
-tacs_eigvals = run_buckling_analysis(
-    thickness=h,
-    E11=E11,
-    nu12=nu,
-    E22=E22,
-    G12=G12,
-    sigma=10.0,
-    num_eig=12,
-    write_soln=True,
+flat_plate = buckling_surrogate.FlatPlateAnalysis(
+    bdf_file="plate.bdf",
+    a=1.0,
+    b=0.2,
+    h=0.01,
+    E11=70e9,
+    nu12=0.33,
+    E22=70e9,  # set to None if isotropic
+    G12=20e9,  # set to None if isotropic
 )
+
+flat_plate.generate_bdf(
+    nx=50,
+    ny=20,
+    exx=flat_plate.affine_exx,
+    eyy=0.0,
+    exy=0.0,
+    clamped=False,
+)
+
+avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+
+tacs_eigvals = flat_plate.run_buckling_analysis(sigma=10.0, num_eig=12, write_soln=True)
 
 print(f"tacs eigvals = {tacs_eigvals}")

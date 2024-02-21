@@ -61,7 +61,10 @@ def get_libraries():
 from . import pytacs
 from . import caps2tacs
 from .pytacs import pyTACS
+from . import buckling_surrogate
 from . import problems
 from . import constraints
 
-__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems", "constraints"])
+__all__.extend(
+    ["buckling_surrogate", "caps2tacs", "pytacs", "pyTACS", "problems", "constraints"]
+)
