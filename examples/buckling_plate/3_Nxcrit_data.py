@@ -51,7 +51,7 @@ while accepted_ct < N:  # until has generated this many samples
     E22 = 10**log_E22
     log_G12 = np.random.uniform(9, log_Emax)
     G12 = 10**log_G12
-    nu12 = np.random.uniform(-0.95, 0.45)
+    nu12 = np.random.uniform(0.1, 0.4) # was [-0.95, 0.45] before which meant a lot of the data was wacky (non-realistic with nu12<0)
 
     # randomly generate the plate sizes
     log_a = np.random.uniform(-1, 1)
@@ -110,10 +110,10 @@ while accepted_ct < N:  # until has generated this many samples
 
     # select number of elements
     if AR > 1.0:
-        nx = np.min([int(AR * 30), 100])
+        nx = np.min([int(AR * 30), 150])
         ny = 30
     else:  # AR < 1.0
-        ny = np.min([int(AR * 30), 100])
+        ny = np.min([int(AR * 30), 150])
         nx = 30
 
     _run_buckling = True
@@ -147,6 +147,7 @@ while accepted_ct < N:  # until has generated this many samples
             # model parameter section
             "Dstar": [Dstar],
             "a0/b0": [a0_b0],
+            "a/b" : [AR],
             "b/h": [slenderR],
             "kx_0": [kx_0],
             # other parameter section
@@ -165,11 +166,15 @@ while accepted_ct < N:  # until has generated this many samples
 
         # write to the csv file
         # convert to a pandas dataframe and save it in the data folder
-        df = pd.DataFrame(data_dict)
-        if accepted_ct == 1 and not (os.path.exists(csv_file)) and comm.rank == 0:
-            df.to_csv(csv_file, mode="w", index=False)
-        else:
-            df.to_csv(csv_file, mode="a", index=False, header=False)
+        if comm.rank == 0:
+            df = pd.DataFrame(data_dict)
+            if accepted_ct == 1 and not (os.path.exists(csv_file)):
+                df.to_csv(csv_file, mode="w", index=False)
+            else:
+                df.to_csv(csv_file, mode="a", index=False, header=False)
+
+        # MPI COMM Barrier in case running with multiple procs
+        comm.Barrier()
 
     else:
         continue

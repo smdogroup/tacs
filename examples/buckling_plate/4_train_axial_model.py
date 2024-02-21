@@ -15,12 +15,12 @@ df = pd.read_csv("data/Nxcrit.csv")
 # extract only the model columns
 # TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
 # or also log(E11/G12)
-X = df[["Dstar", "a0/b0", "b/h"]].to_numpy()
+X = df[["Dstar", "a0/b0", "a/b", "b/h"]].to_numpy()
 Y = df["kx_0"].to_numpy()
 Y = np.reshape(Y, newshape=(Y.shape[0],1))
 
-# convert b/h column to ln(b/h)
-X[:,2] = np.log(X[:,2])
+# convert a0/b0, a/b, b/h column to ln(*) or log space
+X[:,1:] = np.log(X[:,1:])
 
 # split into training and test datasets
 n_train = 1800
