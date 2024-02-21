@@ -82,7 +82,7 @@ while accepted_ct < N:  # until has generated this many samples
     valid_Dstar = 0 <= Dstar <= 1.0
     valid_a_b = 0.05 <= a_b <= 20.0
     valid_a0_b0 = 0.05 <= a0_b0 <= 20.0
-    valid_bh = 5 <= slenderR <= 200
+    valid_bh = 5 <= slenderR <= 100
 
     # skip this random model if model parameters are outside ranges
     ct += 1
@@ -105,11 +105,11 @@ while accepted_ct < N:  # until has generated this many samples
 
     # select number of elements
     if AR > 1.0:
-        nx = np.min([int(AR * 20), 60])
-        ny = 20
+        nx = np.min([int(AR * 30), 80])
+        ny = 30
     else:  # AR < 1.0
-        ny = np.min([int(AR * 20), 60])
-        nx = 20
+        ny = np.min([int(AR * 30), 80])
+        nx = 30
 
     _run_buckling = True
 
@@ -134,7 +134,7 @@ while accepted_ct < N:  # until has generated this many samples
     else:  # just do a model parameter check
         kx_0 = 1.0  # for model parameter check
 
-    if 0 < kx_0 < 100.0:
+    if 1.0 < kx_0 < 100.0:
         accepted_ct += 1
 
         # log the model parameters
