@@ -223,6 +223,8 @@ class FlatPlateAnalysis:
 
             fp.write("ENDDATA")
             fp.close()
+        
+        self.comm.Barrier()
 
     def run_static_analysis(self, base_path=None, write_soln=False):
         """
