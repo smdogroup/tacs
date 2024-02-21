@@ -5,9 +5,7 @@ Goal is to generate data for pure uniaxial compression failure in the x-directio
 For now just simply supported only..
 """
 
-from _generate_plate import generate_plate
-from _static_analysis import run_static_analysis
-from _buckling_analysis import run_buckling_analysis
+from tacs import buckling_surrogate
 import numpy as np
 import pandas as pd
 import os, niceplots
@@ -31,10 +29,10 @@ if not os.path.exists(data_folder):
 # arrays to check the values of
 
 # clear the csv file
-_clear_data = True
+_clear_data = False
 
+csv_file = os.path.join(data_folder, "Nxcrit.csv")
 if _clear_data:
-    csv_file = os.path.join(data_folder, "Nxcrit.csv")
     if os.path.exists(csv_file):
         os.remove(csv_file)
 
@@ -59,14 +57,24 @@ while accepted_ct < N:  # until has generated this many samples
     log_h = np.random.uniform(-3, -2)
     h = 10**log_h
 
-    # get main model parameters
-    Dstar = nu12 * np.sqrt(E22 / E11) + 2 * G12 * (1 - nu12**2 * E22 / E11) / np.sqrt(
-        E11 * E22
+    # make the flat plate
+    flat_plate = buckling_surrogate.FlatPlateAnalysis(
+        bdf_file="plate.bdf",
+        a=a,
+        b=b,
+        h=h,
+        E11=E11,
+        nu12=nu12,
+        E22=E22,  # set to None if isotropic
+        G12=G12,  # set to None if isotropic
     )
-    a0_b0 = (E22 / E11) ** 0.25 * a / b
+
+    # get main model parameters from the flat plate class
+    Dstar = flat_plate.Dstar
+    a0_b0 = flat_plate.affine_aspect_ratio
     log_a0_b0 = np.log10(a0_b0)
-    slenderR = b / h
-    a_b = a / b
+    slenderR = flat_plate.slenderness
+    a_b = flat_plate.aspect_ratio
     AR = a_b
     log_slender = np.log10(slenderR)
 
@@ -95,11 +103,6 @@ while accepted_ct < N:  # until has generated this many samples
 
     # if model parameters were in range then we can now run the buckling analysis
 
-    # compute parameters for the affine bending problem
-    nu21 = E22 / E11 * nu12
-    D11 = E11 * h**3 / 12.0 / (1 - nu12 * nu21)
-    D22 = E22 * h**3 / 12.0 / (1 - nu12 * nu21)
-
     # select number of elements
     if AR > 1.0:
         nx = np.min([int(AR * 20), 60])
@@ -108,28 +111,21 @@ while accepted_ct < N:  # until has generated this many samples
         ny = np.min([int(AR * 20), 60])
         nx = 20
 
-    # choose uniaxial compressive strain so that output lambda = k_x0 of buckling analysis
-    # see 1_run_analysis and affine CPT derivations
-    exx_T = np.pi**2 * np.sqrt(D11 * D22) / b**2 / h / E11
-
     _run_buckling = True
 
     if _run_buckling:
-        generate_plate(
-            Lx=a, Ly=b, nx=nx, ny=ny, exx=exx_T, eyy=0.0, exy=0.0, clamped=False
+        flat_plate.generate_bdf(
+            nx=50,
+            ny=20,
+            exx=flat_plate.affine_exx,
+            eyy=0.0,
+            exy=0.0,
+            clamped=False,
         )
-        # run_static_analysis(thickness=h, E=E, nu=nu, write_soln=True)
 
-        tacs_eigvals = run_buckling_analysis(
-            thickness=h,
-            E11=E11,
-            nu12=nu12,
-            E22=E22,
-            G12=G12,
-            sigma=10.0,
-            num_eig=12,
-            write_soln=True,
-        )
+        # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals = flat_plate.run_buckling_analysis(sigma=10.0, num_eig=12, write_soln=True)
 
         kx_0 = tacs_eigvals[0]
 
@@ -163,7 +159,7 @@ while accepted_ct < N:  # until has generated this many samples
         # write to the csv file
         # convert to a pandas dataframe and save it in the data folder
         df = pd.DataFrame(data_dict)
-        if accepted_ct == 1:
+        if accepted_ct == 1 and not(os.path.exists(csv_file)):
             df.to_csv(csv_file, mode="w", index=False)
         else:
             df.to_csv(csv_file, mode="a", index=False, header=False)

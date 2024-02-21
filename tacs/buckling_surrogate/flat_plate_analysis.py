@@ -72,6 +72,35 @@ class FlatPlateAnalysis:
     def affine_exy(self):
         """TODO : write this eqn out"""
         return None
+    
+    @property
+    def aspect_ratio(self):
+        """a/b ratio of the plate usually between 5 and 200"""
+        return self.a / self.b
+    
+    @property
+    def affine_aspect_ratio(self):
+        """a0/b0 aspect ratio in the affine space"""
+        return (self.E22 / self.E11) ** 0.25 * self.aspect_ratio
+    
+    @property
+    def Dstar(self):
+        """
+        return Dstar the generalized rigidity from the affine transformatin of orthotropic CPT (Classical Plate Theory)
+        TODO : may need to add isotropic case to this with Dstar = 1.0
+        """
+        return self.nu12 * np.sqrt(self.E22 / self.E11) + 2 * self.G12 * (1 - self.nu12**2 * self.E22 / self.E11) / np.sqrt(
+            self.E11 * self.E22
+        )
+    
+    @property
+    def slenderness(self):
+        """
+        slenderness ratio b/h. As the slenderness ratio decreases (plate is thicker) the CPT (Classical Plate Theory)
+        which doesn't include shear strain energy is less exact. And FSDT (First Order Shear Deformation Theory) or Reissler-Mindlin plate
+        theory which includes shear is required.
+        """
+        return self.b / self.h
 
     def generate_bdf(self, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0, clamped=True):
         """
