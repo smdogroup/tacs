@@ -12,7 +12,7 @@ import os, niceplots
 import matplotlib.pyplot as plt
 
 # model inputs
-N = 10000
+N = 4000
 
 # start of computations
 data_dict_list = []
