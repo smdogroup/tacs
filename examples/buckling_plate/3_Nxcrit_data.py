@@ -40,6 +40,14 @@ if _clear_data:
     if os.path.exists(csv_file) and comm.rank == 0:
         os.remove(csv_file)
 
+# maybe it would be better to use a materials database and select a random material then
+# and use material classmethods instead
+
+# TODO : rewrite this by randomly choose an isotropic / composite material
+# randomly choose a b and h pair until AR and affine_AR in range
+# this way a lot of random slenderness values will be used
+# iterate by sweeping AR through the data
+
 accepted_ct = 0
 ct = 0
 while accepted_ct < N:  # until has generated this many samples
@@ -89,7 +97,7 @@ while accepted_ct < N:  # until has generated this many samples
     valid_Dstar = 0 <= Dstar <= 1.0
     valid_a_b = 0.05 <= a_b <= 10.0
     valid_a0_b0 = 0.05 <= a0_b0 <= 20.0
-    valid_bh = 5 <= slenderR <= 100
+    valid_bh = 5 <= slenderR <= 100 # maybe I should allow higher slenderness ratios?
 
     # skip this random model if model parameters are outside ranges
     ct += 1
@@ -123,22 +131,30 @@ while accepted_ct < N:  # until has generated this many samples
     _run_buckling = True
 
     if _run_buckling:
+        load_scale = 0.5
+
         flat_plate.generate_bdf(
-            nx=50,
-            ny=20,
-            exx=flat_plate.affine_exx,
+            nx=nx, # my earlier mistake was the #elements was not copied from above!!
+            ny=ny,
+            exx=flat_plate.affine_exx*load_scale, # scale down to make sure in pre-buckling
             eyy=0.0,
             exy=0.0,
             clamped=False,
         )
 
-        # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+        #avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+        #if comm.rank == 0:
+        #    print(f"avg stresses = {avg_stresses}")
+
+        # Sx0 = avg_stresses[0]
+        # Sy0 = avg_stresses[1]
+        # Sxy0 = avg_stresses[2]
 
         tacs_eigvals, errors = flat_plate.run_buckling_analysis(
-            sigma=10.0, num_eig=12, write_soln=False
+            sigma=10.0/load_scale, num_eig=12, write_soln=False
         )
 
-        kx_0 = tacs_eigvals[0]
+        kx_0 = tacs_eigvals[0]*load_scale
         error_0 = errors[0]
 
     else:  # just do a model parameter check
@@ -156,6 +172,9 @@ while accepted_ct < N:  # until has generated this many samples
             "b/h": [slenderR],
             "kx_0": [kx_0],
             "error": [error_0],
+            #"s_xx" : [Sx0],
+            #"s_yy" : [Sy0],
+            #"s_xy" : [Sxy0],
             # other parameter section
             "E11": [E11],
             "E22": [E22],

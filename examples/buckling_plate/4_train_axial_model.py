@@ -15,16 +15,23 @@ df = pd.read_csv("data/Nxcrit.csv")
 # extract only the model columns
 # TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
 # or also log(E11/G12)
-X = df[["Dstar", "a0/b0", "b/h", "E11", "E22"]].to_numpy()
+model = 1
+if model == 1:
+    X = df[["Dstar", "a0/b0", "b/h"]].to_numpy()
+elif model == 2:
+    X = df[["Dstar", "a0/b0", "b/h", "E11", "G12", "nu12", "E22"]].to_numpy()
 Y = df["kx_0"].to_numpy()
 Y = np.reshape(Y, newshape=(Y.shape[0], 1))
 
 # TODO : possibly could also add nu12, or G12/E11 into the model?
 # explore the RMSE of different models to see if certain parameters are needed
 
-# add new parameter E11/E22 (will become log in a second)
-X[:, 3] = X[:, 3] / X[:, 4]
-X = X[:, :4]  # remove 4th column of E22
+if model == 2:
+    # add new parameter E11/E22 (will become log in a second)
+    E11_vec = X[:,3] * 1.0
+    X[:, 3] = X[:, 3] / X[:, 6]
+    X[:,4] = X[:,4] / E11_vec
+    X = X[:, :6]  # remove E22 column
 
 # convert a0/b0, b/h, E11/E22 column to ln(*) or log space
 X[:, 1:] = np.log(X[:, 1:])
@@ -85,7 +92,7 @@ print(f"RMSE test = {RMSE}")
 
 # plot the model and some of the data near the model range in D*=1, AR from 0.5 to 5.0, b/h=100
 # ---------------------------------------------------------------------------------------------
-X_plot = np.zeros((50, 3))
+X_plot = np.zeros((50, 4))
 X_plot[:, 0] = 1.0
 X_plot[:, 1] = np.linspace(0.5, 10.0, 50)
 X_plot[:, 2] = np.log(75.0)

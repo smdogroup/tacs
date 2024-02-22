@@ -8,6 +8,10 @@ affine_AR = df["a0/b0"].to_numpy()
 slenderness = df["b/h"].to_numpy()
 kx0 = df["kx_0"].to_numpy()
 
+a = df["a"].to_numpy()
+b = df["b"].to_numpy()
+AR = a/b
+
 # make folder for the slender bins
 slender_folder = os.path.join(os.getcwd(), "slender-bin")
 if not os.path.exists(slender_folder):
@@ -19,6 +23,8 @@ slender_bins = [[5.0, 10.0], [10.0, 20.0], [20.0, 50.0], [50.0, 100.0]]
 Dstar_bins = [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0]]
 
 plt.style.use(niceplots.get_style())
+
+mask0 = kx0 <= 20.0
 
 for ibin, bin in enumerate(slender_bins):
     if ibin < len(slender_bins) - 1:
@@ -38,6 +44,7 @@ for ibin, bin in enumerate(slender_bins):
             mask2 = np.logical_and(Dstar_bin[0] <= Dstar, Dstar <= Dstar_bin[1])
 
         mask = np.logical_and(mask1, mask2)
+        mask = np.logical_and(mask, mask0)
         if np.sum(mask) == 0:
             continue
 
