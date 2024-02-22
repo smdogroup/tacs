@@ -10,7 +10,7 @@ kx0 = df["kx_0"].to_numpy()
 
 a = df["a"].to_numpy()
 b = df["b"].to_numpy()
-AR = a/b
+AR = a / b
 
 # make folder for the slender bins
 slender_folder = os.path.join(os.getcwd(), "slender-bin")

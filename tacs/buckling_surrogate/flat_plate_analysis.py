@@ -1,17 +1,29 @@
 __all__ = ["FlatPlateAnalysis"]
 
 import numpy as np
-import matplotlib.pyplot as plt
 from tacs import pyTACS, constitutive, elements, utilities
 import os
 from pprint import pprint
+from .composite_material_utility import CompositeMaterialUtility
 
 dtype = utilities.BaseUI.dtype
 
 
 class FlatPlateAnalysis:
     def __init__(
-        self, comm, bdf_file, a, b, h, E11, nu12, E22=None, G12=None, _G23=None, _G13=None
+        self,
+        comm,
+        bdf_file,
+        a,
+        b,
+        h,
+        E11,
+        nu12,
+        E22=None,
+        G12=None,
+        _G23=None,
+        _G13=None,
+        material_name=None,
     ):
         self.comm = comm
 
@@ -21,6 +33,7 @@ class FlatPlateAnalysis:
         self.h = h  # plate thickness
 
         # material properties
+        self.material_name = material_name
         self.E11 = E11
         self.nu12 = nu12
         self._E22 = E22
@@ -29,6 +42,189 @@ class FlatPlateAnalysis:
         self._G13 = _G13
 
         self._bdf_file = bdf_file
+
+    @property
+    def materials(self):
+        """list of material class methods"""
+        return [
+            self.boron_epoxy,
+            self.AS_carbon_epoxy,
+            self.T300_epoxy,
+            self.HMS_carbon_epoxy,
+            self.GY_70_epoxy,
+            self.Kevlar_49_Epoxy,
+            self.E_glass_epoxy,
+        ]
+
+    # MATERIALS CLASS METHODS
+    @classmethod
+    def boron_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=207e9, E22=19e9, nu12=0.21, G12=6.4e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="boron-epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def AS_carbon_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        AS Carbon-Epoxy
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=127.5e9, E22=9e9, nu12=0.25, G12=6.5e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="AS-carbon-epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def T300_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=138e9, E22=10e9, nu12=0.21, G12=5.9e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="T300-epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def HMS_carbon_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=207e9, E22=13.8e9, nu12=0.20, G12=5.9e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="HMS-carbon-epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def GY_70_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=276e9, E22=8.3e9, nu12=0.25, G12=4.1e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="GY-70-epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def Kevlar_49_Epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=76e9, E22=5.5e9, nu12=0.34, G12=2.1e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="Kevlar-49-Epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+
+    @classmethod
+    def E_glass_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        Ref: Fiber Reinforced Composites TB by P.K. Mallick
+        units of Pa, Appendix A.5
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=39e9, E22=4.8e9, nu12=0.30, G12=4.8e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="E-Glass-Epoxy",
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
 
     @property
     def bdf_file(self) -> str:
@@ -49,7 +245,7 @@ class FlatPlateAnalysis:
             return self.E11
         else:
             return self._E22
-        
+
     @property
     def G12(self) -> float:
         if self._G12 is None:
@@ -70,7 +266,7 @@ class FlatPlateAnalysis:
     @property
     def D12(self) -> float:
         return self.nu12 * self.D22
-    
+
     @property
     def D66(self) -> float:
         return self.G12 * self.h**3 / 12.0
@@ -95,17 +291,17 @@ class FlatPlateAnalysis:
     def affine_exy(self):
         """TODO : write this eqn out"""
         return None
-    
+
     @property
     def aspect_ratio(self):
         """a/b ratio of the plate usually between 5 and 200"""
         return self.a / self.b
-    
+
     @property
     def affine_aspect_ratio(self):
         """a0/b0 aspect ratio in the affine space"""
         return (self.D22 / self.D11) ** 0.25 * self.aspect_ratio
-    
+
     @property
     def Dstar(self):
         """
@@ -204,7 +400,8 @@ class FlatPlateAnalysis:
                             )  # w = theta_x = theta_y
                         else:
                             fp.write(
-                                "%-8s%8d%8d%8s%8.6f\n" % ("SPC", 1, nodes[i, j], "36", 0.0)
+                                "%-8s%8d%8d%8s%8.6f\n"
+                                % ("SPC", 1, nodes[i, j], "36", 0.0)
                             )  # w = theta_x = theta_y
                         if exy != 0 or i == 0 or i == nx:
                             fp.write(
@@ -229,7 +426,7 @@ class FlatPlateAnalysis:
 
             fp.write("ENDDATA")
             fp.close()
-        
+
         self.comm.Barrier()
 
     def run_static_analysis(self, base_path=None, write_soln=False):
@@ -427,7 +624,7 @@ class FlatPlateAnalysis:
 
         errors = []
         for imode in range(num_eig):
-            eigval,eigvec = bucklingProb.getVariables(imode)
+            eigval, eigvec = bucklingProb.getVariables(imode)
             error = bucklingProb.getModalError(imode)
             errors += [error]
 

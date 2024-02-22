@@ -28,9 +28,9 @@ Y = np.reshape(Y, newshape=(Y.shape[0], 1))
 
 if model == 2:
     # add new parameter E11/E22 (will become log in a second)
-    E11_vec = X[:,3] * 1.0
+    E11_vec = X[:, 3] * 1.0
     X[:, 3] = X[:, 3] / X[:, 6]
-    X[:,4] = X[:,4] / E11_vec
+    X[:, 4] = X[:, 4] / E11_vec
     X = X[:, :6]  # remove E22 column
 
 # convert a0/b0, b/h, E11/E22 column to ln(*) or log space

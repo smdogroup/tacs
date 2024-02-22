@@ -52,6 +52,7 @@ accepted_ct = 0
 ct = 0
 while accepted_ct < N:  # until has generated this many samples
     # randomly generate the material constants
+    # TODO : change this to randomly selecting a material from a material database
     log_Emax = np.log10(200e9)
     log_E11 = np.random.uniform(9, log_Emax)
     E11 = 10**log_E11
@@ -64,6 +65,8 @@ while accepted_ct < N:  # until has generated this many samples
     )  # was [-0.95, 0.45] before which meant a lot of the data was wacky (non-realistic with nu12<0)
 
     # randomly generate the plate sizes
+    # TODO : change this to selecting affine_AR => computing AR
+    # select slenderness, scale b such that h > 0.01 (since below that is usually bad for eigenvalue solver)
     log_a = np.random.uniform(-1, 1)
     a = 10**log_a
     log_b = np.random.uniform(-1, 1)
@@ -97,7 +100,7 @@ while accepted_ct < N:  # until has generated this many samples
     valid_Dstar = 0 <= Dstar <= 1.0
     valid_a_b = 0.05 <= a_b <= 10.0
     valid_a0_b0 = 0.05 <= a0_b0 <= 20.0
-    valid_bh = 5 <= slenderR <= 100 # maybe I should allow higher slenderness ratios?
+    valid_bh = 5 <= slenderR <= 100  # maybe I should allow higher slenderness ratios?
 
     # skip this random model if model parameters are outside ranges
     ct += 1
@@ -134,16 +137,17 @@ while accepted_ct < N:  # until has generated this many samples
         load_scale = 0.5
 
         flat_plate.generate_bdf(
-            nx=nx, # my earlier mistake was the #elements was not copied from above!!
+            nx=nx,  # my earlier mistake was the #elements was not copied from above!!
             ny=ny,
-            exx=flat_plate.affine_exx*load_scale, # scale down to make sure in pre-buckling
+            exx=flat_plate.affine_exx
+            * load_scale,  # scale down to make sure in pre-buckling
             eyy=0.0,
             exy=0.0,
             clamped=False,
         )
 
-        #avg_stresses = flat_plate.run_static_analysis(write_soln=True)
-        #if comm.rank == 0:
+        # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+        # if comm.rank == 0:
         #    print(f"avg stresses = {avg_stresses}")
 
         # Sx0 = avg_stresses[0]
@@ -151,10 +155,10 @@ while accepted_ct < N:  # until has generated this many samples
         # Sxy0 = avg_stresses[2]
 
         tacs_eigvals, errors = flat_plate.run_buckling_analysis(
-            sigma=10.0/load_scale, num_eig=12, write_soln=False
+            sigma=10.0 / load_scale, num_eig=12, write_soln=False
         )
 
-        kx_0 = tacs_eigvals[0]*load_scale
+        kx_0 = tacs_eigvals[0] * load_scale
         error_0 = errors[0]
 
     else:  # just do a model parameter check
@@ -172,9 +176,9 @@ while accepted_ct < N:  # until has generated this many samples
             "b/h": [slenderR],
             "kx_0": [kx_0],
             "error": [error_0],
-            #"s_xx" : [Sx0],
-            #"s_yy" : [Sy0],
-            #"s_xy" : [Sxy0],
+            # "s_xx" : [Sx0],
+            # "s_yy" : [Sy0],
+            # "s_xy" : [Sxy0],
             # other parameter section
             "E11": [E11],
             "E22": [E22],

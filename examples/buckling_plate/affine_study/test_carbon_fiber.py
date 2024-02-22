@@ -31,15 +31,15 @@ for AR in np.linspace(0.5, 5, 40):
 
     # carbon fiber material with D* = 0.352
 
-    b = 5.0 # try different b values and make sure curve still valid
-    slenderness = 100.0 #33.3
+    b = 5.0  # try different b values and make sure curve still valid
+    slenderness = 100.0  # 33.3
 
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,
         bdf_file="plate.bdf",
-        a=AR*b,
+        a=AR * b,
         b=b,
-        h=b/slenderness,
+        h=b / slenderness,
         E11=135e9,
         nu12=0.3,
         E22=10e9,  # set to None if isotropic

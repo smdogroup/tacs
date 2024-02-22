@@ -131,6 +131,7 @@ class TestPlateCases(unittest.TestCase):
 
     def test_affine_simply_supported(self):
         flat_plate = buckling_surrogate.FlatPlateAnalysis(
+            comm=comm,
             bdf_file="plate.bdf",
             a=1.0,
             b=1.0,
@@ -152,7 +153,7 @@ class TestPlateCases(unittest.TestCase):
 
         # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals = flat_plate.run_buckling_analysis(
+        tacs_eigvals, _ = flat_plate.run_buckling_analysis(
             sigma=10.0, num_eig=12, write_soln=True
         )
 

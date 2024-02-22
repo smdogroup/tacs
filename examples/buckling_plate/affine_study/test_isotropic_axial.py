@@ -32,9 +32,9 @@ for AR in np.linspace(0.5, 5, 40):
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,
         bdf_file="plate.bdf",
-        a=AR*b,
+        a=AR * b,
         b=b,
-        h=b/slenderness,  # very slender => so near thin plate limit
+        h=b / slenderness,  # very slender => so near thin plate limit
         E11=70e9,
         nu12=0.33,
         E22=None,  # set to None if isotropic
