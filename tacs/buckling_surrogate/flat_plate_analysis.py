@@ -68,6 +68,14 @@ class FlatPlateAnalysis:
         return self.E22 * self.h**3 / 12.0 / (1 - self.nu12 * self.nu21)
 
     @property
+    def D12(self) -> float:
+        return self.nu12 * self.D22
+    
+    @property
+    def D66(self) -> float:
+        return self.G12 * self.h**3 / 12.0
+
+    @property
     def affine_exx(self):
         """
         get the exx so that lambda = kx_0 the affine buckling coefficient
@@ -104,10 +112,8 @@ class FlatPlateAnalysis:
         return Dstar the generalized rigidity from the affine transformatin of orthotropic CPT (Classical Plate Theory)
         TODO : may need to add isotropic case to this with Dstar = 1.0
         """
-        return self.nu12 * np.sqrt(self.E22 / self.E11) + 2 * self.G12 * (1 - self.nu12**2 * self.E22 / self.E11) / np.sqrt(
-            self.E11 * self.E22
-        )
-    
+        return (self.D12 + 2 * self.D66) / np.sqrt(self.D11 * self.D22)
+
     @property
     def slenderness(self):
         """
@@ -419,9 +425,15 @@ class FlatPlateAnalysis:
                 os.mkdir(buckling_folder)
             bucklingProb.writeSolution(outputDir=buckling_folder)
 
+        errors = []
+        for imode in range(num_eig):
+            eigval,eigvec = bucklingProb.getVariables(imode)
+            error = bucklingProb.getModalError(imode)
+            errors += [error]
+
         if self.comm.rank == 0:
             pprint(funcs)
             # pprint(funcsSens)
 
         # return the eigenvalues here
-        return np.array([funcs[key] for key in funcs])
+        return np.array([funcs[key] for key in funcs]), np.array(errors)

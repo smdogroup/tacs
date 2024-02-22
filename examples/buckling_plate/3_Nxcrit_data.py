@@ -51,7 +51,9 @@ while accepted_ct < N:  # until has generated this many samples
     E22 = 10**log_E22
     log_G12 = np.random.uniform(9, log_Emax)
     G12 = 10**log_G12
-    nu12 = np.random.uniform(0.1, 0.4) # was [-0.95, 0.45] before which meant a lot of the data was wacky (non-realistic with nu12<0)
+    nu12 = np.random.uniform(
+        0.1, 0.4
+    )  # was [-0.95, 0.45] before which meant a lot of the data was wacky (non-realistic with nu12<0)
 
     # randomly generate the plate sizes
     log_a = np.random.uniform(-1, 1)
@@ -109,12 +111,14 @@ while accepted_ct < N:  # until has generated this many samples
     # if model parameters were in range then we can now run the buckling analysis
 
     # select number of elements
+    min_elem = 30
+    max_elem = 120
     if AR > 1.0:
-        nx = np.min([int(AR * 30), 150])
-        ny = 30
+        nx = np.min([int(AR * min_elem), max_elem])
+        ny = min_elem
     else:  # AR < 1.0
-        ny = np.min([int(AR * 30), 150])
-        nx = 30
+        ny = np.min([int(min_elem / AR), max_elem])
+        nx = min_elem
 
     _run_buckling = True
 
@@ -130,16 +134,17 @@ while accepted_ct < N:  # until has generated this many samples
 
         # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals = flat_plate.run_buckling_analysis(
-            sigma=10.0, num_eig=12, write_soln=True
+        tacs_eigvals, errors = flat_plate.run_buckling_analysis(
+            sigma=10.0, num_eig=12, write_soln=False
         )
 
         kx_0 = tacs_eigvals[0]
+        error_0 = errors[0]
 
     else:  # just do a model parameter check
         kx_0 = 1.0  # for model parameter check
 
-    if 1.0 < kx_0 < 100.0:
+    if 1.0 < kx_0 < 100.0 and abs(error_0) < 1e-10:
         accepted_ct += 1
 
         # log the model parameters
@@ -147,9 +152,10 @@ while accepted_ct < N:  # until has generated this many samples
             # model parameter section
             "Dstar": [Dstar],
             "a0/b0": [a0_b0],
-            "a/b" : [AR],
+            # "a/b" : [AR],
             "b/h": [slenderR],
             "kx_0": [kx_0],
+            "error": [error_0],
             # other parameter section
             "E11": [E11],
             "E22": [E22],
