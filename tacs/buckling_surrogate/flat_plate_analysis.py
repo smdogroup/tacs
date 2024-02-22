@@ -24,6 +24,7 @@ class FlatPlateAnalysis:
         _G23=None,
         _G13=None,
         material_name=None,
+        ply_angle=None,
     ):
         self.comm = comm
 
@@ -34,6 +35,7 @@ class FlatPlateAnalysis:
 
         # material properties
         self.material_name = material_name
+        self.ply_angle = ply_angle
         self.E11 = E11
         self.nu12 = nu12
         self._E22 = E22
@@ -43,17 +45,16 @@ class FlatPlateAnalysis:
 
         self._bdf_file = bdf_file
 
-    @property
-    def materials(self):
-        """list of material class methods"""
+    @classmethod
+    def get_materials(cls):
         return [
-            self.boron_epoxy,
-            self.AS_carbon_epoxy,
-            self.T300_epoxy,
-            self.HMS_carbon_epoxy,
-            self.GY_70_epoxy,
-            self.Kevlar_49_Epoxy,
-            self.E_glass_epoxy,
+            cls.boron_epoxy,
+            cls.AS_carbon_epoxy,
+            cls.T300_epoxy,
+            cls.HMS_carbon_epoxy,
+            cls.GY_70_epoxy,
+            cls.Kevlar_49_Epoxy,
+            cls.E_glass_epoxy,
         ]
 
     # MATERIALS CLASS METHODS
@@ -75,6 +76,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="boron-epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -100,6 +102,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="AS-carbon-epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -124,6 +127,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="T300-epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -148,6 +152,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="HMS-carbon-epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -172,6 +177,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="GY-70-epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -196,6 +202,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="Kevlar-49-Epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
@@ -220,6 +227,7 @@ class FlatPlateAnalysis:
             b=b,
             h=h,
             material_name="E-Glass-Epoxy",
+            ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
             nu12=comp_utility.nu12,
