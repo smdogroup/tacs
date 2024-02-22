@@ -8,9 +8,9 @@ affine_AR = df["a0/b0"].to_numpy()
 slenderness = df["b/h"].to_numpy()
 kx0 = df["kx_0"].to_numpy()
 
-a = df["a"].to_numpy()
-b = df["b"].to_numpy()
-AR = a / b
+# a = df["a"].to_numpy()
+# b = df["b"].to_numpy()
+# AR = a / b
 
 # make folder for the slender bins
 slender_folder = os.path.join(os.getcwd(), "slender-bin")
@@ -18,7 +18,7 @@ if not os.path.exists(slender_folder):
     os.mkdir(slender_folder)
 
 # loop over different slenderness bins
-slender_bins = [[5.0, 10.0], [10.0, 20.0], [20.0, 50.0], [50.0, 100.0]]
+slender_bins = [[5.0, 10.0], [10.0, 20.0], [20.0, 50.0], [50.0, 100.0], [100.0, 200.0]]
 
 Dstar_bins = [[0.0, 0.2], [0.2, 0.4], [0.4, 0.6], [0.6, 0.8], [0.8, 1.0]]
 

@@ -33,7 +33,7 @@ if not os.path.exists(data_folder) and comm.rank == 0:
 # arrays to check the values of
 
 # clear the csv file
-_clear_data = False
+_clear_data = True
 
 csv_file = os.path.join(data_folder, "Nxcrit.csv")
 if _clear_data:
@@ -60,7 +60,7 @@ for foo in range(100):  # until has generated this many samples
     log_slenderness = np.random.uniform(np.log(5.0), np.log(200.0))
     slenderness = np.exp(log_slenderness)
     h = 0.1
-    b = 1.0  # verified that different b values don't influence non-dim buckling load
+    b = h * slenderness  # verified that different b values don't influence non-dim buckling load
 
     for aspect_ratio in np.linspace(0.2, 5.0, 40):
         a = aspect_ratio * b
@@ -81,8 +81,6 @@ for foo in range(100):  # until has generated this many samples
 
         if not (_accepted):
             continue  # go to next iteration
-        else:  # _accepted
-            inner_ct += 1
 
         # select number of elements
         # in order to preserve element AR based on overall AR
@@ -136,6 +134,7 @@ for foo in range(100):  # until has generated this many samples
                 # model parameter section
                 "Dstar": [flat_plate.Dstar],
                 "a0/b0": [flat_plate.affine_aspect_ratio],
+                "a/b" : [flat_plate.aspect_ratio],
                 "b/h": [flat_plate.slenderness],
                 "kx_0": [kx_0],
                 "error": [error_0],
@@ -154,10 +153,11 @@ for foo in range(100):  # until has generated this many samples
 
             # write to the csv file
             # convert to a pandas dataframe and save it in the data folder
+            inner_ct += 1 # started from 0, so first time is 1
             if comm.rank == 0:
                 df = pd.DataFrame(data_dict)
                 if inner_ct == 1 and not (os.path.exists(csv_file)):
-                    df.to_csv(csv_file, mode="w", index=False)
+                    df.to_csv(csv_file, mode="w", index=False, header=True)
                 else:
                     df.to_csv(csv_file, mode="a", index=False, header=False)
 
