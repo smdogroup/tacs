@@ -26,13 +26,15 @@ for AR in np.linspace(0.5, 5, 40):
     # since material here is isotropic, D11=D22
     # and a0/b0 = a/b = AR
     affine_AR = AR
+    slenderness = 100.0
+    b = 10.0
 
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,
         bdf_file="plate.bdf",
-        a=AR,
-        b=1.0,
-        h=0.01,  # very slender => so near thin plate limit
+        a=AR*b,
+        b=b,
+        h=b/slenderness,  # very slender => so near thin plate limit
         E11=70e9,
         nu12=0.33,
         E22=None,  # set to None if isotropic
@@ -61,7 +63,7 @@ for AR in np.linspace(0.5, 5, 40):
     # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
 
     tacs_eigvals, _ = flat_plate.run_buckling_analysis(
-        sigma=5.0, num_eig=6, write_soln=True
+        sigma=5.0, num_eig=6, write_soln=False
     )
 
     # expect to get ~4.5

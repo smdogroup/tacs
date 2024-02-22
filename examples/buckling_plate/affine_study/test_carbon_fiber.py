@@ -31,12 +31,15 @@ for AR in np.linspace(0.5, 5, 40):
 
     # carbon fiber material with D* = 0.352
 
+    b = 5.0 # try different b values and make sure curve still valid
+    slenderness = 100.0 #33.3
+
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,
         bdf_file="plate.bdf",
-        a=AR,
-        b=1.0,
-        h=0.03,
+        a=AR*b,
+        b=b,
+        h=b/slenderness,
         E11=135e9,
         nu12=0.3,
         E22=10e9,  # set to None if isotropic
@@ -65,7 +68,7 @@ for AR in np.linspace(0.5, 5, 40):
     # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
 
     tacs_eigvals, _ = flat_plate.run_buckling_analysis(
-        sigma=5.0, num_eig=6, write_soln=True
+        sigma=5.0, num_eig=6, write_soln=False
     )
 
     affine_AR = flat_plate.affine_aspect_ratio
