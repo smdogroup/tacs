@@ -78,6 +78,7 @@ class TACSLinearBuckling : public TACSObject {
  private:
   // Data for the eigenvalue analysis
   TacsScalar sigma;
+  void normalize_matrices();
 
   EPBucklingShiftInvert *ep_op;
   SEP *sep;

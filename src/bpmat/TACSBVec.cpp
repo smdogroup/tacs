@@ -447,6 +447,39 @@ void TACSBVec::set(TacsScalar val) {
 }
 
 /*
+  Set a value at one index
+*/
+void TACSBVec::setValue(int n, TacsScalar val) {
+  x[n] = val;
+}
+
+/*
+  Compute the 1-norm sum_i |v_i|
+*/
+TacsScalar TACSBVec::oneNorm() {
+  // Compute the norm for each processor
+  TacsScalar res, sum;
+  res = 0.0;
+  int i = 0;
+  int rem = size % 4;
+  TacsScalar *y = x;
+  for (; i < rem; i++) {
+    res += abs(y[0]);
+    y++;
+  }
+
+  for (; i < size; i += 4) {
+    res += abs(y[0]) + abs(y[1]) + abs(y[2]) + abs(y[3]);
+    y += 4;
+  }
+  TacsAddFlops(2 * size);
+
+  MPI_Allreduce(&res, &sum, 1, TACS_MPI_TYPE, MPI_SUM, comm);
+
+  return sum;
+}
+
+/*
   Initialize the random value generator
 */
 void TACSBVec::initRand() {

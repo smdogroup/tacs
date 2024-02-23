@@ -130,6 +130,10 @@ TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
   update->incref();
   eigvec->incref();
   path->incref();
+
+  // normalize the matrices by their 1-norms
+  // K = K / |K|_1; G = G / |G|_1
+  normalize_matrices();
 }
 
 /*
@@ -154,6 +158,95 @@ TACSLinearBuckling::~TACSLinearBuckling() {
   res->decref();
   update->decref();
   eigvec->decref();
+}
+
+/*
+Normalize the matrices K,G by their 1-norms
+to improve the numerical stability of the eigenvalue problem
+  K := K / |K|_1
+  G := G / |G|_1
+*/
+void TACSLinearBuckling::normalize_matrices() {
+  // first normalize the matrix K
+  // ----------------------------------
+
+  printf("Starting normalize matrices\n");
+
+  int size;
+  path->getSize(&size);
+  path->zeroEntries();
+  TacsScalar local_max, K_norm, temp;
+  local_max = 0.0;
+  K_norm = 0.0;
+  for (int i = 0; i < size; i++) {
+    printf("i/N = %d/%d\n", i,size);
+    path->zeroEntries();
+    res->zeroEntries();
+
+    // set path to e_i
+    path->setValue(i,1.0);
+    path->beginSetValues(TACS_ADD_VALUES);
+    path->endSetValues(TACS_ADD_VALUES);
+
+    // compute K * e_i => v_i the ith column
+    kmat->mult(path, res);
+
+    // compute the 1-norm of residual
+    temp = res->oneNorm();
+    if (temp > local_max) {
+      local_max = temp;
+    }
+  }
+
+  printf("Exited K for loop\n");
+
+  MPI_Barrier(assembler->getMPIComm());
+
+  // maximize the 1-norm among all columns for matrix 1-norm
+  MPI_Allreduce(&local_max, &K_norm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
+
+  // rescale the matrix K
+  printf("Knorm = %.4e\n", K_norm);
+  kmat->scale(1.0/K_norm);
+
+  // then normalize the matrix G
+  // ----------------------------------
+
+  path->zeroEntries();
+  TacsScalar local_maxG, G_norm;
+  local_maxG = 0.0;
+  G_norm = 0.0;
+  for (int i = 0; i < size; i++) {
+    path->zeroEntries();
+    res->zeroEntries();
+
+    // set path to e_i
+    path->setValue(i,1.0);
+    path->beginSetValues(TACS_ADD_VALUES);
+    path->endSetValues(TACS_ADD_VALUES);
+
+    // compute K * e_i => v_i the ith column
+    assembler->setVariables(path);
+    gmat->mult(path, res);
+
+    // compute the 1-norm of residual
+    temp = res->oneNorm();
+    if (temp > local_maxG) {
+      local_maxG = temp;
+    }
+  }
+
+  MPI_Barrier(assembler->getMPIComm());
+
+  // maximize the 1-norm among all columns for matrix 1-norm
+  MPI_Allreduce(&local_maxG, &G_norm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());// global 1-norm
+  printf("Gnorm = %.4e\n", G_norm);
+
+  // rescale the matrix G
+  gmat->scale(1.0/G_norm);
+
+  printf("Done with normalize matrices\n");
+
 }
 
 /*
