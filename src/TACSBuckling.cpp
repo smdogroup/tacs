@@ -164,6 +164,8 @@ to improve the numerical stability of the eigenvalue problem
 */
 void TACSLinearBuckling::normalize_kmat() {
   // first normalize the matrix K
+  // Graeme - propose using the Frobenius norm (instead of 1-norm)
+  //    easier to parallelize
   // ----------------------------------
 
   printf("Starting normalize Kmat\n");
