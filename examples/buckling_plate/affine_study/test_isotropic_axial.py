@@ -27,7 +27,7 @@ for AR in np.linspace(0.5, 5, 40):
     # and a0/b0 = a/b = AR
     affine_AR = AR
     slenderness = 100.0
-    b = 10.0
+    b = 100.0 # 10.0
 
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,

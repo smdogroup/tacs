@@ -130,10 +130,6 @@ TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
   update->incref();
   eigvec->incref();
   path->incref();
-
-  // normalize the matrices by their 1-norms
-  // K = K / |K|_1; G = G / |G|_1
-  normalize_matrices();
 }
 
 /*
@@ -166,20 +162,20 @@ to improve the numerical stability of the eigenvalue problem
   K := K / |K|_1
   G := G / |G|_1
 */
-void TACSLinearBuckling::normalize_matrices() {
+void TACSLinearBuckling::normalize_kmat() {
   // first normalize the matrix K
   // ----------------------------------
 
-  printf("Starting normalize matrices\n");
+  printf("Starting normalize Kmat\n");
 
   int size;
   path->getSize(&size);
   path->zeroEntries();
-  TacsScalar local_max, K_norm, temp;
+  TacsScalar local_max, temp;
   local_max = 0.0;
-  K_norm = 0.0;
+  Knorm = 0.0;
   for (int i = 0; i < size; i++) {
-    printf("i/N = %d/%d\n", i,size);
+    //printf("i/N = %d/%d\n", i,size);
     path->zeroEntries();
     res->zeroEntries();
 
@@ -203,49 +199,25 @@ void TACSLinearBuckling::normalize_matrices() {
   MPI_Barrier(assembler->getMPIComm());
 
   // maximize the 1-norm among all columns for matrix 1-norm
-  MPI_Allreduce(&local_max, &K_norm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
+  MPI_Allreduce(&local_max, &Knorm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
 
   // rescale the matrix K
-  printf("Knorm = %.4e\n", K_norm);
-  kmat->scale(1.0/K_norm);
+  printf("Knorm = %.4e\n", Knorm);
+  kmat->scale(1.0/Knorm);
 
-  // then normalize the matrix G
-  // ----------------------------------
+  printf("Done with normalize Kmat\n");
 
-  path->zeroEntries();
-  TacsScalar local_maxG, G_norm;
-  local_maxG = 0.0;
-  G_norm = 0.0;
-  for (int i = 0; i < size; i++) {
-    path->zeroEntries();
-    res->zeroEntries();
+}
 
-    // set path to e_i
-    path->setValue(i,1.0);
-    path->beginSetValues(TACS_ADD_VALUES);
-    path->endSetValues(TACS_ADD_VALUES);
+void TACSLinearBuckling::normalize_gmat() {
+  printf("Starting normalize Gmat\n");
 
-    // compute K * e_i => v_i the ith column
-    assembler->setVariables(path);
-    gmat->mult(path, res);
-
-    // compute the 1-norm of residual
-    temp = res->oneNorm();
-    if (temp > local_maxG) {
-      local_maxG = temp;
-    }
-  }
-
-  MPI_Barrier(assembler->getMPIComm());
-
-  // maximize the 1-norm among all columns for matrix 1-norm
-  MPI_Allreduce(&local_maxG, &G_norm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());// global 1-norm
-  printf("Gnorm = %.4e\n", G_norm);
+  // previously computed Gnorm, but just using Knorm to scale now
 
   // rescale the matrix G
-  gmat->scale(1.0/G_norm);
+  gmat->scale(1.0/Knorm);
 
-  printf("Done with normalize matrices\n");
+  printf("Done with normalize Gmat\n");
 
 }
 
@@ -355,6 +327,9 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
 
     // Assemble the stiffness and geometric stiffness matrix
     assembler->assembleMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, gmat);
+    normalize_kmat();
+    aux_mat->copyValues(kmat);
+    normalize_gmat();
 
     // Form the shifted operator and factor it
     aux_mat->axpy(sigma, gmat);

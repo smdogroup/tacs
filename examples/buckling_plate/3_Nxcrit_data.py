@@ -59,11 +59,17 @@ for foo in range(100):  # until has generated this many samples
     # random geometry, min thickness so that K,G matrices have good norm
     log_slenderness = np.random.uniform(np.log(5.0), np.log(200.0))
     slenderness = np.exp(log_slenderness)
-    h = 0.1
+    h = 1.0
     b = h * slenderness  # verified that different b values don't influence non-dim buckling load
+
+    fail_ct = 0
 
     for aspect_ratio in np.linspace(0.2, 5.0, 40):
         a = aspect_ratio * b
+
+        if fail_ct > 5:
+            break # exit out of this loop as the solver is failing here..
+            # may want to print out to a file when it does this (so the user can know this happened)
 
         # create the flat plate analysis
 
@@ -96,7 +102,7 @@ for foo in range(100):  # until has generated this many samples
         _run_buckling = True
 
         if _run_buckling:
-            load_scale = 0.5
+            load_scale = 1.0
 
             flat_plate.generate_bdf(
                 nx=nx,  # my earlier mistake was the #elements was not copied from above!!
@@ -117,7 +123,7 @@ for foo in range(100):  # until has generated this many samples
             # Sxy0 = avg_stresses[2]
 
             tacs_eigvals, errors = flat_plate.run_buckling_analysis(
-                sigma=10.0 / load_scale, num_eig=12, write_soln=False
+                sigma=5.0 / load_scale, num_eig=12, write_soln=False
             )
 
             kx_0 = tacs_eigvals[0] * load_scale
@@ -165,6 +171,7 @@ for foo in range(100):  # until has generated this many samples
             comm.Barrier()
 
         else:
+            fail_ct += 1
             continue
 
 # report the percentage of good models out of the Monte Carlo simulation
