@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import niceplots, pandas as pd, os
 
-df = pd.read_csv("Nxcrit.csv")
+cases = ["Nxcrit_SS", "Nxcrit_clamped", "Nxycrit_SS", "Nxycrit_clamped"]
+case = cases[0]
+
+df = pd.read_csv(case + ".csv")
 Dstar = df["Dstar"].to_numpy()
 affine_AR = df["a0/b0"].to_numpy()
 slenderness = df["b/h"].to_numpy()

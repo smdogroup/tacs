@@ -282,14 +282,14 @@ class FlatPlateAnalysis:
     @property
     def affine_exx(self):
         """
-        get the exx so that lambda = kx_0 the affine buckling coefficient
+        get the exx so that lambda = kx_0 the affine buckling coefficient for pure axial load
         out of the buckling analysis!
         """
         exx_T = (
             np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
         )
         return exx_T
-
+    
     @property
     def affine_eyy(self):
         """TODO : write this eqn out"""
@@ -297,8 +297,14 @@ class FlatPlateAnalysis:
 
     @property
     def affine_exy(self):
-        """TODO : write this eqn out"""
-        return None
+        """
+        get the exy so that lambda = kx_0y_0 the affine buckling coefficient for pure shear load
+        out of the buckling analysis!
+        """
+        # two different eqns right now - not sure which one is right
+        #exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
+        exy_T = np.pi**2 * (self.D11 * self.D22**3)**0.25 / self.b**2 / self.h / self.G12
+        return exy_T
 
     @property
     def aspect_ratio(self):
