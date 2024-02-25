@@ -329,9 +329,9 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
 
     // Assemble the stiffness and geometric stiffness matrix
     assembler->assembleMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, gmat);
-    normalize_kmat();
+    //normalize_kmat();
     aux_mat->copyValues(kmat);
-    normalize_gmat();
+    //normalize_gmat();
 
     // Form the shifted operator and factor it
     aux_mat->axpy(sigma, gmat);
