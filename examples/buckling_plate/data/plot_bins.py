@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import niceplots, pandas as pd, os
 
 cases = ["Nxcrit_SS", "Nxcrit_clamped", "Nxycrit_SS", "Nxycrit_clamped"]
-case = cases[0]
+case = cases[1]
 
 df = pd.read_csv(case + ".csv")
 Dstar = df["Dstar"].to_numpy()

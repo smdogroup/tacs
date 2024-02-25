@@ -111,6 +111,6 @@ if comm.rank == 0:
     plt.plot(AR_list, kx0_CF_list, label="closed-form")
     plt.plot(AR_list, kx0_FEA_list, "o", label="FEA")
     plt.xlabel(r"$a_0/b_0$")
-    plt.ylabel(r"$k_{x_0}$")
+    plt.ylabel(r"$k_{x_0 y_0}$")
     plt.legend()
     plt.savefig("affine-AR-kx0.png", dpi=400)

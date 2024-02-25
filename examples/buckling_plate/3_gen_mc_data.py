@@ -26,7 +26,7 @@ N = 100
 # select the load style and BC (4 total combinations)
 # need to generate all 4 combinations of data to finish this
 loading = "Nx"  # "Nx", "Nxy"
-BC = "SS"  # "SS", "clamped"
+BC = "clamped"  # "SS", "clamped"
 
 # END OF MODEL INPUTS SECTION
 # --------------------------------------------
