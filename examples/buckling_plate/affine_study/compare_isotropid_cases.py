@@ -20,7 +20,7 @@ plt.style.use(niceplots.get_style())
 plt.figure("affine")
 
 ct = 0
-for i in range(160): # 200 random smaples
+for i in range(160):  # 200 random smaples
     BC = np.random.choice(np.array(["SS", "CL"]))
     load = np.random.choice(np.array(["axial", "shear"]))
     AR_list = []
@@ -101,8 +101,8 @@ for i in range(160): # 200 random smaples
     comm.Barrier()
     ct += 1
 
-        # if comm.rank == 0:
-        #     plt.plot(AR_list, kx0_FEA_list, "o", label=load + "-" + BC)
+    # if comm.rank == 0:
+    #     plt.plot(AR_list, kx0_FEA_list, "o", label=load + "-" + BC)
 
 # # plot the Closed-Form versus the FEA for affine equations
 # if comm.rank == 0:

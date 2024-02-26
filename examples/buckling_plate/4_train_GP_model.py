@@ -9,18 +9,30 @@ Inputs: D*, a0/b0, ln(b/h)
 Output: k_x0
 """
 
+# choose the modes / dataset
+load = "axial"
+BC = "CL"
+assert load in ["axial", "shear"]
+assert BC in ["CL", "SS"]
+
 # load the Nxcrit dataset
-csv_filename = "Nxcrit_SS"
+load_prefix = "Nxcrit" if load == "axial" else "Nxycrit"
+csv_filename = f"{load_prefix}_{BC}"
 df = pd.read_csv("data/" + csv_filename + ".csv")
 
 # initial hyperparameter vector
 # sigma_n, sigma_f, L1, L2, L3
-theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
 
-n_train = 3600
-
-# avg rel error = 0.05135
-# best_theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+if csv_filename == "Nxcrit_SS":
+    theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+    n_train = 3600
+    # avg rel error = 0.0232,
+    # best_theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+elif csv_filename == "Nxcrit_CL":
+    theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+    n_train = 7000
+else:
+    raise AssertionError("Not setup hyperparameters for the other models yet.")
 
 # extract only the model columns
 # TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
@@ -31,9 +43,22 @@ Y = np.reshape(Y, newshape=(Y.shape[0], 1))
 
 print(f"Monte Carlo #data = {X.shape[0]}")
 
+# remove slenderness 5 to 10 from the dataset for Nxcrit_clamped
+if csv_filename == "Nxcrit_clamped":
+    # it hasn't been converted to logs yet
+    low_slenderness = np.logical_and(5.0 <= X[:, 2], X[:, 2] <= 10.0)
+    keep_mask = np.logical_not(low_slenderness)
+    X = X[keep_mask, :]
+    Y = Y[keep_mask, :]
+
 # REMOVE THE OUTLIERS in local 4d regions
 # loop over different slenderness bins
-slender_bins = [[5.0, 10.0], [10.0, 20.0], [20.0, 50.0], [50.0, 100.0], [100.0, 200.0]]
+slender_bins = [
+    [10.0, 20.0],
+    [20.0, 50.0],
+    [50.0, 100.0],
+    [100.0, 200.0],
+]  # [5.0, 10.0],
 Dstar_bins = [[0.25 * i, 0.25 * (i + 1)] for i in range(6)]
 # added smaller and larger bins here cause we miss some of the outliers near the higher a0/b0 with less data
 aff_AR_bins = (
@@ -352,29 +377,6 @@ alpha = np.linalg.solve(K_y, y)
 # f* = K(X*,X) * (K(X,X) + sn^2*I)^{-1} * Y
 # cov(f*) = K(X*,X*) - K(X*,X)^T * (K(X,X) + sn^2*I)^-1 * K(X,X*)
 
-# predict against the test dataset
-# --------------------------------------------------------------------------------------------------
-# K(X*,X)
-Kstar = np.array(
-    [
-        [kernel(X_train[i, :], X_test[j, :]) for i in range(n_train)]
-        for j in range(n_test)
-    ]
-)
-
-f_test = Kstar @ alpha
-# compute the RMSE on the test dataset
-test_resid = Y_test - f_test
-# print(f"test resid = {test_resid}")
-RMSE = np.sqrt(1.0 / n_test * float(test_resid.T @ test_resid))
-
-# norm RMSE
-norm_resid = (Y_test - f_test) / Y_test
-avg_rel_error = np.sum(np.abs(norm_resid)) / n_test
-
-print(f"RMSE test = {RMSE}")
-print(f"avg relative error = {avg_rel_error}")
-
 # plot the model and some of the data near the model range in D*=1, AR from 0.5 to 5.0, b/h=100
 # ---------------------------------------------------------------------------------------------
 _plot = True
@@ -520,3 +522,27 @@ if _plot:
         # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         plt.savefig(os.path.join(GP_folder, f"Dstar{iDstar}.png"), dpi=400)
         plt.close("check model")
+
+
+# predict against the test dataset
+# --------------------------------------------------------------------------------------------------
+# K(X*,X)
+Kstar = np.array(
+    [
+        [kernel(X_train[i, :], X_test[j, :]) for i in range(n_train)]
+        for j in range(n_test)
+    ]
+)
+
+f_test = Kstar @ alpha
+# compute the RMSE on the test dataset
+test_resid = Y_test - f_test
+# print(f"test resid = {test_resid}")
+RMSE = np.sqrt(1.0 / n_test * float(test_resid.T @ test_resid))
+
+# norm RMSE
+norm_resid = (Y_test - f_test) / Y_test
+avg_rel_error = np.sum(np.abs(norm_resid)) / n_test
+
+print(f"RMSE test = {RMSE}")
+print(f"avg relative error = {avg_rel_error}")
