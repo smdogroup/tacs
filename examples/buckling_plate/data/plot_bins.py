@@ -66,6 +66,7 @@ for ibin, bin in enumerate(slender_bins):
     plt.xlabel(r"$a_0/b_0$")
     plt.ylabel(r"$k_{x_0}$")
     plt.xlim(0.0, 5.0)
+    plt.ylim(0.0, 20.0)
     plt.title(f"slender bin b/h in [{bin[0]:.1f},{bin[1]:.1f}]")
     plt.savefig(
         os.path.join(slender_folder, f"slender_bin_{bin[0]:.1f}_{bin[1]:.1f}.png"),
@@ -109,6 +110,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
     plt.xlabel(r"$a_0/b_0$")
     plt.ylabel(r"$k_{x_0}$")
     plt.xlim(0.0, 5.0)
+    plt.ylim(0.0, 20.0)
     plt.title(f"D* in [{Dstar_bin[0]:.2f},{Dstar_bin[1]:.2f}]")
     plt.savefig(
         os.path.join(
