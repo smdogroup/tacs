@@ -191,7 +191,7 @@ void TACSLinearBuckling::normalize_kmat() {
 
     // compute the 1-norm of residual
     temp = res->oneNorm();
-    if (temp > local_max) {
+    if (TacsRealPart(temp) > TacsRealPart(local_max)) {
       local_max = temp;
     }
   }
@@ -204,7 +204,7 @@ void TACSLinearBuckling::normalize_kmat() {
   MPI_Allreduce(&local_max, &Knorm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
 
   // rescale the matrix K
-  printf("Knorm = %.4e\n", Knorm);
+  //printf("Knorm = %.4e\n", Knorm);
   kmat->scale(1.0/Knorm);
 
   printf("Done with normalize Kmat\n");
