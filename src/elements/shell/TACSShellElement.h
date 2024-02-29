@@ -671,7 +671,19 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
   memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
-  dh = 1e-4;
+
+  bool complexStepOverride = true; // temporarily compute G by complex step (Sean Engelstad)
+
+  dh = 1e-4; // default for without override
+  double dh_mag = 1e-4;
+
+#ifdef TACS_USE_COMPLEX
+  if (complexStepOverride) {
+    dh_mag = 1e-30;
+    dh = TacsScalar(0.0,dh_mag);
+  }
+#endif  // TACS_USE_COMPLEX
+
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
     alpha = 1.0;
@@ -694,7 +706,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     }
 
     // Central difference the tangent stiffness matrix
-    alpha = 0.5 * norm / dh;
+    alpha = 0.5 * norm / dh_mag;
 
     // fwd step
     path = new TacsScalar[vars_per_node * num_nodes];
@@ -713,6 +725,16 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     nlElem->addJacobian(elemIndex, time, -alpha, beta, gamma, Xpts, path, vars,
                         vars, res, mat);
 
+    // rescale by 1.0/i if complex_step_override is on
+#ifdef TACS_USE_COMPLEX
+  if (complexStepOverride) {
+    // take imaginary part of the element matrix
+    for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes; i++) {
+      mat[i] = TacsScalar(TacsImagPart(mat[i]), 0.0);
+    }
+  }
+#endif  // TACS_USE_COMPLEX
+    
     delete[] path;
 
     return;
