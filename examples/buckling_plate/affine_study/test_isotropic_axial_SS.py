@@ -27,7 +27,7 @@ for AR in np.linspace(0.5, 5, 40):
     # and a0/b0 = a/b = AR
     affine_AR = AR
     slenderness = 100.0
-    b = 100.0  # 10.0
+    b = 100.0  # 100.0 originally
 
     flat_plate = buckling_surrogate.FlatPlateAnalysis(
         comm=comm,
@@ -73,7 +73,7 @@ for AR in np.linspace(0.5, 5, 40):
     # but only works in thin plate limit (very thin)
 
     # the non-dimensional buckling coefficient
-    kx0_FEA_list += [tacs_eigvals[0]]
+    kx0_FEA_list += [np.real(tacs_eigvals[0])]
 
     # compute kx0 from the closed-form solution of the affine transform paper
     # loop over each mode and find the min non-dimensional buckling coefficient
