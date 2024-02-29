@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import niceplots, pandas as pd, os
 
-df = pd.read_csv("Nxcrit.csv")
+cases = ["Nxcrit_SS", "Nxcrit_clamped", "Nxycrit_SS", "Nxycrit_clamped"]
+case = cases[1]
+
+df = pd.read_csv(case + ".csv")
 Dstar = df["Dstar"].to_numpy()
 affine_AR = df["a0/b0"].to_numpy()
 slenderness = df["b/h"].to_numpy()
@@ -63,6 +66,7 @@ for ibin, bin in enumerate(slender_bins):
     plt.xlabel(r"$a_0/b_0$")
     plt.ylabel(r"$k_{x_0}$")
     plt.xlim(0.0, 5.0)
+    plt.ylim(0.0, 20.0)
     plt.title(f"slender bin b/h in [{bin[0]:.1f},{bin[1]:.1f}]")
     plt.savefig(
         os.path.join(slender_folder, f"slender_bin_{bin[0]:.1f}_{bin[1]:.1f}.png"),
@@ -106,6 +110,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
     plt.xlabel(r"$a_0/b_0$")
     plt.ylabel(r"$k_{x_0}$")
     plt.xlim(0.0, 5.0)
+    plt.ylim(0.0, 20.0)
     plt.title(f"D* in [{Dstar_bin[0]:.2f},{Dstar_bin[1]:.2f}]")
     plt.savefig(
         os.path.join(

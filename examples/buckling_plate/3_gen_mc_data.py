@@ -3,20 +3,36 @@ Sean Engelstad
 Feb 2024, GT SMDO Lab
 Goal is to generate data for pure uniaxial compression failure in the x-direction
 For now just simply supported only..
+
+gen_mc_data.py : generate monte carlo training data for each of the surrogate models
 """
 
 from tacs import buckling_surrogate
 import numpy as np
 import pandas as pd
-import os, niceplots
-import matplotlib.pyplot as plt
+import os
 
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
-# model inputs
-N = 10000
+# MODEL INPUTS SECTION
+# --------------------------------------------
+# --------------------------------------------
+
+# number of random samples (traverse all AR for each of them)
+N = 100
+
+# select the load style and BC (4 total combinations)
+# need to generate all 4 combinations of data to finish this
+loading = "Nx"  # "Nx", "Nxy"
+BC = "CL"  # "SS", "CL"
+
+# END OF MODEL INPUTS SECTION
+# --------------------------------------------
+# --------------------------------------------
+
+csv_filename = loading + "crit_" + BC + ".csv"
 
 # start of computations
 data_dict_list = []
@@ -35,7 +51,7 @@ if not os.path.exists(data_folder) and comm.rank == 0:
 # clear the csv file
 _clear_data = False
 
-csv_file = os.path.join(data_folder, "Nxcrit.csv")
+csv_file = os.path.join(data_folder, csv_filename)
 if _clear_data:
     if os.path.exists(csv_file) and comm.rank == 0:
         os.remove(csv_file)
@@ -50,7 +66,7 @@ if _clear_data:
 
 inner_ct = 0
 
-for foo in range(100):  # until has generated this many samples
+for foo in range(N):  # until has generated this many samples
     # randomly generate the material
     materials = buckling_surrogate.FlatPlateAnalysis.get_materials()
     material = np.random.choice(np.array(materials))
@@ -107,14 +123,22 @@ for foo in range(100):  # until has generated this many samples
         if _run_buckling:
             load_scale = 1.0
 
+            if loading == "Nx":
+                exx = flat_plate.affine_exx * load_scale
+                exy = 0.0
+            elif loading == "Nxy":
+                exx = 0.0
+                exy = flat_plate.affine_exy * load_scale
+
+            clamped = BC == "clamped"
+
             flat_plate.generate_bdf(
                 nx=nx,  # my earlier mistake was the #elements was not copied from above!!
                 ny=ny,
-                exx=flat_plate.affine_exx
-                * load_scale,  # scale down to make sure in pre-buckling
+                exx=exx,
                 eyy=0.0,
-                exy=0.0,
-                clamped=False,
+                exy=exy,
+                clamped=clamped,
             )
 
             # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
@@ -176,35 +200,3 @@ for foo in range(100):  # until has generated this many samples
         else:
             fail_ct += 1
             continue
-
-# report the percentage of good models out of the Monte Carlo simulation
-# frac_good_models = inner * 1.0 / ct
-# print(f"fraction of good models: {accepted_ct} / {ct} = {frac_good_models}")
-
-# check the model parameter ranges were covered
-# _check_params = False
-# plt.style.use(niceplots.get_style())
-# if _check_params and comm.rank == 0:
-#     plt.figure("Dstar-AR")
-#     plt.plot(
-#         [_["Dstar"] for _ in data_dict_list], [_["a0/b0"] for _ in data_dict_list], "ko"
-#     )
-#     plt.yscale("log")
-#     plt.xlabel("Dstar")
-#     plt.ylabel("AR")
-#     plt.show()
-#     plt.close("Dstar-AR")
-
-#     plt.figure("Dstar-slenderR")
-#     plt.plot(
-#         [_["Dstar"] for _ in data_dict_list], [_["b/h"] for _ in data_dict_list], "ko"
-#     )
-#     plt.yscale("log")
-#     plt.xlabel("Dstar")
-#     plt.ylabel("slenderR")
-#     plt.show()
-#     plt.close("Dstar-slenderR")
-
-# # plot aspect ratio versus kx0
-# plt.plot([_["a0/b0"] for _ in data_dict_list], [_["kx_0"] for _ in data_dict_list], "o")
-# plt.savefig("data/Dstar-kx0.png", dpi=400)
