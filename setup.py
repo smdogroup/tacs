@@ -129,7 +129,7 @@ setup(
         "numpy<2.0.0",
         "mpi4py>=3.1.1",
         "scipy>=1.2.1",
-        "pynastran>=1.3.3",
+        "pynastran>=1.4.0",
         "numba",
     ],
     extras_require=optional_dependencies,
