@@ -45,6 +45,10 @@ class FlatPlateAnalysis:
 
         self._bdf_file = bdf_file
 
+        # temp
+        self._nx = None
+        self._ny = None
+
     @classmethod
     def get_materials(cls):
         return [
@@ -243,6 +247,10 @@ class FlatPlateAnalysis:
         self._bdf_file = new_file
 
     @property
+    def num_elements(self) -> int:
+        return self._nx * self._ny
+
+    @property
     def nu21(self) -> float:
         """reversed 12 Poisson's ratio"""
         return self.nu12 * self.E22 / self.E11
@@ -344,6 +352,9 @@ class FlatPlateAnalysis:
         nodes = np.arange(1, (nx + 1) * (ny + 1) + 1, dtype=np.int32).reshape(
             nx + 1, ny + 1
         )
+
+        self._nx = nx
+        self._ny = ny
 
         x = self.a * np.linspace(0.0, 1.0, nx + 1)
         y = self.b * np.linspace(0.0, 1.0, ny + 1)
