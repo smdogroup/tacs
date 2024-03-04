@@ -12,6 +12,9 @@
 
 #distutils: language=c++
 
+import warnings
+import difflib
+
 # For the use of MPI
 from mpi4py.libmpi cimport *
 cimport mpi4py.MPI as MPI
@@ -34,8 +37,7 @@ from libc.stdlib cimport malloc, free
 from cpython cimport PyObject, Py_INCREF
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
+from tacs.TACS cimport *
 
 # Include the definitions
 include "TacsDefs.pxi"
@@ -216,6 +218,32 @@ cdef class MaterialProperties:
         cdef TacsScalar kappa2 = 230.0
         cdef TacsScalar kappa3 = 230.0
 
+        ISOTROPIC_KEYS = ["rho", "E", "nu", "G", "ys", "alpha", "specific_heat", "kappa"]
+        ORTHOTROPIC_KEYS = ["E1", "E2", "E3",
+                            "nu12", "nu13", "nu23",
+                            "G12", "G13", "G23",
+                            "T1", "T2", "T3",
+                            "C1", "C2", "C3",
+                            "S12", "S13", "S23",
+                            "Xt", "Yt", "Xc", "Yc", "S",
+                            "alpha1", "alpha2", "alpha3",
+                            "kappa1", "kappa2", "kappa3"]
+        ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
+
+        # Check for any invalid/misspelled inputs
+        for input_key in kwargs:
+            if input_key not in ALL_KEYS:
+                guess = difflib.get_close_matches(input_key, ALL_KEYS, n=1, cutoff=0.0)[0]
+                raise ValueError(f"{input_key} is not a valid material property. Perhaps you meant {guess}? \n"
+                                 "Acceptable arguments are: \n" +
+                                 ", ".join(ALL_KEYS),)
+
+        # Check if any input provided in kwargs was orthotropic
+        if any(input_key in ORTHOTROPIC_KEYS for input_key in kwargs):
+            is_orthotropic = True
+        else:
+            is_orthotropic = False
+
         if 'rho' in kwargs:
             rho = kwargs['rho']
         if 'specific_heat' in kwargs:
@@ -314,7 +342,7 @@ cdef class MaterialProperties:
         if 'kappa3' in kwargs:
             kappa3 = kwargs['kappa3']
 
-        if 'E1' in kwargs:
+        if is_orthotropic:
             self.ptr = new TACSMaterialProperties(rho, specific_heat, E1, E2, E3,
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
@@ -393,6 +421,7 @@ cdef class MaterialProperties:
         cdef TacsScalar alpha1, alpha2, alpha3
         cdef TacsScalar kappa1, kappa2, kappa3
 
+        rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
                                        &S12, &S13, &S23)
@@ -400,6 +429,7 @@ cdef class MaterialProperties:
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
 
         mat = {}
+        mat['rho'] = rho
         mat['E1'] = E1
         mat['E2'] = E2
         mat['E3'] = E3
@@ -458,7 +488,7 @@ cdef class OrthotropicPly:
       to zero by default. If a value of C, the failure stress under
       combined in-plane loading, is supplied, the interaction coefficient
       is determined. Be careful - the value can easily fall outside
-      acceptible bounds - these are tested during initialization.
+      acceptable bounds - these are tested during initialization.
 
       Args:
           ply_thickness (float or complex): The ply thickness.
@@ -672,6 +702,9 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+        tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -679,6 +712,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar tOff = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -691,10 +725,12 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'tOffset' in kwargs:
+            tOff = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
-                                                     tlb, tub)
+                                                     tlb, tub, tOff)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -732,11 +768,15 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
        ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
        ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+       tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, ply_list,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
                   np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
-                  TacsScalar kcorr=5.0/6.0):
+                  TacsScalar kcorr=5.0/6.0,
+                  TacsScalar tOffset=0.0):
 
         num_plies = len(ply_list)
         if len(ply_thicknesses) != num_plies:
@@ -755,7 +795,7 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
 
         self.cptr = new TACSCompositeShellConstitutive(num_plies, plys,
                                                        <TacsScalar*>ply_thicknesses.data,
-                                                       <TacsScalar*>ply_angles.data, kcorr)
+                                                       <TacsScalar*>ply_angles.data, kcorr, tOffset)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -784,9 +824,397 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
             ply_id = self.props[i].getNastranID()
             mat_ids.append(ply_id)
 
+        # Calculate distance from ref plane to bottom ply
+        lam_thickness = sum(ply_thicknesses)
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * lam_thickness
+
         prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
                                                     ply_thicknesses.astype(float),
-                                                    np.rad2deg(ply_angles, dtype=float))
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    z0=np.real(z0))
+        return prop
+
+cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    kcorr : float or complex
+        Shear correction factor, usually 5.0/6.0
+    panelLength : float or complex
+        Panel length DV value
+    panelLengthNum : int
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    stiffenerPitchNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    panelThick : float or complex
+        Panel thickness DV value
+    panelThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numPanelPlies : int
+        Number of distinct ply angles in the panel
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    panelPlyFracNums : numpy.ndarray[np.intc]
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerHeightNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerThickNum : int
+        DV number, passing a negative value tells TACS not to treat this as a DV
+    numStiffenerPlies : int
+        Number of distinct ply angles in the stiffener
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc]
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height, by default 1.0
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have numPanelPlies entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have numStiffenerPlies entries
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar kcorr,
+        TacsScalar panelLength,
+        int panelLengthNum,
+        TacsScalar stiffenerPitch,
+        int stiffenerPitchNum,
+        TacsScalar panelThick,
+        int panelThickNum,
+        int numPanelPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums,
+        TacsScalar stiffenerHeight,
+        int stiffenerHeightNum,
+        TacsScalar stiffenerThick,
+        int stiffenerThickNum,
+        int numStiffenerPlies,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums,
+        TacsScalar flangeFraction = 1.0
+        ):
+
+        if len(panelPlyAngles) != numPanelPlies:
+            raise ValueError('panelPlyAngles must have length numPanelPlies')
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have length numPanelPlies')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have length numPanelPlies')
+        if len(stiffenerPlyAngles) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyAngles must have length numStiffenerPlies')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have length numStiffenerPlies')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have length numStiffenerPlies')
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        self.blade_ptr = new TACSBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            flangeFraction
+        )
+        self.ptr = self.cptr = self.blade_ptr
+        self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.blade_ptr:
+            self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
+
+        if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.blade_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
+            self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
+
+        if self.blade_ptr:
+            if len(lowerBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.blade_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
+            self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    composite laminate first-order shear deformation theory (FSDT) shell type element.
+    The stiffness of the laminate is computed by homogenizing the stiffness properties
+    of each ply through the thickness weighted by their relative ply fractions. This class
+    is a good continuous parametrization for laminates used in gradient-based optimizations where
+    stacking sequence effects can be ignored.
+
+    Args:
+       ply_list (list[OrthotropicPly]): List of ply properties in layup.
+       thicknesses (float or complex): Total laminate thickness of layup.
+       ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
+       ply_fractions (numpy.ndarray[float or complex]): Fraction of layup contribution of each ply in ply_list.
+       thickness_dv_num (int, optional): Design variable number to assign to thickness (keyword argument).
+          Defaults to -1.
+       ply_fraction_dv_nums (numpy.ndarray[int], optional): Design variable numbers to assign to ply fractions (keyword argument).
+          Defaults to -1.
+       thickness_lb (float or complex, optional): Lower bound for thickness design variable (keyword argument).
+          Defaults to 0.0.
+       thickness_ub (float or complex, optional): Upper bound for thickness design variable (keyword argument).
+          Defaults to 1e20.
+       ply_fraction_lb (numpy.ndarray[float or complex], optional): Lower bound for ply fraction design variables (keyword argument).
+          Defaults to 0.0.
+       ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
+          Defaults to 1.0.
+       t_offset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+    """
+    def __cinit__(self, ply_list,
+                  TacsScalar thickness,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fractions,
+                  int thickness_dv_num=-1,
+                  np.ndarray[int, ndim=1, mode='c'] ply_fraction_dv_nums=None,
+                  TacsScalar thickness_lb=0.0,
+                  TacsScalar thickness_ub=1e20,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_lb=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,
+                  TacsScalar t_offset=0.0):
+
+        num_plies = len(ply_list)
+
+        cdef np.ndarray _ply_fraction_dv_nums
+        if ply_fraction_dv_nums is None:
+            _ply_fraction_dv_nums = -np.ones(num_plies, int)
+        else:
+            _ply_fraction_dv_nums = ply_fraction_dv_nums
+
+        cdef np.ndarray _ply_fraction_lb
+        if ply_fraction_lb is None:
+            _ply_fraction_lb = np.zeros(num_plies, dtype)
+        else:
+            _ply_fraction_lb = ply_fraction_lb
+
+        cdef np.ndarray _ply_fraction_ub
+        if ply_fraction_ub is None:
+            _ply_fraction_ub = np.ones(num_plies, dtype)
+        else:
+            _ply_fraction_ub = ply_fraction_ub
+
+        # Allocate the array of TACSOrthotropicPly pointers
+        cdef TACSOrthotropicPly **plys
+        plys = <TACSOrthotropicPly**>malloc(num_plies*sizeof(TACSOrthotropicPly*))
+        if plys is NULL:
+            raise MemoryError()
+
+        for i in range(num_plies):
+            plys[i] = (<OrthotropicPly>ply_list[i]).ptr
+
+        self.cptr = new TACSSmearedCompositeShellConstitutive(num_plies, plys,
+                                                              thickness, <TacsScalar*>ply_angles.data,
+                                                              <TacsScalar*>ply_fractions.data,
+                                                              thickness_dv_num,
+                                                              <int*>_ply_fraction_dv_nums.data,
+                                                              thickness_lb, thickness_ub,
+                                                              <TacsScalar *> _ply_fraction_lb.data,
+                                                              <TacsScalar*>_ply_fraction_ub.data,
+                                                              t_offset)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+        # Free the allocated array
+        free(plys)
+
+        self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSSmearedCompositeShellConstitutive* comp_ptr = <TACSSmearedCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_fractions = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        t_tot = comp_ptr.getLaminateThickness()
+        comp_ptr.getPlyFractions(<TacsScalar *> ply_fractions.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+        ply_thicknesses = t_tot * ply_fractions
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * t_tot
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    lam="SMEAR",
+                                                    z0=np.real(z0))
         return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
@@ -943,7 +1371,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         A = np.real(s[0])
         J = np.real(s[1])
         Iz = np.real(s[2])
-        Iyz = np.real(s[3])
+        Iyz = -np.real(s[3])
         e[:] = 0.0
         e[3] = 1.0 / E
         e[4:5] = 1.0 / (G * A)
@@ -951,7 +1379,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iy = np.real(s[3])
         ky = np.real(s[4])
         kz = np.real(s[5])
-        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, Iyz, J, k1=ky, k2=kz)
+        # Nastran uses negative convention for POI's
+        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, -Iyz, J, k1=ky, k2=kz)
         return prop
 
 cdef class IsoTubeBeamConstitutive(BeamConstitutive):
@@ -1052,6 +1481,12 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+        wOffset (float or complex, optional): Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=/2,
+            a value of 0.0 at z=0.0, and a value of -0.5 at z=-w/2 (where z is the local beam axis). Defaults to 0.0.
+        tOffset (float or complex, optional): Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section thickness. A value of 0.5 places the reference axis in the plane y=t/2,
+            a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local beam axis). Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
@@ -1063,6 +1498,8 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar wOffset = 0.0
+        cdef TacsScalar tOffset = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -1083,10 +1520,14 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'wOffset' in kwargs:
+            wOffset = kwargs['wOffset']
+        if 'tOffset' in kwargs:
+            tOffset = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
-                                                             wlb, wub, tlb, tub)
+                                                             wlb, wub, tlb, tub, wOffset, tOffset)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

@@ -34,9 +34,8 @@ from cpython cimport PyObject, Py_INCREF
 include "TacsDefs.pxi"
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
-from elements cimport *
+from tacs.TACS cimport *
+from tacs.constitutive cimport *
 
 # Include the mpi4py header
 cdef extern from "mpi-compat.h":
@@ -263,6 +262,9 @@ def SeedRandomGenerator(int seed=0):
 cdef class LinearTetrahedralBasis(ElementBasis):
     """
     Basis class for a linear tetrahedral 3D element.
+
+    .. note::
+        **numNodes**: 4
     """
     def __cinit__(self):
         self.ptr = new TACSLinearTetrahedralBasis()
@@ -271,23 +273,33 @@ cdef class LinearTetrahedralBasis(ElementBasis):
 cdef class QuadraticTetrahedralBasis(ElementBasis):
     """
     Basis class for a quadratic tetrahedral 3D element.
+
+    .. note::
+        **numNodes**: 10
     """
     def __cinit__(self):
         self.ptr = new TACSQuadraticTetrahedralBasis()
         self.ptr.incref()
 
-cdef class CubicTetrahedralBasis(ElementBasis):
-    """
-    Basis class for a cubic tetrahedral 3D element.
-    """
-    def __cinit__(self):
-        self.ptr = new TACSCubicTetrahedralBasis()
-        self.ptr.incref()
+# Note: Implementation not finished!!!
+#cdef class CubicTetrahedralBasis(ElementBasis):
+#    """
+#    Basis class for a cubic tetrahedral 3D element.
+#
+#    .. note::
+#        **numNodes**: ??
+#    """
+#    def __cinit__(self):
+#        self.ptr = new TACSCubicTetrahedralBasis()
+#        self.ptr.incref()
 
 
 cdef class LinearHexaBasis(ElementBasis):
     """
     Basis class for a linear hexahedral 3D element.
+
+    .. note::
+        **numNodes**: 8
     """
     def __cinit__(self):
         self.ptr = new TACSLinearHexaBasis()
@@ -296,6 +308,9 @@ cdef class LinearHexaBasis(ElementBasis):
 cdef class QuadraticHexaBasis(ElementBasis):
     """
     Basis class for a quadratic hexahedral 3D element.
+
+    .. note::
+        **numNodes**: 27
     """
     def __cinit__(self):
         self.ptr = new TACSQuadraticHexaBasis()
@@ -304,6 +319,9 @@ cdef class QuadraticHexaBasis(ElementBasis):
 cdef class CubicHexaBasis(ElementBasis):
     """
     Basis class for a cubic hexahedral 3D element.
+
+    .. note::
+        **numNodes**: 64
     """
     def __cinit__(self):
         self.ptr = new TACSCubicHexaBasis()
@@ -313,6 +331,9 @@ cdef class CubicHexaBasis(ElementBasis):
 cdef class LinearQuadBasis(ElementBasis):
     """
     Basis class for a linear quad 2D element.
+
+    .. note::
+        **numNodes**: 4
     """
     def __cinit__(self):
         self.ptr = new TACSLinearQuadBasis()
@@ -321,6 +342,9 @@ cdef class LinearQuadBasis(ElementBasis):
 cdef class QuadraticQuadBasis(ElementBasis):
     """
     Basis class for a quadratic quad 2D element.
+
+    .. note::
+        **numNodes**: 9
     """
     def __cinit__(self):
         self.ptr = new TACSQuadraticQuadBasis()
@@ -329,6 +353,9 @@ cdef class QuadraticQuadBasis(ElementBasis):
 cdef class CubicQuadBasis(ElementBasis):
     """
     Basis class for a cubic quad 2D element.
+
+    .. note::
+        **numNodes**: 16
     """
     def __cinit__(self):
         self.ptr = new TACSCubicQuadBasis()
@@ -337,6 +364,9 @@ cdef class CubicQuadBasis(ElementBasis):
 cdef class QuarticQuadBasis(ElementBasis):
     """
     Basis class for a quartic quad 2D element.
+
+    .. note::
+        **numNodes**: 25
     """
     def __cinit__(self):
         self.ptr = new TACSQuarticQuadBasis()
@@ -345,6 +375,9 @@ cdef class QuarticQuadBasis(ElementBasis):
 cdef class QuinticQuadBasis(ElementBasis):
     """
     Basis class for a quintic quad 2D element.
+
+    .. note::
+        **numNodes**: 36
     """
     def __cinit__(self):
         self.ptr = new TACSQuinticQuadBasis()
@@ -354,6 +387,9 @@ cdef class QuinticQuadBasis(ElementBasis):
 cdef class LinearTriangleBasis(ElementBasis):
     """
     Basis class for a linear triangular 2D element
+
+    .. note::
+        **numNodes**: 3
     """
     def __cinit__(self):
         self.ptr = new TACSLinearTriangleBasis()
@@ -362,6 +398,9 @@ cdef class LinearTriangleBasis(ElementBasis):
 cdef class QuadraticTriangleBasis(ElementBasis):
     """
     Basis class for a quadratic triangular 2D element
+
+    .. note::
+        **numNodes**: 6
     """
     def __cinit__(self):
         self.ptr = new TACSQuadraticTriangleBasis()
@@ -370,6 +409,9 @@ cdef class QuadraticTriangleBasis(ElementBasis):
 cdef class CubicTriangleBasis(ElementBasis):
     """
     Basis class for a cubic triangular 2D element
+
+    .. note::
+        **numNodes**: 10
     """
     def __cinit__(self):
         self.ptr = new TACSCubicTriangleBasis()
@@ -380,7 +422,7 @@ cdef class HeatConduction2D(ElementModel):
     Model class for 2D heat conduction element.
 
     .. note::
-        varsPerNode: 1
+        **varsPerNode**: 1
 
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
@@ -395,7 +437,7 @@ cdef class PCMHeatConduction2D(ElementModel):
     Model class for 2D phase change material heat conduction element.
 
     .. note::
-        varsPerNode: 1
+        **varsPerNode**: 1
 
     Args:
         con (PhaseChangeMaterialConstitutive): Material constitutive properties.
@@ -410,7 +452,7 @@ cdef class LinearElasticity2D(ElementModel):
     Model class for 2D linear elasticity element.
 
     .. note::
-        varsPerNode: 2
+        **varsPerNode**: 2
 
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
@@ -425,7 +467,7 @@ cdef class LinearThermoelasticity2D(ElementModel):
     Model class for 2D linear thermoelasticity element.
 
     .. note::
-        varsPerNode: 3
+        **varsPerNode**: 3
 
     Args:
         con (PlaneStressConstitutive): Material constitutive properties.
@@ -443,7 +485,7 @@ cdef class HeatConduction3D(ElementModel):
     Model class for 3D heat conduction element.
 
     .. note::
-        varsPerNode: 1
+        **varsPerNode**: 1
 
     Args:
         con (SolidConstitutive): Material constitutive properties.
@@ -458,7 +500,7 @@ cdef class LinearElasticity3D(ElementModel):
     Model class for 3D linear elasticity element.
 
     .. note::
-        varsPerNode: 3
+        **varsPerNode**: 3
 
     Args:
         con (SolidConstitutive): Material constitutive properties.
@@ -475,7 +517,7 @@ cdef class LinearThermoelasticity3D(ElementModel):
     Model class for 3D linear thermoelasticity element.
 
     .. note::
-        varsPerNode: 4
+        **varsPerNode**: 4
 
     Args:
         con (SolidConstitutive): Material constitutive properties.
@@ -504,9 +546,11 @@ cdef class Element2D(Element):
     General element class appropriate for 2D analysis.
 
     .. note::
-        varsPerNode: depends on ``ElementModel``
+        **varsPerNode**: depends on ``ElementModel``
 
-        outputElement: ``TACS.PLANE_STRESS_ELEMENT``
+        **numNodes**: depends on ``ElementBasis``
+
+        **outputElement**: ``TACS.PLANE_STRESS_ELEMENT``
 
     Args:
         model (ElementModel): Physics model for element.
@@ -522,9 +566,11 @@ cdef class Element3D(Element):
     General element class appropriate for 3D analysis.
 
     .. note::
-        varsPerNode: depends on ``ElementModel``
+        **varsPerNode**: depends on ``ElementModel``
 
-        outputElement: ``TACS.SOLID_ELEMENT``
+        **numNodes**: depends on ``ElementBasis``
+
+        **outputElement**: ``TACS.SOLID_ELEMENT``
 
     Args:
         model (ElementModel): Physics model for element.
@@ -655,9 +701,11 @@ cdef class Quad4Shell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -675,6 +723,10 @@ cdef class Quad4Shell(Element):
 cdef class Quad4NonlinearShell(Element):
     """
     A 4-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+    It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -682,9 +734,11 @@ cdef class Quad4NonlinearShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -699,6 +753,130 @@ cdef class Quad4NonlinearShell(Element):
         self.con = con
         self.transform = transform
 
+cdef class Quad4ShellModRot(Element):
+    """
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad4ShellQuaternion(Element):
+    """
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad4NonlinearShellModRot(Element):
+    """
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4NonlinearShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad4NonlinearShellQuaternion(Element):
+    """
+    A 4-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad4NonlinearShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
 cdef class Quad9Shell(Element):
     """
     A 9-node quad shell element for general linear elastic analysis.
@@ -709,9 +887,11 @@ cdef class Quad9Shell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -729,6 +909,10 @@ cdef class Quad9Shell(Element):
 cdef class Quad9NonlinearShell(Element):
     """
     A 9-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+    It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -736,9 +920,11 @@ cdef class Quad9NonlinearShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -753,6 +939,134 @@ cdef class Quad9NonlinearShell(Element):
         self.con = con
         self.transform = transform
 
+cdef class Quad9ShellModRot(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad9ShellQuaternion(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad9NonlinearShellModRot(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9NonlinearShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad9NonlinearShellQuaternion(Element):
+    """
+    A 9-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad9NonlinearShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
 cdef class Quad16Shell(Element):
     """
     A 16-node quad shell element for general linear elastic analysis.
@@ -763,9 +1077,11 @@ cdef class Quad16Shell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -783,6 +1099,10 @@ cdef class Quad16Shell(Element):
 cdef class Quad16NonlinearShell(Element):
     """
     A 16-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+    It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -790,9 +1110,11 @@ cdef class Quad16NonlinearShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -807,6 +1129,134 @@ cdef class Quad16NonlinearShell(Element):
         self.con = con
         self.transform = transform
 
+cdef class Quad16ShellModRot(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad16ShellQuaternion(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad16NonlinearShellModRot(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16NonlinearShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad16NonlinearShellQuaternion(Element):
+    """
+    A 16-node quad shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSQuad16NonlinearShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
 cdef class Tri3Shell(Element):
     """
     A 3-node triangular shell element for general linear elastic analysis.
@@ -817,9 +1267,11 @@ cdef class Tri3Shell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -837,6 +1289,10 @@ cdef class Tri3Shell(Element):
 cdef class Tri3NonlinearShell(Element):
     """
     A 3-node triangular shell element for geometric elastic analysis.
+    The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+    It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -844,9 +1300,11 @@ cdef class Tri3NonlinearShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -861,9 +1319,12 @@ cdef class Tri3NonlinearShell(Element):
         self.con = con
         self.transform = transform
 
-cdef class Quad4ThermalShell(Element):
+cdef class Tri3ShellModRot(Element):
     """
-    A 4-node quad shell element for general linear thermoelastic analysis.
+    A 3-node triangular shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -871,9 +1332,136 @@ cdef class Quad4ThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3ShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Tri3ShellQuaternion(Element):
+    """
+    A 3-node triangular shell element for general geometric nonlinear elastic analysis.
+    The element uses a linear strain relationship but uses a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3ShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Tri3NonlinearShellModRot(Element):
+    """
+    A 3-node triangular shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a quadratic rotation parameterization that is valid for moderate rotations.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 6
+
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3NonlinearShellModRot(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Tri3NonlinearShellQuaternion(Element):
+    """
+    A 3-node triangular shell element for general geometric nonlinear elastic analysis.
+    The element uses a nonlinear strain relationship and a geometrically exact quaternion rotation parameterization.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 8
+
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
+
+    Args:
+        transform (ShellTransform or None): Shell transform object.
+          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
+        con (ShellConstitutive): Shell constitutive object.
+    """
+    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
+        if transform is None:
+            transform = ShellNaturalTransform()
+        self.ptr = new TACSTri3NonlinearShellQuaternion(transform.ptr, con.cptr)
+        self.ptr.incref()
+        self.con = con
+        self.transform = transform
+
+cdef class Quad4ThermalShell(Element):
+    """
+    A 4-node quad shell element for linear thermoelastic analysis.
+
+    This element employs a mixed interpolation of tensorial (strain)
+    components (MITC) method to avoid shear locking problems.
+
+    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
+
+    .. note::
+        **varsPerNode**: 7
+
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -890,7 +1478,11 @@ cdef class Quad4ThermalShell(Element):
 
 cdef class Quad4NonlinearThermalShell(Element):
     """
-    A 4-node quad shell element for general linear thermoelastic analysis.
+    A 4-node quad shell element for general nonlinear thermoelastic analysis.
+    The element uses a nonlinear strain relationship but retains a linearized treatment of rotations.
+    It should therefore capture geometrically nonlinear stress-stiffening effects, provided rotations remain small.
+
+    .. seealso:: :ref:`theory/shell_element:Director parametrization`
 
     This element employs a mixed interpolation of tensorial (strain)
     components (MITC) method to avoid shear locking problems.
@@ -898,9 +1490,11 @@ cdef class Quad4NonlinearThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 4
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -915,60 +1509,6 @@ cdef class Quad4NonlinearThermalShell(Element):
         self.con = con
         self.transform = transform
 
-cdef class Quad4ShellQuaternion(Element):
-    """
-    A 4-node quad shell element for general linear thermoelastic analysis.
-
-    This element employs a mixed interpolation of tensorial (strain)
-    components (MITC) method to avoid shear locking problems.
-
-    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
-
-    .. note::
-        varsPerNode: 8
-
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-
-    Args:
-        transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
-        con (ShellConstitutive): Shell constitutive object.
-    """
-    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
-        if transform is None:
-            transform = ShellNaturalTransform()
-        self.ptr = new TACSQuad4ShellQuaternion(transform.ptr, con.cptr)
-        self.ptr.incref()
-        self.con = con
-        self.transform = transform
-
-cdef class Quad4ShellModRot(Element):
-    """
-    A 4-node quad shell element for general linear thermoelastic analysis.
-
-    This element employs a mixed interpolation of tensorial (strain)
-    components (MITC) method to avoid shear locking problems.
-
-    .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
-
-    .. note::
-        varsPerNode: ??
-
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
-
-    Args:
-        transform (ShellTransform or None): Shell transform object.
-          ``None`` is equivalent to :class:`~ShellNaturalTransform`.
-        con (ShellConstitutive): Shell constitutive object.
-    """
-    def __cinit__(self, ShellTransform transform, ShellConstitutive con):
-        if transform is None:
-            transform = ShellNaturalTransform()
-        self.ptr = new TACSQuad4ShellModRot(transform.ptr, con.cptr)
-        self.ptr.incref()
-        self.con = con
-        self.transform = transform
-
 cdef class Quad9ThermalShell(Element):
     """
     A 9-node quad shell element for general linear thermoelastic analysis.
@@ -979,9 +1519,11 @@ cdef class Quad9ThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1006,9 +1548,11 @@ cdef class Quad9NonlinearThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 9
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1033,9 +1577,11 @@ cdef class Quad16ThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1060,9 +1606,11 @@ cdef class Quad16NonlinearThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 16
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1087,9 +1635,11 @@ cdef class Tri3ThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1114,9 +1664,11 @@ cdef class Tri3NonlinearThermalShell(Element):
     .. seealso:: :ref:`theory/shell_element:Mixed Interpolation of Tensorial Components`
 
     .. note::
-        varsPerNode: 7
+        **varsPerNode**: 7
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (ShellTransform or None): Shell transform object.
@@ -1178,9 +1730,11 @@ cdef class Beam2(Element):
     A 2-node Timoshenko beam element for general linear elastic analysis.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 2
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
@@ -1197,9 +1751,11 @@ cdef class Beam3(Element):
     A 3-node Timoshenko beam element for general linear elastic analysis.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
@@ -1217,9 +1773,11 @@ cdef class Beam2ModRot(Element):
     with moderate rotations.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 2
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
@@ -1237,9 +1795,11 @@ cdef class Beam3ModRot(Element):
     with moderate rotations.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.BEAM_OR_SHELL_ELEMENT``
+        **numNodes**: 3
+
+        **outputElement**: ``TACS.BEAM_OR_SHELL_ELEMENT``
 
     Args:
         transform (BeamTransform): Beam transform object.
@@ -1344,9 +1904,11 @@ cdef class SpringElement(Element):
     A 6 DOF spring element.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.SPRING_ELEMENT``
+        **numNodes**: 2
+
+        **outputElement**: ``TACS.SPRING_ELEMENT``
 
     Args:
         transform (SpringTransform or None): Spring transform object.
@@ -1414,9 +1976,11 @@ cdef class RBE2(Element):
     points.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.RIGID_ELEMENT``
+        **numNodes**: 2 * N_dep + 1
+
+        **outputElement**: ``TACS.RIGID_ELEMENT``
 
     Args:
         num_nodes (int): Total number of nodes associated with the element.
@@ -1426,7 +1990,7 @@ cdef class RBE2(Element):
     cdef TACSRBE2 *cptr
     def __cinit__(self, int num_nodes,
                   np.ndarray[int, ndim=1, mode='c'] constrained_dofs):
-        num_dep = (num_nodes - 1) / 2
+        cdef int num_dep = (num_nodes - 1) // 2
 
         assert len(constrained_dofs) == 6 or len(constrained_dofs) == 6 * num_dep
 
@@ -1463,9 +2027,11 @@ cdef class RBE3(Element):
     geometry and local weight factors.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.RIGID_ELEMENT``
+        **numNodes**: N_indep + 2
+
+        **outputElement**: ``TACS.RIGID_ELEMENT``
 
     Args:
         num_nodes (int): Total number of nodes associated with the element.
@@ -1480,7 +2046,7 @@ cdef class RBE3(Element):
                   np.ndarray[int, ndim=1, mode='c'] dep_constrained_dofs,
                   np.ndarray[double, ndim=1, mode='c'] weights,
                   np.ndarray[int, ndim=1, mode='c'] indep_constrained_dofs):
-        num_indep = num_nodes - 2
+        cdef int num_indep = num_nodes - 2
 
         assert len(dep_constrained_dofs) == 6
         assert len(weights) == 1 or len(weights) == num_indep
@@ -1517,9 +2083,11 @@ cdef class MassElement(Element):
     A 6 DOF point mass element.
 
     .. note::
-        varsPerNode: 6
+        **varsPerNode**: 6
 
-        outputElement: ``TACS.MASS_ELEMENT``
+        **numNodes**: 1
+
+        **outputElement**: ``TACS.MASS_ELEMENT``
 
     Args:
         con (GeneralMassConstitutive): Point mass constitutive object.

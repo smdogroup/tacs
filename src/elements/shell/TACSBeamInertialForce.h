@@ -4,6 +4,7 @@
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
+#include "TACSBeamElementTransform.h"
 #include "TACSBeamUtilities.h"
 #include "TACSElement.h"
 #include "TACSElementAlgebra.h"
@@ -14,14 +15,22 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSBeamInertialForce : public TACSElement {
  public:
-  TACSBeamInertialForce(TACSBeamConstitutive *_con,
+  TACSBeamInertialForce(TACSBeamTransform *_transform,
+                        TACSBeamConstitutive *_con,
                         const TacsScalar _inertiaVec[]) {
+    transform = _transform;
+    transform->incref();
+
     con = _con;
     con->incref();
+
     memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
   }
 
   ~TACSBeamInertialForce() {
+    if (transform) {
+      transform->decref();
+    }
     if (con) {
       con->decref();
     }
@@ -78,6 +87,13 @@ class TACSBeamInertialForce : public TACSElement {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 
+    // Get the reference axis
+    const A2D::Vec3 &axis = transform->getRefAxis();
+
+    // Compute the normal directions
+    TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+    TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
     // Loop over each quadrature point and add the residual contribution
     for (int quad_index = 0; quad_index < nquad; quad_index++) {
       // Get the quadrature weight
@@ -87,28 +103,42 @@ class TACSBeamInertialForce : public TACSElement {
       // Tangent to the beam
       A2D::Vec3 X0, X0xi;
 
+      // Interpolated normal directions
+      A2D::ADVec3 n1, n2;
+
       // Compute X, X,xi and the interpolated normal
       basis::template interpFields<3, 3>(pt, Xpts, X0.x);
       basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+      basis::template interpFields<3, 3>(pt, fn1, n1.x);
+      basis::template interpFields<3, 3>(pt, fn2, n2.x);
 
       // Compute the determinant of the transform
       A2D::Scalar detXd;
       A2D::Vec3Norm(X0xi, detXd);
 
-      TacsScalar mass = con->evalDensity(elemIndex, pt, X0.x);
+      TacsScalar mass_moment[6];
+      con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+      TacsScalar mass = mass_moment[0];
 
       // Compute the traction
-      TacsScalar tr[3];
+      TacsScalar tr[vars_per_node] = {0.0};
       tr[0] = -detXd.value * weight * mass * inertiaVec[0];
       tr[1] = -detXd.value * weight * mass * inertiaVec[1];
       tr[2] = -detXd.value * weight * mass * inertiaVec[2];
+      // Add moment terms if theres a beam offset
+      crossProductAdd(detXd.value * weight * mass_moment[1], n1.x, inertiaVec,
+                      &tr[3]);
+      crossProductAdd(detXd.value * weight * mass_moment[2], n2.x, inertiaVec,
+                      &tr[3]);
 
-      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
+      basis::template addInterpFieldsTranspose<vars_per_node, vars_per_node>(
+          pt, tr, res);
     }
   }
 
  private:
   TacsScalar inertiaVec[3];
+  TACSBeamTransform *transform;
   TACSBeamConstitutive *con;
 };
 

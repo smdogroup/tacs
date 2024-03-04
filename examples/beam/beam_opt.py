@@ -29,6 +29,7 @@ from mphys.scenario_structural import ScenarioStructural
 from tacs import elements, constitutive, functions
 from tacs.mphys import TacsBuilder
 
+# BDF file containing mesh
 bdf_file = os.path.join(os.path.dirname(__file__), "beam_opt.bdf")
 
 # Beam thickness (initial)
@@ -55,6 +56,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     # Set one thickness dv for every property group
     con = constitutive.IsoRectangleBeamConstitutive(prop, t=t, w=w, tNum=dvNum)
 
+    # Defines local y/thickness direction for beam
     refAxis = np.array([0.0, 1.0, 0.0])
     transform = elements.BeamRefAxisTransform(refAxis)
 
@@ -79,16 +81,16 @@ def problem_setup(scenario_name, fea_assembler, problem):
     problem.addLoadToNodes(101, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
 
-class Top(Multipoint):
+class BeamModel(Multipoint):
     def setup(self):
-        tacs_options = {
-            "element_callback": element_callback,
-            "problem_setup": problem_setup,
-            "mesh_file": bdf_file,
-        }
-
         # Initialize MPHYS builder for TACS
-        struct_builder = TacsBuilder(tacs_options, coupled=False, write_solution=False)
+        struct_builder = TacsBuilder(
+            mesh_file=bdf_file,
+            element_callback=element_callback,
+            problem_setup=problem_setup,
+            coupled=False,
+            write_solution=False,
+        )
         struct_builder.initialize(self.comm)
         dv_array = struct_builder.get_initial_dvs()
 
@@ -112,7 +114,7 @@ class Top(Multipoint):
 ################################################################################
 # Instantiate OpenMDAO problem
 prob = om.Problem()
-prob.model = Top()
+prob.model = BeamModel()
 model = prob.model
 
 # Declare design variables, objective, and constraint
@@ -142,14 +144,18 @@ m_opt = prob["tip_shear.mass"]
 # Get analytical solution
 t_exact = np.sqrt(6 * (L - x) * V / w / ys)
 
+# Compute max thickness value
+t0 = np.sqrt(6 * L * V / w / ys)
+
 if __name__ == "__main__" and prob.comm.size == 1:
     # Output N2 representation of OpenMDAO model
     om.n2(prob, show_browser=False, outfile="beam_opt_n2.html")
 
     # Plot results for solution
-    plt.plot(x, t_opt, "o", x, t_exact)
+    plt.plot(x / L, t_opt / t0, "o", x, t_exact / t0)
     plt.legend(["optimized", "analytical"])
-    plt.ylabel("t(x)")
-    plt.xlabel("x")
+    plt.ylabel(r"$\frac{t(x)}{t_0}$", fontsize=16)
+    plt.xlabel(r"$\frac{x}{L}$", fontsize=16, labelpad=-5)
     plt.title("Optimal beam thickness profile")
+    plt.text(0.05, 0.25, r"$t_0 = \sqrt{\frac{6VL}{w\sigma_y}}$", fontsize=12)
     plt.show()

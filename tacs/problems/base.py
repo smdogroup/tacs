@@ -20,7 +20,13 @@ class TACSProblem(TACSSystem):
     """
 
     def __init__(
-        self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
+        self,
+        assembler,
+        comm=None,
+        options=None,
+        outputViewer=None,
+        meshLoader=None,
+        isNonlinear=False,
     ):
         """
         Parameters
@@ -40,6 +46,10 @@ class TACSProblem(TACSSystem):
         meshLoader : tacs.pymeshloader.pyMeshLoader
             pyMeshLoader object used to create the assembler.
         """
+
+        # Set nonlinear flag
+        self._isNonlinear = isNonlinear
+
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
@@ -47,6 +57,11 @@ class TACSProblem(TACSSystem):
         self.functionList = OrderedDict()
 
         return
+
+    @property
+    def isNonlinear(self):
+        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only."""
+        return self._isNonlinear
 
     ####### Eval function methods ########
 
@@ -868,7 +883,7 @@ class TACSProblem(TACSSystem):
                     auxElems, elemID, trac, faceIndex, nastranOrdering=True
                 )
 
-    def writeSensFile(self, evalFuncs, tacsAim):
+    def writeSensFile(self, evalFuncs, tacsAim, proc: int = 0, root=0):
         """
         write an ESP/CAPS .sens file from the tacs aim
         Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
@@ -879,25 +894,53 @@ class TACSProblem(TACSSystem):
             names of TACS functions to be evaluated
         tacsAim : tacs.caps2tacs.TacsAIM
             class which handles the sensitivity file writing for ESP/CAPS shape derivatives
-
+        proc: int
+            which processor (in case of parallel tacsAIM instances) to write the sens file to
+        root: int
+            which processor we get the data from (usually proc 0)
         """
+
+        is_dummy_file = evalFuncs is None
+        if is_dummy_file:
+            evalFuncs = ["dummy-func"]
 
         # obtain the functions and sensitivities from TACS assembler
         tacs_funcs = {}
-        tacs_sens = {}
-        self.evalFunctions(tacs_funcs, evalFuncs=evalFuncs)
-        self.evalFunctionsSens(tacs_sens, evalFuncs=evalFuncs)
+        if not (is_dummy_file):
+            local_tacs_sens = {}
+            self.evalFunctions(tacs_funcs, evalFuncs=evalFuncs)
+            self.evalFunctionsSens(local_tacs_sens, evalFuncs=evalFuncs)
+
+            # get nastran=>local tacs id map for this processor
+            # this local_tacs_ids is len(num_nodes) globally with -1 for nodes
+            # not on this processor and the local tacs_ids for nodes owned by this processor
+            num_nodes = self.meshLoader.bdfInfo.nnodes
+            bdfNodes = range(num_nodes)
+            local_tacs_ids = self.meshLoader.getLocalNodeIDsFromGlobal(
+                bdfNodes, nastranOrdering=False
+            )
+
+            # only need to combine xpts sens across processors, the struct sens is only root proc (usually rank 0)
+            local_xpt_sens = {}
+            for tacs_key in local_tacs_sens:
+                local_xpt_sens[tacs_key] = local_tacs_sens[tacs_key]["Xpts"]
+
+            # gather the tacs ids and tacs xpts sens globally
+            mpi_tacs_ids = self.comm.gather(local_tacs_ids, root=root)
+            mpi_xpt_sens = self.comm.gather(local_xpt_sens, root=root)
 
         num_funcs = len(evalFuncs)
         assert tacsAim is not None
         num_struct_dvs = len(tacsAim.thickness_variables)
         num_nodes = self.meshLoader.bdfInfo.nnodes
-        node_ids = self.meshLoader.allLocalNodeIDs
 
-        if self.comm.rank == 0:
+        # uses other proc and broadcast so needed before root-proc check
+        sens_file_path = tacsAim.sens_file_path(proc)
+
+        if self.comm.rank == root:
             # open the sens file nastran_CAPS.sens and write coordinate derivatives
             # and any other struct derivatives to it
-            with open(tacsAim.sens_file_path, "w") as hdl:
+            with open(sens_file_path, "w") as hdl:
                 for func_name in evalFuncs:
                     hdl.write(f"{num_funcs} {num_struct_dvs}\n")
 
@@ -908,30 +951,59 @@ class TACSProblem(TACSSystem):
                             if func_name in tacs_key:
                                 break
 
-                        # get the tacs coordinate derivatives
-                        xpts_sens = tacs_sens[tacs_key]["Xpts"]
+                        if not (is_dummy_file):
+                            # write the func name, value and nnodes
+                            hdl.write(f"{func_name}\n")
+                            hdl.write(f"{tacs_funcs[tacs_key].real}\n")
+                            hdl.write(f"{num_nodes}\n")
 
-                        # write the func name, value and nnodes
-                        hdl.write(f"{func_name}\n")
-                        hdl.write(f"{tacs_funcs[tacs_key].real}\n")
-                        hdl.write(f"{num_nodes}\n")
+                            # write the coordinate derivatives for the given function
+                            for nastran_id_m1 in range(num_nodes):
+                                dfdxyz = None
+                                # find the xpt-sens among those of each processor in the mpi_tacs_sens list
+                                for ilocal, local_tacs_ids in enumerate(mpi_tacs_ids):
+                                    if local_tacs_ids[nastran_id_m1] != -1:
+                                        local_tacs_id = local_tacs_ids[nastran_id_m1]
+                                        dfdxyz = mpi_xpt_sens[ilocal][tacs_key][
+                                            3 * local_tacs_id : 3 * local_tacs_id + 3
+                                        ]
+                                        break
 
-                        # write the coordinate derivatives for the given function
-                        for bdf_ind in range(num_nodes):
-                            tacs_ind = node_ids[bdf_ind]
-                            nastran_node = bdf_ind + 1
-                            hdl.write(
-                                f"{nastran_node} {xpts_sens[3*tacs_ind].real} {xpts_sens[3*tacs_ind+1].real} {xpts_sens[3*tacs_ind+2].real}\n"
-                            )
+                                nastran_id = nastran_id_m1 + 1
+                                hdl.write(
+                                    f"{nastran_id} {dfdxyz[0].real} {dfdxyz[1].real} {dfdxyz[2].real}\n"
+                                )
 
-                        # write any struct derivatives if there are struct derivatives
-                        if num_struct_dvs > 0:
-                            struct_sens = tacs_sens[tacs_key]["struct"]
-                            for idx, thick_var in enumerate(
-                                tacsAim.thickness_variables
-                            ):
-                                # assumes these are sorted in tacs aim wrapper
-                                hdl.write(f"{thick_var.name}\n")
-                                hdl.write("1\n")
-                                hdl.write(f"{struct_sens[idx].real}\n")
+                            # write any struct derivatives if there are struct derivatives
+                            if num_struct_dvs > 0:
+                                struct_sens = local_tacs_sens[tacs_key]["struct"]
+                                for idx, thick_var in enumerate(
+                                    tacsAim.thickness_variables
+                                ):
+                                    # assumes these are sorted in tacs aim wrapper
+                                    hdl.write(f"{thick_var.name}\n")
+                                    hdl.write("1\n")
+                                    hdl.write(f"{struct_sens[idx].real}\n")
+
+                        else:  # is a dummy sens file for animating the structure shape
+                            # write the func name, value and nnodes
+                            hdl.write(f"{func_name}\n")
+                            hdl.write(f"{0.0}\n")
+                            hdl.write(f"{num_nodes}\n")
+
+                            # write the coordinate derivatives for the given function
+                            for bdf_ind in range(num_nodes):
+                                nastran_node = bdf_ind + 1
+                                hdl.write(f"{nastran_node} 0.0 0.0 0.0\n")
+
+                            # write any struct derivatives if there are struct derivatives
+                            if num_struct_dvs > 0:
+                                for idx, thick_var in enumerate(
+                                    tacsAim.thickness_variables
+                                ):
+                                    # assumes these are sorted in tacs aim wrapper
+                                    hdl.write(f"{thick_var.name}\n")
+                                    hdl.write("1\n")
+                                    hdl.write("0.0\n")
+
             return

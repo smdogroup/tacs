@@ -112,6 +112,26 @@ typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
     TACSTri3ShellModRot;
 
 /*
+  Moderate rotation shell elements with nonlinear strain and appropriate
+  quadrature schemes
+*/
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSQuadraticRotation, TACSShellNonlinearModel>
+    TACSQuad4NonlinearShellModRot;
+
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+                         TACSQuadraticRotation, TACSShellNonlinearModel>
+    TACSQuad9NonlinearShellModRot;
+
+typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+                         TACSQuadraticRotation, TACSShellNonlinearModel>
+    TACSQuad16NonlinearShellModRot;
+
+typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
+                         TACSQuadraticRotation, TACSShellInplaneNonlinearModel>
+    TACSTri3NonlinearShellModRot;
+
+/*
   Quaternion shell elements
 */
 typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
@@ -130,6 +150,29 @@ typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSQuaternionRotation, TACSShellInplaneLinearModel>
     TACSTri3ShellQuaternion;
 
+/*
+  Quaternion shell elements with nonlinear strain
+*/
+typedef TACSShellElement<TACSQuadLinearQuadrature, TACSShellQuadBasis<2>,
+                         TACSQuaternionRotation, TACSShellNonlinearModel>
+    TACSQuad4NonlinearShellQuaternion;
+
+typedef TACSShellElement<TACSQuadQuadraticQuadrature, TACSShellQuadBasis<3>,
+                         TACSQuaternionRotation, TACSShellNonlinearModel>
+    TACSQuad9NonlinearShellQuaternion;
+
+typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
+                         TACSQuaternionRotation, TACSShellNonlinearModel>
+    TACSQuad16NonlinearShellQuaternion;
+
+typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
+                         TACSQuaternionRotation, TACSShellInplaneNonlinearModel>
+    TACSTri3NonlinearShellQuaternion;
+
+/*
+  Beam elements with linear strain and linear, quadratic and exact rotation
+  parameterizations
+*/
 typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
                         TACSLinearizedRotation, TACSBeamLinearModel>
     TACSBeam2;
@@ -153,6 +196,36 @@ typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
 typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
                         TACSQuaternionRotation, TACSBeamLinearModel>
     TACSBeam3Quaternion;
+
+/*
+  Beam elements with nonlinear strain and linear, quadratic and exact rotation
+  parameterizations.
+
+  Not implemented yet.
+*/
+// typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+//                         TACSLinearizedRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam2;
+
+// typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+//                         TACSLinearizedRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam3;
+
+// typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+//                         TACSQuadraticRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam2ModRot;
+
+// typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+//                         TACSQuadraticRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam3ModRot;
+
+// typedef TACSBeamElement<TACSBeamLinearQuadrature, TACSBeamBasis<2>,
+//                         TACSQuaternionRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam2Quaternion;
+
+// typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
+//                         TACSQuaternionRotation, TACSBeamNonlinearinearModel>
+//     TACSNonlinearBeam3Quaternion;
 
 /**
   Create a TACS shell element based on the name of the shell.

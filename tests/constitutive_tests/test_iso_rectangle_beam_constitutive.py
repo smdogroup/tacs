@@ -9,15 +9,14 @@ class ConstitutiveTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
         if TACS.dtype is complex:
-            self.dh = 1e-50
-            self.rtol = 1e-11
-            self.atol = 1e-5
+            self.dh = 1e-200
+            self.rtol = 1e-12
         else:
-            self.dh = 1e-6
-            self.rtol = 1e-2
-            self.atol = 1e-1
-
+            self.dh = 1e-8
+            self.rtol = 1e-4
         self.dtype = TACS.dtype
+
+        self.atol = np.clip(1e-5 * self.rtol, 1e-14, 1e-8)
 
         self.print_level = 0
 
@@ -43,7 +42,7 @@ class ConstitutiveTest(unittest.TestCase):
             E=E,
             nu=nu,
             ys=ys,
-            cte=cte,
+            alpha=cte,
             kappa=kappa,
         )
         t = 0.1
@@ -53,7 +52,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Create stiffness (need class)
         self.con = constitutive.IsoRectangleBeamConstitutive(
-            self.props, t=t, tNum=tNum, w=w, wNum=wNum
+            self.props, t=t, tNum=tNum, w=w, wNum=wNum, wOffset=0.5, tOffset=-0.5
         )
 
         # Seed random number generator in tacs for consistent test results

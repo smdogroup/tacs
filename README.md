@@ -36,9 +36,9 @@ Kennedy, G. J., "Strategies for adaptive optimization with aggregation constrain
 The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
 available for MacOS and Linux platforms. To get started, run the following in a conda terminal:
 
-    conda create -n TACS python=3.8
+    conda create -n TACS -c conda-forge python=3.8 mamba
     conda activate TACS
-    conda install -c conda-forge -c smdogroup tacs
+    mamba install -c conda-forge -c smdogroup tacs
     
 This will create an environment named "TACS" and install the `tacs` package and all
 necessary dependencies. Once installed, the user will have access to all TACS C++ and python libraries. 
@@ -61,7 +61,7 @@ This will generate a .plt or .vtk file respectively.
 
 # Setting up and installing TACS from source #
 
-In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1 for mesh partitioning. The latest version of Metis can be obtained [here](http://glaros.dtc.umn.edu/gkhome/metis/metis/download). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
+In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1.0 for mesh partitioning. The 5.1.0 version of Metis can be obtained [here](https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
 
 To convert TACS FH5 output files to tecplot-compatible files, you must install [TecIO](https://tecplot.azureedge.net/products/tecio/2021r2/tecio.tgz). This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
 

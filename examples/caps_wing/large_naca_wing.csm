@@ -8,6 +8,7 @@
 # number of ribs and spars
 cfgpmtr nribs 10
 cfgpmtr nspars 2
+cfgpmtr exploded 0 # 0 - non-exploded, 1 upperOML, 2 internalStruct, 3 - lowerOML
 
 # root and tip chord
 despmtr chord0 2.0
@@ -58,7 +59,7 @@ rotatex 90 0 0
 translate xf -sspan zf
 
 # loft the solid wing and store it
-loft 0
+rule
 
 # attribute the solid wing
 select face
@@ -67,13 +68,21 @@ attribute capsLoad $OML
 attribute _color $blue
 
 # make root and tip caps the ribs
-select face 5
+select face 4
 attribute capsGroup $rib1
+attribute tagComp $rib
 attribute _color $green
 
-select face 4
+select face 5
 attribute capsGroup !$rib+nribs
+attribute tagComp $rib
 attribute _color $green
+
+select face 1
+attribute tagComp $OMLtop
+
+select face 2
+attribute tagComp $OMLbot
 
 store solidWing
 
@@ -101,7 +110,7 @@ patbeg ispar nspars
    # add caps attributes
    select face
    attribute capsGroup !$spar+ispar
-   attribute has_group $yes
+   attribute tagComp $spar
    attribute _color $green
 patend
 
@@ -121,7 +130,7 @@ patbeg index ninnerRibs
    # add caps attributes
    select face
    attribute capsGroup !$rib+irib
-   attribute has_group $yes
+   attribute tagComp $rib
    attribute _color $green
 
    # union with previous ribs/spars
@@ -155,6 +164,9 @@ union
 select face $capsGroup $rib1
 attribute capsConstraint $root
 
+select face $capsGroup $*
+attribute has_group $yes
+
 # add the constraint attribute to adjacent edges, nodes
 # otherwise they can pop out of the mesh in the structural analysis
 udprim editAttr filename <<
@@ -173,6 +185,18 @@ udprim editAttr filename <<
  patend
 >>
 
+# extract only certain faces for the exploded view
+ifthen exploded EQ 1
+   select face $tagComp $OMLtop
+   extract @sellist
+elseif exploded EQ 2
+   select face $tagComp $rib
+   select add $tagComp $spar
+   extract @sellist
+elseif exploded EQ 3
+   select face $tagComp $OMLbot
+   extract @sellist
+endif
 
 # add AIM attribute to specify the analyses to use
 select body
@@ -180,4 +204,4 @@ attribute capsAIM $egadsTessAIM;tacsAIM
 
 end
 |||||
-|||
+||||||||||

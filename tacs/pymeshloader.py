@@ -10,15 +10,16 @@ functionality.
 # =============================================================================
 # Imports
 # =============================================================================
+from copy import deepcopy
 import itertools as it
 
 import numpy as np
-from pyNastran.bdf.bdf import read_bdf
+import pyNastran.bdf.bdf as pn
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
-from .utilities import BaseUI
+from tacs.utilities import BaseUI
 
 
 class pyMeshLoader(BaseUI):
@@ -29,10 +30,10 @@ class pyMeshLoader(BaseUI):
         self.printDebug = printDebug
         self.bdfInfo = None
 
-    def scanBdfFile(self, fileName):
+    def scanBdfFile(self, bdf):
         """
         Scan nastran bdf file using pyNastran's bdf parser.
-        We also set up arrays that will be require later to build tacs.
+        We also set up arrays that will be required later to build tacs.
         """
 
         # Only print debug info on root, if requested
@@ -41,10 +42,24 @@ class pyMeshLoader(BaseUI):
         else:
             debugPrint = False
 
-        # Read in bdf file as pynastran object
-        # By default we avoid cross-referencing unless we actually need it,
-        # since its expensive for large models
-        self.bdfInfo = read_bdf(fileName, validate=False, xref=False, debug=debugPrint)
+        # Check if a file name was provided
+        # Create a BDF object from the file
+        if isinstance(bdf, str):
+            # Read in bdf file as pynastran object
+            # By default we avoid cross-referencing unless we actually need it,
+            # since its expensive for large models
+            self.bdfInfo = pn.read_bdf(
+                bdf, validate=False, xref=False, debug=debugPrint
+            )
+        # Create a copy of the BDF object
+        elif isinstance(bdf, pn.BDF):
+            self.bdfInfo = deepcopy(bdf)
+        else:
+            raise self._TACSError(
+                "BDF input must be provided as a file name 'str' or pyNastran 'BDF' object. "
+                f"Provided input was of type '{type(bdf).__name__}'."
+            )
+
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
 
@@ -520,6 +535,7 @@ class pyMeshLoader(BaseUI):
         uniqueNodes = None
         if self.comm.rank == 0:
             allNodes = []
+            componentIDs = self._flatten(componentIDs)
             componentIDs = set(componentIDs)
             for cID in componentIDs:
                 tmp = self.getConnectivityForComp(cID, nastranOrdering=nastranOrdering)
@@ -551,13 +567,14 @@ class pyMeshLoader(BaseUI):
             componentIDs, nastranOrdering=False
         )
 
-        # convert global nodeIDs to local numbering on this processor if requested
-        rank = self.comm.rank
-        ownerRange = self.assembler.getOwnerRange()
-        allNodesOnProc = list(range(ownerRange[rank], ownerRange[rank + 1]))
-        nodes = [i for i, v in enumerate(allNodesOnProc) if v in globalNodeIDs]
+        # get the corresponding local IDs on each proc
+        localNodeIDs = self.getLocalNodeIDsFromGlobal(
+            globalNodeIDs, nastranOrdering=False
+        )
+        # If the returned index is > 0 then it is owned by this proc, otherwise remove it
+        localNodeIDs = [localID for localID in localNodeIDs if localID >= 0]
 
-        return nodes
+        return localNodeIDs
 
     def getGlobalElementIDsForComps(self, componentIDs, nastranOrdering=False):
         """
@@ -900,10 +917,10 @@ class pyMeshLoader(BaseUI):
 
         Parameters
         ----------
-        constrained_dofs : string
+        constrained_dofs : str
             String containing list of dofs (ex. '123456')
 
-        dof : int or string
+        dof : int or str
             nastran dof number to check for
 
         Returns
@@ -1197,15 +1214,12 @@ class pyMeshLoader(BaseUI):
         """
 
         self._nastranToLocalNodeIDMap()
-        local_maps = self.comm.gather(self._local_map, root=0)
-        full_map_list = []
-        for local_map in local_maps:
-            full_map_list += local_map
         all_struct_ids = None
+        local_maps = self.comm.gather(self._local_map, root=0)
         if self.comm.rank == 0:
             all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
-            for map in full_map_list:
-                for key in map:
+            for local_map in local_maps:
+                for key in local_map:
                     all_struct_ids[int(key)] = map[int(key)]
             all_struct_ids = list(all_struct_ids)
         # broadcast to other procs

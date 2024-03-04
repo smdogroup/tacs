@@ -39,7 +39,7 @@ import tacs.elements
 import tacs.functions
 import tacs.problems
 from tacs.pymeshloader import pyMeshLoader
-from .utilities import BaseUI
+from tacs.utilities import BaseUI
 
 warnings.simplefilter("default")
 
@@ -151,15 +151,20 @@ class pyTACS(BaseUI):
             False,
             "Flag for printing out timing information for class procedures.",
         ],
+        "linearityTol": [
+            float,
+            1e-14,
+            "When created, pyTACS will check if the model is linear or nonlinear by checking whether (res(2*u) - res(0)) - 2 * (res(u) - res(0)) == 0 this tolerance controls how close to zero the residual must be to be considered linear.",
+        ],
     }
 
-    def __init__(self, fileName, comm=None, dvNum=0, scaleList=None, options=None):
+    def __init__(self, bdf, comm=None, dvNum=0, scaleList=None, options=None):
         """
 
         Parameters
         ----------
-        fileName : str
-            The filename of the BDF file to load.
+        bdf : str or pyNastran.bdf.bdf.BDF
+            The BDF file or a pyNastran BDF object to load.
 
         comm : mpi4py.MPI.Intracomm
             The comm object on which to create the pyTACS object.
@@ -189,10 +194,10 @@ class pyTACS(BaseUI):
         # Create and load mesh loader object.
         debugFlag = self.getOption("printDebug")
         self.meshLoader = pyMeshLoader(self.comm, debugFlag)
-        self.meshLoader.scanBdfFile(fileName)
-        self.bdfName = fileName
+        self.meshLoader.scanBdfFile(bdf)
         # Save pynastran bdf object
         self.bdfInfo = self.meshLoader.getBDFInfo()
+        self.bdfName = self.bdfInfo.bdf_filename
 
         meshLoadTime = time.time()
 
@@ -232,6 +237,9 @@ class pyTACS(BaseUI):
         # TACS assembler object
         self.assembler = None
 
+        # Nonlinear flag
+        self._isNonlinear = None
+
         initFinishTime = time.time()
         if self.getOption("printTiming"):
             self._pp("+--------------------------------------------------+")
@@ -260,13 +268,20 @@ class pyTACS(BaseUI):
             )
             self._pp("+--------------------------------------------------+")
 
+    @property
+    def isNonlinear(self):
+        """The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only."""
+        return self._isNonlinear
+
     @preinitialize_method
     def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
         """
+        Add a global design variable that can affect multiple components.
+
         This function allows adding design variables that are not
         cleanly associated with a particular constitutive object. One
         example is the pitch of the stiffeners for blade-stiffened
-        panels; It is often the same for many different constitutive
+        panels. It is often the same for many different constitutive
         objects. By calling this function, the internal dvNum counter
         is incremented, and the user doesn't have to worry about
         it.
@@ -276,7 +291,6 @@ class pyTACS(BaseUI):
         descript : str
             A user-supplied string that can be used to retrieve the
             variable number and value elemCallBackFunction.
-
         value : float
             Initial value for variable.
         lower : float
@@ -453,12 +467,12 @@ class pyTACS(BaseUI):
         Methods of selection:
 
         1. include, integer, string, list of integers and/or strings: The
-           simplest and most direct way of selecting a component.
-           The
-           user supplies the index of the componentID, a name or partial
-           name, or a list containing a combination of both.
+        simplest and most direct way of selecting a component.
+        The
+        user supplies the index of the componentID, a name or partial
+        name, or a list containing a combination of both.
 
-           For example::
+        For example::
 
             # Select the 11th component
             selectCompIDs(include=10)
@@ -478,69 +492,65 @@ class pyTACS(BaseUI):
             selectCompIDs(include=['rib.00', 10, 'spar'])
 
         2. Exclude, operates similarly to 'include'.
-        The behaviour
-           of exclude is identical to include above, except that
-           component ID's that are found using 'exclude' are
-           'subtracted' from those found using include.
-           A special
-           case is treated if 'include' is NOT given: if only an
-           exclude list is given, this implies the selection of all
-           compID's EXCEPT the those in exclude.
+        The behaviour of exclude is identical to include above, except that
+        component ID's that are found using 'exclude' are
+        'subtracted' from those found using include.
+        A special case is treated if 'include' is NOT given: if only an
+        exclude list is given, this implies the selection of all
+        compID's EXCEPT the those in exclude.
 
-           For example::
+        For example::
 
-               # This will return will [0, 1, 2, 3, 5, ..., nComp-1]
-               selectCompIDs(exclude = 4)
+            # This will return will [0, 1, 2, 3, 5, ..., nComp-1]
+            selectCompIDs(exclude = 4)
 
-               # This will return [0, 1, 4, 5, ..., nComp-1]
-               selectCompIDs(exclude = [2, 3]) will return
+            # This will return [0, 1, 4, 5, ..., nComp-1]
+            selectCompIDs(exclude = [2, 3]) will return
 
-               # This will return components that have 'ribs' in the
-               # component ID, but not those that have 'le_ribs' in the
-               # component id.
-               selectCompIDs(include='ribs', exclude='le_ribs')
+            # This will return components that have 'ribs' in the
+            # component ID, but not those that have 'le_ribs' in the
+            # component id.
+            selectCompIDs(include='ribs', exclude='le_ribs')
 
         3. includeBounds, list of components defining a region inside
-           which 'include' components will be selected.
-           This
-           functionality uses a geometric approach to select the compIDs.
-           All components within the project 2D convex hull are included.
-           Therefore, it is essential to split up concave include regions
-           into smaller convex regions.
-           Use multiple calls to selectCompIDs to
-           accumulate multiple regions.
+        which 'include' components will be selected.
+        This functionality uses a geometric approach to select the compIDs.
+        All components within the project 2D convex hull are included.
+        Therefore, it is essential to split up concave include regions
+        into smaller convex regions.
+        Use multiple calls to selectCompIDs to accumulate multiple regions.
 
-           For example::
+        For example::
 
-               # This will select upper skin components between the
-               # leading and trailing edge spars and between ribs 1 and 4.
-               selectCompIDs(include='U_SKIN', includeBound=
-                   ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
+            # This will select upper skin components between the
+            # leading and trailing edge spars and between ribs 1 and 4.
+            selectCompIDs(include='U_SKIN', includeBound=
+                ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
 
         4. nGroup: The number of groups to divide the found components
-           into.
-           Generally this will be 1. However, in certain cases, it
-           is convenient to create multiple groups in one pass.
+        into.
+        Generally this will be 1. However, in certain cases, it
+        is convenient to create multiple groups in one pass.
 
-           For example::
+        For example::
 
-             # This will 'evenly' create 10 groups on all components
-             # containing LE_SPAR.
-             Note that once the components are
-             # selected, they are sorted **alphabetically** and assigned
-             # sequentially.
-             selectCompIDs(include='LE_SPAR', nGroup=10)
+            # This will 'evenly' create 10 groups on all components
+            # containing LE_SPAR.
+            Note that once the components are
+            # selected, they are sorted **alphabetically** and assigned
+            # sequentially.
+            selectCompIDs(include='LE_SPAR', nGroup=10)
 
-           nGroup can also be negative.
-           If it is negative, then a single
-           design variable group is added to each of the found
-           components.
+        nGroup can also be negative.
+        If it is negative, then a single
+        design variable group is added to each of the found
+        components.
 
-           For example::
+        For example::
 
-             # will select all components and assign a design variable
-             # group to each one.
-             selectCompIDs(nGroup=-1)
+            # will select all components and assign a design variable
+            # group to each one.
+            selectCompIDs(nGroup=-1)
 
         includeOp, str: 'and' or 'or'.
         Selects the logical operation
@@ -673,7 +683,7 @@ class pyTACS(BaseUI):
         if compIDs is None:
             return copy.deepcopy(self.compDescripts)
         # Convert to list
-        elif isinstance(compIDs, int):
+        elif isinstance(compIDs, (int, np.integer)):
             compIDs = [compIDs]
         # Make sure list is flat
         else:
@@ -734,6 +744,31 @@ class pyTACS(BaseUI):
 
         return self.meshLoader.getLocalNodeIDsForComps(compIDs)
 
+    def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
+        """
+        Given a list of node IDs in global (non-partitioned) ordering
+        returns the local (partitioned) node IDs on each processor.
+        If a requested node is not included on this processor,
+        an entry of -1 will be returned.
+
+        Parameters
+        ----------
+        globalIDs : int or list[int]
+            List of global node IDs.
+
+        nastranOrdering : bool
+            Flag signaling whether globalIDs is in TACS (default) or NASTRAN (grid IDs in bdf file) ordering
+            Defaults to False.
+
+        Returns
+        -------
+        localIDs : list[int]
+            List of local node IDs for each entry in globalIDs.
+            If the node is not owned by this processor, its index is filled with a value of -1.
+        """
+
+        return self.meshLoader.getLocalNodeIDsFromGlobal(globalIDs, nastranOrdering)
+
     def initialize(self, elemCallBack=None):
         """
         This is the 'last' method to be called during the setup. The
@@ -746,7 +781,7 @@ class pyTACS(BaseUI):
 
         Parameters
         ----------
-        elemCallBack : callable
+        elemCallBack : collections.abc.Callable or None
 
            The calling sequence for elemCallBack **must** be as
            follows::
@@ -801,6 +836,58 @@ class pyTACS(BaseUI):
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+
+        self._isNonlinear = self._checkNonlinearity()
+
+    @postinitialize_method
+    def _checkNonlinearity(self) -> bool:
+        """Check if the finite element model is nonlinear
+
+        This check works by checking whether the residual is nonlinear w.r.t the states using 3 residual evaluations.
+
+        Returns
+        -------
+        bool
+            True if the problem is nonlinear, False otherwise.
+        """
+        res0 = self.assembler.createVec()
+        res1 = self.assembler.createVec()
+        res2 = self.assembler.createVec()
+        state = self.assembler.createVec()
+
+        # Evaluate r(0)
+        state.zeroEntries()
+        self.assembler.setVariables(state, state, state)
+        self.assembler.assembleRes(res0)
+
+        # Evaluate r(u) - r(0)
+        state.initRand()
+        state.setRand()
+        self.setBCsInVec(state)
+        self.assembler.setVariables(state, state, state)
+        self.assembler.assembleRes(res1)
+        res1.axpy(-1.0, res0)
+
+        # Evaluate r(2u) -  r(0)
+        state.scale(2.0)
+        self.setBCsInVec(state)
+        self.assembler.setVariables(state, state, state)
+        self.assembler.assembleRes(res2)
+        res2.axpy(-1.0, res0)
+
+        # Reset the state variables
+        state.zeroEntries()
+        self.assembler.setVariables(state, state, state)
+
+        # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
+        resNorm = np.real(res1.norm())
+        res2.axpy(-2.0, res1)
+        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption(
+            "linearityTol"
+        ):
+            return False  # not nonlinear case
+        else:
+            return True  # nonlinear case
 
     def _elemCallBackFromBDF(self):
         """
@@ -995,13 +1082,24 @@ class pyTACS(BaseUI):
                 plyThicknesses = np.array(plyThicknesses, dtype=self.dtype)
                 plyAngles = np.array(plyAngles, dtype=self.dtype)
 
+                # Get the total laminate thickness
+                lamThickness = propInfo.Thickness()
+                # Get the offset distance from the ref plane to the midplane
+                tOffset = -(propInfo.z0 / lamThickness + 0.5)
+
                 if propInfo.lam is None or propInfo.lam in ["SYM", "MEM"]:
                     # Discrete laminate class (not for optimization)
                     con = tacs.constitutive.CompositeShellConstitutive(
-                        plyMats, plyThicknesses, plyAngles
+                        plyMats, plyThicknesses, plyAngles, tOffset=tOffset
                     )
-                    # Need to add functionality to consider only membrane in TACS for type = MEM
 
+                elif propInfo.lam == "SMEAR":
+                    plyFractions = plyThicknesses / lamThickness
+                    con = tacs.constitutive.SmearedCompositeShellConstitutive(
+                        plyMats, lamThickness, plyAngles, plyFractions, t_offset=tOffset
+                    )
+
+                # Need to add functionality to consider only membrane in TACS for type = MEM
                 else:
                     raise self._TACSError(
                         f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}."
@@ -1038,7 +1136,8 @@ class pyTACS(BaseUI):
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
-                I12 = propInfo.i12
+                # Nastran uses negative convention for POI's
+                I12 = -propInfo.i12
                 J = propInfo.j
                 k1 = propInfo.k1
                 k2 = propInfo.k2
@@ -1369,6 +1468,30 @@ class pyTACS(BaseUI):
             array[:] = vec.getArray()
 
     @postinitialize_method
+    def setBCsInVec(self, vec):
+        """
+        Sets dirichlet boundary condition values in the input vector.
+
+        Parameters
+        ----------
+        vec : numpy.ndarray or tacs.TACS.Vec
+            Vector to set boundary conditions in.
+        """
+        # Check if input is a BVec or numpy array
+        if isinstance(vec, tacs.TACS.Vec):
+            self.assembler.setBCs(vec)
+        elif isinstance(vec, np.ndarray):
+            array = vec
+            # Create temporary BVec
+            vec = self.assembler.createVec()
+            # Copy array values to BVec
+            vec.getArray()[:] = array
+            # Apply BCs
+            self.assembler.setBCs(vec)
+            # Copy values back to array
+            array[:] = vec.getArray()
+
+    @postinitialize_method
     def createStaticProblem(self, name, options=None):
         """
         Create a new staticProblem for modeling a static load cases.
@@ -1389,7 +1512,13 @@ class pyTACS(BaseUI):
             StaticProblem object used for modeling and solving static cases.
         """
         problem = tacs.problems.static.StaticProblem(
-            name, self.assembler, self.comm, self.outputViewer, self.meshLoader, options
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            self.isNonlinear,
+            options,
         )
         # Set with original design vars and coordinates, in case they have changed
         problem.setDesignVars(self.x0)
@@ -1431,6 +1560,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
@@ -1471,6 +1601,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
@@ -1511,6 +1642,7 @@ class pyTACS(BaseUI):
             self.comm,
             self.outputViewer,
             self.meshLoader,
+            self.isNonlinear,
             options,
         )
         # Set with original design vars and coordinates, in case they have changed
@@ -1779,7 +1911,16 @@ class pyTACS(BaseUI):
                     else:
                         vec1 = transObj.getRefAxis()
                         vec2 = np.random.random(3)
-                    newBDFInfo.add_cord2r(coordID, origin, np.real(vec1), np.real(vec2))
+                    # Add COORD2R card to BDF
+                    pn.cards.coordinate_systems.define_coord_e123(
+                        newBDFInfo,
+                        "CORD2R",
+                        coordID,
+                        origin,
+                        xaxis=np.real(vec1),
+                        xzplane=np.real(vec2),
+                        add=True,
+                    )
                     curCoordID += 1
                 # We just need the ref vector for these types
                 elif isinstance(
@@ -1977,6 +2118,36 @@ class pyTACS(BaseUI):
             DVConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.DVConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createPanelLengthConstraint(self, name, options=None):
+        """Create a new PanelLengthConstraint for enforcing that the panel
+        length DV values passed to components match the actual panel lengths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.PanelLengthConstraint
+            PanelLengthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.PanelLengthConstraint(
             name,
             self.assembler,
             self.comm,

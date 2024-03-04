@@ -6,7 +6,7 @@ default: suitesparse tecio metis
 
 .phony: suitesparse
 suitesparse: # Allowed to fail since SuiteSparse/AMD is optional
-	tar -xzf suitesparse*.tar.gz && cd ${SUITESPARSE_CONFIG_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" && cd ${AMD_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" || exit 0;
+	tar -xzf SuiteSparse*.tar.gz && cd ${SUITESPARSE_CONFIG_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" && cd ${AMD_DIR} && make CFLAGS="-O3 -fPIC -fexceptions" || exit 0;
 
 .phony: metis
 metis:

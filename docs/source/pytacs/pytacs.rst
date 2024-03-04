@@ -2,7 +2,7 @@ pyTACS
 ******
 The pyTACS interface utilizes a number of Python classes that automate the setup and running of models and analyses in TACS.
 This interface offers the following benefits over the :ref:`core/TACS:Direct` approach:
-has a more robust NASTRAN BDF mesh parsing capablity, improved interface for applying loads to structural problems,
+has a more robust NASTRAN BDF mesh parsing capability, improved interface for applying loads to structural problems,
 fewer Python objects to keep track of when running typical analyses.
 The interface consists of two main groups of classes: an assembler class called :class:`~tacs.pytacs.pyTACS` and
 a set of problem classes for analysis. The details of the interfaces will be discussed in the sections below.
@@ -32,4 +32,5 @@ repeated until the optimization criteria are satisfied.
 
   pytacs_module
   problems
+  solvers
   constraints

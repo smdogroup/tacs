@@ -113,6 +113,10 @@ TACSMaterialProperties::TACSMaterialProperties(
   alpha1 = _alpha1;
   alpha2 = _alpha2;
   alpha3 = _alpha3;
+
+  kappa1 = _kappa1;
+  kappa2 = _kappa2;
+  kappa3 = _kappa3;
 }
 
 // Get the material type
@@ -421,7 +425,7 @@ TacsScalar TACSMaterialProperties::vonMisesFailure3DStressSens(
              (s[1] - s[2]) * (s[1] - s[2]) +
              6.0 * (s[3] * s[3] + s[4] * s[4] + s[5] * s[5])));
 
-  if (fail != 0.0) {
+  if (TacsRealPart(fail) != 0.0) {
     TacsScalar fact = 0.5 / (ys * fail);
     sens[0] = fact * (2.0 * s[0] - s[1] - s[2]);
     sens[1] = fact * (2.0 * s[1] - s[0] - s[2]);
@@ -434,7 +438,7 @@ TacsScalar TACSMaterialProperties::vonMisesFailure3DStressSens(
     sens[3] = sens[4] = sens[5] = 0.0;
   }
 
-  return fail;
+  return fail / ys;
 }
 
 /*
@@ -457,16 +461,15 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
   TacsScalar fail =
       sqrt(s[0] * s[0] + s[1] * s[1] - s[0] * s[1] + 3.0 * s[2] * s[2]);
 
-  if (fail != 0.0) {
+  if (TacsRealPart(fail) != 0.0) {
     sens[0] = (s[0] - 0.5 * s[1]) / (fail * ys);
     sens[1] = (s[1] - 0.5 * s[0]) / (fail * ys);
     sens[2] = (3.0 * s[2]) / (fail * ys);
   } else {
     sens[0] = sens[1] = sens[2] = 0.0;
   }
-  fail = fail / ys;
 
-  return fail;
+  return fail / ys;
 }
 
 /*
@@ -1289,7 +1292,7 @@ void TACSOrthotropicPly::testFailSens(double dh, TacsScalar angle) {
          TacsRealPart(angle));
 
   for (int k = 0; k < 3; k++) {
-    strain[k] = -1.0;
+    strain[k] = -1.0e-3;
 
     // Calculate the failure load
     TacsScalar p = failure(angle, strain);

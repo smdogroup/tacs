@@ -12,7 +12,9 @@ import openmdao.api as om
 # Setup CAPS Problem
 # --------------------------------------------------------------#
 comm = MPI.COMM_WORLD
-tacs_model = caps2tacs.TacsModel.build(csm_file="large_naca_wing.csm", comm=comm)
+tacs_model = caps2tacs.TacsModel.build(
+    csm_file="large_naca_wing.csm", comm=comm, active_procs=[0]
+)
 tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative test to pass
     edge_pt_min=15,
     edge_pt_max=20,

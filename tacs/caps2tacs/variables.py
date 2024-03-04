@@ -1,3 +1,6 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
 __all__ = ["ShapeVariable", "ThicknessVariable"]
 
 from .materials import Material
@@ -9,7 +12,7 @@ class ShapeVariable:
     shape variables in ESP/CAPS are design parameters that affect the structural geometry
     """
 
-    def __init__(self, name: str, value=None):
+    def __init__(self, name: str, value=None, active: bool = True):
         """
         ESP/CAPS shape variable controls a design parameter in the CSM file
             name: corresponds to the design parameter in the CSM file
@@ -17,6 +20,7 @@ class ShapeVariable:
         """
         self.name = name
         self._value = value
+        self._active = active
 
     @property
     def DV_dictionary(self) -> dict:
@@ -52,6 +56,7 @@ class ThicknessVariable:
         upper_bound: float = None,
         max_delta: float = None,
         material: Material = None,
+        active: bool = True,
     ):
         """
         ESP/CAPS Thickness variable sets the thickness over a portion of the geometry in the CSM file
@@ -71,6 +76,7 @@ class ThicknessVariable:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.max_delta = max_delta
+        self._active = active
 
         # private variables used to create shell property
         self._material = material

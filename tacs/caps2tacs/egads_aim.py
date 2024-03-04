@@ -1,6 +1,7 @@
 __all__ = ["EgadsAim"]
 
 from typing import TYPE_CHECKING, List
+from .proc_decorator import parallel
 
 
 class EgadsAim:
@@ -13,10 +14,16 @@ class EgadsAim:
     egadsAim.input.Tess_Params = [.25,.01,15]
     """
 
-    def __init__(self, caps_problem, comm):
+    def __init__(self, caps_problem, comm, active_procs: list = [0]):
         self.comm = comm
-        if comm is None or comm.rank == 0:
-            self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
+        self.active_procs = active_procs
+
+        self._dictOptions = None
+
+        self._aim = None
+        for proc in self.active_procs:
+            if comm.rank == proc:
+                self._aim = caps_problem.analysis.create(aim="egadsTessAIM")
         self._is_setup = False
 
     def set_mesh(
@@ -31,17 +38,39 @@ class EgadsAim:
         """
         cascaded method to set the mesh input settings to the egadsAim
         """
-        if self.comm.rank == 0:
-            self._aim.input.Edge_Point_Min = edge_pt_min
-            self._aim.input.Edge_Point_Max = edge_pt_max
-            self._aim.input.Mesh_Elements = mesh_elements
-            self._aim.input.Tess_Params = [
-                global_mesh_size,
-                max_surf_offset,
-                max_dihedral_angle,
-            ]
+        for proc in self.active_procs:
+            if self.comm.rank == proc:
+                self._aim.input.Edge_Point_Min = edge_pt_min
+                self._aim.input.Edge_Point_Max = edge_pt_max
+                self._aim.input.Mesh_Elements = mesh_elements
+                self._aim.input.Tess_Params = [
+                    global_mesh_size,
+                    max_surf_offset,
+                    max_dihedral_angle,
+                ]
         self._is_setup = True
         return self
+
+    def save_dict_options(self, dictOptions: dict = None):
+        """
+        Optional method to set EGADS mesh settings using dictionaries.
+        Call this before setting up the TACS model. The dictionary should take
+        the form of, e.g.:
+
+        dictOptions['egadsTessAIM']['myOption'] = myValue
+        """
+        self._dictOptions = dictOptions
+
+        return self
+
+    @parallel
+    def _set_dict_options(self):
+        """
+        Set EGADS options via dictionaries.
+        """
+        dictOptions = self._dictOptions
+        for option in dictOptions["egadsTessAIM"]:
+            self.aim.input[option].value = dictOptions["egadsTessAIM"][option]
 
     @property
     def is_setup(self) -> bool:
