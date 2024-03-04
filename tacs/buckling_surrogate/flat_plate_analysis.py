@@ -126,24 +126,28 @@ class FlatPlateAnalysis:
     @classmethod
     def get_materials(cls):
         return [
-            cls.boron_epoxy,
-            cls.AS_carbon_epoxy,
-            cls.T300_epoxy,
-            cls.HMS_carbon_epoxy,
-            cls.GY_70_epoxy,
-            cls.Kevlar_49_Epoxy,
-            cls.E_glass_epoxy,
+            cls.solvay5320,
+            cls.solvayMTM45,
+            cls.torayBT250E,
+            cls.hexcelIM7,
+            cls.victrexAE
         ]
 
     # MATERIALS CLASS METHODS
+    # -----------------------------------------------------------
+    
+    # NIAR composite materials
+
     @classmethod
-    def boron_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+    def solvay5320(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
         """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
+        NIAR dataset - Solvay 5320-1 material (thermoset)
+        Fiber: T650 unitape, Resin: Cycom 5320-1
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
         """
         comp_utility = CompositeMaterialUtility(
-            E11=207e9, E22=19e9, nu12=0.21, G12=6.4e9
+            E11=138.461e9, E22=9.177e9, nu12=0.326, G12=4.957e9
         )
         comp_utility.rotate_ply(ply_angle)
 
@@ -153,7 +157,86 @@ class FlatPlateAnalysis:
             a=a,
             b=b,
             h=h,
-            material_name="boron-epoxy",
+            material_name="solvay5320",
+            ply_angle=ply_angle,
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+    
+    @classmethod
+    def solvayMTM45(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Solvay MTM45 material (thermoset)
+        Style: 12K AS4 Unidirectional
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=129.5e9, E22=7.936e9, nu12=0.313, G12=4.764e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="solvayMTM45",
+            ply_angle=ply_angle,
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+    
+    @classmethod
+    def torayBT250E(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Toray (formerly Tencate) BT250E-6 S2 Unitape Gr 284 material (thermoset)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=44.74e9, E22=11.36e9, nu12=0.278, G12=3.77e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="torayBT250E",
+            ply_angle=ply_angle,
+            E11=comp_utility.E11,
+            E22=comp_utility.E22,
+            nu12=comp_utility.nu12,
+            G12=comp_utility.G12,
+        )
+    
+    @classmethod
+    def victrexAE(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Victrex AE 250 LMPAEK (thermoplastic)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        comp_utility = CompositeMaterialUtility(
+            E11=131.69e9, E22=9.694e9, nu12=0.3192, G12=4.524e9
+        )
+        comp_utility.rotate_ply(ply_angle)
+
+        return cls(
+            comm=comm,
+            bdf_file=bdf_file,
+            a=a,
+            b=b,
+            h=h,
+            material_name="victrexAE",
             ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
@@ -162,14 +245,14 @@ class FlatPlateAnalysis:
         )
 
     @classmethod
-    def AS_carbon_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+    def hexcelIM7(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
         """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        AS Carbon-Epoxy
+        NIAR dataset - Hexcel 8552 IM7 Unidirectional Prepreg (thermoset)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
         """
         comp_utility = CompositeMaterialUtility(
-            E11=127.5e9, E22=9e9, nu12=0.25, G12=6.5e9
+            E11=158.51e9, nu12=0.316, E22=8.96e9, G12=4.688e9
         )
         comp_utility.rotate_ply(ply_angle)
 
@@ -179,132 +262,7 @@ class FlatPlateAnalysis:
             a=a,
             b=b,
             h=h,
-            material_name="AS-carbon-epoxy",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def T300_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=138e9, E22=10e9, nu12=0.21, G12=5.9e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="T300-epoxy",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def HMS_carbon_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=207e9, E22=13.8e9, nu12=0.20, G12=5.9e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="HMS-carbon-epoxy",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def GY_70_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=276e9, E22=8.3e9, nu12=0.25, G12=4.1e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="GY-70-epoxy",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def Kevlar_49_Epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=76e9, E22=5.5e9, nu12=0.34, G12=2.1e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="Kevlar-49-Epoxy",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def E_glass_epoxy(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        Ref: Fiber Reinforced Composites TB by P.K. Mallick
-        units of Pa, Appendix A.5
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=39e9, E22=4.8e9, nu12=0.30, G12=4.8e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="E-Glass-Epoxy",
+            material_name="hexcelIM7",
             ply_angle=ply_angle,
             E11=comp_utility.E11,
             E22=comp_utility.E22,
