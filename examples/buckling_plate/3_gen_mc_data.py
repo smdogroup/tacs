@@ -26,7 +26,7 @@ N = 100
 # select the load style and BC (4 total combinations)
 # need to generate all 4 combinations of data to finish this
 loading = "Nx"  # "Nx", "Nxy"
-BC = "CL"  # "SS", "CL"
+BC = "SS"  # "SS", "CL"
 
 # END OF MODEL INPUTS SECTION
 # --------------------------------------------
@@ -42,11 +42,6 @@ cpath = os.path.dirname(__file__)
 data_folder = os.path.join(cpath, "data")
 if not os.path.exists(data_folder) and comm.rank == 0:
     os.mkdir(data_folder)
-
-# TODO : change this to a Monte carlo simulation over uniform scales or uniform log scales
-# TODO : use the affine transformation of 1_run_analysis.py to make lambda values more consistent.
-
-# arrays to check the values of
 
 # clear the csv file
 _clear_data = False
@@ -66,6 +61,27 @@ if _clear_data:
 
 inner_ct = 0
 
+# run the nominal plate for mode tracking
+nominal_plate = buckling_surrogate.FlatPlateAnalysis.hexcelIM7(
+    comm=comm,
+    bdf_file="plate.bdf",
+    a=1.0,
+    b=1.0,
+    h=0.01,
+    ply_angle=0,
+)
+nominal_plate.generate_bdf(
+    nx=30,
+    ny=30,
+    exx=nominal_plate.affine_exx,
+    eyy=0.0,
+    exy=0.0,
+    clamped=False,
+)
+nom_eigvals, _ = nominal_plate.run_buckling_analysis(
+    sigma=5.0, num_eig=20, write_soln=False
+)
+
 for foo in range(N):  # until has generated this many samples
     # randomly generate the material
     materials = buckling_surrogate.FlatPlateAnalysis.get_materials()
@@ -73,7 +89,7 @@ for foo in range(N):  # until has generated this many samples
     ply_angle = np.random.uniform(0.0, 90.0)
 
     # random geometry, min thickness so that K,G matrices have good norm
-    log_slenderness = np.random.uniform(np.log(5.0), np.log(200.0))
+    log_slenderness = np.random.uniform(np.log(10.0), np.log(200.0))
     slenderness = np.exp(log_slenderness)
     h = 1.0
     b = (
@@ -92,7 +108,7 @@ for foo in range(N):  # until has generated this many samples
         # create the flat plate analysis
 
         # make the flat plate
-        flat_plate: buckling_surrogate.FlatPlateAnalysis = material(
+        new_plate: buckling_surrogate.FlatPlateAnalysis = material(
             comm,
             bdf_file="plate.bdf",
             a=a,
@@ -102,37 +118,36 @@ for foo in range(N):  # until has generated this many samples
         )
 
         # make sure the affine aspect ratio is in a reasonable range
-        _accepted = 0.05 <= flat_plate.affine_aspect_ratio <= 20.0
+        _accepted = 0.05 <= new_plate.affine_aspect_ratio <= 20.0
 
         if not (_accepted):
             continue  # go to next iteration
 
         # select number of elements
         # in order to preserve element AR based on overall AR
-        min_elem = 30
-        max_elem = 150
+        _nelems = 1000
+        min_elem = int(np.sqrt(_nelems / aspect_ratio))
+        max_elem = int(min_elem * aspect_ratio)
         if aspect_ratio > 1.0:
-            nx = np.min([int(aspect_ratio * min_elem), max_elem])
+            nx = max_elem
             ny = min_elem
         else:  # AR < 1.0
-            ny = np.min([int(min_elem / aspect_ratio), max_elem])
+            ny = max_elem
             nx = min_elem
 
         _run_buckling = True
 
         if _run_buckling:
-            load_scale = 1.0
-
             if loading == "Nx":
-                exx = flat_plate.affine_exx * load_scale
+                exx = new_plate.affine_exx
                 exy = 0.0
             elif loading == "Nxy":
                 exx = 0.0
-                exy = flat_plate.affine_exy * load_scale
+                exy = new_plate.affine_exy
 
             clamped = BC == "clamped"
 
-            flat_plate.generate_bdf(
+            new_plate.generate_bdf(
                 nx=nx,  # my earlier mistake was the #elements was not copied from above!!
                 ny=ny,
                 exx=exx,
@@ -149,34 +164,46 @@ for foo in range(N):  # until has generated this many samples
             # Sy0 = avg_stresses[1]
             # Sxy0 = avg_stresses[2]
 
-            tacs_eigvals, errors = flat_plate.run_buckling_analysis(
-                sigma=5.0 / load_scale, num_eig=12, write_soln=False
+            new_eigvals, errors = new_plate.run_buckling_analysis(
+                sigma=5.0, num_eig=40, write_soln=False
             )
 
-            kx_0 = tacs_eigvals[0] * load_scale
+            # min eigenvalue
+            kmin = new_eigvals[0]
             error_0 = errors[0]
 
         else:  # just do a model parameter check
-            kx_0 = 1.0  # for model parameter check
+            kmin = 1.0  # for model parameter check
 
-        reasonable_kx0 = 0.0 < kx_0 < 100.0
+        reasonable_min = 0.0 < kmin < 100.0
 
-        if abs(error_0) < 1e-10 and reasonable_kx0:
+        if abs(error_0) < 1e-10 and reasonable_min and kmin:
+            # perform the mode tracking
+            tracked_eigvals, _ = buckling_surrogate.FlatPlateAnalysis.mac_permutation(
+                nominal_plate, new_plate, num_modes=20
+            )
+
             # record the model parameters
             data_dict = {
                 # model parameter section
-                "Dstar": [flat_plate.Dstar],
-                "a0/b0": [flat_plate.affine_aspect_ratio],
-                "a/b": [flat_plate.aspect_ratio],
-                "b/h": [flat_plate.slenderness],
-                "kx_0": [kx_0],
-                "error": [error_0],
+                "Dstar": [new_plate.Dstar],
+                "a0/b0": [new_plate.affine_aspect_ratio],
+                "a/b": [new_plate.aspect_ratio],
+                "b/h": [new_plate.slenderness],
+                "kmin": [np.real(kmin)],
+                "error": [np.real(error_0)],
                 # other parameter section
-                "material": [flat_plate.material_name],
-                "ply_angle": [flat_plate.ply_angle],
+                "material": [new_plate.material_name],
+                "ply_angle": [new_plate.ply_angle],
                 "nx": [nx],
                 "ny": [ny],
             }
+
+            # add the tracked eigenvalues
+            for imode, tracked_eigval in enumerate(tracked_eigvals):
+                data_dict[f"k_{imode+1}"] = (
+                    np.real(tracked_eigval) if tracked_eigval else None
+                )
 
             # "s_xx" : [Sx0],
             # "s_yy" : [Sy0],

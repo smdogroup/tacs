@@ -15,7 +15,7 @@ if _clear_csv and comm.rank == 0:
         os.remove("mesh_convergence.csv")
 
 ct = 0
-for AR in [5.0]: #[1.0, 3.0, 5.0]
+for AR in [5.0]:  # [1.0, 3.0, 5.0]
     if AR == 1.0:
         max_scale = 1.3
     elif AR == 3.0:
@@ -40,8 +40,8 @@ for AR in [5.0]: #[1.0, 3.0, 5.0]
         )
 
         flat_plate.generate_bdf(
-            nx=int(5*AR*scale),
-            ny=int(5*scale),
+            nx=int(5 * AR * scale),
+            ny=int(5 * scale),
             exx=flat_plate.affine_exx,
             eyy=0.0,
             exy=0.0,
@@ -61,11 +61,11 @@ for AR in [5.0]: #[1.0, 3.0, 5.0]
         _dt = time.time() - _start_time
 
         data_dict = {
-            "AR" : [AR],
-            "nx" : [flat_plate._nx],
-            "ny" : [flat_plate._ny],
-            "nelem" : [flat_plate.num_elements],
-            "dt[s]" : [_dt]
+            "AR": [AR],
+            "nx": [flat_plate._nx],
+            "ny": [flat_plate._ny],
+            "nelem": [flat_plate.num_elements],
+            "dt[s]": [_dt],
         }
 
         del flat_plate
@@ -76,7 +76,7 @@ for AR in [5.0]: #[1.0, 3.0, 5.0]
                 data_dict[f"lam{i}"] = [eigvals[i]]
             df = pd.DataFrame(data_dict)
             if ct == 0 and _clear_csv:
-                df.to_csv("mesh_convergence.csv",index=False)
+                df.to_csv("mesh_convergence.csv", index=False)
             else:
                 df.to_csv("mesh_convergence.csv", mode="a", index=False, header=False)
 

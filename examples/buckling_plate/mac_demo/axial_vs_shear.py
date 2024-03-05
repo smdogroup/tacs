@@ -23,7 +23,7 @@ axial_plate = buckling_surrogate.FlatPlateAnalysis(
     h=0.01,  # slender near thin plate limit
     E11=70e9,
     nu12=0.33,
-    plate_name="axial"
+    plate_name="axial",
 )
 
 axial_plate.generate_bdf(
@@ -51,7 +51,7 @@ shear_plate = buckling_surrogate.FlatPlateAnalysis(
     h=0.01,  # slender near thin plate limit
     E11=70e9,
     nu12=0.33,
-    plate_name="shear"
+    plate_name="shear",
 )
 
 shear_plate.generate_bdf(
@@ -71,4 +71,6 @@ tacs_eigvals, _ = shear_plate.run_buckling_analysis(
 
 # perform modal assurance criterion between these two buckling analyses
 # ---------------------------------------------------------------------
-buckling_surrogate.FlatPlateAnalysis.mac_permutation(axial_plate, shear_plate, num_modes=6)
+buckling_surrogate.FlatPlateAnalysis.mac_permutation(
+    axial_plate, shear_plate, num_modes=6
+)

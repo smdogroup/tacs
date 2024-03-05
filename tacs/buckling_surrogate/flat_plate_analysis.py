@@ -9,9 +9,11 @@ from typing_extensions import Self
 
 dtype = utilities.BaseUI.dtype
 
+
 def exp_kernel1(xp, xq, sigma_f, L):
     # xp, xq are Nx1, Nx1 vectors
     return sigma_f**2 * np.exp(-0.5 * (xp - xq).T @ (xp - xq) / L**2)
+
 
 class FlatPlateAnalysis:
     def __init__(
@@ -29,7 +31,7 @@ class FlatPlateAnalysis:
         _G13=None,
         material_name=None,
         ply_angle=None,
-        plate_name=None, # use the plate name to differentiate plate folder names
+        plate_name=None,  # use the plate name to differentiate plate folder names
     ):
         self.comm = comm
 
@@ -59,30 +61,39 @@ class FlatPlateAnalysis:
         self._N = None
         self._num_modes = None
         self._eigenvectors = None
+        self._eigenvalues = None
         self._alphas = None
         self._solved_buckling = False
         self._saved_alphas = False
 
+    MAC_THRESHOLD = 0.1  # 0.6
+
     @classmethod
-    def mac_permutation(cls, nominal_plate:Self, new_plate:Self, num_modes:int) -> dict:
+    def mac_permutation(
+        cls, nominal_plate: Self, new_plate: Self, num_modes: int
+    ) -> dict:
         """
         compute the permutation of modes in the new plate that correspond to the modes in the nominal plate
         using 2D Discrete Fourier transform in a model assurance criterion
         """
+        eigenvalues = [None for _ in range(num_modes)]
         permutation = {}
-        nominal_interp_modes = nominal_plate.interpolate_eigenvectors(X_test=new_plate.nondim_X)
+        nominal_interp_modes = nominal_plate.interpolate_eigenvectors(
+            X_test=new_plate.nondim_X
+        )
         new_modes = new_plate.eigenvectors
 
         _debug = False
         if _debug:
-            for imode,interp_mode in enumerate(nominal_interp_modes):
+            for imode, interp_mode in enumerate(nominal_interp_modes):
                 interp_mat = new_plate._vec_to_plate_matrix(interp_mode)
                 import matplotlib.pyplot as plt
+
                 plt.imshow(interp_mat.astype(np.double))
                 plt.show()
 
-        for imode,nominal_mode in enumerate(nominal_interp_modes):
-            if imode >= num_modes: # if larger than number of nominal modes to compare
+        for imode, nominal_mode in enumerate(nominal_interp_modes):
+            if imode >= num_modes:  # if larger than number of nominal modes to compare
                 break
             nominal_mode_unit = nominal_mode / np.linalg.norm(nominal_mode)
 
@@ -90,24 +101,30 @@ class FlatPlateAnalysis:
             for new_mode in new_modes:
                 new_mode_unit = new_mode / np.linalg.norm(new_mode)
                 # compute cosine similarity with the unit vectors
-                similarity_list += [abs(np.dot(nominal_mode_unit, new_mode_unit).astype(np.double))]
+                similarity_list += [
+                    abs(np.dot(nominal_mode_unit, new_mode_unit).astype(np.double))
+                ]
 
             # compute the maximum similarity index
             if _debug:
                 print(f"similarity list imode {imode} = {similarity_list}")
             jmode_star = np.argmax(np.array(similarity_list))
             permutation[imode] = jmode_star
+            if similarity_list[jmode_star] > cls.MAC_THRESHOLD:  # similarity threshold
+                eigenvalues[imode] = new_plate.eigenvalues[jmode_star]
 
         # check the permutation map is one-to-one
-        
+
         # print to the terminal about the modal criterion
         print(f"0-based mac criterion permutation map")
-        print(f"\tbetween nominal plate {nominal_plate._plate_name} and new plate {new_plate._plate_name}")
+        print(
+            f"\tbetween nominal plate {nominal_plate._plate_name} and new plate {new_plate._plate_name}"
+        )
         print(f"\tthe permutation map is the following::\n")
         for imode in range(num_modes):
             print(f"\t nominal {imode} : new {permutation[imode]}")
-        
-        return permutation
+
+        return eigenvalues, permutation
 
     @property
     def static_folder_name(self) -> str:
@@ -115,7 +132,7 @@ class FlatPlateAnalysis:
             return "static-" + self._plate_name
         else:
             return "static"
-    
+
     @property
     def buckling_folder_name(self) -> str:
         if self._plate_name:
@@ -130,12 +147,12 @@ class FlatPlateAnalysis:
             cls.solvayMTM45,
             cls.torayBT250E,
             cls.hexcelIM7,
-            cls.victrexAE
+            cls.victrexAE,
         ]
 
     # MATERIALS CLASS METHODS
     # -----------------------------------------------------------
-    
+
     # NIAR composite materials
 
     @classmethod
@@ -164,7 +181,7 @@ class FlatPlateAnalysis:
             nu12=comp_utility.nu12,
             G12=comp_utility.G12,
         )
-    
+
     @classmethod
     def solvayMTM45(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
         """
@@ -191,7 +208,7 @@ class FlatPlateAnalysis:
             nu12=comp_utility.nu12,
             G12=comp_utility.G12,
         )
-    
+
     @classmethod
     def torayBT250E(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
         """
@@ -217,7 +234,7 @@ class FlatPlateAnalysis:
             nu12=comp_utility.nu12,
             G12=comp_utility.G12,
         )
-    
+
     @classmethod
     def victrexAE(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
         """
@@ -329,7 +346,7 @@ class FlatPlateAnalysis:
             np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
         )
         return exx_T
-    
+
     @property
     def affine_eyy(self):
         """TODO : write this eqn out"""
@@ -342,9 +359,15 @@ class FlatPlateAnalysis:
         out of the buckling analysis!
         """
         # option 1 - based on self derivation (but didn't match data well)
-        #exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
+        # exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
         # option 2 - based on NASA non-dimensional buckling parameter derivation
-        exy_T = np.pi**2 * (self.D11 * self.D22**3)**0.25 / self.b**2 / self.h / self.G12
+        exy_T = (
+            np.pi**2
+            * (self.D11 * self.D22**3) ** 0.25
+            / self.b**2
+            / self.h
+            / self.G12
+        )
         return exy_T
 
     @property
@@ -379,17 +402,24 @@ class FlatPlateAnalysis:
         build a matrix for transforming column vectors MN x 1 to M x N matrices
         for the mesh for Modal assurance criterion
         """
-        return np.array([[vec[self._M * j + i] for j in range(self._N)] for i in range(self._M)], dtype=dtype)
-    
-    def get_eigenvector(self,imode):
+        return np.array(
+            [[vec[self._M * j + i] for j in range(self._N)] for i in range(self._M)],
+            dtype=dtype,
+        )
+
+    def get_eigenvector(self, imode):
         # convert eigenvectors to w coordinates only, 6 dof per shell
-        #print(f"ndof in eigenvector = {self._eigenvectors[imode].shape[0]}")
+        # print(f"ndof in eigenvector = {self._eigenvectors[imode].shape[0]}")
         return self._eigenvectors[imode][2::6]
-    
+
     @property
     def eigenvectors(self):
         return [self.get_eigenvector(imode) for imode in range(self.num_modes)]
-    
+
+    @property
+    def eigenvalues(self):
+        return self._eigenvalues
+
     @property
     def num_nodes(self) -> int:
         return self._N * self._M
@@ -397,7 +427,10 @@ class FlatPlateAnalysis:
     @property
     def nondim_X(self):
         """non-dimensional X matrix for Gaussian Process model"""
-        return np.concatenate([np.expand_dims(self._xi,axis=-1), np.expand_dims(self._eta, axis=-1)], axis=1)
+        return np.concatenate(
+            [np.expand_dims(self._xi, axis=-1), np.expand_dims(self._eta, axis=-1)],
+            axis=1,
+        )
 
     def interpolate_eigenvectors(self, X_test, compute_covar=False):
         """
@@ -410,15 +443,25 @@ class FlatPlateAnalysis:
         sigma_n = 1e-4
         sigma_f = 1.0
         L = 0.4
-        _kernel = lambda xp,xq : exp_kernel1(xp,xq,sigma_f=sigma_f, L=L)
-        K_train = sigma_n**2 * np.eye(num_train) + np.array([[_kernel(X_train[i,:], X_train[j,:]) for i in range(num_train)] for j in range(num_train)])
-        K_test = np.array([[_kernel(X_train[i,:], X_test[j,:]) for i in range(num_train)] for j in range(num_test)])
-        
+        _kernel = lambda xp, xq: exp_kernel1(xp, xq, sigma_f=sigma_f, L=L)
+        K_train = sigma_n**2 * np.eye(num_train) + np.array(
+            [
+                [_kernel(X_train[i, :], X_train[j, :]) for i in range(num_train)]
+                for j in range(num_train)
+            ]
+        )
+        K_test = np.array(
+            [
+                [_kernel(X_train[i, :], X_test[j, :]) for i in range(num_train)]
+                for j in range(num_test)
+            ]
+        )
+
         if not compute_covar:
             _interpolated_eigenvectors = []
             for imode in range(self.num_modes):
                 phi = self.get_eigenvector(imode)
-                if self._saved_alphas: # skip linear solve in this case
+                if self._saved_alphas:  # skip linear solve in this case
                     alpha = self._alphas[imode]
                 else:
                     alpha = np.linalg.solve(K_train, phi)
@@ -428,11 +471,13 @@ class FlatPlateAnalysis:
             self._saved_alphas = True
             return _interpolated_eigenvectors
         else:
-            raise AssertionError("Haven't written part of extrapolate eigenvector to get the conditional covariance yet.")
+            raise AssertionError(
+                "Haven't written part of extrapolate eigenvector to get the conditional covariance yet."
+            )
 
     # decided no longer to do the discrete fourier transform approach for modal assurance criterion
     # -----------------------------------------------------------------------------------------------
-    # 
+    #
     # def _dft_matrix(self, k, l):
     #     """compute the Fourier matrix np.exp(-2*pi*sqrt(-1) * (km/M + ln/N)) in inline for loops (faster)"""
     #     return np.array([[np.exp(-2 * np.pi*1j * (k*m/self._M + l*n/self._N)) for n in range(self._N)] for m in range(self._M)])
@@ -470,15 +515,11 @@ class FlatPlateAnalysis:
     #         plt.imshow(eigvec_matrix.astype(np.double))
     #         plt.show()
     #     return self.twod_DFT(eigvec_matrix)
-    
+
     @property
     def num_modes(self) -> int:
         """number of eigenvalues or modes that were recorded"""
         return self._num_modes
-
-    @property
-    def fourier_eigenvectors(self):
-        return [self.get_fourier_eigenvector(imode) for imode in range(self.num_modes)]
 
     def generate_bdf(self, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0, clamped=True):
         """
@@ -505,8 +546,10 @@ class FlatPlateAnalysis:
         self._x = x
         self._y = y
         # nodes count across the x-axis first then loop over y-axis from bot-left corner
-        self._xi = [self._x[i % self._M]/self.a for i in range(self.num_nodes)] # non-dim coordinates
-        self._eta = [self._y[int(i/self._M)]/self.b for i in range(self.num_nodes)]
+        self._xi = [
+            self._x[i % self._M] / self.a for i in range(self.num_nodes)
+        ]  # non-dim coordinates
+        self._eta = [self._y[int(i / self._M)] / self.b for i in range(self.num_nodes)]
 
         if self.comm.rank == 0:
             fp = open(self.bdf_file, "w")
@@ -799,11 +842,13 @@ class FlatPlateAnalysis:
 
         # save the eigenvectors for MAC and return errors from function
         self._eigenvectors = []
+        self._eigenvalues = []
         self._num_modes = num_eig
         errors = []
         for imode in range(num_eig):
             eigval, eigvec = bucklingProb.getVariables(imode)
             self._eigenvectors += [eigvec]
+            self._eigenvalues += [eigval]
             error = bucklingProb.getModalError(imode)
             errors += [error]
 
