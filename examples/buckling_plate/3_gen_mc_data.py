@@ -11,10 +11,26 @@ from tacs import buckling_surrogate
 import numpy as np
 import pandas as pd
 import os
-
+import argparse
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
+
+# parse the arguments
+parent_parser = argparse.ArgumentParser(add_help=False)
+parent_parser.add_argument('--load', type=str)
+parent_parser.add_argument('--BC', type=str)
+
+args = parent_parser.parse_args()
+
+assert args.load in ["Nx", "Nxy", "axial", "shear"]
+assert args.BC in ["SS", "CL"]
+
+if args.load in ["Nx", "axial"]:
+    loading = "Nx"
+else:
+    loading = "Nxy"
+BC = args.BC
 
 # MODEL INPUTS SECTION
 # --------------------------------------------
@@ -22,11 +38,6 @@ comm = MPI.COMM_WORLD
 
 # number of random samples (traverse all AR for each of them)
 N = 100
-
-# select the load style and BC (4 total combinations)
-# need to generate all 4 combinations of data to finish this
-loading = "Nx"  # "Nx", "Nxy"
-BC = "CL"  # "SS", "CL"
 
 # END OF MODEL INPUTS SECTION
 # --------------------------------------------

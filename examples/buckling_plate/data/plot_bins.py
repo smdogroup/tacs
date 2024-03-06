@@ -4,13 +4,30 @@ import niceplots, pandas as pd, os
 import shutil
 from mpi4py import MPI
 import time
+import argparse
 
-cases = ["Nxcrit_SS", "Nxcrit_CL", "Nxycrit_SS", "Nxycrit_CL"]
-case = cases[0]
+# parse the arguments
+parent_parser = argparse.ArgumentParser(add_help=False)
+parent_parser.add_argument('--load', type=str)
+parent_parser.add_argument('--BC', type=str)
+
+args = parent_parser.parse_args()
+
+assert args.load in ["Nx", "Nxy", "axial", "shear"]
+assert args.BC in ["SS", "CL"]
+
+if args.load in ["Nx", "axial"]:
+    loading = "Nx"
+else:
+    loading = "Nxy"
+BC = args.BC
+
+
+csv_filename = loading + "crit_" + BC + ".csv"
 
 comm = MPI.COMM_WORLD
 
-df = pd.read_csv(case + ".csv")
+df = pd.read_csv(csv_filename)
 Dstar = df["Dstar"].to_numpy()
 affine_AR = df["a0/b0"].to_numpy()
 slenderness = df["b/h"].to_numpy()
