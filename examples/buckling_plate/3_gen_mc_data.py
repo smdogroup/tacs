@@ -26,7 +26,7 @@ N = 100
 # select the load style and BC (4 total combinations)
 # need to generate all 4 combinations of data to finish this
 loading = "Nx"  # "Nx", "Nxy"
-BC = "SS"  # "SS", "CL"
+BC = "CL"  # "SS", "CL"
 
 # END OF MODEL INPUTS SECTION
 # --------------------------------------------
@@ -70,13 +70,14 @@ nominal_plate = buckling_surrogate.FlatPlateAnalysis.hexcelIM7(
     h=0.01,
     ply_angle=0,
 )
+
 nominal_plate.generate_bdf(
     nx=30,
     ny=30,
-    exx=nominal_plate.affine_exx,
+    exx=nominal_plate.affine_exx if loading == "Nx" else 0.0,
     eyy=0.0,
-    exy=0.0,
-    clamped=False,
+    exy=nominal_plate.affine_exy if loading == "Nxy" else 0.0,
+    clamped=BC == "CL",
 )
 nom_eigvals, _ = nominal_plate.run_buckling_analysis(
     sigma=5.0, num_eig=20, write_soln=False
@@ -145,7 +146,7 @@ for foo in range(N):  # until has generated this many samples
                 exx = 0.0
                 exy = new_plate.affine_exy
 
-            clamped = BC == "clamped"
+            clamped = BC == "CL"
 
             new_plate.generate_bdf(
                 nx=nx,  # my earlier mistake was the #elements was not copied from above!!

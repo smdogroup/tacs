@@ -155,7 +155,7 @@ for ibin, bin in enumerate(slender_bins):
     # show each of the modes (w/o D* slicing)
     plt.figure("all-modes", figsize=(8, 6))
     ax = plt.subplot(111)
-    for imode in range(10):
+    for imode in range(20):
         mask = np.logical_and(mask1, mask0)
         if any(kmodes[imode][mask]) is not None:
             pass
@@ -170,9 +170,9 @@ for ibin, bin in enumerate(slender_bins):
         )
 
     # Shrink current axis by 20%
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     # maybe in log-log scale the modes will become nearly bilinear?
     _log_scale = False
@@ -304,7 +304,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
     # show each of the modes (w/o D* slicing)
     plt.figure("all-modes", figsize=(8, 6))
     ax = plt.subplot(111)
-    for imode in range(10):
+    for imode in range(20):
         mask = np.logical_and(mask2, mask0)
         if any(kmodes[imode][mask]) is not None:
             pass
@@ -319,9 +319,9 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
         )
 
     # Shrink current axis by 20%
-    box = ax.get_position()
-    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    # box = ax.get_position()
+    # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     # maybe in log-log scale the modes will become nearly bilinear?
     _log_scale = False
