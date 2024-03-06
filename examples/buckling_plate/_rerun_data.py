@@ -81,7 +81,7 @@ nom_eigvals, _ = nominal_plate.run_buckling_analysis(
     sigma=5.0, num_eig=20, write_soln=False
 )
 
-N = len(_materials.shape[0])
+N = _materials.shape[0]
 #N = 1
 for row in range(N):
     # current criterion
@@ -89,6 +89,8 @@ for row in range(N):
         pass # redo this data point (low AR)
     else:
         continue
+
+    print(f"\n\n Re-Running row {row} with AR = {_AR[row]}")
 
     # randomly generate the material
     material = buckling_surrogate.FlatPlateAnalysis.get_material_from_str(_materials[row])
