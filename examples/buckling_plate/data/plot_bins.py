@@ -38,16 +38,20 @@ kmodes = [df[f"k_{imode+1}"].to_numpy() for imode in range(20)]
 # b = df["b"].to_numpy()
 # AR = a / b
 
+case_folder = os.path.join(os.getcwd(), csv_filename.split(".")[0])
+if not os.path.exists(case_folder):
+    os.mkdir(case_folder)
+
 # make folder for the slender bins
-slender_folder = os.path.join(os.getcwd(), "slender-bin")
-if os.path.exists(slender_folder):
-    shutil.rmtree(slender_folder)
+slender_folder = os.path.join(case_folder, "slender-bin")
+# if os.path.exists(slender_folder):
+#     shutil.rmtree(slender_folder)
 if not os.path.exists(slender_folder):
     os.mkdir(slender_folder)
 
-Dstar_folder = os.path.join(os.getcwd(), "Dstar-bin")
-if os.path.exists(Dstar_folder):
-    shutil.rmtree(Dstar_folder)
+Dstar_folder = os.path.join(case_folder, "Dstar-bin")
+# if os.path.exists(Dstar_folder):
+#     shutil.rmtree(Dstar_folder)
 if not os.path.exists(Dstar_folder):
     os.mkdir(Dstar_folder)
 
