@@ -127,14 +127,15 @@ for foo in range(N):  # until has generated this many samples
         # select number of elements
         # in order to preserve element AR based on overall AR
         _nelems = 1000
-        min_elem = int(np.sqrt(_nelems / aspect_ratio))
-        max_elem = int(min_elem * aspect_ratio)
+        AR_g1 = aspect_ratio if aspect_ratio > 1 else 1.0/aspect_ratio
+        min_elem = int(np.sqrt(_nelems / AR_g1))
+        max_elem = int(min_elem * AR_g1)
         if aspect_ratio > 1.0:
             nx = max_elem
             ny = min_elem
         else:  # AR < 1.0
             ny = max_elem
-            nx = min_elem
+            nx = max(min_elem, 25)
 
         _run_buckling = True
 

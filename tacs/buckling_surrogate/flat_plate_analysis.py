@@ -149,6 +149,17 @@ class FlatPlateAnalysis:
             cls.hexcelIM7,
             cls.victrexAE,
         ]
+    
+    @classmethod
+    def get_material_from_str(cls, mat_name:str):
+        method_names = [_.__qualname__ for _ in cls.get_materials()]
+        materials = cls.get_materials()
+        _method = None
+        for i,method_name in enumerate(method_names):
+            if mat_name in method_name:
+                _method = materials[i]
+        assert _method is not None
+        return _method
 
     # MATERIALS CLASS METHODS
     # -----------------------------------------------------------
