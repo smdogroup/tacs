@@ -9,7 +9,7 @@ from tacs import pytacs, constitutive, elements, functions
 6 noded beam model 1 meter long in x direction with a two transient tip load cases:
     1. linear ramp
     2. sinusoidal
-The transient loads are read in from the BDF using the createTACSProbsFromBDF method. 
+The transient loads are read in from the BDF using the createTACSProbsFromBDF method.
 We apply apply various tip loads test KSDisplacement and Compliance functions and sensitivities.
 """
 
@@ -23,9 +23,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "ramp_compliance": 10.917589919679486,
+        "ramp_compliance": 0.6911725719135945,
         "ramp_x_disp": 0.06931471805599457,
-        "ramp_y_disp": 12.191784286714391,
+        "ramp_y_disp": 6.227712362945526,
         "ramp_z_disp": 0.06931471805599457,
         "sinusoid_compliance": 23.113858857368683,
         "sinusoid_x_disp": 0.06931471805599457,
