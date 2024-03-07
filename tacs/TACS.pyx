@@ -28,7 +28,6 @@ from libc.string cimport const_char
 from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 
-
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
 
