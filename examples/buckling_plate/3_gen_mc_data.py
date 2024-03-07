@@ -185,6 +185,9 @@ for foo in range(N):  # until has generated this many samples
             kmin = new_eigvals[0]
             error_0 = errors[0]
 
+            if loading == "Nxy": # can have negative lowest eigenvalue (+- for each)
+                kmin = np.abs(kmin)
+
         else:  # just do a model parameter check
             kmin = 1.0  # for model parameter check
 
