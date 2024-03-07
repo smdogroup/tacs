@@ -23,9 +23,9 @@ flat_plate = buckling_surrogate.FlatPlateAnalysis(
 flat_plate.generate_bdf(
     nx=30,
     ny=30,
-    exx=flat_plate.affine_exx,
+    exx=0.0,
     eyy=0.0,
-    exy=0.0,
+    exy=flat_plate.affine_exy,
     clamped=False,
 )
 

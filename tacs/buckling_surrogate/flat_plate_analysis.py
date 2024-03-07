@@ -369,16 +369,19 @@ class FlatPlateAnalysis:
         get the exy so that lambda = kx_0y_0 the affine buckling coefficient for pure shear load
         out of the buckling analysis!
         """
+        option = 2
         # option 1 - based on self derivation (but didn't match data well)
-        # exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
-        # option 2 - based on NASA non-dimensional buckling parameter derivation
-        exy_T = (
-            np.pi**2
-            * (self.D11 * self.D22**3) ** 0.25
-            / self.b**2
-            / self.h
-            / self.G12
-        )
+        if option == 1:
+            exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
+        # option 2 - based on NASA non-dimensional buckling parameter derivation (much better)
+        elif option == 2:
+            exy_T = (
+                np.pi**2
+                * (self.D11 * self.D22**3) ** 0.25
+                / self.b**2
+                / self.h
+                / self.G12
+            )
         return exy_T
 
     @property

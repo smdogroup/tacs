@@ -44,14 +44,14 @@ if not os.path.exists(case_folder):
 
 # make folder for the slender bins
 slender_folder = os.path.join(case_folder, "slender-bin")
-# if os.path.exists(slender_folder):
-#     shutil.rmtree(slender_folder)
+if os.path.exists(slender_folder):
+    shutil.rmtree(slender_folder)
 if not os.path.exists(slender_folder):
     os.mkdir(slender_folder)
 
 Dstar_folder = os.path.join(case_folder, "Dstar-bin")
-# if os.path.exists(Dstar_folder):
-#     shutil.rmtree(Dstar_folder)
+if os.path.exists(Dstar_folder):
+    shutil.rmtree(Dstar_folder)
 if not os.path.exists(Dstar_folder):
     os.mkdir(Dstar_folder)
 
