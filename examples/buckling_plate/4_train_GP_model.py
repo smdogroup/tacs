@@ -637,5 +637,9 @@ RMSE = np.sqrt(1.0 / n_test * float(test_resid.T @ test_resid))
 norm_resid = (Y_test - f_test) / Y_test
 avg_rel_error = np.sum(np.abs(norm_resid)) / n_test
 
-print(f"RMSE test = {RMSE}")
-print(f"avg relative error = {avg_rel_error}")
+# write this to file in the GP folder
+txt_file = os.path.join(GP_folder, "model-fit.txt")
+hdl = open(txt_file, "w")
+hdl.write(f"RMSE test = {RMSE}")
+hdl.write(f"avg relative error = {avg_rel_error}")
+hdl.close()
