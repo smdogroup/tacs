@@ -35,20 +35,6 @@ csv_filename = f"{load_prefix}_{BC}"
 print(f"csv filename = {csv_filename}")
 df = pd.read_csv("data/" + csv_filename + ".csv")
 
-# initial hyperparameter vector
-# sigma_n, sigma_f, L1, L2, L3
-
-if csv_filename == "Nxcrit_SS":
-    theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
-    n_train = 3600
-    # avg rel error = 0.0232,
-    # best_theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
-elif csv_filename == "Nxcrit_CL":
-    theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
-    n_train = 7000
-else:
-    raise AssertionError("Not setup hyperparameters for the other models yet.")
-
 # extract only the model columns
 # TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
 # or also log(E11/G12)
@@ -57,6 +43,24 @@ Y = df["kmin"].to_numpy()
 Y = np.reshape(Y, newshape=(Y.shape[0], 1))
 
 print(f"Monte Carlo #data = {X.shape[0]}")
+N_data = X.shape[0]
+
+# initial hyperparameter vector
+# sigma_n, sigma_f, L1, L2, L3
+
+theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+n_train = int(0.9 * N_data)
+# if csv_filename == "Nxcrit_SS":
+#     theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+#     n_train = 3600
+#     # avg rel error = 0.0232,
+#     # best_theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+# elif csv_filename == "Nxcrit_CL":
+#     theta = np.array([1e-1, 2.0, 1.0, 0.3, 0.9])
+#     n_train = 7000
+# else:
+#     raise AssertionError("Not setup hyperparameters for the other models yet.")
+
 
 # remove slenderness 5 to 10 from the dataset for Nxcrit_clamped
 # don't even have that data anymore
@@ -454,14 +458,17 @@ if _plot:
             ax = plt.axes(projection ='3d')
             
             # Creating plot
-            ax.plot_surface(DSTAR, AR, KMIN, cmap=cm.coolwarm, antialiased=False, facecolors = KMIN, alpha=0.7)
+            face_colors = cm.jet(KMIN/10.0)
+            ax.plot_surface(DSTAR, AR, KMIN, antialiased=False, facecolors = face_colors, alpha=0.5)
 
             # plot data in certain range of the training set
             for iDstar, Dstar_bin in enumerate(Dstar_bins):
                 mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
                 avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
+                mask3 = np.logical_and(Y[:,0] < 10.0, X[:,1] <= 5.0)
 
                 mask = np.logical_and(mask1, mask2)
+                mask = np.logical_and(mask, mask3)
                 if np.sum(mask) == 0:
                     continue
                 X_in_range = X[mask, :]
@@ -472,7 +479,8 @@ if _plot:
             ax.set_xlabel(r"$D^*$")
             ax.set_ylabel(r"$a_0/b_0$")
             ax.set_zlabel(r"$k_{min}$")
-            ax.set_zlim(0.0, 10.0)
+            ax.set_ylim3d(0.0, 5.0)
+            ax.set_zlim3d(0.0, 10.0)
             ax.view_init(elev=20, azim=20, roll=0)
             plt.gca().invert_xaxis()
             plt.title(f"b/h in [{bin[0]},{bin[1]}]")
