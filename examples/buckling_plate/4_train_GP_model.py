@@ -100,7 +100,7 @@ for ifolder,folder in enumerate([
     w_outliers_folder,
     GP_folder,
 ]):
-    if ifolder >= 2:
+    if ifolder >= 2 and os.path.exists(folder):
         shutil.rmtree(folder)
     if not os.path.exists(folder):
         os.mkdir(folder)
