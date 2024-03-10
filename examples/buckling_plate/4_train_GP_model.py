@@ -2,22 +2,37 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import niceplots, scipy, time, os
+import argparse
+from mpl_toolkits import mplot3d
+from matplotlib import cm
+import shutil
 
 """
 This time I'll try a Gaussian Process model to fit the axial critical load surrogate model
 Inputs: D*, a0/b0, ln(b/h)
 Output: k_x0
 """
+# parse the arguments
+parent_parser = argparse.ArgumentParser(add_help=False)
+parent_parser.add_argument('--load', type=str)
+parent_parser.add_argument('--BC', type=str)
 
-# choose the modes / dataset
-load = "axial"
-BC = "CL"
-assert load in ["axial", "shear"]
-assert BC in ["CL", "SS"]
+args = parent_parser.parse_args()
+
+assert args.load in ["Nx", "Nxy", "axial", "shear"]
+assert args.BC in ["SS", "CL"]
+
+print(f"args.load = {args.load}")
+if args.load in ["Nx", "axial"]:
+    load = "Nx"
+else:
+    load = "Nxy"
+BC = args.BC
 
 # load the Nxcrit dataset
-load_prefix = "Nxcrit" if load == "axial" else "Nxycrit"
+load_prefix = "Nxcrit" if load == "Nx" else "Nxycrit"
 csv_filename = f"{load_prefix}_{BC}"
+print(f"csv filename = {csv_filename}")
 df = pd.read_csv("data/" + csv_filename + ".csv")
 
 # initial hyperparameter vector
@@ -38,18 +53,19 @@ else:
 # TODO : if need more inputs => could maybe try adding log(E11/E22) in as a parameter?
 # or also log(E11/G12)
 X = df[["Dstar", "a0/b0", "b/h"]].to_numpy()
-Y = df["kx_0"].to_numpy()
+Y = df["kmin"].to_numpy()
 Y = np.reshape(Y, newshape=(Y.shape[0], 1))
 
 print(f"Monte Carlo #data = {X.shape[0]}")
 
 # remove slenderness 5 to 10 from the dataset for Nxcrit_clamped
-if csv_filename == "Nxcrit_clamped":
-    # it hasn't been converted to logs yet
-    low_slenderness = np.logical_and(5.0 <= X[:, 2], X[:, 2] <= 10.0)
-    keep_mask = np.logical_not(low_slenderness)
-    X = X[keep_mask, :]
-    Y = Y[keep_mask, :]
+# don't even have that data anymore
+# if csv_filename == "Nxcrit_CL":
+#     # it hasn't been converted to logs yet
+#     low_slenderness = np.logical_and(5.0 <= X[:, 2], X[:, 2] <= 10.0)
+#     keep_mask = np.logical_not(low_slenderness)
+#     X = X[keep_mask, :]
+#     Y = Y[keep_mask, :]
 
 # REMOVE THE OUTLIERS in local 4d regions
 # loop over different slenderness bins
@@ -59,7 +75,7 @@ slender_bins = [
     [50.0, 100.0],
     [100.0, 200.0],
 ]  # [5.0, 10.0],
-Dstar_bins = [[0.25 * i, 0.25 * (i + 1)] for i in range(6)]
+Dstar_bins = [[0.25 * i, 0.25 * (i + 1)] for i in range(7)]
 # added smaller and larger bins here cause we miss some of the outliers near the higher a0/b0 with less data
 aff_AR_bins = (
     [[0.5 * i, 0.5 * (i + 1)] for i in range(4)]
@@ -69,17 +85,19 @@ aff_AR_bins = (
 
 # make a folder for the model fitting
 data_folder = os.path.join(os.getcwd(), "data")
-model_folder = os.path.join(data_folder, csv_filename + "_model")
-wo_outliers_folder = os.path.join(model_folder, "wo-outliers")
-w_outliers_folder = os.path.join(model_folder, "w-outliers")
-GP_folder = os.path.join(model_folder, "GP")
-for folder in [
+sub_data_folder = os.path.join(data_folder, csv_filename)
+wo_outliers_folder = os.path.join(sub_data_folder, "model-no-outliers")
+w_outliers_folder = os.path.join(sub_data_folder, "model-w-outliers")
+GP_folder = os.path.join(sub_data_folder, "GP")
+for ifolder,folder in enumerate([
     data_folder,
-    model_folder,
+    sub_data_folder,
     wo_outliers_folder,
     w_outliers_folder,
     GP_folder,
-]:
+]):
+    if ifolder >= 2:
+        shutil.rmtree(folder)
     if not os.path.exists(folder):
         os.mkdir(folder)
 
@@ -380,6 +398,9 @@ alpha = np.linalg.solve(K_y, y)
 # plot the model and some of the data near the model range in D*=1, AR from 0.5 to 5.0, b/h=100
 # ---------------------------------------------------------------------------------------------
 _plot = True
+_plot_Dstar_2d = True
+_plot_slender_2d = True
+_plot_3d = True
 
 if _plot:
     # get the available colors
@@ -388,101 +409,25 @@ if _plot:
 
     plt.style.use(niceplots.get_style())
 
-    # iterate over the different slender,D* bins
-    for ibin, bin in enumerate(slender_bins):
-        slender_bin = [np.log(bin[0]), np.log(bin[1])]
-        avg_log_slender = 0.5 * (slender_bin[0] + slender_bin[1])
-        mask1 = np.logical_and(slender_bin[0] <= X[:, 2], X[:, 2] <= slender_bin[1])
-        if np.sum(mask1) == 0:
-            continue
-
-        plt.figure("check model", figsize=(8, 6))
-        plt.margins(x=0.05, y=0.05)
-        plt.title(f"b/h in [{bin[0]},{bin[1]}]")
-        ax = plt.subplot(111)
-
-        for iDstar, Dstar_bin in enumerate(Dstar_bins):
-            mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
-            avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
-
-            mask = np.logical_and(mask1, mask2)
-            if np.sum(mask) == 0:
-                continue
-
-            # predict the GP curve
-            n_plot = 300
-            X_plot = np.zeros((n_plot, 3))
-            X_plot[:, 0] = avg_Dstar
-            X_plot[:, 1] = np.linspace(0.1, 10.0, n_plot)
-            X_plot[:, 2] = avg_log_slender
-
-            Kplot = np.array(
-                [
-                    [kernel(X_train[i, :], X_plot[j, :]) for i in range(n_train)]
-                    for j in range(n_plot)
-                ]
-            )
-            f_plot = Kplot @ alpha
-
-            # plot data in certain range of the training set
-            mask = np.logical_and(mask1, mask2)
-            X_in_range = X[mask, :]
-            Y_in_range = Y[mask, :]
-
-            AR_in_range = X_in_range[:, 1]
-
-            # plot the raw data and the model in this range
-            ax.plot(
-                AR_in_range, Y_in_range, "o", color=colors[iDstar]
-            )  # , label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]""
-            ax.plot(
-                X_plot[:, 1],
-                f_plot[:, 0],
-                color=colors[iDstar],
-                label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]",
-            )
-
-        # outside of for loop save the plot
-        plt.xlabel(r"$a_0/b_0$")
-        plt.ylabel(r"$k_{x_0}$")
-        plt.legend()
-        plt.xlim(0.0, 5.0)
-        plt.ylim(0.0, 20.0)
-        # box = ax.get_position()
-        # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        # # Put a legend to the right of the current axis
-        # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.savefig(os.path.join(GP_folder, f"slender{ibin}.png"), dpi=400)
-        plt.close("check model")
-
-    # then do the same but reverse D* then slender for loop
-    # iterate over the different slender,D* bins
-    for iDstar, Dstar_bin in enumerate(Dstar_bins):
-        mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
-        avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
-        if np.sum(mask2) == 0:
-            continue
-
-        plt.figure("check model", figsize=(8, 6))
-        plt.margins(x=0.05, y=0.05)
-        plt.title(f"D* in [{Dstar_bin[0]},{Dstar_bin[1]}]")
-        ax = plt.subplot(111)
-
+    if _plot_3d:
+        # plot the 3D version of the GP curve for each slenderness value
+        # iterate over the different slender,D* bins
         for ibin, bin in enumerate(slender_bins):
             slender_bin = [np.log(bin[0]), np.log(bin[1])]
             avg_log_slender = 0.5 * (slender_bin[0] + slender_bin[1])
             mask1 = np.logical_and(slender_bin[0] <= X[:, 2], X[:, 2] <= slender_bin[1])
-
-            mask = np.logical_and(mask1, mask2)
-            if np.sum(mask) == 0:
+            if np.sum(mask1) == 0:
                 continue
-
-            # predict the GP curve
-            n_plot = 300
+            n_plot = 3000
+            X_plot_mesh = np.zeros((30,100))
             X_plot = np.zeros((n_plot, 3))
-            X_plot[:, 0] = avg_Dstar
-            X_plot[:, 1] = np.linspace(0.1, 10.0, n_plot)
-            X_plot[:, 2] = avg_log_slender
+            ct = 0
+            Dstar_vec = np.linspace(0.25, 1.75, 30)
+            AR_vec = np.linspace(0.1, 5.0, 100)
+            for iDstar in range(30):
+                for iAR in range(100):
+                    X_plot[ct,:] = np.array([Dstar_vec[iDstar], AR_vec[iAR], avg_log_slender])
+                    ct += 1
 
             Kplot = np.array(
                 [
@@ -492,37 +437,185 @@ if _plot:
             )
             f_plot = Kplot @ alpha
 
+            # make meshgrid of outputs
+            DSTAR = np.zeros((30, 100))
+            AR = np.zeros((30,100))
+            KMIN = np.zeros((30,100))
+            ct = 0
+            for iDstar in range(30):
+                for iAR in range(100):
+                    DSTAR[iDstar,iAR] = Dstar_vec[iDstar]
+                    AR[iDstar,iAR] = AR_vec[iAR]
+                    KMIN[iDstar,iAR] = f_plot[ct]
+                    ct += 1
+
+            # plot the model curve
+            fig = plt.figure("3d-GP", figsize =(14, 9))
+            ax = plt.axes(projection ='3d')
+            
+            # Creating plot
+            ax.plot_surface(DSTAR, AR, KMIN, cmap=cm.coolwarm, antialiased=False, facecolors = KMIN, alpha=0.7)
+
             # plot data in certain range of the training set
-            mask = np.logical_and(mask1, mask2)
-            X_in_range = X[mask, :]
-            Y_in_range = Y[mask, :]
+            for iDstar, Dstar_bin in enumerate(Dstar_bins):
+                mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
+                avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
 
-            AR_in_range = X_in_range[:, 1]
+                mask = np.logical_and(mask1, mask2)
+                if np.sum(mask) == 0:
+                    continue
+                X_in_range = X[mask, :]
+                Y_in_range = Y[mask, :]
+                ax.scatter(X_in_range[:,0], X_in_range[:,1], Y_in_range[:,0])
 
-            # plot the raw data and the model in this range
-            ax.plot(
-                AR_in_range, Y_in_range, "o", color=colors[ibin]
-            )  # , label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]""
-            ax.plot(
-                X_plot[:, 1],
-                f_plot[:, 0],
-                color=colors[ibin],
-                label=f"b/h-[{bin[0]},{bin[1]}]",
-            )
+            # save the figure
+            ax.set_xlabel(r"$D^*$")
+            ax.set_ylabel(r"$a_0/b_0$")
+            ax.set_zlabel(r"$k_{min}$")
+            ax.set_zlim(0.0, 10.0)
+            ax.view_init(elev=20, azim=20, roll=0)
+            plt.gca().invert_xaxis()
+            plt.title(f"b/h in [{bin[0]},{bin[1]}]")
+            #plt.show()
+            plt.savefig(os.path.join(GP_folder, f"3d-slender-{ibin}.png"), dpi=400)
+            plt.close("3d-GP")
 
-        # outside of for loop save the plot
-        plt.xlabel(r"$a_0/b_0$")
-        plt.ylabel(r"$k_{x_0}$")
-        plt.legend()
-        plt.xlim(0.0, 5.0)
-        plt.ylim(0.0, 20.0)
-        # box = ax.get_position()
-        # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-        # # Put a legend to the right of the current axis
-        # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.savefig(os.path.join(GP_folder, f"Dstar{iDstar}.png"), dpi=400)
-        plt.close("check model")
+    if _plot_slender_2d:
+        # iterate over the different slender,D* bins
+        for ibin, bin in enumerate(slender_bins):
+            slender_bin = [np.log(bin[0]), np.log(bin[1])]
+            avg_log_slender = 0.5 * (slender_bin[0] + slender_bin[1])
+            mask1 = np.logical_and(slender_bin[0] <= X[:, 2], X[:, 2] <= slender_bin[1])
+            if np.sum(mask1) == 0:
+                continue
 
+            plt.figure("check model", figsize=(8, 6))
+            plt.margins(x=0.05, y=0.05)
+            plt.title(f"b/h in [{bin[0]},{bin[1]}]")
+            ax = plt.subplot(111)
+
+            for iDstar, Dstar_bin in enumerate(Dstar_bins):
+                mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
+                avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
+
+                mask = np.logical_and(mask1, mask2)
+                if np.sum(mask) == 0:
+                    continue
+
+                # predict the GP curve
+                n_plot = 300
+                X_plot = np.zeros((n_plot, 3))
+                X_plot[:, 0] = avg_Dstar
+                X_plot[:, 1] = np.linspace(0.1, 10.0, n_plot)
+                X_plot[:, 2] = avg_log_slender
+
+                Kplot = np.array(
+                    [
+                        [kernel(X_train[i, :], X_plot[j, :]) for i in range(n_train)]
+                        for j in range(n_plot)
+                    ]
+                )
+                f_plot = Kplot @ alpha
+
+                # plot data in certain range of the training set
+                mask = np.logical_and(mask1, mask2)
+                X_in_range = X[mask, :]
+                Y_in_range = Y[mask, :]
+
+                AR_in_range = X_in_range[:, 1]
+
+                # plot the raw data and the model in this range
+                ax.plot(
+                    AR_in_range, Y_in_range, "o", color=colors[iDstar]
+                )  # , label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]""
+                ax.plot(
+                    X_plot[:, 1],
+                    f_plot[:, 0],
+                    color=colors[iDstar],
+                    label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]",
+                )
+
+            # outside of for loop save the plot
+            plt.xlabel(r"$a_0/b_0$")
+            plt.ylabel(r"$k_{x_0}$")
+            plt.legend()
+            plt.xlim(0.0, 5.0)
+            plt.ylim(0.0, 20.0)
+            # box = ax.get_position()
+            # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            # # Put a legend to the right of the current axis
+            # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.savefig(os.path.join(GP_folder, f"slender{ibin}.png"), dpi=400)
+            plt.close("check model")
+
+    if _plot_Dstar_2d:
+        # then do the same but reverse D* then slender for loop
+        # iterate over the different slender,D* bins
+        for iDstar, Dstar_bin in enumerate(Dstar_bins):
+            mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
+            avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
+            if np.sum(mask2) == 0:
+                continue
+
+            plt.figure("check model", figsize=(8, 6))
+            plt.margins(x=0.05, y=0.05)
+            plt.title(f"D* in [{Dstar_bin[0]},{Dstar_bin[1]}]")
+            ax = plt.subplot(111)
+
+            for ibin, bin in enumerate(slender_bins):
+                slender_bin = [np.log(bin[0]), np.log(bin[1])]
+                avg_log_slender = 0.5 * (slender_bin[0] + slender_bin[1])
+                mask1 = np.logical_and(slender_bin[0] <= X[:, 2], X[:, 2] <= slender_bin[1])
+
+                mask = np.logical_and(mask1, mask2)
+                if np.sum(mask) == 0:
+                    continue
+
+                # predict the GP curve
+                n_plot = 300
+                X_plot = np.zeros((n_plot, 3))
+                X_plot[:, 0] = avg_Dstar
+                X_plot[:, 1] = np.linspace(0.1, 10.0, n_plot)
+                X_plot[:, 2] = avg_log_slender
+
+                Kplot = np.array(
+                    [
+                        [kernel(X_train[i, :], X_plot[j, :]) for i in range(n_train)]
+                        for j in range(n_plot)
+                    ]
+                )
+                f_plot = Kplot @ alpha
+
+                # plot data in certain range of the training set
+                mask = np.logical_and(mask1, mask2)
+                X_in_range = X[mask, :]
+                Y_in_range = Y[mask, :]
+
+                AR_in_range = X_in_range[:, 1]
+
+                # plot the raw data and the model in this range
+                ax.plot(
+                    AR_in_range, Y_in_range, "o", color=colors[ibin]
+                )  # , label=f"D*-[{Dstar_bin[0]},{Dstar_bin[1]}]""
+                ax.plot(
+                    X_plot[:, 1],
+                    f_plot[:, 0],
+                    color=colors[ibin],
+                    label=f"b/h-[{bin[0]},{bin[1]}]",
+                )
+
+            # outside of for loop save the plot
+            plt.xlabel(r"$a_0/b_0$")
+            plt.ylabel(r"$k_{x_0}$")
+            plt.legend()
+            plt.xlim(0.0, 5.0)
+            plt.ylim(0.0, 20.0)
+            # box = ax.get_position()
+            # ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            # # Put a legend to the right of the current axis
+            # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            plt.savefig(os.path.join(GP_folder, f"Dstar{iDstar}.png"), dpi=400)
+            plt.close("check model")
 
 # predict against the test dataset
 # --------------------------------------------------------------------------------------------------
