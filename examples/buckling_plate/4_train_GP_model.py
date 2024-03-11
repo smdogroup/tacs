@@ -422,6 +422,24 @@ if _plot:
             mask1 = np.logical_and(slender_bin[0] <= X[:, 2], X[:, 2] <= slender_bin[1])
             if np.sum(mask1) == 0:
                 continue
+
+            fig = plt.figure("3d-GP", figsize =(14, 9))
+            ax = plt.axes(projection ='3d',computed_zorder=False)
+
+            # plot data in certain range of the training set
+            for iDstar, Dstar_bin in enumerate(Dstar_bins):
+                mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
+                avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
+                mask3 = np.logical_and(Y[:,0] < 10.0, X[:,1] <= 5.0)
+
+                mask = np.logical_and(mask1, mask2)
+                mask = np.logical_and(mask, mask3)
+                if np.sum(mask) == 0:
+                    continue
+                X_in_range = X[mask, :]
+                Y_in_range = Y[mask, :]
+                ax.scatter(X_in_range[:,0], X_in_range[:,1], Y_in_range[:,0], s=40, edgecolors='black', zorder=1+iDstar)
+
             n_plot = 3000
             X_plot_mesh = np.zeros((30,100))
             X_plot = np.zeros((n_plot, 3))
@@ -453,27 +471,10 @@ if _plot:
                     KMIN[iDstar,iAR] = f_plot[ct]
                     ct += 1
 
-            # plot the model curve
-            fig = plt.figure("3d-GP", figsize =(14, 9))
-            ax = plt.axes(projection ='3d')
-            
+            # plot the model curve            
             # Creating plot
             face_colors = cm.jet(KMIN/10.0)
-            ax.plot_surface(DSTAR, AR, KMIN, antialiased=False, facecolors = face_colors, alpha=0.5)
-
-            # plot data in certain range of the training set
-            for iDstar, Dstar_bin in enumerate(Dstar_bins):
-                mask2 = np.logical_and(Dstar_bin[0] <= X[:, 0], X[:, 0] <= Dstar_bin[1])
-                avg_Dstar = 0.5 * (Dstar_bin[0] + Dstar_bin[1])
-                mask3 = np.logical_and(Y[:,0] < 10.0, X[:,1] <= 5.0)
-
-                mask = np.logical_and(mask1, mask2)
-                mask = np.logical_and(mask, mask3)
-                if np.sum(mask) == 0:
-                    continue
-                X_in_range = X[mask, :]
-                Y_in_range = Y[mask, :]
-                ax.scatter(X_in_range[:,0], X_in_range[:,1], Y_in_range[:,0])
+            ax.plot_surface(DSTAR, AR, KMIN, antialiased=False, facecolors = face_colors, alpha=0.4, zorder=1)
 
             # save the figure
             ax.set_xlabel(r"$D^*$")
