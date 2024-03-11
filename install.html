@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Install &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=a888008e"></script>
+    <script src="_static/documentation_options.js?v=d048f138"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Interfaces" href="interfaces.html" />
@@ -43,7 +43,7 @@
           <div class="body" role="main">
             
   <section id="install">
-<h1>Install<a class="headerlink" href="#install" title="Permalink to this heading">¶</a></h1>
+<h1>Install<a class="headerlink" href="#install" title="Link to this heading">¶</a></h1>
 <p>TACS can be readily installed on both Linux and MacOS systems.
 At present, Windows installation is not supported.
 Windows users are recommended to try the following alternatives for accessing TACS:</p>
@@ -54,11 +54,11 @@ Windows users are recommended to try the following alternatives for accessing TA
 </ol>
 <p>For either 1 or 2 any of the installation methods described below should get you setup with TACS.</p>
 <section id="from-anaconda">
-<h2>From Anaconda<a class="headerlink" href="#from-anaconda" title="Permalink to this heading">¶</a></h2>
+<h2>From Anaconda<a class="headerlink" href="#from-anaconda" title="Link to this heading">¶</a></h2>
 <p>For users, TACS can be easily installed through <a class="reference external" href="https://www.anaconda.com/">Anaconda</a>.
 <a class="reference external" href="https://anaconda.org/smdogroup/tacs">Conda packages</a> are available for MacOS and Linux platforms.
 To get started, run the following in a conda terminal:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">TACS</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.8</span> <span class="n">mamba</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="n">TACS</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.9</span> <span class="n">mamba</span>
 <span class="n">conda</span> <span class="n">activate</span> <span class="n">TACS</span>
 <span class="n">mamba</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="o">-</span><span class="n">c</span> <span class="n">smdogroup</span> <span class="n">tacs</span>
 </pre></div>
@@ -68,10 +68,10 @@ necessary dependencies. Once installed, the user will have access to all
 TACS C++/python libraries, f5tovtk, f5totec, etc through their conda environment.</p>
 </section>
 <section id="from-source">
-<h2>From source<a class="headerlink" href="#from-source" title="Permalink to this heading">¶</a></h2>
+<h2>From source<a class="headerlink" href="#from-source" title="Link to this heading">¶</a></h2>
 <p>For developers, TACS can also be installed from the source code.</p>
 <section id="prerequisites">
-<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading">¶</a></h3>
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
 <p>The following packages are required to use TACS:</p>
 <ul class="simple">
 <li><p>MPI</p></li>
@@ -92,7 +92,7 @@ TACS C++/python libraries, f5tovtk, f5totec, etc through their conda environment
 </ul>
 </section>
 <section id="basic-steps-to-compile-tacs">
-<h3>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Permalink to this heading">¶</a></h3>
+<h3>Basic steps to compile TACS<a class="headerlink" href="#basic-steps-to-compile-tacs" title="Link to this heading">¶</a></h3>
 <ol class="arabic">
 <li><p>Clone the TACS git repository <a class="reference external" href="https://github.com/smdogroup/tacs">tacs</a></p></li>
 <li><p>In the base 'tacs' directory, copy the Makefile.in.info to Makefile.in. Edit
@@ -114,7 +114,7 @@ the following:</p>
 </ol>
 </section>
 <section id="detailed-installation-instructions">
-<h3>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Permalink to this heading">¶</a></h3>
+<h3>Detailed installation instructions<a class="headerlink" href="#detailed-installation-instructions" title="Link to this heading">¶</a></h3>
 <p>The Toolbox for the Analysis of Composite Structures (TACS) is a
 parallel finite-element code written in C++, with an optional python
 interface. TACS has been implemented from the start with gradient-based
@@ -130,7 +130,7 @@ TACS. The dependencies are divided into the following categories:</p>
 </ol>
 </section>
 <section id="checking-out-the-code">
-<h3>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Permalink to this heading">¶</a></h3>
+<h3>Checking out the code<a class="headerlink" href="#checking-out-the-code" title="Link to this heading">¶</a></h3>
 <p>Using git checkout the source</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">smdogroup</span><span class="o">/</span><span class="n">tacs</span>
 </pre></div>
@@ -151,7 +151,7 @@ The settings in <code class="docutils literal notranslate"><span class="pre">set
 you may wish to modify these settings.</p>
 </section>
 <section id="install-dependencies">
-<h3>Install dependencies<a class="headerlink" href="#install-dependencies" title="Permalink to this heading">¶</a></h3>
+<h3>Install dependencies<a class="headerlink" href="#install-dependencies" title="Link to this heading">¶</a></h3>
 <p>These instructions direct you to install METIS and other dependencies in the directory <code class="docutils literal notranslate"><span class="pre">tacs/extern</span></code>.
 This location for the dependencies is not required, and indeed may not be best.
 If you already have these libraries installed, simply adjust the variables in <code class="docutils literal notranslate"><span class="pre">tacs/Makefile.in</span></code> accordingly.</p>
@@ -171,13 +171,13 @@ Note that TecIO requires the boost library, which can be install with <code clas
 <p>Then try manually running <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> within the <code class="docutils literal notranslate"><span class="pre">metis-5.1.0</span></code> directory.</p>
 </section>
 <section id="make-the-c-tacs-library">
-<h3>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Permalink to this heading">¶</a></h3>
+<h3>Make the C++ TACS library<a class="headerlink" href="#make-the-c-tacs-library" title="Link to this heading">¶</a></h3>
 <p>Return to the root TACS directory.
 Ensure that all appropriate variables are set in <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code>.
 Make the TACS libraries by running <code class="docutils literal notranslate"><span class="pre">make</span></code> from the root directory.</p>
 </section>
 <section id="install-postprocessing-tools">
-<h3>Install postprocessing tools<a class="headerlink" href="#install-postprocessing-tools" title="Permalink to this heading">¶</a></h3>
+<h3>Install postprocessing tools<a class="headerlink" href="#install-postprocessing-tools" title="Link to this heading">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> and <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> are executables that convert <code class="docutils literal notranslate"><span class="pre">.f5</span></code> files to Paraview <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> and <code class="docutils literal notranslate"><span class="pre">.plt</span></code> formats compatible with Paraview and Tecplot respectively.
 After compiling the C++ TACS library, go to the subdirectory <code class="docutils literal notranslate"><span class="pre">tacs/extern/f5tovtk</span></code> and run <code class="docutils literal notranslate"><span class="pre">make</span></code> there.</p>
 <p><code class="docutils literal notranslate"><span class="pre">f5totec</span></code> requires Tecplot's <code class="docutils literal notranslate"><span class="pre">tecio</span></code> library, the installation of which is described above.</p>
@@ -193,7 +193,7 @@ Run <code class="docutils literal notranslate"><span class="pre">f5convert</span
 </div>
 </section>
 <section id="installing-the-python-interface">
-<h3>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Permalink to this heading">¶</a></h3>
+<h3>Installing the python interface<a class="headerlink" href="#installing-the-python-interface" title="Link to this heading">¶</a></h3>
 <p>The python interface is generated in the <code class="docutils literal notranslate"><span class="pre">tacs/tacs</span></code> sub-directory.
 The interface is generated using Cython.</p>
 <p>The python interface requires the following packages:</p>

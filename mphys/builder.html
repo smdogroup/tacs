@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>TacsBuilder class &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="caps2tacs" href="../caps2tacs/caps2tacs.html" />
@@ -45,15 +45,15 @@
           <div class="body" role="main">
             
   <section id="tacsbuilder-class">
-<h1>TacsBuilder class<a class="headerlink" href="#tacsbuilder-class" title="Permalink to this heading">¶</a></h1>
+<h1>TacsBuilder class<a class="headerlink" href="#tacsbuilder-class" title="Link to this heading">¶</a></h1>
 <p>TACS MPhys interface centers around the <a class="reference internal" href="#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> class.
 The <a class="reference internal" href="#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> is responsible for creating <a class="reference external" href="https://openmdao.github.io/mphys/basics/model_hierarchy.html#scenario-groups" title="(in MPhys)"><span class="xref std std-ref">Scenarios</span></a>,
 an OpenMDAO group that contains an analysis condition in a multipoint optimization.</p>
 <section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.mphys.builder.</span></span><span class="sig-name descname"><span class="pre">TacsBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.mphys.builder.</span></span><span class="sig-name descname"><span class="pre">TacsBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.12)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder" title="Link to this definition">¶</a></dt>
 <dd><p>Create the Builder responsible for creating MPhys Scenario's based on TACS Analyses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -213,7 +213,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.initialize">
-<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.initialize" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comm</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.initialize" title="Link to this definition">¶</a></dt>
 <dd><p>Initialize pyTACS.
 This method will be called when the MPI comm is available</p>
 <dl class="field-list simple">
@@ -225,7 +225,7 @@ This method will be called when the MPI comm is available</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_coupling_group_subsystem">
-<span class="sig-name descname"><span class="pre">get_coupling_group_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_coupling_group_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_coupling_group_subsystem" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_coupling_group_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_coupling_group_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_coupling_group_subsystem" title="Link to this definition">¶</a></dt>
 <dd><p>The subsystem that this builder will add to the CouplingGroup</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -243,7 +243,7 @@ this solver. Transfer schemes can return multiple subsystems</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem">
-<span class="sig-name descname"><span class="pre">get_mesh_coordinate_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_mesh_coordinate_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_mesh_coordinate_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_mesh_coordinate_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem" title="Link to this definition">¶</a></dt>
 <dd><p>The subsystem that contains the subsystem that will return the mesh
 coordinates</p>
 <dl class="field-list simple">
@@ -261,7 +261,7 @@ coordinates</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_pre_coupling_subsystem">
-<span class="sig-name descname"><span class="pre">get_pre_coupling_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_pre_coupling_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_pre_coupling_subsystem" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_pre_coupling_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_pre_coupling_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_pre_coupling_subsystem" title="Link to this definition">¶</a></dt>
 <dd><p>Method that returns the openmdao subsystem to be added to each scenario before the coupling group</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -278,7 +278,7 @@ coordinates</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_post_coupling_subsystem">
-<span class="sig-name descname"><span class="pre">get_post_coupling_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_post_coupling_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_post_coupling_subsystem" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_post_coupling_subsystem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scenario_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_post_coupling_subsystem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_post_coupling_subsystem" title="Link to this definition">¶</a></dt>
 <dd><p>Method that returns the openmdao subsystem to be added to each scenario after the coupling group</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -295,7 +295,7 @@ coordinates</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_ndof">
-<span class="sig-name descname"><span class="pre">get_ndof</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_ndof"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_ndof" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_ndof</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_ndof"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_ndof" title="Link to this definition">¶</a></dt>
 <dd><p>The number of degrees of freedom used at each output location.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -309,20 +309,20 @@ coordinates</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_number_of_nodes">
-<span class="sig-name descname"><span class="pre">get_number_of_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_number_of_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_number_of_nodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_number_of_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_number_of_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_number_of_nodes" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of nodes on this processor,
 not including lagrange multiplier nodes</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_initial_dvs">
-<span class="sig-name descname"><span class="pre">get_initial_dvs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_initial_dvs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_initial_dvs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_initial_dvs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_initial_dvs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_initial_dvs" title="Link to this definition">¶</a></dt>
 <dd><p>Get an array holding all dvs values that have been added to TACS</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_dv_bounds">
-<span class="sig-name descname"><span class="pre">get_dv_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_dv_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_dv_bounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_dv_bounds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_dv_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_dv_bounds" title="Link to this definition">¶</a></dt>
 <dd><p>Get arrays containing the lower and upper bounds for the design variables,
 in the form needed by OpenMDAO's <cite>add_design_variable</cite> method.</p>
 <dl class="field-list simple">
@@ -337,7 +337,7 @@ in the form needed by OpenMDAO's <cite>add_design_variable</cite> method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_dv_scalers">
-<span class="sig-name descname"><span class="pre">get_dv_scalers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_dv_scalers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_dv_scalers" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_dv_scalers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_dv_scalers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_dv_scalers" title="Link to this definition">¶</a></dt>
 <dd><p>Get an array containing the scaling factors for the design
 variables, in the form needed by OpenMDAO's <cite>add_design_variable</cite>
 method.</p>
@@ -353,24 +353,24 @@ method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_ndv">
-<span class="sig-name descname"><span class="pre">get_ndv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_ndv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_ndv" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_ndv</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_ndv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_ndv" title="Link to this definition">¶</a></dt>
 <dd><p>Get total number of structural design variables across all procs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_solver">
-<span class="sig-name descname"><span class="pre">get_solver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_solver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_solver" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_solver</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_solver"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_solver" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_fea_assembler">
-<span class="sig-name descname"><span class="pre">get_fea_assembler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_fea_assembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_fea_assembler" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_fea_assembler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_fea_assembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_fea_assembler" title="Link to this definition">¶</a></dt>
 <dd><p>Returns underlying pytacs object.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mphys.builder.TacsBuilder.get_tagged_indices">
-<span class="sig-name descname"><span class="pre">get_tagged_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tags</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_tagged_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_tagged_indices" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get_tagged_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tags</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mphys/builder.html#TacsBuilder.get_tagged_indices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mphys.builder.TacsBuilder.get_tagged_indices" title="Link to this definition">¶</a></dt>
 <dd><p>Method that returns grid IDs for a list of body/boundary tags.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

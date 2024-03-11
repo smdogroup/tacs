@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>StaticProblem &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TransientProblem" href="transient.html" />
@@ -46,7 +46,7 @@
           <div class="body" role="main">
             
   <section id="module-tacs.problems.static">
-<span id="staticproblem"></span><h1>StaticProblem<a class="headerlink" href="#module-tacs.problems.static" title="Permalink to this heading">¶</a></h1>
+<span id="staticproblem"></span><h1>StaticProblem<a class="headerlink" href="#module-tacs.problems.static" title="Link to this heading">¶</a></h1>
 <p>The main purpose of this class is to represent all relevant
 information for a static analysis. This will include
 information defining the loading condition as well as various
@@ -57,7 +57,7 @@ other pieces of information.</p>
 <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method.</p>
 </div>
 <section id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> at time of creation for the class in the
 <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method or using the
 <a class="reference internal" href="#tacs.problems.StaticProblem.setOption" title="tacs.problems.StaticProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.setOption</span></code></a> method. Current option values for a class
@@ -120,17 +120,17 @@ The following options, their default values and descriptions are listed below:</
 </div>
 </section>
 <section id="nonlinear-solvers">
-<h2>Nonlinear solvers<a class="headerlink" href="#nonlinear-solvers" title="Permalink to this heading">¶</a></h2>
+<h2>Nonlinear solvers<a class="headerlink" href="#nonlinear-solvers" title="Link to this heading">¶</a></h2>
 <p>When you create an assembler using a nonlinear element type or constitutive model, any static problems you create will automatically setup a nonlinear solver.
 A continuation solver is used to control an adaptive load incrementation process, and a Newton solver is used to solve the nonlinear system of equations at each load increment.
 The options for these solvers should be set directly to <code class="docutils literal notranslate"><span class="pre">problem.nonlinearSolver</span></code> and <code class="docutils literal notranslate"><span class="pre">problem.nonlinearSolver.innerSolver</span></code>.
 See <a class="reference internal" href="continuation_solver.html#module-tacs.solvers.continuation"><span class="std std-ref">ContinuationSolver</span></a> and <a class="reference internal" href="newton_solver.html#module-tacs.solvers.newton"><span class="std std-ref">NewtonSolver</span></a> for more information.</p>
 </section>
 <section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">StaticProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.problems.</span></span><span class="sig-name descname"><span class="pre">StaticProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">isNonlinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem" title="Link to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createStaticProblem instead.</p>
 <dl class="field-list simple">
@@ -147,7 +147,7 @@ Use pyTACS.createStaticProblem instead.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setOption">
-<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setOption"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setOption" title="Link to this definition">¶</a></dt>
 <dd><p>Set a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -161,7 +161,7 @@ Use pyTACS.createStaticProblem instead.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.loadScale">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadScale</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.loadScale" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loadScale</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.loadScale" title="Link to this definition">¶</a></dt>
 <dd><p>This is a scaling factor applied to all forcing terms</p>
 <p>Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in
 the TACS assembler (e.g inertial, centrifugal forces)</p>
@@ -177,7 +177,7 @@ the TACS assembler (e.g inertial, centrifugal forces)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setLoadScale">
-<span class="sig-name descname"><span class="pre">setLoadScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setLoadScale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setLoadScale" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setLoadScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setLoadScale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setLoadScale" title="Link to this definition">¶</a></dt>
 <dd><p>Set the scaling applied to external loads</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -188,7 +188,7 @@ the TACS assembler (e.g inertial, centrifugal forces)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getLoadScale">
-<span class="sig-name descname"><span class="pre">getLoadScale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getLoadScale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getLoadScale" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getLoadScale</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getLoadScale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getLoadScale" title="Link to this definition">¶</a></dt>
 <dd><p>Get the current load scale</p>
 <p>This function is required by the continuation solver</p>
 <dl class="field-list simple">
@@ -203,7 +203,7 @@ the TACS assembler (e.g inertial, centrifugal forces)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addFunction">
-<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addFunction" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">funcHandle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addFunction" title="Link to this definition">¶</a></dt>
 <dd><p>Generic method to add a function for TACS. It is intended to
 be reasonably generic since the user supplies the actual
 function handle to use. See the <a class="reference internal" href="../core/functions.html#module-tacs.functions" title="tacs.functions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">functions</span></code></a> module
@@ -224,7 +224,7 @@ from the functions module in tacs.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setDesignVars">
-<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -236,7 +236,7 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setNodes">
-<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -248,7 +248,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadToComponents">
-<span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToComponents" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addLoadToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averageLoad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToComponents" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> on one or more
 components, defined by COMPIDs. The purpose of this routine is to add loads that
 remain fixed throughout an optimization. An example would be an engine load.
@@ -291,7 +291,7 @@ in the model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadToNodes">
-<span class="sig-name descname"><span class="pre">addLoadToNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addLoadToNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodeIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToNodes" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed point load of F to the
 selected node IDs.</p>
 <dl class="field-list simple">
@@ -329,7 +329,7 @@ in the model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadToRHS">
-<span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToRHS" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addLoadToRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fapplied</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadToRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadToRHS" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a <em>FIXED TOTAL LOAD</em> directly to the
 right hand side vector given the equation below:</p>
 <blockquote>
@@ -352,7 +352,7 @@ right hand side vector given the equation below:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addTractionToComponents">
-<span class="sig-name descname"><span class="pre">addTractionToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTractionToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTractionToComponents" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addTractionToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTractionToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTractionToComponents" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a <em>FIXED TOTAL TRACTION</em> on one or more
 components, defined by COMPIDs. The purpose of this routine is
 to add loads that remain fixed throughout an optimization.</p>
@@ -371,7 +371,7 @@ Note: not required for certain elements (i.e. shells)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addTractionToElements">
-<span class="sig-name descname"><span class="pre">addTractionToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTractionToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTractionToElements" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addTractionToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTractionToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTractionToElements" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed traction to the
 selected element IDs. Tractions can be specified on an
 element by element basis (if tractions is a 2d array) or
@@ -392,7 +392,7 @@ or NASTRAN ordering</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addPressureToComponents">
-<span class="sig-name descname"><span class="pre">addPressureToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addPressureToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addPressureToComponents" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addPressureToComponents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addPressureToComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addPressureToComponents" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a <em>FIXED TOTAL PRESSURE</em> on one or more
 components, defined by COMPIds. The purpose of this routine is
 to add loads that remain fixed throughout an optimization. An example
@@ -412,7 +412,7 @@ Note: not required for certain elements (i.e. shells)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addPressureToElements">
-<span class="sig-name descname"><span class="pre">addPressureToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addPressureToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addPressureToElements" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addPressureToElements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elemIDs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nastranOrdering</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addPressureToElements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addPressureToElements" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed presure to the
 selected element IDs. Pressures can be specified on an
 element by element basis (if pressures is an array) or
@@ -433,7 +433,7 @@ or NASTRAN ordering</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addInertialLoad">
-<span class="sig-name descname"><span class="pre">addInertialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inertiaVector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addInertialLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addInertialLoad" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addInertialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inertiaVector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addInertialLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addInertialLoad" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed inertial load due to
 a uniform acceleration over the entire model.
 This is most commonly used to model gravity loads on a model.</p>
@@ -446,7 +446,7 @@ This is most commonly used to model gravity loads on a model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addCentrifugalLoad">
-<span class="sig-name descname"><span class="pre">addCentrifugalLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omegaVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotCenter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstOrder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addCentrifugalLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addCentrifugalLoad" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addCentrifugalLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">omegaVector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotCenter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">firstOrder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addCentrifugalLoad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addCentrifugalLoad" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed centrifugal load due to a
 uniform rotational velocity over the entire model.
 This is most commonly used to model rotors, rolling aircraft, etc.</p>
@@ -464,7 +464,7 @@ which computes the force in the displaced position. By default False</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addLoadFromBDF">
-<span class="sig-name descname"><span class="pre">addLoadFromBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadFromBDF" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addLoadFromBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loadID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addLoadFromBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addLoadFromBDF" title="Link to this definition">¶</a></dt>
 <dd><p>This method is used to add a fixed load set defined in the BDF file to the problem.
 Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</p>
 <dl class="field-list simple">
@@ -479,7 +479,7 @@ Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.solve">
-<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solve" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solve" title="Link to this definition">¶</a></dt>
 <dd><p>Solution of the static problem for current load set. The
 forces must already be set.</p>
 <dl class="field-list simple">
@@ -492,7 +492,7 @@ to applied to RHS of the static problem, by default None</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.updateJacobian">
-<span class="sig-name descname"><span class="pre">updateJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updateJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updateJacobian" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">updateJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updateJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updateJacobian" title="Link to this definition">¶</a></dt>
 <dd><p>Update the Jacobian (a.k.a stiffness) matrix</p>
 <p>The Jacobian will only actually be updated if the
 <code class="docutils literal notranslate"><span class="pre">_jacobianUpdateRequired</span></code> flag is set to True.</p>
@@ -505,7 +505,7 @@ to applied to RHS of the static problem, by default None</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.updatePreconditioner">
-<span class="sig-name descname"><span class="pre">updatePreconditioner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updatePreconditioner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updatePreconditioner" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">updatePreconditioner</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updatePreconditioner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updatePreconditioner" title="Link to this definition">¶</a></dt>
 <dd><p>Update the Jacobian (a.k.a stiffness) matrix preconditioner</p>
 <p>By default, the static problem uses a full LU factorization of the
 Jacobian matrix as a preconditioner, which means that this step is
@@ -517,7 +517,7 @@ whenever the Jacobian is updated.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.evalFunctions">
-<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctions" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful information from
 pytacs. The functions corresponding to the strings in
 evalFuncs are evaluated and updated into the provided
@@ -545,7 +545,7 @@ this option with caution.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.evalFunctionsSens">
-<span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctionsSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.evalFunctionsSens" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from problem. The derivatives of the functions
 corresponding to the strings in evalFuncs are evaluated and
@@ -571,7 +571,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addSVSens">
-<span class="sig-name descname"><span class="pre">addSVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svSensList</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addSVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addSVSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addSVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svSensList</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addSVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addSVSens" title="Link to this definition">¶</a></dt>
 <dd><p>Add the state variable partial sensitivity to the ADjoint RHS for given evalFuncs</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -585,7 +585,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addDVSens">
-<span class="sig-name descname"><span class="pre">addDVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addDVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addDVSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addDVSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addDVSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addDVSens" title="Link to this definition">¶</a></dt>
 <dd><p>Add partial sensitivity contribution due to design vars for evalFuncs</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -600,7 +600,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addAdjointResProducts">
-<span class="sig-name descname"><span class="pre">addAdjointResProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjointlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addAdjointResProducts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addAdjointResProducts" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addAdjointResProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjointlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addAdjointResProducts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addAdjointResProducts" title="Link to this definition">¶</a></dt>
 <dd><p>Add the adjoint product contribution to the design variable sensitivity arrays</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -615,7 +615,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addXptSens">
-<span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addXptSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addXptSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addXptSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addXptSens" title="Link to this definition">¶</a></dt>
 <dd><p>Add partial sensitivity contribution due to nodal coordinates for evalFuncs</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -630,7 +630,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addAdjointResXptSensProducts">
-<span class="sig-name descname"><span class="pre">addAdjointResXptSensProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjointlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addAdjointResXptSensProducts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addAdjointResXptSensProducts" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addAdjointResXptSensProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjointlist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addAdjointResXptSensProducts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addAdjointResXptSensProducts" title="Link to this definition">¶</a></dt>
 <dd><p>Add the adjoint product contribution to the nodal coordinates sensitivity arrays</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -645,7 +645,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getResidual">
-<span class="sig-name descname"><span class="pre">getResidual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getResidual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getResidual" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getResidual</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getResidual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getResidual" title="Link to this definition">¶</a></dt>
 <dd><p>This routine is used to evaluate directly the structural
 residual. Only typically used with aerostructural analysis.</p>
 <dl class="field-list simple">
@@ -661,7 +661,7 @@ to applied to RHS of the static problem.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getForces">
-<span class="sig-name descname"><span class="pre">getForces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">externalForceVec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">internalForceVec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getForces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getForces" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getForces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">externalForceVec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">internalForceVec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getForces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getForces" title="Link to this definition">¶</a></dt>
 <dd><p>Compute the internal and external forces acting on the structure</p>
 <dl class="simple">
 <dt>The computations here are based on the residual equation:</dt><dd><p>r(u, loadScale) = -(Fint(u) + loadScale * Fext(u))</p>
@@ -685,7 +685,7 @@ to applied to RHS of the static problem.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getJacobian">
-<span class="sig-name descname"><span class="pre">getJacobian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getJacobian" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getJacobian</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getJacobian" title="Link to this definition">¶</a></dt>
 <dd><p>Get the problem's Jacobian in sciPy sparse matrix format</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -700,7 +700,7 @@ scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.addTransposeJacVecProduct">
-<span class="sig-name descname"><span class="pre">addTransposeJacVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTransposeJacVecProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addTransposeJacVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTransposeJacVecProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct" title="Link to this definition">¶</a></dt>
 <dd><p>Adds product of transpose Jacobian and input vector into output vector as shown below:
 prod += scale * J^T . phi</p>
 <dl class="field-list simple">
@@ -716,19 +716,19 @@ prod += scale * J^T . phi</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.zeroVariables">
-<span class="sig-name descname"><span class="pre">zeroVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">zeroVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Zero all the tacs solution b-vecs</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.zeroLoads">
-<span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroLoads" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroLoads" title="Link to this definition">¶</a></dt>
 <dd><p>Zero all applied loads</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.solveAdjoint">
-<span class="sig-name descname"><span class="pre">solveAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solveAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solveAdjoint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">solveAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solveAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solveAdjoint" title="Link to this definition">¶</a></dt>
 <dd><p>Solve the structural adjoint.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -742,7 +742,7 @@ prod += scale * J^T . phi</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getVariables">
-<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Return the current state values for the
 problem</p>
 <dl class="field-list simple">
@@ -760,7 +760,7 @@ problem</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setVariables">
-<span class="sig-name descname"><span class="pre">setVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.setVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.setVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Set the structural states for current load case.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -771,7 +771,7 @@ problem</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getOutputFileName">
-<span class="sig-name descname"><span class="pre">getOutputFileName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getOutputFileName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getOutputFileName" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getOutputFileName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.getOutputFileName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.getOutputFileName" title="Link to this definition">¶</a></dt>
 <dd><p>Figure out a base path/name for output files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -792,7 +792,7 @@ problem</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSolution">
-<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolution" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolution" title="Link to this definition">¶</a></dt>
 <dd><p>This is a generic shell function that writes the output
 file(s).  The intent is that the user or calling program can
 call this function and pyTACS writes all the files that the
@@ -814,13 +814,13 @@ typically used from an external solver</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.dtype">
-<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.dtype" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.dtype" title="Link to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getDesignVarRange">
-<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -835,7 +835,7 @@ typically used from an external solver</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getDesignVars">
-<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Get the current set of  design variables for this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -849,7 +849,7 @@ typically used from an external solver</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getFunctionKeys">
-<span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getFunctionKeys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getFunctionKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getFunctionKeys" title="Link to this definition">¶</a></dt>
 <dd><p>Return a list of the current function key names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -863,7 +863,7 @@ typically used from an external solver</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNodes">
-<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Return the mesh coordinates of this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -878,7 +878,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumCoordinates">
-<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumCoordinates" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of mesh coordinates on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -892,7 +892,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumDesignVars">
-<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of design variables on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -906,7 +906,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumOwnedNodes">
-<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumOwnedNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of nodes owned by this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -920,7 +920,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getNumVariables">
-<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getNumVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of degrees of freedom (states) that are
 on this processor</p>
 <dl class="field-list simple">
@@ -935,7 +935,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getOption">
-<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getOption" title="Link to this definition">¶</a></dt>
 <dd><p>Get a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -946,7 +946,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getVarsPerNode">
-<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -960,34 +960,34 @@ on this processor</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.isNonlinear">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.isNonlinear" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">isNonlinear</span></span><a class="headerlink" href="#tacs.problems.StaticProblem.isNonlinear" title="Link to this definition">¶</a></dt>
 <dd><p>The public interface for the isNonlinear attribute. Implemented as a property so that it is read-only.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.printDefaultOptions">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printDefaultOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.printModifiedOptions">
-<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printModifiedOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted table of all the options that have been
 modified from their defaults</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.printOptions">
-<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.printOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
 options to the stdout on the root processor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setOptions">
-<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -998,7 +998,7 @@ options to the stdout on the root processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setVarName">
-<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setVarName" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setVarName" title="Link to this definition">¶</a></dt>
 <dd><p>Set a name for the structural variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
@@ -1011,7 +1011,7 @@ optimization</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSensFile">
-<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.writeSensFile" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeSensFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tacsAim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.writeSensFile" title="Link to this definition">¶</a></dt>
 <dd><p>write an ESP/CAPS .sens file from the tacs aim
 Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</p>
 <dl class="field-list simple">
@@ -1028,7 +1028,7 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeSolutionHistory">
-<span class="sig-name descname"><span class="pre">writeSolutionHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolutionHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolutionHistory" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeSolutionHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeSolutionHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeSolutionHistory" title="Link to this definition">¶</a></dt>
 <dd><p>Write the nonlinear solver history to a file</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1045,7 +1045,7 @@ typically used from an external solver</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.writeLoadToBDF">
-<span class="sig-name descname"><span class="pre">writeLoadToBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdfFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadCaseID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeLoadToBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeLoadToBDF" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeLoadToBDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bdfFile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadCaseID</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.writeLoadToBDF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.writeLoadToBDF" title="Link to this definition">¶</a></dt>
 <dd><p>Write loads from problem to NASTRAN BDF file.
 NOTE: To get correct loads, <cite>solve</cite> method should be called before this method.</p>
 <dl class="field-list simple">

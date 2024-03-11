@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.problems.modal &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -55,7 +55,9 @@
 <span class="kn">from</span> <span class="nn">tacs.problems.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
 
 
-<div class="viewcode-block" id="ModalProblem"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem">[docs]</a><span class="k">class</span> <span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+<div class="viewcode-block" id="ModalProblem">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem">[docs]</a>
+<span class="k">class</span> <span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
@@ -229,7 +231,9 @@
         <span class="k">for</span> <span class="n">mode_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valName</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mode_i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_i</span>
 
-<div class="viewcode-block" id="ModalProblem.setOption"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="ModalProblem.setOption">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>
+    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
@@ -256,7 +260,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ModalProblem.setValName"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setValName">[docs]</a>    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.setValName">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setValName">[docs]</a>
+    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a name for the eigenvalues. Only needs</span>
 <span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
@@ -270,7 +277,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="n">valName</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ModalProblem.getNumEigs"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">[docs]</a>    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.getNumEigs">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">[docs]</a>
+    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
@@ -281,13 +291,19 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span></div>
 
-<div class="viewcode-block" id="ModalProblem.addFunction"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.addFunction">[docs]</a>    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.addFunction">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.addFunction">[docs]</a>
+    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;addFunction method not supported for this class.&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ModalProblem.evalFunctions"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.evalFunctions">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
 <span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
@@ -340,7 +356,10 @@
             <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">mode_i</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ModalProblem.evalFunctionsSens"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctionsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.evalFunctionsSens">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctionsSens">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -392,6 +411,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">evalEigenXptSens</span><span class="p">(</span><span class="n">mode_i</span><span class="p">,</span> <span class="n">xptSens</span><span class="p">)</span>
             <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
+
     <span class="c1">####### Modal solver methods ########</span>
 
     <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -410,7 +430,9 @@
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ModalProblem.solve"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="ModalProblem.solve">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.solve">[docs]</a>
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the eigenvalue problem.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -460,7 +482,10 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ModalProblem.getVariables"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.getVariables">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getVariables">[docs]</a>
+    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for one mode of the current problem</span>
 
@@ -490,7 +515,10 @@
             <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">eigVal</span><span class="p">,</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ModalProblem.writeSolution"><a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.writeSolution">[docs]</a>    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ModalProblem.writeSolution">
+<a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.writeSolution">[docs]</a>
+    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
@@ -552,7 +580,9 @@
                 <span class="c1"># Write out mode shape as f5 file</span>
                 <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">index</span>
                 <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
             <div class="clearer"></div>

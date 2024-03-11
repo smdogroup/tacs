@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Installation of ESP/CAPS &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Plate under static load" href="../examples/Example-Plate.html" />
@@ -45,7 +45,7 @@
           <div class="body" role="main">
             
   <section id="installation-of-esp-caps">
-<h1>Installation of ESP/CAPS<a class="headerlink" href="#installation-of-esp-caps" title="Permalink to this heading">¶</a></h1>
+<h1>Installation of ESP/CAPS<a class="headerlink" href="#installation-of-esp-caps" title="Link to this heading">¶</a></h1>
 <p>The link to the main Engineering Sketch Pad webiste is the following, <a class="reference external" href="https://acdl.mit.edu/ESP/">ESP/CAPS</a>.
 A prebuilt distribution can be found in the <code class="docutils literal notranslate"><span class="pre">PreBuilts/</span></code> folder. The following environment variables must be setup in the ~/.bashrc file.
 The serveCSM command is useful in viewing the ESP/CAPS geometry from a .csm file. The alias csm
@@ -74,7 +74,7 @@ Then, as the package is a prebuilt, we only need to make the tacsAIM directory w
 <p>The caps2tacs python module will not be imported unless ESP/CAPS is properly installed on your machine.</p>
 </section>
 <section id="intro">
-<h1>Intro<a class="headerlink" href="#intro" title="Permalink to this heading">¶</a></h1>
+<h1>Intro<a class="headerlink" href="#intro" title="Link to this heading">¶</a></h1>
 <p>The differentiable CAD geometry in ESP/CAPS is defined in a CSM or Computational Solid Model file.
 The user must write their own CSM file (see ESP/CAPS tutorials on their website) to define a structures geometry.
 Important things to include in your CSM file are included below (for reference see the file <code class="docutils literal notranslate"><span class="pre">examples/caps_wing/simple_naca_wing.csm</span></code>).</p>
@@ -163,7 +163,7 @@ Finally the routine <code class="docutils literal notranslate"><span class="pre"
 </div>
 </section>
 <section id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h1>
+<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h1>
 <p>The main caps2tacs example is in the directory <code class="docutils literal notranslate"><span class="pre">./examples/caps_wing/</span></code>, with five analyses
 on a coarse mesh of a symmetric NACA 0012 wing structure.
 1. A steady analysis, using the EGADS AIM for meshing, with a vertical distributed load.
@@ -190,7 +190,7 @@ in designing a good wing structure. In this case, the spars move towards the lea
 <a class="reference external" href="https://github.com/smdogroup/funtofem/">FUNtoFEM github</a>.</p>
 </section>
 <section id="testing">
-<h1>Testing<a class="headerlink" href="#testing" title="Permalink to this heading">¶</a></h1>
+<h1>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h1>
 <p>Two different unittests can be used to verify your build of ESP/CAPS and TACS is working correctly. The unittests
 are located at <code class="docutils literal notranslate"><span class="pre">tests/integration_tests/test_caps_shape_derivatives.py</span></code> and <code class="docutils literal notranslate"><span class="pre">tests/integration_tests/test_caps_thick_derivatives.py</span></code>.</p>
 </section>

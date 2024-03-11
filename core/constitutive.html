@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>constitutive module &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="elements module" href="elements.html" />
@@ -44,14 +44,14 @@
           <div class="body" role="main">
             
   <section id="constitutive-module">
-<h1>constitutive module<a class="headerlink" href="#constitutive-module" title="Permalink to this heading">¶</a></h1>
+<h1>constitutive module<a class="headerlink" href="#constitutive-module" title="Link to this heading">¶</a></h1>
 <p>The <cite>tacs.constitutive</cite> contains classes responsible for defining constitutive behaviors for elements.</p>
 <section id="material-classes">
-<h2>Material classes<a class="headerlink" href="#material-classes" title="Permalink to this heading">¶</a></h2>
+<h2>Material classes<a class="headerlink" href="#material-classes" title="Link to this heading">¶</a></h2>
 <p>Most constitutive classes require a material properties class to setup. The following classes are available in TACS:</p>
-<span class="target" id="module-tacs.constitutive"></span><dl class="py class">
+<dl class="py class" id="module-tacs.constitutive">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">MaterialProperties</span></span><a class="headerlink" href="#tacs.constitutive.MaterialProperties" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">MaterialProperties</span></span><a class="headerlink" href="#tacs.constitutive.MaterialProperties" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>This class stores the mechanical and thermal material properties for
 isotropic and anisotropic materials.</p>
@@ -176,7 +176,7 @@ in the '3' direction (keyword argument).</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -190,7 +190,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.getMaterialProperties">
-<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getMaterialProperties" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getMaterialProperties" title="Link to this definition">¶</a></dt>
 <dd><p>Return a dictionary of the material properties</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -204,7 +204,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.getNastranID">
-<span class="sig-name descname"><span class="pre">getNastranID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getNastranID" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNastranID</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.getNastranID" title="Link to this definition">¶</a></dt>
 <dd><p>Get material ID assigned in NASTRAN card for this object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -218,7 +218,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setDensity">
-<span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setDensity" title="Link to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -229,7 +229,7 @@ in the '3' direction (keyword argument).</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setNastranID">
-<span class="sig-name descname"><span class="pre">setNastranID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setNastranID" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNastranID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setNastranID" title="Link to this definition">¶</a></dt>
 <dd><p>Set material ID to be used in NASTRAN card for this object.
 Should be set before <cite>generateBDFCard</cite> is called.</p>
 <dl class="field-list simple">
@@ -241,7 +241,7 @@ Should be set before <cite>generateBDFCard</cite> is called.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.MaterialProperties.setSpecificHeat">
-<span class="sig-name descname"><span class="pre">setSpecificHeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specific_heat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setSpecificHeat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setSpecificHeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">specific_heat</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MaterialProperties.setSpecificHeat" title="Link to this definition">¶</a></dt>
 <dd><p>Set the density property values</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -254,7 +254,7 @@ Should be set before <cite>generateBDFCard</cite> is called.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">OrthotropicPly</span></span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">OrthotropicPly</span></span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The following class holds the material stiffness and strength
 properties for an orthotropic ply. This class is used by several
@@ -276,7 +276,7 @@ Defaults to False (i.e. use max strength).</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly.getMaterialProperties">
-<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.getMaterialProperties" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.getMaterialProperties" title="Link to this definition">¶</a></dt>
 <dd><p>Get the MaterialProperties class associated with this object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -292,13 +292,13 @@ Defaults to False (i.e. use max strength).</p></li>
 
 </section>
 <section id="constitutive-classes">
-<h2>Constitutive classes<a class="headerlink" href="#constitutive-classes" title="Permalink to this heading">¶</a></h2>
+<h2>Constitutive classes<a class="headerlink" href="#constitutive-classes" title="Link to this heading">¶</a></h2>
 <p>Most <code class="xref py py-class docutils literal notranslate"><span class="pre">Element</span></code> classes require a <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> class in their setup procedure.
 These objects typically defines mass, stiffness, failure and buckling behaviors for the elements that reference them.
 The following <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code> classes are available in TACS:</p>
-<span class="target" id="module-0"></span><dl class="py class">
+<dl class="py class" id="module-0">
 <dt class="sig sig-object py" id="tacs.constitutive.BasicBeamConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BasicBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BasicBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for an general beam.</p>
 <blockquote>
@@ -328,7 +328,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BasicBeamConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -344,7 +344,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BladeStiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BladeStiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class models a shell stiffened with T-shaped stiffeners.
 The stiffeners are not explicitly modelled.
@@ -385,7 +385,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight">
-<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Link to this definition">¶</a></dt>
 <dd><p>Update the ks weight used for aggregating the different failure modes</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -396,7 +396,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the panel ply fraction design variables</p>
 <p>The default bounds are 0 and 1</p>
 <dl class="field-list simple">
@@ -414,7 +414,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds">
-<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the panel thickness design variable</p>
 <p>The default bounds are 1e-4 and 1e20</p>
 <dl class="field-list simple">
@@ -429,7 +429,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener height design variable</p>
 <p>The default bounds are 1e-3 and 1e20</p>
 <dl class="field-list simple">
@@ -444,7 +444,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener pitch design variable</p>
 <p>The default bounds are 1e-3 and 1e20</p>
 <dl class="field-list simple">
@@ -459,7 +459,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener ply fraction design variables</p>
 <p>The default bounds are 0 and 1</p>
 <dl class="field-list simple">
@@ -477,7 +477,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Set the lower and upper bounds for the stiffener thickness design variable</p>
 <p>The default bounds are 1e-4 and 1e20</p>
 <dl class="field-list simple">
@@ -494,7 +494,7 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">CompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">CompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class defines the stiffness properties for a
 composite laminate first-order shear deformation theory (FSDT) shell type element.</p>
@@ -513,7 +513,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -529,7 +529,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.DOFSpringConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">DOFSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">DOFSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralSpringConstitutive" title="tacs.constitutive.GeneralSpringConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralSpringConstitutive</span></code></a></p>
 <p>This is the base class for the traditional spring constitutive objects with no dof coupling.
 Assumes 6 dofs.</p>
@@ -540,7 +540,7 @@ Assumes 6 dofs.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.DOFSpringConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -556,7 +556,7 @@ Assumes 6 dofs.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.GeneralMassConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the fully general point mass constitutive objects.
 Assumes 6 dofs (3 translations + 3 rotations).
@@ -578,7 +578,7 @@ The mass properties of this object are specified using a symmetric 6 x 6 mass ma
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.GeneralMassConstitutive.evalMassMatrix">
-<span class="sig-name descname"><span class="pre">evalMassMatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive.evalMassMatrix" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalMassMatrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GeneralMassConstitutive.evalMassMatrix" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate 6x6 symmetric mass matrix associated with this element.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -594,7 +594,7 @@ The mass properties of this object are specified using a symmetric 6 x 6 mass ma
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.GeneralSpringConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralSpringConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GeneralSpringConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GeneralSpringConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the fully general spring constitutive objects.
 Assumes 6 dofs (3 translations + 3 rotations).
@@ -618,7 +618,7 @@ The spring properties of this object are specified using a symmetric 6 x 6 stiff
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoRectangleBeamConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoRectangleBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoRectangleBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for a solid rectangular beam.</p>
 <p>The thickness dimension is assumed to measured along the beam's local reference axis,
@@ -648,7 +648,7 @@ a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local bea
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoRectangleBeamConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -664,7 +664,7 @@ a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local bea
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class defines the stiffness properties for a
 isotropic first-order shear deformation theory shell type element.</p>
@@ -685,7 +685,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoShellConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -701,7 +701,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoTubeBeamConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoTubeBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">IsoTubeBeamConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BeamConstitutive</span></code></p>
 <p>Timoshenko theory based constitutive object for a hollow circular beam.</p>
 <dl class="field-list simple">
@@ -723,7 +723,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -739,13 +739,13 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.LamParamShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PhaseChangeMaterialConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PhaseChangeMaterialConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PhaseChangeMaterialConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PhaseChangeMaterialConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PhaseChangeMaterialConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the phase change material constitutive objects.</p>
 <dl class="field-list simple">
@@ -767,7 +767,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PlaneStressConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PlaneStressConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PlaneStressConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PlaneStressConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PlaneStressConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the plane stress constitutive objects.
 All objects performing plane stress analysis should utilize this class.</p>
@@ -787,7 +787,7 @@ All objects performing plane stress analysis should utilize this class.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.PointMassConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PointMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PointMassConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PointMassConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.PointMassConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive" title="tacs.constitutive.GeneralMassConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeneralMassConstitutive</span></code></a></p>
 <p>This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
 Assumes 6 dofs.</p>
@@ -840,13 +840,13 @@ Assumes 6 dofs.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">ShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">ShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the shell constitutive objects.
 All objects performing shell elastic analysis should utilize this class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.setDrillingRegularization">
-<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Link to this definition">¶</a></dt>
 <dd><p>Update regularization parameter used to stiffen shell in drilling rotation dof.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -859,7 +859,7 @@ All objects performing shell elastic analysis should utilize this class.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.SmearedCompositeShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SmearedCompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SmearedCompositeShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
 <p>This constitutive class defines the stiffness properties for a
 composite laminate first-order shear deformation theory (FSDT) shell type element.
@@ -894,7 +894,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -910,7 +910,7 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.SolidConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SolidConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">SolidConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Constitutive</span></code></p>
 <p>This is the base class for the solid constitutive objects.
 All objects performing solid elastic analysis should utilize this class.</p>
@@ -930,7 +930,7 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.SolidConstitutive.generateBDFCard">
-<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive.generateBDFCard" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SolidConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
 <dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>

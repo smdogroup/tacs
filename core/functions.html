@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>functions module &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="prev" title="elements module" href="elements.html" /> 
@@ -40,13 +40,13 @@
           <div class="body" role="main">
             
   <section id="functions-module">
-<h1>functions module<a class="headerlink" href="#functions-module" title="Permalink to this heading">¶</a></h1>
+<h1>functions module<a class="headerlink" href="#functions-module" title="Link to this heading">¶</a></h1>
 <p>There are several structural functions built into TACS. All of them can be found in the <cite>tacs.functions</cite> module. These functions and their gradients with respect to design variables can be evaluated by the <a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a> object. These functions inherit from the <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code> class.
 Each class should only ever be passed to a single instance of TACS. If the function needs to be calculated for separate instances, this should be handled by separate instances of function.
 The current available function in TACS:</p>
-<span class="target" id="module-tacs.functions"></span><dl class="py class">
+<dl class="py class" id="module-tacs.functions">
 <dt class="sig sig-object py" id="tacs.functions.AverageTemperature">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">AverageTemperature</span></span><a class="headerlink" href="#tacs.functions.AverageTemperature" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">AverageTemperature</span></span><a class="headerlink" href="#tacs.functions.AverageTemperature" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluate the spatial average of the temperature of the model.</p>
 <dl class="field-list simple">
@@ -61,7 +61,7 @@ The current available function in TACS:</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.CenterOfMass">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">CenterOfMass</span></span><a class="headerlink" href="#tacs.functions.CenterOfMass" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">CenterOfMass</span></span><a class="headerlink" href="#tacs.functions.CenterOfMass" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluates the center of mass of the elements along specified axis.</p>
 <div class="admonition warning">
@@ -82,7 +82,7 @@ Defaults to [0.0, 0.0, 0.0].</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.Compliance">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">Compliance</span></span><a class="headerlink" href="#tacs.functions.Compliance" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">Compliance</span></span><a class="headerlink" href="#tacs.functions.Compliance" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluate the compliance of the structure.</p>
 <p>This evaluates the compliance within the structure based on an
@@ -95,7 +95,7 @@ of the load vector with the displacement.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.functions.Compliance.setComplianceType">
-<span class="sig-name descname"><span class="pre">setComplianceType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compliance_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.Compliance.setComplianceType" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setComplianceType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compliance_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.Compliance.setComplianceType" title="Link to this definition">¶</a></dt>
 <dd><p>Set the type of compliance value to use</p>
 </dd></dl>
 
@@ -103,7 +103,7 @@ of the load vector with the displacement.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.EnclosedVolume">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">EnclosedVolume</span></span><a class="headerlink" href="#tacs.functions.EnclosedVolume" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">EnclosedVolume</span></span><a class="headerlink" href="#tacs.functions.EnclosedVolume" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluates the volume enclosed by the elements.</p>
 <dl class="field-list simple">
@@ -115,7 +115,7 @@ of the load vector with the displacement.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.KSDisplacement">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSDisplacement</span></span><a class="headerlink" href="#tacs.functions.KSDisplacement" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSDisplacement</span></span><a class="headerlink" href="#tacs.functions.KSDisplacement" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>The following class implements the methods to calculate the
 Kreisselmeier–Steinhauser (KS) aggregation of the displacement in
@@ -139,7 +139,7 @@ Case-insensitive, defaults to 'continuous'.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.KSFailure">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSFailure</span></span><a class="headerlink" href="#tacs.functions.KSFailure" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSFailure</span></span><a class="headerlink" href="#tacs.functions.KSFailure" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>The following class implements the methods necessary to calculate
 the Kreisselmeier–Steinhauser (KS) aggregation of either a stress
@@ -168,7 +168,7 @@ Case-insensitive, defaults to 'continuous'.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.KSTemperature">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSTemperature</span></span><a class="headerlink" href="#tacs.functions.KSTemperature" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSTemperature</span></span><a class="headerlink" href="#tacs.functions.KSTemperature" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>The following class implements the methods necessary
 to calculate the Kreisselmeier–Steinhauser (KS) aggregation
@@ -190,7 +190,7 @@ Case-insensitive, defaults to 'continuous'.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.MomentOfInertia">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">MomentOfInertia</span></span><a class="headerlink" href="#tacs.functions.MomentOfInertia" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">MomentOfInertia</span></span><a class="headerlink" href="#tacs.functions.MomentOfInertia" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluates the moment of inertia of the elements about origin or center of mass projected onto two input vectors:</p>
 <blockquote>
@@ -235,7 +235,7 @@ about origin (False) or center of mass (True) (keyword argument). Defaults to Fa
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.StructuralMass">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">StructuralMass</span></span><a class="headerlink" href="#tacs.functions.StructuralMass" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">StructuralMass</span></span><a class="headerlink" href="#tacs.functions.StructuralMass" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
 <p>Evaluates the structural mass of the elements.</p>
 <dl class="field-list simple">

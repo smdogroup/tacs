@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.solvers.continuation &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -90,7 +90,9 @@
         <span class="n">yQuery</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">yQuery</span><span class="p">[:]</span> <span class="o">+</span> <span class="n">yKnown</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">*</span> <span class="n">yTemp</span>
 
 
-<div class="viewcode-block" id="ContinuationSolver"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver">[docs]</a><span class="k">class</span> <span class="nc">ContinuationSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
+<div class="viewcode-block" id="ContinuationSolver">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver">[docs]</a>
+<span class="k">class</span> <span class="nc">ContinuationSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;MaxLambda&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
@@ -229,7 +231,9 @@
     <span class="k">def</span> <span class="nf">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">resFunc</span> <span class="o">=</span> <span class="n">resFunc</span>
 
-<div class="viewcode-block" id="ContinuationSolver.getHistoryVariables"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.getHistoryVariables">[docs]</a>    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<div class="viewcode-block" id="ContinuationSolver.getHistoryVariables">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.getHistoryVariables">[docs]</a>
+    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
 
 <span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
@@ -249,6 +253,7 @@
 
         <span class="k">return</span> <span class="n">variables</span></div>
 
+
     <span class="k">def</span> <span class="nf">_setupPredictorVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the structures containing the data for computing the predictor steps&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span> <span class="o">=</span> <span class="p">[]</span>
@@ -258,7 +263,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">())</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
 
-<div class="viewcode-block" id="ContinuationSolver.setOption"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setOption">[docs]</a>    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="ContinuationSolver.setOption">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setOption">[docs]</a>
+    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">BaseSolver</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># Update the predictor computation data structures if the relevant options are changed</span>
@@ -268,7 +275,10 @@
         <span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_setupPredictorVectors</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ContinuationSolver.setConvergenceTolerance"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setConvergenceTolerance">[docs]</a>    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
+
+<div class="viewcode-block" id="ContinuationSolver.setConvergenceTolerance">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.setConvergenceTolerance">[docs]</a>
+    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
@@ -287,7 +297,10 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ContinuationSolver.initializeSolve"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.initializeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="ContinuationSolver.initializeSolve">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.initializeSolve">[docs]</a>
+    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform any initialization required before the solve&quot;&quot;&quot;</span>
         <span class="n">BaseSolver</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UsePredictor&quot;</span><span class="p">):</span>
@@ -295,7 +308,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathLoadScales</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">equilibriumPathStates</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ContinuationSolver.solve"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
+
+<div class="viewcode-block" id="ContinuationSolver.solve">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.solve">[docs]</a>
+    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">MAX_LAMBDA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxLambda&quot;</span><span class="p">)</span>
@@ -496,7 +512,10 @@
 
         <span class="k">return</span></div>
 
-<div class="viewcode-block" id="ContinuationSolver.computeForceVectors"><a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.computeForceVectors">[docs]</a>    <span class="k">def</span> <span class="nf">computeForceVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="ContinuationSolver.computeForceVectors">
+<a class="viewcode-back" href="../../../pytacs/continuation_solver.html#tacs.solvers.ContinuationSolver.computeForceVectors">[docs]</a>
+    <span class="k">def</span> <span class="nf">computeForceVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the current forcing vector</span>
 
 <span class="sd">        The continuation solver is based on the assumption that the residual takes the following form:</span>
@@ -514,7 +533,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">resFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">fExt</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fInt</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
-        <span class="k">return</span></div></div>
+        <span class="k">return</span></div>
+</div>
+
 </pre></div>
 
             <div class="clearer"></div>

@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.constraints.volume &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -64,7 +64,9 @@
 <span class="kn">from</span> <span class="nn">tacs.functions</span> <span class="kn">import</span> <span class="n">EnclosedVolume</span>
 
 
-<div class="viewcode-block" id="VolumeConstraint"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint">[docs]</a><span class="k">class</span> <span class="nc">VolumeConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+<div class="viewcode-block" id="VolumeConstraint">
+<a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint">[docs]</a>
+<span class="k">class</span> <span class="nc">VolumeConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
     <span class="c1"># Default options for class</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;volCheckTol&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -189,7 +191,9 @@
         <span class="c1"># Wait for root</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
 
-<div class="viewcode-block" id="VolumeConstraint.addConstraint"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.addConstraint">[docs]</a>    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">):</span>
+<div class="viewcode-block" id="VolumeConstraint.addConstraint">
+<a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.addConstraint">[docs]</a>
+    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to adding a new constraint set for TACS.</span>
 
@@ -227,6 +231,7 @@
             <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">return</span> <span class="n">success</span></div>
+
 
     <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -385,7 +390,9 @@
                     <span class="k">continue</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sortIDs</span><span class="p">(</span><span class="n">adjID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">orient1</span><span class="p">,</span> <span class="n">orient2</span><span class="p">)</span>
 
-<div class="viewcode-block" id="VolumeConstraint.evalConstraints"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="VolumeConstraint.evalConstraints">
+<a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraints">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        evalCons are evaluated and updated into the provided</span>
@@ -421,7 +428,10 @@
         <span class="c1"># Update call counter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
-<div class="viewcode-block" id="VolumeConstraint.evalConstraintsSens"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraintsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="VolumeConstraint.evalConstraintsSens">
+<a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraintsSens">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from constraint. The derivatives of the constraints</span>
@@ -467,7 +477,10 @@
             <span class="c1"># Reshape from 1d array to a 1 by N column vector</span>
             <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xpt_array</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncoords</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="VolumeConstraint.writeVisualization"><a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.writeVisualization">[docs]</a>    <span class="k">def</span> <span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="VolumeConstraint.writeVisualization">
+<a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.writeVisualization">[docs]</a>
+    <span class="k">def</span> <span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function can be used to write a tecplot file for</span>
 <span class="sd">        the purposes of visualization.</span>
@@ -610,7 +623,9 @@
             <span class="n">tecInfo</span><span class="o">.</span><span class="n">write_tecplot</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
 
         <span class="c1"># Wait for root</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span></div>
+</div>
+
 
 
 <span class="c1"># Simple class for handling sparse volume constraints in parallel</span>

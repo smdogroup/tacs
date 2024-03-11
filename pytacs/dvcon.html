@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>DVConstraint &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="PanelLengthConstraint" href="panel_length.html" />
@@ -46,7 +46,7 @@
           <div class="body" role="main">
             
   <section id="module-tacs.constraints.dv">
-<span id="dvconstraint"></span><h1>DVConstraint<a class="headerlink" href="#module-tacs.constraints.dv" title="Permalink to this heading">¶</a></h1>
+<span id="dvconstraint"></span><h1>DVConstraint<a class="headerlink" href="#module-tacs.constraints.dv" title="Link to this heading">¶</a></h1>
 <p>The main purpose of this class is to place linear constraints on design variables within the same component.
 The constraints are of the form:</p>
 <blockquote>
@@ -69,10 +69,10 @@ defined by the user.</p>
 <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createDVConstraint" title="tacs.pytacs.pyTACS.createDVConstraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createDVConstraint</span></code></a> method.</p>
 </div>
 <section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constraints.</span></span><span class="sig-name descname"><span class="pre">DVConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constraints.</span></span><span class="sig-name descname"><span class="pre">DVConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint" title="Link to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createDVConstraint instead.</p>
 <dl class="field-list simple">
@@ -89,7 +89,7 @@ Use pyTACS.createDVConstraint instead.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.addConstraint">
-<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvIndices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvWeights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.addConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.addConstraint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvIndices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvWeights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.addConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.addConstraint" title="Link to this definition">¶</a></dt>
 <dd><p>Generic method to adding a new constraint set for TACS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -111,7 +111,7 @@ If list, should match length of dvIndices. Defaults to 1's.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.evalConstraints">
-<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.evalConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.evalConstraints" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.evalConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.evalConstraints" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate values for constraints. The constraints corresponding to the strings in
 evalCons are evaluated and updated into the provided
 dictionary.</p>
@@ -137,7 +137,7 @@ this option with caution.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.evalConstraintsSens">
-<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.evalConstraintsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.evalConstraintsSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/dv.html#DVConstraint.evalConstraintsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.DVConstraint.evalConstraintsSens" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from constraint. The derivatives of the constraints
 corresponding to the strings in evalCons are evaluated and
@@ -163,13 +163,13 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.dtype">
-<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.DVConstraint.dtype" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.DVConstraint.dtype" title="Link to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getConstraintBounds">
-<span class="sig-name descname"><span class="pre">getConstraintBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Get bounds for constraints. The constraints corresponding to the strings in
 <cite>evalCons</cite> are evaluated and updated into the provided
 dictionary.</p>
@@ -194,7 +194,7 @@ Bounds will be saved as a tuple: (lower, upper)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getConstraintKeys">
-<span class="sig-name descname"><span class="pre">getConstraintKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintKeys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintKeys" title="Link to this definition">¶</a></dt>
 <dd><p>Return a list of the current constraint key names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -208,7 +208,7 @@ Bounds will be saved as a tuple: (lower, upper)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getConstraintSizes">
-<span class="sig-name descname"><span class="pre">getConstraintSizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintSizes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintSizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getConstraintSizes" title="Link to this definition">¶</a></dt>
 <dd><p>Get number for constraint equations in each set.
 The constraints corresponding to the strings in <cite>evalCons</cite>
 are evaluated and updated into the provided dictionary.</p>
@@ -232,7 +232,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getDesignVarRange">
-<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -247,7 +247,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getDesignVars">
-<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Get the current set of  design variables for this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -261,7 +261,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getNodes">
-<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Return the mesh coordinates of this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -276,7 +276,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getNumCoordinates">
-<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumCoordinates" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of mesh coordinates on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -290,7 +290,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getNumDesignVars">
-<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of design variables on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -304,7 +304,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getNumOwnedNodes">
-<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumOwnedNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of nodes owned by this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -318,7 +318,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getNumVariables">
-<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getNumVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of degrees of freedom (states) that are
 on this processor</p>
 <dl class="field-list simple">
@@ -333,7 +333,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getOption">
-<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getOption" title="Link to this definition">¶</a></dt>
 <dd><p>Get a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -344,7 +344,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.getVarsPerNode">
-<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -358,28 +358,28 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.printDefaultOptions">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printDefaultOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.printModifiedOptions">
-<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printModifiedOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted table of all the options that have been
 modified from their defaults</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.printOptions">
-<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.printOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
 options to the stdout on the root processor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.setDesignVars">
-<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -391,7 +391,7 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.setNodes">
-<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -403,7 +403,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.setOption">
-<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setOption" title="Link to this definition">¶</a></dt>
 <dd><p>Set a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -417,7 +417,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.setOptions">
-<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -428,7 +428,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.DVConstraint.setVarName">
-<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setVarName" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.DVConstraint.setVarName" title="Link to this definition">¶</a></dt>
 <dd><p>Set a name for the structural variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>

@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.constraints.panel_length &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -181,7 +181,9 @@
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodeIDs</span><span class="p">),</span> <span class="n">nodes</span>
 
 
-<div class="viewcode-block" id="PanelLengthConstraint"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint">[docs]</a><span class="k">class</span> <span class="nc">PanelLengthConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+<div class="viewcode-block" id="PanelLengthConstraint">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint">[docs]</a>
+<span class="k">class</span> <span class="nc">PanelLengthConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
@@ -257,7 +259,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="PanelLengthConstraint.setDesignVars"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setDesignVars">[docs]</a>    <span class="k">def</span> <span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="PanelLengthConstraint.setDesignVars">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setDesignVars">[docs]</a>
+    <span class="k">def</span> <span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the design variables used by tacs.</span>
 
@@ -272,7 +276,10 @@
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.setNodes"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setNodes">[docs]</a>    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.setNodes">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setNodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the mesh coordinates of the structure.</span>
 
@@ -287,7 +294,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.addConstraint"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.addConstraint">[docs]</a>    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.addConstraint">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.addConstraint">[docs]</a>
+    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to adding a new constraint set for TACS.</span>
 
@@ -460,7 +470,10 @@
 
         <span class="k">return</span> <span class="n">success</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.getConstraintBounds"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintBounds">[docs]</a>    <span class="k">def</span> <span class="nf">getConstraintBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.getConstraintBounds">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintBounds">[docs]</a>
+    <span class="k">def</span> <span class="nf">getConstraintBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get bounds for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        `evalCons` are evaluated and updated into the provided</span>
@@ -494,7 +507,10 @@
             <span class="n">nCon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span>
             <span class="n">bounds</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nCon</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nCon</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.getConstraintSizes"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintSizes">[docs]</a>    <span class="k">def</span> <span class="nf">getConstraintSizes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.getConstraintSizes">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.getConstraintSizes">[docs]</a>
+    <span class="k">def</span> <span class="nf">getConstraintSizes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sizes</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get number for constraint equations in each set.</span>
 <span class="sd">        The constraints corresponding to the strings in `evalCons`</span>
@@ -524,7 +540,10 @@
             <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">sizes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">][</span><span class="s2">&quot;nCon&quot;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.evalConstraints"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraints">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.evalConstraints">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraints">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        evalCons are evaluated and updated into the provided dictionary.</span>
@@ -601,7 +620,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="PanelLengthConstraint.evalConstraintsSens"><a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraintsSens">[docs]</a>    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="PanelLengthConstraint.evalConstraintsSens">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.evalConstraintsSens">[docs]</a>
+    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from constraint. The derivatives of the constraints</span>
 <span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
@@ -698,6 +720,7 @@
                 <span class="p">)</span>
                 <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
+
 
     <span class="k">def</span> <span class="nf">_getComponentBoundaryNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;For a given list of components, find the nodes on the boundaries of</span>
@@ -841,6 +864,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span><span class="n">boundaryNodeIDs</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span>
             <span class="n">boundaryNodeCoords</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="mi">0</span>
         <span class="p">)</span></div>
+
 </pre></div>
 
             <div class="clearer"></div>

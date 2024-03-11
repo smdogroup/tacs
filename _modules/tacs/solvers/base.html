@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../../../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.solvers.base &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
   </head><body>
@@ -62,7 +62,9 @@
 <span class="kn">from</span> <span class="nn">tacs.utilities</span> <span class="kn">import</span> <span class="n">BaseUI</span><span class="p">,</span> <span class="n">SolverHistory</span>
 
 
-<div class="viewcode-block" id="BaseSolver"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver">[docs]</a><span class="k">class</span> <span class="nc">BaseSolver</span><span class="p">(</span><span class="n">BaseUI</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseSolver">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver">[docs]</a>
+<span class="k">class</span> <span class="nc">BaseSolver</span><span class="p">(</span><span class="n">BaseUI</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">assembler</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Assembler</span><span class="p">,</span>
@@ -121,7 +123,9 @@
                     <span class="n">varName</span><span class="p">,</span> <span class="n">variable</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">],</span> <span class="n">printVar</span><span class="o">=</span><span class="n">variable</span><span class="p">[</span><span class="s2">&quot;print&quot;</span><span class="p">]</span>
                 <span class="p">)</span>
 
-<div class="viewcode-block" id="BaseSolver.getHistoryVariables"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.getHistoryVariables">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="BaseSolver.getHistoryVariables">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.getHistoryVariables">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
 
@@ -132,6 +136,7 @@
 <span class="sd">        Dict[str, Dict]</span>
 <span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">hasConverged</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -151,7 +156,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of iterations performed, set as a property rather than an attribute so that it is read-only&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span>
 
-<div class="viewcode-block" id="BaseSolver.solve"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.solve">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="BaseSolver.solve">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.solve">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -166,7 +173,10 @@
 <span class="sd">            The problem&#39;s state is updated with the solution whether or not this is provided.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="BaseSolver.setConvergenceTolerance"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setConvergenceTolerance">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+
+<div class="viewcode-block" id="BaseSolver.setConvergenceTolerance">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setConvergenceTolerance">[docs]</a>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -180,7 +190,10 @@
 <span class="sd">            Relative tolerance, not changed if no value is provided</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="BaseSolver.initializeSolve"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.initializeSolve">[docs]</a>    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BaseSolver.initializeSolve">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.initializeSolve">[docs]</a>
+    <span class="k">def</span> <span class="nf">initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform any initialization required before the solve</span>
 
 <span class="sd">        Parameters</span>
@@ -207,7 +220,10 @@
             <span class="k">if</span> <span class="s2">&quot;options&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">getMetadata</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">addMetadata</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BaseSolver.reset"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BaseSolver.reset">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Reset the solver</span>
 
 <span class="sd">        Currently this just zeros out the state vector, but more functionality may be added in future</span>
@@ -215,7 +231,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BaseSolver.setRefNorm"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setRefNorm">[docs]</a>    <span class="k">def</span> <span class="nf">setRefNorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BaseSolver.setRefNorm">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setRefNorm">[docs]</a>
+    <span class="k">def</span> <span class="nf">setRefNorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the reference norm used to compute relative convergence measures</span>
 
 <span class="sd">        Parameters</span>
@@ -225,7 +244,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span> <span class="o">=</span> <span class="n">norm</span></div>
 
-<div class="viewcode-block" id="BaseSolver.setCallback"><a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setCallback">[docs]</a>    <span class="k">def</span> <span class="nf">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BaseSolver.setCallback">
+<a class="viewcode-back" href="../../../pytacs/base_solver.html#tacs.solvers.BaseSolver.setCallback">[docs]</a>
+    <span class="k">def</span> <span class="nf">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set a callback function to be called at each iteration</span>
 
 <span class="sd">        Parameters</span>
@@ -239,7 +261,9 @@
 <span class="sd">            - ``res`` is the current residual vector</span>
 <span class="sd">            - ``monitorVars`` is a dictionary of variables to monitor, which can be specified through the ``&quot;nonlinearSolverMonitorVars&quot;`` option</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="o">=</span> <span class="n">callback</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="o">=</span> <span class="n">callback</span></div>
+</div>
+
 </pre></div>
 
             <div class="clearer"></div>

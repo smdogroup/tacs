@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 
-<html lang="python">
+<html lang="python" data-content_root="../">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>AdjacencyConstraint &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=a888008e"></script>
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="DVConstraint" href="dvcon.html" />
@@ -46,7 +46,7 @@
           <div class="body" role="main">
             
   <section id="module-tacs.constraints.adjacency">
-<span id="adjacencyconstraint"></span><h1>AdjacencyConstraint<a class="headerlink" href="#module-tacs.constraints.adjacency" title="Permalink to this heading">¶</a></h1>
+<span id="adjacencyconstraint"></span><h1>AdjacencyConstraint<a class="headerlink" href="#module-tacs.constraints.adjacency" title="Link to this heading">¶</a></h1>
 <p>The main purpose of this class is to constrain design variables step sizes across adjacent components.
 The formulation is a linear constraint that takes the following form:</p>
 <blockquote>
@@ -63,7 +63,7 @@ The formulation is a linear constraint that takes the following form:</p>
 <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createAdjacencyConstraint" title="tacs.pytacs.pyTACS.createAdjacencyConstraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createAdjacencyConstraint</span></code></a> method.</p>
 </div>
 <section id="options">
-<h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading">¶</a></h2>
 <p>Options can be set for <a class="reference internal" href="#tacs.constraints.AdjacencyConstraint" title="tacs.constraints.AdjacencyConstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdjacencyConstraint</span></code></a> at time of creation for the class in the
 <a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createAdjacencyConstraint" title="tacs.pytacs.pyTACS.createAdjacencyConstraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createAdjacencyConstraint</span></code></a> method or using the
 <a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setOption" title="tacs.constraints.AdjacencyConstraint.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AdjacencyConstraint.setOption</span></code></a> method. Current option values for a class
@@ -80,10 +80,10 @@ The following options, their default values and descriptions are listed below:</
 </div>
 </section>
 <section id="api-reference">
-<h2>API Reference<a class="headerlink" href="#api-reference" title="Permalink to this heading">¶</a></h2>
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constraints.</span></span><span class="sig-name descname"><span class="pre">AdjacencyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constraints.</span></span><span class="sig-name descname"><span class="pre">AdjacencyConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint" title="Link to this definition">¶</a></dt>
 <dd><p>NOTE: This class should not be initialized directly by the user.
 Use pyTACS.createAdjacencyConstraint instead.</p>
 <dl class="field-list simple">
@@ -100,7 +100,7 @@ Use pyTACS.createAdjacencyConstraint instead.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.addConstraint">
-<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.addConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.addConstraint" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e+20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.addConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.addConstraint" title="Link to this definition">¶</a></dt>
 <dd><p>Generic method to adding a new constraint set for TACS.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -118,7 +118,7 @@ typically be a string that is meaningful to the user</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.evalConstraints">
-<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.evalConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.evalConstraints" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.evalConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.evalConstraints" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate values for constraints. The constraints corresponding to the strings in
 evalCons are evaluated and updated into the provided
 dictionary.</p>
@@ -144,7 +144,7 @@ this option with caution.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.evalConstraintsSens">
-<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.evalConstraintsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.evalConstraintsSens" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.evalConstraintsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.evalConstraintsSens" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from constraint. The derivatives of the constraints
 corresponding to the strings in evalCons are evaluated and
@@ -170,7 +170,7 @@ respect to all design variables and node locations are computed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.writeVisualization">
-<span class="sig-name descname"><span class="pre">writeVisualization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.writeVisualization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.writeVisualization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">writeVisualization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/adjacency.html#AdjacencyConstraint.writeVisualization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.writeVisualization" title="Link to this definition">¶</a></dt>
 <dd><p>This function can be used to write a tecplot file for
 the purposes of visualization.</p>
 <dl class="field-list simple">
@@ -188,13 +188,13 @@ typically used from an external solver</p></li>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.dtype">
-<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.dtype" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.dtype" title="Link to this definition">¶</a></dt>
 <dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getConstraintBounds">
-<span class="sig-name descname"><span class="pre">getConstraintBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintBounds" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintBounds" title="Link to this definition">¶</a></dt>
 <dd><p>Get bounds for constraints. The constraints corresponding to the strings in
 <cite>evalCons</cite> are evaluated and updated into the provided
 dictionary.</p>
@@ -219,7 +219,7 @@ Bounds will be saved as a tuple: (lower, upper)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getConstraintKeys">
-<span class="sig-name descname"><span class="pre">getConstraintKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintKeys" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintKeys" title="Link to this definition">¶</a></dt>
 <dd><p>Return a list of the current constraint key names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -233,7 +233,7 @@ Bounds will be saved as a tuple: (lower, upper)</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getConstraintSizes">
-<span class="sig-name descname"><span class="pre">getConstraintSizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintSizes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getConstraintSizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getConstraintSizes" title="Link to this definition">¶</a></dt>
 <dd><p>Get number for constraint equations in each set.
 The constraints corresponding to the strings in <cite>evalCons</cite>
 are evaluated and updated into the provided dictionary.</p>
@@ -257,7 +257,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getDesignVarRange">
-<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getDesignVarRange" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -272,7 +272,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getDesignVars">
-<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Get the current set of  design variables for this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -286,7 +286,7 @@ are evaluated and updated into the provided dictionary.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getNodes">
-<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Return the mesh coordinates of this problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -301,7 +301,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getNumCoordinates">
-<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumCoordinates" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumCoordinates" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of mesh coordinates on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -315,7 +315,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getNumDesignVars">
-<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of design variables on this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -329,7 +329,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getNumOwnedNodes">
-<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumOwnedNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumOwnedNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of nodes owned by this processor.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -343,7 +343,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getNumVariables">
-<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumVariables" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getNumVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Return the number of degrees of freedom (states) that are
 on this processor</p>
 <dl class="field-list simple">
@@ -358,7 +358,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getOption">
-<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getOption" title="Link to this definition">¶</a></dt>
 <dd><p>Get a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -369,7 +369,7 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getVarsPerNode">
-<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getVarsPerNode" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -383,28 +383,28 @@ on this processor</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.printDefaultOptions">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printDefaultOptions" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printDefaultOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the default solver
 options to the stdout</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.printModifiedOptions">
-<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printModifiedOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printModifiedOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted table of all the options that have been
 modified from their defaults</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.printOptions">
-<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
 options to the stdout on the root processor</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setDesignVars">
-<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setDesignVars" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setDesignVars" title="Link to this definition">¶</a></dt>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -416,7 +416,7 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setNodes">
-<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setNodes" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -428,7 +428,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setOption">
-<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setOption" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setOption" title="Link to this definition">¶</a></dt>
 <dd><p>Set a solver option value. The name is not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -442,7 +442,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setOptions">
-<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setOptions" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -453,7 +453,7 @@ the number of structural nodes on this processor.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setVarName">
-<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setVarName" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setVarName" title="Link to this definition">¶</a></dt>
 <dd><p>Set a name for the structural variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
