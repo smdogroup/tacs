@@ -845,92 +845,91 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         Ply model to use for the panel
     stiffenerPly : tacs.constitutive.OrthotropicPly
         Ply model to use for the stiffener
-    kcorr : float or complex
-        Shear correction factor, usually 5.0/6.0
     panelLength : float or complex
         Panel length DV value
-    panelLengthNum : int
-        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV
     stiffenerPitch : float or complex
         Stiffener pitch DV value
-    stiffenerPitchNum : int
-        DV number, passing a negative value tells TACS not to treat this as a DV
     panelThick : float or complex
         Panel thickness DV value
-    panelThickNum : int
-        DV number, passing a negative value tells TACS not to treat this as a DV
-    numPanelPlies : int
-        Number of distinct ply angles in the panel
     panelPlyAngles : numpy.ndarray[float or complex]
         Array of ply angles in the panel
     panelPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions in the panel
-    panelPlyFracNums : numpy.ndarray[np.intc]
-        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV
     stiffenerHeight : float or complex
         Stiffener height DV value
-    stiffenerHeightNum : int
-        DV number, passing a negative value tells TACS not to treat this as a DV
     stiffenerThick : float or complex
         Stiffener thickness DV value
-    stiffenerThickNum : int
-        DV number, passing a negative value tells TACS not to treat this as a DV
-    numStiffenerPlies : int
-        Number of distinct ply angles in the stiffener
     stiffenerPlyAngles : numpy.ndarray[float or complex]
         Array of ply angles for the stiffener
     stiffenerPlyFracs : numpy.ndarray[float or complex]
         Array of ply fractions for the stiffener
-    stiffenerPlyFracNums : numpy.ndarray[numpy.intc]
-        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
     flangeFraction : float, optional
-        Ratio of the stiffener base width to the stiffener height, by default 1.0
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
+    panelLengthNum : int, optional
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPitchNum : int, optional
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelThickNum : int, optional
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelPlyFracNums : numpy.ndarray[np.intc], optional
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    stiffenerHeightNum : int, optional
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerThickNum : int, optional
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
 
     Raises
     ------
     ValueError
-        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have numPanelPlies entries
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries
     ValueError
-        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have numStiffenerPlies entries
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
     """
     def __cinit__(
         self,
         OrthotropicPly panelPly,
         OrthotropicPly stiffenerPly,
-        TacsScalar kcorr,
         TacsScalar panelLength,
-        int panelLengthNum,
         TacsScalar stiffenerPitch,
-        int stiffenerPitchNum,
         TacsScalar panelThick,
-        int panelThickNum,
-        int numPanelPlies,
         np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
         np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
-        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums,
         TacsScalar stiffenerHeight,
-        int stiffenerHeightNum,
         TacsScalar stiffenerThick,
-        int stiffenerThickNum,
-        int numStiffenerPlies,
         np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
         np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
-        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums,
-        TacsScalar flangeFraction = 1.0
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
+        int panelLengthNum = -1,
+        int stiffenerPitchNum = -1,
+        int panelThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
+        int stiffenerHeightNum = -1,
+        int stiffenerThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None
         ):
 
-        if len(panelPlyAngles) != numPanelPlies:
-            raise ValueError('panelPlyAngles must have length numPanelPlies')
+        numPanelPlies = len(panelPlyAngles)
+        numStiffenerPlies = len(stiffenerPlyAngles)
+
+        if panelPlyFracNums is None:
+            panelPlyFracNums = -np.ones([numPanelPlies], dtype=np.intc)
+        if stiffenerPlyFracNums is None:
+            stiffenerPlyFracNums = -np.ones([numStiffenerPlies], dtype=np.intc)
+
         if len(panelPlyFracs) != numPanelPlies:
-            raise ValueError('panelPlyFracs must have length numPanelPlies')
+            raise ValueError('panelPlyFracs must have same length as panelPlyAngles')
         if len(panelPlyFracNums) != numPanelPlies:
-            raise ValueError('panelPlyFracNums must have length numPanelPlies')
-        if len(stiffenerPlyAngles) != numStiffenerPlies:
-            raise ValueError('stiffenerPlyAngles must have length numStiffenerPlies')
+            raise ValueError('panelPlyFracNums must have same length as panelPlyAngles')
         if len(stiffenerPlyFracs) != numStiffenerPlies:
-            raise ValueError('stiffenerPlyFracs must have length numStiffenerPlies')
+            raise ValueError('stiffenerPlyFracs must have same length as stiffenerPlyAngles')
         if len(stiffenerPlyFracNums) != numStiffenerPlies:
-            raise ValueError('stiffenerPlyFracNums must have length numStiffenerPlies')
+            raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
+
 
         # Numpy's default int type is int64, but this is interpreted by Cython as a long.
         if panelPlyFracNums.dtype != np.intc:
