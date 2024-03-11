@@ -86,7 +86,8 @@ class ShellProperty(BaseProperty):
         """
         tacs_aim.register(self)
         return self
-    
+
+
 class CompositeProperty(BaseProperty):
     """
     Define a composite material property from ESP/CAPS
@@ -94,22 +95,23 @@ class CompositeProperty(BaseProperty):
     "Ox,Oy,Oz, d1x, d1y, d1z, d2x, d2y, d2z"
     which is the origin, 1-direction, and 2-direction used for shells
     """
+
     def __init__(
         self,
         caps_group: str,
-        ply_materials:list,
-        ply_thicknesses:list,
-        ply_angles:list,
-        sym_laminate:bool=True,
-        composite_failure_theory:str="STRN",
-        shear_bond_allowable:float=1.0e9, # high in case just stringer-one ply
+        ply_materials: list,
+        ply_thicknesses: list,
+        ply_angles: list,
+        sym_laminate: bool = True,
+        composite_failure_theory: str = "STRN",
+        shear_bond_allowable: float = 1.0e9,  # high in case just stringer-one ply
         bending_inertia: float = 1.0,
         shear_membrane_ratio: float = 0.0,
     ):
         self._caps_group = caps_group
         self._ply_materials = ply_materials
         self._ply_thicknesses = ply_thicknesses
-        self._ply_angles = ply_angles # in degrees
+        self._ply_angles = ply_angles  # in degrees
         self._sym_laminate = sym_laminate
         self._composite_failure_theory = composite_failure_theory
         self._shear_bond_allowable = shear_bond_allowable
@@ -123,22 +125,26 @@ class CompositeProperty(BaseProperty):
         elif isinstance(self._ply_materials[0], Material):
             return [_.name for _ in self._ply_materials]
         else:
-            raise AssertionError("caps2tacs error: Ply material objects need to be list of material name strings or material objects..")
+            raise AssertionError(
+                "caps2tacs error: Ply material objects need to be list of material name strings or material objects.."
+            )
 
     @property
     def dictionary(self) -> dict:
         """
         return property dictionary to pass into tacsAim
         """
-        return {"propertyType"           : "Composite",
-              "shearBondAllowable"       : self._shear_bond_allowable,
-              "bendingInertiaRatio"    : self._bending_inertia,
-              "shearMembraneRatio"     : self._shear_membrane_ratio,
-              "compositeMaterial"      : self.ply_materials,
-              "compositeThickness"     : self._ply_thicknesses,
-              "compositeOrientation"   : self._ply_angles, # in degrees
-              "symmetricLaminate"      : self._sym_laminate,
-              "compositeFailureTheory" : self._composite_failure_theory }
+        return {
+            "propertyType": "Composite",
+            "shearBondAllowable": self._shear_bond_allowable,
+            "bendingInertiaRatio": self._bending_inertia,
+            "shearMembraneRatio": self._shear_membrane_ratio,
+            "compositeMaterial": self.ply_materials,
+            "compositeThickness": self._ply_thicknesses,
+            "compositeOrientation": self._ply_angles,  # in degrees
+            "symmetricLaminate": self._sym_laminate,
+            "compositeFailureTheory": self._composite_failure_theory,
+        }
 
     def register_to(self, tacs_aim):
         """

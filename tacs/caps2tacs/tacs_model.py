@@ -6,7 +6,7 @@ from .egads_aim import EgadsAim
 from .analysis_function import AnalysisFunction, Derivative
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty
+from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
@@ -100,7 +100,7 @@ class TacsModel:
             Material,
             ThicknessVariable,
             ShapeVariable,
-            ShellProperty,
+            BaseProperty,
             Constraint,
             Load,
             EgadsAim,
@@ -217,9 +217,9 @@ class TacsModel:
                     if self.geometry.despmtr[shape_var.name].value != shape_var.value:
                         changed_design = True
                         if shape_var.value is not None:
-                            self.geometry.despmtr[
-                                shape_var.name
-                            ].value = shape_var.value
+                            self.geometry.despmtr[shape_var.name].value = (
+                                shape_var.value
+                            )
                         else:
                             shape_var.value = self.geometry.despmtr[
                                 shape_var.name
@@ -326,7 +326,8 @@ class TacsModel:
                         number=i,
                     )
                     self.SPs[caseID].writeSensFile(
-                        evalFuncs=None, tacsAim=self.tacs_aim,
+                        evalFuncs=None,
+                        tacsAim=self.tacs_aim,
                     )
                 self.tacs_aim.post_analysis()
 

@@ -35,8 +35,11 @@ despmtr rib_a2 0.0
 set rib_a3 1.0-rib_a1-rib_a2
 
 # composite material coordinate system
-dimension compositeCoord 9 1 0
-set compositeCoord "0;0;0;0.0;1.0;0.0;1.0;0.0;0.0;"
+dimension YZcsys 9 1 0
+set YZcsys "0;0;0;0.0;1.0;0.0;1.0;0.0;0.0;"
+
+dimension XZcsys 9 1 0
+set XZcsys "0;0;0;0.0;1.0;0.0;1.0;0.0;0.0;"
 
 
 # Depedendent parameters
@@ -66,6 +69,9 @@ translate xf -sspan zf
 loft 0
 
 # attribute the solid wing
+#select face
+attribute capsGroup $OML
+csystem OML YZcsys
 select face
 attribute capsGroup $OML
 attribute _color $blue
@@ -97,16 +103,16 @@ patbeg ispar nspars
    # make the panel to intersect
    box xroot margin2 -margin1 0.0 -sspan-2*margin2 2*margin1
    
+   # add caps attributes
+   attribute capsGroup !$spar+ispar
+   csystem !$spar+ispar YZcsys
+   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
+   attribute _color $green
+
    # rotate it to match the xtip location
    translate -xroot 0 0
    rotatez angle 0 0
    translate xroot 0 0
-   
-   # add caps attributes
-   select face
-   attribute capsGroup !$spar+ispar
-   ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
-   attribute _color $green
 patend
 
 # make the ribs except for end cap ribs
@@ -123,8 +129,8 @@ patbeg index ninnerRibs
    box -margin3 ypos -margin2 2*margin3 0 2*margin2
    
    # add caps attributes
-   select face
    attribute capsGroup !$rib+irib
+   csystem !$rib+irib XZcsys
    ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
@@ -173,6 +179,7 @@ udprim editAttr filename <<
 
 # add load attribute to OML
 select face $capsGroup $OML
+# set the composite coordinate system on the OML
 #ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
 attribute capsLoad $OML
 
@@ -185,7 +192,6 @@ attribute capsMesh $OML
 
 # add AIM attribute to specify the analyses to use
 select body
-csystem   wing   compositeCoord
 ATTRIBUTE AFLR4_Cmp_ID 1
 attribute capsMeshLength 1.0
 attribute capsAIM $aflr4AIM;tacsAIM;egadsTessAIM

@@ -23,23 +23,51 @@ tacs_model.mesh_aim.set_mesh(
     max_dihedral_angle=15,
 ).register_to(tacs_model)
 
-aluminum = caps2tacs.Isotropic.aluminum()
-aluminum_w_stringer = caps2tacs.Orthotropic.smeared_stringer(aluminum, area_ratio=0.5).register_to(tacs_model)
+carbon_fiber = caps2tacs.Orthotropic.carbon_fiber().register_to(tacs_model)
 
 # setup the thickness design variables + automatic shell properties
 nribs = int(tacs_model.get_config_parameter("nribs"))
 nspars = int(tacs_model.get_config_parameter("nspars"))
+# makes unidirectional laminate composite properties automatically
 for irib in range(1, nribs + 1):
-    caps2tacs.ThicknessVariable(
-        caps_group=f"rib{irib}", value=0.05, material=aluminum_w_stringer, ply_angle=0,
+    caps_group = f"rib{irib}"
+    thick = 0.05
+    caps2tacs.CompositeProperty(
+        caps_group=caps_group,
+        ply_materials=[carbon_fiber] * 4,
+        ply_thicknesses=[thick / 4] * 4,
+        ply_angles=[0, -45, 45, 90],
     ).register_to(tacs_model)
+    # caps2tacs.ThicknessVariable(
+    #     caps_group=f"rib{irib}",
+    #     value=thick,
+    # ).register_to(tacs_model)
 for ispar in range(1, nspars + 1):
-    caps2tacs.ThicknessVariable(
-        caps_group=f"spar{ispar}", value=0.05, material=aluminum_w_stringer, ply_angle=0,
+    caps_group = f"spar{ispar}"
+    thick = 0.04
+    caps2tacs.CompositeProperty(
+        caps_group=caps_group,
+        ply_materials=[carbon_fiber] * 4,
+        ply_thicknesses=[thick / 4] * 4,
+        ply_angles=[0, -45, 45, 90],
     ).register_to(tacs_model)
-caps2tacs.ThicknessVariable(
-    caps_group="OML", value=0.03, material=aluminum_w_stringer, ply_angle=0,
+    # caps2tacs.ThicknessVariable(
+    #     caps_group=caps_group,
+    #     value=thick,
+    # ).register_to(tacs_model)
+
+caps_group = "OML"
+thick = 0.03
+caps2tacs.CompositeProperty(
+    caps_group=caps_group,
+    ply_materials=[carbon_fiber] * 4,
+    ply_thicknesses=[thick / 4] * 4,
+    ply_angles=[0, -45, 45, 90],
 ).register_to(tacs_model)
+# caps2tacs.ThicknessVariable(
+#     caps_group=caps_group,
+#     value=thick,
+# ).register_to(tacs_model)
 
 # add constraints and loads
 caps2tacs.PinConstraint("root").register_to(tacs_model)
@@ -66,12 +94,11 @@ if method == 1:  # less detail version
     tacs_model.pre_analysis()
     tacs_model.run_analysis()
 
-    # assembler = 
+    # assembler =
     # sx = np.array([0 for _ in range(8)])
     # sx[0] = 1.0
     # sy = np.array([0 for _ in range(8)])
     # sy[1] = 1.0
-
 
     tacs_model.post_analysis()
 

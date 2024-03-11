@@ -153,7 +153,9 @@ class TacsAim:
                 }
             if len(self.variables) > 0:
                 self.aim.input.Design_Variable = {
-                    dv.name: dv.DV_dictionary for dv in self._design_variables if dv._active
+                    dv.name: dv.DV_dictionary
+                    for dv in self._design_variables
+                    if dv._active
                 }
 
             if self._dict_options is not None:
@@ -276,9 +278,7 @@ class TacsAim:
         # update property thicknesses by the modified thickness variables
         for property in self._properties:
             for dv in self._design_variables:
-                if isinstance(property, Property) and isinstance(
-                    dv, ThicknessVariable
-                ):
+                if isinstance(property, Property) and isinstance(dv, ThicknessVariable):
                     if property.caps_group == dv.caps_group:
                         property.membrane_thickness == dv.value
                         break
