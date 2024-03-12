@@ -1,3 +1,6 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
 __all__ = ["Material", "Isotropic", "Orthotropic"]
 
 from typing import TYPE_CHECKING

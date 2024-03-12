@@ -14,31 +14,30 @@
 
 #include "TACSElementVerification.h"
 
+#include <string.h>
+
 #include "TACSElementAlgebra.h"
 #include "tacslapack.h"
 
 /*
   Helper function to get the matrix type name from the ElementMatrixType enum
 */
-inline auto TacsGetMatrixTypeName(ElementMatrixType matType) {
+inline std::string TacsGetMatrixTypeName(ElementMatrixType matType) {
+  std::string mat_type = "Unknown Matrix Type";
+
   switch (matType) {
     case TACS_JACOBIAN_MATRIX:
-      return "Jacobian Matrix";
-      break;
+      mat_type = "Jacobian Matrix";
     case TACS_MASS_MATRIX:
-      return "Mass Matrix";
-      break;
+      mat_type = "Mass Matrix";
     case TACS_STIFFNESS_MATRIX:
-      return "Stiffness Matrix";
-      break;
+      mat_type = "Stiffness Matrix";
     case TACS_GEOMETRIC_STIFFNESS_MATRIX:
-      return "Geometric Stiffness Matrix";
-      break;
+      mat_type = "Geometric Stiffness Matrix";
     case TACS_STIFFNESS_PRODUCT_DERIVATIVE:
-      return "Stiffness Product Derivative";
-      break;
+      mat_type = "Stiffness Product Derivative";
   }
-  return "Unknown Matrix Type";
+  return mat_type;
 }
 
 /*
@@ -935,7 +934,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
 
   if (test_print_level > 0) {
     fprintf(stderr, "Testing the %s derivative for %s.\n",
-            TacsGetMatrixTypeName(matType), element->getObjectName());
+            TacsGetMatrixTypeName(matType).c_str(), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -1037,7 +1036,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
 
   if (test_print_level > 0) {
     fprintf(stderr, "Testing the %s derivative for %s.\n",
-            TacsGetMatrixTypeName(matType), element->getObjectName());
+            TacsGetMatrixTypeName(matType).c_str(), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -1048,7 +1047,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
     fprintf(stderr,
             "The derivative of the inner product of the %s and two random "
             "vectors w.r.t the node coordinates\n",
-            TacsGetMatrixTypeName(matType));
+            TacsGetMatrixTypeName(matType).c_str());
     TacsPrintErrorComponents(stderr, "Element product XptSens", dfdX,
                              dfdX_approx, 3 * nnodes);
   }
@@ -1126,7 +1125,7 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
 
   if (test_print_level > 0) {
     fprintf(stderr, "Testing the %s derivative for %s.\n",
-            TacsGetMatrixTypeName(matType), element->getObjectName());
+            TacsGetMatrixTypeName(matType).c_str(), element->getObjectName());
     fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
             max_err_index);
     fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
@@ -1137,7 +1136,7 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
     fprintf(stderr,
             "The derivative of the inner product of the %s and two random "
             "vectors w.r.t the state variables\n",
-            TacsGetMatrixTypeName(matType));
+            TacsGetMatrixTypeName(matType).c_str());
     TacsPrintErrorComponents(stderr, "Element SV product", &res, &fd, 1);
   }
   if (test_print_level) {

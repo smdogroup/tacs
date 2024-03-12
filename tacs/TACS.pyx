@@ -712,6 +712,13 @@ cdef class Vec:
         self.ptr.setRand(lower, upper)
         return
 
+    def initRand(self):
+        """
+        Initialise random number generator
+        """
+        self.ptr.initRand()
+        return
+
     def getValues(self, np.ndarray[int, ndim=1] var):
         """
         Get the values from the given global indices

@@ -1,7 +1,3 @@
-"""
-Written by Sean Engelstad, GT SMDO Lab, 2022-2023
-"""
-__all__ = ["GifWriter"]
 import imageio, os
 
 
@@ -10,18 +6,15 @@ class GifWriter:
     module to write gifs from a set of pngs
     """
 
-    def __init__(self, duration: int = 20):
-        # duration of each frame
-        self._duration = duration
+    def __init__(self, frames_per_second: int = 4):
+        self._fps = frames_per_second
 
     def __call__(self, gif_filename: str, path: str):
         """
         call on current path to create gif of given filename
         """
         gif_filepath = os.path.join(path, gif_filename)
-        with imageio.get_writer(
-            gif_filepath, mode="I", duration=self._duration
-        ) as writer:
+        with imageio.get_writer(gif_filepath, mode="I", fps=self._fps) as writer:
             path_dir = os.listdir(path)
             path_dir = sorted(path_dir)
             for image_file in path_dir:
@@ -31,7 +24,5 @@ class GifWriter:
                     writer.append_data(image)
 
 
-# example of how to use the GifWriter
-# if __name__ == "__main__":
-#    my_writer = GifWriter(frames_per_second=4)
-#    my_writer("sizing1.gif", os.getcwd())
+my_writer = GifWriter(frames_per_second=20)
+my_writer("size_and_shape2.gif", os.getcwd())

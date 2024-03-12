@@ -21,7 +21,7 @@ class TacsPostcouplingGroup(om.Group):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
         self.conduction = self.options["conduction"]
-        self.write_solution = self.options["write_solution"]
+        self.auto_write_solution = self.options["write_solution"]
 
         # Setup problem based on scenario that's calling builder
         scenario_name = self.options["scenario_name"]
@@ -57,7 +57,7 @@ class TacsPostcouplingGroup(om.Group):
                 fea_assembler=self.fea_assembler,
                 check_partials=self.check_partials,
                 conduction=self.conduction,
-                write_solution=self.write_solution,
+                write_solution=self.auto_write_solution,
             ),
             promotes_inputs=promotes_inputs + promotes_states,
             promotes_outputs=["*"],
@@ -130,3 +130,6 @@ class TacsPostcouplingGroup(om.Group):
                 con_group.add_subsystem(
                     constraint.name, con_comp, promotes_inputs=promotes_inputs
                 )
+
+    def write_solution(self):
+        self.eval_funcs.write_solution()
