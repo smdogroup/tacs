@@ -3,8 +3,8 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
 __all__ = ["ShapeVariable", "ThicknessVariable"]
 
-from .materials import Material
-from .property import ShellProperty
+from .materials import *
+from .property import *
 
 
 class ShapeVariable:
@@ -56,6 +56,7 @@ class ThicknessVariable:
         upper_bound: float = None,
         max_delta: float = None,
         material: Material = None,
+        ply_angle: float = None,
         active: bool = True,
     ):
         """
@@ -76,6 +77,7 @@ class ThicknessVariable:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.max_delta = max_delta
+        self.ply_angle = ply_angle
         self._active = active
 
         # private variables used to create shell property
@@ -117,15 +119,15 @@ class ThicknessVariable:
         return {
             "groupName": self.caps_group,
             "initialValue": self.value,
-            "lowerBound": self.lower_bound
-            if self.lower_bound is not None
-            else self.value * 0.5,
-            "upperBound": self.upper_bound
-            if self.upper_bound is not None
-            else self.value * 2.0,
-            "maxDelta": self.max_delta
-            if self.max_delta is not None
-            else self.value * 0.1,
+            "lowerBound": (
+                self.lower_bound if self.lower_bound is not None else self.value * 0.5
+            ),
+            "upperBound": (
+                self.upper_bound if self.upper_bound is not None else self.value * 2.0
+            ),
+            "maxDelta": (
+                self.max_delta if self.max_delta is not None else self.value * 0.1
+            ),
         }
 
     @property
@@ -141,13 +143,29 @@ class ThicknessVariable:
         }
 
     @property
-    def shell_property(self) -> ShellProperty:
+    def auto_property(self) -> BaseProperty:
+        # automatic property is made if a material is provided
         assert self._material is not None
-        return ShellProperty(
-            caps_group=self.caps_group,
-            material=self._material,
-            membrane_thickness=self.value,
-        )
+        if isinstance(self._material, Isotropic):
+            return ShellProperty(
+                caps_group=self.caps_group,
+                material=self._material,
+                membrane_thickness=self.value,
+            )
+        elif isinstance(self._material, Orthotropic):
+            # auto-making a unidirectional laminate CompositeProperty (for ease of use in large cases with metal + smeared stringer models)
+            return CompositeProperty(
+                caps_group=self.caps_group,
+                ply_materials=[self._material],
+                ply_thicknesses=[self.value],
+                ply_angles=[self.ply_angle],
+            )
+        else:
+            raise AssertionError(
+                f"Can't directly make a thickness variable {self.name} from a composite material."
+                + "Don't provide a material => just give the caps_group for the thickness variable"
+                + " and separately make the composite property (registering each to the tacs model or tacs aim)."
+            )
 
     def register_to(self, tacs_aim):
         """
