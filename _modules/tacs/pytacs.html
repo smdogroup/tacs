@@ -1037,6 +1037,15 @@
                 <span class="n">Yt</span> <span class="o">=</span> <span class="n">matInfo</span><span class="o">.</span><span class="n">Yt</span>
                 <span class="n">Yc</span> <span class="o">=</span> <span class="n">matInfo</span><span class="o">.</span><span class="n">Yc</span>
                 <span class="n">S12</span> <span class="o">=</span> <span class="n">matInfo</span><span class="o">.</span><span class="n">S</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">S12</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">Xt</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">Xc</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">Yt</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">Yc</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;MAT8 card </span><span class="si">{</span><span class="n">matInfo</span><span class="o">.</span><span class="n">mid</span><span class="si">}</span><span class="s2"> has a zero strength, check Xc, Xt, Yc, Yt, and S12.&quot;</span>
+                        <span class="s2">&quot;Otherwise Tsai-Wu Failure criterion is undefined or infinity.&quot;</span>
+                    <span class="p">)</span>
+
                 <span class="c1"># TODO: add alpha</span>
                 <span class="n">mat</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span>
                     <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
