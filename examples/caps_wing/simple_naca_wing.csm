@@ -71,6 +71,7 @@ loft 0
 # attribute the solid wing
 #select face
 attribute capsGroup $OML
+attribute capsBound $OML
 csystem OML YZcsys
 select face
 attribute capsGroup $OML
@@ -105,7 +106,8 @@ patbeg ispar nspars
    
    # add caps attributes
    attribute capsGroup !$spar+ispar
-   csystem !$spar+ispar YZcsys
+   attribute capsBound $spar
+   csystem spar YZcsys
    ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
@@ -130,7 +132,8 @@ patbeg index ninnerRibs
    
    # add caps attributes
    attribute capsGroup !$rib+irib
-   csystem !$rib+irib XZcsys
+   attribute capsBound $rib
+   csystem rib XZcsys
    ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
