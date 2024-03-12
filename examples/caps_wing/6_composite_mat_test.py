@@ -79,6 +79,8 @@ caps2tacs.AnalysisFunction.ksfailure(ksWeight=50.0, safetyFactor=1.5).register_t
 )
 caps2tacs.AnalysisFunction.mass().register_to(tacs_model)
 
+caps2tacs.ShapeVariable("rib_a1", value=1.0).register_to(tacs_model)
+
 # run the pre analysis to build tacs input files
 # alternative is to call tacs_aim.setup_aim().pre_analysis() with tacs_aim = tacs_model.tacs_aim
 tacs_model.setup(include_aim=True)
@@ -87,7 +89,7 @@ tacs_model.setup(include_aim=True)
 # 2. Run the TACS steady elastic structural analysis, forward + adjoint
 
 # choose method 1 or 2 to demonstrate the analysis : 1 - fewer lines, 2 - more lines
-method = 2
+method = 1
 
 # show both ways of performing the structural analysis in more or less detail
 if method == 1:  # less detail version

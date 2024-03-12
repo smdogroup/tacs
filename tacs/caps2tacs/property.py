@@ -118,6 +118,31 @@ class CompositeProperty(BaseProperty):
         self._bending_inertia = bending_inertia
         self._shear_membrane_ratio = shear_membrane_ratio
 
+    @classmethod
+    def one_ply(
+        cls,
+        caps_group: str,
+        material: Material,
+        thickness: float,
+        ply_angle: float,
+        sym_laminate: bool = True,
+        composite_failure_theory: str = "STRN",
+        shear_bond_allowable: float = 1.0e9,
+        bending_inertia: float = 1.0,
+        shear_membrane_ratio: float = 0.0,
+    ) -> BaseProperty:
+        return cls(
+            caps_group=caps_group,
+            ply_materials=[material],
+            ply_thicknesses=[thickness],
+            ply_angles=[ply_angle],
+            sym_laminate=sym_laminate,
+            composite_failure_theory=composite_failure_theory,
+            shear_bond_allowable=shear_bond_allowable,
+            bending_inertia=bending_inertia,
+            shear_membrane_ratio=shear_membrane_ratio,
+        )
+
     @property
     def ply_materials(self) -> list:
         if isinstance(self._ply_materials[0], str):
