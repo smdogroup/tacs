@@ -1356,13 +1356,9 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
       }
       if (write_flag & TACS_OUTPUT_EXTRAS) {
         data[0] = con->evalFailure(elemIndex, pt, X, e);
-        data[1] = con->evalDesignFieldValue(elemIndex, pt, X, 0);
-        data[2] = con->evalDesignFieldValue(elemIndex, pt, X, 1);
-        data[3] = con->evalDesignFieldValue(elemIndex, pt, X, 2);
-        data[4] = con->evalDesignFieldValue(elemIndex, pt, X, 3);
-        data[5] = con->evalDesignFieldValue(elemIndex, pt, X, 4);
-        data[6] = con->evalDesignFieldValue(elemIndex, pt, X, 5);
-        data[7] = con->evalDesignFieldValue(elemIndex, pt, X, 6);
+        for (int ii = 0; ii < 7; ii++) {
+          data[ii + 1] = con->evalDesignFieldValue(elemIndex, pt, X, ii);
+        }
         data += 8;
       }
     }

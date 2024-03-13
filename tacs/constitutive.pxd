@@ -29,6 +29,9 @@ cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
     props.ptr.incref()
     return props
 
+cdef class MAT2MaterialProperties(MaterialProperties):
+    cdef TacsScalar E1, E2, E3, G12, G13, G23, rho
+
 cdef class PlaneStressConstitutive(Constitutive):
     cdef TACSPlaneStressConstitutive *cptr
 
