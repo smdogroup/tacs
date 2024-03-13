@@ -3,7 +3,7 @@ __all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
 
-from .materials import Material
+from .materials import Material, Isotropic, Orthotropic
 from typing import TYPE_CHECKING
 
 
@@ -61,6 +61,15 @@ class ShellProperty(BaseProperty):
         self._membrane_thickness = membrane_thickness
         self._bending_inertia = bending_inertia
         self._shear_membrane_ratio = shear_membrane_ratio
+
+    @classmethod
+    def null(cls, caps_group:str):
+        """these properties need to be set then through element callback"""
+        return cls(
+            caps_group=caps_group,
+            material=Isotropic.null(),
+            membrane_thickness=1.0,
+        )
 
     @property
     def membrane_thickness(self) -> float:
@@ -144,6 +153,16 @@ class CompositeProperty(BaseProperty):
             shear_bond_allowable=shear_bond_allowable,
             bending_inertia=bending_inertia,
             shear_membrane_ratio=shear_membrane_ratio,
+        )
+    
+    @classmethod
+    def null(cls, caps_group:str):
+        """these properties need to be set then through element callback"""
+        return cls.one_ply(
+            caps_group=caps_group,
+            material=Isotropic.null(),
+            thickness=1.0,
+            ply_angle=0.0,
         )
 
     @property

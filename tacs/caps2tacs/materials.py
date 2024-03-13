@@ -155,6 +155,16 @@ class Isotropic(Material):
         )
 
     @classmethod
+    def null(cls):
+        """these properties need to be set then through element callback"""
+        return cls(name="null", 
+                   E=0.0,
+                   nu=0.0,
+                   rho=0.0,
+                   T1=0.0,
+                   )
+
+    @classmethod
     def madeupium(
         cls,
         E=72.0e9,
@@ -300,6 +310,29 @@ class Orthotropic(Material):
             alpha1=alpha1,
             alpha2=alpha2,
             alpha3=alpha3,
+        )
+
+    @classmethod
+    def null(cls):
+        """these properties need to be set then through element callback"""
+        return cls(
+            name="null",
+            E1=0.0,
+            E2=0.0,
+            G12=0.0,
+            nu12=0.0,
+            T1=0.0,
+            C1=0.0,
+            T2=0.0,
+            C2=0.0,
+            S1=0.0,
+            alpha1=0.0,
+            alpha2=0.0,
+            rho=0.0,
+            kappa1=0.0,  # W/m-K
+            kappa2=0.0,  # W/m-K
+            kappa3=0.0,  # W/m-K
+            cp=0.0,  # J / kg-K
         )
 
     @classmethod
