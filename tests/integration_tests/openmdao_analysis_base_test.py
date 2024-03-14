@@ -14,16 +14,16 @@ ErrorTuple = namedtuple("ErrorTuple", ["forward", "reverse", "forward_reverse"])
 
 """
 This is a base class for running openmdao unit test cases.
-This base class will test function evaluations, partial, and total 
+This base class will test function evaluations, partial, and total
 sensitivities for the user-specified openmdao problems implemented by
-the child test case. When the user creates a new test based 
-on this class two methods are required to be defined in the child class. 
+the child test case. When the user creates a new test based
+on this class two methods are required to be defined in the child class.
     1. setup_problem
     2. setup_funcs
 
-See the virtual method implementations for each method 
+See the virtual method implementations for each method
 below for more details.
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
@@ -116,25 +116,25 @@ class OpenMDAOTestCase:
             """
             Test total sensitivities using fd/cs
             """
+            of = list(self.func_ref.keys())
             # solve
             self.prob.run_model()
 
-            # Test functions total sensitivities
-            of = list(self.func_ref.keys())
-            for var_wrt in self.wrt:
-                with self.subTest(wrt=var_wrt):
-                    for var_of in of:
-                        with self.subTest(of=var_of):
-                            data = self.prob.check_totals(
-                                of=var_of,
-                                wrt=var_wrt,
+            data = self.prob.check_totals(
+                                of=of,
+                                wrt=self.wrt,
                                 compact_print=True,
                                 out_stream=None,
                                 method=self.fd_method,
                                 form=self.fd_form,
                                 step=self.dh,
                             )
-                            assert_check_totals(data, atol=self.atol, rtol=self.rtol)
+
+            # Test functions total sensitivities
+            for var_of, var_wrt in data.keys():
+                with self.subTest(of=var_of, wrt=var_wrt):
+                    test_data = {(var_of, var_wrt): data[(var_of, var_wrt)]}
+                    assert_check_totals(test_data, atol=self.atol, rtol=self.rtol)
 
         def cleanup_fwd_data(self, data):
             """

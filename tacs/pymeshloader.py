@@ -48,13 +48,17 @@ class pyMeshLoader(BaseUI):
             # Read in bdf file as pynastran object
             # By default we avoid cross-referencing unless we actually need it,
             # since its expensive for large models
-            self.bdfInfo = pn.read_bdf(bdf, validate=False, xref=False, debug=debugPrint)
+            self.bdfInfo = pn.read_bdf(
+                bdf, validate=False, xref=False, debug=debugPrint
+            )
         # Create a copy of the BDF object
         elif isinstance(bdf, pn.BDF):
             self.bdfInfo = deepcopy(bdf)
         else:
-            raise self._TACSError("BDF input must be provided as a file name 'str' or pyNastran 'BDF' object. "
-                                  f"Provided input was of type '{type(bdf).__name__}'.")
+            raise self._TACSError(
+                "BDF input must be provided as a file name 'str' or pyNastran 'BDF' object. "
+                f"Provided input was of type '{type(bdf).__name__}'."
+            )
 
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
@@ -1210,15 +1214,12 @@ class pyMeshLoader(BaseUI):
         """
 
         self._nastranToLocalNodeIDMap()
-        local_maps = self.comm.gather(self._local_map, root=0)
-        full_map_list = []
-        for local_map in local_maps:
-            full_map_list += local_map
         all_struct_ids = None
+        local_maps = self.comm.gather(self._local_map, root=0)
         if self.comm.rank == 0:
             all_struct_ids = np.zeros((self.bdfInfo.nnodes), dtype=int)
-            for map in full_map_list:
-                for key in map:
+            for local_map in local_maps:
+                for key in local_map:
                     all_struct_ids[int(key)] = map[int(key)]
             all_struct_ids = list(all_struct_ids)
         # broadcast to other procs

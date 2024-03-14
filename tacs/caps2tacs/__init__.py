@@ -19,6 +19,7 @@ openmdao_loader = importlib.util.find_spec("openmdao")
 if openmdao_loader is not None:
     from .tacs_component import *
 
+from .gif_writer import *
 from .analysis_function import *
 from .constraints import *
 from .egads_aim import *

@@ -115,6 +115,7 @@ cdef extern from "KSM.h":
         void copyValues(TACSVec *x)
         void axpby(TacsScalar alpha, TacsScalar beta, TACSVec *x)
         void zeroEntries()
+        void initRand()
         void setRand(double lower, double upper)
 
     cdef cppclass TACSMat(TACSObject):

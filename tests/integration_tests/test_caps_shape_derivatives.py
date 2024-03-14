@@ -61,8 +61,8 @@ class TestCaps2TacsShape(unittest.TestCase):
         ).register_to(tacs_model)
 
         # include shape variables
-        caps2tacs.ShapeVariable("rib_a1").register_to(tacs_model)
-        # caps2tacs.ShapeVariable("rib_a2").register_to(tacs_model)
+        caps2tacs.ShapeVariable("rib_a1", value=1.0).register_to(tacs_model)
+        caps2tacs.ShapeVariable("rib_a2", value=0.0).register_to(tacs_model)
 
         # add constraints and loads
         caps2tacs.PinConstraint("root").register_to(tacs_model)
@@ -101,7 +101,7 @@ class TestCaps2TacsShape(unittest.TestCase):
         ) in (
             tacs_model.shape_variables
         ):  # perturb the variables to affect update design
-            shape_var.value += dxds[var.name] * h
+            shape_var.value += dxds[shape_var.name] * h
         tacs_model.update_design()
         tacs_model.pre_analysis()
         tacs_model.run_analysis()

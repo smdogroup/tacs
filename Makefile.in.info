@@ -52,7 +52,7 @@ LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread -lblas
 
 METIS_DIR = ${TACS_DIR}/extern/metis
 METIS_INCLUDE = -I${METIS_DIR}/include/
-METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
+METIS_LIB = ${METIS_DIR}/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
 

@@ -59,7 +59,7 @@ rotatex 90 0 0
 translate xf -sspan zf
 
 # loft the solid wing and store it
-loft 0
+rule
 
 # attribute the solid wing
 select face

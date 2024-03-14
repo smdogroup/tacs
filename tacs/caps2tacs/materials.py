@@ -1,3 +1,6 @@
+"""
+Written by Sean Engelstad, GT SMDO Lab, 2022-2023
+"""
 __all__ = ["Material", "Isotropic", "Orthotropic"]
 
 from typing import TYPE_CHECKING
@@ -176,11 +179,12 @@ class Isotropic(Material):
             rho=2.7e3,
             T1=20.0e7,
             C1=20.0e7,
+            S1=270e6,
             alpha=23.1e-6,
             cp=903,
             kappa=237,
         )
-    
+
     @classmethod
     def titanium(cls):
         return cls(
@@ -190,9 +194,42 @@ class Isotropic(Material):
             rho=4.51e3,
             T1=2.4e7,
             C1=2.4e7,
+            S1=0.6 * 2.4e7,  # estimated shear strength
             alpha=8.41e-6,
             cp=522.3,
             kappa=11.4,
+        )
+
+    @classmethod
+    def titanium_alloy(cls):
+        # Ti 6AL-4V (grade 5)
+        return cls(
+            name="titanium-alloy",
+            E=114e9,
+            nu=0.361,
+            rho=4.43e3,
+            T1=880e6,
+            C1=970e6,
+            S1=0.6 * 880e6,  # estimated shear strength
+            alpha=9.2e-6,
+            cp=526.3,
+            kappa=6.7,
+        )
+
+    @classmethod
+    def aluminum_alloy(cls):
+        # Aluminum alloy Al-MS89
+        return cls(
+            name="aluminum-alloy",
+            E=90e9,
+            rho=2.92e3,
+            nu=0.3,
+            T1=420e6,
+            C1=420e6,
+            S1=0.6 * 420e6,  # estimated
+            alpha=19.0e-6,
+            kappa=115.0,
+            cp=903,  # guessed the cp (not provided in data sheet)
         )
 
     @classmethod
@@ -204,6 +241,7 @@ class Isotropic(Material):
             rho=7.8e3,
             T1=1.0e9,
             C1=1.7e9,
+            S1=0.6 * 420e6,  # estimated
             alpha=11.5e-6,
             kappa=45,
             cp=420,
@@ -282,8 +320,8 @@ class Orthotropic(Material):
             alpha1=-0.3e-6,
             alpha2=28e-6,
             rho=1.6e3,
-            kappa1=14.5, #W/m-K
-            kappa2=4.8, #W/m-K
-            kappa3=4.8, #W/m-K
-            cp=1130.0 # J / kg-K
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
         )
