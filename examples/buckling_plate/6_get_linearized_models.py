@@ -46,7 +46,7 @@ print(f"Monte Carlo #data = {X.shape[0]}")
 N_data = X.shape[0]
 
 # ignore all AR data below 2.0
-mask = X[:,1] > 2.0
+mask = np.logical_and(X[:,1] > 2.0, X[:,1] < 5.0)
 X = X[mask,:]
 Y = Y[mask,:]
 
