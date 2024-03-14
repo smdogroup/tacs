@@ -3,7 +3,7 @@ __all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
 
-from .materials import Material, Isotropic, Orthotropic
+from .materials import Material
 from typing import TYPE_CHECKING
 
 
