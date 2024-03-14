@@ -28,10 +28,11 @@ f2f_loader = importlib.util.find_spec("funtofem")
 class TacsModel:
     MESH_AIMS = ["egads", "aflr"]
 
-    def __init__(self, tacs_aim: TacsAim, mesh_aim, comm=None):
+    def __init__(self, tacs_aim: TacsAim, mesh_aim, comm=None, callback=None):
         self._tacs_aim = tacs_aim
         self._mesh_aim = mesh_aim
         self.comm = comm
+        self._callback = callback  # element callback defined by the user (optional)
 
         self._analysis_functions = []
         self.SPs = None
@@ -305,7 +306,7 @@ class TacsModel:
         most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
         """
         fea_solver = self.fea_solver(root)
-        fea_solver.initialize(callback)
+        fea_solver.initialize(self._callback)
         SPs = fea_solver.createTACSProbsFromBDF()
         self.SPs = SPs  # store the static problems as well
 
