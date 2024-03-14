@@ -1,6 +1,7 @@
 """
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
+
 __all__ = ["TacsModel"]
 
 import pyCAPS
@@ -265,9 +266,9 @@ class TacsModel:
                         ):
                             changed_design = True
                             if shape_var.value is not None:
-                                self.geometry.despmtr[
-                                    shape_var.name
-                                ].value = shape_var.value
+                                self.geometry.despmtr[shape_var.name].value = (
+                                    shape_var.value
+                                )
                             else:
                                 shape_var.value = self.geometry.despmtr[
                                     shape_var.name
@@ -296,13 +297,15 @@ class TacsModel:
         """
         return pyTACS(self.tacs_aim.dat_file_path(root), self.comm)
 
-    def createTACSProbs(self, root=0, addFunctions: bool = True):
+    def createTACSProbs(
+        self, root=0, callback=None, addFunctions: bool = True, auto: bool = False
+    ):
         """
         creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
         most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
         """
         fea_solver = self.fea_solver(root)
-        fea_solver.initialize()
+        fea_solver.initialize(callback)
         SPs = fea_solver.createTACSProbsFromBDF()
         self.SPs = SPs  # store the static problems as well
 

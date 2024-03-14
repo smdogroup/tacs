@@ -63,11 +63,11 @@ class ShellProperty(BaseProperty):
         self._shear_membrane_ratio = shear_membrane_ratio
 
     @classmethod
-    def null(cls, caps_group:str):
+    def null(cls, caps_group: str, material):
         """these properties need to be set then through element callback"""
         return cls(
             caps_group=caps_group,
-            material=Isotropic.null(),
+            material=material,
             membrane_thickness=1.0,
         )
 
@@ -154,13 +154,13 @@ class CompositeProperty(BaseProperty):
             bending_inertia=bending_inertia,
             shear_membrane_ratio=shear_membrane_ratio,
         )
-    
+
     @classmethod
-    def null(cls, caps_group:str):
+    def null(cls, caps_group: str, material):
         """these properties need to be set then through element callback"""
         return cls.one_ply(
             caps_group=caps_group,
-            material=Isotropic.null(),
+            material=material,
             thickness=1.0,
             ply_angle=0.0,
         )
