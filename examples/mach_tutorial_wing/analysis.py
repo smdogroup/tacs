@@ -59,8 +59,6 @@ skinPlyFracs = np.array([44.41, 22.2, 22.2, 11.19], dtype=dtype) / 100.0
 sparRibPlyAngles = np.deg2rad(np.array([0.0, -45.0, 45.0, 90.0])).astype(dtype)
 sparRibPlyFracs = np.array([10.0, 35.0, 35.0, 20.0], dtype=dtype) / 100.0
 
-kcorr = dtype(5.0 / 6.0)  # shear correction factor
-
 # ==============================================================================
 # Design variable values, bounds, and scaling factors
 # ==============================================================================
@@ -172,8 +170,6 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     DVScales.append(panelThicknessScale)
     currDVNum += 1
 
-    panelPlyFracNums = -np.ones(numPlies).astype(np.intc)
-
     stiffenerHeightNum = currDVNum
     DVScales.append(stiffenerHeightScale)
     currDVNum += 1
@@ -182,30 +178,23 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     DVScales.append(stiffenerThicknessScale)
     currDVNum += 1
 
-    stiffenerPlyFracNums = -np.ones(numPlies).astype(np.intc)
-
     con = constitutive.BladeStiffenedShellConstitutive(
         panelPly=ply,
         stiffenerPly=ply,
-        kcorr=kcorr,
         panelLength=panelLength,
-        panelLengthNum=panelLengthNum,
         stiffenerPitch=stiffenerPitch,
-        stiffenerPitchNum=stiffenerPitchNum,
         panelThick=panelThickness,
-        panelThickNum=panelThicknessNum,
-        numPanelPlies=numPlies,
         panelPlyAngles=plyAngles,
         panelPlyFracs=panelPlyFractions,
-        panelPlyFracNums=panelPlyFracNums,
         stiffenerHeight=stiffenerHeight,
-        stiffenerHeightNum=stiffenerHeightNum,
         stiffenerThick=stiffenerThickness,
-        stiffenerThickNum=stiffenerThicknessNum,
-        numStiffenerPlies=numPlies,
         stiffenerPlyAngles=plyAngles,
         stiffenerPlyFracs=stiffenerPlyFractions,
-        stiffenerPlyFracNums=stiffenerPlyFracNums,
+        panelLengthNum=panelLengthNum,
+        stiffenerPitchNum=stiffenerPitchNum,
+        panelThickNum=panelThicknessNum,
+        stiffenerHeightNum=stiffenerHeightNum,
+        stiffenerThickNum=stiffenerThicknessNum,
     )
     con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
     con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)

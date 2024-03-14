@@ -423,7 +423,8 @@ class TacsBuilder(Builder):
 
         Parameters
         ----------
-        tags : list[str]
+        tags : list[str, int]
+            list of component names or node IDs to include in body
 
         Returns
         -------
@@ -436,13 +437,29 @@ class TacsBuilder(Builder):
             # Select all node IDs
             masked_local_nodes = np.arange(nnodes)
 
-        # Get the compIDs associated with tags
+        # Get the node IDs associated with tags
         else:
-            tagged_comps = self.fea_assembler.selectCompIDs(include=tags)
-            # Select local node IDs for tags
+            # Pick out any component names in supplied tags
+            comp_names = [comp_name for comp_name in tags if isinstance(comp_name, str)]
+            tagged_comps = self.fea_assembler.selectCompIDs(include=comp_names)
+            # Select local node IDs for components
             masked_local_nodes = self.fea_assembler.getLocalNodeIDsForComps(
                 tagged_comps
             )
+            # Pick out any node IDs in supplied tags
+            global_node_ids = [
+                comp_name
+                for comp_name in tags
+                if isinstance(comp_name, (int, np.integer))
+            ]
+            # Select local node IDs from global node IDs
+            local_node_ids = self.fea_assembler.getLocalNodeIDsFromGlobal(
+                global_node_ids, nastranOrdering=True
+            )
+            # getLocalNodeIDsFromGlobal returns -1 for nodes not on this processor, so remove those
+            local_node_ids[:] = [id for id in local_node_ids if id >= 0]
+            masked_local_nodes += local_node_ids
+            masked_local_nodes = np.unique(masked_local_nodes)
 
         # Select local node IDs and multiplier node IDs
         local_mnodes = self.fea_assembler.getLocalMultiplierNodeIDs()

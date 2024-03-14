@@ -241,7 +241,7 @@ class Isotropic(Material):
             rho=7.8e3,
             T1=1.0e9,
             C1=1.7e9,
-            S1=0.6 * 420e6,  # estimated
+            S1=0.6 * 1.0e9,  # estimated
             alpha=11.5e-6,
             kappa=45,
             cp=420,
@@ -305,13 +305,154 @@ class Orthotropic(Material):
     @classmethod
     def carbon_fiber(cls):
         # STD CF UD (carbon-fiber fiber/epoxy resin)
-        # TODO : add more kinds here
         return cls(
             name="carbon_fiber_UD",
             E1=135e9,
             E2=10e9,
             G12=5e9,
             nu12=0.3,
+            T1=1.5e9,
+            C1=1.2e9,
+            T2=50e6,
+            C2=250e6,
+            S1=70e9,
+            alpha1=-0.3e-6,
+            alpha2=28e-6,
+            rho=1.6e3,
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
+        )
+
+    @classmethod
+    def solvay5320(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Solvay 5320-1 material (thermoset)
+        Fiber: T650 unitape, Resin: Cycom 5320-1
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        return cls(
+            name="solvay5320",
+            E1=138.461e9,
+            E2=9.177e9,
+            G12=4.957e9,
+            nu12=0.326,
+            # TBD add these rem properties
+            T1=1.5e9,
+            C1=1.2e9,
+            T2=50e6,
+            C2=250e6,
+            S1=70e9,
+            alpha1=-0.3e-6,
+            alpha2=28e-6,
+            rho=1.6e3,
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
+        )
+
+    @classmethod
+    def solvayMTM45(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Solvay MTM45 material (thermoset)
+        Style: 12K AS4 Unidirectional
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        return cls(
+            name="solvayMTM45",
+            E1=129.5e9,
+            E2=7.936e9,
+            G12=4.764e9,
+            nu12=0.313,
+            # TBD add these rem properties
+            T1=1.5e9,
+            C1=1.2e9,
+            T2=50e6,
+            C2=250e6,
+            S1=70e9,
+            alpha1=-0.3e-6,
+            alpha2=28e-6,
+            rho=1.6e3,
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
+        )
+
+    @classmethod
+    def torayBT250E(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Toray (formerly Tencate) BT250E-6 S2 Unitape Gr 284 material (thermoset)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        return cls(
+            name="torayBT250E",
+            E1=44.74e9,
+            E2=11.36e9,
+            G12=3.77e9,
+            nu12=0.278,
+            # TBD add these rem properties
+            T1=1.5e9,
+            C1=1.2e9,
+            T2=50e6,
+            C2=250e6,
+            S1=70e9,
+            alpha1=-0.3e-6,
+            alpha2=28e-6,
+            rho=1.6e3,
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
+        )
+
+    @classmethod
+    def victrexAE(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Victrex AE 250 LMPAEK (thermoplastic)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        return cls(
+            name="victrexAE",
+            E1=131.69e9,
+            E2=9.694e9,
+            G12=4.524e9,
+            nu12=0.3192,
+            # TBD add these rem properties
+            T1=1.5e9,
+            C1=1.2e9,
+            T2=50e6,
+            C2=250e6,
+            S1=70e9,
+            alpha1=-0.3e-6,
+            alpha2=28e-6,
+            rho=1.6e3,
+            kappa1=14.5,  # W/m-K
+            kappa2=4.8,  # W/m-K
+            kappa3=4.8,  # W/m-K
+            cp=1130.0,  # J / kg-K
+        )
+
+    @classmethod
+    def hexcelIM7(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
+        """
+        NIAR dataset - Hexcel 8552 IM7 Unidirectional Prepreg (thermoset)
+        Room Temperature Dry (RTD) mean properties shown below
+        units in Pa, ND
+        """
+        return cls(
+            name="hexcelIM7",
+            E1=158.51e9,
+            E2=8.96e9,
+            G12=4.688e9,
+            nu12=0.316,
+            # TBD add these rem properties
             T1=1.5e9,
             C1=1.2e9,
             T2=50e6,

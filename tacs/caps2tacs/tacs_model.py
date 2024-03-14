@@ -9,7 +9,7 @@ from .egads_aim import EgadsAim
 from .analysis_function import AnalysisFunction, Derivative
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty
+from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
@@ -140,7 +140,7 @@ class TacsModel:
             Material,
             ThicknessVariable,
             ShapeVariable,
-            ShellProperty,
+            BaseProperty,
             Constraint,
             Load,
             EgadsAim,
@@ -281,8 +281,7 @@ class TacsModel:
                     changed_design = True
 
         # update thickness prop cards in t
-        if self.tacs_aim.change_shape:
-            self.tacs_aim.update_properties()
+        self.tacs_aim.update_properties()
 
         # record whether the design has changed & first analysis flag as well
         if self._first_analysis:

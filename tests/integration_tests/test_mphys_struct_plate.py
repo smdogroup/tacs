@@ -109,17 +109,19 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             constr_list = [constr]
             return constr_list
 
+        tacs_builder = tacs.mphys.TacsBuilder(
+            mesh_file=bdf_file,
+            element_callback=element_callback,
+            problem_setup=problem_setup,
+            constraint_setup=constraint_setup,
+            check_partials=True,
+            coupled=True,
+            write_solution=False,
+        )
+        self.tacs_builder = tacs_builder
+
         class Top(Multipoint):
             def setup(self):
-                tacs_builder = tacs.mphys.TacsBuilder(
-                    mesh_file=bdf_file,
-                    element_callback=element_callback,
-                    problem_setup=problem_setup,
-                    constraint_setup=constraint_setup,
-                    check_partials=True,
-                    coupled=True,
-                    write_solution=False,
-                )
                 tacs_builder.initialize(self.comm)
 
                 dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
@@ -154,3 +156,39 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         to test their sensitivities with respect to.
         """
         return FUNC_REFS, wrt
+
+    def test_get_tagged_indices(self):
+        """
+        Test the get_tagged_indices method
+        """
+        prob = self.setup_problem(dtype=float)
+        prob.setup()
+
+        # We want to test that:
+        # - For each comp_id, get_tagged_indices returns the same indices as `getLocalNodeIDsForComps`
+        # - For a random set of the NASTRAN node IDs, get_tagged_indices returns the corresponding local indices
+        # - For a mix of comp_ids and NASTRAN node IDs, get_tagged_indices returns the correct local indices
+        FEAAssembler = self.tacs_builder.get_fea_assembler()
+        compIDs = FEAAssembler.selectCompIDs()[0]
+        meshloader = FEAAssembler.meshLoader
+
+        for compID in compIDs:
+            trueNodeIDs = FEAAssembler.getLocalNodeIDsForComps([compID])
+            compName = FEAAssembler.getCompNames(compID)
+            taggedIndIDs = self.tacs_builder.get_tagged_indices(compName)
+            self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
+
+            nastranIDs = meshloader.getGlobalNodeIDsForComps(
+                [compID], nastranOrdering=True
+            )
+            taggedIndIDs = self.tacs_builder.get_tagged_indices(nastranIDs)
+            self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
+
+        # now test a mix of comp_ids and NASTRAN node IDs, we'll use the name of the first compID and the NASTRAN node
+        # IDs of the last compID
+        tags = FEAAssembler.getCompNames(
+            compIDs[0]
+        ) + meshloader.getGlobalNodeIDsForComps([compIDs[-1]], nastranOrdering=True)
+        trueNodeIDs = FEAAssembler.getLocalNodeIDsForComps([compIDs[0], compIDs[-1]])
+        taggedIndIDs = self.tacs_builder.get_tagged_indices(tags)
+        self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
