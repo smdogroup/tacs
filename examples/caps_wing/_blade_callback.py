@@ -2,7 +2,7 @@ __all__ = ["blade_elemCallBack"]
 
 """
 Adapted by Sean Engelstad
-Source : Alasdair Christian Gray
+Source : Alasdair Christison Gray
 """
 
 from tacs import elements, constitutive, TACS

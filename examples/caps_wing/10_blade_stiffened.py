@@ -2,7 +2,7 @@
 Sean Engelstad, March 2024
 GT SMDO Lab, Dr. Graeme Kennedy
 
-Based off of Alasdair Christan Gray's Mach wing blade stiffened example in TACS : examples/mach_tutorial_wing
+Based off of Alasdair Christison Gray's Mach wing blade stiffened example in TACS : examples/mach_tutorial_wing
     Can only do analysis in caps2tacs module in TACS need FUNtoFEM + casp2tacs to perform full optimization
 """
 
