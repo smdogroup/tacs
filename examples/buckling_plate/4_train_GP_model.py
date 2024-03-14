@@ -489,6 +489,57 @@ if _plot:
             plt.savefig(os.path.join(GP_folder, f"3d-slender-{ibin}.png"), dpi=400)
             plt.close("3d-GP")
 
+            # plot comparison of TACS implemented buckling surface and GP one
+            # ---------------------------------------------------------------
+            if BC == "SS":
+                fig = plt.figure("3d-GP2", figsize =(14, 9))
+                ax = plt.axes(projection ='3d',computed_zorder=True)
+
+                # plot the GP Model again
+                DSTAR = np.zeros((30, 100))
+                AR = np.zeros((30,100))
+                KMIN = np.zeros((30,100))
+                ct = 0
+                for iDstar in range(30):
+                    for iAR in range(100):
+                        DSTAR[iDstar,iAR] = Dstar_vec[iDstar]
+                        AR[iDstar,iAR] = AR_vec[iAR]
+                        KMIN[iDstar,iAR] = f_plot[ct]
+                        ct += 1
+
+                # plot the model curve 
+                face_colors = cm.jet(KMIN/10.0)
+                ax.plot_surface(DSTAR, AR, KMIN, antialiased=False, facecolors = face_colors, alpha=0.4, zorder=1)
+
+                # plot the TACS model
+                if load == "Nx":
+                    KMIN_CF_TACS = 2.0 * (1.0 + DSTAR)
+                elif load == "Nxy":
+                    KMIN_CF_TACS = np.zeros((30,100))
+                    for i1 in range(30):
+                        for i2 in range(100):
+                            xi = 1.0/DSTAR[i1,i2]
+                            if xi > 1.0:
+                                KMIN_CF_TACS[i1,i2] = 4.0/np.pi**2 * (8.125 + 5.045 / xi)
+                            else:
+                                KMIN_CF_TACS[i1,i2] = 4.0/np.pi**2 * xi**0.5 * (11.7 + 0.532 * xi + 0.938 * xi**2)
+                else:
+                    raise AssertionError("TACS Closed-form not implemented for other cases.")
+                
+                ax.plot_wireframe(DSTAR, AR, KMIN_CF_TACS, zorder=2)
+
+                ax.set_xlabel(r"$D^*$")
+                ax.set_ylabel(r"$a_0/b_0$")
+                ax.set_zlabel(r"$k_{min}$")
+                ax.set_ylim3d(0.0, 5.0)
+                ax.set_zlim3d(0.0, 10.0)
+                ax.view_init(elev=10, azim=50, roll=0)
+                plt.gca().invert_xaxis()
+                plt.title(f"b/h in [{bin[0]},{bin[1]}]")
+                #plt.show()
+                plt.savefig(os.path.join(GP_folder, f"3d-slender-{ibin}-tacs-compare.png"), dpi=400)
+                plt.close("3d-GP2")
+
     if _plot_slender_2d:
         # iterate over the different slender,D* bins
         for ibin, bin in enumerate(slender_bins):
