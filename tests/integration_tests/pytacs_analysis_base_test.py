@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from mpi4py import MPI
 
+from tacs import elements
 from tacs import TACS
 from tacs import problems
 from tacs import constraints
@@ -62,6 +63,9 @@ class PyTACSTestCase:
 
             # Populate fd/cs perturbation vectors based on user-defined method
             self.setup_tacs_vecs(self.fea_assembler, self.dv_pert, self.xpts_pert)
+
+            # Seed random number generator in tacs for consistent test results
+            elements.SeedRandomGenerator(0)
 
         def setup_tacs_problems(self, comm):
             """
