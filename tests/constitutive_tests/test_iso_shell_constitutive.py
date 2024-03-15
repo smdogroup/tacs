@@ -46,7 +46,9 @@ class ConstitutiveTest(unittest.TestCase):
         )
 
         # Create stiffness (need class)
-        self.con = constitutive.IsoShellConstitutive(self.props, t=1.0, tNum=0, tOffset=-0.5)
+        self.con = constitutive.IsoShellConstitutive(
+            self.props, t=1.0, tNum=0, tOffset=-0.5
+        )
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)

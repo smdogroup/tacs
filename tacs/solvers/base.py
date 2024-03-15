@@ -105,7 +105,8 @@ class BaseSolver(BaseUI):
     def fatalFailure(self) -> bool:
         """Whether the solver has failed, set as a property rather than an attribute so that it is read-only
 
-        Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a fatal failure in the solver which requires a full reset
+        Note that a fatalFailure is not the same as not converging, this flag is meant to reflect that there has been a
+        fatal failure in the solver which requires a full reset
         """
         return self._fatalFailure
 
