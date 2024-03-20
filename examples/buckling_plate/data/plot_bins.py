@@ -10,6 +10,7 @@ import argparse
 parent_parser = argparse.ArgumentParser(add_help=False)
 parent_parser.add_argument('--load', type=str)
 parent_parser.add_argument('--BC', type=str)
+parent_parser.add_argument('--log', type=bool, default=False)
 
 args = parent_parser.parse_args()
 
@@ -21,7 +22,9 @@ if args.load in ["Nx", "axial"]:
 else:
     loading = "Nxy"
 BC = args.BC
-
+use_logs = args.log
+# print(f"use logs = {use_logs}", flush=True)
+# exit()
 
 csv_filename = loading + "crit_" + BC + ".csv"
 
@@ -67,6 +70,8 @@ plt.style.use(niceplots.get_style())
 
 mask0 = kx0 <= 20.0
 
+figsize=(8,6)
+
 for ibin, bin in enumerate(slender_bins):
     if ibin < len(slender_bins) - 1:
         mask1 = np.logical_and(bin[0] <= slenderness, slenderness < bin[1])
@@ -82,7 +87,7 @@ for ibin, bin in enumerate(slender_bins):
 
     # plot the kmin values
     # -------------------------------------------------------------------------
-    plt.figure(f"islender{ibin}")
+    plt.figure(f"islender{ibin}", figsize=figsize)
     plt.margins(x=0.05, y=0.05)
 
     for iDstar, Dstar_bin in enumerate(Dstar_bins):
@@ -104,10 +109,14 @@ for ibin, bin in enumerate(slender_bins):
         )
 
     plt.legend()
+    if use_logs: 
+        plt.xscale('log')
+        plt.yscale('log')
+    else:
+        plt.xlim(0.0, 5.0)
+        plt.ylim(0.0, 20.0)
     plt.xlabel(r"$a_0/b_0$")
-    plt.ylabel(r"$k_{min}$")
-    plt.xlim(0.0, 5.0)
-    plt.ylim(0.0, 20.0)
+    plt.ylabel(r"$\lambda_{min}$")
     plt.title(f"slender bin b/h in [{bin[0]:.1f},{bin[1]:.1f}]")
     plt.savefig(
         os.path.join(c_slender_folder, "_kmin.png"),
@@ -115,7 +124,7 @@ for ibin, bin in enumerate(slender_bins):
     )
     plt.close(f"islender{ibin}")
 
-    # plot the individual k_i modes
+    # plot the individual \lambda_i modes
     # -------------------------------------------------------------------------
     for imode in range(20):
         has_values = False
@@ -139,7 +148,7 @@ for ibin, bin in enumerate(slender_bins):
         if not has_values:
             continue
 
-        plt.figure(f"islender{ibin}-mode{imode}")
+        plt.figure(f"islender{ibin}-mode{imode}", figsize=figsize)
         plt.margins(x=0.05, y=0.05)
 
         for iDstar, Dstar_bin in enumerate(Dstar_bins):
@@ -163,9 +172,13 @@ for ibin, bin in enumerate(slender_bins):
 
         plt.legend()
         plt.xlabel(r"$a_0/b_0$")
-        plt.ylabel(r"$k_{" + str(imode + 1) + r"}$")
-        plt.xlim(0.0, 5.0)
-        plt.ylim(0.0, 20.0)
+        plt.ylabel(r"$\lambda_{" + str(imode + 1) + r"}$")
+        if use_logs: 
+            plt.xscale('log')
+            plt.yscale('log')
+        else:
+            plt.xlim(0.0, 5.0)
+            plt.ylim(0.0, 20.0)
         plt.title(f"slender bin b/h in [{bin[0]:.1f},{bin[1]:.1f}]")
         plt.savefig(
             os.path.join(c_slender_folder, f"kmode_{imode+1}.png"),
@@ -187,7 +200,7 @@ for ibin, bin in enumerate(slender_bins):
             affine_AR[mask],
             kmodes[imode][mask],
             "o",
-            label=r"$k_{" + str(imode + 1) + r"}$",
+            label=r"$\lambda_{" + str(imode + 1) + r"}$",
         )
 
     # Shrink current axis by 20%
@@ -196,15 +209,15 @@ for ibin, bin in enumerate(slender_bins):
     # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     # maybe in log-log scale the modes will become nearly bilinear?
-    _log_scale = False
-    if _log_scale:
-        plt.xscale("log")
-        plt.yscale("log")
+    if use_logs: 
+        plt.xscale('log')
+        plt.yscale('log')
+    else:
+        plt.xlim(0.0, 5.0)
+        plt.ylim(0.0, 20.0)
 
     plt.xlabel(r"$a_0/b_0$")
-    plt.ylabel(r"$k$")
-    plt.xlim(0.0, 5.0)
-    plt.ylim(0.0, 20.0)
+    plt.ylabel(r"$\lambda$")
     plt.title(f"slender bin b/h in [{bin[0]:.1f},{bin[1]:.1f}]")
     plt.savefig(
         os.path.join(c_slender_folder, f"_kmodes.png"),
@@ -232,7 +245,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
 
     # plot kmin
     # ------------------------------------------------------
-    plt.figure(f"iDstar{iDstar}")
+    plt.figure(f"iDstar{iDstar}", figsize=figsize)
     plt.margins(x=0.05, y=0.05)
 
     if np.sum(mask2) == 0:
@@ -257,10 +270,14 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
         )
 
     plt.legend()
+    if use_logs: 
+        plt.xscale('log')
+        plt.yscale('log')
+    else:
+        plt.xlim(0.0, 5.0)
+        plt.ylim(0.0, 20.0)
     plt.xlabel(r"$a_0/b_0$")
-    plt.ylabel(r"$k_{x_0}$")
-    plt.xlim(0.0, 5.0)
-    plt.ylim(0.0, 20.0)
+    plt.ylabel(r"$\lambda_{min}$")
     plt.title(f"D* in [{Dstar_bin[0]:.2f},{Dstar_bin[1]:.2f}]")
     plt.savefig(
         os.path.join(c_dstar_folder, "_kmin.png"),
@@ -268,7 +285,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
     )
     plt.close(f"iDstar{iDstar}")
 
-    # plot the individual k_i modes
+    # plot the individual \lambda_i modes
     # -------------------------------------------------------------------------
     for imode in range(20):
         has_values = False
@@ -291,7 +308,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
         if not has_values:
             continue
 
-        plt.figure(f"iDstar{iDstar}-imode{imode+1}")
+        plt.figure(f"iDstar{iDstar}-imode{imode+1}", figsize=figsize)
         for ibin, bin in enumerate(slender_bins):
             if ibin < len(slender_bins) - 1:
                 mask1 = np.logical_and(bin[0] <= slenderness, slenderness < bin[1])
@@ -311,10 +328,14 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
             )
 
         plt.legend()
+        if use_logs: 
+            plt.xscale('log')
+            plt.yscale('log')
+        else:
+            plt.xlim(0.0, 5.0)
+            plt.ylim(0.0, 20.0)
         plt.xlabel(r"$a_0/b_0$")
-        plt.ylabel(r"$k_{x_0}$")
-        plt.xlim(0.0, 5.0)
-        plt.ylim(0.0, 20.0)
+        plt.ylabel(r"$\lambda_{min}$")
         plt.title(f"D* in [{Dstar_bin[0]:.2f},{Dstar_bin[1]:.2f}]")
         plt.savefig(
             os.path.join(c_dstar_folder, f"kmode_{imode+1}.png"),
@@ -336,7 +357,7 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
             affine_AR[mask],
             kmodes[imode][mask],
             "o",
-            label=r"$k_{" + str(imode + 1) + r"}$",
+            label=r"$\lambda_{" + str(imode + 1) + r"}$",
         )
 
     # Shrink current axis by 20%
@@ -345,15 +366,15 @@ for iDstar, Dstar_bin in enumerate(Dstar_bins):
     # ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
     # maybe in log-log scale the modes will become nearly bilinear?
-    _log_scale = False
-    if _log_scale:
-        plt.xscale("log")
-        plt.yscale("log")
+    if use_logs: 
+        plt.xscale('log')
+        plt.yscale('log')
+    else:
+        plt.xlim(0.0, 5.0)
+        plt.ylim(0.0, 20.0)
 
     plt.xlabel(r"$a_0/b_0$")
-    plt.ylabel(r"$k$")
-    plt.xlim(0.0, 5.0)
-    plt.ylim(0.0, 20.0)
+    plt.ylabel(r"$\lambda$")
     plt.title(f"D* in [{Dstar_bin[0]:.2f},{Dstar_bin[1]:.2f}]")
     plt.savefig(
         os.path.join(c_dstar_folder, f"_kmodes.png"),
