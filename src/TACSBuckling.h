@@ -81,8 +81,6 @@ class TACSLinearBuckling : public TACSObject {
 
   // rescale the matrices
   TacsScalar Knorm;
-  // void normalize_kmat();
-  // void normalize_gmat();
 
   EPBucklingShiftInvert *ep_op;
   SEP *sep;
