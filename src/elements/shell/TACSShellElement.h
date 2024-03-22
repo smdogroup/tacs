@@ -142,6 +142,8 @@ class TACSShellElement : public TACSElement {
         con, omega, rotCenter, first_order);
   }
 
+  void setComplexStepGmatrix(bool complexStepFlag) {complexStepGmatrix = complexStepFlag;}
+
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
                        TacsScalar *Te, TacsScalar *Pe);
@@ -203,6 +205,8 @@ class TACSShellElement : public TACSElement {
   static const int usize = 3 * num_nodes;
   static const int dsize = 3 * num_nodes;
   static const int csize = 9 * num_nodes;
+
+  bool complexStepGmatrix = false;
 
   TACSShellTransform *transform;
   TACSShellConstitutive *con;
@@ -672,13 +676,13 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   TacsScalar res[vars_per_node * num_nodes];
   memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
 
-  bool complexStepOverride = true; // temporarily compute G by complex step (Sean Engelstad)
-
   dh = 1e-4; // default for without override
   double dh_mag = 1e-4;
 
+  printf("Complex step Gmatrix = ", complexStepGmatrix);
+
 #ifdef TACS_USE_COMPLEX
-  if (complexStepOverride) {
+  if (complexStepGmatrix) {
     dh_mag = 1e-30;
     dh = TacsScalar(0.0,dh_mag);
   }
@@ -727,7 +731,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
     // rescale by 1.0/i if complex_step_override is on
 #ifdef TACS_USE_COMPLEX
-  if (complexStepOverride) {
+  if (complexStepGmatrix) {
     // take imaginary part of the element matrix
     for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes; i++) {
       mat[i] = TacsScalar(TacsImagPart(mat[i]), 0.0);

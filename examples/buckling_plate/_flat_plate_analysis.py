@@ -4,7 +4,6 @@ import numpy as np
 from tacs import pyTACS, constitutive, elements, utilities
 import os
 from pprint import pprint
-from .composite_material_utility import CompositeMaterialUtility
 from typing_extensions import Self
 
 dtype = utilities.BaseUI.dtype
@@ -780,6 +779,9 @@ class FlatPlateAnalysis:
                     elem = elements.Quad9Shell(transform, con)
                 else:
                     raise AssertionError("Non CQUAD4 Elements in this plate?")
+
+                if elem is not None:
+                    elem.setComplexStepGmatrix(True)
 
                 elemList.append(elem)
 

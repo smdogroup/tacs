@@ -291,6 +291,11 @@ cdef class Element:
             self.ptr.setComponentNum(comp_num)
         return
 
+    def setComplexStepGmatrix(self, bool complex_step_flag):
+        if self.ptr:
+            self.ptr.setComplexStepGmatrix(complex_step_flag)
+        return
+
     @classmethod
     def setFiniteDifferenceOrder(cls, int order):
         TACSElement.setFiniteDifferenceOrder(order)

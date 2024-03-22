@@ -86,12 +86,10 @@ class TACSBVec : public TACSVec {
              TACSVec *x);  // y <- alpha*x + beta*y
   void applyBCs(TACSBcMap *map, TACSVec *vec = NULL);
   void setBCs(TACSBcMap *map);
-  TacsScalar oneNorm();                 // Compute the 1-norm (sum of absolute values)
 
   // Get/set the vector elements
   // ---------------------------
   void set(TacsScalar val);                  // Set all values of the vector
-  void setValue(int n, TacsScalar val);      // Set a value at one index
   void zeroEntries();                        // Zero all the entries
   int getArray(TacsScalar **vals);           // Get the local values
   int getDepArray(TacsScalar **vals);        // Get the dependent values

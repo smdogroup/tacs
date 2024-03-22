@@ -231,6 +231,13 @@ class TACSElement : public TACSObject {
   }
 
   /**
+    Set complexStep mode for Gmatrix (default false)
+
+    @param omega The flag for turning on complex step
+  */
+  virtual void setComplexStepGmatrix(bool complexStepFlag);
+
+  /**
     Get the type of element layout for visualization
 
     @return The layout type for this element
