@@ -79,9 +79,6 @@ class TACSLinearBuckling : public TACSObject {
   // Data for the eigenvalue analysis
   TacsScalar sigma;
 
-  // rescale the matrices
-  TacsScalar Knorm;
-
   EPBucklingShiftInvert *ep_op;
   SEP *sep;
 
