@@ -233,9 +233,16 @@ class TACSElement : public TACSObject {
   /**
     Set complexStep mode for Gmatrix (default false)
 
-    @param omega The flag for turning on complex step
+    @param complexStepFlag The flag for turning on complex step
   */
-  virtual void setComplexStepGmatrix(bool complexStepFlag);
+  void setComplexStepGmatrix(bool complexStepFlag) {
+    complexStepGmatrix = complexStepFlag;
+  };
+
+  /**
+    get complexStep mode for Gmatrix (default false)
+  */
+  bool getComplexStepGmatrix() {return complexStepGmatrix;};
 
   /**
     Get the type of element layout for visualization
@@ -758,6 +765,7 @@ class TACSElement : public TACSObject {
 
  private:
   int componentNum;
+  bool complexStepGmatrix = false;
   // Defines order of finite differencing method
   static int fdOrder;
 };

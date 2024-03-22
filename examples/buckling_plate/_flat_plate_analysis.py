@@ -716,15 +716,7 @@ class FlatPlateAnalysis:
 
         self.comm.Barrier()
 
-    def run_static_analysis(self, base_path=None, write_soln=False):
-        """
-        run a linear static analysis on the flat plate with either isotropic or composite materials
-        return the average stresses in the plate => to compute in-plane loads Nx, Ny, Nxy
-        """
-
-        # Instantiate FEAAssembler
-        FEAAssembler = pyTACS(self.bdf_file, comm=self.comm)
-
+    def _elemCallBack(self):
         def elemCallBack(
             dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
         ):
@@ -785,12 +777,23 @@ class FlatPlateAnalysis:
             # Add scale for thickness dv
             scale = [100.0]
             return elemList, scale
+        return elemCallBack
+
+    def run_static_analysis(self, base_path=None, write_soln=False):
+        """
+        run a linear static analysis on the flat plate with either isotropic or composite materials
+        return the average stresses in the plate => to compute in-plane loads Nx, Ny, Nxy
+        """
+
+        # Instantiate FEAAssembler
+        FEAAssembler = pyTACS(self.bdf_file, comm=self.comm)
 
         # Set up constitutive objects and elements
-        FEAAssembler.initialize(elemCallBack)
+        FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
         FEAAssembler.assembler.setComplexStepGmatrix(True)
+        exit()
 
         # debug the static problem first
         SP = FEAAssembler.createStaticProblem(name="static")
@@ -824,70 +827,11 @@ class FlatPlateAnalysis:
         # Instantiate FEAAssembler
         FEAAssembler = pyTACS(self.bdf_file, comm=self.comm)
 
-        def elemCallBack(
-            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
-        ):
-            # Set constitutive properties
-            # rho = 4540.0  # density, kg/m^3
-            # # E = 70e9  # elastic modulus, Pa 118e9
-            # # nu = 0.33  # poisson's ratio
-            # ys = 1050e6  # yield stress, Pa
-            # kappa = 6.89
-            # specific_heat = 463.0
-
-            # if E22 not provided, isotropic
-            isotropic = self._E22 is None
-
-            # Setup property and constitutive objects
-            if isotropic:
-                mat = constitutive.MaterialProperties(E=self.E11, nu=self.nu12)
-
-                # Set one thickness dv for every component
-                con = constitutive.IsoShellConstitutive(mat, t=self.h)
-
-            else:  # orthotropic
-                # assume G23, G13 = G12
-                G23 = self.G12 if self._G23 is None else self._G23
-                G13 = self.G12 if self._G13 is None else self._G13
-                ortho_prop = constitutive.MaterialProperties(
-                    E1=self.E11,
-                    E2=self.E22,
-                    nu12=self.nu12,
-                    G12=self.G12,
-                    G23=G23,
-                    G13=G13,
-                )
-
-                ortho_ply = constitutive.OrthotropicPly(self.h, ortho_prop)
-
-                # one play composite constitutive model
-                con = constitutive.CompositeShellConstitutive(
-                    [ortho_ply],
-                    np.array([self.h], dtype=dtype),
-                    np.array([0], dtype=dtype),
-                    tOffset=0.0,
-                )
-
-            # For each element type in this component,
-            # pass back the appropriate tacs element object
-            elemList = []
-            for descript in elemDescripts:
-                transform = None
-                if descript in ["CQUAD4", "CQUADR"]:
-                    elem = elements.Quad4Shell(transform, con)
-                elif descript in ["CQUAD9", "CQUAD"]:
-                    elem = elements.Quad9Shell(transform, con)
-                else:
-                    raise AssertionError("Non CQUAD4 Elements in this plate?")
-
-                elemList.append(elem)
-
-            # Add scale for thickness dv
-            scale = [100.0]
-            return elemList, scale
-
         # Set up constitutive objects and elements
-        FEAAssembler.initialize(elemCallBack)
+        FEAAssembler.initialize(self._elemCallBack())
+
+        # set complex step Gmatrix into all elements through assembler
+        FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # Setup buckling problem
         bucklingProb = FEAAssembler.createBucklingProblem(

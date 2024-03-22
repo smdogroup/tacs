@@ -6071,6 +6071,6 @@ void TACSAssembler::getAverageStresses(ElementType elem_type, TacsScalar *avgStr
 /* set complex step Gmatrix setting into shell elements for buckling*/
 void TACSAssembler::setComplexStepGmatrix(bool flag) {
   for (int i = 0; i < numElements; i++) {
-    elements[i]->setComplexStepGmatrix(true);
+    elements[i]->setComplexStepGmatrix(flag);
   }
 }
