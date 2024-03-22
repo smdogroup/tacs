@@ -2,13 +2,12 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
-from tacs import buckling_surrogate
-import numpy as np
+from _flat_plate_analysis import FlatPlateAnalysis
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
-flat_plate = buckling_surrogate.FlatPlateAnalysis(
+flat_plate = FlatPlateAnalysis(
     comm=comm,
     bdf_file="plate.bdf",
     a=2.44010,

@@ -2,7 +2,7 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
-from tacs import buckling_surrogate
+from _flat_plate_analysis import FlatPlateAnalysis
 import numpy as np
 import unittest
 from mpi4py import MPI
@@ -17,7 +17,7 @@ run_static = False
 
 class TestPlateCases(unittest.TestCase):
     # use the same flat plate geometry and material through all three test cases
-    flat_plate = buckling_surrogate.FlatPlateAnalysis(
+    flat_plate = FlatPlateAnalysis(
         comm=comm,
         bdf_file="plate.bdf",
         a=1.0,
@@ -130,7 +130,7 @@ class TestPlateCases(unittest.TestCase):
         assert np.max(np.abs(rel_error)) < 0.1
 
     def test_affine_simply_supported(self):
-        flat_plate = buckling_surrogate.FlatPlateAnalysis(
+        flat_plate = FlatPlateAnalysis(
             comm=comm,
             bdf_file="plate.bdf",
             a=1.0,
@@ -181,7 +181,7 @@ class TestPlateCases(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    test = 4
+    test = "all"
 
     # run all cases with this
     if test == "all":
