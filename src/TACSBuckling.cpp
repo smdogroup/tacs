@@ -156,72 +156,72 @@ TACSLinearBuckling::~TACSLinearBuckling() {
   eigvec->decref();
 }
 
-/*
-Normalize the matrices K,G by their 1-norms
-to improve the numerical stability of the eigenvalue problem
-  K := K / |K|_1
-  G := G / |G|_1
-*/
-void TACSLinearBuckling::normalize_kmat() {
-  // first normalize the matrix K
-  // Graeme - propose using the Frobenius norm (instead of 1-norm)
-  //    easier to parallelize
-  // ----------------------------------
+// /*
+// Normalize the matrices K,G by their 1-norms
+// to improve the numerical stability of the eigenvalue problem
+//   K := K / |K|_1
+//   G := G / |G|_1
+// */
+// void TACSLinearBuckling::normalize_kmat() {
+//   // first normalize the matrix K
+//   // Graeme - propose using the Frobenius norm (instead of 1-norm)
+//   //    easier to parallelize
+//   // ----------------------------------
 
-  printf("Starting normalize Kmat\n");
+//   printf("Starting normalize Kmat\n");
 
-  int size;
-  path->getSize(&size);
-  path->zeroEntries();
-  TacsScalar local_max, temp;
-  local_max = 0.0;
-  Knorm = 0.0;
-  for (int i = 0; i < size; i++) {
-    //printf("i/N = %d/%d\n", i,size);
-    path->zeroEntries();
-    res->zeroEntries();
+//   int size;
+//   path->getSize(&size);
+//   path->zeroEntries();
+//   TacsScalar local_max, temp;
+//   local_max = 0.0;
+//   Knorm = 0.0;
+//   for (int i = 0; i < size; i++) {
+//     //printf("i/N = %d/%d\n", i,size);
+//     path->zeroEntries();
+//     res->zeroEntries();
 
-    // set path to e_i
-    path->setValue(i,1.0);
-    path->beginSetValues(TACS_ADD_VALUES);
-    path->endSetValues(TACS_ADD_VALUES);
+//     // set path to e_i
+//     path->setValue(i,1.0);
+//     path->beginSetValues(TACS_ADD_VALUES);
+//     path->endSetValues(TACS_ADD_VALUES);
 
-    // compute K * e_i => v_i the ith column
-    kmat->mult(path, res);
+//     // compute K * e_i => v_i the ith column
+//     kmat->mult(path, res);
 
-    // compute the 1-norm of residual
-    temp = res->oneNorm();
-    if (TacsRealPart(temp) > TacsRealPart(local_max)) {
-      local_max = temp;
-    }
-  }
+//     // compute the 1-norm of residual
+//     temp = res->oneNorm();
+//     if (TacsRealPart(temp) > TacsRealPart(local_max)) {
+//       local_max = temp;
+//     }
+//   }
 
-  printf("Exited K for loop\n");
+//   printf("Exited K for loop\n");
 
-  MPI_Barrier(assembler->getMPIComm());
+//   MPI_Barrier(assembler->getMPIComm());
 
-  // maximize the 1-norm among all columns for matrix 1-norm
-  MPI_Allreduce(&local_max, &Knorm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
+//   // maximize the 1-norm among all columns for matrix 1-norm
+//   MPI_Allreduce(&local_max, &Knorm, 1, TACS_MPI_TYPE, MPI_MAX, assembler->getMPIComm());
 
-  // rescale the matrix K
-  //printf("Knorm = %.4e\n", Knorm);
-  kmat->scale(1.0/Knorm);
+//   // rescale the matrix K
+//   //printf("Knorm = %.4e\n", Knorm);
+//   kmat->scale(1.0/Knorm);
 
-  printf("Done with normalize Kmat\n");
+//   printf("Done with normalize Kmat\n");
 
-}
+// }
 
-void TACSLinearBuckling::normalize_gmat() {
-  printf("Starting normalize Gmat\n");
+// void TACSLinearBuckling::normalize_gmat() {
+//   printf("Starting normalize Gmat\n");
 
-  // previously computed Gnorm, but just using Knorm to scale now
+//   // previously computed Gnorm, but just using Knorm to scale now
 
-  // rescale the matrix G
-  gmat->scale(1.0/Knorm);
+//   // rescale the matrix G
+//   gmat->scale(1.0/Knorm);
 
-  printf("Done with normalize Gmat\n");
+//   printf("Done with normalize Gmat\n");
 
-}
+// }
 
 /*
   Retrieve the value of sigma

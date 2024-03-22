@@ -93,6 +93,7 @@ class TACSAssembler : public TACSObject {
                         const double *_depNodeWeights);
 
   void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses);
+  void setComplexStepGmatrix(bool flag);
 
   // Set additional information about the design vector
   // --------------------------------------------------

@@ -274,7 +274,6 @@ cdef extern from "TACSElement.h":
         TACSElementBasis* getElementBasis()
         TACSElementModel* getElementModel()
         ElementType getElementType()
-        void setComplexStepGmatrix(bool)
         TACSElement* createElementTraction(int, const TacsScalar*)
         TACSElement* createElementPressure(int, TacsScalar)
         TACSElement* createElementInertialForce(const TacsScalar*)
@@ -339,7 +338,8 @@ cdef extern from "TACSAssembler.h":
         int getNumElements()
         TACSNodeMap *getNodeMap()
         TACSBcMap *getBcMap()
-        void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses);
+        void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses)
+        void setComplexStepGmatrix(bool flag)
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)

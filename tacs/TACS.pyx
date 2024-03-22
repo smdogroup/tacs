@@ -291,11 +291,6 @@ cdef class Element:
             self.ptr.setComponentNum(comp_num)
         return
 
-    def setComplexStepGmatrix(self, bool complex_step_flag):
-        if self.ptr:
-            self.ptr.setComplexStepGmatrix(complex_step_flag)
-        return
-
     @classmethod
     def setFiniteDifferenceOrder(cls, int order):
         TACSElement.setFiniteDifferenceOrder(order)
@@ -1621,6 +1616,11 @@ cdef class Assembler:
         elem_type = elem.getElementType()
         self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data)
         return stresses
+
+    def setComplexStepGmatrix(self, bool complex_step_flag):
+        if self.ptr:
+            self.ptr.setComplexStepGmatrix(complex_step_flag)
+        return
 
     def setDependentNodes(self,
                           np.ndarray[int, ndim=1, mode='c'] ptr,
