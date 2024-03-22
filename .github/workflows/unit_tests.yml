@@ -103,6 +103,8 @@ jobs:
           make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Install optional dependencies
         run: |
+          # Temp fix until MPhys 1.3.0 is released
+          pip install openmdao==3.30.0;
           # Install petsc for openmdao tests
           conda install -c conda-forge petsc=3.19 petsc4py -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
