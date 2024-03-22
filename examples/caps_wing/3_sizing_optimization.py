@@ -25,7 +25,15 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
     tacs_model
 )
 
+use_stringers = False
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
+aluminum_w_stringer = caps2tacs.Orthotropic.smeared_stringer(
+    aluminum, area_ratio=0.5
+).register_to(tacs_model)
+if use_stringers:
+    material = aluminum_w_stringer
+else:
+    material = aluminum
 
 # setup the thickness design variables + automatic shell properties
 nribs = int(tacs_model.get_config_parameter("nribs"))
@@ -33,15 +41,15 @@ nspars = int(tacs_model.get_config_parameter("nspars"))
 nOML = nribs - 1
 for irib in range(1, nribs + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"rib{irib}", value=0.03, material=aluminum
+        caps_group=f"rib{irib}", value=0.03, material=material
     ).register_to(tacs_model)
 for ispar in range(1, nspars + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"spar{ispar}", value=0.03, material=aluminum
+        caps_group=f"spar{ispar}", value=0.03, material=material
     ).register_to(tacs_model)
 for iOML in range(1, nOML + 1):
     caps2tacs.ThicknessVariable(
-        caps_group=f"OML{iOML}", value=0.1, material=aluminum
+        caps_group=f"OML{iOML}", value=0.1, material=material
     ).register_to(tacs_model)
 
 # add constraints and loads
