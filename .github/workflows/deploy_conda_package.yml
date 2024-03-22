@@ -30,6 +30,10 @@ jobs:
             TARGET: osx-64
             SCALAR: real
 
+          - OS: macos-14
+            TARGET: osx-arm64
+            SCALAR: real
+
           # complex versions
           - OS: ubuntu-latest
             TARGET: linux-64
@@ -37,6 +41,10 @@ jobs:
 
           - OS: macos-latest
             TARGET: osx-64
+            SCALAR: complex
+
+          - OS: macos-14
+            TARGET: osx-arm64
             SCALAR: complex
 
     name: TACS Conda Package Deployment (${{ matrix.TARGET }}, ${{ matrix.SCALAR }})
@@ -62,10 +70,20 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - uses: actions/checkout@v2
       - name: Setup miniconda
+        if: ${{ matrix.OS != 'macos-14' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: 3.8
+          python-version: 3.9
+
+      - name: Setup miniconda (MACOS-14)
+        if: ${{ matrix.OS == 'macos-14' }}
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          python-version: 3.9
+          architecture: arm64
 
       - name: Build TACS package
         run: |

@@ -21,7 +21,7 @@ To get started, run the following in a conda terminal:
 
 ::
 
-    conda create -n TACS -c conda-forge python=3.8 mamba
+    conda create -n TACS -c conda-forge python=3.9 mamba
     conda activate TACS
     mamba install -c conda-forge -c smdogroup tacs
 
