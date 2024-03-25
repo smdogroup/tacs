@@ -43,6 +43,10 @@ set margin1 5.0
 set margin2 3.0
 set margin3 10.0
 
+# composite material coordinate system
+dimension compositeCoord 9 1 0
+set compositeCoord "0;0;0;0.0;1.0;0.0;1.0;0.0;0.0;"
+
 
 ### 1. Wing Solid Body ###
 
@@ -200,6 +204,7 @@ endif
 
 # add AIM attribute to specify the analyses to use
 select body
+csystem   wing   compositeCoord
 attribute capsAIM $egadsTessAIM;tacsAIM
 
 end
