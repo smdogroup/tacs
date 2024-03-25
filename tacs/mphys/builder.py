@@ -190,36 +190,10 @@ class TacsBuilder(Builder):
 
         """
         if isinstance(mesh_file, dict):
-            warnings.warn(
+            raise ValueError(
                 "The signature for TacsBuilder has changed. Arguments such as 'mesh_file' must be passed directly as "
-                "arguments to TacsBuilder. Please see the TacsBuilder docstring for more info. This will become an "
-                "error in tacs 3.7.0",
-                DeprecationWarning,
+                "arguments to TacsBuilder. Please see the TacsBuilder docstring for more info."
             )
-            options = mesh_file
-            # Make deep copy of dict so we can modify it
-            pytacs_options = copy.deepcopy(options)
-            mesh_file = pytacs_options.pop("mesh_file")
-
-            # Load optional user-defined callback function for setting up tacs elements
-            if "assembler_setup" in pytacs_options:
-                assembler_setup = pytacs_options.pop("assembler_setup")
-
-            # Load optional user-defined callback function for setting up tacs elements
-            if "element_callback" in pytacs_options:
-                element_callback = pytacs_options.pop("element_callback")
-
-            # Load optional user-defined callback function for setting up tacs elements
-            if "problem_setup" in pytacs_options:
-                problem_setup = pytacs_options.pop("problem_setup")
-
-            # Load optional user-defined callback function for setting up constraints
-            if "constraint_setup" in pytacs_options:
-                constraint_setup = pytacs_options.pop("constraint_setup")
-
-            # Load optional user-defined callback function for setting up buckling problem
-            if "buckling_setup" in pytacs_options:
-                buckling_setup = pytacs_options.pop("buckling_setup")
 
         self.mesh_file = mesh_file
         self.assembler_setup = assembler_setup
