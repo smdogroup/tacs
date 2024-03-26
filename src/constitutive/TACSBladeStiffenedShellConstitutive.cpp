@@ -2786,11 +2786,11 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
     *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root + 1e-13);
   }
   if (dfdN1Crit != NULL) {
-    *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root) -
+    *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root + 1e-13) -
                  N1 / (2.0 * N1Crit * N1Crit);
   }
   if (dfdN12Crit != NULL) {
-    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit * root);
+    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit * root + 1e-13);
   }
   return bucklingEnvelope(N1, N1Crit, N12, N12Crit);
 }
