@@ -2780,10 +2780,10 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
   TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
   if (dfdN1 != NULL) {
     // *dfdN1 = 1.0 / N1Crit;
-    *dfdN1 = N1 / (2.0 * N1Crit * N1Crit * root) + 1.0 / (2.0 * N1Crit);
+    *dfdN1 = N1 / (2.0 * N1Crit * N1Crit * root + 1e-13) + 1.0 / (2.0 * N1Crit);
   }
   if (dfdN12 != NULL) {
-    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root);
+    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root + 1e-13);
   }
   if (dfdN1Crit != NULL) {
     *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root) -
