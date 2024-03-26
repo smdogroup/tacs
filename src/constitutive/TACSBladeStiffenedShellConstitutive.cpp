@@ -2778,7 +2778,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
   TacsScalar N1Term = N1 / N1Crit;
   TacsScalar N12Term = N12 / N12Crit;
   TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
-  if (root == 0.0) {
+  if (TacsRealPart(root) == 0.0) {
     root = 1e-13;
   }
   if (dfdN1 != NULL) {
