@@ -2777,20 +2777,20 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
     TacsScalar* dfdN12, TacsScalar* dfdN12Crit) {
   TacsScalar N1Term = N1 / N1Crit;
   TacsScalar N12Term = N12 / N12Crit;
-  TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
+  TacsScalar root = max(sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term), 1e-13);
   if (dfdN1 != NULL) {
     // *dfdN1 = 1.0 / N1Crit;
-    *dfdN1 = N1 / (2.0 * N1Crit * N1Crit * root + 1e-13) + 1.0 / (2.0 * N1Crit);
+    *dfdN1 = N1 / (2.0 * N1Crit * N1Crit * root) + 1.0 / (2.0 * N1Crit);
   }
   if (dfdN12 != NULL) {
-    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root + 1e-13);
+    *dfdN12 = 2.0 * N12 / (N12Crit * N12Crit * root);
   }
   if (dfdN1Crit != NULL) {
-    *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root + 1e-13) -
+    *dfdN1Crit = -N1 * N1 / (2.0 * N1Crit * N1Crit * N1Crit * root) -
                  N1 / (2.0 * N1Crit * N1Crit);
   }
   if (dfdN12Crit != NULL) {
-    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit * root + 1e-13);
+    *dfdN12Crit = -2.0 * N12 * N12 / (N12Crit * N12Crit * N12Crit * root);
   }
   return bucklingEnvelope(N1, N1Crit, N12, N12Crit);
 }
