@@ -172,6 +172,9 @@ int main(int argc, char *argv[]) {
   TACSAssembler *assembler[max_nlevels];
   TACSCreator *creator[max_nlevels];
 
+  // Flag to indicate the type of solution method
+  int use_gmres = 0;
+
   // Set the dimension of the largest meshes
   int nx = 128;
   int ny = 128;
@@ -196,6 +199,9 @@ int main(int argc, char *argv[]) {
       if (nlevels > max_nlevels) {
         nlevels = max_nlevels;
       }
+    }
+    if (strcmp(argv[k], "use_gmres") == 0) {
+      use_gmres = 1;
     }
   }
 
@@ -315,16 +321,32 @@ int main(int argc, char *argv[]) {
   TACSBVec *ans = assembler[0]->createVec();
   ans->incref();
 
-  // Allocate the GMRES solution method
-  int gmres_iters = 25;
-  int nrestart = 8;
-  int is_flexible = 0;
-  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
-  ksm->incref();
+  TACSKsm *ksm = NULL;
 
-  // Set a monitor to check on solution progress
-  int freq = 1;
-  ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+  if (use_gmres) {
+    // Allocate the GMRES solution method
+    int gmres_iters = 25;
+    int nrestart = 8;
+    int is_flexible = 1;
+    ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+
+    // Set a monitor to check on solution progress
+    int freq = 1;
+    ksm->setMonitor(new KSMPrintStdout("GMRES", rank, freq));
+
+  } else {
+    // Create the PCG object
+    int reset_iter = 100;
+    int max_reset = 100;
+    ksm = new PCG(mg->getMat(0), mg, reset_iter, max_reset);
+
+    // Set a monitor to check on solution progress
+    int freq = 1;
+    ksm->setMonitor(new KSMPrintStdout("PCG", rank, freq));
+  }
+
+  ksm->incref();
+  ksm->setTolerances(1e-12, 1e-30);
 
   // The initial time
   double t0 = MPI_Wtime();
@@ -343,7 +365,7 @@ int main(int argc, char *argv[]) {
   // Factor the preconditioner
   mg->factor();
 
-  // Compute the solution using GMRES
+  // Compute the solution
   ksm->solve(force, ans);
 
   t0 = MPI_Wtime() - t0;

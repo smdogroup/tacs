@@ -5258,11 +5258,6 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
   getDataPointers(elementData, &elemVars, &elemPsi, &elemPhi, NULL, &elemXpts,
                   &xptSens, NULL, NULL);
 
-  // Get the design variables from the elements on this process
-  const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
-
   // Go through each element in the domain and compute the derivative
   // of the residuals with respect to each design variable and multiply by
   // the adjoint variables
