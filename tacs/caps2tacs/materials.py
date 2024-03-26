@@ -1,6 +1,7 @@
 """
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
+
 __all__ = ["Material", "Isotropic", "Orthotropic"]
 
 from typing import TYPE_CHECKING
@@ -155,6 +156,17 @@ class Isotropic(Material):
         )
 
     @classmethod
+    def null(cls):
+        """these properties need to be set then through element callback"""
+        return cls(
+            name="null",
+            E=0.0,
+            nu=0.0,
+            rho=0.0,
+            T1=1.0,
+        )
+
+    @classmethod
     def madeupium(
         cls,
         E=72.0e9,
@@ -300,6 +312,24 @@ class Orthotropic(Material):
             alpha1=alpha1,
             alpha2=alpha2,
             alpha3=alpha3,
+        )
+
+    @classmethod
+    def null(cls):
+        """these properties need to be set then through element callback"""
+        return cls(
+            name="null",
+            E1=0.0,
+            E2=0.0,
+            G12=0.0,
+            nu12=0.0,
+            T1=1.0,
+            C1=1.0,
+            T2=1.0,
+            C2=1.0,
+            S1=1.0,
+            cp=0.0,  # J / kg-K
+            rho=0.0,
         )
 
     @classmethod

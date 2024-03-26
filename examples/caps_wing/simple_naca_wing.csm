@@ -106,8 +106,7 @@ patbeg ispar nspars
    
    # add caps attributes
    attribute capsGroup !$spar+ispar
-   attribute capsBound $spar
-   csystem spar YZcsys
+   csystem !$spar+ispar YZcsys
    ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
@@ -132,8 +131,7 @@ patbeg index ninnerRibs
    
    # add caps attributes
    attribute capsGroup !$rib+irib
-   attribute capsBound $rib
-   csystem rib XZcsys
+   csystem !$rib+irib XZcsys
    ATTRIBUTE AFLR_GBC $TRANSP_UG3_GBC
    attribute _color $green
 
