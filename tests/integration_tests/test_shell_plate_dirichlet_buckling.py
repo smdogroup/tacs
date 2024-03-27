@@ -1,3 +1,18 @@
+"""
+Sean Engelstad, Feb 2024
+GT SMDO Lab
+"""
+import numpy as np
+import unittest
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+
+# 3 main verification cases for the buckling analysis
+# 1, 2, 3
+case = 3
+run_static = False
+
 __all__ = ["FlatPlateAnalysis", "exp_kernel1", "CompositeMaterialUtility"]
 
 import numpy as np
@@ -7,68 +22,6 @@ from pprint import pprint
 from typing_extensions import Self
 
 dtype = utilities.BaseUI.dtype
-
-
-def exp_kernel1(xp, xq, sigma_f, L):
-    # xp, xq are Nx1, Nx1 vectors
-    return sigma_f**2 * np.exp(-0.5 * (xp - xq).T @ (xp - xq) / L**2)
-
-class CompositeMaterialUtility:
-    """
-    utility class for computing composite material properties at an orientation
-    Ref: Fiber Reinforced Composites TB by P.K. Mallick
-    """
-
-    @classmethod
-    def from_fiber_matrix(cls, Ef, Em, nuf, num, vf):
-        Gf = Ef / 2.0 / (1 + nuf)
-        Gm = Em / 2.0 / (1 + num)
-        vm = 1.0 - vf
-
-        E11 = Ef * vf + Em * vm
-        E22 = Ef * Em / (Ef * vm + Em * vf)
-        nu12 = nuf * vf + num * vm
-        G12 = Gf * Gm / (Gf * vm + Gm * nuf)
-        return cls(E11=E11, E22=E22, nu12=nu12, G12=G12)
-
-    def __init__(self, E11, E22, nu12, G12):
-        self.E11 = E11
-        self.E22 = E22
-        self.nu12 = nu12
-        self.G12 = G12
-
-    def rotate_ply(self, angle=0.0):
-        """
-        compute the properties at a general angle
-        assume the input angle is in degrees
-        """
-        # copy previous properties at 0 deg into temp variables
-        E11 = self.E11 * 1.0
-        E22 = self.E22 * 1.0
-        nu12 = self.nu12 * 1.0
-        G12 = self.G12 * 1.0
-
-        # perform rotation to new axis system
-        angle_rad = np.deg2rad(angle)
-        C = np.cos(angle_rad)
-        S = np.sin(angle_rad)
-        C2 = np.cos(2 * angle_rad)
-        S2 = np.sin(2 * angle_rad)
-        self.E11 = (
-            C**4 / E11 + S**4 / E22 + 0.25 * (1.0 / G12 - 2 * nu12 / E11) * S2**2
-        ) ** (-1)
-        self.E22 = (
-            S**4 / E11 + C**4 / E22 + 0.25 * (1.0 / G12 - 2 * nu12 / E11) * S2**2
-        ) ** (-1)
-        _temp1 = 1.0 / E11 + 2.0 * nu12 / E11 + 1.0 / E22
-        self.G12 = (_temp1 - (_temp1 - 1.0 / G12) * C2**2) ** (-1)
-        self.nu12 = self.E11 * (nu12 / E11 - 0.25 * (_temp1 - 1.0 / G12) * S2**2)
-        return self
-
-    def __str__(self):
-        return (
-            f"E11 = {self.E11}, E22 = {self.E22}, nu12 = {self.nu12}, G12 = {self.G12}"
-        )
 
 class FlatPlateAnalysis:
     def __init__(
@@ -109,78 +62,6 @@ class FlatPlateAnalysis:
 
         self._bdf_file = bdf_file
 
-        # temp
-        self._nx = None
-        self._ny = None
-        self._M = None
-        self._N = None
-        self._num_modes = None
-        self._eigenvectors = None
-        self._eigenvalues = None
-        self._alphas = None
-        self._solved_buckling = False
-        self._saved_alphas = False
-
-    MAC_THRESHOLD = 0.1  # 0.6
-
-    @classmethod
-    def mac_permutation(
-        cls, nominal_plate: Self, new_plate: Self, num_modes: int
-    ) -> dict:
-        """
-        compute the permutation of modes in the new plate that correspond to the modes in the nominal plate
-        using 2D Discrete Fourier transform in a model assurance criterion
-        """
-        eigenvalues = [None for _ in range(num_modes)]
-        permutation = {}
-        nominal_interp_modes = nominal_plate.interpolate_eigenvectors(
-            X_test=new_plate.nondim_X
-        )
-        new_modes = new_plate.eigenvectors
-
-        _debug = False
-        if _debug:
-            for imode, interp_mode in enumerate(nominal_interp_modes):
-                interp_mat = new_plate._vec_to_plate_matrix(interp_mode)
-                import matplotlib.pyplot as plt
-
-                plt.imshow(interp_mat.astype(np.double))
-                plt.show()
-
-        for imode, nominal_mode in enumerate(nominal_interp_modes):
-            if imode >= num_modes:  # if larger than number of nominal modes to compare
-                break
-            nominal_mode_unit = nominal_mode / np.linalg.norm(nominal_mode)
-
-            similarity_list = []
-            for new_mode in new_modes:
-                new_mode_unit = new_mode / np.linalg.norm(new_mode)
-                # compute cosine similarity with the unit vectors
-                similarity_list += [
-                    abs(np.dot(nominal_mode_unit, new_mode_unit).astype(np.double))
-                ]
-
-            # compute the maximum similarity index
-            if _debug:
-                print(f"similarity list imode {imode} = {similarity_list}")
-            jmode_star = np.argmax(np.array(similarity_list))
-            permutation[imode] = jmode_star
-            if similarity_list[jmode_star] > cls.MAC_THRESHOLD:  # similarity threshold
-                eigenvalues[imode] = new_plate.eigenvalues[jmode_star]
-
-        # check the permutation map is one-to-one
-
-        # print to the terminal about the modal criterion
-        print(f"0-based mac criterion permutation map")
-        print(
-            f"\tbetween nominal plate {nominal_plate._plate_name} and new plate {new_plate._plate_name}"
-        )
-        print(f"\tthe permutation map is the following::\n")
-        for imode in range(num_modes):
-            print(f"\t nominal {imode} : new {permutation[imode]}")
-
-        return eigenvalues, permutation
-
     @property
     def static_folder_name(self) -> str:
         if self._plate_name:
@@ -194,164 +75,6 @@ class FlatPlateAnalysis:
             return "buckling-" + self._plate_name
         else:
             return "buckling"
-
-    @classmethod
-    def get_materials(cls):
-        return [
-            cls.solvay5320,
-            cls.solvayMTM45,
-            cls.torayBT250E,
-            cls.hexcelIM7,
-            cls.victrexAE,
-        ]
-    
-    @classmethod
-    def get_material_from_str(cls, mat_name:str):
-        method_names = [_.__qualname__ for _ in cls.get_materials()]
-        materials = cls.get_materials()
-        _method = None
-        for i,method_name in enumerate(method_names):
-            if mat_name in method_name:
-                _method = materials[i]
-        assert _method is not None
-        return _method
-
-    # MATERIALS CLASS METHODS
-    # -----------------------------------------------------------
-
-    # NIAR composite materials
-
-    @classmethod
-    def solvay5320(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        NIAR dataset - Solvay 5320-1 material (thermoset)
-        Fiber: T650 unitape, Resin: Cycom 5320-1
-        Room Temperature Dry (RTD) mean properties shown below
-        units in Pa, ND
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=138.461e9, E22=9.177e9, nu12=0.326, G12=4.957e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="solvay5320",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def solvayMTM45(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        NIAR dataset - Solvay MTM45 material (thermoset)
-        Style: 12K AS4 Unidirectional
-        Room Temperature Dry (RTD) mean properties shown below
-        units in Pa, ND
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=129.5e9, E22=7.936e9, nu12=0.313, G12=4.764e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="solvayMTM45",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def torayBT250E(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        NIAR dataset - Toray (formerly Tencate) BT250E-6 S2 Unitape Gr 284 material (thermoset)
-        Room Temperature Dry (RTD) mean properties shown below
-        units in Pa, ND
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=44.74e9, E22=11.36e9, nu12=0.278, G12=3.77e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="torayBT250E",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def victrexAE(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        NIAR dataset - Victrex AE 250 LMPAEK (thermoplastic)
-        Room Temperature Dry (RTD) mean properties shown below
-        units in Pa, ND
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=131.69e9, E22=9.694e9, nu12=0.3192, G12=4.524e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="victrexAE",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
-
-    @classmethod
-    def hexcelIM7(cls, comm, bdf_file, a, b, h, ply_angle=0.0):
-        """
-        NIAR dataset - Hexcel 8552 IM7 Unidirectional Prepreg (thermoset)
-        Room Temperature Dry (RTD) mean properties shown below
-        units in Pa, ND
-        """
-        comp_utility = CompositeMaterialUtility(
-            E11=158.51e9, nu12=0.316, E22=8.96e9, G12=4.688e9
-        )
-        comp_utility.rotate_ply(ply_angle)
-
-        return cls(
-            comm=comm,
-            bdf_file=bdf_file,
-            a=a,
-            b=b,
-            h=h,
-            material_name="hexcelIM7",
-            ply_angle=ply_angle,
-            E11=comp_utility.E11,
-            E22=comp_utility.E22,
-            nu12=comp_utility.nu12,
-            G12=comp_utility.G12,
-        )
 
     @property
     def bdf_file(self) -> str:
@@ -466,124 +189,10 @@ class FlatPlateAnalysis:
         """
         return self.b / self.h
 
-    def _vec_to_plate_matrix(self, vec):
-        """
-        build a matrix for transforming column vectors MN x 1 to M x N matrices
-        for the mesh for Modal assurance criterion
-        """
-        return np.array(
-            [[vec[self._M * j + i] for j in range(self._N)] for i in range(self._M)],
-            dtype=dtype,
-        )
-
     def get_eigenvector(self, imode):
         # convert eigenvectors to w coordinates only, 6 dof per shell
         # print(f"ndof in eigenvector = {self._eigenvectors[imode].shape[0]}")
         return self._eigenvectors[imode][2::6]
-
-    @property
-    def eigenvectors(self):
-        return [self.get_eigenvector(imode) for imode in range(self.num_modes)]
-
-    @property
-    def eigenvalues(self):
-        return self._eigenvalues
-
-    @property
-    def num_nodes(self) -> int:
-        return self._N * self._M
-
-    @property
-    def nondim_X(self):
-        """non-dimensional X matrix for Gaussian Process model"""
-        return np.concatenate(
-            [np.expand_dims(self._xi, axis=-1), np.expand_dims(self._eta, axis=-1)],
-            axis=1,
-        )
-
-    def interpolate_eigenvectors(self, X_test, compute_covar=False):
-        """
-        interpolate the eigenvector from this object the nominal plate to a new mesh in non-dim coordinates
-        """
-        X_train = self.nondim_X
-        num_train = self.num_nodes
-        num_test = X_test.shape[0]
-        # default hyperparameters
-        sigma_n = 1e-4
-        sigma_f = 1.0
-        L = 0.4
-        _kernel = lambda xp, xq: exp_kernel1(xp, xq, sigma_f=sigma_f, L=L)
-        K_train = sigma_n**2 * np.eye(num_train) + np.array(
-            [
-                [_kernel(X_train[i, :], X_train[j, :]) for i in range(num_train)]
-                for j in range(num_train)
-            ]
-        )
-        K_test = np.array(
-            [
-                [_kernel(X_train[i, :], X_test[j, :]) for i in range(num_train)]
-                for j in range(num_test)
-            ]
-        )
-
-        if not compute_covar:
-            _interpolated_eigenvectors = []
-            for imode in range(self.num_modes):
-                phi = self.get_eigenvector(imode)
-                if self._saved_alphas:  # skip linear solve in this case
-                    alpha = self._alphas[imode]
-                else:
-                    alpha = np.linalg.solve(K_train, phi)
-                    self._alphas[imode] = alpha
-                phi_star = K_test @ alpha
-                _interpolated_eigenvectors += [phi_star]
-            self._saved_alphas = True
-            return _interpolated_eigenvectors
-        else:
-            raise AssertionError(
-                "Haven't written part of extrapolate eigenvector to get the conditional covariance yet."
-            )
-
-    # decided no longer to do the discrete fourier transform approach for modal assurance criterion
-    # -----------------------------------------------------------------------------------------------
-    #
-    # def _dft_matrix(self, k, l):
-    #     """compute the Fourier matrix np.exp(-2*pi*sqrt(-1) * (km/M + ln/N)) in inline for loops (faster)"""
-    #     return np.array([[np.exp(-2 * np.pi*1j * (k*m/self._M + l*n/self._N)) for n in range(self._N)] for m in range(self._M)])
-
-    # def twod_DFT(self, eig_matrix):
-    #     """
-    #     perform the 2D Discrete Fourier Transform on the eigenvector
-    #     in a meshgrid / matrix form (since this is a 2D mesh)
-    #     report the amplitudes of the first 25 Fourier entries
-    #     """
-
-    #     dft_amplitudes = []
-    #     for k in range(5):
-    #         for l in range(5):
-    #             # compute Phi_kl using DFT
-    #             _debug = True
-    #             if _debug: # see the eigenvectors
-    #                 import matplotlib.pyplot as plt
-    #                 plt.title(f"k = {k}, l = {l}")
-    #                 plt.imshow(np.real(self._dft_matrix(k,l)))
-    #                 plt.show()
-    #             Phi_kl = 1.0 / self._M / self._N * np.sum(eig_matrix * self._dft_matrix(k,l))
-    #             dft_amplitudes += [np.abs(Phi_kl)]
-    #     return np.array(dft_amplitudes)
-    # def get_fourier_eigenvector(self, imode):
-    #     """
-    #     get the 2D DFT fourier amplitude vector for each mode
-    #     used for cosine similarity among different flat plates
-    #     """
-    #     eigvec = self.get_eigenvector(imode)
-    #     eigvec_matrix = self._vec_to_plate_matrix(eigvec)
-    #     _debug = False
-    #     if _debug: # see the eigenvectors
-    #         import matplotlib.pyplot as plt
-    #         plt.imshow(eigvec_matrix.astype(np.double))
-    #         plt.show()
-    #     return self.twod_DFT(eigvec_matrix)
 
     @property
     def num_modes(self) -> int:
@@ -614,11 +223,6 @@ class FlatPlateAnalysis:
         # copy coordinates for use later in the modal assurance criterion
         self._x = x
         self._y = y
-        # nodes count across the x-axis first then loop over y-axis from bot-left corner
-        self._xi = [
-            self._x[i % self._M] / self.a for i in range(self.num_nodes)
-        ]  # non-dim coordinates
-        self._eta = [self._y[int(i / self._M)] / self.b for i in range(self.num_nodes)]
 
         if self.comm.rank == 0:
             fp = open(self.bdf_file, "w")
@@ -875,3 +479,197 @@ class FlatPlateAnalysis:
 
         # return the eigenvalues here
         return np.array([funcs[key] for key in funcs]), np.array(errors)
+
+
+class TestPlateCases(unittest.TestCase):
+    # use the same flat plate geometry and material through all three test cases
+    flat_plate = FlatPlateAnalysis(
+        comm=comm,
+        bdf_file="plate.bdf",
+        a=1.0,
+        b=0.7,
+        h=0.07,
+        E11=70e9,
+        nu12=0.33,
+        E22=None,  # set to None if isotropic
+        G12=None,  # set to None if isotropic
+    )
+
+    def test_uniaxial_compression(self):
+        # case 1 - simply supported, uniaxial compression buckling
+
+        self.flat_plate.generate_bdf(
+            nx=10,
+            ny=10,
+            exx=0.001,
+            eyy=0.0,
+            exy=0.0,
+            clamped=False,
+        )
+
+        # flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+            sigma=30.0, num_eig=12, write_soln=True
+        )
+
+        # eigenvalues from Abaqus for comparison
+        abaqus_eigvals = np.array([36.083, 38.000, 51.634, 72.896, 96.711, 113.94])
+        rel_error = (tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
+
+        print(
+            f"\n\nVerification of case 1 - uniaxial compression,\n\tsimply supported plate buckling modes\n"
+        )
+        for i in range(6):
+            print(f"mode {i+1} eigenvalues:")
+            print(
+                f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
+            )
+
+        # relaxed the max relative error requirement due to very coarse mesh
+        assert np.max(np.abs(rel_error)) < 0.2
+
+    def test_pure_shear_clamped(self):
+        # case 2 - pure shear, clamped plate
+        self.flat_plate.generate_bdf(
+            nx=10,
+            ny=10,
+            exx=0.0,
+            eyy=0.0,
+            exy=0.001,
+            clamped=True,
+        )
+
+        # flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+            sigma=30.0, num_eig=12, write_soln=True
+        )
+
+        # every other shear mode has negative eigenvalue (since reverse shear load will still cause failure by sym)
+        pos_tacs_eigvals = [eigval for eigval in tacs_eigvals if eigval > 0.0]
+
+        # eigenvalues from Abaqus for comparison
+        abaqus_eigvals = np.array([111.79, 115.45, 169.71, 181.02, 236.06, 242.07])
+        rel_error = (pos_tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
+
+        print(
+            f"\n\nVerification of case 2 - pure shear,\n\tclamped plate buckling modes\n"
+        )
+        for i in range(6):
+            print(f"mode {i+1} eigenvalues:")
+            print(
+                f"\ttacs = {pos_tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
+            )
+
+        # relaxed the max relative error requirement due to very coarse mesh
+        assert np.max(np.abs(rel_error)) < 0.2
+
+    def test_combined_axial_shear_clamped(self):
+        # case 3 - mixed shear and uniaxial compression case, clamped plate
+        self.flat_plate.generate_bdf(
+            nx=10,
+            ny=10,
+            exx=0.001,
+            eyy=0.0,
+            exy=0.001,
+            clamped=True,
+        )
+
+        # flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+            sigma=30.0, num_eig=12, write_soln=True
+        )
+
+        # eigenvalues from Abaqus for comparison
+        abaqus_eigvals = np.array([42.237, 42.290, 59.616, 68.999, 88.243, 91.976])
+        rel_error = (tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
+
+        print(
+            f"\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n"
+        )
+        for i in range(6):
+            print(f"mode {i+1} eigenvalues:")
+            print(
+                f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
+            )
+
+        # relaxed the max relative error requirement due to very coarse mesh
+        assert np.max(np.abs(rel_error)) < 0.2
+
+    def test_affine_simply_supported(self):
+        flat_plate = FlatPlateAnalysis(
+            comm=comm,
+            bdf_file="plate.bdf",
+            a=1.0,
+            b=1.0,
+            h=0.005,  # very slender => so near thin plate limit
+            E11=70e9,
+            nu12=0.33,
+            E22=None,  # set to None if isotropic
+            G12=None,  # set to None if isotropic
+        )
+
+        flat_plate.generate_bdf(
+            nx=10,
+            ny=10,
+            exx=flat_plate.affine_exx,
+            eyy=0.0,
+            exy=0.0,
+            clamped=False,
+        )
+
+        # avg_stresses = flat_plate.run_static_analysis(write_soln=True)
+
+        tacs_eigvals, _ = flat_plate.run_buckling_analysis(
+            sigma=10.0, num_eig=12, write_soln=True
+        )
+
+        # expect to get ~4.5
+        # since k0-2D* = (m a_0/b_0)^2 + (b_0/a_0/m)^2
+        # in affine space and D*=1 and k0-2D* = 2.5 in Brunelle paper (buckling-analysis section)
+        # "Generic Buckling Curves For Specially Orthotropic Rectangular Plates"
+        # but only works in thin plate limit (very thin)
+
+        kx_0 = tacs_eigvals[0]  # exx_affine was scaled so that lambda = kx_0
+        # the non-dimensional buckling coefficient
+
+        kx_0_exact = 2.5 + 2.0 * flat_plate.Dstar
+        rel_err = (kx_0 - kx_0_exact) / kx_0_exact
+
+        print(f"Case 4 - Compare affine curve simply supported uniaxial compression..")
+        print(
+            f"\tDstar = {flat_plate.Dstar}, b/h = {flat_plate.slenderness} (near thin plate limit)"
+        )
+        print(f"\tkx0 pred = {kx_0}")
+        print(f"\tkx0 exact = {kx_0_exact}")
+        print(f"\tkx0 rel error = {rel_err}")
+
+        # relaxed the max relative error requirement due to very coarse mesh
+        assert np.max(np.abs(rel_err)) < 0.2
+
+
+if __name__ == "__main__":
+    test = "all"
+
+    # run all cases with this
+    if test == "all":
+        unittest.main()
+
+    elif test == 1:
+        # run individual cases here
+        tester = TestPlateCases()
+        tester.test_uniaxial_compression()
+
+    elif test == 2:
+        tester = TestPlateCases()
+        tester.test_pure_shear_clamped()
+
+    elif test == 3:
+        tester = TestPlateCases()
+        tester.test_combined_axial_shear_clamped()
+
+    elif test == 4:
+        tester = TestPlateCases()
+        tester.test_affine_simply_supported()

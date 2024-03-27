@@ -804,7 +804,12 @@ class BucklingProblem(TACSProblem):
     
     def getModalError(self, index):
         """
-        get the error associated with a particular mode
+        Return the error associated with a particular mode
+
+        Parameters
+        ----------
+        index: int
+            Mode index to return solution for
         """
         eigVal, err = self.buckleSolver.extractEigenvalue(index)
         return err

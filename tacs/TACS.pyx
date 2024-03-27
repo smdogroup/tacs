@@ -1642,8 +1642,6 @@ cdef class Assembler:
         if elems is NULL:
             raise MemoryError()
 
-        print(f"adding elems!", flush=True)
-
         for i in range(len(elements)):
             elems[i] = (<Element>elements[i]).ptr
 
@@ -1662,8 +1660,6 @@ cdef class Assembler:
         cdef int vars_dim = -1
         cdef int *vars_data = NULL
         cdef TacsScalar *values_data = NULL
-
-        print(f"adding BCs!", flush=True)
 
         # Unwrap the boundary condition information
         if _vars is not None:
