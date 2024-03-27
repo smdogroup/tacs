@@ -57,6 +57,12 @@ class TACSElement : public TACSObject {
   int getComponentNum() { return componentNum; }
 
   /**
+   * get average stresses in the element
+  */
+  virtual void getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar *avgStresses) {}
+
+  /**
     Get a string representation of the element name
 
     @return The name of the element
@@ -223,6 +229,20 @@ class TACSElement : public TACSObject {
       const bool first_order = false) {
     return NULL;
   }
+
+  /**
+    Set complexStep mode for Gmatrix (default false)
+
+    @param complexStepFlag The flag for turning on complex step
+  */
+  void setComplexStepGmatrix(bool complexStepFlag) {
+    complexStepGmatrix = complexStepFlag;
+  };
+
+  /**
+    get complexStep mode for Gmatrix (default false)
+  */
+  bool getComplexStepGmatrix() {return complexStepGmatrix;};
 
   /**
     Get the type of element layout for visualization
@@ -745,6 +765,7 @@ class TACSElement : public TACSObject {
 
  private:
   int componentNum;
+  bool complexStepGmatrix = false;
   // Defines order of finite differencing method
   static int fdOrder;
 };

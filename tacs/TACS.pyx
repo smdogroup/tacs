@@ -1606,6 +1606,22 @@ cdef class Assembler:
 
         return
 
+    def getAverageStresses(self):
+        cdef Element elem
+        cdef ElementType elem_type
+        cdef np.ndarray stresses
+
+        stresses = np.zeros((9), dtype=dtype)
+        elem = self.getElements()[0]
+        elem_type = elem.getElementType()
+        self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data)
+        return stresses
+
+    def setComplexStepGmatrix(self, bool complex_step_flag):
+        if self.ptr:
+            self.ptr.setComplexStepGmatrix(complex_step_flag)
+        return
+
     def setDependentNodes(self,
                           np.ndarray[int, ndim=1, mode='c'] ptr,
                           np.ndarray[int, ndim=1, mode='c'] conn,
@@ -1626,6 +1642,8 @@ cdef class Assembler:
         if elems is NULL:
             raise MemoryError()
 
+        print(f"adding elems!", flush=True)
+
         for i in range(len(elements)):
             elems[i] = (<Element>elements[i]).ptr
 
@@ -1644,6 +1662,8 @@ cdef class Assembler:
         cdef int vars_dim = -1
         cdef int *vars_data = NULL
         cdef TacsScalar *values_data = NULL
+
+        print(f"adding BCs!", flush=True)
 
         # Unwrap the boundary condition information
         if _vars is not None:
