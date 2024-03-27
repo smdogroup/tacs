@@ -90,6 +90,12 @@ class TACSShellElement : public TACSElement {
     return quadrature::getQuadratureWeight(n);
   }
 
+  void setComplexStepGmatrix(bool complexStepFlag) {
+    complexStepGmatrix = complexStepFlag;
+  };
+
+  bool getComplexStepGmatrix() {return complexStepGmatrix;};
+
   double getQuadraturePoint(int n, double pt[]) {
     return quadrature::getQuadraturePoint(n, pt);
   }

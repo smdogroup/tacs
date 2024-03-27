@@ -8,18 +8,10 @@ from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
-# 3 main verification cases for the buckling analysis
-# 1, 2, 3
-case = 3
-run_static = False
-
-__all__ = ["FlatPlateAnalysis", "exp_kernel1", "CompositeMaterialUtility"]
-
 import numpy as np
 from tacs import pyTACS, constitutive, elements, utilities
 import os
 from pprint import pprint
-from typing_extensions import Self
 
 dtype = utilities.BaseUI.dtype
 
@@ -188,16 +180,6 @@ class FlatPlateAnalysis:
         theory which includes shear is required.
         """
         return self.b / self.h
-
-    def get_eigenvector(self, imode):
-        # convert eigenvectors to w coordinates only, 6 dof per shell
-        # print(f"ndof in eigenvector = {self._eigenvectors[imode].shape[0]}")
-        return self._eigenvectors[imode][2::6]
-
-    @property
-    def num_modes(self) -> int:
-        """number of eigenvalues or modes that were recorded"""
-        return self._num_modes
 
     def generate_bdf(self, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0, clamped=True):
         """
