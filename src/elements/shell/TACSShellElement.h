@@ -36,6 +36,8 @@ class TACSShellElement : public TACSElement {
   // this constant is used in many locations within the element.
   static const int num_nodes = basis::NUM_NODES;
 
+  bool complexStepGmatrix = false;
+
   TACSShellElement(TACSShellTransform *_transform,
                    TACSShellConstitutive *_con) {
     transform = _transform;

@@ -1617,11 +1617,6 @@ cdef class Assembler:
         self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data)
         return stresses
 
-    def setComplexStepGmatrix(self, bool complex_step_flag):
-        if self.ptr:
-            self.ptr.setComplexStepGmatrix(complex_step_flag)
-        return
-
     def setDependentNodes(self,
                           np.ndarray[int, ndim=1, mode='c'] ptr,
                           np.ndarray[int, ndim=1, mode='c'] conn,

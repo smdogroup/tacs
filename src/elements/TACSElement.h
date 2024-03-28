@@ -751,7 +751,6 @@ class TACSElement : public TACSObject {
 
  private:
   int componentNum;
-  bool complexStepGmatrix = false;
   // Defines order of finite differencing method
   static int fdOrder;
 };

@@ -2,6 +2,7 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
+
 import numpy as np
 import unittest
 from mpi4py import MPI
@@ -14,6 +15,7 @@ import os
 from pprint import pprint
 
 dtype = utilities.BaseUI.dtype
+
 
 class FlatPlateAnalysis:
     def __init__(
@@ -123,9 +125,7 @@ class FlatPlateAnalysis:
         get the exx so that lambda = kx_0 the affine buckling coefficient for pure axial load
         out of the buckling analysis!
         """
-        exx_T = (
-            np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
-        )
+        exx_T = np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
         return exx_T
 
     @property
@@ -142,7 +142,14 @@ class FlatPlateAnalysis:
         option = 2
         # option 1 - based on self derivation (but didn't match data well)
         if option == 1:
-            exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
+            exy_T = (
+                np.pi**2
+                * (self.D11 * self.D22) ** 0.5
+                / self.a
+                / self.b
+                / self.h
+                / self.G12
+            )
         # option 2 - based on NASA non-dimensional buckling parameter derivation (much better)
         elif option == 2:
             exy_T = (
@@ -358,11 +365,15 @@ class FlatPlateAnalysis:
                 else:
                     raise AssertionError("Non CQUAD4 Elements in this plate?")
 
+                # set the complex step Gmatrix flag on
+                elem.setComplexStepGmatrix(True)
+
                 elemList.append(elem)
 
             # Add scale for thickness dv
             scale = [100.0]
             return elemList, scale
+
         return elemCallBack
 
     def run_static_analysis(self, base_path=None, write_soln=False):
@@ -378,7 +389,7 @@ class FlatPlateAnalysis:
         FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
-        FEAAssembler.assembler.setComplexStepGmatrix(True)
+        # FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # debug the static problem first
         SP = FEAAssembler.createStaticProblem(name="static")
@@ -415,7 +426,7 @@ class FlatPlateAnalysis:
         FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
-        FEAAssembler.assembler.setComplexStepGmatrix(True)
+        # FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # Setup buckling problem
         bucklingProb = FEAAssembler.createBucklingProblem(
@@ -491,7 +502,7 @@ class TestPlateCases(unittest.TestCase):
 
         # flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+        tacs_eigvals, _ = self.flat_plate.run_buckling_analysis(
             sigma=30.0, num_eig=12, write_soln=True
         )
 
@@ -524,7 +535,7 @@ class TestPlateCases(unittest.TestCase):
 
         # flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+        tacs_eigvals, _ = self.flat_plate.run_buckling_analysis(
             sigma=30.0, num_eig=12, write_soln=True
         )
 
@@ -560,7 +571,7 @@ class TestPlateCases(unittest.TestCase):
 
         # flat_plate.run_static_analysis(write_soln=True)
 
-        tacs_eigvals,_ = self.flat_plate.run_buckling_analysis(
+        tacs_eigvals, _ = self.flat_plate.run_buckling_analysis(
             sigma=30.0, num_eig=12, write_soln=True
         )
 

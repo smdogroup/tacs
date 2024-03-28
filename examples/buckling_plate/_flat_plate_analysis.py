@@ -772,6 +772,9 @@ class FlatPlateAnalysis:
                 else:
                     raise AssertionError("Non CQUAD4 Elements in this plate?")
 
+                # set the complex step Gmatrix flag on
+                elem.setComplexStepGmatrix(True)
+
                 elemList.append(elem)
 
             # Add scale for thickness dv
@@ -792,7 +795,7 @@ class FlatPlateAnalysis:
         FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
-        FEAAssembler.assembler.setComplexStepGmatrix(True)
+        # FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # debug the static problem first
         SP = FEAAssembler.createStaticProblem(name="static")
@@ -829,7 +832,7 @@ class FlatPlateAnalysis:
         FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
-        FEAAssembler.assembler.setComplexStepGmatrix(True)
+        #FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # Setup buckling problem
         bucklingProb = FEAAssembler.createBucklingProblem(
