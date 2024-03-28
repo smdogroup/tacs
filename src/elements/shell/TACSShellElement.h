@@ -18,7 +18,7 @@
 
 template <class quadrature, class basis, class director, class model>
 class TACSShellElement : public TACSElement {
- public:
+public:
   // Offset within the solution vector to the rotational
   // parametrization defined via the director class. Here the offset
   // is 3 corresponding to the (u, v, w) displacements of the
@@ -96,7 +96,7 @@ class TACSShellElement : public TACSElement {
     complexStepGmatrix = complexStepFlag;
   };
 
-  bool getComplexStepGmatrix() {return complexStepGmatrix;};
+  bool getComplexStepGmatrix() { return complexStepGmatrix; };
 
   double getQuadraturePoint(int n, double pt[]) {
     return quadrature::getQuadraturePoint(n, pt);
@@ -201,12 +201,12 @@ class TACSShellElement : public TACSElement {
                      const TacsScalar dvars[], const TacsScalar ddvars[],
                      int ld_data, TacsScalar *data);
 
-  void getAverageStresses(
-    int elemIndex, ElementType etype, const TacsScalar Xpts[], 
-    const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar *avgStresses);
+  void getAverageStresses(int elemIndex, ElementType etype,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          TacsScalar *avgStresses);
 
- private:
+private:
   // Set sizes for the different components
   static const int usize = 3 * num_nodes;
   static const int dsize = 3 * num_nodes;
@@ -277,15 +277,15 @@ void TACSShellElement<quadrature, basis, director, model>::computeEnergies(
     detXd *= weight;
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
-    TacsScalar e[9];  // The components of the strain
+    TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = et;
 
@@ -381,15 +381,15 @@ void TACSShellElement<quadrature, basis, director, model>::addResidual(
     detXd *= weight;
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
-    TacsScalar e[9];  // The components of the strain
+    TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = et;
 
@@ -488,9 +488,9 @@ void TACSShellElement<quadrature, basis, director, model>::addJacobian(
   TacsScalar d2etyu[basis::NUM_TYING_POINTS * usize];
   TacsScalar d2etyd[basis::NUM_TYING_POINTS * dsize];
   memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
-  memset(
-      d2ety, 0,
-      basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  memset(d2ety, 0,
+         basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS *
+             sizeof(TacsScalar));
   memset(d2etyu, 0, basis::NUM_TYING_POINTS * usize * sizeof(TacsScalar));
   memset(d2etyd, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
 
@@ -544,15 +544,15 @@ void TACSShellElement<quadrature, basis, director, model>::addJacobian(
     detXd *= weight;
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
-    TacsScalar e[9];  // The components of the strain
+    TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = et;
 
@@ -689,16 +689,16 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 #ifdef TACS_USE_COMPLEX
   if (_complexStepGmatrix) {
     dh_mag = 1e-30;
-    dh = TacsScalar(0.0,dh_mag);
+    dh = TacsScalar(0.0, dh_mag);
   }
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
 
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
     alpha = 1.0;
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
-  } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
+  } else { // TACS_GEOMETRIC_STIFFNESS_MATRIX
     // Approximate geometric stiffness using directional derivative of
     // tangential stiffness projected along path of current state vars
 
@@ -736,14 +736,15 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
     // rescale by 1.0/i if complex_step_override is on
 #ifdef TACS_USE_COMPLEX
-  if (_complexStepGmatrix) {
-    // take imaginary part of the element matrix
-    for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes; i++) {
-      mat[i] = TacsScalar(TacsImagPart(mat[i]), 0.0);
+    if (_complexStepGmatrix) {
+      // take imaginary part of the element matrix
+      for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes;
+           i++) {
+        mat[i] = TacsScalar(TacsImagPart(mat[i]), 0.0);
+      }
     }
-  }
-#endif  // TACS_USE_COMPLEX
-    
+#endif // TACS_USE_COMPLEX
+
     delete[] path;
 
     return;
@@ -811,18 +812,18 @@ void TACSShellElement<quadrature, basis, director, model>::addAdjResProduct(
     detXd *= weight;
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6], gtyd[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6], gtyd[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
     basis::interpTyingStrain(pt, etyd, gtyd);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6], e0tyd[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6], e0tyd[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
     mat3x3SymmTransformTranspose(XdinvT, gtyd, e0tyd);
 
     // Compute the set of strain components
-    TacsScalar e[9];   // The components of the strain
-    TacsScalar ed[9];  // The directional derivative components of the strain
+    TacsScalar e[9];  // The components of the strain
+    TacsScalar ed[9]; // The directional derivative components of the strain
     model::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd, e0tyd, e, ed);
     e[8] = et;
     ed[8] = etd;
@@ -888,21 +889,21 @@ int TACSShellElement<quadrature, basis, director, model>::evalPointQuantity(
           pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
 
       // Evaluate the tying components of the strain
-      TacsScalar gty[6];  // The symmetric components of the tying strain
+      TacsScalar gty[6]; // The symmetric components of the tying strain
       basis::interpTyingStrain(pt, ety, gty);
 
       // Compute the symmetric parts of the tying strain
-      TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+      TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
       mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
       // Compute the set of strain components
-      TacsScalar e[9];  // The components of the strain
+      TacsScalar e[9]; // The components of the strain
       model::evalStrain(u0x, u1x, e0ty, e);
       e[8] = 0.0;
 
       if (quantityType == TACS_FAILURE_INDEX) {
         *quantity = con->evalFailure(elemIndex, pt, X, e);
-      } else {  // quantityType == TACS_STRAIN_ENERGY_DENSITY
+      } else { // quantityType == TACS_STRAIN_ENERGY_DENSITY
         TacsScalar s[9];
         con->evalStress(elemIndex, pt, X, e, s);
         *quantity = 0.0;
@@ -1067,21 +1068,21 @@ void TACSShellElement<quadrature, basis, director, model>::
         pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
-    TacsScalar e[9];  // The components of the strain
+    TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = 0.0;
 
     if (quantityType == TACS_FAILURE_INDEX) {
       con->addFailureDVSens(elemIndex, scale * dfdq[0], pt, X, e, dvLen, dfdx);
-    } else {  // quantityType == TACS_STRAIN_ENERGY_DENSITY
+    } else { // quantityType == TACS_STRAIN_ENERGY_DENSITY
       TacsScalar s[9];
       con->evalStress(elemIndex, pt, X, e, s);
       con->addStressDVSens(elemIndex, scale * dfdq[0], pt, X, e, e, dvLen,
@@ -1234,15 +1235,15 @@ void TACSShellElement<quadrature, basis, director, model>::
         pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
 
     // Evaluate the tying components of the strain
-    TacsScalar gty[6];  // The symmetric components of the tying strain
+    TacsScalar gty[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, ety, gty);
 
     // Compute the symmetric parts of the tying strain
-    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
     mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
     // Compute the set of strain components
-    TacsScalar e[9];  // The components of the strain
+    TacsScalar e[9]; // The components of the strain
     model::evalStrain(u0x, u1x, e0ty, e);
     e[8] = 0.0;
 
@@ -1250,7 +1251,7 @@ void TACSShellElement<quadrature, basis, director, model>::
     if (quantityType == TACS_FAILURE_INDEX) {
       // Compute the sensitivity of the failure index w.r.t. the strain
       con->evalFailureStrainSens(elemIndex, pt, X, e, sens);
-    } else {  // quantityType == TACS_STRAIN_ENERGY_DENSITY
+    } else { // quantityType == TACS_STRAIN_ENERGY_DENSITY
       // Compute the sensitivity of the strain energy density w.r.t. the strain
       con->evalStress(elemIndex, pt, X, e, sens);
       for (int i = 0; i < 9; i++) {
@@ -1292,7 +1293,7 @@ void TACSShellElement<quadrature, basis, director, model>::
 */
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
-    int elemIndex, ElementType etype, const TacsScalar Xpts[], 
+    int elemIndex, ElementType etype, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar *avgStresses) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
@@ -1326,7 +1327,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
       loc_avgStresses[i] = 0.0;
     }
 
-    //printf("num vis nodes = %d\n", num_vis_nodes);
+    // printf("num vis nodes = %d\n", num_vis_nodes);
 
     // Loop over each quadrature point and add the residual contribution
     for (int index = 0; index < num_vis_nodes; index++) {
@@ -1351,15 +1352,15 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
           pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
 
       // Evaluate the tying components of the strain
-      TacsScalar gty[6];  // The symmetric components of the tying strain
+      TacsScalar gty[6]; // The symmetric components of the tying strain
       basis::interpTyingStrain(pt, ety, gty);
 
       // Compute the symmetric parts of the tying strain
-      TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+      TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
       mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
       // Compute the set of strain components
-      TacsScalar e[9];  // The components of the strain
+      TacsScalar e[9]; // The components of the strain
       model::evalStrain(u0x, u1x, e0ty, e);
       e[8] = et;
 
@@ -1368,7 +1369,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
       con->evalStress(elemIndex, pt, X, e, s);
 
       for (int i = 0; i < 9; i++) {
-        //printf("s[%d] = %.6f\n", i, s[i]);
+        // printf("s[%d] = %.6f\n", i, s[i]);
         loc_avgStresses[i] += s[i];
       }
     }
@@ -1376,7 +1377,7 @@ void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
     // average the average stresses among the quadrature points
     for (int i = 0; i < 9; i++) {
       loc_avgStresses[i] /= num_vis_nodes;
-      //printf("loc avg Stresses = %.5f\n", loc_avgStresses);
+      // printf("loc avg Stresses = %.5f\n", loc_avgStresses);
       avgStresses[i] += loc_avgStresses[i];
     }
   }
@@ -1438,15 +1439,15 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
           pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
 
       // Evaluate the tying components of the strain
-      TacsScalar gty[6];  // The symmetric components of the tying strain
+      TacsScalar gty[6]; // The symmetric components of the tying strain
       basis::interpTyingStrain(pt, ety, gty);
 
       // Compute the symmetric parts of the tying strain
-      TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+      TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
       mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
       // Compute the set of strain components
-      TacsScalar e[9];  // The components of the strain
+      TacsScalar e[9]; // The components of the strain
       model::evalStrain(u0x, u1x, e0ty, e);
       e[8] = et;
 
@@ -1531,9 +1532,9 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
   TacsScalar d2etyu[basis::NUM_TYING_POINTS * usize];
   TacsScalar d2etyd[basis::NUM_TYING_POINTS * dsize];
   memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
-  memset(
-      d2ety, 0,
-      basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  memset(d2ety, 0,
+         basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS *
+             sizeof(TacsScalar));
   memset(d2etyu, 0, basis::NUM_TYING_POINTS * usize * sizeof(TacsScalar));
   memset(d2etyd, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
 
@@ -1542,11 +1543,11 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
                                                            ety);
 
   // Evaluate the tying components of the strain
-  TacsScalar gty[6];  // The symmetric components of the tying strain
+  TacsScalar gty[6]; // The symmetric components of the tying strain
   basis::interpTyingStrain(pt, ety, gty);
 
   // Compute the symmetric parts of the tying strain
-  TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+  TacsScalar e0ty[6]; // e0ty = XdinvT^{T}*gty*XdinvT
   mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
 
   // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
@@ -1582,7 +1583,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
     varst[i] = vars[i] + TacsScalar(0.0, dh);
 #else
     varst[i] = vars[i] + dh;
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
 
     // Perturb the variables
     TacsScalar etyt[basis::NUM_TYING_POINTS];
@@ -1590,7 +1591,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
                                                              etyt);
 
     // Evaluate the tying components of the strain
-    TacsScalar gtyt[6];  // The symmetric components of the tying strain
+    TacsScalar gtyt[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, etyt, gtyt);
 
     // Compute the symmetric parts of the tying strain
@@ -1628,7 +1629,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
       fdmat[size * j + i] = TacsImagPart(rest[j]) / dh;
 #else
       fdmat[size * j + i] = (rest[j] - res[j]) / dh;
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
     }
 
     if (i % vars_per_node < 3) {
@@ -1638,7 +1639,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
         fdd2du[usize * j + index] = TacsImagPart(ddt[j]) / dh;
 #else
         fdd2du[usize * j + index] = (ddt[j] - dd[j]) / dh;
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
       }
     }
   }
@@ -1698,7 +1699,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
     dt[i] = d[i] + TacsScalar(0.0, dh);
 #else
     dt[i] = d[i] + dh;
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
 
     // Perturb the variables
     TacsScalar etyt[basis::NUM_TYING_POINTS];
@@ -1706,7 +1707,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
                                                              etyt);
 
     // Evaluate the tying components of the strain
-    TacsScalar gtyt[6];  // The symmetric components of the tying strain
+    TacsScalar gtyt[6]; // The symmetric components of the tying strain
     basis::interpTyingStrain(pt, etyt, gtyt);
 
     // Compute the symmetric parts of the tying strain
@@ -1744,7 +1745,7 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
       fdd2d[dsize * j + i] = TacsImagPart(ddt[j]) / dh;
 #else
       fdd2d[dsize * j + i] = (ddt[j] - dd[j]) / dh;
-#endif  // TACS_USE_COMPLEX
+#endif // TACS_USE_COMPLEX
     }
   }
 
@@ -1772,4 +1773,4 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
   return fail;
 }
 
-#endif  // TACS_SHELL_ELEMENT_H
+#endif // TACS_SHELL_ELEMENT_H

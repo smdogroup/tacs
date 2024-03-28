@@ -35,7 +35,7 @@
 
 // The TACSElement base class
 class TACSElement : public TACSObject {
- public:
+public:
   TACSElement(int _componentNum = 0) { componentNum = _componentNum; }
   virtual ~TACSElement() {}
 
@@ -58,9 +58,11 @@ class TACSElement : public TACSObject {
 
   /**
    * get average stresses in the element
-  */
-  virtual void getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar *avgStresses) {}
+   */
+  virtual void
+  getAverageStresses(int i, ElementType elem_type, const TacsScalar elemXpts[],
+                     const TacsScalar vars[], const TacsScalar dvars[],
+                     const TacsScalar ddvars[], TacsScalar *avgStresses) {}
 
   /**
     Get a string representation of the element name
@@ -224,9 +226,10 @@ class TACSElement : public TACSObject {
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
-  virtual TACSElement *createElementCentrifugalForce(
-      const TacsScalar omega[], const TacsScalar rotCenter[],
-      const bool first_order = false) {
+  virtual TACSElement *
+  createElementCentrifugalForce(const TacsScalar omega[],
+                                const TacsScalar rotCenter[],
+                                const bool first_order = false) {
     return NULL;
   }
 
@@ -490,13 +493,11 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design variable vector
     @param dvSens The derivative vector
   */
-  virtual void addAdjResXptProduct(int elemIndex, double time, TacsScalar scale,
-                                   const TacsScalar psi[],
-                                   const TacsScalar Xpts[],
-                                   const TacsScalar vars[],
-                                   const TacsScalar dvars[],
-                                   const TacsScalar ddvars[],
-                                   TacsScalar fXptSens[]);
+  virtual void
+  addAdjResXptProduct(int elemIndex, double time, TacsScalar scale,
+                      const TacsScalar psi[], const TacsScalar Xpts[],
+                      const TacsScalar vars[], const TacsScalar dvars[],
+                      const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
   /**
     Compute a specific type of element matrix (mass, stiffness, geometric
@@ -546,11 +547,12 @@ class TACSElement : public TACSObject {
     @param ddvars The second time derivative of the element DOF
     @param data The element data required for a matrix-vector product
   */
-  virtual void getMatVecProductData(
-      ElementMatrixType matType, int elemIndex, double time, TacsScalar alpha,
-      TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
-      const TacsScalar vars[], const TacsScalar dvars[],
-      const TacsScalar ddvars[], TacsScalar data[]) {}
+  virtual void
+  getMatVecProductData(ElementMatrixType matType, int elemIndex, double time,
+                       TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[],
+                       TacsScalar data[]) {}
 
   /**
     Compute the element-wise matrix-vector product
@@ -630,10 +632,11 @@ class TACSElement : public TACSObject {
     @param vars The values of element degrees of freedom
     @param dfdu The residual output The element matrix output
   */
-  virtual void getMatSVSensInnerProduct(
-      ElementMatrixType matType, int elemIndex, double time,
-      const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
-      const TacsScalar vars[], TacsScalar dfdu[]);
+  virtual void
+  getMatSVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                           double time, const TacsScalar psi[],
+                           const TacsScalar phi[], const TacsScalar Xpts[],
+                           const TacsScalar vars[], TacsScalar dfdu[]);
 
   /**
     Evaluate a point-wise quantity of interest.
@@ -657,7 +660,7 @@ class TACSElement : public TACSObject {
                                 const TacsScalar dvars[],
                                 const TacsScalar ddvars[], TacsScalar *detXd,
                                 TacsScalar *quantity) {
-    return 0;  // No quantities defined by default
+    return 0; // No quantities defined by default
   }
 
   /**
@@ -675,11 +678,12 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param fdvSens The derivative array
   */
-  virtual void addPointQuantityDVSens(
-      int elemIndex, int quantityType, double time, TacsScalar scale, int n,
-      double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
-      const TacsScalar dvars[], const TacsScalar ddvars[],
-      const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[]);
+  virtual void
+  addPointQuantityDVSens(int elemIndex, int quantityType, double time,
+                         TacsScalar scale, int n, double pt[],
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         const TacsScalar dfdq[], int dvLen, TacsScalar dfdx[]);
 
   /**
     Add the derivative of the point quantity w.r.t. the state variables
@@ -700,12 +704,13 @@ class TACSElement : public TACSObject {
     @param dvLen The length of the design array
     @param dfdu The derivative of the quantity w.r.t. state variables
   */
-  virtual void addPointQuantitySVSens(
-      int elemIndex, int quantityType, double time, TacsScalar alpha,
-      TacsScalar beta, TacsScalar gamma, int n, double pt[],
-      const TacsScalar Xpts[], const TacsScalar vars[],
-      const TacsScalar dvars[], const TacsScalar ddvars[],
-      const TacsScalar dfdq[], TacsScalar dfdu[]);
+  virtual void
+  addPointQuantitySVSens(int elemIndex, int quantityType, double time,
+                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                         int n, double pt[], const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], const TacsScalar dfdq[],
+                         TacsScalar dfdu[]);
 
   /**
     Add the derivative of the point quantity w.r.t. the node locations
@@ -749,10 +754,10 @@ class TACSElement : public TACSObject {
                              const TacsScalar ddvars[], int ld_data,
                              TacsScalar *data) {}
 
- private:
+private:
   int componentNum;
   // Defines order of finite differencing method
   static int fdOrder;
 };
 
-#endif  // TACS_ELEMENT_H
+#endif // TACS_ELEMENT_H
