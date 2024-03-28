@@ -753,7 +753,7 @@ cdef class Quad4NonlinearShell(Element):
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
-        self.cptr = self.ptr = new TACSQuad4NonlinearShell(transform.ptr, con.cptr)
+        self.ptr = new TACSQuad4NonlinearShell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
         self.transform = transform
