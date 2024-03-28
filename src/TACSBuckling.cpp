@@ -208,14 +208,18 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
 
       // Add the right-hand-side due to external forces
       if (rhs) {
-        // res->axpy(1.0, rhs);
-        assembler->applyBCs(res);
+        // copy force values and zero bcs indices
+        update->copyValues(rhs);
+        assembler->applyBCs(update);
+        res->axpy(-1.0, update);
       }
 
       // Solve for the load path
       solver->solve(res, path);
       path->scale(-1.0);
     }
+    // set BCs associated with displacements (displacement control)
+    assembler->setBCs(path);
     assembler->setVariables(path);
 
     // Assemble the linear combination of the stiffness matrix
@@ -236,15 +240,16 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
 
     if (u0) {
       path->copyValues(u0);
-      assembler->applyBCs(path);
     } else {
       pc->factor();
       assembler->assembleRes(res);
 
       // If need to add rhs
       if (rhs) {
-        res->axpy(-1.0, rhs);
-        assembler->applyBCs(res);
+        // copy force values and zero bcs indices
+        update->copyValues(rhs);
+        assembler->applyBCs(update);
+        res->axpy(-1.0, update);
       }
 
       // Solve for the load path and set the variables
@@ -252,6 +257,8 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
       path->scale(-1.0);
     }
 
+    // set BCs associated with displacements (displacement control)
+    assembler->setBCs(path);
     assembler->setVariables(path);
 
     // Assemble the stiffness and geometric stiffness matrix

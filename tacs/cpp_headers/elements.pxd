@@ -16,6 +16,7 @@ from cpython cimport PyObject
 
 # Import numpy
 from libc.string cimport const_char
+from libcpp cimport bool
 
 # Import from constitutive for definitions
 from tacs.cpp_headers.constitutive cimport *
@@ -204,14 +205,21 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4Shell(TACSElement):
         TACSQuad4Shell(TACSShellTransform*,
                        TACSShellConstitutive*)
+        # temporary hack until the G matrix is analytic
+        void setComplexStepGmatrix(bool)
+        
 
     cdef cppclass TACSQuad9Shell(TACSElement):
         TACSQuad9Shell(TACSShellTransform*,
                        TACSShellConstitutive*)
+        # temporary hack until the G matrix is analytic
+        void setComplexStepGmatrix(bool)
 
     cdef cppclass TACSQuad16Shell(TACSElement):
         TACSQuad16Shell(TACSShellTransform*,
                         TACSShellConstitutive*)
+        # temporary hack until the G matrix is analytic
+        void setComplexStepGmatrix(bool)
 
     cdef cppclass TACSTri3Shell(TACSElement):
         TACSTri3Shell(TACSShellTransform*,
@@ -220,6 +228,7 @@ cdef extern from "TACSShellElementDefs.h":
     cdef cppclass TACSQuad4ThermalShell(TACSElement):
         TACSQuad4ThermalShell(TACSShellTransform*,
                               TACSShellConstitutive*)
+        
 
     cdef cppclass TACSQuad9ThermalShell(TACSElement):
         TACSQuad9ThermalShell(TACSShellTransform*,

@@ -190,9 +190,9 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # Apply distributed forces at tip of beam
         # Apply Qxx
-        f_array[
-            np.logical_and(local_x == 1.5 * Lx, local_y == 0.5 * Ly), :
-        ] = applied_force
+        f_array[np.logical_and(local_x == 1.5 * Lx, local_y == 0.5 * Ly), :] = (
+            applied_force
+        )
 
         # Create temporary dv vec for doing fd/cs
         dv_pert_array = dv_pert_vec.getArray()

@@ -821,7 +821,6 @@ class pyTACS(BaseUI):
         self.assembler = self.meshLoader.createTACSAssembler(
             self.varsPerNode, self.massDVs
         )
-
         self._createOutputViewer()
 
         # Store original node locations read in from bdf file
