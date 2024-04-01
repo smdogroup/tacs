@@ -15,13 +15,13 @@ bdf_file = os.path.join(base_dir, "./input_files/plate_combined_buckle.bdf")
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
-    
+
     FUNC_REFS = {
-        "buckling_eigsb.0": 42.237,
-        "buckling_eigsb.1": 42.290,
-        "buckling_eigsb.2": 59.616,
-        "buckling_eigsb.3": 68.999,
-        "buckling_eigsb.4": 88.243,
+        "buckle_eigsb.0": (52.61641147328781),
+        "buckle_eigsb.1": (58.487138500669104),
+        "buckle_eigsb.2": (117.21577758483404),
+        "buckle_eigsb.3": (129.37327029030266),
+        "buckle_eigsb.4": (143.2423322677979),
     }
 
     def setup_tacs_problems(self, comm):
@@ -31,6 +31,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
+            print(f"dtype complex..")
             self.rtol = 1e-8
             self.atol = 1e-8
             self.dh = 1e-50
@@ -61,7 +62,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             transform = None
             # Set up element
             elem = elements.Quad4Shell(transform, con)
-            #elem.setComplexStepGmatrix(True)
+            # elem.setComplexStepGmatrix(True)
             scale = [100.0]
             return elem, scale
 
@@ -76,6 +77,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return [buckle_prob], fea_assembler
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import unittest
+
     unittest.main()

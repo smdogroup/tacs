@@ -48,6 +48,8 @@ class PyTACSTestCase:
             if not hasattr(self, "comm"):
                 self.comm = MPI.COMM_WORLD
 
+            self._absolute_compare = False
+
             # Setup tacs problems to be tested
             self.tacs_probs, self.fea_assembler = self.setup_tacs_problems(self.comm)
 
@@ -111,8 +113,16 @@ class PyTACSTestCase:
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
                                 np.testing.assert_allclose(
-                                    funcs[func_key],
-                                    self.FUNC_REFS[func_key],
+                                    (
+                                        funcs[func_key]
+                                        if not self._absolute_compare
+                                        else abs(funcs[func_key])
+                                    ),
+                                    (
+                                        self.FUNC_REFS[func_key]
+                                        if not self._absolute_compare
+                                        else abs(self.FUNC_REFS[func_key])
+                                    ),
                                     rtol=self.rtol,
                                     atol=self.atol,
                                 )
@@ -159,8 +169,16 @@ class PyTACSTestCase:
                                     funcs_pert[func_key], funcs[func_key]
                                 )
                                 np.testing.assert_allclose(
-                                    dfddv_proj,
-                                    fdv_sens_approx,
+                                    (
+                                        dfddv_proj
+                                        if not self._absolute_compare
+                                        else np.abs(dfddv_proj)
+                                    ),
+                                    (
+                                        fdv_sens_approx
+                                        if not self._absolute_compare
+                                        else np.abs(fdv_sens_approx)
+                                    ),
                                     rtol=self.rtol,
                                     atol=self.atol,
                                 )
@@ -202,8 +220,16 @@ class PyTACSTestCase:
                                     funcs_pert[func_key], funcs[func_key]
                                 )
                                 np.testing.assert_allclose(
-                                    dfdx_proj,
-                                    f_xpt_sens_approx,
+                                    (
+                                        dfdx_proj
+                                        if not self._absolute_compare
+                                        else np.abs(dfdx_proj)
+                                    ),
+                                    (
+                                        f_xpt_sens_approx
+                                        if not self._absolute_compare
+                                        else np.abs(f_xpt_sens_approx)
+                                    ),
                                     rtol=self.rtol,
                                     atol=self.atol,
                                 )

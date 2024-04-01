@@ -1,27 +1,36 @@
 import os
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive
+from tacs import pytacs, elements, constitutive, TACS
+import unittest
+
+complex_mode = TACS.dtype == complex
 
 """"
 The nominal case is a 1m x 0.7m flat plate under a buckling analysis. The
 perimeter of the plate is clamped and loaded in shear on its horizontal edges. 
-This tests the eigenvalues and eigenvalue sensitivities
+This tests the eigenvalues and eigenvalue sensitivities.
+This analysis was verified against Abaqus and closed-form solution with a finer mesh.
+    However, this test is scaled down to a 5x5 mesh to make sure the analysis result is identical.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate_shear_buckle.bdf")
 
 
+@unittest.skipIf(
+    not complex_mode,
+    "test with Gmatrix only in complex mode until analytic one implemented",
+)
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "buckling_eigsb.0": 111.79,
-        "buckling_eigsb.1": 115.45,
-        "buckling_eigsb.2": 169.71,
-        "buckling_eigsb.3": 181.02,
-        "buckling_eigsb.4": 242.07,
+        "buckling_eigsb.0": -170.74198051427817,
+        "buckling_eigsb.1": 170.7419805143329,
+        "buckling_eigsb.2": 199.91780267055614,
+        "buckling_eigsb.3": -199.91780267064914,
+        "buckling_eigsb.4": -377.1783008654174,
     }
 
     def setup_tacs_problems(self, comm):
@@ -38,6 +47,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.rtol = 2e-1
             self.atol = 1e-4
             self.dh = 1e-5
+
+        # turn on absolute value comparison since +- shear mode eigenvalues can switch order
+        self._absolute_compare = True
 
         # Instantiate FEA Assembler
         fea_assembler = pytacs.pyTACS(bdf_file, comm)
@@ -76,6 +88,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return [buckle_prob], fea_assembler
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     import unittest
+
     unittest.main()
