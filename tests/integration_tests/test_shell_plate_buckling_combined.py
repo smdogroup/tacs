@@ -1,7 +1,10 @@
 import os
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive
+from tacs import pytacs, elements, constitutive, TACS
+import unittest
+
+complex_mode = TACS.dtype == complex
 
 """"
 The nominal case is a 1m x 0.7m flat plate under a buckling analysis. The
@@ -13,6 +16,10 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate_combined_buckle.bdf")
 
 
+@unittest.skipIf(
+    not complex_mode,
+    "test with Gmatrix only in complex mode until analytic one implemented",
+)
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
