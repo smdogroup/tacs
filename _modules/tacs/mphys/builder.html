@@ -229,36 +229,10 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mesh_file</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;The signature for TacsBuilder has changed. Arguments such as &#39;mesh_file&#39; must be passed directly as &quot;</span>
-                <span class="s2">&quot;arguments to TacsBuilder. Please see the TacsBuilder docstring for more info. This will become an &quot;</span>
-                <span class="s2">&quot;error in tacs 3.7.0&quot;</span><span class="p">,</span>
-                <span class="ne">DeprecationWarning</span><span class="p">,</span>
+                <span class="s2">&quot;arguments to TacsBuilder. Please see the TacsBuilder docstring for more info.&quot;</span>
             <span class="p">)</span>
-            <span class="n">options</span> <span class="o">=</span> <span class="n">mesh_file</span>
-            <span class="c1"># Make deep copy of dict so we can modify it</span>
-            <span class="n">pytacs_options</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
-            <span class="n">mesh_file</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;mesh_file&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
-            <span class="k">if</span> <span class="s2">&quot;assembler_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
-                <span class="n">assembler_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;assembler_setup&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
-            <span class="k">if</span> <span class="s2">&quot;element_callback&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
-                <span class="n">element_callback</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;element_callback&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Load optional user-defined callback function for setting up tacs elements</span>
-            <span class="k">if</span> <span class="s2">&quot;problem_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
-                <span class="n">problem_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;problem_setup&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Load optional user-defined callback function for setting up constraints</span>
-            <span class="k">if</span> <span class="s2">&quot;constraint_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
-                <span class="n">constraint_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;constraint_setup&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Load optional user-defined callback function for setting up buckling problem</span>
-            <span class="k">if</span> <span class="s2">&quot;buckling_setup&quot;</span> <span class="ow">in</span> <span class="n">pytacs_options</span><span class="p">:</span>
-                <span class="n">buckling_setup</span> <span class="o">=</span> <span class="n">pytacs_options</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;buckling_setup&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mesh_file</span> <span class="o">=</span> <span class="n">mesh_file</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler_setup</span> <span class="o">=</span> <span class="n">assembler_setup</span>
