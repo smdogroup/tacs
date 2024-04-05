@@ -27,7 +27,7 @@
 // Include the AMD package if we have it
 #ifdef TACS_HAS_AMD_LIBRARY
 #include "amd.h"
-#endif // TACS_HAS_AMD_LIBRARY
+#endif  // TACS_HAS_AMD_LIBRARY
 
 // The TACS-METIS header
 #include "tacsmetis.h"
@@ -82,9 +82,10 @@ TACSAssembler::TACSAssembler(MPI_Comm _tacs_comm, int _varsPerNode,
   extNodeOffset = 0;
 
   // Print out the number of local nodes and elements
-  printf("[%d] Creating TACSAssembler with numOwnedNodes = %d "
-         "numElements = %d\n",
-         mpiRank, numOwnedNodes, numElements);
+  printf(
+      "[%d] Creating TACSAssembler with numOwnedNodes = %d "
+      "numElements = %d\n",
+      mpiRank, numOwnedNodes, numElements);
 
   // Calculate the total number of nodes and elements
   int info[2], recv_info[2];
@@ -92,9 +93,10 @@ TACSAssembler::TACSAssembler(MPI_Comm _tacs_comm, int _varsPerNode,
   info[1] = numElements;
   MPI_Reduce(info, recv_info, 2, MPI_INT, MPI_SUM, 0, tacs_comm);
   if (mpiSize > 1 && mpiRank == 0) {
-    printf("[%d] TACSAssembler: Total dof = %d Total nodes = %d "
-           "Total elements = %d\n",
-           mpiRank, varsPerNode * recv_info[0], recv_info[0], recv_info[1]);
+    printf(
+        "[%d] TACSAssembler: Total dof = %d Total nodes = %d "
+        "Total elements = %d\n",
+        mpiRank, varsPerNode * recv_info[0], recv_info[0], recv_info[1]);
   }
 
   // The mesh has not been initialized yet...
@@ -1591,7 +1593,7 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
 #if TACS_HAS_AMD_LIBRARY
     // Use the approximate minimum degree ordering
     double control[AMD_CONTROL], info[AMD_INFO];
-    amd_defaults(control); // Use the default values
+    amd_defaults(control);  // Use the default values
     amd_order(nvars, rowp, cols, _perm, control, info);
 
     if (new_vars) {
@@ -1611,7 +1613,7 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
         new_vars[_perm[k]] = k;
       }
     }
-#endif // TACS_HAS_AMD_LIBRARY
+#endif  // TACS_HAS_AMD_LIBRARY
   } else if (order_type == ND_ORDER) {
     // Set the default options in METIS
     int options[METIS_NOPTIONS];
@@ -2760,9 +2762,10 @@ void TACSAssembler::checkElementDeterminants() {
 
         if (count > 0) {
           if (TacsRealPart(detXd) <= 0.0) {
-            printf("[%d] TACS Warning: Negative determinant of the Jacobian "
-                   "transformation for element %d of type %s. Flipped mesh?",
-                   mpiRank, elemIndex, element->getObjectName());
+            printf(
+                "[%d] TACS Warning: Negative determinant of the Jacobian "
+                "transformation for element %d of type %s. Flipped mesh?",
+                mpiRank, elemIndex, element->getObjectName());
           }
         }
       }
@@ -3627,7 +3630,7 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
 
       // Here perm is the entire permutation array
       int *perm = new int[numNodes];
-      int use_exact_degree = 0; // Don't use the exact degree
+      int use_exact_degree = 0;  // Don't use the exact degree
       amd_order_interface(numNodes, rowp, cols, perm, coupling_nodes,
                           ncoupling_nodes, num_multipliers, multipliers,
                           indep_ptr, indep_nodes, use_exact_degree);
@@ -5793,7 +5796,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   TacsScalar fval1;
   evalFunctions(1, &func, &fval1);
   fd = 0.5 * (fval0 - fval1) / dh;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
   // Compute df/dx
   TacsScalar coef = 1.0;
@@ -5861,7 +5864,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   evalFunctions(1, &func, &fval1);
 
   fd = 0.5 * (fval0 - fval1) / dh;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
   // Reset the variable values
   setVariables(vars);
@@ -5926,7 +5929,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   evalFunctions(1, &func, &fval1);
 
   fd = 0.5 * (fval0 - fval1) / dh;
-#endif // TACS_USE_COMPLEX
+#endif  // TACS_USE_COMPLEX
 
   // Reset the variable values
   setNodes(Xvars);
