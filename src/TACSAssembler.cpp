@@ -6064,7 +6064,6 @@ void TACSAssembler::getAverageStresses(ElementType elem_type,
   }
 
   for (int j = 0; j < 9; j++) {
-    // printf("avgStresses = %.5f\n", avgStresses[j]);
     avgStresses[j] /= numElements;
   }
 }
