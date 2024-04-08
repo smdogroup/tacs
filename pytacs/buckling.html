@@ -491,6 +491,17 @@ to applied to RHS of the static problem. Alternate to Fext.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.BucklingProblem.getModalError">
+<span class="sig-name descname"><span class="pre">getModalError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.getModalError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.getModalError" title="Link to this definition">¶</a></dt>
+<dd><p>Return the error associated with a particular mode</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) -- Mode index to return solution for</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.BucklingProblem.addXptSens">
 <span class="sig-name descname"><span class="pre">addXptSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xptSensList</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/buckling.html#BucklingProblem.addXptSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.BucklingProblem.addXptSens" title="Link to this definition">¶</a></dt>
 <dd><p>Add partial sensitivity contribution due to nodal coordinates for eigenvalue</p>
@@ -835,6 +846,7 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.solve"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.solve()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.BucklingProblem.getModalError"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.getModalError()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.addXptSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addXptSens()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.addDVSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.addDVSens()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.BucklingProblem.evalSVSens"><code class="docutils literal notranslate"><span class="pre">BucklingProblem.evalSVSens()</span></code></a></li>
