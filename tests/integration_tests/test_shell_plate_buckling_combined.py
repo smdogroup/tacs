@@ -4,8 +4,6 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, TACS
 import unittest
 
-complex_mode = TACS.dtype == complex
-
 """"
 The nominal case is a 1m x 0.7m flat plate under a buckling analysis. The
 perimeter of the plate is pinned and loaded in combined axial and shear on its horizontal edges. 
@@ -16,19 +14,15 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate_combined_buckle.bdf")
 
 
-@unittest.skipIf(
-    not complex_mode,
-    "test with Gmatrix only in complex mode until analytic one implemented",
-)
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "buckle_eigsb.0": (52.61641147328781),
-        "buckle_eigsb.1": (58.487138500669104),
-        "buckle_eigsb.2": (117.21577758483404),
-        "buckle_eigsb.3": (129.37327029030266),
-        "buckle_eigsb.4": (143.2423322677979),
+        "buckle_eigsb.0": 52.61641147328781,
+        "buckle_eigsb.1": 58.487138500669104,
+        "buckle_eigsb.2": 117.21577758483404,
+        "buckle_eigsb.3": 129.37327029030266,
+        "buckle_eigsb.4": 143.2423322677979,
     }
 
     def setup_tacs_problems(self, comm):
@@ -38,7 +32,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            print(f"dtype complex..")
             self.rtol = 1e-8
             self.atol = 1e-8
             self.dh = 1e-50
@@ -69,7 +62,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             transform = None
             # Set up element
             elem = elements.Quad4Shell(transform, con)
-            # elem.setComplexStepGmatrix(True)
             scale = [100.0]
             return elem, scale
 
@@ -80,7 +72,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         buckle_prob.setOption("L2Convergence", 1e-20)
         buckle_prob.setOption("L2ConvergenceRel", 1e-20)
         # no loads just displacement control
-        # buckle_prob.addLoadFromBDF(loadID=1)
 
         return [buckle_prob], fea_assembler
 

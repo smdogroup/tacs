@@ -18,10 +18,6 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/plate_shear_buckle.bdf")
 
 
-@unittest.skipIf(
-    not complex_mode,
-    "test with Gmatrix only in complex mode until analytic one implemented",
-)
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
@@ -49,7 +45,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.dh = 1e-5
 
         # turn on absolute value comparison since +- shear mode eigenvalues can switch order
-        self._absolute_compare = True
+        self.absolute_compare = True
 
         # Instantiate FEA Assembler
         fea_assembler = pytacs.pyTACS(bdf_file, comm)
@@ -84,9 +80,28 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         buckle_prob.setOption("L2Convergence", 1e-20)
         buckle_prob.setOption("L2ConvergenceRel", 1e-20)
         # no loads just displacement control
-        # buckle_prob.addLoadFromBDF(loadID=1)
 
         return [buckle_prob], fea_assembler
+
+    @unittest.skipIf(
+        not complex_mode,
+        "test with Gmatrix only in complex mode until analytic one implemented",
+    )
+    def test_total_dv_sensitivities(self):
+        """
+        Test total dv sensitivity through adjoint against fd/cs
+        """
+        PyTACSTestCase.PyTACSTest.test_total_dv_sensitivities(self)
+
+    @unittest.skipIf(
+        not complex_mode,
+        "test with Gmatrix only in complex mode until analytic one implemented",
+    )
+    def test_total_xpt_sensitivities(self):
+        """
+        Test total xpt sensitivity through adjoint against fd/cs
+        """
+        PyTACSTestCase.PyTACSTest.test_total_xpt_sensitivities(self)
 
 
 if __name__ == "__main__":
