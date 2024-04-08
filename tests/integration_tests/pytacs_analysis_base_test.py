@@ -112,11 +112,13 @@ class PyTACSTestCase:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
+                                # Convert to abs value if requested
                                 if self.absolute_compare:
                                     funcs[func_key] = abs(funcs[func_key])
                                     self.FUNC_REFS[func_key] = abs(
                                         self.FUNC_REFS[func_key]
                                     )
+                                # Test values
                                 np.testing.assert_allclose(
                                     funcs[func_key],
                                     self.FUNC_REFS[func_key],
