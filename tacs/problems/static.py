@@ -1021,6 +1021,7 @@ class StaticProblem(TACSProblem):
                 self.K,
                 loadScale=self._loadScale,
             )
+            self._jacobianUpdateRequired = False
             self._preconditionerUpdateRequired = True
 
     def updatePreconditioner(self):
