@@ -169,6 +169,21 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
  protected:
 
   // ==============================================================================
+  // Override Failure constraint and sensitivities
+  // ==============================================================================
+
+    // Compute the failure values for each failure mode of the stiffened panel
+    TacsScalar computeFailureValues(const TacsScalar e[], TacsScalar fails[]);
+
+    // Evaluate the derivative of the failure criteria w.r.t. the strain
+    TacsScalar evalFailureStrainSens(int elemIndex, const double pt[], const TacsScalar X[],
+        const TacsScalar e[], TacsScalar sens[]);
+
+    // Add the derivative of the failure criteria w.r.t. the design variables
+    void addFailureDVSens(int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
+        const TacsScalar strain[], int dvLen, TacsScalar dfdx[]);
+
+  // ==============================================================================
   // Buckling functions
   // ==============================================================================
 
@@ -403,7 +418,7 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
    * returns:
    * @return N12Crit  the approximate critical buckling load
    */
-  static TacsScalar computeCriticalGlobalShearLoad(
+  TacsScalar computeCriticalGlobalShearLoad(
     const TacsScalar D11, const TacsScalar D22, const TacsScalar b,
     const TacsScalar xi, const TacsScalar gamma,);
 
@@ -422,7 +437,7 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
    * @param gammasens sensitivity w.r.t. the stiffener-to-(local panel) bending stiffness ratio
    * @return TacsScalar The critical shear buckling load
    */
-  static TacsScalar computeCriticalGlobalShearLoadSens( 
+  TacsScalar computeCriticalGlobalShearLoadSens( 
     const TacsScalar D11, const TacsScalar D22, const TacsScalar b,
     const TacsScalar xi, const TacsScalar gamma,
     TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* bsens,
@@ -440,7 +455,7 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
    * returns:
    * @return N12Crit  the approximate critical buckling load
    */
-  static TacsScalar computeCriticalLocalShearLoad(
+  TacsScalar computeCriticalLocalShearLoad(
     const TacsScalar D11, const TacsScalar D22, const TacsScalar xi);
 
   /**
@@ -457,10 +472,74 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
    * @param spitchsens sensitivity w.r.t. the stiffener pitch
    * @return TacsScalar The critical shear buckling load
    */
-  static TacsScalar computeCriticalLocalShearLoadSens( 
+  TacsScalar computeCriticalLocalShearLoadSens( 
     const TacsScalar D11, const TacsScalar D22, const TacsScalar xi, 
     TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* xisens,
     TacsScalar* spitchsens);
+
+  /**
+   * @brief Compute the non-dimensional parameters lam1bar, lam2bar using Newton iteration for the critical shear load closed-form solution.
+   *
+   * @param xi the non-dimensional generalized rigidity of the plate
+   * @param gamma the stiffener-to-plate stiffness ratio
+   * @param lam1bar return value of lam1bar
+   * @param lam2bar return value of lam2bar which is always positive since it shows up as squared
+   */
+  static void nondimShearParams(const TacsScalar xi, const TacsScalar gamma, TacsScalar* lam1bar, TacsScalar* lam2bar);
+  
+    /**
+   * @brief Compute the derivatives of lam2sq  for the critical shear load closed-form solution.
+   *
+   * @param xi the non-dimensional generalized rigidity of the plate
+   * @param gamma the stiffener-to-plate stiffness ratio
+   * @param lam1bar return value of lam1bar
+   * @param lam2bar return value of lam2bar which is always positive since it shows up as squared
+   * @param dl1xi dlam1_bar/dxi sens
+   * @param dl1gamma dlam1_bar/dgamma sens
+   * @param dl2xi dlam2_bar/dxi sens
+   * @param dl2gamma dlam2_bar/dgamma sens
+   */
+  static void nondimShearParamsSens(const TacsScalar xi, const TacsScalar gamma,
+  TacsScalar* lam1bar, TacsScalar* lam2bar,
+  TacsScalar* dl1xi, TacsScalar* dl1gamma, TacsScalar* dl2xi, TacsScalar* dl2gamma);
+
+  static TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi, const TacsScalar gamma);
+  static TacsScalar lam2ConstraintDeriv(const TacsScalar lam2sq, const TacsScalar xi, const TacsScalar gamma);
+
+    /**
+   * @brief Compute the critical stiffener crippling load
+   *
+   *
+   * input:
+   * @param D11 the D11 stiffness of the stiffener
+   * @param D22 the D22 stiffness of the stiffener
+   * @param xi the generalized rigidity
+   * @param genPoisss the generalized Poisson's ratio of the stiffener
+   *
+   * returns:
+   * @return N11crit  the approximate critical crippling in-plane load of the stiffener
+   */
+  TacsScalar computeStiffenerCripplingLoad(
+    const TacsScalar D11, const TacsScalar D22, const TacsScalar xi, const TacsScalar genPoiss);
+
+  /**
+   * @brief Compute the sensitivity of the critical stiffener crippling load
+   *
+   * @param D11 the D11 stiffness of the stiffener
+   * @param D22 the D22 stiffness of the stiffener
+   * @param xi the generalized rigidity
+   * @param genPoisss the generalized Poisson's ratio of the stiffener
+   * @param D11sens Sensitivity of the the D11 stiffness of the stiffener
+   * @param D22sens Sensitivity of the the D22 stiffness of the stiffener
+   * @param xisens Sensitivity of the the generalized rigidity
+   * @param genPoiss_sens Sensitivity of the the generalized Poisson's ratio of the stiffener
+   * @param sheightsens Sensitivity w.r.t. the stiffener height DV
+   * @return N11crit  the approximate critical crippling in-plane load of the stiffener
+   */
+  TacsScalar computeStiffenerCripplingLoadSens( 
+    const TacsScalar D11, const TacsScalar D22, const TacsScalar xi, 
+    const TacsScalar genPoiss, TacsScalar* D11sens, TacsScalar* D22sens,
+    TacsScalar* xisens, TacsScalar* genPoiss_sens, TacsScalar* sheightsens);
 
   // ==============================================================================
   // Attributes
