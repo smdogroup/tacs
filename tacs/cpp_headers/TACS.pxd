@@ -338,6 +338,8 @@ cdef extern from "TACSAssembler.h":
         int getNumElements()
         TACSNodeMap *getNodeMap()
         TACSBcMap *getBcMap()
+        void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses)
+        void setComplexStepGmatrix(bool flag)
         TACSElement **getElements()
         TACSElement *getElement(int, TacsScalar*, TacsScalar*,
                                 TacsScalar*, TacsScalar*)
