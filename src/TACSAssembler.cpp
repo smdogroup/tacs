@@ -6037,3 +6037,38 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
   *_len = len;
   *_data = data;
 }
+
+void TACSAssembler::computePanelDimensions() {
+  // for each TACS component => compute the panel length and width
+  for (int icomp = 0; icomp < getNumComponents(); icomp++) {
+    // compute the centroid of the panel using point quantity
+    //     sum the int(r)dV across all procs
+
+    // compute the moment of inertia tensor of the panel (6 indep. quantities)
+    //     sum the integral across all procs
+
+    // only allows TACSGPBladeStiffenedShellConstitutive const. objects in the element (so maybe throw error if not?)1
+
+    // compute the principal axes of the inertial tensor
+
+    // compute the two principal axes with the middle and lowest diagonal inertias
+    //     do we need to do a KS function here to make these min operations differentiable? 
+    //     would prefer to just assume that the shape change is small and this is the same for now..
+
+    // get the ref direction from the constitutive object to determine the length and width direction
+    //     of the panel using KS min and max of dot with ref axis
+
+    // use KS function to get positive difference in max and min coordinates along length and width direction
+
+    // set the panel length and width into the TACS constitutive object
+  }
+}
+
+void TACSAssembler::computePanelDimensionsXptSens() {
+  // for each TACS component => compute the panel length and width
+  for (int icomp = 0; icomp < getNumComponents(); icomp++) {
+    // add the Xptsens term due to changes in panel length and width into the overall XptSens (coordinate sensitivity)
+
+    // needs to get the panel length and width sensitivities and multiply by panel length and width XptSens to get function XptSens
+  }
+}
