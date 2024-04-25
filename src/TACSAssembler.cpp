@@ -6039,17 +6039,45 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
 }
 
 void TACSAssembler::computePanelDimensions() {
+  // only allows TACSGPBladeStiffenedShellConstitutive const. objects in the element (so maybe throw error if not?)
+  // maybe return early and skip the computation if not? Or can we do this computation only including this kind of element..
+
   // for each TACS component => compute the panel length and width
   for (int icomp = 0; icomp < getNumComponents(); icomp++) {
     // compute the centroid of the panel using point quantity
+    TacsScalar local_centroidint[3], local_area; // int r dV for the centroid
+    for (int i = 0; i < numElements; i++) {
+      if (elements[i]->getComponentNum() == icomp) {
+        // may need to use evalPointQuantity subroutine here..
+        elements[i]->getCentroid(&local_centroidint, &local_area);
+      }
+    }
+
     //     sum the int(r)dV across all procs
+    TacsScalar global_centroidint[3] = 0.0;
+    TacsScalar global_area = 0.0;
+    MPI_Allreduce(&local_centroidint, &global_centroidint, 3, TACS_MPI_TYPE, MPI_MAX, tacs_comm);
+    MPI_Allreduce(&local_area, &global_area, 1, TACS_MPI_TYPE, MPI_MAX, tacs_comm);
+    TacsScalar centroid[3];
+    centroid[0] = global_centroidint[0] / global_area;
+    centroid[1] = global_centroidint[1] / global_area;
+    centroid[2] = global_centroidint[2] / global_area;
 
     // compute the moment of inertia tensor of the panel (6 indep. quantities)
-    //     sum the integral across all procs
+    TacsScalar local_inertia[6];
+    TacsScalar global_inertia[6] = 0.0;
+    for (int i = 0; i < numElements; i++) {
+      if (elements[i]->getComponentNum() == icomp) {
+        // may need to use evalPointQuantity subroutine here..
+        elements[i]->getGeomInertialTensor(&local_inertia);
+      }
+    }
 
-    // only allows TACSGPBladeStiffenedShellConstitutive const. objects in the element (so maybe throw error if not?)1
+    //     sum the inertia integral across all procs
+    MPI_Allreduce(&local_inertia, &global_inertia, 6, TACS_MPI_TYPE, MPI_MAX, tacs_comm);
 
     // compute the principal axes of the inertial tensor
+    
 
     // compute the two principal axes with the middle and lowest diagonal inertias
     //     do we need to do a KS function here to make these min operations differentiable? 
