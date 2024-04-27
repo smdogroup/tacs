@@ -73,3 +73,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         buckle_prob.addLoadFromBDF(loadID=1)
 
         return [buckle_prob], fea_assembler
+
+
+if __name__ == "__main__":
+    import unittest
+
+    unittest.main()
