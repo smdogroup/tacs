@@ -6049,6 +6049,7 @@ void TACSAssembler::computePanelDimensions() {
     for (int i = 0; i < numElements; i++) {
       if (elements[i]->getComponentNum() == icomp) {
         // may need to use evalPointQuantity subroutine here..
+        // probably need to use the constitutive object here instead?
         elements[i]->getCentroid(&local_centroidint, &local_area);
       }
     }
@@ -6069,6 +6070,7 @@ void TACSAssembler::computePanelDimensions() {
     for (int i = 0; i < numElements; i++) {
       if (elements[i]->getComponentNum() == icomp) {
         // may need to use evalPointQuantity subroutine here..
+        // probably need to use the constitutive object here instead?
         elements[i]->getGeomInertialTensor(&local_inertia);
       }
     }
@@ -6077,18 +6079,83 @@ void TACSAssembler::computePanelDimensions() {
     MPI_Allreduce(&local_inertia, &global_inertia, 6, TACS_MPI_TYPE, MPI_MAX, tacs_comm);
 
     // compute the principal axes of the inertial tensor
-    
+    // solve 3x3 eigenvalue problem
+    TacsScalar principalInertias[3];
+    TacsScalar principalAxes[9];
+    // TBD on solving the 3x3 eigenvalue problem here
 
     // compute the two principal axes with the middle and lowest diagonal inertias
-    //     do we need to do a KS function here to make these min operations differentiable? 
-    //     would prefer to just assume that the shape change is small and this is the same for now..
+    //     use weighted softmax on the principal axes vectors
+    TacsScalar minAxis[3] = { }, min2Axis[3] = { }; // axis 1 has lowest inertia, 2 has middle inertia
+    TacsScalar minInertia, temp = 0.0, temp2 = 0.0;
+    TacsScalar ks = 50.0;
+
+    // sum of softmax for min inertia
+    for (int v = 0; v < 3; v++) {
+      temp += exp(ks * -principalInertias[v]);
+    }
+    minInertia = 1.0/ks * log(temp);
+    // sum of softmax entries for second min inertia (use (x-m) * exp(ks*(m-x)) to get min second inertia) 
+    for (int v = 0; v < 3; v++) {
+      temp2 += (principalInertias[v] - minInertia) * exp(ks * (minInertia - principalInertias[v]))
+    }
+
+    for (int v = 0; v < 3; v++) {
+      for (int d = 0; d < 3; d++) {
+        minAxis[d] += exp(ks * -principalInertias[v]) / temp * principalAxes[3*v+d];
+        min2Axis[d] += (principalInertias[v] - minInertia) * exp(ks * (minInertia - principalInertias[v])) / temp2 * principalAxes[3*v+d];
+      }
+    }
 
     // get the ref direction from the constitutive object to determine the length and width direction
-    //     of the panel using KS min and max of dot with ref axis
+    //     of the panel using softmax of dot with ref axis
+    TacsScalar axis1[3], axis2[3], refAxis[3];
+    elements[0]->getRefLoadAxis(&refAxis);
+
+    TacsScalar dot1 = 0.0, dot2 = 0.0;
+    for (int d = 0; d < 3; d++) {
+      dot1 += minAxis[d] * refAxis[d];
+      dot2 += min2Axis[d] * refAxis[d];
+    }
+
+    TacsScalar temp1 = 0.0, temp2 = 0.0;
+    temp1 = exp(ks * dot1) + exp(ks * dot2);
+    temp2 = exp(-ks * dot1) + exp(-ks * dot2);
+
+    for (int d = 0; d < 3; d++) {
+      axis1[d] += exp(ks * dot1) / temp1 * minAxis[d] + exp(ks * dot2) / temp1 * min2Axis[d];
+      axis2[d] += exp(-ks * dot1) / temp2 * minAxis[d] + exp(-ks * dot2) / temp2 * min2Axis[d];
+    }
 
     // use KS function to get positive difference in max and min coordinates along length and width direction
+    TacsScalar min1 = min2 = max1 = max2 = 0.0;
+    for (int i = 0; i < numElements; i++) {
+      if (elements[i]->getComponentNum() == icomp) {
+        elements[i]->addKSdotProduct(axis1,-ks,&min1);
+        elements[i]->addKSdotProduct(axis2,-ks,&min2);
+        elements[i]->addKSdotProduct(axis1,ks,&max1);
+        elements[i]->addKSdotProduct(axis2,ks,&max2);
+      }
+    }
+
+    // TODO : sum these across all processors:
+    
+
+    min1 = 1/ks * log(min1);
+    min2 = 1/ks * log(min2);
+    max1 = 1/ks * log(max1);
+    max2 = 1/ks * log(max2);
+
+    TacsScalar length = max1 - min1;
+    TacsScalar width = max2 - min2;
 
     // set the panel length and width into the TACS constitutive object
+    for (int i = 0; i < numElements; i++) {
+      if (elements[i]->getComponentNum() == icomp) {
+        elements[i]->getConstitutive()->setPanelLength(length);
+        elements[i]->getConstitutive()->setPanelWidth(width);
+      }
+    }
   }
 }
 
