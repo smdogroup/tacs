@@ -7,10 +7,10 @@
 
     <title>Composite plate optimization with MPhys &#8212; TACS  documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=d59dc883" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -56,7 +56,8 @@ a uniform pressure of 100 kPa loading on the top.
 The plate is discretized into 100 quad shell elements, each having its own independent laminate layup.
 The goal of this example will be to optimize the layup of each element in the plate in order to minimize the total compliance energy.
 A diagram of the problem is shown below.</p>
-<a class="reference internal image-reference" href="../_images/plate_pressure.png"><img alt="Plate problem" src="../_images/plate_pressure.png" style="width: 800px;" /></a>
+<a class="reference internal image-reference" href="../_images/plate_pressure.png"><img alt="Plate problem" src="../_images/plate_pressure.png" style="width: 800px;" />
+</a>
 <p>To make this problem tractable for gradient-based optimization we will make the following simplifications:</p>
 <blockquote>
 <div><ol class="arabic simple">
@@ -65,7 +66,8 @@ A diagram of the problem is shown below.</p>
 </ol>
 </div></blockquote>
 <p>The optimization problem can now be summarized as follows:</p>
-<a class="reference internal image-reference" href="../_images/comp_opt_def.png"><img alt="Optimization problem" src="../_images/comp_opt_def.png" style="width: 800px;" /></a>
+<a class="reference internal image-reference" href="../_images/comp_opt_def.png"><img alt="Optimization problem" src="../_images/comp_opt_def.png" style="width: 800px;" />
+</a>
 <p>To begin we first import required libraries, define the model bdf file, and define important problem constants:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
 
@@ -256,7 +258,8 @@ Finally, we run the problem driver to optimize the problem.</p>
 The <code class="docutils literal notranslate"><span class="pre">f5</span></code> solution file at each optimization iteration can also be converted to a Tecplot or Paraview files using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> or <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>, respectively.
 The optimized ply fraction distributions for each angle can be visualized by plotting the contours of the following variables in Tecplot or Paraview: <code class="docutils literal notranslate"><span class="pre">dv2</span></code>, <code class="docutils literal notranslate"><span class="pre">dv3</span></code>, <code class="docutils literal notranslate"><span class="pre">dv4</span></code>, <code class="docutils literal notranslate"><span class="pre">dv5</span></code>.
 A visualization of the optimized result is shown below:</p>
-<a class="reference internal image-reference" href="../_images/pf_opt.png"><img alt="Plate optimization solution" src="../_images/pf_opt.png" style="width: 800px;" /></a>
+<a class="reference internal image-reference" href="../_images/pf_opt.png"><img alt="Plate optimization solution" src="../_images/pf_opt.png" style="width: 800px;" />
+</a>
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
 <aside class="footnote brackets" id="id1" role="doc-footnote">
@@ -283,7 +286,7 @@ A visualization of the optimized result is shown below:</p>
     <p class="topless"><a href="../theory/theory.html"
                           title="next chapter">Theory</a></p>
   </div>
-<div id="searchbox" style="display: none" role="search">
+<search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
     <div class="searchformwrapper">
     <form class="search" action="../search.html" method="get">
@@ -291,7 +294,7 @@ A visualization of the optimized result is shown below:</p>
       <input type="submit" value="Go" />
     </form>
     </div>
-</div>
+</search>
 <script>document.getElementById('searchbox').style.display = "block"</script>
         </div>
       </div>
