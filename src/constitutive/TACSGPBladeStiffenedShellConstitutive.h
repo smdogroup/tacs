@@ -73,12 +73,14 @@ void printStiffnessMatrix(const TacsScalar* const C);
  * the thickness of the panel. This is a valid assumption for thick laminates.
  *
  * The design variables (in order) for this constitutive model are:
+ * - Panel Length
  * - Stiffener pitch
  * - Panel thickness
  * - Panel ply fractions
  * - Stiffener height
  * - Stiffener thickness
  * - Stiffener ply fractions
+ * - Panel Width
  * NOTE : the panelLength design variable is removed from the
  * TACSBladeStiffenedShellConstitutive.h model
  *
@@ -119,7 +121,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param _stiffenerPly Orthotropic ply object for the stiffener
    * @param _kcorr Shear correction factor
    * @param _panelLength Panel length value
-   * @param _panelWidth Panel width value
+   * @param _panelLengthNum Panel Length design variable number
    * @param _stiffenerPitch Stiffener pitch value
    * @param _stiffenerPitchNum Stiffener pitch design variable number
    * @param _panelThick Panel thickness value
@@ -136,21 +138,24 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param _stiffenerPlyAngles Stiffener ply angles
    * @param _stiffenerPlyFracs Stiffener ply fractions
    * @param _stiffenerPlyFracNums Stiffener ply fraction design variable numbers
+   * @param _panelWidth Panel Width value
+   * @param _panelWidthNum Panel Width design variable number
    * @param _flangeFraction Stiffener base width as a fraction of the stiffener
    * @param useGPs whether to use GPs (Machine Learning) or closed-form for
    * buckling constraints height
    */
   TACSGPBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
-      TacsScalar _kcorr, TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
+      TacsScalar _kcorr, TacsScalar _panelLength, int _panelLengthNum,
+      TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
       TacsScalar _panelThick, int _panelThickNum, int _numPanelPlies,
       TacsScalar _panelPlyAngles[], TacsScalar _panelPlyFracs[],
       int _panelPlyFracNums[], TacsScalar _stiffenerHeight,
       int _stiffenerHeightNum, TacsScalar _stiffenerThick,
       int _stiffenerThickNum, int _numStiffenerPlies,
       TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
-      int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0,
-      bool useGPs = false);
+      int _stiffenerPlyFracNums[], TacsScalar _panelWidth, int _panelWidthNum,
+      TacsScalar _flangeFraction = 1.0, bool useGPs = false);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -169,9 +174,6 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Test `computeCriticalShearLoadSens` against finite difference
    */
   static bool testCriticalShearLoadSens();
-
-  void setPanelLength(TacsScalar _length) { this->panelLength = _length; }
-  void setPanelWidth(TacsScalar _width) { this->panelWidth = _width; }
 
  protected:
   // ==============================================================================
@@ -590,6 +592,16 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar panelWidth;  ///< Panel width
   bool useGPs;
   int NUM_CF_MODES = 50;  // number of modes used in closed-form method
+
+  TacsScalar panelWidthLowerBound = 0.0;
+  TacsScalar panelWidthUpperBound = 1e20;
+
+  // --- Design variable numbers ---
+  int panelWidthNum;  ///< Panel width DV number
+
+  // --- Local design variable numbers, these are useful when returning
+  // sensitivity values ---
+  int panelWidthLocalNum;  ///< Panel width local DV number
 
   // overwrite number of failure modes
   // panel stress, stiffener stress, global buckling, local buckling, stiffener

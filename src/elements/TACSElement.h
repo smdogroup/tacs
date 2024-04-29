@@ -76,10 +76,6 @@ class TACSElement : public TACSObject {
                                   const TacsScalar ddvars[],
                                   TacsScalar *avgStresses) {}
 
-  bool needsPanelDimensions() { return false; }
-  void setPanelLength() {}
-  void setPanelWidth() {}
-
   /**
     Get a string representation of the element name
 

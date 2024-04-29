@@ -34,23 +34,36 @@ const char* TACSGPBladeStiffenedShellConstitutive::constName =
 
 TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
-    TacsScalar _kcorr, TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
-    TacsScalar _panelThick, int _panelThickNum, int _numPanelPlies,
-    TacsScalar _panelPlyAngles[], TacsScalar _panelPlyFracs[],
-    int _panelPlyFracNums[], TacsScalar _stiffenerHeight,
-    int _stiffenerHeightNum, TacsScalar _stiffenerThick, int _stiffenerThickNum,
-    int _numStiffenerPlies, TacsScalar _stiffenerPlyAngles[],
-    TacsScalar _stiffenerPlyFracs[], int _stiffenerPlyFracNums[],
+    TacsScalar _kcorr, TacsScalar _panelLength, int _panelLengthNum,
+    TacsScalar _stiffenerPitch, int _stiffenerPitchNum, TacsScalar _panelThick,
+    int _panelThickNum, int _numPanelPlies, TacsScalar _panelPlyAngles[],
+    TacsScalar _panelPlyFracs[], int _panelPlyFracNums[],
+    TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
+    TacsScalar _stiffenerThick, int _stiffenerThickNum, int _numStiffenerPlies,
+    TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
+    int _stiffenerPlyFracNums[], TacsScalar _panelWidth, int _panelWidthNum,
     TacsScalar _flangeFraction) {
-  this->panelWidth = _panelWidth;
   // call the superclass constructor except with panelLength DV turned off
   TACSBladeStiffenedShellConstitutive(
-      _panelPly, _stiffenerPly, _kcorr, 1.0, -1, _stiffenerPitch,
-      _stiffenerPitchNum, _panelThick, _panelThickNum, _numPanelPlies,
-      _panelPlyAngles, _panelPlyFracs, _panelPlyFracNums, _stiffenerHeight,
-      _stiffenerHeightNum, _stiffenerThick, _stiffenerThickNum,
-      _numStiffenerPlies, _stiffenerPlyAngles, _stiffenerPlyFracs,
-      _stiffenerPlyFracNums, _flangeFraction);
+      _panelPly, _stiffenerPly, _kcorr, _panelLength, _panelLengthNum,
+      _stiffenerPitch, _stiffenerPitchNum, _panelThick, _panelThickNum,
+      _numPanelPlies, _panelPlyAngles, _panelPlyFracs, _panelPlyFracNums,
+      _stiffenerHeight, _stiffenerHeightNum, _stiffenerThick,
+      _stiffenerThickNum, _numStiffenerPlies, _stiffenerPlyAngles,
+      _stiffenerPlyFracs, _stiffenerPlyFracNums, _flangeFraction);
+
+  // DVs section, only one new DV - panelWidth
+  // --- Panel width values ---
+  this->panelWidth = _panelWidth;
+  this->panelWidthNum = _panelWidthNum;
+  this->panelWidthLocalNum = -1;
+  if (_panelWidthNum >= 0) {
+    this->panelWidthLocalNum = this->numDesignVars;
+    this->numDesignVars++;
+    this->numGeneralDV++;
+  }
+  this->panelWidthLowerBound = 0.000;
+  this->panelWidthUpperBound = 1e20;
 }
 
 // ==============================================================================
