@@ -75,6 +75,7 @@ jobs:
         with:
           auto-update-conda: true
           python-version: 3.9
+          architecture: x64
 
       - name: Setup miniconda (macos-latest)
         if: ${{ matrix.OS == 'macos-latest' }}
