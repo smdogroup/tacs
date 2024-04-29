@@ -23,33 +23,27 @@ jobs:
         include:
           # real versions
           - OS: ubuntu-latest
-            ARCHITECTURE: x64
             TARGET: linux-64
             SCALAR: real
 
-          - OS: macos-latest
-            ARCHITECTURE: x64
+          - OS: macos-13
             TARGET: osx-64
             SCALAR: real
 
           - OS: macos-latest
-            ARCHITECTURE: arm64
             TARGET: osx-arm64
             SCALAR: real
 
           # complex versions
           - OS: ubuntu-latest
-            ARCHITECTURE: x64
             TARGET: linux-64
             SCALAR: complex
 
-          - OS: macos-latest
-            ARCHITECTURE: x64
+          - OS: macos-13
             TARGET: osx-64
             SCALAR: complex
 
           - OS: macos-latest
-            ARCHITECTURE: arm64
             TARGET: osx-arm64
             SCALAR: complex
 
@@ -75,14 +69,21 @@ jobs:
           echo "=============================================================";
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - uses: actions/checkout@v2
-
       - name: Setup miniconda
+        if: ${{ matrix.OS != 'macos-latest' }}
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.9
+
+      - name: Setup miniconda (macos-latest)
+        if: ${{ matrix.OS == 'macos-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
           auto-update-conda: true
           python-version: 3.9
-          architecture: ${{ matrix.ARCHITECTURE }}
+          architecture: arm64
 
       - name: Build TACS package
         run: |
