@@ -94,6 +94,10 @@ class TACSShellConstitutive : public TACSConstitutive {
   // The name of the constitutive object
   const char *getObjectName();
 
+  void setPanelLength(TacsScalar _length) {}
+
+  void setPanelWidth(TacsScalar _width) {}
+
  protected:
   // The drilling regularization constant
   static double DRILLING_REGULARIZATION;
