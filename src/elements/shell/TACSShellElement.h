@@ -1778,17 +1778,6 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
 }
 
 template <int vars_per_node, class basis, class model>
-void TACSShellElement<quadrature, basis, director, model>::getCentroid(
-  const TacsScalar elemXpts[], TacsScalar *local_centroidint, TacsScalar *local_area) {
-    int num_nodes = getNumNodes();
-
-    for (int inode = 0; inode < num_nodes; inode++) {
-
-    }
-
-}
-
-template <int vars_per_node, class basis, class model>
 void TACSShellElement<quadrature, basis, director, model>::getKSPanelAxes(
   TacsScalar ks, TacsScalar* axis1, TacsScalar* axis2) {
 

@@ -6092,7 +6092,10 @@ void TACSAssembler::computePanelDimensions() {
         xptVec->getValues(len, nodes, elemXpts);
 
         // get the centroid coordinates
-        elements[i]->getCentroid(elemXpts, &local_centroidint, &local_area);
+        elements[i]->evalPointQuantity(i, TACS_ELEMENT_DENSITY_MOMENT, 0.0, n, pt, elemXpts, vars, dvars, ddvars, detXd, &local_centroidint);
+        // still need a way to get local_area, maybe add a new section where density is 1 and we compute the moment differently
+        // TODO : something to get &local_area
+        // elements[i]->getCentroid(elemXpts, &local_centroidint, &local_area);
       }
     }
 
@@ -6112,7 +6115,8 @@ void TACSAssembler::computePanelDimensions() {
     for (int i = 0; i < numElements; i++) {
       if (elements[i]->getComponentNum() == icomp && element[i]->needsPanelDimensions()) {
         // may need to use evalPointQuantity subroutine here..
-        elements[i]->getGeomInertialTensor(&local_inertia);
+        elements[i]->evalPointQuantity(i, TACS_ELEMENT_MOMENT_OF_INERTIA, 0.0, n, pt, elemXpts, vars, dvars, ddvars, detXd, &local_inertia);
+        // elements[i]->getGeomInertialTensor(&local_inertia);
       }
     }
 
