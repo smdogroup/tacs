@@ -137,7 +137,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   TacsScalar N1;
   N1Crit = computeStiffenerCripplingLoad(D11s, D22s, xiStiff, genPoiss);
   N1 = -stiffenerStress[0];
-  this->fails[4] = N1 / N1Crit;
+  fails[4] = N1 / N1Crit;
   // --- End of computeFailuresValues subsections ---
 
   // aggregate the failure across all 5 failures modes (0-4)
