@@ -63,8 +63,85 @@ TACSGPBladeStiffenedShellConstitutive::~TACSGPBladeStiffenedShellConstitutive() 
 // Compute the failure values for each failure mode of the stiffened panel
 TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
     const TacsScalar e[], TacsScalar fails[]) {
-  // --- Panel material failure ---
-  // TODO : need to complete this function
+
+  // --- #0 - Panel material failure ---
+  fails[0] = this->computePanelFailure(e);
+
+  // --- #1 - Stiffener material failure ---
+  TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
+  this->transformStrain(e, stiffenerStrain);
+  fails[1] = this->computeStiffenerFailure(stiffenerStrain);
+
+  // -- prelim to buckling constraints --
+  // compute the A,B,D matrices of the panel
+  TacsScalar D11p, D22p, D12p, D66p;
+  TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
+      stress[NUM_STRESSES];
+  this->computePanelStiffness(panelStiffness);
+  const TacsScalar *Ap, *Dp;
+  this->extractTangentStiffness(panelStiffness, &Ap, NULL, &Dp, NULL, NULL);
+  this->computePanelStress(e, stress);
+
+  // Compute panel dimensions, material props and non-dimensional parameters
+  TacsScalar N1Crit, N12Crit;
+  TacsScalar D11p = Dp[0], D12p = Dp[1], D22p = Dp[3], D66p = Dp[5];
+  TacsScalar delta, rho0Panel, xiPanel, gamma, a, b;
+  a = this->panelLength;
+  b = this->panelWidth;
+  delta = computeStiffenerAreaRatio();
+  rho0Panel = computeAffineAspectRatio(D11p, D22p, a, b);
+  xiPanel = computeGeneralizedRigidity(D11p, D22p, D12p, D66p);
+  gamma = computeStiffenerStiffnessRatio();
+
+  // --- #2 - Global panel buckling ---
+  // compute the global critical loads
+  N1Crit = computeCriticalGlobalAxialLoad(D11p, D22p, b, delta, rho0Panel, xiPanel, gamma);
+  // TODO : add other inputs like rho0 here and ML buckling constraints
+  N12Crit = computeCriticalGlobalShearLoad(D11p, D22p, b, xiPanel, gamma);
+
+  // combined failure criterion for axial + shear global mode buckling
+  // stress[0] is the panel in-plane load Nx, stress[2] is panel shear in-plane load Nxy
+  this->evalStress(0, NULL, NULL, e, stress);
+  fails[2] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
+
+  // --- #3 - Local panel buckling ---
+  // compute the global critical loads
+  N1Crit = computeCriticalLocalAxialLoad(D11p, D22p, rho0Panel, xiPanel);
+  // TODO : add other inputs like rho0 here and ML buckling constraints
+  N12Crit = computeCriticalLocalShearLoad(D11p, D22p, xiPanel);
+
+  // stress[0] is the panel in-plane load Nx, stress[2] is panel shear in-plane load Nxy
+  this->evalStress(0, NULL, NULL, e, stress);
+  fails[3] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
+
+  // --- #4 - Stiffener crippling ---
+  // compute the A,B,D matrices of the stiffener
+  TacsScalar D11s, D22s, D12s, D66s;
+  TacsScalar stiffenerStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
+      stiffenerStress[NUM_STRESSES];
+  this->computeStiffenerStiffness(stiffenerStiffness);
+  const TacsScalar *As, *Ds;
+  this->extractTangentStiffness(stiffenerStiffness, &As, NULL, &Ds, NULL, NULL);
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+
+  // compute stiffener non-dimensional parameters
+  TacsScalar D11s = Ds[0], D12s = Ds[1], D22s = Ds[3], D66s = Ds[5];
+  TacsScalar delta, rho0Stiff, xiStiff, bStiff, hStiff, genPoiss;
+  bStiff = this->stiffenerHeight;
+  hStiff = this->stiffenerThick;
+  rho0Stiff = computeAffineAspectRatio(D11s, D22s, a, bStiff);
+  xiStiff = computeGeneralizedRigidity(D11s, D22s, D12s, D66s);
+  genPoiss = computeGeneralizedPoissonsRatio(D12s, D66s);
+
+  // Compute panel dimensions, material props and non-dimensional parameters
+  TacsScalar N1;
+  N1Crit = computeStiffenerCripplingLoad(D11s, D22s, xiStiff, genPoiss);
+  N1 = -stiffenerStress[0];
+  this->fails[4] = N1 / N1Crit;
+  // --- End of computeFailuresValues subsections ---
+
+  // aggregate the failure across all 5 failures modes (0-4)
+  return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);  
 }
 
 // Evaluate the derivative of the failure criteria w.r.t. the strain

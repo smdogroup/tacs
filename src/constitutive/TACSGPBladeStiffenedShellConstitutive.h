@@ -549,4 +549,8 @@ class TACSGPBladeStiffenedShellConstitutive : public TACSBladeStiffenedShellCons
   TacsScalar panelWidth;          ///< Panel width
   bool useGPs;
   int NUM_CF_MODES = 50; // number of modes used in closed-form method
+  
+  // overwrite number of failure modes
+  // panel stress, stiffener stress, global buckling, local buckling, stiffener crippling
+  static const int NUM_FAILURES = 5;  ///< Number of failure modes
 };
