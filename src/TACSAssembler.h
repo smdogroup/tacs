@@ -361,7 +361,8 @@ class TACSAssembler : public TACSObject {
                            int *item, TacsScalar *temp,
                            MatrixOrientation matOr);
 
-  // compute the length and width dimensions of a panel and their coordinate derivatives
+  // compute the length and width dimensions of a panel and their coordinate
+  // derivatives
   void computePanelDimensions();
   void computePanelDimensionsXptSens();
 
