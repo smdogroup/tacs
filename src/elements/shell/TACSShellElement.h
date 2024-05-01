@@ -211,8 +211,6 @@ class TACSShellElement : public TACSElement {
                           const TacsScalar dvars[], const TacsScalar ddvars[],
                           TacsScalar *avgStresses);
 
-  bool needsPanelDimensions() { return con->needsPanelDimensions(); }
-
  private:
   // Set sizes for the different components
   static const int usize = 3 * num_nodes;
