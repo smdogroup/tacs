@@ -18,20 +18,15 @@ a part of.
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-from numba import njit
 import numpy as np
 import scipy as sp
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs.constraints.base import TACSConstraint
 from .panel_length import *
 
-# TODO : update this code to do panel width instead..
-
-
-class PanelWidthConstraint(TACSConstraint):
+class PanelWidthConstraint(PanelLengthConstraint):
     def __init__(
         self,
         name,
@@ -43,7 +38,7 @@ class PanelWidthConstraint(TACSConstraint):
     ):
         """
         NOTE: This class should not be initialized directly by the user.
-        Use pyTACS.createPanelLengthConstraint instead.
+        Use pyTACS.createPanelWidthConstraint instead.
 
         Parameters
         ----------
@@ -66,76 +61,7 @@ class PanelWidthConstraint(TACSConstraint):
             Dictionary holding problem-specific option parameters (case-insensitive).
         """
 
-        # Problem name
-        self.name = name
-
-        # Default setup for common constraint class objects, sets up comm and options
-        TACSConstraint.__init__(
-            self, assembler, comm, options, outputViewer, meshLoader
-        )
-
-        # Create a map from the global DV index to the proc index that owns it and the local index on that proc
-        self.globalToLocalDVNumsOnProc = self.comm.gather(
-            self.globalToLocalDVNums, root=0
-        )
-        self.DVMap = {}
-        if self.rank == 0:
-            for procInd in range(self.comm.size):
-                for globalInd, localInd in self.globalToLocalDVNumsOnProc[
-                    procInd
-                ].items():
-                    self.DVMap[globalInd] = {"proc": procInd, "localInd": localInd}
-
-        # Now create the same thing for the nodes
-        nodeDict = self.meshLoader.getGlobalToLocalNodeIDDict()
-        nodeDicts = self.comm.gather(nodeDict, root=0)
-        self.nodeMap = {}
-        if self.rank == 0:
-            for procInd in range(self.comm.size):
-                for globalInd, localInd in nodeDicts[procInd].items():
-                    self.nodeMap[globalInd] = {"proc": procInd, "localInd": localInd}
-
-        # Store the number of DVs and nodes on each proc
-        self.numLocalDVs = self.getNumDesignVars()
-
-        self.computePanelLength = computePanelLength
-        self.computePanelLengthSens = computePanelLengthSens
-
-        # Store flags for whether or not we need to recompute the constraints and derivatives
-        self.constraintsUpToDate = {}
-        self.funcs = {}
-        self.constraintsSensUpToDate = {}
-        self.funcsSens = {}
-
-    def setDesignVars(self, x):
-        """
-        Update the design variables used by tacs.
-
-        Parameters
-        ----------
-        x : numpy.ndarray or dict or tacs.TACS.Vec
-            The variables (typically from the optimizer) to set. It
-            looks for variable in the ``self.varName`` attribute if in dict.
-
-        """
-        TACSConstraint.setDesignVars(self, x)
-        for key in self.constraintsUpToDate:
-            self.constraintsUpToDate[key] = False
-
-    def setNodes(self, Xpts):
-        """
-        Set the mesh coordinates of the structure.
-
-        Parameters
-        ----------
-        coords : numpy.ndarray
-            Structural coordinate in array of size (N * 3) where N is
-            the number of structural nodes on this processor.
-        """
-        TACSConstraint.setNodes(self, Xpts)
-        for key in self.constraintsUpToDate:
-            self.constraintsUpToDate[key] = False
-            self.constraintsSensUpToDate[key] = False
+        super(PanelWidthConstraint, self).__init__(name, assembler, comm, outputViewer, meshLoader, options)
 
     def addConstraint(self, conName, compIDs=None, lower=None, upper=None, dvIndex=0):
         """
@@ -174,6 +100,7 @@ class PanelWidthConstraint(TACSConstraint):
         boundaryNodeLocalInds = []
         boundaryNodeLocalProcs = []
         refAxes = []
+        widthAxes = []
         dvJacRows = []
         dvJacCols = []
         dvJacVals = []
@@ -213,6 +140,11 @@ class PanelWidthConstraint(TACSConstraint):
                 refAxis -= np.dot(refAxis, panelNormal) * panelNormal
                 refAxis /= np.linalg.norm(refAxis)
                 refAxes.append(refAxis)
+
+                # now this refAxis is the panel length axis, compute the width axis which is normal to the length + panel normal axis
+                widthAxis = np.cross(refAxis, panelNormal)
+                widthAxis /= np.linalg.norm(widthAxis)
+                widthAxes.append(widthAxes)
 
                 # Now figure out where the DV for this component lives
                 globalDvNums = elemObj.getDesignVarNums(0)
@@ -277,7 +209,8 @@ class PanelWidthConstraint(TACSConstraint):
                 "boundaryNodeGlobalInds": boundaryNodeGlobalInds,
                 "boundaryNodeLocalInds": boundaryNodeLocalInds,
                 "boundaryNodeLocalProcs": boundaryNodeLocalProcs,
-                "refAxes": refAxes,
+                "lengthAxes": refAxes,
+                "widthAxes" : widthAxes,
             }
         else:
             self.constraintList[conName] = {"nCon": len(compIDs)}
@@ -310,70 +243,6 @@ class PanelWidthConstraint(TACSConstraint):
 
         return success
 
-    def getConstraintBounds(self, bounds, evalCons=None):
-        """
-        Get bounds for constraints. The constraints corresponding to the strings in
-        `evalCons` are evaluated and updated into the provided
-        dictionary.
-
-        The panel length constraints are equality constraints so both the upper and lower bounds are zero
-
-        Parameters
-        ----------
-        bounds : dict
-            Dictionary into which the constraint bounds are saved.
-            Bounds will be saved as a tuple: (lower, upper)
-        evalCons : iterable object containing strings.
-            If not none, use these constraints to evaluate.
-
-        Examples
-        --------
-        >>> conBounds = {}
-        >>> tacsConstraint.getConstraintBounds(conBounds, 'LE_SPAR')
-        >>> conBounds
-        >>> # Result will look like (if TACSConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
-        """
-        # Check if user specified which constraints to output
-        # Otherwise, output them all
-        evalCons = self._processEvalCons(evalCons)
-
-        # Loop through each requested constraint set
-        for conName in evalCons:
-            key = f"{self.name}_{conName}"
-            nCon = self.constraintList[conName]["nCon"]
-            bounds[key] = (np.zeros(nCon), np.zeros(nCon))
-
-    def getConstraintSizes(self, sizes, evalCons=None):
-        """
-        Get number for constraint equations in each set.
-        The constraints corresponding to the strings in `evalCons`
-        are evaluated and updated into the provided dictionary.
-
-        Parameters
-        ----------
-        sizes : dict
-            Dictionary into which the constraint sizes are saved.
-        evalCons : iterable object containing strings.
-            If not none, use these constraints to evaluate.
-
-        Examples
-        --------
-        >>> conSizes = {}
-        >>> tacsConstraint.getConstraintSizes(conSizes, 'LE_SPAR')
-        >>> funconSizescs
-        >>> # Result will look like (if TACSConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR': 10}
-        """
-        # Check if user specified which constraints to output
-        # Otherwise, output them all
-        evalCons = self._processEvalCons(evalCons)
-
-        # Loop through each requested constraint set
-        for conName in evalCons:
-            key = f"{self.name}_{conName}"
-            sizes[key] = self.constraintList[conName]["nCon"]
-
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
         Evaluate values for constraints. The constraints corresponding to the strings in
@@ -396,7 +265,7 @@ class PanelWidthConstraint(TACSConstraint):
         >>> funcs = {}
         >>> adjConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
-        >>> # Result will look like (if PanelLengthConstraint has name of 'c1'):
+        >>> # Result will look like (if PanelWidthConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([1.325, 2.1983645, 3.1415926, ...])}
         """
 
@@ -440,11 +309,11 @@ class PanelWidthConstraint(TACSConstraint):
                                 "boundaryNodeLocalInds"
                             ][ii][jj]
                             boundaryPoints[jj] = nodes[nodeProc][localInd]
-                        refAxis = self.constraintList[conName]["refAxes"][ii]
+                        widthAxis = self.constraintList[conName]["widthAxes"][ii]
                         DVProc = self.constraintList[conName]["dvProcs"][ii]
                         DVLocalInd = self.constraintList[conName]["dvLocalInds"][ii]
                         constraintValues[ii] = (
-                            self.computePanelLength(boundaryPoints, refAxis)
+                            self.computePanelLength(boundaryPoints, widthAxis)
                             - DVs[DVProc][DVLocalInd]
                         )
                 funcs[key] = self.comm.bcast(constraintValues, root=0)
@@ -529,8 +398,8 @@ class PanelWidthConstraint(TACSConstraint):
                                 "boundaryNodeLocalInds"
                             ][ii][jj]
                             boundaryPoints[jj] = nodes[nodeProc][localInd]
-                        refAxis = self.constraintList[conName]["refAxes"][ii]
-                        LSens = self.computePanelLengthSens(boundaryPoints, refAxis)
+                        widthAxis = self.constraintList[conName]["widthAxes"][ii]
+                        LSens = self.computePanelLengthSens(boundaryPoints, widthAxis)
                         for jj in range(numPoints):
                             nodeProc = self.constraintList[conName][
                                 "boundaryNodeLocalProcs"
@@ -548,146 +417,3 @@ class PanelWidthConstraint(TACSConstraint):
                 )
                 funcsSens[key][self.coordName] = self.funcsSens[key].copy()
                 self.constraintsSensUpToDate[conName] = True
-
-    def _getComponentBoundaryNodes(self, compIDs):
-        """For a given list of components, find the nodes on the boundaries of
-        each of the components.
-
-        The results are broadcast to all procs
-
-        Parameters
-        ----------
-        compIDs: list[int]
-            List of compIDs to find boundaries of.
-
-        Returns
-        --------
-        dict[int, list[int]]
-            Dictionary where dict[compID] = sorted list of nodeIDs on the
-            boundary of the component
-        dict[int, np.array]
-            Dictionary where dict[compID] = array of node coordinates on the
-            boundary of the component
-        """
-
-        boundaryNodeIDs = {}
-        boundaryNodeCoords = {}
-
-        if self.rank == 0:
-            for compID in compIDs:
-                allEdges = set()
-                dupEdges = set()
-                compConn = self.meshLoader.getConnectivityForComp(
-                    compID, nastranOrdering=False
-                )
-                # Go over all the elements in the component and add their edges to the sets of all and possibly duplicate edges
-                for elemConn in compConn:
-                    nnodes = len(elemConn)
-                    if nnodes >= 2:
-                        for j in range(nnodes):
-                            nodeID1 = elemConn[j]
-                            nodeID2 = elemConn[(j + 1) % nnodes]
-
-                            if nodeID1 < nodeID2:
-                                key = (nodeID1, nodeID2)
-                            else:
-                                key = (nodeID2, nodeID1)
-
-                            # Skip degenerate edges
-                            if key[0] != key[1]:
-                                # Either add to allEdges or dupEdges depending on whether we've seen this edge before
-                                if key not in allEdges:
-                                    allEdges.add(key)
-                                else:
-                                    dupEdges.add(key)
-                # Now get a list of all the edges that aren't duplicated, these are the boundary edges
-                boundaryEdges = list(allEdges - dupEdges)
-
-                # Create a nodeToElem Pointer using a dictionary:
-                nodeToElem = {}
-                for iEdge in range(len(boundaryEdges)):
-                    edge = boundaryEdges[iEdge]
-                    for ii in range(2):
-                        if edge[ii] in nodeToElem:
-                            nodeToElem[edge[ii]].append(iEdge)
-                        else:
-                            nodeToElem[edge[ii]] = [iEdge]
-
-                # Now check that each nodeToElem has a length of
-                # 2. This means we have a chance it is a
-                # closed curve
-                for key in nodeToElem:
-                    if len(nodeToElem[key]) != 2:
-                        raise ValueError(
-                            "The topology of the geometry associated with "
-                            "a constitutive object is not manifold "
-                            "(There is a node with three or more edges "
-                            "attached. This constitutive object cannot "
-                            "use a panel-type constitutive object. "
-                            f"CompIDs are: {repr(compIDs)}"
-                        )
-
-                # Now we will "order" the edges if possible. This
-                # will also allow us to detect multiple loops
-                # which isn't allowed, or a non-manifold local
-                # geometry - ie. in this context a node connected
-                # to three edges. This is also not allowed.
-
-                nodeChain = [boundaryEdges[0][0], boundaryEdges[0][1]]
-                cont = True
-                curElem = 0
-                while cont:
-                    # We arbitrarily pick the first 'element'
-                    # (edge) containing the first two nodes of our
-                    # chain. Next step is to find the next element
-                    # and node in the chain:
-                    nextElems = nodeToElem[nodeChain[-1]]
-                    # Get the 'nextElem' that isn't the current
-                    # one
-                    if nextElems[0] == curElem:
-                        nextElem = nextElems[1]
-                    else:
-                        nextElem = nextElems[0]
-
-                    # Now nextElem is the next in the chain. Get
-                    # the nodes for this elem:
-                    nextNodes = boundaryEdges[nextElem]
-
-                    # Append the node that isn't the last one
-                    # (that is already in the chain)
-                    if nextNodes[0] == nodeChain[-1]:
-                        nodeChain.append(nextNodes[1])
-                    else:
-                        nodeChain.append(nextNodes[0])
-
-                    # Exit condition:
-                    if nodeChain[-1] == nodeChain[0]:
-                        # We've made it all the way around!
-                        cont = False
-
-                    # Set current element
-                    curElem = nextElem
-
-                # Now check that we've *actually* used all of our
-                # nodes. Since we've determined it is manifold,
-                # this must mean we have multiple loops which
-                # *also* isn't allowed.
-                if len(nodeChain) - 1 != len(boundaryEdges):
-                    raise ValueError(
-                        "Detected more than one closed loop for "
-                        "constitutive object. This is not allowed. "
-                        "This constitutive object cannot use a "
-                        "panel-type constitutive object. "
-                        f"CompIDs are: {repr(compIDs)}"
-                    )
-                nodeChain = nodeChain[:-1]
-                nodeChainCoords = self.meshLoader.getBDFNodes(
-                    nodeChain, nastranOrdering=False
-                )
-                nodeIDs, coords = simplifyPoly(nodeChain, nodeChainCoords)
-                boundaryNodeIDs[compID] = nodeIDs
-                boundaryNodeCoords[compID] = coords
-
-        return self.comm.bcast(boundaryNodeIDs, root=0), self.comm.bcast(
-            boundaryNodeCoords, root=0
-        )

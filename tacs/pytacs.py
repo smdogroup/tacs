@@ -959,9 +959,7 @@ class pyTACS(BaseUI):
                 Yc = matInfo.Yc
                 S12 = matInfo.S
 
-                if (
-                    S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0
-                ):
+                if S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0:
                     self._TACSWarning(
                         f"MAT8 card {matInfo.mid} has a zero strength, check Xc, Xt, Yc, Yt, and S12."
                         "Otherwise Tsai-Wu Failure criterion is undefined or infinity."
@@ -2156,6 +2154,36 @@ class pyTACS(BaseUI):
             PanelLengthConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.PanelLengthConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+    
+    @postinitialize_method
+    def createPanelWidthConstraint(self, name, options=None):
+        """Create a new PanelWidthConstraint for enforcing that the panel
+        width DV values passed to components match the actual panel widths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.{PanelWidthConstraint}
+            PanelWidthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.PanelWidthConstraint(
             name,
             self.assembler,
             self.comm,
