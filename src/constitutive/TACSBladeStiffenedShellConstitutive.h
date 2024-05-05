@@ -981,6 +981,44 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       const TacsScalar N12Crit, TacsScalar* N1Sens, TacsScalar* N1CritSens,
       TacsScalar* N12Sens, TacsScalar* N12CritSens);
 
+
+  // ==============================================================================
+  // Thermal properties
+  // ==============================================================================
+
+// Evaluate the specific heat
+  TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
+                              const TacsScalar X[]);
+
+  // Evaluate the stresss
+  void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
+                  const TacsScalar strain[], TacsScalar stress[]);
+
+  // Evaluate failure
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
+
+  // Evaluate the derivative of the failure criteria w.r.t. the strain
+  TacsScalar evalFailureStrainSens(int elemIndex, const double pt[],
+                                   const TacsScalar X[], const TacsScalar e[],
+                                   TacsScalar sens[]);
+
+  // Evaluate the tangent stiffness
+  void evalTangentStiffness(int elemIndex, const double pt[],
+                            const TacsScalar X[], TacsScalar C[]);
+
+  // Evaluate the thermal strain
+  void evalThermalStrain(int elemIndex, const double pt[], const TacsScalar X[],
+                         TacsScalar theta, TacsScalar strain[]);
+
+  // Evaluate the heat flux, given the thermal gradient
+  void evalHeatFlux(int elemIndex, const double pt[], const TacsScalar X[],
+                    const TacsScalar grad[], TacsScalar flux[]);
+
+  // Evaluate the tangent of the heat flux
+  void evalTangentHeatFlux(int elemIndex, const double pt[],
+                           const TacsScalar X[], TacsScalar C[]);
+
   // ==============================================================================
   // Attributes
   // ==============================================================================
