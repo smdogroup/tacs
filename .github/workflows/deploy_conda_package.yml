@@ -30,7 +30,7 @@ jobs:
             TARGET: osx-64
             SCALAR: real
 
-          - OS: macos-14
+          - OS: macos-latest
             TARGET: osx-arm64
             SCALAR: real
 
@@ -43,7 +43,7 @@ jobs:
             TARGET: osx-64
             SCALAR: complex
 
-          - OS: macos-14
+          - OS: macos-latest
             TARGET: osx-arm64
             SCALAR: complex
 
@@ -70,14 +70,16 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - uses: actions/checkout@v2
       - name: Setup miniconda
-        if: ${{ matrix.OS != 'macos-14' }}
+        if: ${{ matrix.TARGET != 'osx-arm64' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
+          miniconda-version: "latest"
           auto-update-conda: true
           python-version: 3.9
+          architecture: x64
 
-      - name: Setup miniconda (MACOS-14)
-        if: ${{ matrix.OS == 'macos-14' }}
+      - name: Setup miniconda (macos-latest)
+        if: ${{ matrix.TARGET == 'osx-arm64' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
