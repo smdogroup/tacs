@@ -30,4 +30,6 @@ public:
 private:
  void loadAxialData(filename);
  void loadShearData(filename);
+
+ Xtrain; alpha
 }
