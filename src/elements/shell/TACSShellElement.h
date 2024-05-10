@@ -103,8 +103,6 @@ class TACSShellElement : public TACSElement {
 
   bool getComplexStepGmatrix() { return complexStepGmatrix; };
 
-  void getKSPanelAxes(TacsScalar ks, TacsScalar* axis1, TacsScalar* axis2);
-
   double getQuadraturePoint(int n, double pt[]) {
     return quadrature::getQuadraturePoint(n, pt);
   }
@@ -212,8 +210,6 @@ class TACSShellElement : public TACSElement {
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
                           TacsScalar *avgStresses);
-
-  bool needsPanelDimensions() {return true;}
 
  private:
   // Set sizes for the different components
@@ -1775,71 +1771,6 @@ int TacsTestShellTyingStrain(double dh = 1e-7, int test_print_level = 2,
   fail = (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
   return fail;
-}
-
-template <int vars_per_node, class basis, class model>
-void TACSShellElement<quadrature, basis, director, model>::getCentroid(
-  const TacsScalar elemXpts[], TacsScalar *local_centroidint, TacsScalar *local_area) {
-    int num_nodes = getNumNodes();
-
-    for (int inode = 0; inode < num_nodes; inode++) {
-
-    }
-
-}
-
-template <int vars_per_node, class basis, class model>
-void TACSShellElement<quadrature, basis, director, model>::getKSPanelAxes(
-  TacsScalar ks, TacsScalar* axis1, TacsScalar* axis2) {
-
-    // compute the principal axes of the inertial tensor
-    // solve 3x3 eigenvalue problem
-    TacsScalar principalInertias[3];
-    TacsScalar principalAxes[9];
-    // TBD : need to implement the operations to solve the 3x3 eigenvalue problem
-    getPrincipalAxes(&principalInertias, &principalAxes);
-
-    TacsScalar minAxis[3], min2Axis[3]; // axis 1 has lowest inertia, 2 has middle inertia
-    TacsScalar ks = 50.0;
-    TacsScalar minInertia, temp = 0.0, temp2 = 0.0;
-    TacsScalar ks = 50.0;
-
-    // sum of softmax for min inertia
-    for (int v = 0; v < 3; v++) {
-      temp += exp(ks * -principalInertias[v]);
-    }
-    minInertia = 1.0/ks * log(temp);
-    // sum of softmax entries for second min inertia (use (x-m) * exp(ks*(m-x)) to get min second inertia) 
-    for (int v = 0; v < 3; v++) {
-      temp2 += (principalInertias[v] - minInertia) * exp(ks * (minInertia - principalInertias[v]))
-    }
-
-    for (int v = 0; v < 3; v++) {
-      for (int d = 0; d < 3; d++) {
-        minAxis[d] += exp(ks * -principalInertias[v]) / temp * principalAxes[3*v+d];
-        min2Axis[d] += (principalInertias[v] - minInertia) * exp(ks * (minInertia - principalInertias[v])) / temp2 * principalAxes[3*v+d];
-      }
-    }
-
-    // get the ref direction from the constitutive object to determine the length and width direction
-    //     of the panel using softmax of dot with ref axis
-    TacsScalar axis1[3], axis2[3], refAxis[3];
-    elements[0]->getRefLoadAxis(&refAxis);
-
-    TacsScalar dot1 = 0.0, dot2 = 0.0;
-    for (int d = 0; d < 3; d++) {
-      dot1 += minAxis[d] * refAxis[d];
-      dot2 += min2Axis[d] * refAxis[d];
-    }
-
-    TacsScalar temp1 = 0.0, temp2 = 0.0;
-    temp1 = exp(ks * dot1) + exp(ks * dot2);
-    temp2 = exp(-ks * dot1) + exp(-ks * dot2);
-
-    for (int d = 0; d < 3; d++) {
-      axis1[d] += exp(ks * dot1) / temp1 * minAxis[d] + exp(ks * dot2) / temp1 * min2Axis[d];
-      axis2[d] += exp(-ks * dot1) / temp2 * minAxis[d] + exp(-ks * dot2) / temp2 * min2Axis[d];
-    }
 }
 
 #endif  // TACS_SHELL_ELEMENT_H

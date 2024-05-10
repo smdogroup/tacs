@@ -361,10 +361,6 @@ class TACSAssembler : public TACSObject {
                            int *item, TacsScalar *temp,
                            MatrixOrientation matOr);
 
-  // compute the length and width dimensions of a panel and their coordinate derivatives
-  void computePanelDimensions();
-  void computePanelDimensionsXptSens();
-
   TACSNodeMap *nodeMap;               // Variable ownership map
   TACSBcMap *bcMap;                   // Boundary condition data
   TACSBcMap *bcInitMap;               // Initial boundary condition data
