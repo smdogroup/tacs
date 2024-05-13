@@ -25,8 +25,8 @@ buckling constraints of stiffened panels.
 
 class GaussianProcessModel {
  public:
-  GaussianProcessModel(int n_train, int n_param, TacsScalar Xtrain[],
-                       TacsScalar alpha[]);
+  GaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
+                       const TacsScalar alpha[]);
   ~GaussianProcessModel();
 
   // predict the test data at a single point using a matrix-vector product
@@ -46,11 +46,19 @@ class GaussianProcessModel {
     return exp(rho * x) / (1 + exp(rho * x));
   }
 
+  // GETTERS AND SETTERS
+  // -------------------
+
+  int getNtrain() { return n_train; }
+  int getNparam() { return n_param; }
+
  protected:
   // virtual functions for the kernel definition and its sensitivity
-  virtual TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain);
+  virtual TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) {
+    return 0.0;
+  };
   virtual void kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain,
-                          TacsScalar alpha, TacsScalar* Xtestsens);
+                          TacsScalar alpha, TacsScalar* Xtestsens){};
 
   int n_train;
   int n_param;
@@ -62,39 +70,37 @@ class GaussianProcessModel {
   TacsScalar* alpha;
 };
 
-class AxialGaussianProcessModel : GaussianProcessModel {
+class AxialGaussianProcessModel : public GaussianProcessModel {
  public:
   AxialGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                             const TacsScalar alpha[])
-      : GaussianProcessModel(n_train, N_PARAM, Xtrain, alpha){};
-  AxialGaussianProcessModel();  // empty constructor for debugging purposes
-  ~AxialGaussianProcessModel() : ~GaussianProcessModel(){};
+      : GaussianProcessModel(n_train, N_PARAM, Xtrain, alpha) {
+    setDefaultHyperParameters();
+  };
+  ~AxialGaussianProcessModel();
   void setDefaultHyperParameters();
 
  protected:
   // here Xtest, Xtrain are each length 5 arrays (N_PARAM) [just uses one train
   // and one test point here] these are overwritten from subclass
-  TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain){};
+  TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain);
   void kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain,
                   TacsScalar alpha, TacsScalar* Xtestsens);
 
   // set the default hyperparameters of the model
-  const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
+  TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
-  static int N_PARAM = 4;
+  static const int N_PARAM = 4;
 };
 
-class ShearGaussianProcessModel : AxialGaussianProcessModel {
+class ShearGaussianProcessModel : public AxialGaussianProcessModel {
  public:
   ShearGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                             const TacsScalar alpha[])
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  ShearGaussianProcessModel()
-      : AxialGaussianProcessModel(){};  // empty constructor for debugging
-                                        // purposes
-  ~ShearGaussianProcessModel() : ~AxialGaussianProcessModel(){};
+  ~ShearGaussianProcessModel();
   // void setdefaultHyperParameters();
  protected:
   // set the default hyperparameters of the model
@@ -102,15 +108,12 @@ class ShearGaussianProcessModel : AxialGaussianProcessModel {
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 };
 
-class CripplingGaussianProcessModel : AxialGaussianProcessModel {
+class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
  public:
   CripplingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                                 const TacsScalar alpha[])
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  CripplingGaussianProcessModel()
-      : AxialGaussianProcessModel(){};  // empty constructor for debugging
-                                        // purposes
-  ~CripplingGaussianProcessModel() : ~AxialGaussianProcessModel(){};
+  ~CripplingGaussianProcessModel();
   // void setdefaultHyperParameters();
  protected:
   // set the default hyperparameters of the model

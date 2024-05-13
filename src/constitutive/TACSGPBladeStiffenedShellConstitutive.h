@@ -23,13 +23,8 @@ constraints of the stiffened panels.
 // Extension Includes
 // =============================================================================
 #include "GaussianProcessModel.h"
-#include "TACSBeamConstitutive.h"
 #include "TACSBladeStiffenedShellConstitutive.h"
-#include "TACSMaterialProperties.h"
-#include "TACSShellConstitutive.h"
 #include "TacsUtilities.h"
-
-void printStiffnessMatrix(const TacsScalar* const C);
 
 // =============================================================================
 // Class Declaration
@@ -159,9 +154,10 @@ class TACSGPBladeStiffenedShellConstitutive
       TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
       TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
       int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-      TacsScalar flangeFraction = 1.0, AxialGaussianProcessModel* axialGP,
-      ShearGaussianProcessModel* shearGP,
-      CripplingGaussianProcessModel* cripplingGP);
+      TacsScalar flangeFraction = 1.0,
+      AxialGaussianProcessModel* axialGP = nullptr,
+      ShearGaussianProcessModel* shearGP = nullptr,
+      CripplingGaussianProcessModel* cripplingGP = nullptr);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -199,6 +195,32 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Test all GP tests
    */
   TacsScalar testAllTests(TacsScalar epsilon);
+
+  // ==============================================================================
+  // Getter and setters
+  // ==============================================================================
+
+  // get the three Gaussian Process model pointers
+  AxialGaussianProcessModel* getAxialGP() { return axialGP; }
+  ShearGaussianProcessModel* getShearGP() { return shearGP; }
+  CripplingGaussianProcessModel* getCripplingGP() { return cripplingGP; }
+
+  // Retrieve the global design variable numbers
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+
+  // Set the element design variable from the design vector
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+
+  // Get the element design variables values
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+
+  // Get the lower and upper bounds for the design variable values
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
+
+  // Retrieve the design variable for plotting purposes
+  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
+                                  const TacsScalar X[], int index);
 
  protected:
   // ==============================================================================
@@ -437,9 +459,9 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    */
   TacsScalar computeTransverseShearParameterSens(
-      const TacsScalar zetasens, TacsScalar A66, TacsScalar A11, TacsScalar b,
-      TacsScalar h, TacsScalar* A66sens, TacsScalar* A11sens, TacsScalar* bsens,
-      TacsScalar* hsens);
+      const TacsScalar zetasens, const TacsScalar A66, const TacsScalar A11,
+      const TacsScalar b, const TacsScalar h, TacsScalar* A66sens,
+      TacsScalar* A11sens, TacsScalar* bsens, TacsScalar* hsens);
 
   /**
    *
@@ -601,7 +623,7 @@ class TACSGPBladeStiffenedShellConstitutive
       const TacsScalar b, const TacsScalar xi, const TacsScalar rho_0,
       const TacsScalar gamma, const TacsScalar zeta, TacsScalar* D11sens,
       TacsScalar* D22sens, TacsScalar* bsens, TacsScalar* xisens,
-      TacsScalar rho_0sens, TacsScalar* gammasens, const TacsScalar zetasens);
+      TacsScalar* rho_0sens, TacsScalar* gammasens, TacsScalar* zetasens);
 
   /**
    *
@@ -670,8 +692,8 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param lam2bar return value of lam2bar which is always positive since it
    * shows up as squared
    */
-  static void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
-                                TacsScalar* lam1bar, TacsScalar* lam2bar);
+  void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
+                         TacsScalar* lam1bar, TacsScalar* lam2bar);
 
   /**
    * @brief Compute the derivatives of lam2sq  for the critical shear load
@@ -687,16 +709,15 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param dl2xi dlam2_bar/dxi sens
    * @param dl2gamma dlam2_bar/dgamma sens
    */
-  static void nondimShearParamsSens(const TacsScalar xi, const TacsScalar gamma,
-                                    TacsScalar* lam1bar, TacsScalar* lam2bar,
-                                    TacsScalar* dl1xi, TacsScalar* dl1gamma,
-                                    TacsScalar* dl2xi, TacsScalar* dl2gamma);
+  void nondimShearParamsSens(const TacsScalar xi, const TacsScalar gamma,
+                             TacsScalar* lam1bar, TacsScalar* lam2bar,
+                             TacsScalar* dl1xi, TacsScalar* dl1gamma,
+                             TacsScalar* dl2xi, TacsScalar* dl2gamma);
 
-  static TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi,
-                                   const TacsScalar gamma);
-  static TacsScalar lam2ConstraintDeriv(const TacsScalar lam2sq,
-                                        const TacsScalar xi,
-                                        const TacsScalar gamma);
+  TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi,
+                            const TacsScalar gamma);
+  TacsScalar lam2ConstraintDeriv(const TacsScalar lam2sq, const TacsScalar xi,
+                                 const TacsScalar gamma);
 
   /**
    * @brief Compute the critical stiffener crippling load
@@ -758,21 +779,18 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // --- Design variable values ---
   TacsScalar panelWidth;  ///< Panel width
-  TacsScalar M_PI = 3.14159265358979323846;
   int NUM_CF_MODES = 50;  // number of modes used in closed-form method
 
   TacsScalar panelWidthLowerBound = 0.0;
   TacsScalar panelWidthUpperBound = 1e20;
 
   // --- Design variable numbers ---
-  int panelWidthNum;  ///< Panel width DV number
-
-  // --- Local design variable numbers, these are useful when returning
-  // sensitivity values ---
+  int panelWidthNum;       ///< Panel width DV number
   int panelWidthLocalNum;  ///< Panel width local DV number
 
   // overwrite number of failure modes
   // panel stress, stiffener stress, global buckling, local buckling, stiffener
   // crippling
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
+  static const char* constName;       ///< Constitutive model name
 };
