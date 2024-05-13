@@ -1279,9 +1279,15 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
 
         # make null ptrs for GPs if not defined and store them in this class too
-        cdef AxialGaussianProcessModel *axial_gp_ptr = <AxialGaussianProcessModel*>axialGP.axial_gp
-        cdef ShearGaussianProcessModel *shear_gp_ptr = <ShearGaussianProcessModel*>shearGP.gp
-        cdef CripplingGaussianProcessModel *crippling_gp_ptr = <CripplingGaussianProcessModel*>cripplingGP.gp
+        cdef AxialGaussianProcessModel *axial_gp_ptr = NULL
+        if axialGP is not None:
+            axial_gp_ptr = (<AxialGP>axialGP).axial_gp
+        cdef ShearGaussianProcessModel *shear_gp_ptr = NULL
+        if shearGP is not None:
+            shear_gp_ptr = (<ShearGP>shearGP).gp
+        cdef CripplingGaussianProcessModel *crippling_gp_ptr = NULL
+        if cripplingGP is not None:
+            crippling_gp_ptr = (<CripplingGP>cripplingGP).gp
 
         self.gp_blade_ptr = new TACSGPBladeStiffenedShellConstitutive(
             panelPly.ptr,

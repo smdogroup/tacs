@@ -10,6 +10,10 @@ np.random.seed(1342342)
 
 class GPConstitutiveMLTest(unittest.TestCase):
     def setUp(self):
+        self._my_debug = True
+
+        if self._my_debug: print(f"begin setUp in class {self.__class__}")
+
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-200
@@ -147,6 +151,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         # construct the optional ML models
         n_train = 4
 
+        if self._my_debug: print(f"make the axial GP")
         n_param = constitutive.AxialGP.n_param
         self.axialGP = constitutive.AxialGP(
             n_train,
@@ -154,6 +159,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train),
         )
 
+        if self._my_debug: print(f"make the shear GP")
         n_param = constitutive.ShearGP.n_param
         self.shearGP = constitutive.ShearGP(
             n_train,
@@ -161,6 +167,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train),
         )
 
+        if self._my_debug: print(f"make the crippling GP")
         n_param = constitutive.CripplingGP.n_param
         self.cripplingGP = constitutive.CripplingGP(
             n_train,
@@ -171,6 +178,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
     def get_con(self, ply):
         # TODO : add cython construction of TACSGPBladeStiffenedShellConstitutive
         # and repeat this test for ML and then closed-form cases each
+        if self._my_debug: print("make the GP Blade constitutive object")
         con = constitutive.GPBladeStiffenedShellConstitutive(
             ply,
             ply,
@@ -198,16 +206,21 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.shearGP,
             self.cripplingGP,
         )
+        if self._my_debug: print("\tdone making the GP Blade constitutive object")
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
+        if self._my_debug: print("Call setKSWeight")
         con.setKSWeight(0.1)
+        if self._my_debug: print("\tDone calling setKSWeight")
         return con
 
     def test_constitutive_density(self):
         # Test density dv sensitivity
+        if self._my_debug: print("test constitutive density", flush=True)
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
+                if self._my_debug: print("prior to test density subroutine")
                 fail = constitutive.TestConstitutiveDensity(
                     con,
                     self.elem_index,
@@ -219,6 +232,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
                     self.atol,
                     self.rtol,
                 )
+                if self._my_debug: print(f"after test density subroutine fail = {fail}", flush=True)
                 self.assertFalse(fail)
 
     # def test_constitutive_specific_heat(self):
@@ -259,6 +273,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
 
     def test_constitutive_stress(self):
         # Test stress dv sensitivity
+        if self._my_debug: print("test constitutive stress", flush=True)
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
@@ -295,6 +310,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
 
     def test_constitutive_failure(self):
         # Test failure dv sensitivity
+        if self._my_debug: print("test constitutive failure DV sens", flush=True)
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
@@ -314,6 +330,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
                 self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
+        if self._my_debug: print("test constitutive failure strain sens", flush=True)
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
@@ -333,6 +350,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
 
     def test_constitutive_internal_tests(self):
         """test all the internal or intermediate tests in C++"""
+        if self._my_debug: print("test constitutive internal tests", flush=True)
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
