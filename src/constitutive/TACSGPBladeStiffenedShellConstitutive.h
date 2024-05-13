@@ -792,5 +792,9 @@ class TACSGPBladeStiffenedShellConstitutive
   // panel stress, stiffener stress, global buckling, local buckling, stiffener
   // crippling
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
-  static const char* constName;       ///< Constitutive model name
+
+ private:
+  // private so that subclass constName for GP buckling constraints doesn't
+  // conflict with superclass
+  static const char* constName;  ///< Constitutive model name
 };

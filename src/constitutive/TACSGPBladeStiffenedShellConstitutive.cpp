@@ -80,43 +80,30 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
 // ==============================================================================
 TACSGPBladeStiffenedShellConstitutive::
     ~TACSGPBladeStiffenedShellConstitutive() {
-  printf("C++ GPConst destructor: start\n");
-
-  // call superclass destructor
-  TACSBladeStiffenedShellConstitutive::~TACSBladeStiffenedShellConstitutive();
-  printf("C++ GPConst destructor: done with subclass destructor\n");
+  // Don't call the base class destructor C++ does that automatically (and will
+  // seg fault if you call it here.)
 
   // destroy the gaussian process model objects if they exist
   if (this->axialGP) {
-    printf("C++ GPconst destructor: attempt destroy axialGP pointer ",
-           this->axialGP);
+    // this object is shared, may not want to delete it (unless a local copy is
+    // made)
     delete this->axialGP;
     this->axialGP = nullptr;
-  } else {
-    printf("C++ GPConst Destructor: has nullptr for axialGP\n");
   }
-  printf("C++ GPConst destructor: destroyed axialGP\n");
 
   if (this->shearGP) {
-    printf("C++ GPconst destructor: attempt destroy shearGP pointer ",
-           this->shearGP);
+    // this object is shared, may not want to delete it (unless a local copy is
+    // made)
     delete this->shearGP;
     this->shearGP = nullptr;
-  } else {
-    printf("C++ GPConst Destructor: has nullptr for shearGP\n");
   }
-  printf("C++ GPConst destructor: destroyed shearGP\n");
 
   if (this->cripplingGP) {
-    printf("C++ GPconst destructor: attempt destroy cripplingGP pointer ",
-           this->cripplingGP);
+    // this object is shared, may not want to delete it (unless a local copy is
+    // made)
     delete this->cripplingGP;
     this->cripplingGP = nullptr;
-  } else {
-    printf("C++ GPConst Destructor: has nullptr for cripplingGP\n");
   }
-  printf("C++ GPConst destructor: destroyed cripplingGP\n");
-  printf("C++ GPConst destructor: exit destructor\n");
 }
 
 // ==============================================================================

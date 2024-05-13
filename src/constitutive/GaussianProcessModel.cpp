@@ -63,21 +63,6 @@ TacsScalar GaussianProcessModel::predictMeanTestDataSens(
   return Ytest;
 }
 
-AxialGaussianProcessModel::~AxialGaussianProcessModel() {
-  // destructor for the AxialGaussianProcessModel class
-  GaussianProcessModel::~GaussianProcessModel();
-}
-
-ShearGaussianProcessModel::~ShearGaussianProcessModel() {
-  // destructor for the AxialGaussianProcessModel class
-  GaussianProcessModel::~GaussianProcessModel();
-}
-
-CripplingGaussianProcessModel::~CripplingGaussianProcessModel() {
-  // destructor for the AxialGaussianProcessModel class
-  GaussianProcessModel::~GaussianProcessModel();
-}
-
 void AxialGaussianProcessModel::setDefaultHyperParameters() {
   this->S1 = 1e-1;
   this->S2 = 3e-1;

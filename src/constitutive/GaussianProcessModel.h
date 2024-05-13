@@ -87,7 +87,7 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
       : GaussianProcessModel(n_train, N_PARAM, Xtrain, alpha) {
     setDefaultHyperParameters();
   };
-  ~AxialGaussianProcessModel();
+  ~AxialGaussianProcessModel(){};
   void setDefaultHyperParameters();
 
   TacsScalar testKernelSens(TacsScalar epsilon);
@@ -115,7 +115,7 @@ class ShearGaussianProcessModel : public AxialGaussianProcessModel {
   ShearGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                             const TacsScalar alpha[])
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  ~ShearGaussianProcessModel();
+  ~ShearGaussianProcessModel(){};
   // void setdefaultHyperParameters();
   //  protected:
   // set the default hyperparameters of the model
@@ -130,7 +130,7 @@ class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
   CripplingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                                 const TacsScalar alpha[])
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  ~CripplingGaussianProcessModel();
+  ~CripplingGaussianProcessModel(){};
   // void setdefaultHyperParameters();
   //  protected:
   // set the default hyperparameters of the model
