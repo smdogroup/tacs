@@ -42,6 +42,7 @@ TacsScalar GaussianProcessModel::predictMeanTestData(const TacsScalar* Xtest) {
 
 TacsScalar GaussianProcessModel::predictMeanTestDataSens(const TacsScalar* Xtest, TacsScalar* Xtestsens) {
     // Xtest is an array of size n_param (for one test data point)
+    // the sensitivity here is on log[nondim-params]
     // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot product]
     // where Ytest is a scalar
     TacsScalar Ytest = 0.0;
@@ -85,19 +86,19 @@ void AxialGaussianProcessModel::setDefaultHyperParameters() {
 
 TacsScalar AxialGaussianProcessModel::kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) {
     // define the kernel function k(*,*) on training and testing points for one training point
-    // the entries are [log(rho_0), log(xi), log(gamma), log(zeta)]
+    // the entries are [log(xi), log(rho_0), log(1+gamma), log(zeta)]
     
-    // log(rho_0) direction 0
+    // log(xi) direction 0
     TacsScalar kernel0 = S1*S1 + S2*S2*soft_relu(Xtest[0]-c, alpha1) * soft_relu(Xtrain[0] - c, alpha1);
     
-    // log(xi) direction 1
+    // log(rho0) direction 1
     TacsScalar d1 = Xtest[1] - Xtrain[1];
     TacsScalar fact1 = soft_relu(1 - soft_relu(Xtest[1], 1.0), 10);
     TacsScalar fact2 = soft_relu(1 - soft_relu(Xtrain[1], 1.0), 10);
     TacsScalar rho0term3 = soft_relu(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
-    TacsScalar kernel1 = exp(-0.5 * (d1*d1/L1*L1)) * fact1 * fact2 + S4 + S5 * rho0term3;
+    TacsScalar kernel1 = exp(-0.5 * (d1*d1/L1/L1)) * fact1 * fact2 + S4 + S5 * rho0term3;
     
-    // log(gamma) direction 2
+    // log(1+gamma) direction 2
     TacsScalar d2 = Xtest[2] - Xtrain[2];
     TacsScalar kernel2 = exp(-0.5 * d2 * d2 / L2 / L2);
 
@@ -108,7 +109,49 @@ TacsScalar AxialGaussianProcessModel::kernel(const TacsScalar* Xtest, const Tacs
     return kernel0 * kernel1 * kernel2 + 2.0 * kernel3
 }
 
-TacsScalar kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain, TacsScalar alpha, TacsScalar* Xtestsens) {
+TacsScalar AxialGaussianProcessModel::kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain, TacsScalar alpha, TacsScalar* Xtestsens) {
     // add into the Xtestsens (don't reset to zero) for x_test = log[nondim params] vector
+
+    // forward analysis section
+    // -----------------------------------
+    // log(xi) direction 0
+    TacsScalar kernel0 = S1*S1 + S2*S2*soft_relu(Xtest[0]-c, alpha1) * soft_relu(Xtrain[0] - c, alpha1);
     
+    // log(rho0) direction 1
+    TacsScalar d1 = Xtest[1] - Xtrain[1];
+    TacsScalar fact1 = soft_relu(1 - soft_relu(Xtest[1], 1.0), 10);
+    TacsScalar fact2 = soft_relu(1 - soft_relu(Xtrain[1], 1.0), 10);
+    TacsScalar rho0term3 = soft_relu(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
+    TacsScalar kernel1 = exp(-0.5 * (d1*d1/L1/L1)) * fact1 * fact2 + S4 + S5 * rho0term3;
+    
+    // log(1+gamma) direction 2
+    TacsScalar d2 = Xtest[2] - Xtrain[2];
+    TacsScalar kernel2 = exp(-0.5 * d2 * d2 / L2 / L2);
+
+    // log(zeta) direction 3
+    TacsScalar d3 = Xtest[3] - Xtrain[3];
+    TacsScalar kernel3 = S6 * exp(-0.5 * d3 * d3 / L3 / L3);
+    // sensitivity section
+    // ---------------------------------------------------
+    // log(xi) direction 0
+    TacsScalar kernel0sens = S2*S2* soft_relu_sens(Xtest[0]-c, alpha1) * soft_relu(Xtrain[0] - c, alpha1;
+    Xtestsens[0] += kernel0sens * kernel1 * kernel2;
+
+    // log(rho_0) direction 1
+    TacsScalar kernel1sens = 0.0;
+    kernel1sens += term11 * -d1 / L1 / L1;
+    kernel1sens += exp(-0.5 * (d1*d1/L1/L1)) * soft_relu_sens(1 - soft_relu(Xtest[1], 1.0), 10) * -soft_relu_sens(Xtest[1], 1.0) * fact2;
+    kernel1sens += S5 * soft_relu_sens(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
+    Xtestsens[1] += kernel0 * kernel1sens * kernel2;
+
+    // log(1+gamma) direction 2
+    TacsScalar kernel2sens = kernel2 * -d2 / L2 / L2;
+    Xtestsens[2] += kernel0 * kernel1 * kernel2sens;
+
+    // log(zeta) direction 3
+    TacsScalar kernel3sens = kernel3 * -d3 / L3 / L3;
+    Xtestsens[3] += kernel3sens * 2.0;
+
+    // return original output if requested
+    return kernel0 * kernel1 * kernel2 + 2.0 * kernel3
 }
