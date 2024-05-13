@@ -44,17 +44,17 @@ cdef class ShellConstitutive(Constitutive):
 cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     cdef TACSBladeStiffenedShellConstitutive *blade_ptr
 
-cdef class GaussianProcessModel:
-    cdef GaussianProcessModel *base_model
+cdef class GaussianProcess:
+    cdef GaussianProcessModel *base_gp
 
-cdef class AxialGaussianProcessModel(GaussianProcessModel):
-    cdef AxialGaussianProcessModel *model
+cdef class AxialGP(GaussianProcess):
+    cdef AxialGaussianProcessModel *axial_gp
 
-cdef class ShearGaussianProcessModel(GaussianProcessModel):
-    cdef ShearGaussianProcessModel *model
+cdef class ShearGP(AxialGP):
+    cdef ShearGaussianProcessModel *gp
 
-cdef class CripplingGaussianProcessModel(GaussianProcessModel):
-    cdef CripplingGaussianProcessModel *model
+cdef class CripplingGP(AxialGP):
+    cdef CripplingGaussianProcessModel *gp
 
 cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
     cdef TACSGPBladeStiffenedShellConstitutive *gp_blade_ptr

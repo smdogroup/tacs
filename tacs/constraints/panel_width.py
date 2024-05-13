@@ -26,6 +26,7 @@ import scipy as sp
 # ==============================================================================
 from .panel_length import *
 
+
 class PanelWidthConstraint(PanelLengthConstraint):
     def __init__(
         self,
@@ -61,7 +62,9 @@ class PanelWidthConstraint(PanelLengthConstraint):
             Dictionary holding problem-specific option parameters (case-insensitive).
         """
 
-        super(PanelWidthConstraint, self).__init__(name, assembler, comm, outputViewer, meshLoader, options)
+        super(PanelWidthConstraint, self).__init__(
+            name, assembler, comm, outputViewer, meshLoader, options
+        )
 
     def addConstraint(self, conName, compIDs=None, lower=None, upper=None, dvIndex=0):
         """
@@ -210,7 +213,7 @@ class PanelWidthConstraint(PanelLengthConstraint):
                 "boundaryNodeLocalInds": boundaryNodeLocalInds,
                 "boundaryNodeLocalProcs": boundaryNodeLocalProcs,
                 "lengthAxes": refAxes,
-                "widthAxes" : widthAxes,
+                "widthAxes": widthAxes,
             }
         else:
             self.constraintList[conName] = {"nCon": len(compIDs)}

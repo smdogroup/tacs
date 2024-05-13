@@ -1097,6 +1097,69 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
                 raise ValueError('upperBound must have length numPanelPlies')
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
+cdef class GaussianProcess:
+    def __cinit__(
+        self,
+        int n_train, 
+        int n_param,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+    ):
+        self.base_gp = new GaussianProcessModel(
+            n_train,
+            n_param,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+        )
+
+cdef class AxialGP(GaussianProcess):
+    def __cinit__(
+        self,
+        int n_train, 
+        int n_param,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+    ):
+        self.axial_gp = new AxialGaussianProcessModel(
+            n_train,
+            n_param,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+        )
+        self.base_gp = self.axial_gp
+        
+cdef class ShearGP(AxialGP):
+    def __cinit__(
+        self,
+        int n_train, 
+        int n_param,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+    ):
+        self.gp = new ShearGaussianProcessModel(
+            n_train,
+            n_param,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+        )
+        self.base_gp = self.axial_gp = self.gp
+
+cdef class CripplingGP(AxialGP):
+    def __cinit__(
+        self,
+        int n_train, 
+        int n_param,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+    ):
+        self.gp = new CripplingGaussianProcessModel(
+            n_train,
+            n_param,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+        )
+        self.base_gp = self.axial_gp = self.gp
+
 cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
@@ -1165,6 +1228,7 @@ cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
     ValueError
         Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
     """
+
     def __cinit__(
         self,
         OrthotropicPly panelPly,
@@ -1189,9 +1253,9 @@ cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
         int stiffenerThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         int panelWidthNum = -1,
-        AxialGaussianProcessModel axialGP = None,
-        ShearGaussianProcessModel shearGP = None,
-        CripplingGaussianProcessModel cripplingGP = None,
+        AxialGP axialGP = None,
+        ShearGP shearGP = None,
+        CripplingGP cripplingGP = None,
         ):
 
         # same input checks as superclass BladeStiffenedShellConstitutive
@@ -1220,15 +1284,9 @@ cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
 
         # make null ptrs for GPs if not defined and store them in this class too
-        cdef AxialGaussianProcessModel* axial_gp_ptr = NULL
-        if axialGP is not None:
-            axial_gp_ptr = (<AxialGaussianProcessModel>axialGP).ptr
-        cdef ShearGaussianProcessModel* shear_gp_ptr = NULL
-        if shearGP is not None:
-            shear_gp_ptr = (<ShearGaussianProcessModel>shearGP).ptr
-        cdef CripplingGaussianProcessModel* crippling_gp_ptr = NULL
-        if cripplingGP is not None:
-            crippling_gp_ptr = (<CripplingGaussianProcessModel>cripplingGP).ptr
+        cdef AxialGaussianProcessModel *axial_gp_ptr = <AxialGaussianProcessModel*>axialGP.axial_gp
+        cdef ShearGaussianProcessModel *shear_gp_ptr = <ShearGaussianProcessModel*>shearGP.gp
+        cdef CripplingGaussianProcessModel *crippling_gp_ptr = <CripplingGaussianProcessModel*>cripplingGP.gp
 
         self.gp_blade_ptr = new TACSGPBladeStiffenedShellConstitutive(
             panelPly.ptr,

@@ -2165,7 +2165,7 @@ class pyTACS(BaseUI):
         constr.setDesignVars(self.x0)
         constr.setNodes(self.Xpts0)
         return constr
-    
+
     @postinitialize_method
     def createPanelWidthConstraint(self, name, options=None):
         """Create a new PanelWidthConstraint for enforcing that the panel
