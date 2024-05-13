@@ -741,10 +741,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeAffineAspectRatioSens(
 
   // use power series rules d(x^p) = p * (x^p) / x to cleanly differentiate the
   // expression
-  *asens = rho0sens * rho_0 / a;
-  *bsens = rho0sens * -1.0 * rho_0 / b;
-  *D11sens = rho0sens * -0.25 * rho_0 / D11;
-  *D22sens = rho0sens * 0.25 * rho_0 / D22;
+  *D11sens += rho0sens * rho_0 * -0.25 / D11;
+  *D22sens += rho0sens * rho_0 * 0.25 / D22;
+  *asens += rho0sens * rho_0 / a;
+  *bsens += rho0sens * rho_0 * -1.0 / b;
 
   return rho_0;
 }
@@ -818,13 +818,10 @@ TacsScalar
 TACSGPBladeStiffenedShellConstitutive::computeStiffenerStiffnessRatio(
     TacsScalar D11) {
   // get effective moduli for the panel and stiffener
-  TacsScalar E1s, E1p, _;
-  // first the effective modulus of the panel/plate
-  // need to add derivatives w.r.t. panel plies here then..
-  this->computeEffectiveModulii(this->numPanelPlies, this->panelQMats,
-                                this->panelPlyFracs, &E1p, &_);
+  TacsScalar E1s, _;
 
-  // then the stiffener
+  // effective modulus of the stiffener E1s = Q11 - Q12^2 / Q22 [of the
+  // stiffener laminate]
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E1s, &_);
 
@@ -832,7 +829,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerStiffnessRatio(
   // TODO : double check if this bending stiffness calculation is correct..
   TacsScalar Is = this->computeStiffenerIzz();
 
-  return E1s * Is / D11 / this->stiffenerThick;
+  return E1s * Is / D11 / this->stiffenerPitch;
 }
 
 TacsScalar
@@ -840,8 +837,8 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerStiffnessRatioSens(
     const TacsScalar gammasens, const TacsScalar D11, TacsScalar* D11sens,
     TacsScalar* sthickSens, TacsScalar* sheightSens, TacsScalar* spitchSens) {
   // use power series rules and the forward state to differentiate
-  TacsScalar gamma = computeStiffenerStiffnessRatio(
-      D11);  // this is the stiffener stiffness ratio (final forward state)
+  TacsScalar gamma = computeStiffenerStiffnessRatio(D11);
+  // this is the stiffener stiffness ratio (final forward state)
 
   // intermediate states and sensitivities
   TacsScalar Is = this->computeStiffenerIzz();
@@ -1602,7 +1599,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
   }
   f2 = computeAffineAspectRatio(x[0], x[1], x[2], x[3]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -1657,7 +1654,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedRigidity(
   }
   f2 = computeGeneralizedRigidity(x[0], x[1], x[2], x[3]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -1710,7 +1707,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
   }
   f2 = computeGeneralizedPoissonsRatio(x[0], x[1]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -1764,7 +1761,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
   this->panelThick += 2.0 * p_input[3] * epsilon;
   f2 = computeStiffenerAreaRatio();
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // reset the values
   this->stiffenerThick -= p_input[0] * epsilon;
@@ -1825,7 +1822,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
   this->stiffenerPitch += 2.0 * p_input[3] * epsilon;
   f2 = computeStiffenerStiffnessRatio(D11);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // reset the values
   D11 -= p_input[0] * epsilon;
@@ -1886,7 +1883,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
   }
   f2 = computeTransverseShearParameter(x[0], x[1], x[2], x[3]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -2008,7 +2005,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   f2 = computeCriticalGlobalAxialLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6],
                                       x[7]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -2071,7 +2068,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   this->stiffenerPitch = x0[2] + p_input[2] * epsilon;
   f2 = computeCriticalLocalAxialLoad(x[0], x[1], x[3], x[4], x[5]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -2159,7 +2156,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   }
   f2 = computeCriticalGlobalShearLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -2222,7 +2219,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   this->stiffenerPitch = x0[2] + p_input[2] * epsilon;
   f2 = computeCriticalLocalShearLoad(x[0], x[1], x[3], x[4], x[5]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -2286,7 +2283,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   this->stiffenerHeight = x0[6] + p_input[6] * epsilon;
   f2 = computeStiffenerCripplingLoad(x[0], x[1], x[2], x[3], x[4], x[5]);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];

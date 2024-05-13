@@ -220,7 +220,7 @@ TacsScalar GaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon) {
   }
   f2 = predictMeanTestData(x);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
@@ -278,7 +278,7 @@ TacsScalar AxialGaussianProcessModel::testKernelSens(TacsScalar epsilon) {
   }
   f2 = kernel(x, Xtrain);
 
-  TacsScalar centralDiff = (f2 - f0) / 2.0 / epsilon;
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
