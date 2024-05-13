@@ -355,3 +355,6 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
         self.axialGP = None
         self.shearGP = None
         self.cripplingGP = None
+
+if __name__=="__main__":
+    unittest.main()

@@ -1098,20 +1098,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 cdef class GaussianProcess:
-    def __cinit__(
-        self,
-        int n_train, 
-        int n_param,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
-    ):
-        self.base_gp = new GaussianProcessModel(
-            n_train,
-            n_param,
-            <TacsScalar*>Xtrain.data,
-            <TacsScalar*>alpha.data,
-        )
-    
+    # base class so no constructor here    
     def test_all_gp_tests(self, TacsScalar epsilon):
         """
         run all the GP derivative tests
@@ -1166,7 +1153,9 @@ cdef class CripplingGP(AxialGP):
         )
         self.base_gp = self.axial_gp = self.gp
 
-cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
+# don't make this class a subclass of BladeStiffenedShellConstitutive here because
+# otherwise it tries to call the subclass constructor too and that is unnecessary
+cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
     Instead, their stiffness is "smeared" across the shell.
@@ -1324,8 +1313,141 @@ cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
             crippling_gp_ptr,
         )
         # copy pointers to all superclasses
-        self.ptr = self.cptr = self.blade_ptr = self.gp_blade_ptr
+        self.ptr = self.cptr = self.gp_blade_ptr
         self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
+
+        if self.gp_blade_ptr:
+            if len(lowerBound) != self.gp_blade_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.gp_blade_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
+            self.gp_blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
+
+        if self.gp_blade_ptr:
+            if len(lowerBound) != self.gp_blade_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.gp_blade_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
+            self.gp_blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
     def test_all_derivative_tests(self, TacsScalar epsilon):
         """

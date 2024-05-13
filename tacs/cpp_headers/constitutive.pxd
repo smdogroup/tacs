@@ -228,6 +228,16 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             ShearGaussianProcessModel*, # shear GP
             CripplingGaussianProcessModel*, # crippling GP
         )
+        # temporarily commented out due to inheritance and (ambiguous overloaded method problem)
+        # int getNumPanelPlies()
+        # int getNumStiffenerPlies()
+        # void setKSWeight(double ksWeight)
+        # void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        # void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        # void setStiffenerThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        # void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        # void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+        # void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
         TacsScalar testAllTests(TacsScalar epsilon)
 
 cdef extern from "TACSBeamConstitutive.h":

@@ -56,7 +56,7 @@ cdef class ShearGP(AxialGP):
 cdef class CripplingGP(AxialGP):
     cdef CripplingGaussianProcessModel *gp
 
-cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
+cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
     cdef TACSGPBladeStiffenedShellConstitutive *gp_blade_ptr
 
 cdef class BeamConstitutive(Constitutive):
