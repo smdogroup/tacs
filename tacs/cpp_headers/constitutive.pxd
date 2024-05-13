@@ -172,12 +172,12 @@ cdef extern from "GaussianProcessModel.h":
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
+        TacsScalar testAllGPTests(TacsScalar epsilon)
 
 cdef extern from "GaussianProcessModel.h":
     cdef cppclass AxialGaussianProcessModel(GaussianProcessModel):
         AxialGaussianProcessModel(
             int, # n_train
-            int, # n_param
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
@@ -186,16 +186,13 @@ cdef extern from "GaussianProcessModel.h":
     cdef cppclass ShearGaussianProcessModel(AxialGaussianProcessModel):
         ShearGaussianProcessModel(
             int, # n_train
-            int, # n_param
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
-
 cdef extern from "GaussianProcessModel.h":
     cdef cppclass CripplingGaussianProcessModel(AxialGaussianProcessModel):
         CripplingGaussianProcessModel(
             int, # n_train
-            int, # n_param
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
@@ -231,6 +228,7 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             ShearGaussianProcessModel*, # shear GP
             CripplingGaussianProcessModel*, # crippling GP
         )
+        TacsScalar testAllTests(TacsScalar epsilon)
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):

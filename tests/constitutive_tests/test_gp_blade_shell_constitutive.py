@@ -5,9 +5,10 @@ import numpy as np
 from tacs import TACS, constitutive, elements
 
 DEG2RAD = np.pi / 180.0
+np.random.seed(1342342)
 
 
-class ConstitutiveMLTest(unittest.TestCase):
+class GPConstitutiveMLTest(unittest.TestCase):
     def setUp(self):
         # fd/cs step size
         if TACS.dtype is complex:
@@ -65,6 +66,9 @@ class ConstitutiveMLTest(unittest.TestCase):
             dtype=np.intc,
         )
 
+        self.panelWidth = 1.0
+        self.panelWidthNum = 5 + self.numPanelPlies + self.numStiffenerPlies
+
         self.dvs = (
             [
                 self.panelLength,
@@ -75,6 +79,7 @@ class ConstitutiveMLTest(unittest.TestCase):
             ]
             + list(self.panelPlyFracs)
             + list(self.stiffenerPlyFracs)
+            + [self.panelWidth]
         )
         self.dvs = np.array(self.dvs, dtype=self.dtype)
 
@@ -139,10 +144,34 @@ class ConstitutiveMLTest(unittest.TestCase):
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
+        # construct the optional ML models
+        n_train = 4
+
+        n_param = constitutive.AxialGP.n_param
+        self.axialGP = constitutive.AxialGP(
+            n_train,
+            Xtrain=np.random.rand(n_param * n_train),
+            alpha=np.random.rand(n_train),
+        )
+
+        n_param = constitutive.ShearGP.n_param
+        self.shearGP = constitutive.ShearGP(
+            n_train,
+            Xtrain=np.random.rand(n_param * n_train),
+            alpha=np.random.rand(n_train),
+        )
+
+        n_param = constitutive.CripplingGP.n_param
+        self.cripplingGP = constitutive.CripplingGP(
+            n_train,
+            Xtrain=np.random.rand(n_param * n_train),
+            alpha=np.random.rand(n_train),
+        )
+
     def get_con(self, ply):
         # TODO : add cython construction of TACSGPBladeStiffenedShellConstitutive
         # and repeat this test for ML and then closed-form cases each
-        con = constitutive.BladeStiffenedShellConstitutive(
+        con = constitutive.GPBladeStiffenedShellConstitutive(
             ply,
             ply,
             self.panelLength,
@@ -154,6 +183,7 @@ class ConstitutiveMLTest(unittest.TestCase):
             self.stiffenerThickness,
             self.stiffenerPlyAngles,
             self.stiffenerPlyFracs,
+            self.panelWidth,
             self.kcorr,
             self.flangeFraction,
             self.panelLengthNum,
@@ -162,7 +192,11 @@ class ConstitutiveMLTest(unittest.TestCase):
             self.panelPlyFracNums,
             self.stiffenerHeightNum,
             self.stiffenerThicknessNum,
-            self.stiffenerPlyFracNums
+            self.stiffenerPlyFracNums,
+            self.panelWidthNum,
+            self.axialGP,
+            self.shearGP,
+            self.cripplingGP,
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
@@ -296,3 +330,28 @@ class ConstitutiveMLTest(unittest.TestCase):
                         self.atol,
                     )
                 self.assertFalse(fail)
+
+    def test_constitutive_internal_tests(self):
+        """test all the internal or intermediate tests in C++"""
+        for ply in self.ply_list:
+            with self.subTest(ply=ply):
+                con = self.get_con(ply)
+                relError = con.testAllTests(self.dh)
+                fail = abs(relError.real) < self.rtol
+                self.assertFalse(fail)
+
+
+"""
+second test with closed-form only, not ML models
+"""
+
+
+class GPConstitutiveCFTest(GPConstitutiveMLTest):
+    def setUp(self):
+        super(GPConstitutiveCFTest, self).setUp()
+
+        # change the ML models to None so the constitutive class
+        # uses closed-form solutions for buckling now.
+        self.axialGP = None
+        self.shearGP = None
+        self.cripplingGP = None

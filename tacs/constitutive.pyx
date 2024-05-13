@@ -1111,50 +1111,56 @@ cdef class GaussianProcess:
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
         )
+    
+    def test_all_gp_tests(self, TacsScalar epsilon):
+        """
+        run all the GP derivative tests
+        """
+        return self.base_gp.testAllGPTests(epsilon)
 
 cdef class AxialGP(GaussianProcess):
+    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(zeta)]
+
     def __cinit__(
         self,
         int n_train, 
-        int n_param,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
         self.axial_gp = new AxialGaussianProcessModel(
             n_train,
-            n_param,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
         )
         self.base_gp = self.axial_gp
         
 cdef class ShearGP(AxialGP):
+    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(zeta)]
+
     def __cinit__(
         self,
         int n_train, 
-        int n_param,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
         self.gp = new ShearGaussianProcessModel(
             n_train,
-            n_param,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
         )
         self.base_gp = self.axial_gp = self.gp
 
 cdef class CripplingGP(AxialGP):
+    n_param = 4 # [log(xi), log(rho0), log(genEps), log(zeta)]
+
     def __cinit__(
         self,
         int n_train, 
-        int n_param,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
         self.gp = new CripplingGaussianProcessModel(
             n_train,
-            n_param,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
         )
@@ -1320,6 +1326,12 @@ cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
         # copy pointers to all superclasses
         self.ptr = self.cptr = self.blade_ptr = self.gp_blade_ptr
         self.ptr.incref()
+
+    def test_all_derivative_tests(self, TacsScalar epsilon):
+        """
+        test all the internal derivative tests 
+        """
+        return self.gp_blade_ptr.testAllTests(epsilon)
 
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """

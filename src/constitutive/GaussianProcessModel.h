@@ -36,8 +36,15 @@ class GaussianProcessModel {
   // covariance matrix each time. here Xtest is one point prediction with an
   // array of length n_param
   TacsScalar predictMeanTestData(const TacsScalar* Xtest);
-  TacsScalar predictMeanTestDataSens(const TacsScalar* Xtest,
+  TacsScalar predictMeanTestDataSens(const TacsScalar Ysens,
+                                     const TacsScalar* Xtest,
                                      TacsScalar* Xtestsens);
+
+  // TESTING SCRIPTS
+  // ---------------
+  TacsScalar testAllGPTests(TacsScalar epsilon);
+  TacsScalar testPredictMeanTestData(TacsScalar epsilon);
+  virtual TacsScalar testKernelSens(TacsScalar epsilon) { return 0.0; };
 
   static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho) {
     return 1.0 / rho * log(1 + exp(rho * x));
@@ -57,8 +64,8 @@ class GaussianProcessModel {
   virtual TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) {
     return 0.0;
   };
-  virtual void kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain,
-                          TacsScalar alpha, TacsScalar* Xtestsens){};
+  virtual void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
+                          const TacsScalar* Xtrain, TacsScalar* Xtestsens){};
 
   int n_train;
   int n_param;
@@ -68,6 +75,9 @@ class GaussianProcessModel {
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
   TacsScalar* Xtrain;
   TacsScalar* alpha;
+
+ private:
+  static const char* GPname;
 };
 
 class AxialGaussianProcessModel : public GaussianProcessModel {
@@ -80,12 +90,14 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
   ~AxialGaussianProcessModel();
   void setDefaultHyperParameters();
 
+  TacsScalar testKernelSens(TacsScalar epsilon);
+
  protected:
   // here Xtest, Xtrain are each length 5 arrays (N_PARAM) [just uses one train
   // and one test point here] these are overwritten from subclass
   TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain);
-  void kernelSens(const TacsScalar* Xtest, const TacsScalar* Xtrain,
-                  TacsScalar alpha, TacsScalar* Xtestsens);
+  void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
+                  const TacsScalar* Xtrain, TacsScalar* Xtestsens);
 
   // set the default hyperparameters of the model
   TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
@@ -93,6 +105,9 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
   static const int N_PARAM = 4;
+
+ private:
+  static const char* GPname;
 };
 
 class ShearGaussianProcessModel : public AxialGaussianProcessModel {
@@ -102,10 +117,12 @@ class ShearGaussianProcessModel : public AxialGaussianProcessModel {
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
   ~ShearGaussianProcessModel();
   // void setdefaultHyperParameters();
- protected:
+  //  protected:
   // set the default hyperparameters of the model
   // for now just use the same routine as the axial one
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
+ private:
+  static const char* GPname;
 };
 
 class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
@@ -115,8 +132,10 @@ class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
       : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
   ~CripplingGaussianProcessModel();
   // void setdefaultHyperParameters();
- protected:
+  //  protected:
   // set the default hyperparameters of the model
   // for now just use the same routine as the axial one
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
+ private:
+  static const char* GPname;
 };
