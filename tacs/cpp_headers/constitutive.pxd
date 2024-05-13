@@ -200,6 +200,74 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
         void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
         void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
 
+cdef extern from "GaussianProcessModel.h":
+    cdef cppclass GaussianProcessModel:
+        GaussianProcessModel(
+            int, # n_train
+            int, # n_param
+            TacsScalar[], # Xtrain
+            TacsScalar[], # alpha
+        )
+
+cdef extern from "GaussianProcessModel.h":
+    cdef cppclass AxialGaussianProcessModel(GaussianProcessModel):
+        AxialGaussianProcessModel(
+            int, # n_train
+            int, # n_param
+            TacsScalar[], # Xtrain
+            TacsScalar[], # alpha
+        )
+
+cdef extern from "GaussianProcessModel.h":
+    cdef cppclass ShearGaussianProcessModel(AxialGaussianProcessModel):
+        ShearGaussianProcessModel(
+            int, # n_train
+            int, # n_param
+            TacsScalar[], # Xtrain
+            TacsScalar[], # alpha
+        )
+
+cdef extern from "GaussianProcessModel.h":
+    cdef cppclass CripplingGaussianProcessModel(AxialGaussianProcessModel):
+        CripplingGaussianProcessModel(
+            int, # n_train
+            int, # n_param
+            TacsScalar[], # Xtrain
+            TacsScalar[], # alpha
+        )
+
+cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
+    cdef cppclass TACSGPBladeStiffenedShellConstitutive(TACSBladeStiffenedShellConstitutive):
+        TACSGPBladeStiffenedShellConstitutive(
+            TACSOrthotropicPly*, # panelPly
+            TACSOrthotropicPly*, # stiffenerPly
+            TacsScalar, # kcorr
+            TacsScalar, # panelLength
+            int, # panelLengthNum
+            TacsScalar, # stiffenerPitch
+            int, # stiffenerPitchNum
+            TacsScalar, # panelThick
+            int, # panelThickNum
+            int, # numPanelPlies
+            TacsScalar[], # panelPlyAngles
+            TacsScalar[], # panelPlyFracs
+            int[], # panelPlyFracNums
+            TacsScalar, # stiffenerHeight
+            int, # stiffenerHeightNum
+            TacsScalar, # stiffenerThick
+            int, # stiffenerThickNum
+            int, # numStiffenerPlies
+            TacsScalar[], # stiffenerPlyAngles
+            TacsScalar[], # stiffenerPlyFracs
+            int[], # stiffenerPlyFracNums
+            TacsScalar, # panelWidth
+            int, # panelWidthNum
+            TacsScalar # flangeFraction,
+            AxialGaussianProcessModel*, # axial GP
+            ShearGaussianProcessModel*, # shear GP
+            CripplingGaussianProcessModel*, # crippling GP
+        )
+
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
         pass

@@ -1097,6 +1097,172 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
                 raise ValueError('upperBound must have length numPanelPlies')
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
+cdef class GPBladeStiffenedShellConstitutive(BladeStiffenedShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+
+    The novelty of this class as opposed to the BladeStiffenedShellConstitutive base class
+    is the addition of more accurate buckling constraints through Gaussian Processes of Machine Learning.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    panelLength : float or complex
+        Panel length DV value
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    panelThick : float or complex
+        Panel thickness DV value
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    panelWidth : float or complex
+        Panel width DV value
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
+    panelLengthNum : int, optional
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPitchNum : int, optional
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelThickNum : int, optional
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelPlyFracNums : numpy.ndarray[np.intc], optional
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    stiffenerHeightNum : int, optional
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerThickNum : int, optional
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    panelWidthNum : int, optional
+        Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    axialGP : AxialGaussianProcessModel, optional
+        GP model for axial buckling data, if None uses closed-form instead
+    shearGP : ShearGaussianProcessModel, optional
+        GP model for shear buckling data, if None uses closed-form instead
+    cripplingGP : CripplingGaussianProcessModel, optional
+        GP model for crippling buckling data, if None uses closed-form instead
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar panelLength,
+        TacsScalar stiffenerPitch,
+        TacsScalar panelThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        TacsScalar stiffenerHeight,
+        TacsScalar stiffenerThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        TacsScalar panelWidth,
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
+        int panelLengthNum = -1,
+        int stiffenerPitchNum = -1,
+        int panelThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
+        int stiffenerHeightNum = -1,
+        int stiffenerThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
+        int panelWidthNum = -1,
+        AxialGaussianProcessModel axialGP = None,
+        ShearGaussianProcessModel shearGP = None,
+        CripplingGaussianProcessModel cripplingGP = None,
+        ):
+
+        # same input checks as superclass BladeStiffenedShellConstitutive
+        numPanelPlies = len(panelPlyAngles)
+        numStiffenerPlies = len(stiffenerPlyAngles)
+
+        if panelPlyFracNums is None:
+            panelPlyFracNums = -np.ones([numPanelPlies], dtype=np.intc)
+        if stiffenerPlyFracNums is None:
+            stiffenerPlyFracNums = -np.ones([numStiffenerPlies], dtype=np.intc)
+
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have same length as panelPlyAngles')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have same length as panelPlyAngles')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have same length as stiffenerPlyAngles')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
+
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        # make null ptrs for GPs if not defined and store them in this class too
+        cdef AxialGaussianProcessModel* axial_gp_ptr = NULL
+        if axialGP is not None:
+            axial_gp_ptr = (<AxialGaussianProcessModel>axialGP).ptr
+        cdef ShearGaussianProcessModel* shear_gp_ptr = NULL
+        if shearGP is not None:
+            shear_gp_ptr = (<ShearGaussianProcessModel>shearGP).ptr
+        cdef CripplingGaussianProcessModel* crippling_gp_ptr = NULL
+        if cripplingGP is not None:
+            crippling_gp_ptr = (<CripplingGaussianProcessModel>cripplingGP).ptr
+
+        self.gp_blade_ptr = new TACSGPBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            panelWidth,
+            panelWidthNum,
+            flangeFraction,
+            axial_gp_ptr,
+            shear_gp_ptr,
+            crippling_gp_ptr,
+        )
+        # copy pointers to all superclasses
+        self.ptr = self.cptr = self.blade_ptr = self.gp_blade_ptr
+        self.ptr.incref()
+
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """
     This constitutive class defines the stiffness properties for a
