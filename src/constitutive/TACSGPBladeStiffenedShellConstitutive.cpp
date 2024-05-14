@@ -2523,15 +2523,32 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
   printf("\ttestShearCriticalLoads = %.4e\n", relErrors[2]);
   printf("\ttestStiffenerCripplingLoad = %.4e\n", relErrors[3]);
   if (this->getAxialGP()) {
-    printf("\ttestAxialGP all tests = %.4e", relErrors[4]);
+    printf("\ttestAxialGP all tests = %.4e\n", relErrors[4]);
   }
   if (this->getShearGP()) {
-    printf("\ttestShearGP all tests = %.4e", relErrors[5]);
+    printf("\ttestShearGP all tests = %.4e\n", relErrors[5]);
   }
   if (this->getCripplingGP()) {
-    printf("\ttestCripplingGp all tests = %.4e", relErrors[6]);
+    printf("\ttestCripplingGp all tests = %.4e\n", relErrors[6]);
   }
   printf("\tOverall max rel error = %.4e\n\n", maxRelError);
 
   return maxRelError;
+}
+
+void TACSGPBladeStiffenedShellConstitutive::setKSWeight(TacsScalar ksWeight) {
+  // call the superclass method to set the ksWeight for this const class
+  TACSBladeStiffenedShellConstitutive::setKSWeight(ksWeight);
+
+  // set KS into each GP model (for differentiable / smooth kernel functions) if
+  // they exist
+  if (this->getAxialGP()) {
+    this->getAxialGP()->setKS(ksWeight);
+  }
+  if (this->getShearGP()) {
+    this->getShearGP()->setKS(ksWeight);
+  }
+  if (this->getCripplingGP()) {
+    this->getCripplingGP()->setKS(ksWeight);
+  }
 }

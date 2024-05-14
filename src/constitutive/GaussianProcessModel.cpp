@@ -88,9 +88,10 @@ TacsScalar AxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
 
   // log(rho0) direction 1
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar fact1 = soft_relu(1 - soft_relu(Xtest[1], 1.0), 10);
-  TacsScalar fact2 = soft_relu(1 - soft_relu(Xtrain[1], 1.0), 10);
-  TacsScalar rho0term3 = soft_relu(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
+  TacsScalar fact1 = soft_relu(1 - soft_abs(Xtest[1], this->ks), this->ks);
+  TacsScalar fact2 = soft_relu(1 - soft_abs(Xtrain[1], this->ks), this->ks);
+  TacsScalar rho0term3 =
+      soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
   TacsScalar kernel1 =
       exp(-0.5 * (d1 * d1 / L1 / L1)) * fact1 * fact2 + S4 + S5 * rho0term3;
 
@@ -120,11 +121,12 @@ void AxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
 
   // log(rho0) direction 1
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar fact1 = soft_relu(1 - soft_relu(Xtest[1], 1.0), 10);
-  TacsScalar fact2 = soft_relu(1 - soft_relu(Xtrain[1], 1.0), 10);
-  TacsScalar rho0term3 = soft_relu(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
-  TacsScalar kernel1 =
-      exp(-0.5 * (d1 * d1 / L1 / L1)) * fact1 * fact2 + S4 + S5 * rho0term3;
+  TacsScalar fact1 = soft_relu(1 - soft_abs(Xtest[1], this->ks), this->ks);
+  TacsScalar fact2 = soft_relu(1 - soft_abs(Xtrain[1], this->ks), this->ks);
+  TacsScalar k1_term1 = exp(-0.5 * (d1 * d1 / L1 / L1)) * fact1 * fact2;
+  TacsScalar rho0term3 =
+      soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
+  TacsScalar kernel1 = k1_term1 + S4 + S5 * rho0term3;
 
   // log(1+gamma) direction 2
   TacsScalar d2 = Xtest[2] - Xtrain[2];
@@ -135,31 +137,39 @@ void AxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   TacsScalar kernel3 = S6 * exp(-0.5 * d3 * d3 / L3 / L3);
   // sensitivity section
   // ---------------------------------------------------
+  TacsScalar* jacobian = new TacsScalar[4];
+
   // log(xi) direction 0
   TacsScalar kernel0sens = S2 * S2 * soft_relu_sens(Xtest[0] - c, alpha1) *
                            soft_relu(Xtrain[0] - c, alpha1);
-  Xtestsens[0] += kernel0sens * kernel1 * kernel2;
+  printf("kernel0senf = %.4e\n", kernel0sens);
+  jacobian[0] += kernel0sens * kernel1 * kernel2;
 
   // log(rho_0) direction 1
   TacsScalar kernel1sens = 0.0;
-  kernel1sens += kernel1 * -d1 / L1 / L1;
-  kernel1sens += exp(-0.5 * (d1 * d1 / L1 / L1)) *
-                 soft_relu_sens(1 - soft_relu(Xtest[1], 1.0), 10) *
-                 -soft_relu_sens(Xtest[1], 1.0) * fact2;
-  kernel1sens += S5 * soft_relu_sens(-Xtest[1], 10) * soft_relu(-Xtrain[1], 10);
-  Xtestsens[1] += kernel0 * kernel1sens * kernel2;
+  kernel1sens += k1_term1 * -d1 / L1 / L1;
+  kernel1sens += k1_term1 / fact1 *
+                 soft_relu_sens(1 - soft_abs(Xtest[1], this->ks), this->ks) *
+                 -soft_abs_sens(Xtest[1], this->ks);
+  kernel1sens += S5 * soft_relu_sens(-Xtest[1], this->ks) *
+                 soft_relu(-Xtrain[1], this->ks);
+  printf("kernel1senf = %.4e\n", kernel0sens);
+  jacobian[1] += kernel0 * kernel1sens * kernel2;
 
   // log(1+gamma) direction 2
   TacsScalar kernel2sens = kernel2 * -d2 / L2 / L2;
-  Xtestsens[2] += kernel0 * kernel1 * kernel2sens;
+  printf("kernel0senf = %.4e\n", kernel2sens);
+  jacobian[2] += kernel0 * kernel1 * kernel2sens;
 
   // log(zeta) direction 3
   TacsScalar kernel3sens = kernel3 * -d3 / L3 / L3;
-  Xtestsens[3] += kernel3sens * 2.0;
+  printf("kernel0senf = %.4e\n", kernel3sens);
+  jacobian[3] += kernel3sens * 2.0;
 
   // scale up the Xtestsens by the backpropagated values
+  printf("ksens = %.4e\n", ksens);
   for (int ii = 0; ii < 4; ii++) {
-    Xtestsens[ii] *= ksens;
+    Xtestsens[ii] += ksens * jacobian[ii];
   }
 }
 
@@ -259,6 +269,13 @@ TacsScalar AxialGaussianProcessModel::testKernelSens(TacsScalar epsilon) {
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
+  // temporarily only make p_input[0] active
+  for (int ii = 0; ii < n_input; ii++) {
+    if (ii == 1) {
+      p_input[ii] = 0.0;
+    }
+  }
+
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values

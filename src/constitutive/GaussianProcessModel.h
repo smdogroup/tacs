@@ -51,13 +51,22 @@ class GaussianProcessModel {
   };
   static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho) {
     return exp(rho * x) / (1 + exp(rho * x));
-  }
+  };
+
+  static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho) {
+    return 1.0 / rho * log(exp(-rho * x) + exp(rho * x));
+  };
+  static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho) {
+    return (exp(rho * x) - exp(-rho * x)) / (exp(-rho * x) + exp(rho * x));
+  };
 
   // GETTERS AND SETTERS
   // -------------------
 
-  int getNtrain() { return n_train; }
-  int getNparam() { return n_param; }
+  int getNtrain() { return n_train; };
+  int getNparam() { return n_param; };
+  TacsScalar getKS() { return ks; };
+  void setKS(TacsScalar ks) { this->ks = ks; };
 
  protected:
   // virtual functions for the kernel definition and its sensitivity
@@ -75,6 +84,8 @@ class GaussianProcessModel {
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
   TacsScalar* Xtrain;
   TacsScalar* alpha;
+
+  TacsScalar ks;  // ks setting for smooth kernel functions
 
  private:
   static const char* GPname;

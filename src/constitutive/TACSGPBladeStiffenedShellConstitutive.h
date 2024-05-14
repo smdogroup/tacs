@@ -222,6 +222,10 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
+  // set the KS weight for the failure constraints and the GP models (if GP
+  // models are active)
+  void setKSWeight(double _ksWeight);
+
  protected:
   // ==============================================================================
   // Override Failure constraint and sensitivities
