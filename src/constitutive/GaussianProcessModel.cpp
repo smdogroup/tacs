@@ -167,6 +167,10 @@ TacsScalar GaussianProcessModel::testAllGPTests(TacsScalar epsilon) {
   // run all GP tests
   const int n_tests = 2;
   TacsScalar* relErrors = new TacsScalar[n_tests];
+
+  printf("\n%s..testAllGPtests full results::\n", GPname);
+  printf("--------------------------------------------------------\n\n");
+
   relErrors[0] = testPredictMeanTestData(epsilon);
   relErrors[1] = testKernelSens(epsilon);
 
@@ -179,10 +183,10 @@ TacsScalar GaussianProcessModel::testAllGPTests(TacsScalar epsilon) {
   }
 
   // get max rel error among them
-  printf("\n\n%s..testAllGPtests full results::\n", GPname);
+  printf("\n%s..testAllGPtests full results::\n", GPname);
   printf("\ttestPredictMeanTestData = %.4e\n", relErrors[0]);
   printf("\ttestKernelSens = %.4e\n", relErrors[1]);
-  printf("\tOverall max rel error = %.4e\n", maxRelError);
+  printf("\tOverall max rel error = %.4e\n\n", maxRelError);
 
   return maxRelError;
 }
@@ -224,6 +228,7 @@ TacsScalar GaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon) {
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
+  memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
@@ -236,10 +241,10 @@ TacsScalar GaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon) {
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("%s..testPredictMeanTestDataSens:\n", this->GPname);
-  printf("\t adjDeriv = %.4e\n", adjTD);
-  printf("\t centralDiff = %.4e\n", centralDiff);
-  printf("\t rel error = %.4e\n", relError);
+  printf("\t%s..testPredictMeanTestDataSens:\n", this->GPname);
+  printf("\t\t adjDeriv = %.4e\n", adjTD);
+  printf("\t\t centralDiff = %.4e\n", centralDiff);
+  printf("\t\t rel error = %.4e\n", relError);
   return relError;
 }
 
@@ -282,6 +287,7 @@ TacsScalar AxialGaussianProcessModel::testKernelSens(TacsScalar epsilon) {
 
   // now perform the adjoint sensitivity
   TacsScalar* input_sens = new TacsScalar[n_input];
+  memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
@@ -294,10 +300,10 @@ TacsScalar AxialGaussianProcessModel::testKernelSens(TacsScalar epsilon) {
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("%s..testKernelSens:\n", this->GPname);
-  printf("\t adjDeriv = %.4e\n", adjTD);
-  printf("\t centralDiff = %.4e\n", centralDiff);
-  printf("\t rel error = %.4e\n", relError);
+  printf("\t%s..testKernelSens:\n", this->GPname);
+  printf("\t\t adjDeriv = %.4e\n", adjTD);
+  printf("\t\t centralDiff = %.4e\n", centralDiff);
+  printf("\t\t rel error = %.4e\n", relError);
   return relError;
 }
 

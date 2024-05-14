@@ -714,10 +714,22 @@ class TACSGPBladeStiffenedShellConstitutive
                              TacsScalar* dl1xi, TacsScalar* dl1gamma,
                              TacsScalar* dl2xi, TacsScalar* dl2gamma);
 
+  /**
+   *
+   * @brief Test the nondimShearParams function
+   */
+  TacsScalar testNondimShearParams(const TacsScalar epsilon);
+
   TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi,
                             const TacsScalar gamma);
   TacsScalar lam2ConstraintDeriv(const TacsScalar lam2sq, const TacsScalar xi,
                                  const TacsScalar gamma);
+
+  /**
+   *
+   * @brief Test the lam2Constraint function
+   */
+  TacsScalar testLam2Constraint(const TacsScalar epsilon);
 
   /**
    * @brief Compute the critical stiffener crippling load
