@@ -2007,12 +2007,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
-  // temporarily set all but 0-3 the dimensional part zero (so only test dimensional part)
-  for (int ii = 0; ii < n_input; ii++) {
-    if (ii != 4) {
-      p_input[ii] = 0.0;
-    }
-  }
 
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 

@@ -53,12 +53,21 @@ TacsScalar GaussianProcessModel::predictMeanTestDataSens(
 
   // iterate over each training data point, get the cross-term covariance and
   // add the coefficient alpha for it
+  memset(Xtestsens, 0, n_param * sizeof(TacsScalar));
+  TacsScalar* loc_Xtestsens = new TacsScalar[n_param];
+
   for (int itrain = 0; itrain < n_train; itrain++) {
     TacsScalar* loc_Xtrain = &Xtrain[n_param * itrain];
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
+    
     // add the kernel sensitivity for this training point (w/ backpropagation)
-    memset(Xtestsens, 0, n_param * sizeof(TacsScalar));
-    kernelSens(Ysens * alpha[itrain], Xtest, loc_Xtrain, Xtestsens);
+    memset(loc_Xtestsens, 0, n_param * sizeof(TacsScalar));
+    kernelSens(Ysens * alpha[itrain], Xtest, loc_Xtrain, loc_Xtestsens);
+
+    // add into full Xtestsens
+    for (int iparam = 0; iparam < n_param; iparam++) {
+      Xtestsens[iparam] += loc_Xtestsens[iparam];
+    }
   }
   return Ytest;
 }
@@ -170,7 +179,7 @@ void AxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
 
 TacsScalar GaussianProcessModel::testAllGPTests(TacsScalar epsilon) {
   // run all GP tests
-  const int n_tests = 2;
+  const int n_tests = 4;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
   relErrors[0] = test_soft_relu(epsilon);
