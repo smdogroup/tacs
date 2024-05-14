@@ -142,8 +142,8 @@ class GPConstitutiveMLTest(unittest.TestCase):
         )
         ortho_ply = constitutive.OrthotropicPly(1e-3, ortho_prop)
 
-        # self.ply_list = [iso_ply, ortho_ply]
-        self.ply_list = [ortho_ply]
+        self.ply_list = [iso_ply, ortho_ply]
+        # self.ply_list = [ortho_ply]
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
@@ -339,8 +339,9 @@ class GPConstitutiveMLTest(unittest.TestCase):
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
                 relError = con.test_all_derivative_tests(self.dh)
-                fail = abs(relError.real) < self.rtol
+                fail = abs(relError.real) > self.rtol
                 self.assertFalse(fail)
+        print("All internal tests pass!")
 
 
 """
@@ -361,20 +362,13 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
 
 if __name__ == "__main__":
     cases = ["all", "CF", "ML"]
-    idx = 1  # choose this one
-    case = cases[idx]
+    case = cases[2]  # choose the index here
 
     if case == "all":
         unittest.main()
     elif case == "CF":
-        print("\n\nTest constitutive internal tests for CF Constraints")
-        print("--------------------------------------------------------")
-        print("--------------------------------------------------------\n", flush=True)
         tester = GPConstitutiveCFTest()
     elif case == "ML":
-        print("\n\nTest constitutive internal tests for ML Constraints")
-        print("--------------------------------------------------------")
-        print("--------------------------------------------------------\n", flush=True)
         tester = GPConstitutiveMLTest()
 
     if case in ["CF", "ML"]:
