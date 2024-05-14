@@ -18,12 +18,13 @@ buckling constraints of stiffened panels.
 // Extension Includes
 // =============================================================================
 #include "TacsUtilities.h"
+#include "TACSObject.h"
 
 // =============================================================================
 // Class Declaration
 // =============================================================================
 
-class GaussianProcessModel {
+class GaussianProcessModel : public TACSObject {
  public:
   GaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
                        const TacsScalar alpha[]);
@@ -52,12 +53,32 @@ class GaussianProcessModel {
   static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho) {
     return exp(rho * x) / (1 + exp(rho * x));
   };
+  static TacsScalar test_soft_relu(TacsScalar epsilon) {
+    TacsScalar x = 1.0, rho = 1.0; // very low rho for smoother function for deriv test
+    TacsScalar f0 = soft_relu(x-epsilon,rho);
+    TacsScalar f2 = soft_relu(x+epsilon,rho);
+    TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
+    TacsScalar analyDeriv = soft_relu_sens(x,rho);
+    TacsScalar relError = (analyDeriv - centDiff) / centDiff;
+    relError = abs(TacsRealPart(relError));
+    return relError;
+  };
 
   static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho) {
     return 1.0 / rho * log(exp(-rho * x) + exp(rho * x));
   };
   static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho) {
     return (exp(rho * x) - exp(-rho * x)) / (exp(-rho * x) + exp(rho * x));
+  };
+  static TacsScalar test_soft_abs(TacsScalar epsilon) {
+    TacsScalar x = 1.0, rho = 1.0; // very low rho for smoother function for deriv test
+    TacsScalar f0 = soft_abs(x-epsilon,rho);
+    TacsScalar f2 = soft_abs(x+epsilon,rho);
+    TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
+    TacsScalar analyDeriv = soft_abs_sens(x,rho);
+    TacsScalar relError = (analyDeriv - centDiff) / centDiff;
+    relError = abs(TacsRealPart(relError));
+    return relError;
   };
 
   // GETTERS AND SETTERS
@@ -86,9 +107,6 @@ class GaussianProcessModel {
   TacsScalar* alpha;
 
   TacsScalar ks;  // ks setting for smooth kernel functions
-
- private:
-  static const char* GPname;
 };
 
 class AxialGaussianProcessModel : public GaussianProcessModel {
@@ -116,9 +134,6 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
   static const int N_PARAM = 4;
-
- private:
-  static const char* GPname;
 };
 
 class ShearGaussianProcessModel : public AxialGaussianProcessModel {
@@ -132,8 +147,6 @@ class ShearGaussianProcessModel : public AxialGaussianProcessModel {
   // set the default hyperparameters of the model
   // for now just use the same routine as the axial one
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
- private:
-  static const char* GPname;
 };
 
 class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
@@ -147,6 +160,4 @@ class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
   // set the default hyperparameters of the model
   // for now just use the same routine as the axial one
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
- private:
-  static const char* GPname;
 };

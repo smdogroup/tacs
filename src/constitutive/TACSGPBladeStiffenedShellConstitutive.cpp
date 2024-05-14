@@ -21,7 +21,6 @@ constraints of the stiffened panels.
 // Extension Includes
 // =============================================================================
 #include "TACSGPBladeStiffenedShellConstitutive.h"
-
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
@@ -67,12 +66,17 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
 
   // set Gaussian process models in
   this->axialGP = axialGP;
-  // if (this->axialGP) {
-  //   this->axialGP->incref();
-  // }
-
+  if (this->axialGP) {
+    this->axialGP->incref();
+  }
   this->shearGP = shearGP;
+  if (this->shearGP) {
+    this->shearGP->incref();
+  }
   this->cripplingGP = cripplingGP;
+  if (this->cripplingGP) {
+    this->cripplingGP->incref();
+  }
 }
 
 // ==============================================================================
@@ -87,21 +91,21 @@ TACSGPBladeStiffenedShellConstitutive::
   if (this->axialGP) {
     // this object is shared, may not want to delete it (unless a local copy is
     // made)
-    delete this->axialGP;
+    this->axialGP->decref();
     this->axialGP = nullptr;
   }
 
   if (this->shearGP) {
     // this object is shared, may not want to delete it (unless a local copy is
     // made)
-    delete this->shearGP;
+    this->shearGP->decref();
     this->shearGP = nullptr;
   }
 
   if (this->cripplingGP) {
     // this object is shared, may not want to delete it (unless a local copy is
     // made)
-    delete this->cripplingGP;
+    this->cripplingGP->decref();
     this->cripplingGP = nullptr;
   }
 }
@@ -2003,6 +2007,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
+  // temporarily set all but 0-3 the dimensional part zero (so only test dimensional part)
+  for (int ii = 0; ii < n_input; ii++) {
+    if (ii != 4) {
+      p_input[ii] = 0.0;
+    }
+  }
+
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
@@ -2126,7 +2137,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
     TacsScalar epsilon) {
   // run each of the nondim parameter tests and aggregate the max among them
-  const int n_tests = 2;
+  const int n_tests = 4;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
   printf("\nTACSGPBladeStiffened..testShearCriticalLoads start::\n");
@@ -2498,12 +2509,18 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
   relErrors[5] = 0.0;
   relErrors[6] = 0.0;
   if (this->getAxialGP()) {
+    printf("\nAxialGP : testAllGPtests start::\n");
+    printf("--------------------------------------------------------\n\n");
     relErrors[4] = this->getAxialGP()->testAllGPTests(epsilon);
   }
   if (this->getShearGP()) {
+    printf("\nShearGP : testAllGPtests start::\n");
+    printf("--------------------------------------------------------\n\n");
     relErrors[5] = this->getShearGP()->testAllGPTests(epsilon);
   }
   if (this->getCripplingGP()) {
+    printf("\nCripplingGP : testAllGPtests start::\n");
+    printf("--------------------------------------------------------\n\n");
     relErrors[6] = this->getCripplingGP()->testAllGPTests(epsilon);
   }
 
