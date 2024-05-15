@@ -244,6 +244,8 @@ class TACSGPBladeStiffenedShellConstitutive
                         const TacsScalar X[], const TacsScalar strain[],
                         int dvLen, TacsScalar dfdx[]);
 
+  void computeStiffenerCripplingStiffness(TacsScalar C[]);
+
   // ==============================================================================
   // Buckling functions
   // ==============================================================================

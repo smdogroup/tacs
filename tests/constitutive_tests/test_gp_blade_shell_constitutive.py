@@ -375,16 +375,22 @@ if __name__ == "__main__":
     parent_parser.add_argument("--case", type=str)
     args = parent_parser.parse_args()
 
-    assert args.case in ["CF", "ML", "all"]
+    assert args.case in ["CF", "ML", "failStrain", "all"]
 
     if args.case == "CF":
         tester = GPConstitutiveCFTest()
-    elif args.case == "ML":
-        tester = GPConstitutiveMLTest()
-    elif args.case == "all":
-        unittest.main()
-
-    if args.case in ["CF", "ML"]:
         tester._my_debug = True
         tester.setUp()
         tester.test_constitutive_internal_tests()
+    elif args.case == "ML":
+        tester = GPConstitutiveMLTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_internal_tests()
+    elif args.case == "failStrain":
+        tester = GPConstitutiveCFTest()
+        # tester = GPConstitutiveMLTest()
+        tester.setUp()
+        tester.test_constitutive_failure_strain_sens()
+    elif args.case == "all":
+        unittest.main()
