@@ -313,6 +313,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
                         self.atol,
                         self.rtol,
                     )
+                print(f"fail = {fail}")
                 self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
@@ -375,7 +376,7 @@ if __name__ == "__main__":
     parent_parser.add_argument("--case", type=str, default="full")
     args = parent_parser.parse_args()
 
-    assert args.case in ["CF", "ML", "failStrain", "full"]
+    assert args.case in ["CF", "ML", "failStrain", "failDV", "full"]
 
     if args.case == "CF":
         tester = GPConstitutiveCFTest()
@@ -388,9 +389,16 @@ if __name__ == "__main__":
         tester.setUp()
         tester.test_constitutive_internal_tests()
     elif args.case == "failStrain":
+        # shouldn't matter which one of these I test as long as internal tests pass
+        tester = GPConstitutiveCFTest()
+        #tester = GPConstitutiveMLTest()
+        tester.setUp()
+        tester.test_constitutive_failure_strain_sens()
+    elif args.case == "failDV":
+        # shouldn't matter which one of these I test as long as internal tests pass
         tester = GPConstitutiveCFTest()
         # tester = GPConstitutiveMLTest()
         tester.setUp()
-        tester.test_constitutive_failure_strain_sens()
+        tester.test_constitutive_failure()
     elif args.case == "full":
         unittest.main()
