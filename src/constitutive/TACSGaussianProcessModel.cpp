@@ -1,9 +1,9 @@
-#include "GaussianProcessModel.h"
+#include "TACSGaussianProcessModel.h"
 
-GaussianProcessModel::GaussianProcessModel(int n_train, int n_param,
-                                           const TacsScalar Xtrain[],
-                                           const TacsScalar alpha[]) {
-  // constructor for the base GaussianProcessModel class
+TACSGaussianProcessModel::TACSGaussianProcessModel(int n_train, int n_param,
+                                                   const TacsScalar Xtrain[],
+                                                   const TacsScalar alpha[]) {
+  // constructor for the base TACSGaussianProcessModel class
   this->n_train = n_train;
   this->n_param = n_param;
 
@@ -19,8 +19,8 @@ GaussianProcessModel::GaussianProcessModel(int n_train, int n_param,
   }
 }
 
-GaussianProcessModel::~GaussianProcessModel() {
-  // destructor for the base GaussianProcessModel class
+TACSGaussianProcessModel::~TACSGaussianProcessModel() {
+  // destructor for the base TACSGaussianProcessModel class
   delete[] this->Xtrain;
   this->Xtrain = nullptr;
 
@@ -28,7 +28,8 @@ GaussianProcessModel::~GaussianProcessModel() {
   this->alpha = nullptr;
 }
 
-TacsScalar GaussianProcessModel::predictMeanTestData(const TacsScalar* Xtest) {
+TacsScalar TACSGaussianProcessModel::predictMeanTestData(
+    const TacsScalar* Xtest) {
   // Xtest is an array of size n_param (for one test data point)
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
   // product] where Ytest is a scalar
@@ -43,7 +44,7 @@ TacsScalar GaussianProcessModel::predictMeanTestData(const TacsScalar* Xtest) {
   return Ytest;
 }
 
-TacsScalar GaussianProcessModel::predictMeanTestDataSens(
+TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
     const TacsScalar Ysens, const TacsScalar* Xtest, TacsScalar* Xtestsens) {
   // Xtest is an array of size n_param (for one test data point)
   // the sensitivity here is on log[nondim-params]
@@ -66,7 +67,7 @@ TacsScalar GaussianProcessModel::predictMeanTestDataSens(
   return Ytest;
 }
 
-void AxialGaussianProcessModel::setDefaultHyperParameters() {
+void TACSAxialGaussianProcessModel::setDefaultHyperParameters() {
   this->S1 = 1e-1;
   this->S2 = 3e-1;
   this->c = -1;
@@ -79,8 +80,8 @@ void AxialGaussianProcessModel::setDefaultHyperParameters() {
   this->S6 = 1.0;
 }
 
-TacsScalar AxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
-                                             const TacsScalar* Xtrain) {
+TacsScalar TACSAxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
+                                                 const TacsScalar* Xtrain) {
   // define the kernel function k(*,*) on training and testing points for one
   // training point the entries are [log(xi), log(rho_0), log(1+gamma),
   // log(zeta)]
@@ -109,10 +110,10 @@ TacsScalar AxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
   return kernel0 * kernel1 * kernel2 + 2.0 * kernel3;
 }
 
-void AxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
-                                           const TacsScalar* Xtest,
-                                           const TacsScalar* Xtrain,
-                                           TacsScalar* Xtestsens) {
+void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
+                                               const TacsScalar* Xtest,
+                                               const TacsScalar* Xtrain,
+                                               TacsScalar* Xtestsens) {
   // add into the Xtestsens (don't reset to zero) for x_test = log[nondim
   // params] vector
 
@@ -171,8 +172,8 @@ void AxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   }
 }
 
-TacsScalar GaussianProcessModel::testAllGPTests(TacsScalar epsilon,
-                                                int printLevel) {
+TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
+                                                    int printLevel) {
   // run all GP tests
   const int n_tests = 4;
   TacsScalar* relErrors = new TacsScalar[n_tests];
@@ -202,8 +203,8 @@ TacsScalar GaussianProcessModel::testAllGPTests(TacsScalar epsilon,
   return maxRelError;
 }
 
-TacsScalar GaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
-                                                         int printLevel) {
+TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
+                                                             int printLevel) {
   // test the sensitivities of the kernel computation
 
   // perform complex-step or finite difference check (depending on the value of
@@ -262,8 +263,8 @@ TacsScalar GaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   return relError;
 }
 
-TacsScalar AxialGaussianProcessModel::testKernelSens(TacsScalar epsilon,
-                                                     int printLevel) {
+TacsScalar TACSAxialGaussianProcessModel::testKernelSens(TacsScalar epsilon,
+                                                         int printLevel) {
   // test the sensitivities of the kernel computation
 
   // perform complex-step or finite difference check (depending on the value of

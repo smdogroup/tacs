@@ -2,7 +2,7 @@
 ========================================================================
 Gaussian Process Model for TACS Buckling Constraints
 ========================================================================
-@File   :   GaussianProcessModel.h
+@File   :   TACSGaussianProcessModel.h
 @Date   :   2024/05/10
 @Author :   Sean Phillip Engelstad
 @Description : Use Gaussian Processes for machine learning techniques to
@@ -24,11 +24,11 @@ buckling constraints of stiffened panels.
 // Class Declaration
 // =============================================================================
 
-class GaussianProcessModel : public TACSObject {
+class TACSGaussianProcessModel : public TACSObject {
  public:
-  GaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
-                       const TacsScalar alpha[]);
-  ~GaussianProcessModel();
+  TACSGaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
+                           const TacsScalar alpha[]);
+  ~TACSGaussianProcessModel();
 
   // predict the test data at a single point using a matrix-vector product
   // this is the mean test data prediction. The offline training beforehand
@@ -113,14 +113,14 @@ class GaussianProcessModel : public TACSObject {
   TacsScalar ks;  // ks setting for smooth kernel functions
 };
 
-class AxialGaussianProcessModel : public GaussianProcessModel {
+class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
  public:
-  AxialGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                            const TacsScalar alpha[])
-      : GaussianProcessModel(n_train, N_PARAM, Xtrain, alpha) {
+  TACSAxialGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
+                                const TacsScalar alpha[])
+      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha) {
     setDefaultHyperParameters();
   };
-  ~AxialGaussianProcessModel(){};
+  ~TACSAxialGaussianProcessModel(){};
   void setDefaultHyperParameters();
 
   TacsScalar testKernelSens(TacsScalar epsilon, int printLevel);
@@ -140,12 +140,12 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
   static const int N_PARAM = 4;
 };
 
-class ShearGaussianProcessModel : public AxialGaussianProcessModel {
+class TACSShearGaussianProcessModel : public TACSAxialGaussianProcessModel {
  public:
-  ShearGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                            const TacsScalar alpha[])
-      : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  ~ShearGaussianProcessModel(){};
+  TACSShearGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
+                                const TacsScalar alpha[])
+      : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha){};
+  ~TACSShearGaussianProcessModel(){};
   // void setdefaultHyperParameters();
   //  protected:
   // set the default hyperparameters of the model
@@ -153,12 +153,12 @@ class ShearGaussianProcessModel : public AxialGaussianProcessModel {
   // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 };
 
-class CripplingGaussianProcessModel : public AxialGaussianProcessModel {
+class TACSCripplingGaussianProcessModel : public TACSAxialGaussianProcessModel {
  public:
-  CripplingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                                const TacsScalar alpha[])
-      : AxialGaussianProcessModel(n_train, Xtrain, alpha){};
-  ~CripplingGaussianProcessModel(){};
+  TACSCripplingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
+                                    const TacsScalar alpha[])
+      : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha){};
+  ~TACSCripplingGaussianProcessModel(){};
   // void setdefaultHyperParameters();
   //  protected:
   // set the default hyperparameters of the model

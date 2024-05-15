@@ -164,9 +164,9 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
         void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
         void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
 
-cdef extern from "GaussianProcessModel.h":
-    cdef cppclass GaussianProcessModel:
-        GaussianProcessModel(
+cdef extern from "TACSGaussianProcessModel.h":
+    cdef cppclass TACSGaussianProcessModel:
+        TACSGaussianProcessModel(
             int, # n_train
             int, # n_param
             TacsScalar[], # Xtrain
@@ -174,24 +174,24 @@ cdef extern from "GaussianProcessModel.h":
         )
         TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel)
 
-cdef extern from "GaussianProcessModel.h":
-    cdef cppclass AxialGaussianProcessModel(GaussianProcessModel):
-        AxialGaussianProcessModel(
+cdef extern from "TACSGaussianProcessModel.h":
+    cdef cppclass TACSAxialGaussianProcessModel(TACSGaussianProcessModel):
+        TACSAxialGaussianProcessModel(
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
 
-cdef extern from "GaussianProcessModel.h":
-    cdef cppclass ShearGaussianProcessModel(AxialGaussianProcessModel):
-        ShearGaussianProcessModel(
+cdef extern from "TACSGaussianProcessModel.h":
+    cdef cppclass TACSShearGaussianProcessModel(TACSAxialGaussianProcessModel):
+        TACSShearGaussianProcessModel(
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
-cdef extern from "GaussianProcessModel.h":
-    cdef cppclass CripplingGaussianProcessModel(AxialGaussianProcessModel):
-        CripplingGaussianProcessModel(
+cdef extern from "TACSGaussianProcessModel.h":
+    cdef cppclass TACSCripplingGaussianProcessModel(TACSAxialGaussianProcessModel):
+        TACSCripplingGaussianProcessModel(
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
@@ -224,9 +224,9 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             TacsScalar, # panelWidth
             int, # panelWidthNum
             TacsScalar, # flangeFraction,
-            AxialGaussianProcessModel*, # axial GP
-            ShearGaussianProcessModel*, # shear GP
-            CripplingGaussianProcessModel*, # crippling GP
+            TACSAxialGaussianProcessModel*, # axial GP
+            TACSShearGaussianProcessModel*, # shear GP
+            TACSCripplingGaussianProcessModel*, # crippling GP
         )
         # temporarily commented out due to inheritance and (ambiguous overloaded method problem)
         # int getNumPanelPlies()

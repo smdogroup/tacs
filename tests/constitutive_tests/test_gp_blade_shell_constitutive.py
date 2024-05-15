@@ -9,7 +9,7 @@ np.random.seed(1342342)
 
 
 class GPConstitutiveMLTest(unittest.TestCase):
-    _my_debug = False
+    _my_debug = True
 
     def setUp(self):
 
@@ -338,7 +338,9 @@ class GPConstitutiveMLTest(unittest.TestCase):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
-                relError = con.test_all_derivative_tests(self.dh, self.print_level)
+                relError = con.test_all_derivative_tests(
+                    self.dh, self.print_level
+                )  # self.print_level
                 fail = abs(relError.real) > self.rtol
                 self.assertFalse(fail)
         if self.print_level != 0:
@@ -362,17 +364,27 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
 
 
 if __name__ == "__main__":
-    cases = ["CF", "ML", "all"]
-    case = cases[1]  # choose the index here
+    # current status of these tests
+    # case == "CF" [runs internal tests] => all pass
+    # case == "ML" [runs internal tests] => all pass
+    # case == "all" [runs internal + external tests] => failure criterion fails.
 
-    if case == "CF":
+    import argparse
+
+    parent_parser = argparse.ArgumentParser(add_help=False)
+    parent_parser.add_argument("--case", type=str)
+    args = parent_parser.parse_args()
+
+    assert args.case in ["CF", "ML", "all"]
+
+    if args.case == "CF":
         tester = GPConstitutiveCFTest()
-    elif case == "ML":
+    elif args.case == "ML":
         tester = GPConstitutiveMLTest()
-    elif case == "all":
+    elif args.case == "all":
         unittest.main()
 
-    if case in ["CF", "ML"]:
+    if args.case in ["CF", "ML"]:
         tester._my_debug = True
         tester.setUp()
         tester.test_constitutive_internal_tests()

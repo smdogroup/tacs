@@ -42,9 +42,9 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
     TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
     int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-    TacsScalar flangeFraction, AxialGaussianProcessModel* axialGP,
-    ShearGaussianProcessModel* shearGP,
-    CripplingGaussianProcessModel* cripplingGP)
+    TacsScalar flangeFraction, TACSAxialGaussianProcessModel* axialGP,
+    TACSShearGaussianProcessModel* shearGP,
+    TACSCripplingGaussianProcessModel* cripplingGP)
     : TACSBladeStiffenedShellConstitutive(
           panelPly, stiffenerPly, kcorr, panelLength, panelLengthNum,
           stiffenerPitch, stiffenerPitchNum, panelThick, panelThickNum,

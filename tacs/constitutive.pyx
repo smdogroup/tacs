@@ -1114,7 +1114,7 @@ cdef class AxialGP(GaussianProcess):
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
-        self.axial_gp = new AxialGaussianProcessModel(
+        self.axial_gp = new TACSAxialGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
@@ -1130,7 +1130,7 @@ cdef class ShearGP(AxialGP):
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
-        self.gp = new ShearGaussianProcessModel(
+        self.gp = new TACSShearGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
@@ -1146,7 +1146,7 @@ cdef class CripplingGP(AxialGP):
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
     ):
-        self.gp = new CripplingGaussianProcessModel(
+        self.gp = new TACSCripplingGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
@@ -1209,11 +1209,11 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
     panelWidthNum : int, optional
         Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
-    axialGP : AxialGaussianProcessModel, optional
+    axialGP : TACSAxialGaussianProcessModel, optional
         GP model for axial buckling data, if None uses closed-form instead
-    shearGP : ShearGaussianProcessModel, optional
+    shearGP : TACSShearGaussianProcessModel, optional
         GP model for shear buckling data, if None uses closed-form instead
-    cripplingGP : CripplingGaussianProcessModel, optional
+    cripplingGP : TACSCripplingGaussianProcessModel, optional
         GP model for crippling buckling data, if None uses closed-form instead
 
     Raises
@@ -1279,13 +1279,13 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
 
         # make null ptrs for GPs if not defined and store them in this class too
-        cdef AxialGaussianProcessModel *axial_gp_ptr = NULL
+        cdef TACSAxialGaussianProcessModel *axial_gp_ptr = NULL
         if axialGP is not None:
             axial_gp_ptr = (<AxialGP>axialGP).axial_gp
-        cdef ShearGaussianProcessModel *shear_gp_ptr = NULL
+        cdef TACSShearGaussianProcessModel *shear_gp_ptr = NULL
         if shearGP is not None:
             shear_gp_ptr = (<ShearGP>shearGP).gp
-        cdef CripplingGaussianProcessModel *crippling_gp_ptr = NULL
+        cdef TACSCripplingGaussianProcessModel *crippling_gp_ptr = NULL
         if cripplingGP is not None:
             crippling_gp_ptr = (<CripplingGP>cripplingGP).gp
 
