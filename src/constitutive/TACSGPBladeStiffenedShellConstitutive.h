@@ -244,6 +244,16 @@ class TACSGPBladeStiffenedShellConstitutive
                         const TacsScalar X[], const TacsScalar strain[],
                         int dvLen, TacsScalar dfdx[]);
 
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
+
+  // ==============================================================================
+  // Stiffener crippling helper functions
+  // ==============================================================================
+
+  TacsScalar computeStiffenerInPlaneLoad(const TacsScalar stiffenerStrain[],
+                                         TacsScalar* A11s);
+
   void computeStiffenerCripplingStiffness(TacsScalar C[]);
 
   // ==============================================================================

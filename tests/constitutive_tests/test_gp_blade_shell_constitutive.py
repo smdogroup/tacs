@@ -372,10 +372,10 @@ if __name__ == "__main__":
     import argparse
 
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("--case", type=str)
+    parent_parser.add_argument("--case", type=str, default="full")
     args = parent_parser.parse_args()
 
-    assert args.case in ["CF", "ML", "failStrain", "all"]
+    assert args.case in ["CF", "ML", "failStrain", "full"]
 
     if args.case == "CF":
         tester = GPConstitutiveCFTest()
@@ -392,5 +392,5 @@ if __name__ == "__main__":
         # tester = GPConstitutiveMLTest()
         tester.setUp()
         tester.test_constitutive_failure_strain_sens()
-    elif args.case == "all":
+    elif args.case == "full":
         unittest.main()
