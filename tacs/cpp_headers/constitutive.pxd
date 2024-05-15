@@ -172,7 +172,7 @@ cdef extern from "GaussianProcessModel.h":
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
-        TacsScalar testAllGPTests(TacsScalar epsilon)
+        TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel)
 
 cdef extern from "GaussianProcessModel.h":
     cdef cppclass AxialGaussianProcessModel(GaussianProcessModel):
@@ -238,7 +238,7 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
         # void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
         # void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
         # void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
-        TacsScalar testAllTests(TacsScalar epsilon)
+        TacsScalar testAllTests(TacsScalar epsilon, int printLevel)
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):

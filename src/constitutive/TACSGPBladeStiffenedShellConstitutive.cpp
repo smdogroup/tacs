@@ -21,6 +21,7 @@ constraints of the stiffened panels.
 // Extension Includes
 // =============================================================================
 #include "TACSGPBladeStiffenedShellConstitutive.h"
+
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
@@ -1586,7 +1587,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
 // -----------------------------------------------------------
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1634,15 +1635,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testAffineAspectRatio:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testAffineAspectRatio:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedRigidity(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1690,15 +1693,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedRigidity(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testGeneralizedRigidity:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testGeneralizedRigidity:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1743,15 +1748,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testGeneralizedPoissonsRatio:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testGeneralizedPoissonsRatio:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1804,15 +1811,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testStiffenerAreaRatio:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testStiffenerAreaRatio:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1867,15 +1876,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testStiffenerStiffnessRatio:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testStiffenerStiffnessRatio:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -1923,28 +1934,32 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testTransverseShearParameter:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testTransverseShearParameter:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimensionalParameters(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 6;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
-  printf("\nTACSGPBladeStiffened..testNondimensionalParmeters start::\n");
-  printf("--------------------------------------------------------\n\n");
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testNondimensionalParmeters start::\n");
+    printf("--------------------------------------------------------\n\n");
+  }
 
-  relErrors[0] = testAffineAspectRatio(epsilon);
-  relErrors[1] = testGeneralizedRigidity(epsilon);
-  relErrors[2] = testGeneralizedPoissonsRatio(epsilon);
-  relErrors[3] = testStiffenerAreaRatio(epsilon);
-  relErrors[4] = testStiffenerStiffnessRatio(epsilon);
-  relErrors[5] = testTransverseShearParameter(epsilon);
+  relErrors[0] = testAffineAspectRatio(epsilon, printLevel);
+  relErrors[1] = testGeneralizedRigidity(epsilon, printLevel);
+  relErrors[2] = testGeneralizedPoissonsRatio(epsilon, printLevel);
+  relErrors[3] = testStiffenerAreaRatio(epsilon, printLevel);
+  relErrors[4] = testStiffenerStiffnessRatio(epsilon, printLevel);
+  relErrors[5] = testTransverseShearParameter(epsilon, printLevel);
 
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
@@ -1955,30 +1970,35 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimensionalParameters(
   }
 
   // report the overall test results
-  printf(
-      "\nTACSGPBladeStiffened..testNondimensionalParmeters final results::\n");
-  printf("\ttestAffineAspectRatio = %.4e\n", relErrors[0]);
-  printf("\ttestGeneralizedRigidity = %.4e\n", relErrors[1]);
-  printf("\ttestGeneralizedPoissonsRatio = %.4e\n", relErrors[2]);
-  printf("\ttestStiffenerAreaRatio = %.4e\n", relErrors[3]);
-  printf("\ttestStiffenerStiffnessRatio = %.4e\n", relErrors[4]);
-  printf("\ttestTransverseShearParameter = %.4e\n", relErrors[5]);
-  printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  if (printLevel != 0) {
+    printf(
+        "\nTACSGPBladeStiffened..testNondimensionalParmeters final "
+        "results::\n");
+    printf("\ttestAffineAspectRatio = %.4e\n", relErrors[0]);
+    printf("\ttestGeneralizedRigidity = %.4e\n", relErrors[1]);
+    printf("\ttestGeneralizedPoissonsRatio = %.4e\n", relErrors[2]);
+    printf("\ttestStiffenerAreaRatio = %.4e\n", relErrors[3]);
+    printf("\ttestStiffenerStiffnessRatio = %.4e\n", relErrors[4]);
+    printf("\ttestTransverseShearParameter = %.4e\n", relErrors[5]);
+    printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  }
 
   return maxRelError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testAxialCriticalLoads(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 2;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
-  printf("\nTACSGPBladeStiffened..testAxialCriticalLoads start::\n");
-  printf("--------------------------------------------------------\n\n");
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testAxialCriticalLoads start::\n");
+    printf("--------------------------------------------------------\n\n");
+  }
 
-  relErrors[0] = testCriticalGlobalAxialLoad(epsilon);
-  relErrors[1] = testCriticalLocalAxialLoad(epsilon);
+  relErrors[0] = testCriticalGlobalAxialLoad(epsilon, printLevel);
+  relErrors[1] = testCriticalLocalAxialLoad(epsilon, printLevel);
 
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
@@ -1989,16 +2009,18 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAxialCriticalLoads(
   }
 
   // get max rel error among them
-  printf("\nTACSGPBladeStiffened..testAxialCriticalLoads final results::\n");
-  printf("\ttestGlobalAxialLoad = %.4e\n", relErrors[0]);
-  printf("\ttestLocalAxialLoad = %.4e\n", relErrors[1]);
-  printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testAxialCriticalLoads final results::\n");
+    printf("\ttestGlobalAxialLoad = %.4e\n", relErrors[0]);
+    printf("\ttestLocalAxialLoad = %.4e\n", relErrors[1]);
+    printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  }
 
   return maxRelError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2057,15 +2079,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testCriticalGlobalAxialLoad:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalGlobalAxialLoad:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2121,28 +2145,32 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testCriticalLocalAxialLoad:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalLocalAxialLoad:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 4;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
-  printf("\nTACSGPBladeStiffened..testShearCriticalLoads start::\n");
-  printf("--------------------------------------------------------\n\n");
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testShearCriticalLoads start::\n");
+    printf("--------------------------------------------------------\n\n");
+  }
 
   // first two tests are used for the closed-form solution approach
-  relErrors[0] = testLam2Constraint(epsilon);
-  relErrors[1] = testNondimShearParams(epsilon);
+  relErrors[0] = testLam2Constraint(epsilon, printLevel);
+  relErrors[1] = testNondimShearParams(epsilon, printLevel);
   // final crit load tests
-  relErrors[2] = testCriticalGlobalShearLoad(epsilon);
-  relErrors[3] = testCriticalLocalShearLoad(epsilon);
+  relErrors[2] = testCriticalGlobalShearLoad(epsilon, printLevel);
+  relErrors[3] = testCriticalLocalShearLoad(epsilon, printLevel);
 
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
@@ -2153,18 +2181,20 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
   }
 
   // get max rel error among them
-  printf("\nTACSGPBladeStiffened..testShearCriticalLoads final results::\n");
-  printf("\ttestLam2Constraint = %.4e\n", relErrors[0]);
-  printf("\ttestNondimShearParams = %.4e\n", relErrors[1]);
-  printf("\ttestGlobalShearLoad = %.4e\n", relErrors[2]);
-  printf("\ttestLocalShearLoad = %.4e\n", relErrors[3]);
-  printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testShearCriticalLoads final results::\n");
+    printf("\ttestLam2Constraint = %.4e\n", relErrors[0]);
+    printf("\ttestNondimShearParams = %.4e\n", relErrors[1]);
+    printf("\ttestGlobalShearLoad = %.4e\n", relErrors[2]);
+    printf("\ttestLocalShearLoad = %.4e\n", relErrors[3]);
+    printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+  }
 
   return maxRelError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
-    const TacsScalar epsilon) {
+    const TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2211,15 +2241,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testLam2Constraint:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testLam2Constraint:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
-    const TacsScalar epsilon) {
+    const TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2282,15 +2314,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testNondimShearParams:\n");
-  printf("\t\tadjDeriv = %.4e\n", adjTD);
-  printf("\t\tcentralDiff = %.4e\n", centralDiff);
-  printf("\t\trel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testNondimShearParams:\n");
+    printf("\t\tadjDeriv = %.4e\n", adjTD);
+    printf("\t\tcentralDiff = %.4e\n", centralDiff);
+    printf("\t\trel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2345,15 +2379,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testCriticalGlobalShearLoad:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalGlobalShearLoad:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2409,15 +2445,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("\tTACSGPBladeStiffened..testCriticalLocalShearLoad:\n");
-  printf("\t\t adjDeriv = %.4e\n", adjTD);
-  printf("\t\t centralDiff = %.4e\n", centralDiff);
-  printf("\t\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalLocalShearLoad:\n");
+    printf("\t\t adjDeriv = %.4e\n", adjTD);
+    printf("\t\t centralDiff = %.4e\n", centralDiff);
+    printf("\t\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
@@ -2428,8 +2466,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
-  printf("\nTACSGPBladeStiffened..testStiffenerCripplingLoad start::\n");
-  printf("--------------------------------------------------------\n\n");
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testStiffenerCripplingLoad start::\n");
+    printf("--------------------------------------------------------\n\n");
+  }
 
   // compute initial values
   TacsScalar* x0 = new TacsScalar[n_input];
@@ -2478,44 +2518,53 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  printf("TACSGPBladeStiffened..testStiffenerCripplingLoad:\n");
-  printf("\t adjDeriv = %.4e\n", adjTD);
-  printf("\t centralDiff = %.4e\n", centralDiff);
-  printf("\t rel error = %.4e\n", relError);
+  if (printLevel != 0) {
+    printf("TACSGPBladeStiffened..testStiffenerCripplingLoad:\n");
+    printf("\t adjDeriv = %.4e\n", adjTD);
+    printf("\t centralDiff = %.4e\n", centralDiff);
+    printf("\t rel error = %.4e\n", relError);
+  }
   return relError;
 }
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
-    TacsScalar epsilon) {
+    TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 7;
   TacsScalar* relErrors = new TacsScalar[n_tests];
+  memset(relErrors, 0, n_tests * sizeof(TacsScalar));
 
-  printf("\nTACSGPBladeStiffened..testAllTests start::\n");
-  printf("========================================================\n");
-  printf("========================================================\n\n");
+  if (printLevel != 0) {
+    printf("\nTACSGPBladeStiffened..testAllTests start::\n");
+    printf("========================================================\n");
+    printf("========================================================\n\n");
+  }
 
-  relErrors[0] = testNondimensionalParameters(epsilon);
-  relErrors[1] = testAxialCriticalLoads(epsilon);
-  relErrors[2] = testShearCriticalLoads(epsilon);
-  relErrors[3] = testStiffenerCripplingLoad(epsilon);
-  relErrors[4] = 0.0;
-  relErrors[5] = 0.0;
-  relErrors[6] = 0.0;
+  relErrors[0] = testNondimensionalParameters(epsilon, printLevel);
+  relErrors[1] = testAxialCriticalLoads(epsilon, printLevel);
+  relErrors[2] = testShearCriticalLoads(epsilon, printLevel);
+  relErrors[3] = testStiffenerCripplingLoad(epsilon, printLevel);
+
   if (this->getAxialGP()) {
-    printf("\nAxialGP : testAllGPtests start::\n");
-    printf("--------------------------------------------------------\n\n");
-    relErrors[4] = this->getAxialGP()->testAllGPTests(epsilon);
+    if (printLevel != 0) {
+      printf("\nAxialGP : testAllGPtests start::\n");
+      printf("--------------------------------------------------------\n\n");
+    }
+    relErrors[4] = this->getAxialGP()->testAllGPTests(epsilon, printLevel);
   }
   if (this->getShearGP()) {
-    printf("\nShearGP : testAllGPtests start::\n");
-    printf("--------------------------------------------------------\n\n");
-    relErrors[5] = this->getShearGP()->testAllGPTests(epsilon);
+    if (printLevel != 0) {
+      printf("\nShearGP : testAllGPtests start::\n");
+      printf("--------------------------------------------------------\n\n");
+    }
+    relErrors[5] = this->getShearGP()->testAllGPTests(epsilon, printLevel);
   }
   if (this->getCripplingGP()) {
-    printf("\nCripplingGP : testAllGPtests start::\n");
-    printf("--------------------------------------------------------\n\n");
-    relErrors[6] = this->getCripplingGP()->testAllGPTests(epsilon);
+    if (printLevel != 0) {
+      printf("\nCripplingGP : testAllGPtests start::\n");
+      printf("--------------------------------------------------------\n\n");
+    }
+    relErrors[6] = this->getCripplingGP()->testAllGPTests(epsilon, printLevel);
   }
 
   // get max rel error among them
@@ -2527,22 +2576,24 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
   }
 
   // get max rel error among them
-  printf("========================================================\n");
-  printf("\nTACSGPBladeStiffened..testAllTests full results::\n");
-  printf("\ttestNondimensionalParameters = %.4e\n", relErrors[0]);
-  printf("\ttestAxialCriticalLoads = %.4e\n", relErrors[1]);
-  printf("\ttestShearCriticalLoads = %.4e\n", relErrors[2]);
-  printf("\ttestStiffenerCripplingLoad = %.4e\n", relErrors[3]);
-  if (this->getAxialGP()) {
-    printf("\ttestAxialGP all tests = %.4e\n", relErrors[4]);
+  if (printLevel != 0) {
+    printf("========================================================\n");
+    printf("\nTACSGPBladeStiffened..testAllTests full results::\n");
+    printf("\ttestNondimensionalParameters = %.4e\n", relErrors[0]);
+    printf("\ttestAxialCriticalLoads = %.4e\n", relErrors[1]);
+    printf("\ttestShearCriticalLoads = %.4e\n", relErrors[2]);
+    printf("\ttestStiffenerCripplingLoad = %.4e\n", relErrors[3]);
+    if (this->getAxialGP()) {
+      printf("\ttestAxialGP all tests = %.4e\n", relErrors[4]);
+    }
+    if (this->getShearGP()) {
+      printf("\ttestShearGP all tests = %.4e\n", relErrors[5]);
+    }
+    if (this->getCripplingGP()) {
+      printf("\ttestCripplingGp all tests = %.4e\n", relErrors[6]);
+    }
+    printf("\tOverall max rel error = %.4e\n\n", maxRelError);
   }
-  if (this->getShearGP()) {
-    printf("\ttestShearGP all tests = %.4e\n", relErrors[5]);
-  }
-  if (this->getCripplingGP()) {
-    printf("\ttestCripplingGp all tests = %.4e\n", relErrors[6]);
-  }
-  printf("\tOverall max rel error = %.4e\n\n", maxRelError);
 
   return maxRelError;
 }

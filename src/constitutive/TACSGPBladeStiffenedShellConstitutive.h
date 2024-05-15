@@ -170,31 +170,31 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Test the nondimensional parameter computations against finite
    * difference.
    */
-  TacsScalar testNondimensionalParameters(TacsScalar epsilon);
+  TacsScalar testNondimensionalParameters(TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test the axial critical loads.
    */
-  TacsScalar testAxialCriticalLoads(TacsScalar epsilon);
+  TacsScalar testAxialCriticalLoads(TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test the shear critical loads.
    */
-  TacsScalar testShearCriticalLoads(TacsScalar epsilon);
+  TacsScalar testShearCriticalLoads(TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test the crippling critical loads.
    */
-  TacsScalar testStiffenerCripplingLoad(TacsScalar epsilon);
+  TacsScalar testStiffenerCripplingLoad(TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test all GP tests
    */
-  TacsScalar testAllTests(TacsScalar epsilon);
+  TacsScalar testAllTests(TacsScalar epsilon, int printLevel);
 
   // ==============================================================================
   // Getter and setters
@@ -290,7 +290,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the affine aspect ratio sensitivity.
    */
-  TacsScalar testAffineAspectRatio(const TacsScalar epsilon);
+  TacsScalar testAffineAspectRatio(const TacsScalar epsilon, int printLevel);
 
   /**
    * @brief Compute the non-dimensional generalized rigidity xi = (D12 + 2 D66)
@@ -333,7 +333,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the generalized rigidity sensitivity.
    */
-  TacsScalar testGeneralizedRigidity(const TacsScalar epsilon);
+  TacsScalar testGeneralizedRigidity(const TacsScalar epsilon, int printLevel);
 
   /**
    * @brief Compute the non-dimensional generalized Poisson's ratio eps = 1/xi *
@@ -369,7 +369,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the generalized poisson's ratio sensitivity.
    */
-  TacsScalar testGeneralizedPoissonsRatio(const TacsScalar epsilon);
+  TacsScalar testGeneralizedPoissonsRatio(const TacsScalar epsilon,
+                                          int printLevel);
 
   /**
    * @brief Compute the non-dimensional stiffener area ratio delta = E1s * As /
@@ -401,7 +402,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the stiffener area ratio sensitivity aka delta parameter
    */
-  TacsScalar testStiffenerAreaRatio(const TacsScalar epsilon);
+  TacsScalar testStiffenerAreaRatio(const TacsScalar epsilon, int printLevel);
 
   /**
    * @brief Compute the non-dimensional stiffener-to-panel stiffness ratio gamma
@@ -432,7 +433,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the stiffener stiffness ratio sensitivity aka gamma parameter
    */
-  TacsScalar testStiffenerStiffnessRatio(const TacsScalar epsilon);
+  TacsScalar testStiffenerStiffnessRatio(const TacsScalar epsilon,
+                                         int printLevel);
 
   /**
    * @brief Compute the non-dimensional transverse shear parameter
@@ -471,7 +473,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the transverse shear parameter sensitivity aka zeta parameter
    */
-  TacsScalar testTransverseShearParameter(const TacsScalar epsilon);
+  TacsScalar testTransverseShearParameter(const TacsScalar epsilon,
+                                          int printLevel);
 
   /**
    * @brief Compute the critical axial load for the global buckling of the
@@ -529,7 +532,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the critical global axial load function
    */
-  TacsScalar testCriticalGlobalAxialLoad(const TacsScalar epsilon);
+  TacsScalar testCriticalGlobalAxialLoad(const TacsScalar epsilon,
+                                         int printLevel);
 
   /**
    * @brief Compute the critical axial load for the local buckling mode of the
@@ -577,7 +581,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the critical local axial load function
    */
-  TacsScalar testCriticalLocalAxialLoad(const TacsScalar epsilon);
+  TacsScalar testCriticalLocalAxialLoad(const TacsScalar epsilon,
+                                        int printLevel);
 
   /**
    * @brief Compute the critical shear load for global buckling
@@ -633,7 +638,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the critical global shear load function
    */
-  TacsScalar testCriticalGlobalShearLoad(const TacsScalar epsilon);
+  TacsScalar testCriticalGlobalShearLoad(const TacsScalar epsilon,
+                                         int printLevel);
 
   /**
    * @brief Compute the critical shear load for local buckling
@@ -684,7 +690,8 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the critical local shear load function
    */
-  TacsScalar testCriticalLocalShearLoad(const TacsScalar epsilon);
+  TacsScalar testCriticalLocalShearLoad(const TacsScalar epsilon,
+                                        int printLevel);
 
   /**
    * @brief Compute the non-dimensional parameters lam1bar, lam2bar using Newton
@@ -722,7 +729,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the nondimShearParams function
    */
-  TacsScalar testNondimShearParams(const TacsScalar epsilon);
+  TacsScalar testNondimShearParams(const TacsScalar epsilon, int printLevel);
 
   TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi,
                             const TacsScalar gamma);
@@ -733,7 +740,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the lam2Constraint function
    */
-  TacsScalar testLam2Constraint(const TacsScalar epsilon);
+  TacsScalar testLam2Constraint(const TacsScalar epsilon, int printLevel);
 
   /**
    * @brief Compute the critical stiffener crippling load

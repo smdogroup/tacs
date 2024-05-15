@@ -1099,11 +1099,11 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
 cdef class GaussianProcess:
     # base class so no constructor here    
-    def test_all_gp_tests(self, TacsScalar epsilon):
+    def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
         """
         run all the GP derivative tests
         """
-        return self.base_gp.testAllGPTests(epsilon)
+        return self.base_gp.testAllGPTests(epsilon, printLevel)
 
 cdef class AxialGP(GaussianProcess):
     n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(zeta)]
@@ -1455,11 +1455,11 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
                 raise ValueError('upperBound must have length numPanelPlies')
             self.gp_blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
-    def test_all_derivative_tests(self, TacsScalar epsilon):
+    def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
         """
         test all the internal derivative tests 
         """
-        return self.gp_blade_ptr.testAllTests(epsilon)
+        return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
 
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """

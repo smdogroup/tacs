@@ -17,8 +17,8 @@ buckling constraints of stiffened panels.
 // =============================================================================
 // Extension Includes
 // =============================================================================
-#include "TacsUtilities.h"
 #include "TACSObject.h"
+#include "TacsUtilities.h"
 
 // =============================================================================
 // Class Declaration
@@ -43,9 +43,11 @@ class GaussianProcessModel : public TACSObject {
 
   // TESTING SCRIPTS
   // ---------------
-  TacsScalar testAllGPTests(TacsScalar epsilon);
-  TacsScalar testPredictMeanTestData(TacsScalar epsilon);
-  virtual TacsScalar testKernelSens(TacsScalar epsilon) { return 0.0; };
+  TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel);
+  TacsScalar testPredictMeanTestData(TacsScalar epsilon, int printLevel);
+  virtual TacsScalar testKernelSens(TacsScalar epsilon, int printLevel) {
+    return 0.0;
+  };
 
   static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho) {
     return 1.0 / rho * log(1 + exp(rho * x));
@@ -54,11 +56,12 @@ class GaussianProcessModel : public TACSObject {
     return exp(rho * x) / (1 + exp(rho * x));
   };
   static TacsScalar test_soft_relu(TacsScalar epsilon) {
-    TacsScalar x = 1.0, rho = 1.0; // very low rho for smoother function for deriv test
-    TacsScalar f0 = soft_relu(x-epsilon,rho);
-    TacsScalar f2 = soft_relu(x+epsilon,rho);
+    TacsScalar x = 1.0,
+               rho = 1.0;  // very low rho for smoother function for deriv test
+    TacsScalar f0 = soft_relu(x - epsilon, rho);
+    TacsScalar f2 = soft_relu(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
-    TacsScalar analyDeriv = soft_relu_sens(x,rho);
+    TacsScalar analyDeriv = soft_relu_sens(x, rho);
     TacsScalar relError = (analyDeriv - centDiff) / centDiff;
     relError = abs(TacsRealPart(relError));
     return relError;
@@ -71,11 +74,12 @@ class GaussianProcessModel : public TACSObject {
     return (exp(rho * x) - exp(-rho * x)) / (exp(-rho * x) + exp(rho * x));
   };
   static TacsScalar test_soft_abs(TacsScalar epsilon) {
-    TacsScalar x = 1.0, rho = 1.0; // very low rho for smoother function for deriv test
-    TacsScalar f0 = soft_abs(x-epsilon,rho);
-    TacsScalar f2 = soft_abs(x+epsilon,rho);
+    TacsScalar x = 1.0,
+               rho = 1.0;  // very low rho for smoother function for deriv test
+    TacsScalar f0 = soft_abs(x - epsilon, rho);
+    TacsScalar f2 = soft_abs(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
-    TacsScalar analyDeriv = soft_abs_sens(x,rho);
+    TacsScalar analyDeriv = soft_abs_sens(x, rho);
     TacsScalar relError = (analyDeriv - centDiff) / centDiff;
     relError = abs(TacsRealPart(relError));
     return relError;
@@ -119,7 +123,7 @@ class AxialGaussianProcessModel : public GaussianProcessModel {
   ~AxialGaussianProcessModel(){};
   void setDefaultHyperParameters();
 
-  TacsScalar testKernelSens(TacsScalar epsilon);
+  TacsScalar testKernelSens(TacsScalar epsilon, int printLevel);
 
  protected:
   // here Xtest, Xtrain are each length 5 arrays (N_PARAM) [just uses one train

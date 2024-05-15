@@ -338,10 +338,11 @@ class GPConstitutiveMLTest(unittest.TestCase):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
-                relError = con.test_all_derivative_tests(self.dh)
+                relError = con.test_all_derivative_tests(self.dh, self.print_level)
                 fail = abs(relError.real) > self.rtol
                 self.assertFalse(fail)
-        print("All internal tests pass!")
+        if self.print_level != 0:
+            print("All internal tests pass!")
 
 
 """
@@ -361,15 +362,15 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
 
 
 if __name__ == "__main__":
-    cases = ["all", "CF", "ML"]
-    case = cases[2]  # choose the index here
+    cases = ["CF", "ML", "all"]
+    case = cases[1]  # choose the index here
 
-    if case == "all":
-        unittest.main()
-    elif case == "CF":
+    if case == "CF":
         tester = GPConstitutiveCFTest()
     elif case == "ML":
         tester = GPConstitutiveMLTest()
+    elif case == "all":
+        unittest.main()
 
     if case in ["CF", "ML"]:
         tester._my_debug = True
