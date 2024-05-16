@@ -1,6 +1,3 @@
-import copy
-import warnings
-
 from mphys.core import Builder, MPhysVariables
 import numpy as np
 
@@ -102,9 +99,10 @@ class TacsBuilder(Builder):
         conduction : bool, optional
             Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
             Defaults to False.
-        coupled : bool, optional
-            Flag to determine of if multidisciplinary coupling variables should be turned on
-            (used in aerostructural/thermostructural analyses). Defaults to True.
+        coupling_loads : list[str] or str or None, optional
+            List of coupling loads to add to right handside of FEA state equation. These loads correspond to the nodal
+            forces on the model. Multiple load sources can be specified, these will be added together before being
+            applied to the model. This is used in aerostructural/thermostructural analyses. Defaults to None.
         write_solution : bool, optional
             Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.
         separate_mass_dvs : bool, optional
