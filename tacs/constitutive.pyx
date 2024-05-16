@@ -1099,6 +1099,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
 cdef class GaussianProcess:
     # base class so no constructor here    
+    def predict_mean_test_data(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+    ):
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+
+    def setKS(self, TacsScalar ksWeight):
+        self.base_gp.setKS(ksWeight)
+
     def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
         """
         run all the GP derivative tests
@@ -1352,6 +1361,26 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr = self.gp_blade_ptr
         self.ptr.incref()
 
+        # free the temporary created pointers
+        free(axial_gp_ptr)
+        free(shear_gp_ptr)
+        free(crippling_gp_ptr)
+
+    def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        return self.gp_blade_ptr.nondimCriticalGlobalAxialLoad(rho_0, xi, gamma, zeta)
+
+    def nondimCriticalLocalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        return self.gp_blade_ptr.nondimCriticalLocalAxialLoad(rho_0, xi, zeta)
+
+    def nondimCriticalGlobalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        return self.gp_blade_ptr.nondimCriticalGlobalShearLoad(rho_0, xi, gamma, zeta)
+
+    def nondimCriticalLocalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        return self.gp_blade_ptr.nondimCriticalLocalShearLoad(rho_0, xi, zeta)
+
+    def nondimStiffenerCripplingLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta=0.0):
+        return self.gp_blade_ptr.nondimStiffenerCripplingLoad(rho_0, xi, genPoiss, zeta)
+
     def setKSWeight(self, double ksWeight):
         """
         Update the ks weight used for aggregating the different failure modes
@@ -1363,6 +1392,14 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         """
         if self.gp_blade_ptr:
             self.gp_blade_ptr.setKSWeight(ksWeight)
+        # then also call on GP models
+        # right now need to call on the GPs as you create them instead
+        # if self.axial_gp_ptr:
+        #     self.axial_gp_ptr.setKS(ksWeight)
+        # if self.shear_gp_ptr:
+        #     self.shear_gp_ptr.setKS(ksWeight)
+        # if self.crippling_gp_ptr:
+        #     self.crippling_gp_ptr.setKS(ksWeight)
 
     def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
         """Set the lower and upper bounds for the stiffener pitch design variable

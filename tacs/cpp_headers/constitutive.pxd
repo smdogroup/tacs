@@ -172,7 +172,9 @@ cdef extern from "TACSGaussianProcessModel.h":
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
+        void setKS(double ksWeight)
         TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel)
+        TacsScalar predictMeanTestData(TacsScalar*)
 
 cdef extern from "TACSGaussianProcessModel.h":
     cdef cppclass TACSAxialGaussianProcessModel(TACSGaussianProcessModel):
@@ -228,16 +230,11 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             TACSShearGaussianProcessModel*, # shear GP
             TACSCripplingGaussianProcessModel*, # crippling GP
         )
-        # temporarily commented out due to inheritance and (ambiguous overloaded method problem)
-        # int getNumPanelPlies()
-        # int getNumStiffenerPlies()
-        # void setKSWeight(double ksWeight)
-        # void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
-        # void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
-        # void setStiffenerThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
-        # void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
-        # void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
-        # void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+        TacsScalar nondimCriticalGlobalAxialLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta)
+        TacsScalar nondimCriticalLocalAxialLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar zeta)
+        TacsScalar nondimCriticalGlobalShearLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta)
+        TacsScalar nondimCriticalLocalShearLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar zeta)
+        TacsScalar nondimStiffenerCripplingLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta)
         TacsScalar testAllTests(TacsScalar epsilon, int printLevel)
 
 cdef extern from "TACSBeamConstitutive.h":

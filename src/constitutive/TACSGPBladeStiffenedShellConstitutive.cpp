@@ -78,6 +78,9 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
   if (this->cripplingGP) {
     this->cripplingGP->incref();
   }
+
+  // default value of ksWeight
+  this->setKSWeight(80.0);
 }
 
 // ==============================================================================
@@ -1135,6 +1138,42 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
   }
 }
 
+TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalAxialLoad(
+    const TacsScalar rho_0, const TacsScalar xi, const TacsScalar gamma,
+    const TacsScalar zeta) {
+  if (this->getAxialGP()) {
+    // use Gaussian processes to compute the critical global axial load
+    TacsScalar dim_factor = 1.0;
+    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
+    TacsScalar one = 1.0;
+    Xtest[0] = log(xi);
+    Xtest[1] = log(rho_0);
+    Xtest[2] = log(one + gamma);
+    Xtest[3] = log(zeta);
+    return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
+
+  } else {
+    // use the CPT closed-form solution to compute the critical global axial
+    // load
+    TacsScalar neg_N11crits[this->NUM_CF_MODES];
+    for (int _m1 = 1; _m1 < this->NUM_CF_MODES + 1; _m1++) {
+      TacsScalar dim_factor = 1.0;
+      TacsScalar m1 = _m1;
+      TacsScalar nondim_factor = (1.0 + gamma) * pow(m1 / rho_0, 2.0) +
+                                 pow(m1 / rho_0, -2.0) + 2.0 * xi;
+      neg_N11crits[_m1 - 1] =
+          -1.0 * dim_factor * nondim_factor;  // negated only because we have to
+                                              // do KS min aggregate later
+    }
+
+    // compute KS aggregation for -N11crit for each mode then negate again
+    // (because we want minimum N11crit so maximize negative N11crit)
+    TacsScalar neg_N11crit =
+        ksAggregation(neg_N11crits, this->NUM_CF_MODES, this->ksWeight);
+    return -1.0 * neg_N11crit;
+  }
+}
+
 TacsScalar
 TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     const TacsScalar N1sens, const TacsScalar D11, const TacsScalar D22,
@@ -1274,6 +1313,41 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoad(
   }
 }
 
+TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalAxialLoad(
+    const TacsScalar rho_0, const TacsScalar xi, const TacsScalar zeta) {
+  if (this->getAxialGP()) {
+    // use Gaussian processes to compute the critical global axial load
+    TacsScalar dim_factor = 1.0;
+    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
+    Xtest[0] = log(xi);
+    Xtest[1] = log(rho_0);
+    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[3] = log(zeta);
+    return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
+
+  } else {
+    // use the CPT closed-form solution to compute the critical global axial
+    // load
+    TacsScalar neg_N11crits[this->NUM_CF_MODES];
+    for (int _m1 = 1; _m1 < this->NUM_CF_MODES + 1; _m1++) {
+      TacsScalar dim_factor = 1.0;
+      // convert to double/cmplx type here
+      TacsScalar m1 = _m1;
+      TacsScalar nondim_factor =
+          pow(m1 / rho_0, 2.0) + pow(m1 / rho_0, -2.0) + 2.0 * xi;
+      neg_N11crits[_m1 - 1] =
+          -1.0 * dim_factor * nondim_factor;  // negated only because we have to
+                                              // do KS min aggregate later
+    }
+
+    // compute KS aggregation for -N11crit for each mode then negate again
+    // (because we want minimum N11crit so maximize negative N11crit)
+    TacsScalar neg_N11crit =
+        ksAggregation(neg_N11crits, this->NUM_CF_MODES, this->ksWeight);
+    return -1.0 * neg_N11crit;
+  }
+}
+
 TacsScalar
 TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     const TacsScalar N1sens, const TacsScalar D11, const TacsScalar D22,
@@ -1396,6 +1470,37 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     nondimShearParams(xi, gamma, &lam1, &lam2);
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
+    TacsScalar nondim_factor =
+        (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
+         2.0 * xi) /
+        (2.0 * lam1 * lam1 * lam2);
+    return dim_factor *
+           nondim_factor;  // aka N12_crit from CPT closed-form solution
+  }
+}
+
+TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
+    const TacsScalar rho_0, const TacsScalar xi, const TacsScalar gamma,
+    const TacsScalar zeta) {
+  if (this->getShearGP()) {
+    // use Gaussian processes to compute the critical global shear load
+    TacsScalar dim_factor = 1.0;
+    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
+    Xtest[0] = log(xi);
+    Xtest[1] = log(rho_0);
+    Xtest[2] = log(
+        1.0 + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[3] = log(zeta);
+    return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
+
+  } else {
+    // use the CPT closed-form solution to compute the critical global axial
+    // load no mode switching in this solution.. (only accurate for higher
+    // aspect ratios => hence the need for machine learning for the actual
+    // solution)
+    TacsScalar lam1, lam2;  // lam1bar, lam2bar values
+    nondimShearParams(xi, gamma, &lam1, &lam2);
+    TacsScalar dim_factor = 1.0;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi) /
@@ -1635,6 +1740,36 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
   }
 }
 
+TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
+    const TacsScalar rho_0, const TacsScalar xi, const TacsScalar zeta) {
+  if (this->getShearGP()) {
+    // use Gaussian processes to compute the critical global shear load
+    TacsScalar s_p = this->stiffenerPitch;
+    TacsScalar dim_factor = 1.0;
+    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
+    Xtest[0] = log(xi);
+    Xtest[1] = log(rho_0);
+    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[3] = log(zeta);
+    return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
+
+  } else {
+    // use the CPT closed-form solution to compute the critical global axial
+    // load no mode switching in this solution.. (only accurate for higher
+    // aspect ratios => hence the need for machine learning for the actual
+    // solution)
+    TacsScalar lam1, lam2;  // lam1bar, lam2bar values
+    nondimShearParams(xi, 0.0, &lam1, &lam2);
+    TacsScalar dim_factor = 1.0;
+    TacsScalar nondim_factor =
+        (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
+         2.0 * xi) /
+        (2.0 * lam1 * lam1 * lam2);
+    return dim_factor *
+           nondim_factor;  // aka N12_crit from CPT closed-form solution
+  }
+}
+
 TacsScalar
 TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     const TacsScalar N12sens, const TacsScalar D11, const TacsScalar D22,
@@ -1740,6 +1875,28 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoad(
     // crippling, not a function of aspect ratio
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) /
                             this->stiffenerHeight / this->stiffenerHeight;
+    TacsScalar nondim_factor = (0.476 - 0.56 * (genPoiss - 0.2)) * xi;
+    return dim_factor * nondim_factor;
+  }
+}
+
+TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimStiffenerCripplingLoad(
+    const TacsScalar rho_0, const TacsScalar xi, const TacsScalar genPoiss,
+    const TacsScalar zeta) {
+  if (this->getCripplingGP()) {
+    // use Gaussian processes to compute the critical global axial load
+    TacsScalar dim_factor = 1.0;
+    TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
+    Xtest[0] = log(xi);
+    Xtest[1] = log(rho_0);
+    Xtest[2] = log(genPoiss);
+    Xtest[3] = log(zeta);
+    return dim_factor * exp(this->getCripplingGP()->predictMeanTestData(Xtest));
+
+  } else {
+    // use the literature CPT closed-form solution for approximate stiffener
+    // crippling, not a function of aspect ratio
+    TacsScalar dim_factor = 1.0;
     TacsScalar nondim_factor = (0.476 - 0.56 * (genPoiss - 0.2)) * xi;
     return dim_factor * nondim_factor;
   }

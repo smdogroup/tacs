@@ -226,6 +226,86 @@ class TACSGPBladeStiffenedShellConstitutive
   // models are active)
   void setKSWeight(double ksWeight);
 
+  // ==============================================================================
+  // Verification purpose public routines
+  // ==============================================================================
+
+  /**
+   * @brief Compute the non-dimensional critical axial load for the global
+   * buckling of the stiffened panel (for output purposes only)
+   * @param rho_0 affine aspect ratio
+   * @param xi generalized rigidity
+   * @param gamma stiffener-to-panel 11-bending stiffness ratio
+   * @param zeta the transverse shear stiffness parameter
+   *
+   * @return TacsScalar The nondimensional critical axial load for the global
+   * buckling mode
+   */
+  TacsScalar nondimCriticalGlobalAxialLoad(const TacsScalar rho_0,
+                                           const TacsScalar xi,
+                                           const TacsScalar gamma,
+                                           const TacsScalar zeta);
+
+  /**
+   * @brief Compute the non-dimensional critical axial load for the local
+   * buckling of the stiffened panel (for output purposes only)
+   * @param rho_0 affine aspect ratio
+   * @param xi generalized rigidity
+   * @param zeta the transverse shear stiffness parameter
+   *
+   * @return TacsScalar The nondimensional critical axial load for the local
+   * buckling mode
+   */
+  TacsScalar nondimCriticalLocalAxialLoad(const TacsScalar rho_0,
+                                          const TacsScalar xi,
+                                          const TacsScalar zeta);
+
+  /**
+   * @brief Compute the non-dimensional critical shear load for the global
+   * buckling of the stiffened panel (for output purposes only)
+   * @param rho_0 affine aspect ratio
+   * @param xi generalized rigidity
+   * @param gamma stiffener-to-panel 11-bending stiffness ratio
+   * @param zeta the transverse shear stiffness parameter
+   *
+   * @return TacsScalar The nondimensional critical shear load for the global
+   * buckling mode
+   */
+  TacsScalar nondimCriticalGlobalShearLoad(const TacsScalar rho_0,
+                                           const TacsScalar xi,
+                                           const TacsScalar gamma,
+                                           const TacsScalar zeta);
+
+  /**
+   * @brief Compute the non-dimensional critical shear load for the local
+   * buckling of the stiffened panel (for output purposes only)
+   * @param rho_0 affine aspect ratio
+   * @param xi generalized rigidity
+   * @param zeta the transverse shear stiffness parameter
+   *
+   * @return TacsScalar The nondimensional critical shear load for the local
+   * buckling mode
+   */
+  TacsScalar nondimCriticalLocalShearLoad(const TacsScalar rho_0,
+                                          const TacsScalar xi,
+                                          const TacsScalar zeta);
+
+  /**
+   * @brief Compute the non-dimensional critical shear load for the local
+   * buckling of the stiffened panel (for output purposes only)
+   * @param rho_0 affine aspect ratio
+   * @param xi generalized rigidity
+   * @param genPoiss generalized poisson's ratio
+   * @param zeta the transverse shear stiffness parameter
+   *
+   * @return TacsScalar The nondimensional critical shear load for the local
+   * buckling mode
+   */
+  TacsScalar nondimStiffenerCripplingLoad(const TacsScalar rho_0,
+                                          const TacsScalar xi,
+                                          const TacsScalar genPoiss,
+                                          const TacsScalar zeta);
+
  protected:
   // ==============================================================================
   // Override Failure constraint and sensitivities
