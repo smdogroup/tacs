@@ -1411,11 +1411,16 @@ void TACSGPBladeStiffenedShellConstitutive::nondimShearParams(
   // need to iterate over lam2 with the Newton's method
   TacsScalar lam2bar_sq = 0.0;  // starting guess for lambda2_bar^2
 
+  TacsScalar init_resid = lam2Constraint(lam2bar_sq, xi, gamma);
   // Newton iteration for lam2bar squared
   int ct = 0;
-  while (abs(TacsRealPart(lam2Constraint(lam2bar_sq, xi, gamma))) > 1e-15) {
+  // use rel tolerance of 1e-13
+  while (abs(TacsRealPart(lam2Constraint(lam2bar_sq, xi, gamma)) / init_resid) >
+             1e-13 &&
+         ct < 50) {
     lam2bar_sq -= lam2Constraint(lam2bar_sq, xi, gamma) /
                   lam2ConstraintDeriv(lam2bar_sq, xi, gamma);
+    ct += 1;
   }
 
   // now compute lam1_bar, lam2_bar
