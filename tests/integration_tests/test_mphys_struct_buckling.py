@@ -3,8 +3,8 @@ import unittest
 
 import numpy as np
 import openmdao.api as om
-from mphys.multipoint import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint, MPhysVariables
+from mphys.scenarios import ScenarioStructural
 
 import tacs.mphys
 from openmdao_analysis_base_test import OpenMDAOTestCase
@@ -13,7 +13,7 @@ from tacs import elements, constitutive, TACS
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
 The plate is structurally loaded under a compression load and a unit force, 
-"f_struct", is applied on on every node. The mass and KSFailure of the plate 
+"f_aero_struct", is applied on on every node. The mass and KSFailure of the plate 
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
@@ -27,7 +27,11 @@ FUNC_REFS = {
 }
 
 # Inputs to check total sensitivities wrt
-wrt = ["mesh.fea_mesh.x_struct0", "dv_struct", "f_struct"]
+wrt = [
+    f"mesh.fea_mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+    "dv_struct",
+    MPhysVariables.Structures.Loads.AERODYNAMIC,
+]
 
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
@@ -101,7 +105,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     problem_setup=problem_setup,
                     buckling_setup=buckling_setup,
                     check_partials=True,
-                    coupled=True,
+                    coupling_loads=[MPhysVariables.Structures.Loads.AERODYNAMIC],
                     write_solution=False,
                 )
                 tacs_builder.initialize(self.comm)
@@ -114,15 +118,25 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 forces = self.add_subsystem("forces", om.IndepVarComp(), promotes=["*"])
                 f = np.zeros(f_size)
                 f[1::3] = -1e0
-                forces.add_output("f_struct", val=np.ones(f_size), distributed=True)
+                forces.add_output(
+                    MPhysVariables.Structures.Loads.AERODYNAMIC,
+                    val=np.ones(f_size),
+                    distributed=True,
+                )
 
                 self.add_subsystem("mesh", tacs_builder.get_mesh_coordinate_subsystem())
                 self.mphys_add_scenario(
                     "analysis", ScenarioStructural(struct_builder=tacs_builder)
                 )
-                self.connect("mesh.x_struct0", "analysis.x_struct0")
+                self.connect(
+                    f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+                    f"analysis.{MPhysVariables.Structures.COORDINATES}",
+                )
                 self.connect("dv_struct", "analysis.dv_struct")
-                self.connect("f_struct", "analysis.f_struct")
+                self.connect(
+                    MPhysVariables.Structures.Loads.AERODYNAMIC,
+                    f"analysis.{MPhysVariables.Structures.Loads.AERODYNAMIC}",
+                )
 
         prob = om.Problem()
         prob.model = Top()

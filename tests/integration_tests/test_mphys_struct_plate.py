@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 import openmdao.api as om
-from mphys.multipoint import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint, MPhysVariables
+from mphys.scenarios import ScenarioStructural
 
 import tacs.mphys
 from openmdao_analysis_base_test import OpenMDAOTestCase
@@ -28,7 +28,11 @@ FUNC_REFS = {
 }
 
 # Inputs to check total sensitivities wrt
-wrt = ["mesh.fea_mesh.x_struct0", "dv_struct", "f_struct"]
+wrt = [
+    f"mesh.fea_mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+    "dv_struct",
+    MPhysVariables.Structures.Loads.AERODYNAMIC,
+]
 
 # KS function weight
 ksweight = 10.0
@@ -115,7 +119,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             problem_setup=problem_setup,
             constraint_setup=constraint_setup,
             check_partials=True,
-            coupled=True,
+            coupling_loads=MPhysVariables.Structures.Loads.AERODYNAMIC,
             write_solution=False,
         )
         self.tacs_builder = tacs_builder
@@ -135,15 +139,25 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
                 f_size = tacs_builder.get_ndof() * tacs_builder.get_number_of_nodes()
                 forces = self.add_subsystem("forces", om.IndepVarComp(), promotes=["*"])
-                forces.add_output("f_struct", val=np.ones(f_size), distributed=True)
+                forces.add_output(
+                    MPhysVariables.Structures.Loads.AERODYNAMIC,
+                    val=np.ones(f_size),
+                    distributed=True,
+                )
 
                 self.add_subsystem("mesh", tacs_builder.get_mesh_coordinate_subsystem())
                 self.mphys_add_scenario(
                     "analysis", ScenarioStructural(struct_builder=tacs_builder)
                 )
-                self.connect("mesh.x_struct0", "analysis.x_struct0")
+                self.connect(
+                    f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+                    f"analysis.{MPhysVariables.Structures.COORDINATES}",
+                )
                 self.connect("dv_struct", "analysis.dv_struct")
-                self.connect("f_struct", "analysis.f_struct")
+                self.connect(
+                    MPhysVariables.Structures.Loads.AERODYNAMIC,
+                    f"analysis.{MPhysVariables.Structures.Loads.AERODYNAMIC}",
+                )
 
         prob = om.Problem()
         prob.model = Top()
