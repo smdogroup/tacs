@@ -1361,11 +1361,6 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         self.ptr = self.cptr = self.gp_blade_ptr
         self.ptr.incref()
 
-        # free the temporary created pointers
-        free(axial_gp_ptr)
-        free(shear_gp_ptr)
-        free(crippling_gp_ptr)
-
     def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
         return self.gp_blade_ptr.nondimCriticalGlobalAxialLoad(rho_0, xi, gamma, zeta)
 
