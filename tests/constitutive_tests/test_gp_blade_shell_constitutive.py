@@ -154,22 +154,22 @@ class GPConstitutiveMLTest(unittest.TestCase):
         n_param = constitutive.AxialGP.n_param
         self.axialGP = constitutive.AxialGP(
             n_train,
-            Xtrain=np.random.rand(n_param * n_train),
-            alpha=np.random.rand(n_train),
+            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+            alpha=np.random.rand(n_train).astype(self.dtype),
         )
 
         n_param = constitutive.ShearGP.n_param
         self.shearGP = constitutive.ShearGP(
             n_train,
-            Xtrain=np.random.rand(n_param * n_train),
-            alpha=np.random.rand(n_train),
+            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+            alpha=np.random.rand(n_train).astype(self.dtype),
         )
 
         n_param = constitutive.CripplingGP.n_param
         self.cripplingGP = constitutive.CripplingGP(
             n_train,
-            Xtrain=np.random.rand(n_param * n_train),
-            alpha=np.random.rand(n_train),
+            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+            alpha=np.random.rand(n_train).astype(self.dtype),
         )
 
     def get_con(self, ply):
@@ -339,8 +339,12 @@ class GPConstitutiveMLTest(unittest.TestCase):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
+                if TACS.dtype  is complex:
+                    dh = self.dh * 1j
+                else:
+                    dh = self.dh
                 relError = con.test_all_derivative_tests(
-                    self.dh, self.print_level
+                    dh, self.print_level
                 )  # self.print_level
                 fail = abs(relError.real) > self.rtol
                 self.assertFalse(fail)
@@ -396,8 +400,8 @@ if __name__ == "__main__":
         tester.test_constitutive_failure_strain_sens()
     elif args.case == "failDV":
         # shouldn't matter which one of these I test as long as internal tests pass
-        tester = GPConstitutiveCFTest()
-        # tester = GPConstitutiveMLTest()
+        # tester = GPConstitutiveCFTest()
+        tester = GPConstitutiveMLTest()
         tester.setUp()
         tester.test_constitutive_failure()
     elif args.case == "full":

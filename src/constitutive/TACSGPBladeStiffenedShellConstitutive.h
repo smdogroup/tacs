@@ -224,12 +224,17 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // set the KS weight for the failure constraints and the GP models (if GP
   // models are active)
-  void setKSWeight(double _ksWeight);
+  void setKSWeight(double ksWeight);
 
  protected:
   // ==============================================================================
   // Override Failure constraint and sensitivities
   // ==============================================================================
+
+  // override from superclass so that evalFailure uses the computeFailureValues
+  // from this subroutine
+  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
+                         const TacsScalar e[]);
 
   // Compute the failure values for each failure mode of the stiffened panel
   TacsScalar computeFailureValues(const TacsScalar e[], TacsScalar fails[]);
@@ -244,15 +249,18 @@ class TACSGPBladeStiffenedShellConstitutive
                         const TacsScalar X[], const TacsScalar strain[],
                         int dvLen, TacsScalar dfdx[]);
 
-  TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
-                         const TacsScalar e[]);
-
   // ==============================================================================
   // Stiffener crippling helper functions
   // ==============================================================================
 
   TacsScalar computeStiffenerInPlaneLoad(const TacsScalar stiffenerStrain[],
                                          TacsScalar* A11s);
+
+  TacsScalar computeStiffenerInPlaneLoadSens(const TacsScalar scale,
+                                             const TacsScalar panelStrain[],
+                                             const TacsScalar stiffenerStrain[],
+                                             const TacsScalar dN11_stiff,
+                                             TacsScalar dfdx[]);
 
   void computeStiffenerCripplingStiffness(TacsScalar C[]);
 

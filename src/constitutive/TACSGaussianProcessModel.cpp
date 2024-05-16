@@ -92,8 +92,9 @@ TacsScalar TACSAxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
 
   // log(rho0) direction 1
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar fact1 = soft_relu(1 - soft_abs(Xtest[1], this->ks), this->ks);
-  TacsScalar fact2 = soft_relu(1 - soft_abs(Xtrain[1], this->ks), this->ks);
+  TacsScalar one = 1.0;
+  TacsScalar fact1 = soft_relu(one - soft_abs(Xtest[1], this->ks), this->ks);
+  TacsScalar fact2 = soft_relu(one - soft_abs(Xtrain[1], this->ks), this->ks);
   TacsScalar k1_term1 = exp(-0.5 * (d1 * d1 / L1 / L1)) * fact1 * fact2;
   TacsScalar rho0term3 =
       soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
@@ -125,8 +126,9 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
 
   // log(rho0) direction 1
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar fact1 = soft_relu(1 - soft_abs(Xtest[1], this->ks), this->ks);
-  TacsScalar fact2 = soft_relu(1 - soft_abs(Xtrain[1], this->ks), this->ks);
+  TacsScalar one = 1.0;
+  TacsScalar fact1 = soft_relu(one - soft_abs(Xtest[1], this->ks), this->ks);
+  TacsScalar fact2 = soft_relu(one - soft_abs(Xtrain[1], this->ks), this->ks);
   TacsScalar k1_term1 = exp(-0.5 * (d1 * d1 / L1 / L1)) * fact1 * fact2;
   TacsScalar rho0term3 =
       soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
@@ -152,7 +154,7 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   TacsScalar kernel1sens = 0.0;
   kernel1sens += k1_term1 * -d1 / L1 / L1;
   kernel1sens += k1_term1 / fact1 *
-                 soft_relu_sens(1 - soft_abs(Xtest[1], this->ks), this->ks) *
+                 soft_relu_sens(one - soft_abs(Xtest[1], this->ks), this->ks) *
                  -soft_abs_sens(Xtest[1], this->ks);
   kernel1sens += S5 * soft_relu_sens(-Xtest[1], this->ks) * -1.0 *
                  soft_relu(-Xtrain[1], this->ks);
@@ -186,7 +188,7 @@ TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
   for (int i = 0; i < n_tests; i++) {
-    if (relErrors[i] > maxRelError) {
+    if (TacsRealPart(relErrors[i]) > TacsRealPart(maxRelError)) {
       maxRelError = relErrors[i];
     }
   }
@@ -194,11 +196,11 @@ TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
   // get max rel error among them
   if (printLevel != 0) {
     printf("\ntestAllGPtests full results::\n");
-    printf("\ttest_soft_relu = %.4e\n", relErrors[0]);
-    printf("\ttest_soft_abs = %.4e\n", relErrors[1]);
-    printf("\ttestPredictMeanTestData = %.4e\n", relErrors[2]);
-    printf("\ttestKernelSens = %.4e\n", relErrors[3]);
-    printf("\tOverall max rel error = %.4e\n\n", maxRelError);
+    printf("\ttest_soft_relu = %.4e\n", TacsRealPart(relErrors[0]));
+    printf("\ttest_soft_abs = %.4e\n", TacsRealPart(relErrors[1]));
+    printf("\ttestPredictMeanTestData = %.4e\n", TacsRealPart(relErrors[2]));
+    printf("\ttestKernelSens = %.4e\n", TacsRealPart(relErrors[3]));
+    printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
   return maxRelError;
 }
@@ -256,9 +258,9 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
   if (printLevel != 0) {
     printf("\t%s..testPredictMeanTestDataSens:\n", typeid(this).name());
-    printf("\t\t adjDeriv = %.4e\n", adjTD);
-    printf("\t\t centralDiff = %.4e\n", centralDiff);
-    printf("\t\t rel error = %.4e\n", relError);
+    printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
+    printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));
+    printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
   return relError;
 }
@@ -325,9 +327,9 @@ TacsScalar TACSAxialGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
   if (printLevel != 0) {
     printf("\t%s..testKernelSens:\n", typeid(this).name());
-    printf("\t\t adjDeriv = %.4e\n", adjTD);
-    printf("\t\t centralDiff = %.4e\n", centralDiff);
-    printf("\t\t rel error = %.4e\n", relError);
+    printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
+    printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));
+    printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
   return relError;
 }

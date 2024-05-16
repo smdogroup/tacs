@@ -50,10 +50,12 @@ class TACSGaussianProcessModel : public TACSObject {
   };
 
   static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho) {
-    return 1.0 / rho * log(1 + exp(rho * x));
+    TacsScalar one = 1.0;
+    return 1.0 / rho * log(one + exp(rho * x));
   };
   static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho) {
-    return exp(rho * x) / (1 + exp(rho * x));
+    TacsScalar one = 1.0;
+    return exp(rho * x) / (one + exp(rho * x));
   };
   static TacsScalar test_soft_relu(TacsScalar epsilon) {
     TacsScalar x = 1.0,
