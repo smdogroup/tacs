@@ -1,7 +1,7 @@
 import copy
 import warnings
 
-from mphys.builder import Builder
+from mphys.core import Builder, MPhysVariables
 import numpy as np
 
 from tacs.pytacs import pyTACS
@@ -23,7 +23,7 @@ class TacsBuilder(Builder):
         pytacs_options=None,
         check_partials=False,
         conduction=False,
-        coupled=True,
+        coupling_loads=None,
         write_solution=True,
         separate_mass_dvs=False,
         res_ref=None,
@@ -204,7 +204,12 @@ class TacsBuilder(Builder):
         self.pytacs_options = pytacs_options
         self.check_partials = check_partials
         self.conduction = conduction
-        self.coupled = coupled
+        if isinstance(coupling_loads, str):
+            self.coupling_loads = [coupling_loads]
+        elif hasattr(coupling_loads, "__iter__"):
+            self.coupling_loads = coupling_loads
+        else:
+            self.coupling_loads = []
         self.write_solution = write_solution
         self.separate_mass_dvs = separate_mass_dvs
         self.res_ref = res_ref
@@ -232,6 +237,13 @@ class TacsBuilder(Builder):
         # Set up elements and TACS assembler
         self.fea_assembler.initialize(self.element_callback)
 
+        if self.conduction:
+            self.discipline_vars = MPhysVariables.Thermal
+            self.discipline_vars.STATES = self.discipline_vars.TEMPERATURE
+        else:
+            self.discipline_vars = MPhysVariables.Structures
+            self.discipline_vars.STATES = self.discipline_vars.DISPLACEMENTS
+
     def get_coupling_group_subsystem(self, scenario_name=None):
         """
         The subsystem that this builder will add to the CouplingGroup
@@ -249,9 +261,9 @@ class TacsBuilder(Builder):
         """
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
-            conduction=self.conduction,
+            discipline_vars=self.discipline_vars,
             check_partials=self.check_partials,
-            coupled=self.coupled,
+            coupling_loads=self.coupling_loads,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
             res_ref=self.res_ref,
@@ -272,7 +284,10 @@ class TacsBuilder(Builder):
         mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`
             The openmdao subsystem that has an output of coordinates.
         """
-        return TacsMeshGroup(fea_assembler=self.fea_assembler)
+        return TacsMeshGroup(
+            fea_assembler=self.fea_assembler,
+            discipline_vars=self.discipline_vars,
+        )
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
         """
@@ -292,6 +307,7 @@ class TacsBuilder(Builder):
             fea_assembler=self.fea_assembler,
             initial_dv_vals=initial_dvs,
             separate_mass_dvs=self.separate_mass_dvs,
+            discipline_vars=self.discipline_vars,
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
@@ -310,7 +326,7 @@ class TacsBuilder(Builder):
         return TacsPostcouplingGroup(
             fea_assembler=self.fea_assembler,
             check_partials=self.check_partials,
-            conduction=self.conduction,
+            discipline_vars=self.discipline_vars,
             write_solution=self.write_solution,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,

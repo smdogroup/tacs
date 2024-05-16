@@ -14,9 +14,9 @@ class TacsSolver(om.ImplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline_vars", default=False)
         self.options.declare("check_partials")
-        self.options.declare("coupled", default=False)
+        self.options.declare("coupling_loads", default=[])
         self.options.declare("res_ref", default=None)
 
         self.fea_assembler = None
@@ -30,16 +30,14 @@ class TacsSolver(om.ImplicitComponent):
     def setup(self):
         self.check_partials = self.options["check_partials"]
         self.fea_assembler = self.options["fea_assembler"]
-        self.conduction = self.options["conduction"]
-        self.coupled = self.options["coupled"]
+        self.discipline_vars = self.options["discipline_vars"]
+        self.coupling_loads = self.options["coupling_loads"]
+        self.coupled = len(self.coupling_loads) > 0
         self.res_ref = self.options["res_ref"]
 
-        if self.conduction:
-            self.states_name = "T_conduct"
-            self.rhs_name = "q_conduct"
-        else:
-            self.states_name = "u_struct"
-            self.rhs_name = "f_struct"
+        self.coords_name = self.discipline_vars.COORDINATES
+        self.states_name = self.discipline_vars.STATES
+        self.rhs_name = "rhs"
 
         # OpenMDAO setup
         local_ndvs = self.fea_assembler.getNumDesignVars()
@@ -55,7 +53,7 @@ class TacsSolver(om.ImplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            self.coords_name,
             distributed=True,
             shape_by_conn=True,
             desc="distributed structural node coordinates",
@@ -67,8 +65,7 @@ class TacsSolver(om.ImplicitComponent):
                 distributed=True,
                 shape=state_size,
                 val=0.0,
-                desc="coupling load vector",
-                tags=["mphys_coupling"],
+                desc="sum of coupling load vectors",
             )
 
         # outputs
@@ -87,7 +84,7 @@ class TacsSolver(om.ImplicitComponent):
         update = False
 
         dvs = inputs["tacs_dvs"]
-        xs = inputs["x_struct0"]
+        xs = inputs[self.coords_name]
 
         if self.old_dvs is None:
             self.old_dvs = inputs["tacs_dvs"].copy()
@@ -99,12 +96,12 @@ class TacsSolver(om.ImplicitComponent):
                 update = True
 
         if self.old_xs is None:
-            self.old_xs = inputs["x_struct0"].copy()
+            self.old_xs = inputs[self.coords_name].copy()
             update = True
 
         elif len(xs) > 0:
             if max(np.abs(xs - self.old_xs)) > 0.0:  # 1e-7:
-                self.old_xs = inputs["x_struct0"].copy()
+                self.old_xs = inputs[self.coords_name].copy()
                 update = True
 
         tmp = update
@@ -115,7 +112,7 @@ class TacsSolver(om.ImplicitComponent):
     def _update_internal(self, inputs, outputs=None):
         if self._need_update(inputs):
             self.sp.setDesignVars(inputs["tacs_dvs"])
-            self.sp.setNodes(inputs["x_struct0"])
+            self.sp.setNodes(inputs[self.coords_name])
         if outputs is not None:
             self.sp.setVariables(outputs[self.states_name])
         self.sp._updateAssemblerVars()
@@ -179,10 +176,10 @@ class TacsSolver(om.ImplicitComponent):
                     self.fea_assembler.applyBCsToVec(array_w_bcs)
                     d_inputs[self.rhs_name] -= array_w_bcs
 
-                if "x_struct0" in d_inputs:
+                if self.coords_name in d_inputs:
                     self.sp.addAdjointResXptSensProducts(
                         [d_residuals[self.states_name]],
-                        [d_inputs["x_struct0"]],
+                        [d_inputs[self.coords_name]],
                         scale=1.0,
                     )
 
