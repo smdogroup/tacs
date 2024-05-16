@@ -172,7 +172,7 @@ cdef extern from "TACSGaussianProcessModel.h":
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
         )
-        void setKS(double ksWeight)
+        void setKS(TacsScalar ksWeight)
         TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel)
         TacsScalar predictMeanTestData(TacsScalar*)
 
