@@ -9,7 +9,7 @@ np.random.seed(1342342)
 
 
 class GPConstitutiveMLTest(unittest.TestCase):
-    _my_debug = True
+    _my_debug = False
 
     def setUp(self):
 
@@ -313,7 +313,6 @@ class GPConstitutiveMLTest(unittest.TestCase):
                         self.atol,
                         self.rtol,
                     )
-                print(f"fail = {fail}")
                 self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
@@ -339,7 +338,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)
-                if TACS.dtype  is complex:
+                if TACS.dtype is complex:
                     dh = self.dh * 1j
                 else:
                     dh = self.dh
@@ -395,7 +394,7 @@ if __name__ == "__main__":
     elif args.case == "failStrain":
         # shouldn't matter which one of these I test as long as internal tests pass
         tester = GPConstitutiveCFTest()
-        #tester = GPConstitutiveMLTest()
+        # tester = GPConstitutiveMLTest()
         tester.setUp()
         tester.test_constitutive_failure_strain_sens()
     elif args.case == "failDV":
