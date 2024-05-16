@@ -6,7 +6,7 @@ from mphys.core import (
     MaskedConverter,
     UnmaskedConverter,
     MaskedVariableDescription,
-    DistributedSumer,
+    DistributedSummer,
     DistributedVariableDescription,
 )
 
@@ -70,7 +70,7 @@ class TacsCouplingGroup(om.Group):
             output_metadata = DistributedVariableDescription(
                 name=self.rhs_name_masked, shape=(nnodes - nmult) * vpn
             )
-            rhs_sum = DistributedSumer(inputs=input_metadata, output=output_metadata)
+            rhs_sum = DistributedSummer(inputs=input_metadata, output=output_metadata)
             self.add_subsystem("rhs_sum", rhs_sum, promotes_inputs=self.coupling_loads)
 
             unmask_output = MaskedVariableDescription(self.rhs_name, shape=nnodes * vpn)
