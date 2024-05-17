@@ -1112,7 +1112,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1149,7 +1149,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalAxialLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1191,7 +1191,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     TacsScalar arg = this->getAxialGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
@@ -1206,7 +1206,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     *xisens += Xtestsens[0] / xi;  // chain rule dlog(xi)/dxi = 1/xi
     *rho_0sens += Xtestsens[1] / rho_0;
     *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
 
     // compute the sensivities of inputs in the dimensional constant
     // (this part differentiates the dim factor)
@@ -1287,7 +1287,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1324,7 +1324,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalAxialLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1365,7 +1365,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
 
     TacsScalar arg = this->getAxialGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
@@ -1381,7 +1381,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     *xisens += Xtestsens[0] / xi;
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
@@ -1462,7 +1462,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1495,7 +1495,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1641,7 +1641,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     TacsScalar arg = this->getShearGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
@@ -1657,7 +1657,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
@@ -1726,7 +1726,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1758,7 +1758,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1794,7 +1794,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     TacsScalar arg = this->getShearGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
@@ -1809,7 +1809,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     *xisens += Xtestsens[0] / xi;
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating dim_factor)
@@ -1877,7 +1877,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getCripplingGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1901,7 +1901,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimStiffenerCripplingLoad(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     return dim_factor * exp(this->getCripplingGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1929,7 +1929,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + zeta);
+    Xtest[3] = log(one + 1000.0 * zeta);
     TacsScalar arg = this->getCripplingGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
@@ -1945,7 +1945,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *genPoiss_sens += Xtestsens[2] / genPoiss;
-    *zetasens += Xtestsens[3] / (one + zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating the dimensional factor)
