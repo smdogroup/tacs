@@ -1460,7 +1460,8 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     TacsScalar one = 1.0;
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[2] = log(
+        one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
@@ -1492,7 +1493,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     TacsScalar one = 1.0;
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[2] = log(
+        one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + zeta);
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
@@ -1637,7 +1639,8 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     TacsScalar one = 1.0;
     Xtest[0] = log(xi);
     Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    Xtest[2] = log(
+        one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + zeta);
     TacsScalar arg = this->getShearGP()->predictMeanTestData(Xtest);
     TacsScalar nondim_factor = exp(arg);
