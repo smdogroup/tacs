@@ -1115,7 +1115,7 @@ cdef class GaussianProcess:
         return self.base_gp.testAllGPTests(epsilon, printLevel)
 
 cdef class AxialGP(GaussianProcess):
-    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(zeta)]
+    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(1+zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/axial_data.csv"):
@@ -1151,7 +1151,7 @@ cdef class AxialGP(GaussianProcess):
         self.base_gp = self.axial_gp
         
 cdef class ShearGP(AxialGP):
-    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(zeta)]
+    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(1+zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/shear_data.csv"):
@@ -1172,7 +1172,7 @@ cdef class ShearGP(AxialGP):
         self.base_gp = self.axial_gp = self.gp
 
 cdef class CripplingGP(AxialGP):
-    n_param = 4 # [log(xi), log(rho0), log(genEps), log(zeta)]
+    n_param = 4 # [log(xi), log(rho0), log(genEps), log(1+zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/crippling_data.csv"):

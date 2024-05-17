@@ -538,7 +538,7 @@ class TACSGPBladeStiffenedShellConstitutive
 
   /**
    * @brief Compute the non-dimensional transverse shear parameter
-   * zeta = A66 / A11 * (b/h)**2
+   * zeta = A11 / A66 * (h/b)**2
    *
    * @param A66 the A66 stiffness of the plate
    * @param A11 the A11 stiffness of the plate
@@ -551,7 +551,7 @@ class TACSGPBladeStiffenedShellConstitutive
 
   /**
    * @brief Compute the sensitivities of the non-dimensional transverse shear
-   * parameter zeta = A66 / A11 * (b/h)**2
+   * parameter zeta = A11 / A66 * (h/b)**2
    *
    * @param zetasens backpropagated sensitivity for output zeta
    * @param A66 the A66 stiffness of the plate
