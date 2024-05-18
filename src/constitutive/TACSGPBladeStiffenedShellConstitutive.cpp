@@ -1206,7 +1206,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     *xisens += Xtestsens[0] / xi;  // chain rule dlog(xi)/dxi = 1/xi
     *rho_0sens += Xtestsens[1] / rho_0;
     *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // compute the sensivities of inputs in the dimensional constant
     // (this part differentiates the dim factor)
@@ -1381,7 +1381,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     *xisens += Xtestsens[0] / xi;
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
@@ -1657,7 +1657,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
@@ -1809,7 +1809,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     *xisens += Xtestsens[0] / xi;
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating dim_factor)
@@ -1945,7 +1945,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *genPoiss_sens += Xtestsens[2] / genPoiss;
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta);
+    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating the dimensional factor)
@@ -2441,7 +2441,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   x0[4] = 2.4545;   // rho0
   x0[5] = 1.24332;  // xi
   x0[6] = 0.2454;   // gamma
-  x0[7] = 40.1324;  // zeta
+  x0[7] = 1e-3;     // zeta
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
@@ -2507,7 +2507,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   x0[2] = this->stiffenerPitch;  // s_p
   x0[3] = 2.4545;                // rho0
   x0[4] = 1.24332;               // xi
-  x0[5] = 40.1324;               // zeta
+  x0[5] = 1e-3;                  // zeta
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
@@ -2743,7 +2743,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   x0[3] = 2.4545;   // rho0
   x0[4] = 1.24332;  // xi
   x0[5] = 0.2454;   // gamma
-  x0[6] = 40.1324;  // zeta
+  x0[6] = 1e-3;     // zeta
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
@@ -2807,7 +2807,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   x0[2] = this->stiffenerPitch;  // s_p
   x0[3] = 1.24332;               // xi
   x0[4] = 2.4545;                // rho0
-  x0[5] = 40.1324;               // zeta
+  x0[5] = 1e-3;                  // zeta
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
@@ -2919,7 +2919,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   x0[3] = 1.24332;                // xi
   x0[4] = 2.4545;                 // rho0
   x0[5] = 0.2454;                 // genPoiss
-  x0[6] = 40.1324;                // zeta
+  x0[6] = 1e-3;                   // zeta
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
