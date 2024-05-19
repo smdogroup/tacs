@@ -1109,7 +1109,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
         M_PI * M_PI * sqrt(D11 * D22) / b / b / (1.0 + delta);
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1146,10 +1146,11 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalAxialLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
+
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1188,7 +1189,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
         M_PI * M_PI * sqrt(D11 * D22) / b / b / (1.0 + delta);
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1203,7 +1204,8 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     TacsScalar* Xtestsens = new TacsScalar[n_axial_param];
     TacsScalar Ysens = N1sens * output;
     this->getAxialGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
-    *xisens += Xtestsens[0] / xi;  // chain rule dlog(xi)/dxi = 1/xi
+    *xisens +=
+        Xtestsens[0] / (one + xi);  // chain rule dlog(one + xi)/dxi = 1/xi
     *rho_0sens += Xtestsens[1] / rho_0;
     *gammasens += Xtestsens[2] / (1.0 + gamma);
     *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
@@ -1284,7 +1286,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoad(
                             this->stiffenerPitch / this->stiffenerPitch;
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1321,7 +1323,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalAxialLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1362,7 +1364,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
                             this->stiffenerPitch / this->stiffenerPitch;
     TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1378,7 +1380,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     TacsScalar Ysens = N1sens * output;
     this->getAxialGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
 
-    *xisens += Xtestsens[0] / xi;
+    *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
@@ -1458,7 +1460,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
@@ -1491,7 +1493,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
@@ -1637,7 +1639,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
@@ -1653,7 +1655,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     TacsScalar Ysens = N12sens * output;
     this->getShearGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
 
-    *xisens += Xtestsens[0] / xi;
+    *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *gammasens += Xtestsens[2] / (1.0 + gamma);
@@ -1723,7 +1725,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1755,7 +1757,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1791,7 +1793,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
     TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1806,7 +1808,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     TacsScalar Ysens = N12sens * output;
     this->getShearGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
 
-    *xisens += Xtestsens[0] / xi;
+    *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
@@ -1874,7 +1876,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoad(
                             this->stiffenerHeight / this->stiffenerHeight;
     TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1898,7 +1900,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimStiffenerCripplingLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1926,7 +1928,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
                             this->stiffenerHeight / this->stiffenerHeight;
     TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(xi);
+    Xtest[0] = log(one + xi);
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
@@ -1941,7 +1943,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     TacsScalar Ysens = N1sens * output;
     this->getCripplingGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
 
-    *xisens += Xtestsens[0] / xi;
+    *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
         Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
     *genPoiss_sens += Xtestsens[2] / genPoiss;
