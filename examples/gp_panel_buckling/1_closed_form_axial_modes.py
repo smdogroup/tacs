@@ -57,8 +57,8 @@ con.setKSWeight(20.0)
 n = 500
 plt.style.use(niceplots.get_style())
 rho0_vec = np.linspace(0.5, 10.0, n)
-N11cr_vec = np.zeros((n,))
-for gamma in [0.0, 0.1, 0.5, 4.0]:
+N11cr_vec = np.zeros((n,), dtype=dtype)
+for gamma in [0.0, 0.1, 0.5, 1.0]:
     for i, rho0 in enumerate(rho0_vec):
         N11cr_vec[i] = con.nondimCriticalGlobalAxialLoad(rho0, 1.0, gamma)
     plt.plot(rho0_vec, N11cr_vec, label=f"gamma={gamma:.2f}")
