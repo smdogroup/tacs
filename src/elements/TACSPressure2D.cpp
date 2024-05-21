@@ -64,9 +64,6 @@ double TACSPressure2D::getFaceQuadraturePoint(int face, int n, double pt[],
 /*
   Add the residual to the provided vector
 */
-/*
-  Add the residual to the provided vector
-*/
 void TACSPressure2D::addResidual(int elemIndex, double time,
                                  const TacsScalar *Xpts, const TacsScalar *vars,
                                  const TacsScalar *dvars,
