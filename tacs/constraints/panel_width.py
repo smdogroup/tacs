@@ -147,7 +147,7 @@ class PanelWidthConstraint(PanelLengthConstraint):
                 # now this refAxis is the panel length axis, compute the width axis which is normal to the length + panel normal axis
                 widthAxis = np.cross(refAxis, panelNormal)
                 widthAxis /= np.linalg.norm(widthAxis)
-                widthAxes.append(widthAxes)
+                widthAxes.append(widthAxis)
 
                 # Now figure out where the DV for this component lives
                 globalDvNums = elemObj.getDesignVarNums(0)

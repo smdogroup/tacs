@@ -235,6 +235,15 @@ class PanelLengthConstraint(TACSConstraint):
         for key in self.constraintsUpToDate:
             self.constraintsUpToDate[key] = False
 
+    def externalClearUpToDate(self):
+        """
+        clear UpToDate by FUNtoFEM which sets variables into 
+        TACS through a different interface
+        """
+        for key in self.constraintsUpToDate:
+            self.constraintsUpToDate[key] = False
+        return
+
     def setNodes(self, Xpts):
         """
         Set the mesh coordinates of the structure.
