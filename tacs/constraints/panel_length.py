@@ -237,7 +237,7 @@ class PanelLengthConstraint(TACSConstraint):
 
     def externalClearUpToDate(self):
         """
-        clear UpToDate by FUNtoFEM which sets variables into 
+        clear UpToDate by FUNtoFEM which sets variables into
         TACS through a different interface
         """
         for key in self.constraintsUpToDate:
