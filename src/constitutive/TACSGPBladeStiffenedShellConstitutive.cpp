@@ -1478,7 +1478,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2.0 * gamma) /
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1687,7 +1687,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar num =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma);
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2.0 * gamma);
     TacsScalar den = 2.0 * lam1 * lam1 * lam2;
     TacsScalar nondim_factor = num / den;
     TacsScalar N12crit = dim_factor * nondim_factor;
@@ -1708,7 +1708,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     *D22sens += N12sens * N12crit * 0.75 / D22;
     *bsens += N12sens * N12crit * -2.0 / b;
     *xisens += N12sens * dim_factor *
-               (dNDlam1 * dl1xi + dNDlam2 * dl2xi + 2.0 / den +
+               (dNDlam1 * dl1xi + dNDlam2 * dl2xi +
                 2.0 * (lam1 * lam1 + lam2 * lam2) / den);
     *gammasens += N12sens * dim_factor *
                   (dNDlam1 * dl1gamma + dNDlam2 * dl2gamma + 2.0 / den);
