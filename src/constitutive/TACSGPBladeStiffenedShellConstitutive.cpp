@@ -1478,7 +1478,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi) /
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1510,7 +1510,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi) /
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1685,8 +1685,9 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     // compute forward analysis states involved in the N12crit load
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
-    TacsScalar num = 1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
-                     pow(lam2, 4.0) + 2.0 * xi;
+    TacsScalar num =
+        (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma);
     TacsScalar den = 2.0 * lam1 * lam1 * lam2;
     TacsScalar nondim_factor = num / den;
     TacsScalar N12crit = dim_factor * nondim_factor;
@@ -1694,20 +1695,23 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     // sensitivities for the non_dim factor
 
     TacsScalar dNDlam1 =
-        (4.0 * pow(lam1, 3.0) + 12.0 * lam1 * lam2 * lam2) / den -
+        (4.0 * pow(lam1, 3.0) + 12.0 * lam1 * lam2 * lam2 + 4.0 * lam1 * xi) /
+            den -
         num * 4.0 * lam1 * lam2 / den / den;
     TacsScalar dNDlam2 =
-        (4.0 * pow(lam2, 3.0) + 12.0 * lam2 * lam1 * lam1) / den -
+        (4.0 * pow(lam2, 3.0) + 12.0 * lam2 * lam1 * lam1 + 4.0 * lam2 * xi) /
+            den -
         num * 2.0 * lam1 * lam1 / den / den;
 
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
     *D22sens += N12sens * N12crit * 0.75 / D22;
     *bsens += N12sens * N12crit * -2.0 / b;
-    *xisens +=
-        N12sens * dim_factor * (dNDlam1 * dl1xi + dNDlam2 * dl2xi + 2.0 / den);
-    *gammasens +=
-        N12sens * dim_factor * (dNDlam1 * dl1gamma + dNDlam2 * dl2gamma);
+    *xisens += N12sens * dim_factor *
+               (dNDlam1 * dl1xi + dNDlam2 * dl2xi + 2.0 / den +
+                2.0 * (lam1 * lam1 + lam2 * lam2) / den);
+    *gammasens += N12sens * dim_factor *
+                  (dNDlam1 * dl1gamma + dNDlam2 * dl2gamma + 2.0 / den);
     // *rho_0sens, *zetasens are unchanged in closed-form
 
     // return N12crit from closed-form solution
@@ -1742,7 +1746,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
                             this->stiffenerPitch / this->stiffenerPitch;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi) /
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1773,7 +1777,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
     TacsScalar dim_factor = 1.0;
     TacsScalar nondim_factor =
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi) /
+         2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1839,8 +1843,8 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     // compute forward analysis states involved in the N12crit load
     TacsScalar dim_factor = M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) /
                             this->stiffenerPitch / this->stiffenerPitch;
-    TacsScalar num = 1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
-                     pow(lam2, 4.0) + 2.0 * xi;
+    TacsScalar num = (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
+                      pow(lam2, 4.0) + 2.0 * xi * (lam1 * lam1 + lam2 * lam2));
     TacsScalar den = 2.0 * lam1 * lam1 * lam2;
     TacsScalar nondim_factor = num / den;
     TacsScalar N12crit = dim_factor * nondim_factor;
@@ -1848,18 +1852,21 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     // sensitivities for the non_dim factor
 
     TacsScalar dNDlam1 =
-        (4.0 * pow(lam1, 3.0) + 12.0 * lam1 * lam2 * lam2) / den -
+        (4.0 * pow(lam1, 3.0) + 12.0 * lam1 * lam2 * lam2 + 4.0 * lam1 * xi) /
+            den -
         num * 4.0 * lam1 * lam2 / den / den;
     TacsScalar dNDlam2 =
-        (4.0 * pow(lam2, 3.0) + 12.0 * lam2 * lam1 * lam1) / den -
+        (4.0 * pow(lam2, 3.0) + 12.0 * lam2 * lam1 * lam1 + 4.0 * lam2 * xi) /
+            den -
         num * 2.0 * lam1 * lam1 / den / den;
 
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
     *D22sens += N12sens * N12crit * 0.75 / D22;
     *spitchsens += N12sens * N12crit * -2.0 / this->stiffenerPitch;
-    *xisens +=
-        N12sens * dim_factor * (dNDlam1 * dl1xi + dNDlam2 * dl2xi + 2.0 / den);
+    *xisens += N12sens * dim_factor *
+               (dNDlam1 * dl1xi + dNDlam2 * dl2xi +
+                2.0 * (lam1 * lam1 + lam2 * lam2) / den);
     // rho_0sens, zetasens unchanged in closed-form
 
     // return N12crit from closed-form solution
