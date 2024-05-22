@@ -8,6 +8,7 @@ from openmdao.utils.assert_utils import (
     assert_check_totals,
 )
 
+from tacs import elements
 from tacs import TACS
 
 ErrorTuple = namedtuple("ErrorTuple", ["forward", "reverse", "forward_reverse"])
@@ -57,6 +58,9 @@ class OpenMDAOTestCase:
 
             if self.wrt is None:
                 self.wrt = []
+
+            # Seed random number generator in tacs for consistent test results
+            elements.SeedRandomGenerator(0)
 
         def setup_problem(self, dtype):
             """

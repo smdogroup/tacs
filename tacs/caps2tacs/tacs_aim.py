@@ -9,7 +9,7 @@ import os, numpy as np
 from .proc_decorator import root_broadcast, parallel
 from .materials import Material
 from .constraints import Constraint
-from .property import ShellProperty, Property
+from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
 from .egads_aim import EgadsAim
@@ -58,6 +58,9 @@ class TacsAim:
         self._first_setup = True
         self._mesh_morph = mesh_morph
 
+        # override for having no constraints
+        self._no_constr_override = False
+
     @parallel
     def _build_aim(self, caps_problem):
         """
@@ -75,10 +78,10 @@ class TacsAim:
         elif isinstance(obj, ThicknessVariable):
             self._design_variables.append(obj)
             if obj.can_make_shell:
-                self._properties.append(obj.shell_property)
+                self._properties.append(obj.auto_property)
         elif isinstance(obj, ShapeVariable):
             self._design_variables.append(obj)
-        elif isinstance(obj, Property):
+        elif isinstance(obj, BaseProperty):
             self._properties.append(obj)
         elif isinstance(obj, Constraint):
             self._constraints.append(obj)
@@ -137,7 +140,8 @@ class TacsAim:
         # make sure there is at least one material, property, constraint, etc.
         assert len(self._materials) > 0
         assert len(self._properties) > 0
-        assert len(self._constraints) > 0
+        if not self._no_constr_override:
+            assert len(self._constraints) > 0
         assert self._mesh_aim is not None
 
         local_shape_vars = self.local_shape_vars
@@ -174,9 +178,10 @@ class TacsAim:
                 }
 
                 # add constraints to tacsAim
-                self.aim.input.Constraint = {
-                    con.name: con.dictionary for con in self._constraints
-                }
+                if not self._no_constr_override:
+                    self.aim.input.Constraint = {
+                        con.name: con.dictionary for con in self._constraints
+                    }
 
                 # add loads to tacsAim
                 if len(self._loads) > 0:
@@ -233,6 +238,15 @@ class TacsAim:
     @root_broadcast
     def get_config_parameter(self, param_name: str):
         return self.geometry.cfgpmtr[param_name].value
+        
+    @parallel
+    def set_design_parameter(self, param_name: str, value: float):
+        self.geometry.despmtr[param_name].value = value
+        return
+
+    @root_broadcast
+    def get_design_parameter(self, param_name: str):
+        return self.geometry.despmtr[param_name].value
 
     @root_broadcast
     def get_output_parameter(self, out_name: str):
@@ -366,7 +380,7 @@ class TacsAim:
         # update property thicknesses by the modified thickness variables
         for property in self._properties:
             for dv in self._design_variables:
-                if isinstance(property, ShellProperty) and isinstance(
+                if isinstance(property, BaseProperty) and isinstance(
                     dv, ThicknessVariable
                 ):
                     if property.caps_group == dv.caps_group:

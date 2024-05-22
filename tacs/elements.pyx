@@ -712,13 +712,18 @@ cdef class Quad4Shell(Element):
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
+    cdef TACSQuad4Shell* cptr
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
-        self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
+        self.cptr = self.ptr = new TACSQuad4Shell(transform.ptr, con.cptr)
         self.ptr.incref()
         self.con = con
         self.transform = transform
+
+    def setComplexStepGmatrix(self, bool flag):
+        if self.cptr:
+            self.cptr.setComplexStepGmatrix(flag)
 
 cdef class Quad4NonlinearShell(Element):
     """
@@ -898,6 +903,7 @@ cdef class Quad9Shell(Element):
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
+    cdef TACSQuad9Shell* cptr
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -905,6 +911,10 @@ cdef class Quad9Shell(Element):
         self.ptr.incref()
         self.con = con
         self.transform = transform
+
+    def setComplexStepGmatrix(self, bool flag):
+        if self.cptr:
+            self.cptr.setComplexStepGmatrix(flag)
 
 cdef class Quad9NonlinearShell(Element):
     """
@@ -1088,6 +1098,7 @@ cdef class Quad16Shell(Element):
           ``None`` is equivalent to :class:`~ShellNaturalTransform`.
         con (ShellConstitutive): Shell constitutive object.
     """
+    cdef TACSQuad16Shell* cptr
     def __cinit__(self, ShellTransform transform, ShellConstitutive con):
         if transform is None:
             transform = ShellNaturalTransform()
@@ -1095,6 +1106,10 @@ cdef class Quad16Shell(Element):
         self.ptr.incref()
         self.con = con
         self.transform = transform
+
+    def setComplexStepGmatrix(self, bool flag):
+        if self.cptr:
+            self.cptr.setComplexStepGmatrix(flag)
 
 cdef class Quad16NonlinearShell(Element):
     """

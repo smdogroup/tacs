@@ -1613,6 +1613,17 @@ cdef class Assembler:
 
         return
 
+    def getAverageStresses(self):
+        cdef Element elem
+        cdef ElementType elem_type
+        cdef np.ndarray stresses
+
+        stresses = np.zeros((9), dtype=dtype)
+        elem = self.getElements()[0]
+        elem_type = elem.getElementType()
+        self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data)
+        return stresses
+
     def setDependentNodes(self,
                           np.ndarray[int, ndim=1, mode='c'] ptr,
                           np.ndarray[int, ndim=1, mode='c'] conn,

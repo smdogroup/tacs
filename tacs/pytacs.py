@@ -821,7 +821,6 @@ class pyTACS(BaseUI):
         self.assembler = self.meshLoader.createTACSAssembler(
             self.varsPerNode, self.massDVs
         )
-
         self._createOutputViewer()
 
         # Store original node locations read in from bdf file
@@ -959,6 +958,15 @@ class pyTACS(BaseUI):
                 Yt = matInfo.Yt
                 Yc = matInfo.Yc
                 S12 = matInfo.S
+
+                if (
+                    S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0
+                ):
+                    self._TACSWarning(
+                        f"MAT8 card {matInfo.mid} has a zero strength, check Xc, Xt, Yc, Yt, and S12."
+                        "Otherwise Tsai-Wu Failure criterion is undefined or infinity."
+                    )
+
                 # TODO: add alpha
                 mat = tacs.constitutive.MaterialProperties(
                     rho=rho,
@@ -1736,8 +1744,8 @@ class pyTACS(BaseUI):
                                     timeSteps, dscale
                                 )
                             elif dloadInfo.type == "TLOAD2":
-                                loadScales = _tload2_get_load_at_time(
-                                    dloadInfo, timeSteps, dscale
+                                loadScales = dloadInfo.get_load_at_time(
+                                    timeSteps, dscale
                                 )
                             if dloadInfo.Type != "LOAD":
                                 self._TACSWarning(
@@ -2487,46 +2495,3 @@ class pyTACS(BaseUI):
         # Default to 6
         if self.varsPerNode is None:
             self.varsPerNode = 6
-
-
-def _tload2_get_load_at_time(tload2, time, scale=1.0):
-    """
-    This is a function for interpolating the time series for the NASTRAN TLOAD2 card.
-    Usually, this would be done through pyNastran, but there's bug in its implementation
-    that prevents it from being run.
-    """
-    if isinstance(time, float):
-        time = np.array([time])
-    else:
-        time = np.asarray(time)
-
-    if isinstance(tload2.delay, float):
-        tau = tload2.delay
-    elif tload2.delay == 0 or tload2.delay is None:
-        tau = 0.0
-    else:
-        tau = tload2.delay_ref.get_delay_at_time(time)
-
-    t1 = tload2.T1 + tau
-    t2 = tload2.T2 + tau
-    freq = tload2.frequency
-    p = tload2.phase
-    f = np.zeros(time.shape, dtype=time.dtype)
-
-    i = np.where(t1 <= time)[0]
-    j = np.where(time[i] <= t2)[0]
-    i = i[j]
-    f[i] = (
-        scale
-        * time[i] ** tload2.b
-        * np.exp(tload2.c * time[i])
-        * np.cos(2 * np.pi * freq * time[i] + p)
-    )
-
-    is_spcd = False
-    # resp = f
-    if tload2.Type == "VELO" and is_spcd:
-        f[0] = tload2.us0
-    if tload2.Type == "ACCE" and is_spcd:
-        f[0] = tload2.vs0
-    return f

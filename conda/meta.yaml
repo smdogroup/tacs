@@ -21,7 +21,7 @@ source:
 
 build:
   number: {{ build }}
-  skip: true  # [py<=37]
+  skip: true  # [py<=38]
   string: py{{ CONDA_PY }}_{{ scalar }}_h{{ PKG_HASH }}_{{ build }}
   track_features:
     - tacs_complex  # [scalar == "complex"]
@@ -29,52 +29,44 @@ build:
 requirements:
   build:
     - python {{ python }}
-    - numpy   1.18   # [py==38]
-    - numpy   1.19   # [py==39]
-    - numpy   1.22   # [py==310]
-    - numpy   1.23   # [py==311]
-    - {{ mpi }}
+    - numpy   >=1.25
+    - openmpi >=4.1.4 # [mpi == "openmpi"]
+    - mpich  # [mpi == "mpich"]
     - openmpi-mpicxx  # [mpi == "openmpi"]
     - mpich-mpicxx  # [mpi == "mpich"]
     - {{ compiler('cxx') }}
     - make
-    - mpi4py
-    - cython >=0.29,<3.0
+    - mpi4py >=3.1.1
+    - cython >=3.0.0
     - setuptools
 
   host:
     - python {{ python }}
     - pip
-    - numpy   1.18   # [py==38]
-    - numpy   1.19   # [py==39]
-    - numpy   1.22   # [py==310]
-    - numpy   1.23   # [py==311]
-    - {{ mpi }}
+    - numpy   >=1.25
+    - openmpi >=4.1.4 # [mpi == "openmpi"]
+    - mpich  # [mpi == "mpich"]
     - openmpi-mpicxx  # [mpi == "openmpi"]
     - mpich-mpicxx  # [mpi == "mpich"]
     - libopenblas
     - lapack
     - metis ==5.1.0
     - tecio
-    - mpi4py
+    - mpi4py >=3.1.1
     - cython >=3.0.0
     - setuptools
 
   run:
     - python
-    - numpy >=1.18.5,<2.0.a0   # [py==38]
-    - numpy >=1.19.5,<2.0.a0   # [py==39]
-    - numpy >=1.22.0,<2.0.a0   # [py==310]
-    - numpy >=1.23.0,<2.0.a0   # [py==311]
+    - numpy <2.0.a0
     - scipy
-    - {{ mpi }}
-    - openmpi-mpicxx  # [mpi == "openmpi"]
-    - mpich-mpicxx  # [mpi == "mpich"]
+    - openmpi >=4.1.4 # [mpi == "openmpi"]
+    - mpich  # [mpi == "mpich"]
     - libopenblas
     - lapack
     - metis ==5.1.0
-    - mpi4py
-    - pynastran
+    - mpi4py >=3.1.1
+    - pynastran >=1.4.0
     - numba >=0.55.2
 
 test:

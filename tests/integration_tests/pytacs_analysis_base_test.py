@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 from mpi4py import MPI
 
+from tacs import elements
 from tacs import TACS
 from tacs import problems
 from tacs import constraints
@@ -47,6 +48,8 @@ class PyTACSTestCase:
             if not hasattr(self, "comm"):
                 self.comm = MPI.COMM_WORLD
 
+            self.absolute_compare = False
+
             # Setup tacs problems to be tested
             self.tacs_probs, self.fea_assembler = self.setup_tacs_problems(self.comm)
 
@@ -62,6 +65,9 @@ class PyTACSTestCase:
 
             # Populate fd/cs perturbation vectors based on user-defined method
             self.setup_tacs_vecs(self.fea_assembler, self.dv_pert, self.xpts_pert)
+
+            # Seed random number generator in tacs for consistent test results
+            elements.SeedRandomGenerator(0)
 
         def setup_tacs_problems(self, comm):
             """
@@ -106,6 +112,13 @@ class PyTACSTestCase:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
+                                # Convert to abs value if requested
+                                if self.absolute_compare:
+                                    funcs[func_key] = abs(funcs[func_key])
+                                    self.FUNC_REFS[func_key] = abs(
+                                        self.FUNC_REFS[func_key]
+                                    )
+                                # Test values
                                 np.testing.assert_allclose(
                                     funcs[func_key],
                                     self.FUNC_REFS[func_key],
@@ -154,6 +167,11 @@ class PyTACSTestCase:
                                 fdv_sens_approx = self.compute_fdcs_approx(
                                     funcs_pert[func_key], funcs[func_key]
                                 )
+                                # Convert to abs value if requested
+                                if self.absolute_compare:
+                                    dfddv_proj = np.abs(dfddv_proj)
+                                    fdv_sens_approx = np.abs(fdv_sens_approx)
+                                # Test values
                                 np.testing.assert_allclose(
                                     dfddv_proj,
                                     fdv_sens_approx,
@@ -197,6 +215,11 @@ class PyTACSTestCase:
                                 f_xpt_sens_approx = self.compute_fdcs_approx(
                                     funcs_pert[func_key], funcs[func_key]
                                 )
+                                # Convert to abs value if requested
+                                if self.absolute_compare:
+                                    dfdx_proj = np.abs(dfdx_proj)
+                                    f_xpt_sens_approx = np.abs(f_xpt_sens_approx)
+                                # Test values
                                 np.testing.assert_allclose(
                                     dfdx_proj,
                                     f_xpt_sens_approx,
