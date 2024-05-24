@@ -897,7 +897,9 @@ int TACSGPBladeStiffenedShellConstitutive::setDesignVars(
 
   // NOTE : this is a very important step => here we reset the save on all
   // computed GP models so they recalculate and compute their new values.
-  this->panelGPs->resetSavedData();
+  if (this->panelGPs) {
+    this->panelGPs->resetSavedData();
+  }
 
   return this->numDesignVars;
 }
