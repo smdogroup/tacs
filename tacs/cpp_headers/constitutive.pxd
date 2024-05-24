@@ -199,6 +199,14 @@ cdef extern from "TACSGaussianProcessModel.h":
             TacsScalar[], # alpha
         )
 
+cdef extern from "TACSPanelGPs.h":
+    cdef cppclass TACSPanelGPs:
+        TACSPanelGPs(
+            TACSAxialGaussianProcessModel*, # axial GP
+            TACSShearGaussianProcessModel*, # shear GP
+            TACSCripplingGaussianProcessModel*, # crippling GP
+        )
+
 cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSGPBladeStiffenedShellConstitutive(TACSBladeStiffenedShellConstitutive):
         TACSGPBladeStiffenedShellConstitutive(
@@ -226,9 +234,7 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             TacsScalar, # panelWidth
             int, # panelWidthNum
             TacsScalar, # flangeFraction,
-            TACSAxialGaussianProcessModel*, # axial GP
-            TACSShearGaussianProcessModel*, # shear GP
-            TACSCripplingGaussianProcessModel*, # crippling GP
+            TACSPanelGPs*, # panelGPs object container
         )
         TacsScalar nondimCriticalGlobalAxialLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta)
         TacsScalar nondimCriticalLocalAxialLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar zeta)
