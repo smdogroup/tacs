@@ -56,7 +56,8 @@ void TACSPanelGPs::resetSavedData() {
   }
 }
 
-TacsScalar predictMeanTestData(int predInd, const TacsScalar* Xtest) {
+TacsScalar TACSPanelGPs::predictMeanTestData(int predInd,
+                                             const TacsScalar* Xtest) {
   // assume checking for input calling is in the other class for now
   // otherwise I would return garbage values..
   if (!savedForward[predInd]) {
@@ -77,9 +78,9 @@ TacsScalar predictMeanTestData(int predInd, const TacsScalar* Xtest) {
   return savedYtest[predInd];
 }
 
-TacsScalar predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
-                                   const TacsScalar* Xtest,
-                                   TacsScalar* Xtestsens) {
+void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
+                                           const TacsScalar* Xtest,
+                                           TacsScalar* Xtestsens) {
   // assume checking for input calling is in the other class for now
   // otherwise I would return garbage values..
 
@@ -92,15 +93,15 @@ TacsScalar predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
   if (!savedAdjoint[predInd]) {
     // axial global or local options
     if (predInd == 0 || predInd == 1) {
-      this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian)
+      this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
     }
     // shear global or local options
     if (predInd == 2 || predInd == 3) {
-      this->shearGP->predictMeanTestDataSens(1.0, Xtest, localJacobian)
+      this->shearGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
     }
     // crippling GP
     if (predInd == 4) {
-      this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian)
+      this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
     }
     savedAdjoint[predInd] = true;
   }

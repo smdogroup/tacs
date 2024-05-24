@@ -172,6 +172,12 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train).astype(self.dtype),
         )
 
+        self.panelGPs = constitutive.PanelGPs(
+            self.axialGP,
+            self.shearGP,
+            self.cripplingGP,
+        )
+
     def get_con(self, ply):
         con = constitutive.GPBladeStiffenedShellConstitutive(
             ply,
@@ -196,9 +202,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.stiffenerThicknessNum,
             self.stiffenerPlyFracNums,
             self.panelWidthNum,
-            self.axialGP,
-            self.shearGP,
-            self.cripplingGP,
+            self.panelGPs
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
@@ -364,6 +368,11 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
         self.axialGP = None
         self.shearGP = None
         self.cripplingGP = None
+        self.panelGPs = constitutive.PanelGPs(
+            self.axialGP,
+            self.shearGP,
+            self.cripplingGP,
+        )
 
 
 if __name__ == "__main__":
