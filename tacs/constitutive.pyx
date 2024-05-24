@@ -1115,7 +1115,7 @@ cdef class GaussianProcess:
         return self.base_gp.testAllGPTests(epsilon, printLevel)
 
 cdef class AxialGP(GaussianProcess):
-    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
+    n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/axial_data.csv"):
@@ -1124,12 +1124,12 @@ cdef class AxialGP(GaussianProcess):
         import pandas as pd
 
         df = pd.read_csv(csv_file)
-        Xtrain_mat = df[df.colums[:4]].to_numpy()
-        alpha = df[df.colums[-1]].to_numpy()
+        Xtrain_mat = df[df.columns[1:5]].to_numpy(dtype=dtype)
+        alpha = df[df.columns[-1]].to_numpy(dtype=dtype)
         n_train = Xtrain_mat.shape[0]
         n_param = 4
 
-        Xtrain = np.zeros((n_train*n_param,), dtype=np.double)
+        Xtrain = np.zeros((n_train*n_param,), dtype=dtype)
         # stagger the array entries
         for iparam in range(4):
             Xtrain[iparam::4] = Xtrain_mat[:,iparam]
@@ -1151,7 +1151,7 @@ cdef class AxialGP(GaussianProcess):
         self.base_gp = self.axial_gp
         
 cdef class ShearGP(AxialGP):
-    n_param = 4 # [log(xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
+    n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/shear_data.csv"):
@@ -1172,7 +1172,7 @@ cdef class ShearGP(AxialGP):
         self.base_gp = self.axial_gp = self.gp
 
 cdef class CripplingGP(AxialGP):
-    n_param = 4 # [log(xi), log(rho0), log(genEps), log(1+10^3 * zeta)]
+    n_param = 4 # [log(1+xi), log(rho0), log(genEps), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file="_buckling_data/crippling_data.csv"):
