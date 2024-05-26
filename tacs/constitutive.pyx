@@ -1307,6 +1307,8 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     panelGPs: TACSPanelGPs
         container for the three GP models for each panel / TACS component
+    CFshearMode: int
+        setting for CF version for nondim outputs (1 - all ARs, 2 - only high ARs, 3 - smeared model)
 
     Raises
     ------
@@ -1341,6 +1343,7 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         int panelWidthNum = -1,
         PanelGPs panelGPs = None,
+        int CFshearMode = 1,
         ):
 
         # same input checks as superclass BladeStiffenedShellConstitutive
@@ -1397,6 +1400,7 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             panelWidthNum,
             flangeFraction,
             panel_gp_ptr,
+            CFshearMode,
         )
         # copy pointers to all superclasses
         self.ptr = self.cptr = self.gp_blade_ptr

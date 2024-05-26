@@ -138,6 +138,11 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param panelWidth Panel Width value
    * @param panelWidthNum Panel Width design variable number
    * @param flangeFraction Stiffener base width as a fraction of the stiffener
+   * @param panelGPs PanelGP object (one for each TACS component) that contains
+   * the GP objects or None if using CF
+   * @param CFshearMode int toggle to change method for closed-form shear mode
+   * [1 - all AR most general, 2 - high AR approx, 3 - smeared stiffener (TBD on
+   * 3)]
    */
   TACSGPBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* panelPly, TACSOrthotropicPly* stiffenerPly,
@@ -149,7 +154,8 @@ class TACSGPBladeStiffenedShellConstitutive
       TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
       TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
       int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-      TacsScalar flangeFraction = 1.0, TACSPanelGPs* panelGPs = nullptr);
+      TacsScalar flangeFraction = 1.0, TACSPanelGPs* panelGPs = nullptr,
+      int CFshearMode = 1);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -923,6 +929,9 @@ class TACSGPBladeStiffenedShellConstitutive
   // panel stress, stiffener stress, global buckling, local buckling, stiffener
   // crippling
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
+
+  // different mode for computing the shear closed form solution
+  int CFshearMode;
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't

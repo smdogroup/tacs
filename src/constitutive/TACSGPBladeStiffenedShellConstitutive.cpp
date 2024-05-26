@@ -42,7 +42,7 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
     TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
     int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-    TacsScalar flangeFraction, TACSPanelGPs* panelGPs)
+    TacsScalar flangeFraction, TACSPanelGPs* panelGPs, int CFshearMode)
     : TACSBladeStiffenedShellConstitutive(
           panelPly, stiffenerPly, kcorr, panelLength, panelLengthNum,
           stiffenerPitch, stiffenerPitchNum, panelThick, panelThickNum,
@@ -68,6 +68,9 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
   if (this->panelGPs) {
     this->panelGPs->incref();
   }
+
+  // set any modes for different types of CF solutions
+  this->CFshearMode = CFshearMode;
 
   // default value of ksWeight
   this->setKSWeight(80.0);
@@ -1500,15 +1503,53 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
     // solution)
-    TacsScalar lam1, lam2;  // lam1bar, lam2bar values
-    nondimShearParams(xi, gamma, &lam1, &lam2);
-    TacsScalar dim_factor = 1.0;
-    TacsScalar nondim_factor =
-        (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
-        (2.0 * lam1 * lam1 * lam2);
-    return dim_factor *
-           nondim_factor;  // aka N12_crit from CPT closed-form solution
+    if (this->CFshearMode == 1) {
+      // CPT closed-form solution accurate to all Aspect ratios (most accurate)
+
+      TacsScalar neg_N12crits[this->NUM_CF_MODES];
+      TacsScalar dim_factor = 1.0;
+      for (int _m1 = 1; _m1 < this->NUM_CF_MODES + 1; _m1++) {
+        // compute non-dimensional forms of lam1, lam2
+        TacsScalar lam1 = rho_0 / _m1;
+        TacsScalar term2 = pow((3.0 + xi) / 9.0 + 4.0 / 3.0 * lam1 * lam1 * xi +
+                                   4.0 / 3.0 * pow(lam1, 4.0),
+                               0.5);
+        TacsScalar lam2 = pow(-lam1 * lam1 - xi / 3.0 + term2, 0.5);
+        TacsScalar nondim_factor =
+            (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
+             pow(lam2, 4.0) + 2.0 * xi * (lam1 * lam1 + lam2 * lam2) +
+             2 * gamma) /
+            (2.0 * lam1 * lam1 * lam2);
+        neg_N12crits[_m1 - 1] =
+            -1.0 * dim_factor * nondim_factor;  // negated only because we have
+                                                // to do KS min aggregate later
+      }
+
+      // compute KS aggregation for -N11crit for each mode then negate again
+      // (because we want minimum N11crit so maximize negative N11crit)
+      TacsScalar neg_N12crit =
+          ksAggregation(neg_N12crits, this->NUM_CF_MODES, this->ksWeight);
+      return -1.0 * neg_N12crit;
+    }
+    if (this->CFshearMode == 2) {
+      // CPT closed-form solution accurate only to high ARs (medium accuracy)
+      TacsScalar lam1, lam2;  // lam1bar, lam2bar values
+      nondimShearParams(xi, gamma, &lam1, &lam2);
+      TacsScalar dim_factor = 1.0;
+      TacsScalar nondim_factor =
+          (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
+           2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
+          (2.0 * lam1 * lam1 * lam2);
+      return dim_factor *
+             nondim_factor;  // aka N12_crit from CPT closed-form solution
+    }
+    if (this->CFshearMode == 3) {
+      // TBD on this one, compare to smeared-stiffener approach (limit of
+      // gamma->infty I think?)
+      return 0.0;
+    }
+    // TBD add else statement and throw error if not one of these three or do
+    // this in constructor prob better
   }
 }
 
