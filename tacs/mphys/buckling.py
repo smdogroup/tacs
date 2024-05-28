@@ -1,4 +1,7 @@
 import numpy as np
+from mphys.core import MPhysVariables
+
+StructVars = MPhysVariables.Structures
 
 import openmdao.api as om
 
@@ -10,7 +13,6 @@ class TacsBuckling(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
-        self.options.declare("conduction", default=False)
         self.options.declare("check_partials")
         self.options.declare("write_solution")
 
@@ -22,13 +24,9 @@ class TacsBuckling(om.ExplicitComponent):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
         self.write_solution = self.options["write_solution"]
-        self.conduction = self.options["conduction"]
         self.solution_counter = 0
 
-        if self.conduction:
-            self.states_name = "T_conduct"
-        else:
-            self.states_name = "u_struct"
+        self.states_name = StructVars.DISPLACEMENTS
 
         # TACS part of setup
         local_ndvs = self.fea_assembler.getNumDesignVars()
@@ -42,7 +40,7 @@ class TacsBuckling(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            StructVars.COORDINATES,
             distributed=True,
             shape_by_conn=True,
             desc="structural node coordinates",
@@ -69,7 +67,7 @@ class TacsBuckling(om.ExplicitComponent):
 
     def _update_internal(self, inputs):
         self.bp.setDesignVars(inputs["tacs_dvs"])
-        self.bp.setNodes(inputs["x_struct0"])
+        self.bp.setNodes(inputs[StructVars.COORDINATES])
 
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
@@ -111,9 +109,9 @@ class TacsBuckling(om.ExplicitComponent):
                             [mode_i], [d_inputs["tacs_dvs"]], scale=d_func
                         )
 
-                    if "x_struct0" in d_inputs:
+                    if StructVars.COORDINATES in d_inputs:
                         self.bp.addXptSens(
-                            [mode_i], [d_inputs["x_struct0"]], scale=d_func
+                            [mode_i], [d_inputs[StructVars.COORDINATES]], scale=d_func
                         )
 
                     if self.states_name in d_inputs:

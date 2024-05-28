@@ -9,6 +9,7 @@ class ConstraintComponent(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
+        self.options.declare("discipline_vars")
         self.options.declare("constraint_object")
 
         self.fea_assembler = None
@@ -19,6 +20,7 @@ class ConstraintComponent(om.ExplicitComponent):
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
+        self.discipline_vars = self.options["discipline_vars"]
         self.constr = self.options["constraint_object"]
 
         # TACS part of setup
@@ -33,7 +35,7 @@ class ConstraintComponent(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            self.discipline_vars.COORDINATES,
             distributed=True,
             shape_by_conn=True,
             desc="structural node coordinates",
@@ -56,7 +58,7 @@ class ConstraintComponent(om.ExplicitComponent):
         if dvsNeedUpdate:
             self.constr.setDesignVars(inputs["tacs_dvs"])
         if xsNeedUpdate:
-            self.constr.setNodes(inputs["x_struct0"])
+            self.constr.setNodes(inputs[self.discipline_vars.COORDINATES])
 
     def _need_update(self, inputs):
         """Checks whether the design variables or coordinates being passed
@@ -77,7 +79,7 @@ class ConstraintComponent(om.ExplicitComponent):
         xsNeedUpdate = False
 
         dvs = inputs["tacs_dvs"]
-        xs = inputs["x_struct0"]
+        xs = inputs[self.discipline_vars.COORDINATES]
 
         if self.old_dvs is None:
             self.old_dvs = inputs["tacs_dvs"].copy()
@@ -89,12 +91,12 @@ class ConstraintComponent(om.ExplicitComponent):
                 dvsNeedUpdate = True
 
         if self.old_xs is None:
-            self.old_xs = inputs["x_struct0"].copy()
+            self.old_xs = inputs[self.discipline_vars.COORDINATES].copy()
             xsNeedUpdate = True
 
         elif len(xs) > 0:
             if max(np.abs(xs - self.old_xs)) > 0.0:  # 1e-7:
-                self.old_xs = inputs["x_struct0"].copy()
+                self.old_xs = inputs[self.discipline_vars.COORDINATES].copy()
                 xsNeedUpdate = True
 
         tmp1 = dvsNeedUpdate
@@ -132,13 +134,15 @@ class ConstraintComponent(om.ExplicitComponent):
                     out = Jdv.dot(d_inputs["tacs_dvs"])
                     d_outputs[out_name] += self.comm.allreduce(out)
 
-                if "x_struct0" in d_inputs:
-                    out = Jxpt.dot(d_inputs["x_struct0"])
+                if self.discipline_vars.COORDINATES in d_inputs:
+                    out = Jxpt.dot(d_inputs[self.discipline_vars.COORDINATES])
                     d_outputs[out_name] += self.comm.allreduce(out)
 
             elif mode == "rev":
                 if "tacs_dvs" in d_inputs:
                     d_inputs["tacs_dvs"] += Jdv.T.dot(d_outputs[out_name])
 
-                if "x_struct0" in d_inputs:
-                    d_inputs["x_struct0"] += Jxpt.T.dot(d_outputs[out_name])
+                if self.discipline_vars.COORDINATES in d_inputs:
+                    d_inputs[self.discipline_vars.COORDINATES] += Jxpt.T.dot(
+                        d_outputs[out_name]
+                    )

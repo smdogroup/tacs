@@ -1,7 +1,7 @@
 import numpy as np
 
 import openmdao.api as om
-from mphys.mask_converter import UnmaskedConverter, MaskedVariableDescription
+from mphys.core import UnmaskedConverter, MaskedVariableDescription
 
 from .dv import TacsDVComp
 
@@ -10,6 +10,12 @@ class TacsPrecouplingGroup(om.Group):
     def initialize(self):
         self.options.declare(
             "fea_assembler",
+            default=None,
+            desc="the pytacs object itself",
+            recordable=False,
+        )
+        self.options.declare(
+            "discipline_vars",
             default=None,
             desc="the pytacs object itself",
             recordable=False,
@@ -24,6 +30,7 @@ class TacsPrecouplingGroup(om.Group):
             default=False,
             desc="Flag for whether or not to separate out point mass dvs using user-defined names",
         )
+        self.options.declare("discipline_vars")
 
     def setup(self):
         # Promote state variables/rhs with physics-specific tag that MPhys expects
@@ -32,6 +39,9 @@ class TacsPrecouplingGroup(om.Group):
         fea_assembler = self.options["fea_assembler"]
         initial_dv_vals = self.options["initial_dv_vals"]
         separate_mass_dvs = self.options["separate_mass_dvs"]
+        discipline_vars = self.options["discipline_vars"]
+
+        coords_name = discipline_vars.COORDINATES
 
         self.add_subsystem(
             "distributor",
@@ -46,10 +56,12 @@ class TacsPrecouplingGroup(om.Group):
         nnodes = fea_assembler.getNumOwnedNodes()
         nmult = fea_assembler.getNumOwnedMultiplierNodes()
         unmask_output = MaskedVariableDescription(
-            "x_struct0", shape=nnodes * 3, tags=["mphys_coordinates"]
+            coords_name, shape=nnodes * 3, tags=["mphys_coordinates"]
         )
         unmask_input = MaskedVariableDescription(
-            "x_struct0_masked", shape=(nnodes - nmult) * 3, tags=["mphys_coordinates"]
+            f"{coords_name}_masked",
+            shape=(nnodes - nmult) * 3,
+            tags=["mphys_coordinates"],
         )
         mult_ids = fea_assembler.getLocalMultiplierNodeIDs()
         mask = np.zeros([nnodes, 3], dtype=bool)
@@ -64,5 +76,7 @@ class TacsPrecouplingGroup(om.Group):
             distributed=True,
         )
         self.add_subsystem(
-            "unmasker", unmasker, promotes_inputs=[("x_struct0_masked", "x_struct0")]
+            "unmasker",
+            unmasker,
+            promotes_inputs=[(f"{coords_name}_masked", coords_name)],
         )

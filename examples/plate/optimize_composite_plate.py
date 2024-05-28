@@ -5,8 +5,8 @@ import os
 
 import openmdao.api as om
 import numpy as np
-from mphys import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint
+from mphys.scenarios import ScenarioStructural
 
 from tacs import elements, constitutive, functions
 from tacs.mphys import TacsBuilder
@@ -117,7 +117,6 @@ class PlateModel(Multipoint):
             element_callback=element_callback,
             problem_setup=problem_setup,
             constraint_setup=constraint_setup,
-            coupled=False,
             check_partials=True,
         )
         struct_builder.initialize(self.comm)
@@ -130,7 +129,9 @@ class PlateModel(Multipoint):
         self.mphys_add_scenario(
             "pressure_load", ScenarioStructural(struct_builder=struct_builder)
         )
-        self.mphys_connect_scenario_coordinate_source("mesh", "pressure_load", "struct")
+        self.mphys_connect_scenario_coordinate_source(
+            "mesh", "pressure_load", "Structures"
+        )
 
         self.connect("dv_struct", "pressure_load.dv_struct")
 

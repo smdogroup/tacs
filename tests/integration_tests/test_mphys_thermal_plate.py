@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 import openmdao.api as om
-from mphys.multipoint import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint, MPhysVariables
+from mphys.scenarios import ScenarioStructural
 
 import tacs.mphys
 from openmdao_analysis_base_test import OpenMDAOTestCase
@@ -27,7 +27,11 @@ FUNC_REFS = {
 }
 
 # Inputs to check total sensitivities wrt
-wrt = ["mesh.fea_mesh.x_struct0", "dv_struct", "q_conduct"]
+wrt = [
+    f"mesh.fea_mesh.{MPhysVariables.Thermal.Mesh.COORDINATES}",
+    "dv_struct",
+    MPhysVariables.Thermal.HeatFlow.AERODYNAMIC,
+]
 
 # Area of plate
 area = 2.0
@@ -100,7 +104,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     element_callback=element_callback,
                     problem_setup=problem_setup,
                     check_partials=True,
-                    coupled=True,
+                    coupling_loads=MPhysVariables.Thermal.HeatFlow.AERODYNAMIC,
                     conduction=True,
                     write_solution=False,
                 )
@@ -112,15 +116,25 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
                 q_size = tacs_builder.get_ndof() * tacs_builder.get_number_of_nodes()
                 heat = self.add_subsystem("heat", om.IndepVarComp(), promotes=["*"])
-                heat.add_output("q_conduct", val=q_size * [1e5], distributed=True)
+                heat.add_output(
+                    MPhysVariables.Thermal.HeatFlow.AERODYNAMIC,
+                    val=q_size * [1e5],
+                    distributed=True,
+                )
 
                 self.add_subsystem("mesh", tacs_builder.get_mesh_coordinate_subsystem())
                 self.mphys_add_scenario(
                     "analysis", ScenarioStructural(struct_builder=tacs_builder)
                 )
-                self.connect("mesh.x_struct0", "analysis.x_struct0")
+                self.connect(
+                    f"mesh.{MPhysVariables.Thermal.Mesh.COORDINATES}",
+                    f"analysis.{MPhysVariables.Thermal.COORDINATES}",
+                )
                 self.connect("dv_struct", "analysis.dv_struct")
-                self.connect("q_conduct", "analysis.q_conduct")
+                self.connect(
+                    MPhysVariables.Thermal.HeatFlow.AERODYNAMIC,
+                    f"analysis.{MPhysVariables.Thermal.HeatFlow.AERODYNAMIC}",
+                )
 
         prob = om.Problem()
         prob.model = Top()
