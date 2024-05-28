@@ -42,9 +42,7 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
     TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
     int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-    TacsScalar flangeFraction, TACSAxialGaussianProcessModel* axialGP,
-    TACSShearGaussianProcessModel* shearGP,
-    TACSCripplingGaussianProcessModel* cripplingGP)
+    TacsScalar flangeFraction, TACSPanelGPs* panelGPs, int CFshearMode)
     : TACSBladeStiffenedShellConstitutive(
           panelPly, stiffenerPly, kcorr, panelLength, panelLengthNum,
           stiffenerPitch, stiffenerPitchNum, panelThick, panelThickNum,
@@ -66,18 +64,13 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
   this->panelWidthUpperBound = 1e20;
 
   // set Gaussian process models in
-  this->axialGP = axialGP;
-  if (this->axialGP) {
-    this->axialGP->incref();
+  this->panelGPs = panelGPs;
+  if (this->panelGPs) {
+    this->panelGPs->incref();
   }
-  this->shearGP = shearGP;
-  if (this->shearGP) {
-    this->shearGP->incref();
-  }
-  this->cripplingGP = cripplingGP;
-  if (this->cripplingGP) {
-    this->cripplingGP->incref();
-  }
+
+  // set any modes for different types of CF solutions
+  this->CFshearMode = CFshearMode;
 
   // default value of ksWeight
   this->setKSWeight(80.0);
@@ -91,26 +84,9 @@ TACSGPBladeStiffenedShellConstitutive::
   // Don't call the base class destructor C++ does that automatically (and will
   // seg fault if you call it here.)
 
-  // destroy the gaussian process model objects if they exist
-  if (this->axialGP) {
-    // this object is shared, may not want to delete it (unless a local copy is
-    // made)
-    this->axialGP->decref();
-    this->axialGP = nullptr;
-  }
-
-  if (this->shearGP) {
-    // this object is shared, may not want to delete it (unless a local copy is
-    // made)
-    this->shearGP->decref();
-    this->shearGP = nullptr;
-  }
-
-  if (this->cripplingGP) {
-    // this object is shared, may not want to delete it (unless a local copy is
-    // made)
-    this->cripplingGP->decref();
-    this->cripplingGP = nullptr;
+  if (this->panelGPs) {
+    this->panelGPs->decref();
+    this->panelGPs = nullptr;
   }
 }
 
@@ -221,6 +197,12 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
       D11s, D22s, xiStiff, rho0Stiff, genPoiss, zetaStiff);
   fails[4] = N1stiff / N1CritCrippling;
   // --- End of computeFailuresValues subsections ---
+
+  // debug print all four failure values
+  // printf("fails[0] = %.4e\n", fails[0]);
+  // printf("fails[1] = %.4e\n", fails[1]);
+  // printf("fails[2] = %.4e\n", fails[2]);
+  // printf("fails[3] = %.4e\n", fails[3]);
 
   // aggregate the failure across all 5 failures modes (0-4)
   return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
@@ -915,6 +897,13 @@ int TACSGPBladeStiffenedShellConstitutive::setDesignVars(
       this->panelWidth = dvs[this->panelWidthLocalNum];
     }
   }
+
+  // NOTE : this is a very important step => here we reset the save on all
+  // computed GP models so they recalculate and compute their new values.
+  if (this->panelGPs) {
+    this->panelGPs->resetSavedData();
+  }
+
   return this->numDesignVars;
 }
 
@@ -1113,7 +1102,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
-    return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
+    return dim_factor * exp(this->panelGPs->predictMeanTestData(0, Xtest));
 
   } else {
     // use the CPT closed-form solution to compute the critical global axial
@@ -1151,6 +1140,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalAxialLoad(
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
 
+    // don't need to use the saved data here since this routine is only meant to
+    // be called on a single constitutive object (not a whole mesh with O(1e4)
+    // const objects)
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1193,7 +1185,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(one + gamma);
     Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->getAxialGP()->predictMeanTestData(Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(0, Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
@@ -1203,7 +1195,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     int n_axial_param = this->getAxialGP()->getNparam();
     TacsScalar* Xtestsens = new TacsScalar[n_axial_param];
     TacsScalar Ysens = N1sens * output;
-    this->getAxialGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(0, Ysens, Xtest, Xtestsens);
     *xisens +=
         Xtestsens[0] / (one + xi);  // chain rule dlog(one + xi)/dxi = 1/xi
     *rho_0sens += Xtestsens[1] / rho_0;
@@ -1290,7 +1282,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
-    return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
+    return dim_factor * exp(this->panelGPs->predictMeanTestData(1, Xtest));
 
   } else {
     // use the CPT closed-form solution to compute the critical global axial
@@ -1327,6 +1319,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalAxialLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
+    // don't need to use the saved data here since this routine is only meant to
+    // be called on a single constitutive object (not a whole mesh with O(1e4)
+    // const objects)
     return dim_factor * exp(this->getAxialGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1369,7 +1364,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
 
-    TacsScalar arg = this->getAxialGP()->predictMeanTestData(Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(1, Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
@@ -1378,7 +1373,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     int n_axial_param = this->getAxialGP()->getNparam();
     TacsScalar* Xtestsens = new TacsScalar[n_axial_param];
     TacsScalar Ysens = N1sens * output;
-    this->getAxialGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(1, Ysens, Xtest, Xtestsens);
 
     *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
@@ -1465,7 +1460,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
-    return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
+    return dim_factor * exp(this->panelGPs->predictMeanTestData(2, Xtest));
 
   } else {
     // use the CPT closed-form solution to compute the critical global axial
@@ -1498,6 +1493,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
+    // don't need to use the saved data here since this routine is only meant to
+    // be called on a single constitutive object (not a whole mesh with O(1e4)
+    // const objects)
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1505,15 +1503,53 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
     // solution)
-    TacsScalar lam1, lam2;  // lam1bar, lam2bar values
-    nondimShearParams(xi, gamma, &lam1, &lam2);
-    TacsScalar dim_factor = 1.0;
-    TacsScalar nondim_factor =
-        (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
-         2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
-        (2.0 * lam1 * lam1 * lam2);
-    return dim_factor *
-           nondim_factor;  // aka N12_crit from CPT closed-form solution
+    if (this->CFshearMode == 1) {
+      // CPT closed-form solution accurate to all Aspect ratios (most accurate)
+
+      TacsScalar neg_N12crits[this->NUM_CF_MODES];
+      TacsScalar dim_factor = 1.0;
+      for (int _m1 = 1; _m1 < this->NUM_CF_MODES + 1; _m1++) {
+        // compute non-dimensional forms of lam1, lam2
+        TacsScalar lam1 = rho_0 / _m1;
+        TacsScalar term2 = pow((3.0 + xi) / 9.0 + 4.0 / 3.0 * lam1 * lam1 * xi +
+                                   4.0 / 3.0 * pow(lam1, 4.0),
+                               0.5);
+        TacsScalar lam2 = pow(-lam1 * lam1 - xi / 3.0 + term2, 0.5);
+        TacsScalar nondim_factor =
+            (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
+             pow(lam2, 4.0) + 2.0 * xi * (lam1 * lam1 + lam2 * lam2) +
+             2 * gamma) /
+            (2.0 * lam1 * lam1 * lam2);
+        neg_N12crits[_m1 - 1] =
+            -1.0 * dim_factor * nondim_factor;  // negated only because we have
+                                                // to do KS min aggregate later
+      }
+
+      // compute KS aggregation for -N11crit for each mode then negate again
+      // (because we want minimum N11crit so maximize negative N11crit)
+      TacsScalar neg_N12crit =
+          ksAggregation(neg_N12crits, this->NUM_CF_MODES, this->ksWeight);
+      return -1.0 * neg_N12crit;
+    }
+    if (this->CFshearMode == 2) {
+      // CPT closed-form solution accurate only to high ARs (medium accuracy)
+      TacsScalar lam1, lam2;  // lam1bar, lam2bar values
+      nondimShearParams(xi, gamma, &lam1, &lam2);
+      TacsScalar dim_factor = 1.0;
+      TacsScalar nondim_factor =
+          (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
+           2.0 * xi * (lam1 * lam1 + lam2 * lam2) + 2 * gamma) /
+          (2.0 * lam1 * lam1 * lam2);
+      return dim_factor *
+             nondim_factor;  // aka N12_crit from CPT closed-form solution
+    }
+    if (this->CFshearMode == 3) {
+      // TBD on this one, compare to smeared-stiffener approach (limit of
+      // gamma->infty I think?)
+      return 0.0;
+    }
+    // TBD add else statement and throw error if not one of these three or do
+    // this in constructor prob better
   }
 }
 
@@ -1644,7 +1680,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     Xtest[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->getShearGP()->predictMeanTestData(Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(2, Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
@@ -1653,7 +1689,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     int n_shear_param = this->getShearGP()->getNparam();
     TacsScalar* Xtestsens = new TacsScalar[n_shear_param];
     TacsScalar Ysens = N12sens * output;
-    this->getShearGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(2, Ysens, Xtest, Xtestsens);
 
     *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
@@ -1733,7 +1769,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
-    return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
+    return dim_factor * exp(this->panelGPs->predictMeanTestData(3, Xtest));
 
   } else {
     // use the CPT closed-form solution to compute the critical global axial
@@ -1765,6 +1801,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
+    // don't need to use the saved data here since this routine is only meant to
+    // be called on a single constitutive object (not a whole mesh with O(1e4)
+    // const objects)
     return dim_factor * exp(this->getShearGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1801,7 +1840,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     Xtest[1] = log(rho_0);
     Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
     Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->getShearGP()->predictMeanTestData(Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(3, Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
@@ -1810,7 +1849,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     int n_shear_param = this->getShearGP()->getNparam();
     TacsScalar* Xtestsens = new TacsScalar[n_shear_param];
     TacsScalar Ysens = N12sens * output;
-    this->getShearGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(3, Ysens, Xtest, Xtestsens);
 
     *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=
@@ -1887,7 +1926,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
-    return dim_factor * exp(this->getCripplingGP()->predictMeanTestData(Xtest));
+    return dim_factor * exp(this->panelGPs->predictMeanTestData(4, Xtest));
 
   } else {
     // use the literature CPT closed-form solution for approximate stiffener
@@ -1911,6 +1950,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimStiffenerCripplingLoad(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
+    // don't need to use the saved data here since this routine is only meant to
+    // be called on a single constitutive object (not a whole mesh with O(1e4)
+    // const objects)
     return dim_factor * exp(this->getCripplingGP()->predictMeanTestData(Xtest));
 
   } else {
@@ -1939,7 +1981,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     Xtest[1] = log(rho_0);
     Xtest[2] = log(genPoiss);
     Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->getCripplingGP()->predictMeanTestData(Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(4, Xtest);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
@@ -1948,7 +1990,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     int n_crippling_param = this->getCripplingGP()->getNparam();
     TacsScalar* Xtestsens = new TacsScalar[n_crippling_param];
     TacsScalar Ysens = N1sens * output;
-    this->getCripplingGP()->predictMeanTestDataSens(Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(4, Ysens, Xtest, Xtestsens);
 
     *xisens += Xtestsens[0] / (one + xi);
     *rho_0sens +=

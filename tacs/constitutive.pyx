@@ -1192,6 +1192,63 @@ cdef class CripplingGP(AxialGP):
         )
         self.base_gp = self.axial_gp = self.gp
 
+cdef class PanelGPs:
+    # base class so no constructor here 
+    """
+    axialGP : TACSAxialGaussianProcessModel, optional
+        GP model for axial buckling data, if None uses closed-form instead
+    shearGP : TACSShearGaussianProcessModel, optional
+        GP model for shear buckling data, if None uses closed-form instead
+    cripplingGP : TACSCripplingGaussianProcessModel, optional
+        GP model for crippling buckling data, if None uses closed-form instead
+
+    return:
+    -------
+    object meant to built for each panel in the class
+    """
+    def __cinit__(
+        self,
+        AxialGP axialGP = None, 
+        ShearGP shearGP = None,
+        CripplingGP cripplingGP = None,
+    ):   
+        # make null ptrs for GPs if not defined and store them in this class too
+        cdef TACSAxialGaussianProcessModel *axial_gp_ptr = NULL
+        if axialGP is not None:
+            axial_gp_ptr = (<AxialGP>axialGP).axial_gp
+        cdef TACSShearGaussianProcessModel *shear_gp_ptr = NULL
+        if shearGP is not None:
+            shear_gp_ptr = (<ShearGP>shearGP).gp
+        cdef TACSCripplingGaussianProcessModel *crippling_gp_ptr = NULL
+        if cripplingGP is not None:
+            crippling_gp_ptr = (<CripplingGP>cripplingGP).gp
+
+        self.gptr = new TACSPanelGPs(
+            axial_gp_ptr,
+            shear_gp_ptr,
+            crippling_gp_ptr,
+        )
+
+    @classmethod
+    def component_dict(
+        cls, 
+        tacs_components, # list of strings of each tacs component name
+        AxialGP axialGP = None, 
+        ShearGP shearGP = None,
+        CripplingGP cripplingGP = None,
+        ):
+        """
+        make the dictionary of PanelGP objects from the list of TACS components
+        """
+        _dict = {}
+        for comp_name in tacs_components:
+            _dict[comp_name] = cls(
+                axialGP,
+                shearGP,
+                cripplingGP
+            )
+        return _dict
+
 # don't make this class a subclass of BladeStiffenedShellConstitutive here because
 # otherwise it tries to call the subclass constructor too and that is unnecessary
 cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
@@ -1248,12 +1305,10 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
     panelWidthNum : int, optional
         Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
-    axialGP : TACSAxialGaussianProcessModel, optional
-        GP model for axial buckling data, if None uses closed-form instead
-    shearGP : TACSShearGaussianProcessModel, optional
-        GP model for shear buckling data, if None uses closed-form instead
-    cripplingGP : TACSCripplingGaussianProcessModel, optional
-        GP model for crippling buckling data, if None uses closed-form instead
+    panelGPs: TACSPanelGPs
+        container for the three GP models for each panel / TACS component
+    CFshearMode: int
+        setting for CF version for nondim outputs (1 - all ARs, 2 - only high ARs, 3 - smeared model)
 
     Raises
     ------
@@ -1287,9 +1342,8 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         int stiffenerThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         int panelWidthNum = -1,
-        AxialGP axialGP = None,
-        ShearGP shearGP = None,
-        CripplingGP cripplingGP = None,
+        PanelGPs panelGPs = None,
+        int CFshearMode = 1,
         ):
 
         # same input checks as superclass BladeStiffenedShellConstitutive
@@ -1310,23 +1364,15 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         if len(stiffenerPlyFracNums) != numStiffenerPlies:
             raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
 
+        cdef TACSPanelGPs *panel_gp_ptr = NULL
+        if panelGPs is not None:
+            panel_gp_ptr = (<PanelGPs>panelGPs).gptr
 
         # Numpy's default int type is int64, but this is interpreted by Cython as a long.
         if panelPlyFracNums.dtype != np.intc:
             panelPlyFracNums = panelPlyFracNums.astype(np.intc)
         if stiffenerPlyFracNums.dtype != np.intc:
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
-
-        # make null ptrs for GPs if not defined and store them in this class too
-        cdef TACSAxialGaussianProcessModel *axial_gp_ptr = NULL
-        if axialGP is not None:
-            axial_gp_ptr = (<AxialGP>axialGP).axial_gp
-        cdef TACSShearGaussianProcessModel *shear_gp_ptr = NULL
-        if shearGP is not None:
-            shear_gp_ptr = (<ShearGP>shearGP).gp
-        cdef TACSCripplingGaussianProcessModel *crippling_gp_ptr = NULL
-        if cripplingGP is not None:
-            crippling_gp_ptr = (<CripplingGP>cripplingGP).gp
 
         self.gp_blade_ptr = new TACSGPBladeStiffenedShellConstitutive(
             panelPly.ptr,
@@ -1353,9 +1399,8 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             panelWidth,
             panelWidthNum,
             flangeFraction,
-            axial_gp_ptr,
-            shear_gp_ptr,
-            crippling_gp_ptr,
+            panel_gp_ptr,
+            CFshearMode,
         )
         # copy pointers to all superclasses
         self.ptr = self.cptr = self.gp_blade_ptr

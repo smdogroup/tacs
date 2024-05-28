@@ -28,6 +28,7 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSBladeStiffenedShellConstitutive.o \
 	TACSSmearedCompositeShellConstitutive.o \
 	TACSGaussianProcessModel.o \
+	TACSPanelGPs.o \
 	TACSGPBladeStiffenedShellConstitutive.o
 
 DIR=${TACS_DIR}/src/constitutive

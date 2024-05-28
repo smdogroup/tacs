@@ -24,6 +24,7 @@ constraints of the stiffened panels.
 // =============================================================================
 #include "TACSBladeStiffenedShellConstitutive.h"
 #include "TACSGaussianProcessModel.h"
+#include "TACSPanelGPs.h"
 #include "TacsUtilities.h"
 
 // =============================================================================
@@ -137,12 +138,11 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param panelWidth Panel Width value
    * @param panelWidthNum Panel Width design variable number
    * @param flangeFraction Stiffener base width as a fraction of the stiffener
-   * @param TACSAxialGaussianProcessModel an axial gaussian process model (if
-   * null closed-form solution is used)
-   * @param TACSShearGaussianProcessModel a shear gaussian process model (if
-   * null closed-form solution is used)
-   * @param TACSCripplingGaussianProcessModel a crippling gaussian process model
-   * (if null closed-form solution is used) buckling constraints height
+   * @param panelGPs PanelGP object (one for each TACS component) that contains
+   * the GP objects or None if using CF
+   * @param CFshearMode int toggle to change method for closed-form shear mode
+   * [1 - all AR most general, 2 - high AR approx, 3 - smeared stiffener (TBD on
+   * 3)]
    */
   TACSGPBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* panelPly, TACSOrthotropicPly* stiffenerPly,
@@ -154,10 +154,8 @@ class TACSGPBladeStiffenedShellConstitutive
       TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
       TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
       int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-      TacsScalar flangeFraction = 1.0,
-      TACSAxialGaussianProcessModel* axialGP = nullptr,
-      TACSShearGaussianProcessModel* shearGP = nullptr,
-      TACSCripplingGaussianProcessModel* cripplingGP = nullptr);
+      TacsScalar flangeFraction = 1.0, TACSPanelGPs* panelGPs = nullptr,
+      int CFshearMode = 1);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -201,9 +199,27 @@ class TACSGPBladeStiffenedShellConstitutive
   // ==============================================================================
 
   // get the three Gaussian Process model pointers
-  TACSAxialGaussianProcessModel* getAxialGP() { return axialGP; }
-  TACSShearGaussianProcessModel* getShearGP() { return shearGP; }
-  TACSCripplingGaussianProcessModel* getCripplingGP() { return cripplingGP; }
+  TACSAxialGaussianProcessModel* getAxialGP() {
+    if (this->panelGPs) {
+      return this->panelGPs->getAxialGP();
+    } else {
+      return nullptr;
+    }
+  }
+  TACSShearGaussianProcessModel* getShearGP() {
+    if (this->panelGPs) {
+      return this->panelGPs->getShearGP();
+    } else {
+      return nullptr;
+    }
+  }
+  TACSCripplingGaussianProcessModel* getCripplingGP() {
+    if (this->panelGPs) {
+      return this->panelGPs->getCripplingGP();
+    } else {
+      return nullptr;
+    }
+  }
 
   // Retrieve the global design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -895,10 +911,8 @@ class TACSGPBladeStiffenedShellConstitutive
   // Attributes
   // ==============================================================================
 
-  // Machine learning Gaussian Process models
-  TACSAxialGaussianProcessModel* axialGP;
-  TACSShearGaussianProcessModel* shearGP;
-  TACSCripplingGaussianProcessModel* cripplingGP;
+  // Machine learning Gaussian Process models stored in panel GP class
+  TACSPanelGPs* panelGPs;
 
   // --- Design variable values ---
   TacsScalar panelWidth;  ///< Panel width
@@ -915,6 +929,9 @@ class TACSGPBladeStiffenedShellConstitutive
   // panel stress, stiffener stress, global buckling, local buckling, stiffener
   // crippling
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
+
+  // different mode for computing the shear closed form solution
+  int CFshearMode;
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't
