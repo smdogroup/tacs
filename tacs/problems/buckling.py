@@ -801,7 +801,7 @@ class BucklingProblem(TACSProblem):
         elif isinstance(states, np.ndarray):
             states[:] = eigVector.getArray()
         return eigVal, eigVector.getArray()
-    
+
     def getModalError(self, index):
         """
         Return the error associated with a particular mode
