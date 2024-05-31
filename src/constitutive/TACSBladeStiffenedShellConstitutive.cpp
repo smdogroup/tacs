@@ -759,7 +759,7 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   // correct)
   this->addPanelStressDVSens(scale, strain, psi, &dfdx[this->panelDVStartNum]);
 
-  // Transform the psi vector the same way we do for stains
+  // Transform the psi vector the same way we do for strains
   TacsScalar stiffenerPsi[TACSBeamConstitutive::NUM_STRESSES];
   this->transformStrain(psi, stiffenerPsi);
 
@@ -879,6 +879,13 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
   this->evalStress(0, NULL, NULL, e, stress);
   fails[3] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
 
+  // --- Stiffener column buckling ---
+  TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+  // The first component of the stiffener stress is the axial force
+  TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
+  fails[4] = -stiffenerStress[0] / fCrit;
+
   return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
 }
 
@@ -945,6 +952,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
       -stress[0], N1CritGlobal, stress[2], N12CritGlobal, &N1GlobalSens,
       &N1CritGlobalSens, &N12GlobalSens, &N12CritGlobalSens);
 
+  // --- Stiffener column buckling ---
+  TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+  TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
+  fails[4] = -stiffenerStress[0] / fCrit;
+
   // Compute the sensitivity of the aggregate failure value to the individual
   // failure mode values
   TacsScalar fail =
@@ -975,6 +988,9 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
   sens[3] += N1GlobalSens * -B[0] + N12GlobalSens * B[2];
   sens[4] += N1GlobalSens * -B[1] + N12GlobalSens * B[4];
   sens[5] += N1GlobalSens * -B[2] + N12GlobalSens * B[5];
+
+  // Stiffener column buckling
+  this->addStiffenerColumnBucklingStrainSens(dKSdf[4], fCrit, sens);
 
   return fail;
 }
@@ -1198,6 +1214,16 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
         scale * (N12CritSens[4] * dfdN12CritLocal +
                  N1CritSens[4] * dfdN1CritLocal + globalBucklingspSens);
   }
+
+  // --- Stiffener column buckling ---
+  TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+  const TacsScalar columnBucklingLoad =
+      this->computeStiffenerColumnBucklingLoad();
+  const TacsScalar stiffenerAxialLoad = -stiffenerStress[0];
+  this->addStiffenerColumnBucklingDVSens(dKSdf[4] * scale, strain,
+                                         stiffenerStrain, stiffenerAxialLoad,
+                                         columnBucklingLoad, dfdx);
 }
 
 // ==============================================================================
@@ -1324,8 +1350,6 @@ void TACSBladeStiffenedShellConstitutive::transformStrain(
 
 void TACSBladeStiffenedShellConstitutive::transformStrainSens(
     const TacsScalar stiffenerStrainSens[], TacsScalar panelStrainSens[]) {
-  memset(panelStrainSens, 0,
-         TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
   TacsScalar z =
       this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
@@ -2345,7 +2369,11 @@ void TACSBladeStiffenedShellConstitutive::
 }
 
 void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
-  const TacsScalar eps = 1e-6;
+#ifdef TACS_USE_COMPLEX
+  const double eps = 1e-200;
+#else
+  const double eps = 1e-6;
+#endif
   // Get the number of DVs
   int num_dvs = this->getDesignVars(0, 0, NULL);
   TacsScalar* DV0 = new TacsScalar[num_dvs];
@@ -2380,7 +2408,7 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
          TacsRealPart(psSens[2]));
   TacsScalar D1Pert, D2Pert, D3Pert;
 #ifdef TACS_USE_COMPLEX
-  DVPert[this->stiffenerPitchLocalNum] += TacsScalar(0.0, 1e-200);
+  DVPert[this->stiffenerPitchLocalNum] += TacsScalar(0.0, eps);
 #else
   DVPert[this->stiffenerPitchLocalNum] += eps;
 #endif
@@ -2388,7 +2416,7 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
   this->computeCriticalGlobalBucklingStiffness(&D1Pert, &D2Pert, &D3Pert);
 
 #ifdef TACS_USE_COMPLEX
-  TacsScalar psSensFD = TacsImagPart(D1Pert) * 1e200;
+  TacsScalar psSensFD = TacsImagPart(D1Pert) / eps;
 #else
   TacsScalar psSensFD = (D1Pert - D1) / eps;
 #endif
@@ -2400,7 +2428,7 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
   printf("       FD: D1sens = % 011.7e, ", TacsRealPart(psSensFD));
 
 #ifdef TACS_USE_COMPLEX
-  psSensFD = TacsImagPart(D2Pert) * 1e200;
+  psSensFD = TacsImagPart(D2Pert) / eps;
 #else
   psSensFD = (D2Pert - D2) / eps;
 #endif
@@ -2851,6 +2879,137 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
 
   return (fabs(dfdN1RelError) < tol && fabs(dfdN1CritRelError) < tol &&
           fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
+}
+
+TacsScalar
+TACSBladeStiffenedShellConstitutive::computeStiffenerColumnBucklingLoad() {
+  TacsScalar E, G, Izz;
+  this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
+                                this->stiffenerPlyFracs, &E, &G);
+  Izz = this->computeStiffenerIzz();
+  return this->computeColumnBucklingLoad(E, Izz, this->panelLength);
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingLoadDVSens(
+    const TacsScalar scale, TacsScalar dfdx[]) {
+  // First compute the sensitivity of the critical load to the E, I and L values
+  // of the stiffener
+  TacsScalar E, G, Izz;
+  this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
+                                this->stiffenerPlyFracs, &E, &G);
+  Izz = this->computeStiffenerIzz();
+  TacsScalar dFdE, dFdI, dFdL;
+  this->computeColumnBucklingLoadSens(E, Izz, this->panelLength, dFdE, dFdI,
+                                      dFdL);
+
+  // Now convert those sensitivities into sensitivities with respect to the DVs
+  // Beam length contributions (only relevant DV is panel length)
+  if (this->panelLengthNum >= 0) {
+    dfdx[this->panelLengthLocalNum] += scale * dFdL;
+  }
+
+  // Moment of inertia contributions (only relevant DVs are stiffener height
+  // and thickness)
+  TacsScalar dIzzdt, dIzzdh;
+  this->computeStiffenerIzzSens(dIzzdt, dIzzdh);
+  if (this->stiffenerHeightNum >= 0) {
+    dfdx[this->stiffenerHeightLocalNum] += scale * dFdI * dIzzdh;
+  }
+  if (this->stiffenerThickNum >= 0) {
+    dfdx[this->stiffenerThickLocalNum] += scale * dFdI * dIzzdt;
+  }
+
+  // Young's modulus contributions (only relevant DVs are stiffener ply
+  // fractions)
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    if (this->stiffenerPlyFracNums[ii] >= 0) {
+      int index = this->stiffenerPlyFracLocalNums[ii];
+
+      TacsScalar* Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
+
+      TacsScalar dEdx = Q[0] - (Q[1] * Q[1]) / Q[3];
+      dfdx[index] += scale * dFdE * dEdx;
+    }
+  }
+}
+
+TacsScalar TACSBladeStiffenedShellConstitutive::computeColumnBucklingLoad(
+    const TacsScalar E, const TacsScalar I, const TacsScalar L) {
+  return M_PI * M_PI * E * I / (L * L);
+}
+
+TacsScalar TACSBladeStiffenedShellConstitutive::computeColumnBucklingLoadSens(
+    const TacsScalar E, const TacsScalar I, const TacsScalar L,
+    TacsScalar& dFdE, TacsScalar& dFdI, TacsScalar& dFdL) {
+  const double pi2 = M_PI * M_PI;
+  const TacsScalar L2inv = 1.0 / (L * L);
+  const TacsScalar F = pi2 * E * I * L2inv;
+  dFdE = pi2 * I * L2inv;
+  dFdI = pi2 * E * L2inv;
+  dFdL = -2.0 * F / L;
+  return F;
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingStrainSens(
+    const TacsScalar scale, const TacsScalar C[], const TacsScalar fCrit,
+    TacsScalar sens[]) {
+  // First compute sensitivity with respect to beam strains
+  TacsScalar stiffenerStrainSens[TACSBeamConstitutive::NUM_STRESSES],
+      shellStrainSens[this->NUM_STRESSES];
+  memset(stiffenerStrainSens, 0,
+         TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
+
+  stiffenerStrainSens[0] = -C[0] * scale / fCrit;
+
+  // Now transform sensitivity to be in terms of shell strains
+  this->transformStrainSens(stiffenerStrainSens, shellStrainSens);
+  for (int ii = 0; ii < this->NUM_STRESSES; ii++) {
+    sens[ii] += shellStrainSens[ii];
+  }
+}
+void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingStrainSens(
+    const TacsScalar scale, const TacsScalar fCrit, TacsScalar sens[]) {
+  int n = TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES;
+  TacsScalar C[n];
+  memset(C, 0, n * sizeof(TacsScalar));
+  this->computeStiffenerStiffness(C);
+  this->addStiffenerColumnBucklingStrainSens(scale, C, fCrit, sens);
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingStrainSens(
+    const TacsScalar scale, TacsScalar sens[]) {
+  TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
+  this->addStiffenerColumnBucklingStrainSens(scale, fCrit, sens);
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingDVSens(
+    const TacsScalar scale, const TacsScalar shellStrain[],
+    const TacsScalar stiffenerStrain[], const TacsScalar stiffenerAxialLoad,
+    const TacsScalar fCrit, TacsScalar dfdx[]) {
+  // F = stiffenerAxialLoad / fCrit
+  // Using the Quotient rule:
+  // dF/dx =  1/fCrit * dS11/dx - stiffenerAxialLoad/fCrit^2 * dfCrit/dx
+
+  // First we add the 1/fCrit * dS11/dx term
+  // We need to consider both the direct dependence of the stiffener stress on
+  // the DVs, and also the dependence of the stiffener stress on the stiffener
+  // centroid strains, which depend on the DVS:
+  // psi^T dS/dx = psi^T pS/px + psi^T pS/pe * dstiffenerStrain/dx
+  // = psi^T pS/px + C * psi * d/dx(Te) * shellStrain
+  TacsScalar psi[TACSBeamConstitutive::NUM_STRESSES];
+  memset(psi, 0, TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
+  psi[0] = 1.0;
+  this->addStiffenerStressDVSens(-scale / fCrit, stiffenerStrain, psi,
+                                 &dfdx[this->stiffenerDVStartNum]);
+
+  TacsScalar psiStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(psi, psiStress);
+  this->addStrainTransformProductDVsens(psiStress, shellStrain, -scale / fCrit,
+                                        dfdx);
+
+  // Now we add the - stiffenerAxialLoad/fCrit^2 * dfCrit/dx term
+  this->addStiffenerColumnBucklingLoadDVSens(
+      -scale * stiffenerAxialLoad / (fCrit * fCrit), dfdx);
 }
 
 // ==============================================================================

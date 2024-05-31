@@ -69,11 +69,13 @@ class ConstitutiveTest(unittest.TestCase):
             [
                 self.panelLength,
                 self.stiffenerPitch,
-                self.stiffenerHeight,
-                self.stiffenerThickness,
                 self.panelThickness,
             ]
             + list(self.panelPlyFracs)
+            + [
+                self.stiffenerHeight,
+                self.stiffenerThickness,
+            ]
             + list(self.stiffenerPlyFracs)
         )
         self.dvs = np.array(self.dvs, dtype=self.dtype)

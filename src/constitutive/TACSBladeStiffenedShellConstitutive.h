@@ -981,6 +981,95 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       const TacsScalar N12Crit, TacsScalar* N1Sens, TacsScalar* N1CritSens,
       TacsScalar* N12Sens, TacsScalar* N12CritSens);
 
+  /**
+   * @brief Compute the critical buckling load of the panel stiffeners
+   *
+   * @return TacsScalar
+   */
+  TacsScalar computeStiffenerColumnBucklingLoad();
+
+  /**
+   * @brief Add the sensitivity of the stiffener column buckling failure with
+   * respect to the DVs
+   *
+   * @param scale Scaling factor to apply to the sensitivities (e.g the
+   * sensitivity of the final output to the stiffener column buckling load)
+   * @param dfdx Array of DV sensitivities
+   */
+  void addStiffenerColumnBucklingLoadDVSens(const TacsScalar scale,
+                                            TacsScalar dfdx[]);
+
+  /**
+   * @brief Compute the critical column buckling load of a beam
+   *
+   * @param E Elastic modulus
+   * @param I Bending moment of inertia
+   * @param L Beam length
+   * @return TacsScalar Critical column buckling load
+   */
+  static TacsScalar computeColumnBucklingLoad(const TacsScalar E,
+                                              const TacsScalar I,
+                                              const TacsScalar L);
+
+  /**
+   * @brief Compute the sensitivity of the critical column buckling load of a
+   * beam w.r.t the it's stiffness and length
+   *
+   * @param E Elastic modulus
+   * @param I Bending moment of inertia
+   * @param L Beam length
+   * @param dFdE Sensitivity of the critical load w.r.t the elastic modulus
+   * @param dFdI Sensitivity of the critical load w.r.t the bending moment of
+   * inertia
+   * @param dFdL Sensitivity of the critical load w.r.t the beam length
+   * @return TacsScalar Critical column buckling load
+   */
+  static TacsScalar computeColumnBucklingLoadSens(
+      const TacsScalar E, const TacsScalar I, const TacsScalar L,
+      TacsScalar& dFdE, TacsScalar& dFdI, TacsScalar& dFdL);
+
+  /**
+   * @brief Add the sensitivity of the stiffener column buckling failure
+   * criteria with respect to the shell strains to an existing strain
+   * sensitivity vector
+   *
+   * @param scale Scaling factor to apply to the sensitivities (e.g the
+   * sensitivity of the final output to the stiffener column buckling
+   * failure criteria)
+   * @param C Stiffener stiffness matrix
+   * @param fCrit Critical column buckling load, as computed by
+   * `computeStiffenerColumnBucklingLoad`
+   * @param sens Array to add the sensitivity to, should be at least
+   * TACSShellConstitutive::NUM_STRESSES long
+   */
+  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
+                                            const TacsScalar C[],
+                                            const TacsScalar fCrit,
+                                            TacsScalar sens[]);
+  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
+                                            const TacsScalar fCrit,
+                                            TacsScalar sens[]);
+  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
+                                            TacsScalar sens[]);
+
+  /**
+   * @brief Add the sensitivity of the stiffener column buckling failure
+   * criteria with respect to the design variables to an existing strain
+   * sensitivity vector
+   *
+   * @param scale
+   * @param shellStrain
+   * @param stiffenerAxialLoad
+   * @param fCrit
+   * @param dfdx
+   */
+  void addStiffenerColumnBucklingDVSens(const TacsScalar scale,
+                                        const TacsScalar shellStrain[],
+                                        const TacsScalar stiffenerStrain[],
+                                        const TacsScalar stiffenerAxialLoad,
+                                        const TacsScalar fCrit,
+                                        TacsScalar dfdx[]);
+
   // ==============================================================================
   // Attributes
   // ==============================================================================
@@ -1069,6 +1158,13 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
-      3;                              ///< Number of entries in the ABar matrix
-  static const int NUM_FAILURES = 4;  ///< Number of failure modes
+      3;  ///< Number of entries in the ABar matrix
+  static const int NUM_FAILURES =
+      5;  ///< Number of failure modes, we have:
+          ///< 1. Panel material failure
+          ///< 2. Panel material failure
+          ///< 3. Local panel buckling (between stiffeners)
+          ///< 4. Global panel buckling
+          ///< 5. Stiffener column buckling
+          ///< 6. Stiffener crippling
 };
