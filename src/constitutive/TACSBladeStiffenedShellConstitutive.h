@@ -653,7 +653,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static void computeEffectiveModulii(const int numPlies,
                                       const TacsScalar QMats[],
                                       const TacsScalar plyFracs[],
-                                      TacsScalar* E, TacsScalar* G);
+                                      TacsScalar* const E, TacsScalar* const G);
 
   /**
    * @brief Compute the failure criterion for the stiffener in a given strain
@@ -795,8 +795,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @output D2 2-direction bending stiffness
    * @output D3 Twisting stiffness
    */
-  void computeCriticalGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
-                                              TacsScalar* D3);
+  void computeCriticalGlobalBucklingStiffness(TacsScalar* const D1,
+                                              TacsScalar* const D2,
+                                              TacsScalar* const D3);
 
   /**
    * @brief Compute the sensitivities of the panel + stiffener stiffness values
@@ -816,8 +817,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   void computeCriticalGlobalBucklingStiffnessSens(
       const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
-      TacsScalar* spSens, TacsScalar* tpSens, TacsScalar* hsSens,
-      TacsScalar* tsSens, TacsScalar QstiffSens[], TacsScalar QpanelSens[]);
+      TacsScalar* const spSens, TacsScalar* const tpSens,
+      TacsScalar* const hsSens, TacsScalar* const tsSens,
+      TacsScalar QstiffSens[], TacsScalar QpanelSens[]);
 
   /**
    * @brief Compute the critical axial load for the global buckling of the
@@ -869,9 +871,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeCriticalLocalAxialLoadSens(
       const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
-      const TacsScalar D66, const TacsScalar L, TacsScalar* D11Sens,
-      TacsScalar* D22Sens, TacsScalar* D12Sens, TacsScalar* D66Sens,
-      TacsScalar* LSens);
+      const TacsScalar D66, const TacsScalar L, TacsScalar* const D11Sens,
+      TacsScalar* const D22Sens, TacsScalar* const D12Sens,
+      TacsScalar* const D66Sens, TacsScalar* const LSens);
 
   /**
    * @brief Compute the critical shear load for either local or global buckling
@@ -942,8 +944,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeCriticalShearLoadSens(
       const TacsScalar D1, const TacsScalar D2, const TacsScalar D3,
-      const TacsScalar L, TacsScalar* D1Sens, TacsScalar* D2Sens,
-      TacsScalar* D3Sens, TacsScalar* LSens);
+      const TacsScalar L, TacsScalar* const D1Sens, TacsScalar* const D2Sens,
+      TacsScalar* const D3Sens, TacsScalar* const LSens);
 
   /**
    * @brief Compute the buckling failure criterion
@@ -978,8 +980,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar bucklingEnvelopeSens(
       const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
-      const TacsScalar N12Crit, TacsScalar* N1Sens, TacsScalar* N1CritSens,
-      TacsScalar* N12Sens, TacsScalar* N12CritSens);
+      const TacsScalar N12Crit, TacsScalar* const N1Sens,
+      TacsScalar* const N1CritSens, TacsScalar* const N12Sens,
+      TacsScalar* const N12CritSens);
 
   /**
    * @brief Compute the critical buckling load of the panel stiffeners
