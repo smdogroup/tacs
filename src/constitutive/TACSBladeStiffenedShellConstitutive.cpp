@@ -1878,7 +1878,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerStiffness(
 
 void TACSBladeStiffenedShellConstitutive::computeEffectiveModulii(
     const int numPlies, const TacsScalar QMats[], const TacsScalar plyFracs[],
-    TacsScalar* E, TacsScalar* G) {
+    TacsScalar* const E, TacsScalar* const G) {
   *E = 0.;
   *G = 0.;
   for (int plyNum = 0; plyNum < numPlies; plyNum++) {
@@ -2186,8 +2186,9 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
 // ==============================================================================
 
 void TACSBladeStiffenedShellConstitutive::
-    computeCriticalGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
-                                           TacsScalar* D3) {
+    computeCriticalGlobalBucklingStiffness(TacsScalar* const D1,
+                                           TacsScalar* const D2,
+                                           TacsScalar* const D3) {
   // Compute the Q matrices for the panel and stiffener
   TacsScalar QPanel[this->NUM_Q_ENTRIES], QStiffener[this->NUM_Q_ENTRIES];
   this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
@@ -2244,8 +2245,9 @@ void TACSBladeStiffenedShellConstitutive::
 void TACSBladeStiffenedShellConstitutive::
     computeCriticalGlobalBucklingStiffnessSens(
         const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
-        TacsScalar* psSens, TacsScalar* tpSens, TacsScalar* hsSens,
-        TacsScalar* tsSens, TacsScalar QpanelSens[], TacsScalar QstiffSens[]) {
+        TacsScalar* const psSens, TacsScalar* const tpSens,
+        TacsScalar* const hsSens, TacsScalar* const tsSens,
+        TacsScalar QpanelSens[], TacsScalar QstiffSens[]) {
   // Zero the sensitivities
   *tpSens = 0.0;
   *psSens = 0.0;
@@ -2676,9 +2678,9 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
 TacsScalar
 TACSBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
-    const TacsScalar D66, const TacsScalar L, TacsScalar* D11Sens,
-    TacsScalar* D22Sens, TacsScalar* D12Sens, TacsScalar* D66Sens,
-    TacsScalar* LSens) {
+    const TacsScalar D66, const TacsScalar L, TacsScalar* const D11Sens,
+    TacsScalar* const D22Sens, TacsScalar* const D12Sens,
+    TacsScalar* const D66Sens, TacsScalar* const LSens) {
   double pi2 = M_PI * M_PI;
   TacsScalar L2 = L * L;
   TacsScalar root = sqrt(D11 * D22);
@@ -2717,8 +2719,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
 
 TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoadSens(
     const TacsScalar D1, const TacsScalar D2, const TacsScalar D3,
-    const TacsScalar L, TacsScalar* D1Sens, TacsScalar* D2Sens,
-    TacsScalar* D3Sens, TacsScalar* LSens) {
+    const TacsScalar L, TacsScalar* const D1Sens, TacsScalar* const D2Sens,
+    TacsScalar* const D3Sens, TacsScalar* const LSens) {
   TacsScalar L2 = L * L;
   TacsScalar L3 = L2 * L;
   TacsScalar D32 = D3 * D3;
@@ -2838,12 +2840,13 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelope(
   return 0.5 * (N1Term + root);
 }
 
-// Compute the sensitivity of the buckling failure criterion w.r.t the loads and
-// critical loads
+// Compute the sensitivity of the buckling failure criterion w.r.t the loads
+// and critical loads
 TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
     const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
-    const TacsScalar N12Crit, TacsScalar* dfdN1, TacsScalar* dfdN1Crit,
-    TacsScalar* dfdN12, TacsScalar* dfdN12Crit) {
+    const TacsScalar N12Crit, TacsScalar* const dfdN1,
+    TacsScalar* const dfdN1Crit, TacsScalar* const dfdN12,
+    TacsScalar* const dfdN12Crit) {
   TacsScalar N1Term = N1 / N1Crit;
   TacsScalar N12Term = N12 / N12Crit;
   TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
