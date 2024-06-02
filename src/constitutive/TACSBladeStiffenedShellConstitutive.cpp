@@ -1891,21 +1891,24 @@ void TACSBladeStiffenedShellConstitutive::computeEffectiveModulii(
   // code above, but for some reason (probably related to floating point
   // arithmetic), it produces results that don't quite match complex step
   // derivatives w.r.t the ply fractions
-  /*
-  TacsScalar Q[this->NUM_Q_ENTRIES], ABar[this->NUM_ABAR_ENTRIES];
+  // TacsScalar Q[NUM_Q_ENTRIES];  //, ABar[this->NUM_ABAR_ENTRIES];
+  // for (int ii = 0; ii < NUM_Q_ENTRIES; ii++) {
+  //   Q[ii] = 0.0;
+  // }
+  // for (int plyNum = 0; plyNum < numPlies; plyNum++) {
+  //   const TacsScalar* Qply = &(QMats[plyNum * NUM_Q_ENTRIES]);
+  //   for (int ii = 0; ii < NUM_Q_ENTRIES; ii++) {
+  //     Q[ii] += plyFracs[plyNum] * Qply[ii];
+  //   }
+  // }
 
-  this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,
-                                this->stiffenerAbarMats,
-                                this->stiffenerPlyFracs, Q, ABar);
-
-  // Compute the effective elastic and shear moduli
-  TacsScalar Q11 = Q[0];
-  TacsScalar Q12 = Q[1];
-  TacsScalar Q22 = Q[3];
-  TacsScalar Q66 = Q[5];
-  E = Q11 - Q12 * Q12 / Q22;
-  G = Q66;
-  */
+  // // Compute the effective elastic and shear moduli
+  // TacsScalar Q11 = Q[0];
+  // TacsScalar Q12 = Q[1];
+  // TacsScalar Q22 = Q[3];
+  // TacsScalar Q66 = Q[5];
+  // *E = Q11 - Q12 * Q12 / Q22;
+  // *G = Q66;
 }
 
 // Compute the failure criteria for the stiffener
@@ -2221,14 +2224,15 @@ void TACSBladeStiffenedShellConstitutive::
 
   // --- 2-direction bending stiffness ---
   // TacsScalar D2Panel = (tp3 * QPanel[3]) / 12.0;
-  // TacsScalar D2Stiff = ((tp + 0.5 * ts) * (tp + 0.5 * ts) * (tp + 0.5 * ts) *
+  // TacsScalar D2Stiff = ((tp + 0.5 * ts) * (tp + 0.5 * ts) * (tp + 0.5 * ts)
+  // *
   //                       (QPanel[3] + QStiffener[3])) /
   //                      6.0;
   // *D2 = ps / ((ps - hs * kf) / D2Panel + (hs * kf) / D2Stiff);
   // NOTE: I am ignoring the contribution of the stiffener flange to the
   // 2-direction bending stiffness so that the stiffness used for the buckling
-  // calculation is consistent with the stiffness matrix. Not sure whether this
-  // is a good idea or not.
+  // calculation is consistent with the stiffness matrix. Not sure whether
+  // this is a good idea or not.
   *D2 = tp3 / 12.0 * QPanel[3];
 
   // --- Twisting stiffness ---
@@ -2287,8 +2291,8 @@ void TACSBladeStiffenedShellConstitutive::
   TacsScalar zns2 = (zn - zs) * (zn - zs);
   TacsScalar pInv = 1.0 / ps;
 
-  // D1 = (E1p * (Ip + Ap * zn * zn) + E1s * (Is + As * (zn - zs) * (zn - zs)))
-  // / ps;
+  // D1 = (E1p * (Ip + Ap * zn * zn) + E1s * (Is + As * (zn - zs) * (zn -
+  // zs))) / ps;
 
   TacsScalar E1pSens = dfdD1 * ((Ap * zn2 + Ip) / ps);
   TacsScalar IpSens = dfdD1 * (E1p / ps);
@@ -2822,7 +2826,8 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
       " LSens = % 011.7e |  LSensFD = % 011.7e |  LSensRelError = % 011.7e\n",
       TacsRealPart(LSens), TacsRealPart(LSensFD), TacsRealPart(LSensRelError));
   printf(
-      "------------------------------------------------------------------------"
+      "----------------------------------------------------------------------"
+      "--"
       "\n");
 
   return fabs(TacsRealPart(D1SensRelError)) < tol &&
@@ -2904,7 +2909,8 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
 
   printf("testBucklingEnvelopeSens results:");
   printf(
-      "N1 = % 011.7e, N1Crit = % 011.7e, N12 = % 011.7e, N12Crit = % 011.7e\n",
+      "N1 = % 011.7e, N1Crit = % 011.7e, N12 = % 011.7e, N12Crit = % "
+      "011.7e\n",
       TacsRealPart(N1), TacsRealPart(N1Crit), TacsRealPart(N12),
       TacsRealPart(N12Crit));
   printf("f: % 011.7e\n", f);
@@ -2931,13 +2937,14 @@ TACSBladeStiffenedShellConstitutive::computeStiffenerColumnBucklingLoad() {
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
   Izz = this->computeStiffenerIzz();
-  return this->computeColumnBucklingLoad(E, Izz, this->panelLength);
+  TacsScalar fCrit = this->computeColumnBucklingLoad(E, Izz, this->panelLength);
+  return fCrit;
 }
 
 void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingLoadDVSens(
     const TacsScalar scale, TacsScalar dfdx[]) {
-  // First compute the sensitivity of the critical load to the E, I and L values
-  // of the stiffener
+  // First compute the sensitivity of the critical load to the E, I and L
+  // values of the stiffener
   TacsScalar E, G, Izz;
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
@@ -2946,8 +2953,8 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingLoadDVSens(
   this->computeColumnBucklingLoadSens(E, Izz, this->panelLength, dFdE, dFdI,
                                       dFdL);
 
-  // Now convert those sensitivities into sensitivities with respect to the DVs
-  // Beam length contributions (only relevant DV is panel length)
+  // Now convert those sensitivities into sensitivities with respect to the
+  // DVs Beam length contributions (only relevant DV is panel length)
   if (this->panelLengthNum >= 0) {
     dfdx[this->panelLengthLocalNum] += scale * dFdL;
   }
