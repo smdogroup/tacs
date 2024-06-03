@@ -461,7 +461,7 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   static inline TacsScalar computeGeneralizedPoissonsRatio(
       const TacsScalar D12, const TacsScalar D66) {
-    return (D12 + 2.0 * D66) / D12;
+    return D12 / (D12 + 2.0 * D66);
   }
 
   /**
@@ -528,6 +528,20 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D11 the D11 stiffness of the plate
    */
   TacsScalar computeStiffenerStiffnessRatio(const TacsScalar D11);
+
+  /**
+   *
+   * @brief Return the bending stiffness of an individual stiffener
+   *
+   **/
+  TacsScalar computeStiffenerBendingStiffness();
+
+  /**
+   *
+   * @brief Returns the 1x2 Jacobian of the stiffener bending stiffness computation in 2 separate scalars
+   *
+   **/
+  TacsScalar computeStiffenerBendingStiffnessSens(TacsScalar& sthickSens, TacsScalar& sheightSens);
 
   /**
    * @brief Compute the sensitivities of the non-dimensional  stiffener-to-panel
