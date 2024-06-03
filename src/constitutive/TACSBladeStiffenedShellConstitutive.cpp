@@ -886,7 +886,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
   TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
   fails[4] = -stiffenerStress[0] / fCrit;
 
-  return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
+  // --- Stiffener crippling ---
+  fails[5] = this->computeStiffenerCrippling(stiffenerStrain);
+
+  TacsScalar ksFail = ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
+
+  return ksFail;
 }
 
 // Evaluate the derivative of the failure criteria w.r.t. the strain
@@ -3061,6 +3066,122 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingDVSens(
   // Now we add the - stiffenerAxialLoad/fCrit^2 * dfCrit/dx term
   this->addStiffenerColumnBucklingLoadDVSens(
       -scale * stiffenerAxialLoad / (fCrit * fCrit), dfdx);
+}
+
+TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
+    const TacsScalar stiffenerStrain[]) {
+  // We use the semi-empirical formula for one-edge-free crippling described in
+  // the DoD composite materials handbook Volume 3 (a.k.a MIL-HDBK-17-3F)
+  // (available at
+  // http://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_17_3F_216/)
+  //
+  // The formula is: F_crippling / F_ult = 1.63*(b/t)^-0.717
+  // Where:
+  // F_crippling is the crippling load
+  // F_ult is the ultimate compressive load
+  // b is the flange width
+  // t is the flange thickness
+  //
+  // Here we compute the ultimate compressive load using the same criteria used
+  // to compute the stiffener material failure value but using on the axial
+  // strain component. This gives:
+  // SR_Crippling = SR_comp/1.63 * (b/t)^0.717
+  // Where SR_Crippling is the crippling strength ratio
+  // SR_comp is the strength ratio computed using only the compressive component
+  // of the strain
+
+  memset(this->stiffenerPlyFailValues, 0,
+         2 * this->numStiffenerPlies * sizeof(TacsScalar));
+
+  // We compute the crippling criteria for both the web and
+  // the flange of the stiffener.
+  TACSOrthotropicPly* ply = this->stiffenerPly;
+  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
+
+  TacsScalar flangeCrippleFactor =
+      pow(0.5 * this->flangeFraction * this->stiffenerHeight /
+              this->stiffenerThick,
+          0.717) /
+      1.63;
+
+  TacsScalar plyStrain[3];
+  memset(plyStrain, 0, 3 * sizeof(TacsScalar));
+  plyStrain[0] = stiffenerStrain[0] + zFlange * stiffenerStrain[2];
+  bool flangeInTension = TacsRealPart(plyStrain[0]) > 0.0;
+  if (flangeInTension) {
+    plyStrain[0] *= -1.0;
+    flangeCrippleFactor *= -1.0;
+  }
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    this->stiffenerPlyFailValues[ii] =
+        ply->failure(this->stiffenerPlyAngles[ii], plyStrain) *
+        flangeCrippleFactor;
+    printf("ply flange fail %d: %e\n", ii,
+           TacsRealPart(this->stiffenerPlyFailValues[ii]));
+  }
+
+  // For the stiffener web, we will use the method described by Kassapoglou to
+  // account for the variation in tension/compression over the height of the
+  // web. (See section 8.5.3 of Kassapoglou's "Design and Analysis of Composite
+  // Structures with Applications to Aerospace Structures").
+  // The basic steps are:
+  // 1. Compute the axial strain at the top and bottom of the web
+  // 2. Consider only the portion of the web that is in compression
+  // 3. Use the length of that region as b
+  // 4. Use the average stress/strain in that region to compute the stress ratio
+  // 5. Use the crippling formula to compute the crippling strength ratio as
+  // usual
+  TacsScalar zWebTop =
+      -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
+  TacsScalar zWebBottom = -this->stiffenerThick - zCentroid;
+  TacsScalar axStrainTop = stiffenerStrain[0] + zWebTop * stiffenerStrain[2];
+  TacsScalar axStrainBottom =
+      stiffenerStrain[0] + zWebBottom * stiffenerStrain[2];
+  TacsScalar minStrain, maxStrain;
+  if (TacsRealPart(axStrainTop) > TacsRealPart(axStrainBottom)) {
+    maxStrain = axStrainTop;
+    minStrain = axStrainBottom;
+  } else {
+    maxStrain = axStrainBottom;
+    minStrain = axStrainTop;
+  }
+  printf("\n\naxStrainTop: %e\naxStrainBottom: %e\n", TacsRealPart(axStrainTop),
+         TacsRealPart(axStrainBottom));
+  printf("minStrain: %e\nmaxStrain: %e\n", TacsRealPart(minStrain),
+         TacsRealPart(maxStrain));
+
+  if (TacsRealPart(minStrain) < -1e-13) {
+    TacsScalar compressiveLength;
+    if (TacsRealPart(maxStrain) > 0.0) {
+      compressiveLength =
+          this->stiffenerHeight * minStrain / (minStrain - maxStrain);
+      maxStrain = 0.0;
+    } else {
+      compressiveLength = this->stiffenerHeight;
+    }
+    TacsScalar webCrippleFactor =
+        pow(compressiveLength / this->stiffenerThick, 0.717) / 1.63;
+
+    TacsScalar averageStrain = 0.5 * (maxStrain + minStrain);
+    printf("compressiveLength: %e\nwebCrippleFactor: %e\n",
+           TacsRealPart(compressiveLength), TacsRealPart(webCrippleFactor));
+    plyStrain[0] = averageStrain;
+    for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+      this->stiffenerPlyFailValues[ii + this->numStiffenerPlies] =
+          ply->failure(this->stiffenerPlyAngles[ii], plyStrain) *
+          webCrippleFactor;
+      printf("ply web fail %d: %e\n", ii,
+             TacsRealPart(
+                 this->stiffenerPlyFailValues[ii + this->numStiffenerPlies]));
+    }
+  }
+
+  TacsScalar fail = ksAggregation(this->stiffenerPlyFailValues,
+                                  2 * this->numStiffenerPlies, this->ksWeight);
+  printf("stiffener crippling fail: %e\n", TacsRealPart(fail));
+
+  return fail;
 }
 
 // ==============================================================================

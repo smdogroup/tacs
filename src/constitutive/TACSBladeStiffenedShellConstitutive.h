@@ -1073,6 +1073,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                         const TacsScalar fCrit,
                                         TacsScalar dfdx[]);
 
+  TacsScalar computeStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+
   // ==============================================================================
   // Attributes
   // ==============================================================================
@@ -1163,7 +1165,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static const int NUM_ABAR_ENTRIES =
       3;  ///< Number of entries in the ABar matrix
   static const int NUM_FAILURES =
-      5;  ///< Number of failure modes, we have:
+      6;  ///< Number of failure modes, we have:
           ///< 1. Panel material failure
           ///< 2. Panel material failure
           ///< 3. Local panel buckling (between stiffeners)
