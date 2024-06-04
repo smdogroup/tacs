@@ -1073,7 +1073,17 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                         const TacsScalar fCrit,
                                         TacsScalar dfdx[]);
 
+  /**
+   * @brief Compute the strength ratio with respect to stiffener crippling
+   *
+   * @param stiffenerStrain Stiffener centroid beam strains
+   * @return TacsScalar Strength ratio
+   */
   TacsScalar computeStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+
+  void addStiffenerCripplingStrainSens(const TacsScalar scale,
+                                       const TacsScalar stiffenerStrain[],
+                                       TacsScalar sens[]);
 
   // ==============================================================================
   // Attributes
