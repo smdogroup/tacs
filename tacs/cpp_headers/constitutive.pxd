@@ -205,6 +205,7 @@ cdef extern from "TACSPanelGPs.h":
             TACSAxialGaussianProcessModel*, # axial GP
             TACSShearGaussianProcessModel*, # shear GP
             TACSCripplingGaussianProcessModel*, # crippling GP
+            bool,
         )
 
 cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":

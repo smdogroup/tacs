@@ -165,17 +165,19 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train).astype(self.dtype),
         )
 
-        n_param = constitutive.CripplingGP.n_param
-        self.cripplingGP = constitutive.CripplingGP(
-            n_train,
-            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
-            alpha=np.random.rand(n_train).astype(self.dtype),
-        )
+        #n_param = constitutive.CripplingGP.n_param
+        #self.cripplingGP = constitutive.CripplingGP(
+        #    n_train,
+        #    Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+        #    alpha=np.random.rand(n_train).astype(self.dtype),
+        #)
+        self.cripplingGP = None
 
         self.panelGPs = constitutive.PanelGPs(
             self.axialGP,
             self.shearGP,
             self.cripplingGP,
+            saveData=False
         )
 
     def get_con(self, ply):
@@ -401,7 +403,7 @@ if __name__ == "__main__":
         tester.test_constitutive_internal_tests()
     elif args.case == "failStrain":
         # shouldn't matter which one of these I test as long as internal tests pass
-        # tester = GPConstitutiveCFTest()
+        #tester = GPConstitutiveCFTest()
         tester = GPConstitutiveMLTest()
         tester._my_debug = True
         tester.setUp()

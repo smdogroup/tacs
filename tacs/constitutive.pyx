@@ -1211,6 +1211,7 @@ cdef class PanelGPs:
         AxialGP axialGP = None, 
         ShearGP shearGP = None,
         CripplingGP cripplingGP = None,
+        bool saveData = True,
     ):   
         # make null ptrs for GPs if not defined and store them in this class too
         cdef TACSAxialGaussianProcessModel *axial_gp_ptr = NULL
@@ -1227,6 +1228,7 @@ cdef class PanelGPs:
             axial_gp_ptr,
             shear_gp_ptr,
             crippling_gp_ptr,
+            saveData,
         )
 
     @classmethod
@@ -1236,6 +1238,7 @@ cdef class PanelGPs:
         AxialGP axialGP = None, 
         ShearGP shearGP = None,
         CripplingGP cripplingGP = None,
+        bool saveData = True,
         ):
         """
         make the dictionary of PanelGP objects from the list of TACS components
@@ -1245,7 +1248,8 @@ cdef class PanelGPs:
             _dict[comp_name] = cls(
                 axialGP,
                 shearGP,
-                cripplingGP
+                cripplingGP,
+                saveData
             )
         return _dict
 

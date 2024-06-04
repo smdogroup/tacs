@@ -38,7 +38,8 @@ class TACSPanelGPs : public TACSObject {
    */
   TACSPanelGPs(TACSAxialGaussianProcessModel* axialGP,
                TACSShearGaussianProcessModel* shearGP,
-               TACSCripplingGaussianProcessModel* cripplingGP);
+               TACSCripplingGaussianProcessModel* cripplingGP,
+	       bool saveData);
   ~TACSPanelGPs();
 
   // predict the test data and sens using the GPs
@@ -68,6 +69,7 @@ class TACSPanelGPs : public TACSObject {
  protected:
   const int n_save = 5;
   int n_save_adj = 20;  // 5 * n_params rn
+  bool saveData;
 
   // saved forward data in this class
   TacsScalar* savedYtest;

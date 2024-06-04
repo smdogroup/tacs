@@ -107,7 +107,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
     const TacsScalar e[], TacsScalar fails[]) {
   // --- #0 - Panel material failure ---
   fails[0] = this->computePanelFailure(e);
-  // printf("panelAxialCompStrain = %.4e\n", -e[0]);
+  printf("panelAxialCompStrain = %.4e\n", -e[0]);
 
   // --- #1 - Stiffener material failure ---
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
@@ -150,9 +150,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // panel stress (closed-form instead for stiffener properties)
   TacsScalar globalAxialFail = -panelStress[0] / N1CritGlobal;
   TacsScalar globalShearFail = panelStress[2] / N12CritGlobal;
-  // printf("globalAxialFail = %.4e\n", globalAxialFail);
-  // printf("globalShearFail = %.4e\n", globalShearFail);
-  // printf("N11 panel = %.4e\n", -panelStress[0]);
+  printf("globalAxialFail = %.4e\n", globalAxialFail);
+  printf("globalShearFail = %.4e\n", globalShearFail);
+  printf("N11 panel = %.4e\n", -panelStress[0]);
 
   fails[2] = this->bucklingEnvelope(-panelStress[0], N1CritGlobal,
                                     panelStress[2], N12CritGlobal);
@@ -171,8 +171,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // load Nxy
   TacsScalar localAxialFail = -panelStress[0] / N1CritLocal;
   TacsScalar localShearFail = panelStress[2] / N12CritLocal;
-  // printf("local axial fail = %.4e\n", localAxialFail);
-  // printf("local shear fail = %.4e\n", localShearFail);
+  printf("local axial fail = %.4e\n", localAxialFail);
+  printf("local shear fail = %.4e\n", localShearFail);
 
   fails[3] = this->bucklingEnvelope(-panelStress[0], N1CritLocal,
                                     panelStress[2], N12CritLocal);
@@ -204,21 +204,21 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // Compute stiffener in plane load and crippling failure index
   TacsScalar A11s_beam;
   TacsScalar N1stiff = computeStiffenerInPlaneLoad(stiffenerStrain, &A11s_beam);
-  // printf("stiffStrain = %.4e\n", -stiffenerStrain[0]);
-  // printf("N1stiff = %.4e\n", N1stiff);
+  printf("stiffStrain = %.4e\n", -stiffenerStrain[0]);
+  printf("N1stiff = %.4e\n", N1stiff);
   //  TacsScalar N1stiff = 1.0;
   TacsScalar N1CritCrippling = computeStiffenerCripplingLoad(
       D11s, D22s, xiStiff, rho0Stiff, genPoiss, zetaStiff);
-  // printf("N1crippling = %.4e\n", N1CritCrippling);
+  printf("N1crippling = %.4e\n", N1CritCrippling);
   fails[4] = N1stiff / N1CritCrippling;
   // --- End of computeFailuresValues subsections ---
 
   // debug print all four failure values
-  // printf("fails[0] = %.4e\n", fails[0]);
-  // printf("fails[1] = %.4e\n", fails[1]);
-  // printf("fails[2] = %.4e\n", fails[2]);
-  // printf("fails[3] = %.4e\n", fails[3]);
-  // printf("fails[4] = %.4e\n", fails[4]);
+  printf("fails[0] = %.12e\n", fails[0]);
+  printf("fails[1] = %.12e\n", fails[1]);
+  printf("fails[2] = %.12e\n", fails[2]);
+  printf("fails[3] = %.12e\n", fails[3]);
+  printf("fails[4] = %.12e\n", fails[4]);
 
   // aggregate the failure across all 5 failures modes (0-4)
   return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
@@ -726,6 +726,13 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
   // 2,3,4 - backpropagate remaining DV sens into dfdx
   // --------------------------------------------------
 
+  printf("DVsens[0] = %.12e\n", DVsens[0]);
+  printf("DVsens[1] = %.12e\n", DVsens[1]);
+  printf("DVsens[2] = %.12e\n", DVsens[2]);
+  printf("DVsens[3] = %.12e\n", DVsens[3]);
+  printf("DVsens[4] = %.12e\n", DVsens[4]);
+  printf("DVsens[5] = %.12e\n", DVsens[5]);
+
   // recall DV sens [0 - panel length, 1 - stiff pitch, 2 - panel thick,
   //                 3 - stiff height, 4 - stiff thick, 5 - panel width]
 
@@ -924,9 +931,16 @@ int TACSGPBladeStiffenedShellConstitutive::setDesignVars(
     }
   }
 
+  printf("panelLength = %.8e\n", this->panelLength);
+  printf("panelThick = %.8e\n", this->panelThick);
+  printf("panelWidth = %.8e\n", this->panelWidth);
+  printf("stiffThick = %.8e\n", this->stiffenerThick);
+  printf("stiffHeight = %.8e\n", this->stiffenerHeight);
+
   // NOTE : this is a very important step => here we reset the save on all
   // computed GP models so they recalculate and compute their new values.
   if (this->panelGPs) {
+    printf("reset Saved data in setDesignVars\n");
     this->panelGPs->resetSavedData();
   }
 
@@ -1633,6 +1647,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     if (this->CFshearMode == 3) {
       // TBD on this one, compare to smeared-stiffener approach (limit of
       // gamma->infty I think?)
+      return 0.0;
+    } else {
       return 0.0;
     }
     // TBD add else statement and throw error if not one of these three or do
@@ -2656,12 +2672,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
+  this->panelGPs->resetSavedData();
   f0 = computeCriticalGlobalAxialLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6],
                                       x[7]);
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
+  this->panelGPs->resetSavedData();
   f2 = computeCriticalGlobalAxialLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6],
                                       x[7]);
 
@@ -2673,6 +2691,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
+  this->panelGPs->resetSavedData();
   computeCriticalGlobalAxialLoadSens(
       p_output, x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], &input_sens[0],
       &input_sens[1], &input_sens[2], &input_sens[3], &input_sens[4],
@@ -2730,12 +2749,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
     x[i] = x0[i] - p_input[i] * epsilon;
   }
   this->stiffenerPitch = x0[2] - p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
   f0 = computeCriticalLocalAxialLoad(x[0], x[1], x[3], x[4], x[5]);
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
   this->stiffenerPitch = x0[2] + p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
   f2 = computeCriticalLocalAxialLoad(x[0], x[1], x[3], x[4], x[5]);
 
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
@@ -2747,6 +2768,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
+  this->panelGPs->resetSavedData();
   computeCriticalLocalAxialLoadSens(
       p_output, x[0], x[1], x[3], x[4], x[5], &input_sens[0], &input_sens[1],
       &input_sens[2], &input_sens[3], &input_sens[4], &input_sens[5]);
@@ -2992,11 +3014,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
+  this->panelGPs->resetSavedData();
   f0 = computeCriticalGlobalShearLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
+  this->panelGPs->resetSavedData();
   f2 = computeCriticalGlobalShearLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
 
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
@@ -3007,6 +3031,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
+  this->panelGPs->resetSavedData();
   computeCriticalGlobalShearLoadSens(
       p_output, x[0], x[1], x[2], x[3], x[4], x[5], x[6], &input_sens[0],
       &input_sens[1], &input_sens[2], &input_sens[3], &input_sens[4],
@@ -3064,11 +3089,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
     x[i] = x0[i] - p_input[i] * epsilon;
   }
   this->stiffenerPitch = x0[2] - p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
   f0 = computeCriticalLocalShearLoad(x[0], x[1], x[3], x[4], x[5]);
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
+  this->panelGPs->resetSavedData();
   this->stiffenerPitch = x0[2] + p_input[2] * epsilon;
   f2 = computeCriticalLocalShearLoad(x[0], x[1], x[3], x[4], x[5]);
 
@@ -3081,6 +3108,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
+  this->panelGPs->resetSavedData();
   computeCriticalLocalShearLoadSens(
       p_output, x[0], x[1], x[3], x[4], x[5], &input_sens[0], &input_sens[1],
       &input_sens[2], &input_sens[3], &input_sens[4], &input_sens[5]);
@@ -3183,12 +3211,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
     x[i] = x0[i] - p_input[i] * epsilon;
   }
   this->stiffenerHeight = x0[2] - p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
   f0 = computeStiffenerCripplingLoad(x[0], x[1], x[3], x[4], x[5], x[6]);
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
   this->stiffenerHeight = x0[2] + p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
   f2 = computeStiffenerCripplingLoad(x[0], x[1], x[3], x[4], x[5], x[6]);
 
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
@@ -3200,6 +3230,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
+  this->panelGPs->resetSavedData();
   computeStiffenerCripplingLoadSens(
       p_output, x[0], x[1], x[3], x[4], x[5], x[6], &input_sens[0],
       &input_sens[1], &input_sens[2], &input_sens[3], &input_sens[4],

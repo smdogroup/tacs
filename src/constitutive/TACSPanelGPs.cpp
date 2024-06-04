@@ -2,7 +2,8 @@
 
 TACSPanelGPs::TACSPanelGPs(TACSAxialGaussianProcessModel* axialGP,
                            TACSShearGaussianProcessModel* shearGP,
-                           TACSCripplingGaussianProcessModel* cripplingGP) {
+                           TACSCripplingGaussianProcessModel* cripplingGP,
+			   bool saveData) {
   this->axialGP = axialGP;
   if (this->axialGP) {
     this->axialGP->incref();
@@ -21,6 +22,8 @@ TACSPanelGPs::TACSPanelGPs(TACSAxialGaussianProcessModel* axialGP,
   savedYtest = new TacsScalar[n_save];
   savedAdjoint = new bool[n_save];
   savedJacobians = new TacsScalar[n_save_adj];
+
+  this->saveData = saveData;
 }
 
 TACSPanelGPs::~TACSPanelGPs() {
@@ -49,17 +52,15 @@ TACSPanelGPs::~TACSPanelGPs() {
 
   // free pointers for saved data
   delete[] savedForward;
-  savedForward = nullptr;
   delete[] savedYtest;
-  savedYtest = nullptr;
   delete[] savedAdjoint;
-  savedAdjoint = nullptr;
   delete[] savedJacobians;
-  savedJacobians = nullptr;
 }
 
 void TACSPanelGPs::resetSavedData() {
   // goal here is to reset the saved data
+  memset(savedYtest, 0.0, n_save * sizeof(TacsScalar));
+  memset(savedJacobians, 0.0, n_save_adj * sizeof(TacsScalar));
   for (int i = 0; i < n_save; i++) {
     savedForward[i] = false;
     savedAdjoint[i] = false;
@@ -70,7 +71,7 @@ TacsScalar TACSPanelGPs::predictMeanTestData(int predInd,
                                              const TacsScalar* Xtest) {
   // assume checking for input calling is in the other class for now
   // otherwise I would return garbage values..
-  if (!savedForward[predInd]) {
+  if (!savedForward[predInd] || !saveData) {
     // axial global or local options
     if (predInd == 0 || predInd == 1) {
       savedYtest[predInd] = this->axialGP->predictMeanTestData(Xtest);
@@ -100,7 +101,7 @@ void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
   // change this part with 4* to not be hardcoded later..
   TacsScalar* localJacobian = &savedJacobians[4 * predInd];
 
-  if (!savedAdjoint[predInd]) {
+  if (!savedAdjoint[predInd] || !saveData) {
     // axial global or local options
     if (predInd == 0 || predInd == 1) {
       this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
@@ -111,7 +112,7 @@ void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
     }
     // crippling GP
     if (predInd == 4) {
-      this->axialGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
+      this->cripplingGP->predictMeanTestDataSens(1.0, Xtest, localJacobian);
     }
     savedAdjoint[predInd] = true;
   }
