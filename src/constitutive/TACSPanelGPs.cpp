@@ -46,6 +46,16 @@ TACSPanelGPs::~TACSPanelGPs() {
     this->cripplingGP->decref();
     this->cripplingGP = nullptr;
   }
+
+  // free pointers for saved data
+  delete[] savedForward;
+  savedForward = nullptr;
+  delete[] savedYtest;
+  savedYtest = nullptr;
+  delete[] savedAdjoint;
+  savedAdjoint = nullptr;
+  delete[] savedJacobians;
+  savedJacobians = nullptr;
 }
 
 void TACSPanelGPs::resetSavedData() {

@@ -38,7 +38,8 @@ ortho_ply = constitutive.OrthotropicPly(1e-3, ortho_prop)
 
 # build the axial GP object (which is the main ML object we are testing for this example)
 # however it is used inside of the constitutive object so we need to build that too
-axialGP = constitutive.AxialGP.from_csv(csv_file=mlb.archived_model_files.axialGP_csv)
+axialGP = constitutive.AxialGP.from_csv(csv_file=mlb.axialGP_csv)
+panelGP = constitutive.PanelGPs(axialGP=axialGP)
 
 # don't put in any GP models (so using closed-form solutions rn)
 con = constitutive.GPBladeStiffenedShellConstitutive(
@@ -55,7 +56,7 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
     stiffenerPlyFracs=np.array([0.6, 0.4], dtype=dtype),
     panelWidth=1.0,
     flangeFraction=0.8,
-    axialGP=axialGP,
+    panelGPs=panelGP,
 )
 # Set the KS weight really low so that all failure modes make a
 # significant contribution to the failure function derivatives
