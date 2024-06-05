@@ -1032,28 +1032,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       TacsScalar& dFdE, TacsScalar& dFdI, TacsScalar& dFdL);
 
   /**
-   * @brief Add the sensitivity of the stiffener column buckling failure
-   * criteria with respect to the shell strains to an existing strain
-   * sensitivity vector
+   * @brief Compute the sensitivity of the stiffener column buckling failure
+   * criteria with respect to the beam strains
    *
-   * @param scale Scaling factor to apply to the sensitivities (e.g the
-   * sensitivity of the final output to the stiffener column buckling
-   * failure criteria)
-   * @param C Stiffener stiffness matrix
-   * @param fCrit Critical column buckling load, as computed by
-   * `computeStiffenerColumnBucklingLoad`
-   * @param sens Array to add the sensitivity to, should be at least
-   * TACSShellConstitutive::NUM_STRESSES long
+   * @param stiffenerStrain Stiffener centroid beam strains
+   * @param sens Sensitivity of the column failure criteria w.r.t the beam
+   * strains
+   * @return TacsScalar The column buckling failure criteria value
    */
-  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
-                                            const TacsScalar C[],
-                                            const TacsScalar fCrit,
-                                            TacsScalar sens[]);
-  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
-                                            const TacsScalar fCrit,
-                                            TacsScalar sens[]);
-  void addStiffenerColumnBucklingStrainSens(const TacsScalar scale,
-                                            TacsScalar sens[]);
+  TacsScalar evalStiffenerColumnBucklingStrainSens(
+      const TacsScalar stiffenerStrain[], TacsScalar sens[]);
 
   /**
    * @brief Add the sensitivity of the stiffener column buckling failure
@@ -1081,9 +1069,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   TacsScalar computeStiffenerCrippling(const TacsScalar stiffenerStrain[]);
 
-  void addStiffenerCripplingStrainSens(const TacsScalar scale,
-                                       const TacsScalar stiffenerStrain[],
-                                       TacsScalar sens[]);
+  TacsScalar evalStiffenerCripplingStrainSens(
+      const TacsScalar stiffenerStrain[], TacsScalar sens[]);
 
   // ==============================================================================
   // Attributes
