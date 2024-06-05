@@ -119,6 +119,6 @@ void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
 
   // now multiply the Ysens backpropagated derivative by the saved jacobian
   for (int i = 0; i < 4; i++) {
-    Xtestsens[i] += Ysens * localJacobian[i];
+    Xtestsens[i] = Ysens * localJacobian[i];
   }
 }
