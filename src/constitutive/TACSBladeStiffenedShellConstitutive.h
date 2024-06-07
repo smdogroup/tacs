@@ -1062,15 +1062,50 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
                                         TacsScalar dfdx[]);
 
   /**
+   * @brief Compute the empirical crippling factor for a stiffener flange
+   *
+   * @param b Flange length
+   * @param t Flange thickness
+   * @return TacsScalar Crippling factor by which the compressive strength
+   * should be scaled down or, conversely, the strength ratio should be scaled
+   * up
+   */
+  static TacsScalar computeCripplingFactor(const TacsScalar b,
+                                           const TacsScalar t) {
+    return pow(b / t, 0.717) / 1.63;
+  }
+
+  /**
+   * @brief Compute the sensitivity of the flange crippling factor w.r.t the
+   * flange dimensions
+   *
+   * @param b Flange length
+   * @param t Flange thickness
+   * @return dkdb Sensitivity of the crippling factor w.r.t the flange length
+   * @return dkdt Sensitivity of the crippling factor w.r.t the flange thickness
+   * @return TacsScalar The crippling factor
+   */
+  static TacsScalar computeCripplingFactorSens(const TacsScalar b,
+                                               const TacsScalar t,
+                                               TacsScalar& dkdb,
+                                               TacsScalar& dkdt);
+
+  /**
    * @brief Compute the strength ratio with respect to stiffener crippling
    *
    * @param stiffenerStrain Stiffener centroid beam strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar computeStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+  TacsScalar evalStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+  void computeStiffenerCripplingValues(const TacsScalar stiffenerStrain[],
+                                       TacsScalar plyFailValues[]);
 
   TacsScalar evalStiffenerCripplingStrainSens(
       const TacsScalar stiffenerStrain[], TacsScalar sens[]);
+
+  void addStiffenerCripplingDVSens(const TacsScalar scale,
+                                   const TacsScalar stiffenerStrain[],
+                                   TacsScalar dfdx[]);
 
   // ==============================================================================
   // Attributes

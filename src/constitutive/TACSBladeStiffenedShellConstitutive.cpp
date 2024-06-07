@@ -892,7 +892,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
   fails[4] = -stiffenerStress[0] / fCrit;
 
   // --- Stiffener crippling ---
-  fails[5] = this->computeStiffenerCrippling(stiffenerStrain);
+  fails[5] = this->evalStiffenerCrippling(stiffenerStrain);
 
   TacsScalar ksFail = ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
   return ksFail;
@@ -1024,7 +1024,7 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   // Compute the failure values and then compute the
   // sensitivity of the aggregate failure value w.r.t. them
   TacsScalar fails[this->NUM_FAILURES], dKSdf[this->NUM_FAILURES];
-  TacsScalar fail = this->computeFailureValues(strain, fails);
+  this->computeFailureValues(strain, fails);
   ksAggregationSens(fails, this->NUM_FAILURES, this->ksWeight, dKSdf);
 
   // Sensitivity of the panel failure value to it's DVs
@@ -1240,6 +1240,18 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   this->addStiffenerColumnBucklingDVSens(dKSdf[4] * scale, strain,
                                          stiffenerStrain, stiffenerAxialLoad,
                                          columnBucklingLoad, dfdx);
+
+  // --- Stiffener crippling ---
+  // Direct dependence of the stiffener crippling on the DVs
+  this->addStiffenerCripplingDVSens(scale * dKSdf[5], stiffenerStrain,
+                                    &dfdx[this->stiffenerDVStartNum]);
+  // Sensitivity of the stiffener crippling due to effect of DVs on the
+  // stiffener strains
+  TacsScalar stiffenerCripplingStrainSens[TACSBeamConstitutive::NUM_STRESSES];
+  this->evalStiffenerCripplingStrainSens(stiffenerStrain,
+                                         stiffenerCripplingStrainSens);
+  this->addStrainTransformProductDVsens(stiffenerCripplingStrainSens, strain,
+                                        scale * dKSdf[5], dfdx);
 }
 
 // ==============================================================================
@@ -3069,10 +3081,10 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingDVSens(
       -scale * stiffenerAxialLoad / (fCrit * fCrit), dfdx);
 }
 
-TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
-    const TacsScalar stiffenerStrain[]) {
-  // We use the semi-empirical formula for one-edge-free crippling described in
-  // the DoD composite materials handbook Volume 3 (a.k.a MIL-HDBK-17-3F)
+void TACSBladeStiffenedShellConstitutive::computeStiffenerCripplingValues(
+    const TacsScalar stiffenerStrain[], TacsScalar plyFailValues[]) {
+  // We use the semi-empirical formula for one-edge-free crippling described
+  // in the DoD composite materials handbook Volume 3F (a.k.a MIL-HDBK-17-3F)
   // (available at
   // http://everyspec.com/MIL-HDBK/MIL-HDBK-0001-0099/MIL_HDBK_17_3F_216/)
   //
@@ -3083,16 +3095,14 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
   // b is the flange width
   // t is the flange thickness
   //
-  // Here we compute the ultimate compressive load using the same criteria used
-  // to compute the stiffener material failure value but using on the axial
-  // strain component. This gives:
-  // SR_Crippling = SR_comp/1.63 * (b/t)^0.717
-  // Where SR_Crippling is the crippling strength ratio
-  // SR_comp is the strength ratio computed using only the compressive component
-  // of the strain
+  // Here we compute the ultimate compressive load using the same criteria
+  // used to compute the stiffener material failure value but using on the
+  // axial strain component. This gives: SR_Crippling = SR_comp/1.63 *
+  // (b/t)^0.717 Where SR_Crippling is the crippling strength ratio SR_comp is
+  // the strength ratio computed using only the compressive component of the
+  // strain
 
   const int numPlies = this->numStiffenerPlies;
-  TacsScalar* const plyFailValues = this->stiffenerPlyFailValues;
   TacsScalar* const plyAngles = this->stiffenerPlyAngles;
   memset(plyFailValues, 0, 2 * numPlies * sizeof(TacsScalar));
 
@@ -3102,15 +3112,13 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
   TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
   TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
 
-  TacsScalar flangeCrippleFactor =
-      pow(0.5 * this->flangeFraction * this->stiffenerHeight /
-              this->stiffenerThick,
-          0.717) /
-      1.63;
+  TacsScalar flangeCrippleFactor = computeCripplingFactor(
+      0.5 * this->flangeFraction * this->stiffenerHeight, this->stiffenerThick);
 
   TacsScalar plyStrain[3];
   memset(plyStrain, 0, 3 * sizeof(TacsScalar));
   plyStrain[0] = stiffenerStrain[0] + zFlange * stiffenerStrain[2];
+
   if (TacsRealPart(plyStrain[0]) < 0.0) {
     for (int ii = 0; ii < numPlies; ii++) {
       plyFailValues[ii] =
@@ -3122,11 +3130,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
   // account for the variation in tension/compression over the height of the
   // web. (See section 8.5.3 of Kassapoglou's "Design and Analysis of
   // Composite Structures with Applications to Aerospace Structures").
-  TacsScalar zWebTop =
+  const TacsScalar zWebTop =
       -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
-  TacsScalar zWebBottom = -this->stiffenerThick - zCentroid;
-  TacsScalar axStrainTop = stiffenerStrain[0] + zWebTop * stiffenerStrain[2];
-  TacsScalar axStrainBottom =
+  const TacsScalar zWebBottom = -this->stiffenerThick - zCentroid;
+  const TacsScalar axStrainTop =
+      stiffenerStrain[0] + zWebTop * stiffenerStrain[2];
+  const TacsScalar axStrainBottom =
       stiffenerStrain[0] + zWebBottom * stiffenerStrain[2];
 
   // There are 3 cases we have to consider:
@@ -3171,7 +3180,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
     }
 
     webCrippleFactor =
-        pow(compressiveLength / this->stiffenerThick, 0.717) / 1.63;
+        computeCripplingFactor(compressiveLength, this->stiffenerThick);
 
     plyStrain[0] = averageStrain;
     for (int ii = 0; ii < numPlies; ii++) {
@@ -3179,8 +3188,14 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerCrippling(
           ply->failure(plyAngles[ii], plyStrain) * webCrippleFactor;
     }
   }
-
-  TacsScalar fail = ksAggregation(plyFailValues, 2 * numPlies, this->ksWeight);
+}
+TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerCrippling(
+    const TacsScalar stiffenerStrain[]) {
+  const int numPlies = this->numStiffenerPlies;
+  this->computeStiffenerCripplingValues(stiffenerStrain,
+                                        this->stiffenerPlyFailValues);
+  TacsScalar fail =
+      ksAggregation(this->stiffenerPlyFailValues, 2 * numPlies, this->ksWeight);
 
   return fail;
 }
@@ -3202,19 +3217,19 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
 
   // We compute the crippling criteria for both the web and
   // the flange of the stiffener.
+
+  // --- Flange crippling ---
   TACSOrthotropicPly* ply = this->stiffenerPly;
   TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
   TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
 
-  TacsScalar flangeCrippleFactor =
-      pow(0.5 * this->flangeFraction * this->stiffenerHeight /
-              this->stiffenerThick,
-          0.717) /
-      1.63;
+  TacsScalar flangeCrippleFactor = computeCripplingFactor(
+      0.5 * this->flangeFraction * this->stiffenerHeight, this->stiffenerThick);
 
   TacsScalar plyStrain[3];
   memset(plyStrain, 0, 3 * sizeof(TacsScalar));
   plyStrain[0] = stiffenerStrain[0] + zFlange * stiffenerStrain[2];
+
   if (TacsRealPart(plyStrain[0]) < 0.0) {
     for (int ii = 0; ii < numPlies; ii++) {
       TacsScalar plyFailStrainSens[3];
@@ -3254,7 +3269,7 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
       const TacsScalar strainDiff = axStrainTop - axStrainBottom;
       compressiveLength = this->stiffenerHeight * axStrainTop / strainDiff;
       lengthStrainSens[0] =
-          this->stiffenerHeight * axStrainBottom / (strainDiff * strainDiff);
+          -this->stiffenerHeight * axStrainBottom / (strainDiff * strainDiff);
       lengthStrainSens[1] =
           this->stiffenerHeight * axStrainTop / (strainDiff * strainDiff);
 
@@ -3268,34 +3283,35 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
       lengthStrainSens[0] =
           this->stiffenerHeight * axStrainBottom / (strainDiff * strainDiff);
       lengthStrainSens[1] =
-          this->stiffenerHeight * axStrainTop / (strainDiff * strainDiff);
+          -this->stiffenerHeight * axStrainTop / (strainDiff * strainDiff);
 
       averageStrain = 0.5 * axStrainBottom;
       averageStrainSens[1] = 0.5;
     }
 
-    webCrippleFactor =
-        pow(compressiveLength / this->stiffenerThick, 0.717) / 1.63;
-    const TacsScalar dFactordL =
-        0.717 * pow(compressiveLength / this->stiffenerThick, -0.283) / 1.63;
+    TacsScalar dFactordL, dFactordt;
+    webCrippleFactor = computeCripplingFactorSens(
+        compressiveLength, this->stiffenerThick, dFactordL, dFactordt);
 
     plyStrain[0] = averageStrain;
     for (int ii = 0; ii < numPlies; ii++) {
       TacsScalar plyFailStrainSens[3];
-      plyFailValues[ii + numPlies] =
-          ply->failureStrainSens(plyAngles[ii], plyStrain, plyFailStrainSens) *
-          webCrippleFactor;
+      const TacsScalar strengthRatio =
+          ply->failureStrainSens(plyAngles[ii], plyStrain, plyFailStrainSens);
+      plyFailValues[ii + numPlies] = strengthRatio * webCrippleFactor;
 
+      // Convert sensitivity w.r.t the average strain to sensitivity w.r.t
+      // the top and bottom strains
       TacsScalar topStrainSens =
-          plyFailValues[ii + numPlies] * dFactordL * lengthStrainSens[0] +
+          strengthRatio * dFactordL * lengthStrainSens[0] +
           webCrippleFactor * plyFailStrainSens[0] * averageStrainSens[0];
 
       TacsScalar bottomStrainSens =
-          plyFailValues[ii + numPlies] * dFactordL * lengthStrainSens[1] +
+          strengthRatio * dFactordL * lengthStrainSens[1] +
           webCrippleFactor * plyFailStrainSens[0] * averageStrainSens[1];
 
-      // Convert the sensitivity w.r.t the ply strains to the sensitivity
-      // w.r.t beam strains
+      // Convert the sensitivity w.r.t the top and bottom strains to the
+      // sensitivity w.r.t beam strains
       dFaildStrain[ii + numPlies][0] = topStrainSens + bottomStrainSens;
       dFaildStrain[ii + numPlies][2] =
           zWebTop * topStrainSens + zWebBottom * bottomStrainSens;
@@ -3307,6 +3323,176 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
                                this->ksWeight, dFaildStrain, sens);
 
   return fail;
+}
+
+void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
+    const TacsScalar scale, const TacsScalar stiffenerStrain[],
+    TacsScalar dfdx[]) {
+  TACSOrthotropicPly* ply = this->stiffenerPly;
+  TacsScalar* plyFailValues = this->stiffenerPlyFailValues;
+  const TacsScalar* plyAngles = this->stiffenerPlyAngles;
+  TacsScalar* dKSdFail = this->stiffenerPlyFailSens;
+  const int hNum = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
+  const int tNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
+  const int numPlies = this->numStiffenerPlies;
+  const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
+  const bool computeThicknessSens = (this->stiffenerThickNum >= 0);
+  const bool computeHeightSens = (this->stiffenerHeightNum >= 0);
+
+  this->computeStiffenerCripplingValues(stiffenerStrain, plyFailValues);
+
+  const TacsScalar fail =
+      ksAggregationSens(plyFailValues, 2 * numPlies, this->ksWeight, dKSdFail);
+
+  // --- Flange crippling ---
+  TacsScalar dzCentroiddh, dzCentroiddt;
+  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  this->computeStiffenerCentroidHeightSens(dzCentroiddt, dzCentroiddh);
+  TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
+  const TacsScalar dzFlangedt = -0.5 - dzCentroiddt;
+  const TacsScalar dzFlangedh = -dzCentroiddh;
+
+  TacsScalar dFactordh, dFactordt;
+  TacsScalar flangeCrippleFactor = computeCripplingFactorSens(
+      0.5 * this->flangeFraction * this->stiffenerHeight, this->stiffenerThick,
+      dFactordh, dFactordt);
+  dFactordh *= 0.5 * this->flangeFraction;
+
+  TacsScalar plyStrain[3];
+  memset(plyStrain, 0, 3 * sizeof(TacsScalar));
+  plyStrain[0] = stiffenerStrain[0] + zFlange * stiffenerStrain[2];
+  if (TacsRealPart(plyStrain[0]) < 0.0) {
+    for (int ii = 0; ii < numPlies; ii++) {
+      TacsScalar plyFailStrainSens[3];
+      const TacsScalar strengthRatio =
+          ply->failureStrainSens(plyAngles[ii], plyStrain, plyFailStrainSens);
+      if (computeThicknessSens) {
+        dfdx[tNum] += dKSdFail[ii] * scale *
+                      (strengthRatio * dFactordt +
+                       plyFailStrainSens[0] * dzFlangedt * stiffenerStrain[2] *
+                           flangeCrippleFactor);
+      }
+      if (computeHeightSens) {
+        dfdx[hNum] += dKSdFail[ii] * scale *
+                      (strengthRatio * dFactordh +
+                       plyFailStrainSens[0] * dzFlangedh * stiffenerStrain[2] *
+                           flangeCrippleFactor);
+      }
+    }
+  }
+
+  // --- Flange crippling ---
+  const TacsScalar zWebTop =
+      -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
+  const TacsScalar dzWebTopdh = -1.0 - dzCentroiddh;
+  const TacsScalar dzWebTopdt = -1.0 - dzCentroiddt;
+
+  const TacsScalar zWebBottom = -this->stiffenerThick - zCentroid;
+  const TacsScalar dzWebBottomdt = -1.0 - dzCentroiddt;
+  const TacsScalar dzWebBottomdh = -dzCentroiddh;
+
+  const TacsScalar axStrainTop =
+      stiffenerStrain[0] + zWebTop * stiffenerStrain[2];
+  const TacsScalar dStrainTopdh = stiffenerStrain[2] * dzWebTopdh;
+  const TacsScalar dStrainTopdt = stiffenerStrain[2] * dzWebTopdt;
+
+  const TacsScalar axStrainBottom =
+      stiffenerStrain[0] + zWebBottom * stiffenerStrain[2];
+  const TacsScalar dStrainBottomdh = stiffenerStrain[2] * dzWebBottomdh;
+  const TacsScalar dStrainBottomdt = stiffenerStrain[2] * dzWebBottomdt;
+
+  if (TacsRealPart(axStrainTop) < 0.0 || TacsRealPart(axStrainBottom) < 0.0) {
+    TacsScalar compressiveLength = 0.0, averageStrain = 0.0,
+               webCrippleFactor = 0.0;
+    TacsScalar dAverageStraindh = 0.0;
+    TacsScalar dAverageStraindt = 0.0;
+    TacsScalar dLdh = 0.0;
+    TacsScalar dLdt = 0.0;
+    if (TacsRealPart(axStrainTop) < 0 && TacsRealPart(axStrainBottom) < 0) {
+      // --- Case 2 ---
+      compressiveLength = this->stiffenerHeight;
+      dLdh = 1.0;
+
+      averageStrain = 0.5 * (axStrainTop + axStrainBottom);
+      dAverageStraindh = 0.5 * (dStrainTopdh + dStrainBottomdh);
+      dAverageStraindt = 0.5 * (dStrainTopdt + dStrainBottomdt);
+    } else if (TacsRealPart(axStrainTop) < 0 &&
+               TacsRealPart(axStrainBottom) >= 0) {
+      // --- Case 3 top in compression ---
+      const TacsScalar strainDiff = axStrainTop - axStrainBottom;
+      compressiveLength = this->stiffenerHeight * axStrainTop / strainDiff;
+
+      const TacsScalar dLdstrainTop =
+          -this->stiffenerHeight * axStrainBottom / (strainDiff * strainDiff);
+      const TacsScalar dLdstrainBottom =
+          this->stiffenerHeight * axStrainTop / (strainDiff * strainDiff);
+
+      // dLdx = pLpx + pLpet * detdx + pLpeb * debdx
+      dLdh = axStrainTop / strainDiff + dLdstrainTop * dStrainTopdh +
+             dLdstrainBottom * dStrainBottomdh;
+      dLdt = dLdstrainTop * dStrainTopdt + dLdstrainBottom * dStrainBottomdt;
+
+      averageStrain = 0.5 * axStrainTop;
+      dAverageStraindh = 0.5 * dStrainTopdh;
+      dAverageStraindt = 0.5 * dStrainTopdt;
+    } else if (TacsRealPart(axStrainTop) >= 0 &&
+               TacsRealPart(axStrainBottom) < 0) {
+      // --- Case 3 bottom in compression ---
+      const TacsScalar strainDiff = axStrainBottom - axStrainTop;
+
+      compressiveLength = this->stiffenerHeight * axStrainBottom / strainDiff;
+
+      const TacsScalar dLdstrainTop =
+          this->stiffenerHeight * axStrainBottom / (strainDiff * strainDiff);
+      const TacsScalar dLdstrainBottom =
+          -this->stiffenerHeight * axStrainTop / (strainDiff * strainDiff);
+
+      // dLdx = pLpx + pLpet * detdx + pLpeb * debdx
+      dLdh = axStrainBottom / strainDiff + dLdstrainTop * dStrainTopdh +
+             dLdstrainBottom * dStrainBottomdh;
+      dLdt = dLdstrainTop * dStrainTopdt + dLdstrainBottom * dStrainBottomdt;
+
+      averageStrain = 0.5 * axStrainBottom;
+      dAverageStraindh = 0.5 * dStrainBottomdh;
+      dAverageStraindt = 0.5 * dStrainBottomdt;
+    }
+
+    TacsScalar dFactordL, dFactordt;
+    webCrippleFactor = computeCripplingFactorSens(
+        compressiveLength, this->stiffenerThick, dFactordL, dFactordt);
+    const TacsScalar dFactordh = dFactordL * dLdh;
+    dFactordt += dFactordL * dLdt;
+
+    plyStrain[0] = averageStrain;
+    for (int ii = 0; ii < numPlies; ii++) {
+      TacsScalar plyFailStrainSens[3];
+      const TacsScalar strengthRatio =
+          ply->failureStrainSens(plyAngles[ii], plyStrain, plyFailStrainSens);
+      if (computeThicknessSens) {
+        const TacsScalar dFaildt =
+            strengthRatio * dFactordt +
+            webCrippleFactor * plyFailStrainSens[0] * dAverageStraindt;
+
+        dfdx[tNum] += dKSdFail[ii + numPlies] * scale * dFaildt;
+      }
+      if (computeHeightSens) {
+        const TacsScalar dFaildh =
+            strengthRatio * dFactordh +
+            webCrippleFactor * plyFailStrainSens[0] * dAverageStraindh;
+
+        dfdx[hNum] += dKSdFail[ii + numPlies] * scale * dFaildh;
+      }
+    }
+  }
+}
+
+TacsScalar TACSBladeStiffenedShellConstitutive::computeCripplingFactorSens(
+    const TacsScalar b, const TacsScalar t, TacsScalar& dkdb,
+    TacsScalar& dkdt) {
+  const TacsScalar factor = pow(b / t, 0.717) / 1.63;
+  dkdb = 0.717 * factor / b;
+  dkdt = -0.717 * factor / t;
+  return factor;
 }
 
 // ==============================================================================
