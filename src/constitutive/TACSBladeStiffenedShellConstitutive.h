@@ -131,6 +131,14 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param _stiffenerPlyFracNums Stiffener ply fraction design variable numbers
    * @param _flangeFraction Stiffener base width as a fraction of the stiffener
    * height
+   * @param _includeGlobalBuckling Whether to include global panel buckling in
+   * the aggregated failure criteria
+   * @param _includeLocalBuckling Whether to include local inter-stringer
+   * buckling in the aggregated failure criteria
+   * @param _includeStiffenerColumnBuckling Whether to include stiffener column
+   * buckling in the aggregated failure criteria
+   * @param _includeStiffenerCrippling Whether to include stiffener crippling in
+   * the aggregated failure criteria
    */
   TACSBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
@@ -142,13 +150,69 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       int _stiffenerHeightNum, TacsScalar _stiffenerThick,
       int _stiffenerThickNum, int _numStiffenerPlies,
       TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
-      int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0);
+      int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0,
+      bool _includeGlobalBuckling = true, bool _includeLocalBuckling = true,
+      bool _includeStiffenerColumnBuckling = true,
+      bool _includeStiffenerCrippling = true);
 
   ~TACSBladeStiffenedShellConstitutive();
 
   // ==============================================================================
   // Set non-default values
   // ==============================================================================
+
+  /**
+   * @brief Enable or disable the material failure mode in the aggregated
+   * failure criteria
+   *
+   * @param includeMaterialFailure Whether to include material failure
+   */
+  void setIncludeMaterialFailure(bool _includMaterialFailure) {
+    this->includeMaterialFailure = _includMaterialFailure;
+  }
+
+  /**
+   * @brief Enable or disable the global panel buckling mode in the aggregated
+   * failure criteria
+   *
+   * @param includeGlobalBuckling Whether to include global panel buckling
+   */
+  void setIncludeGlobalBuckling(bool _includeGlobalBuckling) {
+    this->includeGlobalBuckling = _includeGlobalBuckling;
+  }
+
+  /**
+   * @brief Enable or disable the local inter-stringer buckling mode in the
+   * aggregated failure criteria
+   *
+   * @param _includeLocalBuckling Whether to include local inter-stringer
+   * buckling
+   */
+  void setIncludeLocalBuckling(bool _includeLocalBuckling) {
+    this->includeLocalBuckling = _includeLocalBuckling;
+  }
+
+  /**
+   * @brief Enable or disable the stiffener column buckling mode in the
+   * aggregated failure criteria
+   *
+   * @param _includeStiffenerColumnBuckling Whether to include stiffener column
+   * buckling
+   */
+  void setIncludeStiffenerColumnBuckling(bool _includeStiffenerColumnBuckling) {
+    this->includeStiffenerColumnBuckling = _includeStiffenerColumnBuckling;
+  }
+
+  /**
+   * @brief Enable or disable the stiffener crippling mode in the aggregated
+   * failure criteria
+   *
+   * @param _includeStiffenerCrippling Whether to include stiffener crippling
+   */
+  void setIncludeStiffenerCrippling(bool _includeStiffenerCrippling) {
+    this->includeStiffenerCrippling = _includeStiffenerCrippling;
+  }
+
   /**
    * @brief Set the Stiffener Pitch DV Bounds
    *
@@ -1119,6 +1183,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int numGeneralDV;        ///< Number of general DVs
   int numPanelDV;          ///< Number of panel DVs
   int numStiffenerDV;      ///< Number of stiffener DVs
+  bool includeMaterialFailure =
+      true;  ///< Whether to consider panel material failure
+  bool includeGlobalBuckling =
+      true;  ///< Whether to consider global panel buckling failure
+  bool includeLocalBuckling = true;  ///< Whether to consider local buckling
+                                     ///< failure of the skin between stiffeners
+  bool includeStiffenerColumnBuckling =
+      true;  ///< Whether to consider stiffener column buckling failure
+  bool includeStiffenerCrippling =
+      true;  ///< Whether to consider stiffener crippling failure
 
   // --- Material properties ---
   TACSOrthotropicPly* panelPly;      ///< Orthotropic ply for the panel
@@ -1192,7 +1266,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar* panelPlyFailSens;
   TacsScalar* stiffenerPlyFailSens;
 
-  static const char* constName;        ///< Constitutive model name
+  static const char* const constName;  ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
       3;  ///< Number of entries in the ABar matrix
@@ -1204,4 +1278,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
           ///< 4. Global panel buckling
           ///< 5. Stiffener column buckling
           ///< 6. Stiffener crippling
+  static constexpr TacsScalar DUMMY_FAIL_VALUE =
+      -1e200;  ///< Dummy failure value used for failure modes that are disabled
 };
