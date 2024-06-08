@@ -154,8 +154,7 @@ class TACSGPBladeStiffenedShellConstitutive
       TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
       TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
       int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-      TacsScalar flangeFraction = 1.0, TACSPanelGPs* panelGPs = nullptr,
-      int CFshearMode = 1);
+      TacsScalar flangeFraction = 1.0, TACSPanelGPs* panelGPs = nullptr);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -538,10 +537,12 @@ class TACSGPBladeStiffenedShellConstitutive
 
   /**
    *
-   * @brief Returns the 1x2 Jacobian of the stiffener bending stiffness computation in 2 separate scalars
+   * @brief Returns the 1x2 Jacobian of the stiffener bending stiffness
+   *computation in 2 separate scalars
    *
    **/
-  TacsScalar computeStiffenerBendingStiffnessSens(TacsScalar& sthickSens, TacsScalar& sheightSens);
+  TacsScalar computeStiffenerBendingStiffnessSens(TacsScalar& sthickSens,
+                                                  TacsScalar& sheightSens);
 
   /**
    * @brief Compute the sensitivities of the non-dimensional  stiffener-to-panel
@@ -945,7 +946,12 @@ class TACSGPBladeStiffenedShellConstitutive
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
 
   // different mode for computing the shear closed form solution
-  int CFshearMode;
+  int CFshearMode = 2;
+
+  // debugging modes
+  // should all be false if not debugging
+  bool writeNDparamsToDV = true;
+  bool writeIndFailuresToDV = false;
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't

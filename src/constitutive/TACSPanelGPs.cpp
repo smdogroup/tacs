@@ -3,7 +3,7 @@
 TACSPanelGPs::TACSPanelGPs(TACSAxialGaussianProcessModel* axialGP,
                            TACSShearGaussianProcessModel* shearGP,
                            TACSCripplingGaussianProcessModel* cripplingGP,
-			   bool saveData) {
+                           bool saveData) {
   this->axialGP = axialGP;
   if (this->axialGP) {
     this->axialGP->incref();

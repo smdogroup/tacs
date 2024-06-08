@@ -42,7 +42,7 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     TacsScalar stiffenerThick, int stiffenerThickNum, int numStiffenerPlies,
     TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
     int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
-    TacsScalar flangeFraction, TACSPanelGPs* panelGPs, int CFshearMode)
+    TacsScalar flangeFraction, TACSPanelGPs* panelGPs)
     : TACSBladeStiffenedShellConstitutive(
           panelPly, stiffenerPly, kcorr, panelLength, panelLengthNum,
           stiffenerPitch, stiffenerPitchNum, panelThick, panelThickNum,
@@ -68,9 +68,6 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
   if (this->panelGPs) {
     this->panelGPs->incref();
   }
-
-  // set any modes for different types of CF solutions
-  this->CFshearMode = CFshearMode;
 
   // default value of ksWeight
   this->setKSWeight(80.0);
@@ -107,7 +104,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
     const TacsScalar e[], TacsScalar fails[]) {
   // --- #0 - Panel material failure ---
   fails[0] = this->computePanelFailure(e);
-  //printf("panelAxialCompStrain = %.4e\n", -e[0]);
+  // printf("panelAxialCompStrain = %.4e\n", -e[0]);
 
   // --- #1 - Stiffener material failure ---
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
@@ -150,9 +147,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // panel stress (closed-form instead for stiffener properties)
   TacsScalar globalAxialFail = -panelStress[0] / N1CritGlobal;
   TacsScalar globalShearFail = panelStress[2] / N12CritGlobal;
-  //printf("globalAxialFail = %.4e\n", globalAxialFail);
-  //printf("globalShearFail = %.4e\n", globalShearFail);
-  //printf("N11 panel = %.4e\n", -panelStress[0]);
+  // printf("globalAxialFail = %.4e\n", globalAxialFail);
+  // printf("globalShearFail = %.4e\n", globalShearFail);
+  // printf("N11 panel = %.4e\n", -panelStress[0]);
 
   fails[2] = this->bucklingEnvelope(-panelStress[0], N1CritGlobal,
                                     panelStress[2], N12CritGlobal);
@@ -171,8 +168,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // load Nxy
   TacsScalar localAxialFail = -panelStress[0] / N1CritLocal;
   TacsScalar localShearFail = panelStress[2] / N12CritLocal;
-  //printf("local axial fail = %.4e\n", localAxialFail);
-  //printf("local shear fail = %.4e\n", localShearFail);
+  // printf("local axial fail = %.4e\n", localAxialFail);
+  // printf("local shear fail = %.4e\n", localShearFail);
 
   fails[3] = this->bucklingEnvelope(-panelStress[0], N1CritLocal,
                                     panelStress[2], N12CritLocal);
@@ -204,21 +201,21 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // Compute stiffener in plane load and crippling failure index
   TacsScalar A11s_beam;
   TacsScalar N1stiff = computeStiffenerInPlaneLoad(stiffenerStrain, &A11s_beam);
-  //printf("stiffStrain = %.4e\n", -stiffenerStrain[0]);
-  //printf("N1stiff = %.4e\n", N1stiff);
-  //  TacsScalar N1stiff = 1.0;
+  // printf("stiffStrain = %.4e\n", -stiffenerStrain[0]);
+  // printf("N1stiff = %.4e\n", N1stiff);
+  //   TacsScalar N1stiff = 1.0;
   TacsScalar N1CritCrippling = computeStiffenerCripplingLoad(
       D11s, D22s, xiStiff, rho0Stiff, genPoiss, zetaStiff);
-  //printf("N1crippling = %.4e\n", N1CritCrippling);
+  // printf("N1crippling = %.4e\n", N1CritCrippling);
   fails[4] = N1stiff / N1CritCrippling;
   // --- End of computeFailuresValues subsections ---
 
   // debug print all four failure values
-  //printf("fails[0] = %.12e\n", fails[0]);
-  //printf("fails[1] = %.12e\n", fails[1]);
-  //printf("fails[2] = %.12e\n", fails[2]);
-  //printf("fails[3] = %.12e\n", fails[3]);
-  //printf("fails[4] = %.12e\n", fails[4]);
+  // printf("fails[0] = %.12e\n", fails[0]);
+  // printf("fails[1] = %.12e\n", fails[1]);
+  // printf("fails[2] = %.12e\n", fails[2]);
+  // printf("fails[3] = %.12e\n", fails[3]);
+  // printf("fails[4] = %.12e\n", fails[4]);
 
   // aggregate the failure across all 5 failures modes (0-4)
   return ksAggregation(fails, this->NUM_FAILURES, this->ksWeight);
@@ -726,12 +723,12 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
   // 2,3,4 - backpropagate remaining DV sens into dfdx
   // --------------------------------------------------
 
-  //printf("DVsens[0] = %.12e\n", DVsens[0]);
-  //printf("DVsens[1] = %.12e\n", DVsens[1]);
-  //printf("DVsens[2] = %.12e\n", DVsens[2]);
-  //printf("DVsens[3] = %.12e\n", DVsens[3]);
-  //printf("DVsens[4] = %.12e\n", DVsens[4]);
-  //printf("DVsens[5] = %.12e\n", DVsens[5]);
+  // printf("DVsens[0] = %.12e\n", DVsens[0]);
+  // printf("DVsens[1] = %.12e\n", DVsens[1]);
+  // printf("DVsens[2] = %.12e\n", DVsens[2]);
+  // printf("DVsens[3] = %.12e\n", DVsens[3]);
+  // printf("DVsens[4] = %.12e\n", DVsens[4]);
+  // printf("DVsens[5] = %.12e\n", DVsens[5]);
 
   // recall DV sens [0 - panel length, 1 - stiff pitch, 2 - panel thick,
   //                 3 - stiff height, 4 - stiff thick, 5 - panel width]
@@ -769,24 +766,86 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
 // Retrieve the design variable for plotting purposes
 TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  switch (index) {
-    case 0:
-      return this->computeEffectiveThickness();
-    case 1:
-      return this->computeEffectiveBendingThickness();
-    case 2:
-      return this->panelLength;
-    case 3:
-      return this->stiffenerPitch;
-    case 4:
-      return this->panelThick;
-    case 5:
-      return this->stiffenerHeight;
-    case 6:
-      return this->stiffenerThick;
-    case 7:
-      return this->panelWidth;
+  if (!writeNDparamsToDV && !writeIndFailuresToDV) {
+    switch (index) {
+      case 0:
+        return this->computeEffectiveThickness();
+      case 1:
+        return this->computeEffectiveBendingThickness();
+      case 2:
+        return this->panelLength;
+      case 3:
+        return this->stiffenerPitch;
+      case 4:
+        return this->panelThick;
+      case 5:
+        return this->stiffenerHeight;
+      case 6:
+        return this->stiffenerThick;
+        // there is no case 7 right now
+        // case 7:
+        //  return this->panelWidth;
+    }
+  } else if (writeNDparamsToDV) {
+    TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
+    this->computePanelStiffness(panelStiffness);
+    const TacsScalar *Ap, *Dp;
+    this->extractTangentStiffness(panelStiffness, &Ap, NULL, &Dp, NULL, NULL);
+
+    // Compute panel dimensions, material props and non-dimensional parameters
+    TacsScalar D11p = Dp[0], D12p = Dp[1], D22p = Dp[3], D66p = Dp[5];
+    TacsScalar A11p = Ap[0], A66p = Ap[5];
+    // only do ND params for the panel since those are the ones used for the ML
+    // models
+    TacsScalar delta, rho0, xi, gamma, a, b, zeta;
+    a = this->panelLength;
+    b = this->panelWidth;
+    delta = computeStiffenerAreaRatio();
+    rho0 = computeAffineAspectRatio(D11p, D22p, a, b);
+    xi = computeGeneralizedRigidity(D11p, D22p, D12p, D66p);
+    gamma = computeStiffenerStiffnessRatio(D11p);
+    zeta = computeTransverseShearParameter(A66p, A11p, b, this->panelThick);
+    TacsScalar SAR = this->stiffenerHeight / this->stiffenerThick;
+
+    switch (index) {
+      case 0:
+        return this->stiffenerPitch;
+      case 1:
+        return SAR;
+      case 2:
+        return delta;
+      case 3:
+        return rho0;
+      case 4:
+        return xi;
+      case 5:
+        return gamma;
+      case 6:
+        return zeta;
+    }
+  } else {
+    TacsScalar fails[this->NUM_FAILURES];
+    // where to get the strains..
+    // TacsScalar aggFail = this->computeFailureValues(e, fails);
+
+    switch (index) {
+      case 0:
+        return fails[0];
+      case 1:
+        return fails[1];
+      case 2:
+        return fails[2];
+      case 3:
+        return fails[3];
+      case 4:
+        return fails[4];
+      case 5:
+        return 0.0;
+      case 6:
+        return 0.0;
+    }
   }
+
   return 0.0;
 }
 
@@ -931,16 +990,16 @@ int TACSGPBladeStiffenedShellConstitutive::setDesignVars(
     }
   }
 
-  //printf("panelLength = %.8e\n", this->panelLength);
-  //printf("panelThick = %.8e\n", this->panelThick);
-  //printf("panelWidth = %.8e\n", this->panelWidth);
-  //printf("stiffThick = %.8e\n", this->stiffenerThick);
-  //printf("stiffHeight = %.8e\n", this->stiffenerHeight);
+  // printf("panelLength = %.8e\n", this->panelLength);
+  // printf("panelThick = %.8e\n", this->panelThick);
+  // printf("panelWidth = %.8e\n", this->panelWidth);
+  // printf("stiffThick = %.8e\n", this->stiffenerThick);
+  // printf("stiffHeight = %.8e\n", this->stiffenerHeight);
 
   // NOTE : this is a very important step => here we reset the save on all
   // computed GP models so they recalculate and compute their new values.
   if (this->panelGPs) {
-    //printf("reset Saved data in setDesignVars\n");
+    // printf("reset Saved data in setDesignVars\n");
     this->panelGPs->resetSavedData();
   }
 
