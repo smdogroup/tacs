@@ -865,16 +865,14 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
     fails[1] = this->computeStiffenerFailure(stiffenerStrain);
   }
 
-  if (this->includeGlobalBuckling || this->includeLocalBuckling) {
-    // --- Local panel buckling ---
-    if (this->includeLocalBuckling) {
-      fails[2] = this->evalLocalPanelBuckling(e);
-    }
+  // --- Local panel buckling ---
+  if (this->includeLocalBuckling) {
+    fails[2] = this->evalLocalPanelBuckling(e);
+  }
 
-    // --- Global buckling ---
-    if (this->includeGlobalBuckling) {
-      fails[3] = this->evalGlobalPanelBuckling(e);
-    }
+  // --- Global buckling ---
+  if (this->includeGlobalBuckling) {
+    fails[3] = this->evalGlobalPanelBuckling(e);
   }
 
   // --- Stiffener column buckling ---
