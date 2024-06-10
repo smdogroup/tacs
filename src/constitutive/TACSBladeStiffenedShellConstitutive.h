@@ -1121,6 +1121,15 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       TacsScalar* const N12CritSens);
 
   /**
+   * @brief Compute the strength ratio for the stiffener column buckling failure
+   * mode
+   *
+   * @param stiffenerStrain Stiffener centroid strains
+   * @return TacsScalar Strength ratio
+   */
+  TacsScalar evalStiffenerColumnBuckling(const TacsScalar stiffenerStrain[]);
+
+  /**
    * @brief Compute the critical buckling load of the panel stiffeners
    *
    * @return TacsScalar

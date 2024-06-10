@@ -877,11 +877,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
 
   // --- Stiffener column buckling ---
   if (this->includeStiffenerColumnBuckling) {
-    TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
-    this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
-    // The first component of the stiffener stress is the axial force
-    TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
-    fails[4] = -stiffenerStress[0] / fCrit;
+    fails[4] = this->evalStiffenerColumnBuckling(stiffenerStrain);
   }
 
   // --- Stiffener crippling ---
@@ -3070,6 +3066,15 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
 
   return (fabs(dfdN1RelError) < tol && fabs(dfdN1CritRelError) < tol &&
           fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
+}
+
+TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerColumnBuckling(
+    const TacsScalar stiffenerStrain[]) {
+  TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+  // The first component of the stiffener stress is the axial force
+  TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
+  return -stiffenerStress[0] / fCrit;
 }
 
 TacsScalar
