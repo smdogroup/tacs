@@ -865,51 +865,19 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
     fails[1] = this->computeStiffenerFailure(stiffenerStrain);
   }
 
-  if (this->includeGlobalBuckling || this->includeLocalBuckling) {
-    // Compute panel stiffness matrix and loads
-    TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
-        stress[NUM_STRESSES];
+  // --- Local panel buckling ---
+  if (this->includeLocalBuckling) {
+    fails[2] = this->evalLocalPanelBuckling(e);
+  }
 
-    // --- Local panel buckling ---
-    if (this->includeLocalBuckling) {
-      this->computePanelStiffness(panelStiffness);
-      const TacsScalar *A, *D;
-      this->extractTangentStiffness(panelStiffness, &A, NULL, &D, NULL, NULL);
-      this->computePanelStress(e, stress);
-
-      // Compute the critical local loads
-      const TacsScalar D11 = D[0], D12 = D[1], D22 = D[3], D66 = D[5],
-                       L = this->stiffenerPitch;
-      const TacsScalar N1Crit =
-          this->computeCriticalLocalAxialLoad(D11, D22, D12, D66, L);
-      const TacsScalar N12Crit =
-          this->computeCriticalShearLoad(D11, D22, D12 + 2.0 * D66, L);
-
-      // Compute the buckling criteria
-      fails[2] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
-    }
-
-    // --- Global buckling ---
-    if (this->includeGlobalBuckling) {
-      TacsScalar D1, D2, D3;
-      this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
-      const TacsScalar L = this->panelLength;
-
-      const TacsScalar N1Crit = computeCriticalGlobalAxialLoad(D1, L);
-      const TacsScalar N12Crit = this->computeCriticalShearLoad(D1, D2, D3, L);
-
-      this->evalStress(0, NULL, NULL, e, stress);
-      fails[3] = this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
-    }
+  // --- Global buckling ---
+  if (this->includeGlobalBuckling) {
+    fails[3] = this->evalGlobalPanelBuckling(e);
   }
 
   // --- Stiffener column buckling ---
   if (this->includeStiffenerColumnBuckling) {
-    TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
-    this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
-    // The first component of the stiffener stress is the axial force
-    TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
-    fails[4] = -stiffenerStress[0] / fCrit;
+    fails[4] = this->evalStiffenerColumnBuckling(stiffenerStrain);
   }
 
   // --- Stiffener crippling ---
@@ -944,10 +912,11 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
   this->transformStrain(e, stiffenerStrain);
 
-  // First compute the sensitivity of the panel failure value
+  // --- Material failure ---
   TacsScalar panelFailSens[this->NUM_STRESSES];
   memset(panelFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
   if (this->includeMaterialFailure) {
+    // First compute the sensitivity of the panel failure value
     fails[0] = this->evalPanelFailureStrainSens(e, panelFailSens);
 
     // And now for the stiffener failure value, first in terms of the beam
@@ -957,71 +926,18 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
     this->transformStrainSens(stiffenerStrainSens, stiffenerMatFailSens);
   }
 
-  TacsScalar globalBucklingSens[this->NUM_STRESSES],
-      localBucklingSens[this->NUM_STRESSES];
-  memset(globalBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  // --- Local panel buckling ---
+  TacsScalar localBucklingSens[this->NUM_STRESSES];
   memset(localBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
-  if (this->includeGlobalBuckling || this->includeLocalBuckling) {
-    // --- Local panel buckling ---
-    if (this->includeLocalBuckling) {
-      // Compute panel stiffness matrix and loads
-      TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
-          panelStress[NUM_STRESSES];
-      this->computePanelStiffness(panelStiffness);
-      const TacsScalar *APanel, *DPanel;
-      this->extractTangentStiffness(panelStiffness, &APanel, NULL, &DPanel,
-                                    NULL, NULL);
-      this->computePanelStress(e, panelStress);
+  if (this->includeLocalBuckling) {
+    fails[2] = this->evalLocalPanelBucklingStrainSens(e, localBucklingSens);
+  }
 
-      // Compute the critical local loads (no need to compute their
-      // sensitivities because they're not dependent on the strain))
-      TacsScalar N1CritLocal, N12CritLocal;
-      TacsScalar D11 = DPanel[0], D12 = DPanel[1], D22 = DPanel[3],
-                 D66 = DPanel[5], L = this->stiffenerPitch;
-      N1CritLocal = this->computeCriticalLocalAxialLoad(D11, D22, D12, D66, L);
-      N12CritLocal =
-          this->computeCriticalShearLoad(D11, D22, D12 + 2.0 * D66, L);
-
-      // Compute the buckling criteria and it's sensitivities
-      TacsScalar N1LocalSens, N12LocalSens, N1CritLocalSens, N12CritLocalSens;
-      fails[2] = this->bucklingEnvelopeSens(
-          -panelStress[0], N1CritLocal, panelStress[2], N12CritLocal,
-          &N1LocalSens, &N1CritLocalSens, &N12LocalSens, &N12CritLocalSens);
-
-      localBucklingSens[0] +=
-          N1LocalSens * -APanel[0] + N12LocalSens * APanel[2];
-      localBucklingSens[1] +=
-          N1LocalSens * -APanel[1] + N12LocalSens * APanel[4];
-      localBucklingSens[2] +=
-          N1LocalSens * -APanel[2] + N12LocalSens * APanel[5];
-    }
-
-    // --- Global buckling ---
-    if (this->includeGlobalBuckling) {
-      TacsScalar stiffness[NUM_TANGENT_STIFFNESS_ENTRIES], stress[NUM_STRESSES];
-      this->computeStiffness(stiffness);
-      const TacsScalar *A, *B, *D, *As;
-      TacsScalar drill;
-      this->extractTangentStiffness(stiffness, &A, &B, &D, &As, &drill);
-      this->computeStress(A, B, D, As, drill, e, stress);
-      TacsScalar N1GlobalSens, N1CritGlobalSens, N12GlobalSens,
-          N12CritGlobalSens;
-      TacsScalar D1, D2, D3;
-      this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
-      const TacsScalar L = this->panelLength;
-      TacsScalar N1CritGlobal = computeCriticalGlobalAxialLoad(D1, L);
-      TacsScalar N12CritGlobal = this->computeCriticalShearLoad(D1, D2, D3, L);
-
-      fails[3] = this->bucklingEnvelopeSens(
-          -stress[0], N1CritGlobal, stress[2], N12CritGlobal, &N1GlobalSens,
-          &N1CritGlobalSens, &N12GlobalSens, &N12CritGlobalSens);
-      globalBucklingSens[0] += N1GlobalSens * -A[0] + N12GlobalSens * A[2];
-      globalBucklingSens[1] += N1GlobalSens * -A[1] + N12GlobalSens * A[4];
-      globalBucklingSens[2] += N1GlobalSens * -A[2] + N12GlobalSens * A[5];
-      globalBucklingSens[3] += N1GlobalSens * -B[0] + N12GlobalSens * B[2];
-      globalBucklingSens[4] += N1GlobalSens * -B[1] + N12GlobalSens * B[4];
-      globalBucklingSens[5] += N1GlobalSens * -B[2] + N12GlobalSens * B[5];
-    }
+  // --- Global buckling ---
+  TacsScalar globalBucklingSens[this->NUM_STRESSES];
+  memset(globalBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  if (this->includeGlobalBuckling) {
+    fails[3] = this->evalGlobalPanelBucklingStrainSens(e, globalBucklingSens);
   }
 
   // --- Stiffener column buckling ---
@@ -1101,209 +1017,14 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
 
   // --- Local panel buckling ---
   if (this->includeLocalBuckling) {
-    // Compute panel stiffness matrix and loads
-    TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
-        panelStress[NUM_STRESSES];
-    this->computePanelStiffness(panelStiffness);
-    const TacsScalar *A, *D;
-    this->extractTangentStiffness(panelStiffness, &A, NULL, &D, NULL, NULL);
-    this->computePanelStress(strain, panelStress);
-
-    // Compute the critical local loads and their sensitivities
-    TacsScalar N1Crit, N12Crit;
-    const TacsScalar D11 = D[0], D12 = D[1], D22 = D[3], D66 = D[5],
-                     L = this->stiffenerPitch;
-
-    // Create arrays for the sensitivities of the critical loads:
-    // [dN/dD11, dNdD22, dNdD12, dNdD66, dNdL]
-    TacsScalar N1CritSens[5], N12CritSens[5];
-    N1Crit = this->computeCriticalLocalAxialLoadSens(
-        D11, D22, D12, D66, L, &N1CritSens[0], &N1CritSens[1], &N1CritSens[2],
-        &N1CritSens[3], &N1CritSens[4]);
-    N12Crit = this->computeCriticalShearLoadSens(
-        D11, D22, D12 + 2.0 * D66, L, &N12CritSens[0], &N12CritSens[1],
-        &N12CritSens[2], &N12CritSens[4]);
-
-    // N12CritSens[2] is currently dN12Crit/d(D12 + 2D66)
-    N12CritSens[3] = 2.0 * N12CritSens[2];
-
-    // Compute the buckling criteria and it's sensitivities to the applied and
-    // critical loads
-    TacsScalar dfdN1Local, dfdN12Local, dfdN1CritLocal, dfdN12CritLocal;
-    fails[2] = this->bucklingEnvelopeSens(
-        -panelStress[0], N1Crit, panelStress[2], N12Crit, &dfdN1Local,
-        &dfdN1CritLocal, &dfdN12Local, &dfdN12CritLocal);
-    dfdN1Local *= dKSdf[2];
-    dfdN12Local *= dKSdf[2];
-    dfdN1CritLocal *= dKSdf[2];
-    dfdN12CritLocal *= dKSdf[2];
-
-    // Convert sensitivity w.r.t applied loads into sensitivity w.r.t DVs
-    TacsScalar dfdPanelStress[NUM_STRESSES];
-    memset(dfdPanelStress, 0, NUM_STRESSES * sizeof(TacsScalar));
-    dfdPanelStress[0] = -dfdN1Local;
-    dfdPanelStress[2] = dfdN12Local;
-    this->addPanelStressDVSens(scale, strain, dfdPanelStress,
-                               &dfdx[this->panelDVStartNum]);
-
-    // Convert the sensitivities of  the critical loads w.r.t the D matrix
-    // entries to sensitivities of the buckling failure criteria w.r.t the D
-    // matrix entries
-    TacsScalar localBucklingDMatSens[4];
-    for (int ii = 0; ii < 4; ii++) {
-      localBucklingDMatSens[ii] =
-          N1CritSens[ii] * dfdN1CritLocal + N12CritSens[ii] * dfdN12CritLocal;
-    }
-
-    // --- Panel thickness sensitivity ---
-    if (this->panelThickNum >= 0) {
-      const int dvNum = this->panelThickLocalNum;
-      // --- Local buckling contribution ---
-      const TacsScalar dMatdt = 0.25 * t * t;  // d/dt(t^3/12) = t^2/4
-      for (int ii = 0; ii < this->numPanelPlies; ii++) {
-        TacsScalar* Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
-        dfdx[dvNum] +=
-            scale * dMatdt * this->panelPlyFracs[ii] *
-            (localBucklingDMatSens[0] * Q[0] + localBucklingDMatSens[1] * Q[3] +
-             localBucklingDMatSens[2] * Q[1] + localBucklingDMatSens[3] * Q[5]);
-      }
-    }
-
-    // --- Panel Ply fraction sensitivities ---
-    for (int ii = 0; ii < this->numPanelPlies; ii++) {
-      if (this->panelPlyFracNums[ii] >= 0) {
-        const int dvNum = this->panelPlyFracLocalNums[ii];
-        // --- Local buckling contribution ---
-        const TacsScalar DFactor = t * t * t / 12.0;
-        const TacsScalar* const Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
-        // Do df/dx += df/dD11 * dD11/dx + df/dD22 * dD22/dx + df/dD12 * dD12/dx
-        // + df/dD66 * dD66/dx
-        dfdx[dvNum] +=
-            scale * DFactor *
-            (localBucklingDMatSens[0] * Q[0] + localBucklingDMatSens[1] * Q[3] +
-             localBucklingDMatSens[2] * Q[1] + localBucklingDMatSens[3] * Q[5]);
-      }
-    }
-
-    // --- Stiffener pitch sensitivity ---
-    if (this->stiffenerPitchNum >= 0) {
-      dfdx[this->stiffenerPitchLocalNum] +=
-          scale *
-          (N12CritSens[4] * dfdN12CritLocal + N1CritSens[4] * dfdN1CritLocal);
-    }
+    this->addLocalPanelBucklingDVSens(elemIndex, scale * dKSdf[2], pt, X,
+                                      strain, dvLen, dfdx);
   }
 
   // --- Global buckling sensitivity ---
   if (this->includeGlobalBuckling) {
-    TacsScalar stress[NUM_STRESSES];
-    this->evalStress(0, NULL, NULL, strain, stress);
-    TacsScalar dfdN1Global, dfdN12Global, dfdN1CritGlobal, dfdN12CritGlobal;
-    TacsScalar D1, D2, D3;
-    TacsScalar N1Crit, N12Crit;
-    this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
-    const TacsScalar L = this->panelLength;
-    N1Crit = computeCriticalGlobalAxialLoad(D1, L);
-    N12Crit = this->computeCriticalShearLoad(D1, D2, D3, L);
-
-    this->bucklingEnvelopeSens(-stress[0], N1Crit, stress[2], N12Crit,
-                               &dfdN1Global, &dfdN1CritGlobal, &dfdN12Global,
-                               &dfdN12CritGlobal);
-    dfdN1Global *= dKSdf[3];
-    dfdN12Global *= dKSdf[3];
-    dfdN1CritGlobal *= dKSdf[3];
-    dfdN12CritGlobal *= dKSdf[3];
-
-    // Add the sensitivity of the buckling failure criteria due to the
-    // dependence of the applied loads on the DVs
-    TacsScalar dfdStress[NUM_STRESSES];
-    memset(dfdStress, 0, NUM_STRESSES * sizeof(TacsScalar));
-    dfdStress[0] = -dfdN1Global;
-    dfdStress[2] = dfdN12Global;
-    this->addStressDVSens(elemIndex, scale, pt, X, strain, dfdStress, numDV,
-                          dfdx);
-
-    // Propogate the sensitivity of the buckling failure criteria w.r.t the
-    // critical loads back to the DVs
-    TacsScalar dfdD1, dfdD2, dfdD3, dfdPanelLength;
-    this->computeCriticalShearLoadSens(D1, D2, D3, L, &dfdD1, &dfdD2, &dfdD3,
-                                       &dfdPanelLength);
-    dfdD1 *= dfdN12CritGlobal;
-    dfdD2 *= dfdN12CritGlobal;
-    dfdD3 *= dfdN12CritGlobal;
-    dfdPanelLength *= dfdN12CritGlobal;
-    // N1CritGlobal = M_PI * M_PI * D1 / (L * L);
-    dfdD1 += dfdN1CritGlobal * (M_PI * M_PI / (L * L));
-    dfdPanelLength += dfdN1CritGlobal * (-2.0 * M_PI * M_PI * D1 / (L * L * L));
-
-    if (this->panelLengthNum >= 0) {
-      dfdx[this->panelLengthLocalNum] += scale * dfdPanelLength;
-    }
-
-    TacsScalar globalBucklingspSens, globalBucklingtpSens, globalBucklinghsSens,
-        globalBucklingtsSens, globalBucklingQstiffSens[NUM_Q_ENTRIES],
-        globalBucklingQpanelSens[NUM_Q_ENTRIES];
-    this->computeCriticalGlobalBucklingStiffnessSens(
-        dfdD1, dfdD2, dfdD3, &globalBucklingspSens, &globalBucklingtpSens,
-        &globalBucklinghsSens, &globalBucklingtsSens, globalBucklingQpanelSens,
-        globalBucklingQstiffSens);
-
-    // --- Panel thickness sensitivity ---
-    TacsScalar t = this->panelThick;
-    if (this->panelThickNum >= 0) {
-      const int dvNum = this->panelThickLocalNum;
-      dfdx[dvNum] += scale * globalBucklingtpSens;
-    }
-
-    // --- Stiffener height contribution ---
-    if (this->stiffenerHeightNum >= 0) {
-      const int dvNum = this->stiffenerHeightLocalNum;
-      // --- Global buckling contribution ---
-      dfdx[dvNum] += scale * globalBucklinghsSens;
-    }
-
-    // --- Stiffener thickness contribution ---
-    if (this->stiffenerThickNum >= 0) {
-      const int dvNum = this->stiffenerThickLocalNum;
-      // --- Global buckling contribution ---
-      dfdx[dvNum] += scale * globalBucklingtsSens;
-    }
-
-    // --- Panel Ply fraction sensitivities ---
-    for (int ii = 0; ii < this->numPanelPlies; ii++) {
-      if (this->panelPlyFracNums[ii] >= 0) {
-        const int dvNum = this->panelPlyFracLocalNums[ii];
-        const TacsScalar* const Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
-
-        // --- Global buckling contribution ---
-        dfdx[dvNum] += scale * (globalBucklingQpanelSens[0] * Q[0] +
-                                globalBucklingQpanelSens[1] * Q[1] +
-                                globalBucklingQpanelSens[2] * Q[2] +
-                                globalBucklingQpanelSens[3] * Q[3] +
-                                globalBucklingQpanelSens[4] * Q[4] +
-                                globalBucklingQpanelSens[5] * Q[5]);
-      }
-    }
-
-    // --- Stiffener ply fraction contributions ---
-    for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
-      if (this->stiffenerPlyFracNums[ii] >= 0) {
-        const int dvNum = this->stiffenerPlyFracLocalNums[ii];
-        const TacsScalar* const Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
-
-        // --- Global buckling contribution ---
-        dfdx[dvNum] += scale * (globalBucklingQstiffSens[0] * Q[0] +
-                                globalBucklingQstiffSens[1] * Q[1] +
-                                globalBucklingQstiffSens[2] * Q[2] +
-                                globalBucklingQstiffSens[3] * Q[3] +
-                                globalBucklingQstiffSens[4] * Q[4] +
-                                globalBucklingQstiffSens[5] * Q[5]);
-      }
-    }
-
-    // --- Stiffener pitch sensitivity ---
-    if (this->stiffenerPitchNum >= 0) {
-      dfdx[this->stiffenerPitchLocalNum] += scale * globalBucklingspSens;
-    }
+    this->addGlobalPanelBucklingDVSens(elemIndex, scale * dKSdf[3], pt, X,
+                                       strain, dvLen, dfdx);
   }
 
   // --- Stiffener column buckling ---
@@ -2295,6 +2016,20 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
 // Buckling functions
 // ==============================================================================
 
+TacsScalar TACSBladeStiffenedShellConstitutive::evalGlobalPanelBuckling(
+    const TacsScalar e[]) {
+  TacsScalar stress[TACSShellConstitutive::NUM_STRESSES];
+  TacsScalar D1, D2, D3;
+  this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
+  const TacsScalar L = this->panelLength;
+
+  const TacsScalar N1Crit = computeCriticalGlobalAxialLoad(D1, L);
+  const TacsScalar N12Crit = this->computeCriticalShearLoad(D1, D2, D3, L);
+
+  this->evalStress(0, NULL, NULL, e, stress);
+  return this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
+}
+
 void TACSBladeStiffenedShellConstitutive::
     computeCriticalGlobalBucklingStiffness(TacsScalar* const D1,
                                            TacsScalar* const D2,
@@ -2349,8 +2084,150 @@ void TACSBladeStiffenedShellConstitutive::
   *D3 = (QPanel[5] * (Jp + Ap * zg * zg) +
          0.25 * QStiffener[5] * (Js + As * (zg - zs) * (zg - zs))) /
         ps;
+}
 
-  TacsScalar C[NUM_TANGENT_STIFFNESS_ENTRIES];
+TacsScalar
+TACSBladeStiffenedShellConstitutive::evalGlobalPanelBucklingStrainSens(
+    const TacsScalar e[], TacsScalar sens[]) {
+  TacsScalar stiffness[NUM_TANGENT_STIFFNESS_ENTRIES], stress[NUM_STRESSES];
+  this->computeStiffness(stiffness);
+  const TacsScalar *A, *B, *D, *As;
+  TacsScalar drill;
+  this->extractTangentStiffness(stiffness, &A, &B, &D, &As, &drill);
+  this->computeStress(A, B, D, As, drill, e, stress);
+  TacsScalar N1GlobalSens, N1CritGlobalSens, N12GlobalSens, N12CritGlobalSens;
+  TacsScalar D1, D2, D3;
+  this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
+  const TacsScalar L = this->panelLength;
+  TacsScalar N1CritGlobal = computeCriticalGlobalAxialLoad(D1, L);
+  TacsScalar N12CritGlobal = this->computeCriticalShearLoad(D1, D2, D3, L);
+
+  const TacsScalar strengthRatio = this->bucklingEnvelopeSens(
+      -stress[0], N1CritGlobal, stress[2], N12CritGlobal, &N1GlobalSens,
+      &N1CritGlobalSens, &N12GlobalSens, &N12CritGlobalSens);
+
+  sens[0] += N1GlobalSens * -A[0] + N12GlobalSens * A[2];
+  sens[1] += N1GlobalSens * -A[1] + N12GlobalSens * A[4];
+  sens[2] += N1GlobalSens * -A[2] + N12GlobalSens * A[5];
+  sens[3] += N1GlobalSens * -B[0] + N12GlobalSens * B[2];
+  sens[4] += N1GlobalSens * -B[1] + N12GlobalSens * B[4];
+  sens[5] += N1GlobalSens * -B[2] + N12GlobalSens * B[5];
+
+  return strengthRatio;
+}
+
+void TACSBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
+    int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
+    const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
+  TacsScalar stress[NUM_STRESSES];
+  this->evalStress(0, NULL, NULL, strain, stress);
+  TacsScalar dfdN1Global, dfdN12Global, dfdN1CritGlobal, dfdN12CritGlobal;
+  TacsScalar D1, D2, D3;
+  TacsScalar N1Crit, N12Crit;
+  this->computeCriticalGlobalBucklingStiffness(&D1, &D2, &D3);
+  const TacsScalar L = this->panelLength;
+  N1Crit = computeCriticalGlobalAxialLoad(D1, L);
+  N12Crit = this->computeCriticalShearLoad(D1, D2, D3, L);
+
+  this->bucklingEnvelopeSens(-stress[0], N1Crit, stress[2], N12Crit,
+                             &dfdN1Global, &dfdN1CritGlobal, &dfdN12Global,
+                             &dfdN12CritGlobal);
+  // dfdN1Global *= dKSdf[3];
+  // dfdN12Global *= dKSdf[3];
+  // dfdN1CritGlobal *= dKSdf[3];
+  // dfdN12CritGlobal *= dKSdf[3];
+
+  // Add the sensitivity of the buckling failure criteria due to the
+  // dependence of the applied loads on the DVs
+  TacsScalar dfdStress[NUM_STRESSES];
+  memset(dfdStress, 0, NUM_STRESSES * sizeof(TacsScalar));
+  dfdStress[0] = -dfdN1Global;
+  dfdStress[2] = dfdN12Global;
+  this->addStressDVSens(elemIndex, scale, pt, X, strain, dfdStress, dvLen,
+                        dfdx);
+
+  // Propogate the sensitivity of the buckling failure criteria w.r.t the
+  // critical loads back to the DVs
+  TacsScalar dfdD1, dfdD2, dfdD3, dfdPanelLength;
+  this->computeCriticalShearLoadSens(D1, D2, D3, L, &dfdD1, &dfdD2, &dfdD3,
+                                     &dfdPanelLength);
+  dfdD1 *= dfdN12CritGlobal;
+  dfdD2 *= dfdN12CritGlobal;
+  dfdD3 *= dfdN12CritGlobal;
+  dfdPanelLength *= dfdN12CritGlobal;
+  // N1CritGlobal = M_PI * M_PI * D1 / (L * L);
+  dfdD1 += dfdN1CritGlobal * (M_PI * M_PI / (L * L));
+  dfdPanelLength += dfdN1CritGlobal * (-2.0 * M_PI * M_PI * D1 / (L * L * L));
+
+  if (this->panelLengthNum >= 0) {
+    dfdx[this->panelLengthLocalNum] += scale * dfdPanelLength;
+  }
+
+  TacsScalar globalBucklingspSens, globalBucklingtpSens, globalBucklinghsSens,
+      globalBucklingtsSens, globalBucklingQstiffSens[NUM_Q_ENTRIES],
+      globalBucklingQpanelSens[NUM_Q_ENTRIES];
+  this->computeCriticalGlobalBucklingStiffnessSens(
+      dfdD1, dfdD2, dfdD3, &globalBucklingspSens, &globalBucklingtpSens,
+      &globalBucklinghsSens, &globalBucklingtsSens, globalBucklingQpanelSens,
+      globalBucklingQstiffSens);
+
+  // --- Panel thickness sensitivity ---
+  TacsScalar t = this->panelThick;
+  if (this->panelThickNum >= 0) {
+    const int dvNum = this->panelThickLocalNum;
+    dfdx[dvNum] += scale * globalBucklingtpSens;
+  }
+
+  // --- Stiffener height contribution ---
+  if (this->stiffenerHeightNum >= 0) {
+    const int dvNum = this->stiffenerHeightLocalNum;
+    // --- Global buckling contribution ---
+    dfdx[dvNum] += scale * globalBucklinghsSens;
+  }
+
+  // --- Stiffener thickness contribution ---
+  if (this->stiffenerThickNum >= 0) {
+    const int dvNum = this->stiffenerThickLocalNum;
+    // --- Global buckling contribution ---
+    dfdx[dvNum] += scale * globalBucklingtsSens;
+  }
+
+  // --- Panel Ply fraction sensitivities ---
+  for (int ii = 0; ii < this->numPanelPlies; ii++) {
+    if (this->panelPlyFracNums[ii] >= 0) {
+      const int dvNum = this->panelPlyFracLocalNums[ii];
+      const TacsScalar* const Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
+
+      // --- Global buckling contribution ---
+      dfdx[dvNum] += scale * (globalBucklingQpanelSens[0] * Q[0] +
+                              globalBucklingQpanelSens[1] * Q[1] +
+                              globalBucklingQpanelSens[2] * Q[2] +
+                              globalBucklingQpanelSens[3] * Q[3] +
+                              globalBucklingQpanelSens[4] * Q[4] +
+                              globalBucklingQpanelSens[5] * Q[5]);
+    }
+  }
+
+  // --- Stiffener ply fraction contributions ---
+  for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
+    if (this->stiffenerPlyFracNums[ii] >= 0) {
+      const int dvNum = this->stiffenerPlyFracLocalNums[ii];
+      const TacsScalar* const Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
+
+      // --- Global buckling contribution ---
+      dfdx[dvNum] += scale * (globalBucklingQstiffSens[0] * Q[0] +
+                              globalBucklingQstiffSens[1] * Q[1] +
+                              globalBucklingQstiffSens[2] * Q[2] +
+                              globalBucklingQstiffSens[3] * Q[3] +
+                              globalBucklingQstiffSens[4] * Q[4] +
+                              globalBucklingQstiffSens[5] * Q[5]);
+    }
+  }
+
+  // --- Stiffener pitch sensitivity ---
+  if (this->stiffenerPitchNum >= 0) {
+    dfdx[this->stiffenerPitchLocalNum] += scale * globalBucklingspSens;
+  }
 }
 
 void TACSBladeStiffenedShellConstitutive::
@@ -2786,23 +2663,26 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
   delete[] DVPert;
 }
 
-TacsScalar
-TACSBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
-    const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
-    const TacsScalar D66, const TacsScalar L, TacsScalar* const D11Sens,
-    TacsScalar* const D22Sens, TacsScalar* const D12Sens,
-    TacsScalar* const D66Sens, TacsScalar* const LSens) {
-  double pi2 = M_PI * M_PI;
-  TacsScalar L2 = L * L;
-  TacsScalar root = sqrt(D11 * D22);
+TacsScalar TACSBladeStiffenedShellConstitutive::evalLocalPanelBuckling(
+    const TacsScalar e[]) {
+  // Compute panel stiffness matrix and loads
+  TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
+      stress[NUM_STRESSES];
+  this->computePanelStiffness(panelStiffness);
+  const TacsScalar *A, *D;
+  this->extractTangentStiffness(panelStiffness, &A, NULL, &D, NULL, NULL);
+  this->computePanelStress(e, stress);
 
-  *D11Sens = pi2 * root / (D11 * L2);
-  *D12Sens = 2.0 * pi2 / L2;
-  *D22Sens = pi2 * root / (D22 * L2);
-  *D66Sens = 4.0 * pi2 / L2;
-  *LSens = 4.0 * pi2 * (-D12 - 2.0 * D66 - root) / (L2 * L);
+  // Compute the critical local loads
+  const TacsScalar D11 = D[0], D12 = D[1], D22 = D[3], D66 = D[5],
+                   L = this->stiffenerPitch;
+  const TacsScalar N1Crit =
+      this->computeCriticalLocalAxialLoad(D11, D22, D12, D66, L);
+  const TacsScalar N12Crit =
+      this->computeCriticalShearLoad(D11, D22, D12 + 2.0 * D66, L);
 
-  return 2.0 * pi2 / L2 * (root + D12 + 2.0 * D66);
+  // Compute the buckling criteria
+  return this->bucklingEnvelope(-stress[0], N1Crit, stress[2], N12Crit);
 }
 
 TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
@@ -2828,15 +2708,166 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
   return N12_crit;
 }
 
+TacsScalar
+TACSBladeStiffenedShellConstitutive::evalLocalPanelBucklingStrainSens(
+    const TacsScalar e[], TacsScalar sens[]) {
+  // Compute panel stiffness matrix and loads
+  TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
+      panelStress[NUM_STRESSES];
+  this->computePanelStiffness(panelStiffness);
+  const TacsScalar *APanel, *DPanel;
+  this->extractTangentStiffness(panelStiffness, &APanel, NULL, &DPanel, NULL,
+                                NULL);
+  this->computePanelStress(e, panelStress);
+
+  // Compute the critical local loads (no need to compute their
+  // sensitivities because they're not dependent on the strain))
+  TacsScalar N1CritLocal, N12CritLocal;
+  TacsScalar D11 = DPanel[0], D12 = DPanel[1], D22 = DPanel[3], D66 = DPanel[5],
+             L = this->stiffenerPitch;
+  N1CritLocal = this->computeCriticalLocalAxialLoad(D11, D22, D12, D66, L);
+  N12CritLocal = this->computeCriticalShearLoad(D11, D22, D12 + 2.0 * D66, L);
+
+  // Compute the buckling criteria and it's sensitivities
+  TacsScalar N1LocalSens, N12LocalSens, N1CritLocalSens, N12CritLocalSens;
+  const TacsScalar strengthRatio = this->bucklingEnvelopeSens(
+      -panelStress[0], N1CritLocal, panelStress[2], N12CritLocal, &N1LocalSens,
+      &N1CritLocalSens, &N12LocalSens, &N12CritLocalSens);
+
+  sens[0] = N1LocalSens * -APanel[0] + N12LocalSens * APanel[2];
+  sens[1] = N1LocalSens * -APanel[1] + N12LocalSens * APanel[4];
+  sens[2] = N1LocalSens * -APanel[2] + N12LocalSens * APanel[5];
+  for (int ii = 3; ii < NUM_STRESSES; ii++) {
+    sens[ii] = 0.0;
+  }
+
+  return strengthRatio;
+}
+
+void TACSBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
+    int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
+    const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
+  // Compute panel stiffness matrix and loads
+  TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
+      panelStress[NUM_STRESSES];
+  const TacsScalar t = this->panelThick;
+  this->computePanelStiffness(panelStiffness);
+  const TacsScalar *A, *D;
+  this->extractTangentStiffness(panelStiffness, &A, NULL, &D, NULL, NULL);
+  this->computePanelStress(strain, panelStress);
+
+  // Compute the critical local loads and their sensitivities
+  TacsScalar N1Crit, N12Crit;
+  const TacsScalar D11 = D[0], D12 = D[1], D22 = D[3], D66 = D[5],
+                   L = this->stiffenerPitch;
+
+  // Create arrays for the sensitivities of the critical loads:
+  // [dN/dD11, dNdD22, dNdD12, dNdD66, dNdL]
+  TacsScalar N1CritSens[5], N12CritSens[5];
+  N1Crit = this->computeCriticalLocalAxialLoadSens(
+      D11, D22, D12, D66, L, &N1CritSens[0], &N1CritSens[1], &N1CritSens[2],
+      &N1CritSens[3], &N1CritSens[4]);
+  N12Crit = this->computeCriticalShearLoadSens(
+      D11, D22, D12 + 2.0 * D66, L, &N12CritSens[0], &N12CritSens[1],
+      &N12CritSens[2], &N12CritSens[4]);
+
+  // N12CritSens[2] is currently dN12Crit/d(D12 + 2D66)
+  N12CritSens[3] = 2.0 * N12CritSens[2];
+
+  // Compute the buckling criteria and it's sensitivities to the applied and
+  // critical loads
+  TacsScalar dfdN1Local, dfdN12Local, dfdN1CritLocal, dfdN12CritLocal;
+  this->bucklingEnvelopeSens(-panelStress[0], N1Crit, panelStress[2], N12Crit,
+                             &dfdN1Local, &dfdN1CritLocal, &dfdN12Local,
+                             &dfdN12CritLocal);
+  // dfdN1Local *= dKSdf[2];
+  // dfdN12Local *= dKSdf[2];
+  // dfdN1CritLocal *= dKSdf[2];
+  // dfdN12CritLocal *= dKSdf[2];
+
+  // Convert sensitivity w.r.t applied loads into sensitivity w.r.t DVs
+  TacsScalar dfdPanelStress[NUM_STRESSES];
+  memset(dfdPanelStress, 0, NUM_STRESSES * sizeof(TacsScalar));
+  dfdPanelStress[0] = -dfdN1Local;
+  dfdPanelStress[2] = dfdN12Local;
+  this->addPanelStressDVSens(scale, strain, dfdPanelStress,
+                             &dfdx[this->panelDVStartNum]);
+
+  // Convert the sensitivities of  the critical loads w.r.t the D matrix
+  // entries to sensitivities of the buckling failure criteria w.r.t the D
+  // matrix entries
+  TacsScalar localBucklingDMatSens[4];
+  for (int ii = 0; ii < 4; ii++) {
+    localBucklingDMatSens[ii] =
+        N1CritSens[ii] * dfdN1CritLocal + N12CritSens[ii] * dfdN12CritLocal;
+  }
+
+  // --- Panel thickness sensitivity ---
+  if (this->panelThickNum >= 0) {
+    const int dvNum = this->panelThickLocalNum;
+    // --- Local buckling contribution ---
+    const TacsScalar dMatdt = 0.25 * t * t;  // d/dt(t^3/12) = t^2/4
+    for (int ii = 0; ii < this->numPanelPlies; ii++) {
+      TacsScalar* Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
+      dfdx[dvNum] +=
+          scale * dMatdt * this->panelPlyFracs[ii] *
+          (localBucklingDMatSens[0] * Q[0] + localBucklingDMatSens[1] * Q[3] +
+           localBucklingDMatSens[2] * Q[1] + localBucklingDMatSens[3] * Q[5]);
+    }
+  }
+
+  // --- Panel Ply fraction sensitivities ---
+  for (int ii = 0; ii < this->numPanelPlies; ii++) {
+    if (this->panelPlyFracNums[ii] >= 0) {
+      const int dvNum = this->panelPlyFracLocalNums[ii];
+      // --- Local buckling contribution ---
+      const TacsScalar DFactor = t * t * t / 12.0;
+      const TacsScalar* const Q = &(this->panelQMats[ii * NUM_Q_ENTRIES]);
+      // Do df/dx += df/dD11 * dD11/dx + df/dD22 * dD22/dx + df/dD12 * dD12/dx
+      // + df/dD66 * dD66/dx
+      dfdx[dvNum] +=
+          scale * DFactor *
+          (localBucklingDMatSens[0] * Q[0] + localBucklingDMatSens[1] * Q[3] +
+           localBucklingDMatSens[2] * Q[1] + localBucklingDMatSens[3] * Q[5]);
+    }
+  }
+
+  // --- Stiffener pitch sensitivity ---
+  if (this->stiffenerPitchNum >= 0) {
+    dfdx[this->stiffenerPitchLocalNum] +=
+        scale *
+        (N12CritSens[4] * dfdN12CritLocal + N1CritSens[4] * dfdN1CritLocal);
+  }
+}
+
+TacsScalar
+TACSBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
+    const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
+    const TacsScalar D66, const TacsScalar L, TacsScalar* const D11Sens,
+    TacsScalar* const D22Sens, TacsScalar* const D12Sens,
+    TacsScalar* const D66Sens, TacsScalar* const LSens) {
+  const double pi2 = M_PI * M_PI;
+  const TacsScalar L2 = L * L;
+  const TacsScalar root = sqrt(D11 * D22);
+
+  *D11Sens = pi2 * root / (D11 * L2);
+  *D12Sens = 2.0 * pi2 / L2;
+  *D22Sens = pi2 * root / (D22 * L2);
+  *D66Sens = 4.0 * pi2 / L2;
+  *LSens = 4.0 * pi2 * (-D12 - 2.0 * D66 - root) / (L2 * L);
+
+  return 2.0 * pi2 / L2 * (root + D12 + 2.0 * D66);
+}
+
 TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoadSens(
     const TacsScalar D1, const TacsScalar D2, const TacsScalar D3,
     const TacsScalar L, TacsScalar* const D1Sens, TacsScalar* const D2Sens,
     TacsScalar* const D3Sens, TacsScalar* const LSens) {
-  TacsScalar L2 = L * L;
-  TacsScalar L3 = L2 * L;
-  TacsScalar D32 = D3 * D3;
-  TacsScalar root = sqrt(D1 * D2);
-  TacsScalar xi = root / D3;
+  const TacsScalar L2 = L * L;
+  const TacsScalar L3 = L2 * L;
+  const TacsScalar D32 = D3 * D3;
+  const TacsScalar root = sqrt(D1 * D2);
+  const TacsScalar xi = root / D3;
 
   TacsScalar N12CritVals[2];
   N12CritVals[0] = -(4.0 / L2) * sqrt(D3 * D1 * xi) * (8.125 + 5.045 / xi);
@@ -2847,32 +2878,32 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoadSens(
   N12Crit = ksAggregationSens(N12CritVals, 2, 50., N12CritSens);
   N12Crit *= -1.0;
 
-  TacsScalar dN12Crit1_dD1 =
+  const TacsScalar dN12Crit1_dD1 =
       sqrt(D1 * root) * (5.045 * D3 + 24.375 * root) / (D1 * L2 * root);
-  TacsScalar dN12Crit2_dD1 =
+  const TacsScalar dN12Crit2_dD1 =
       sqrt(D1 * D3) * (5.628 * D1 * D2 + 23.4 * D32 + 2.128 * D3 * root) /
       (D1 * D32 * L2);
 
   *D1Sens = dN12Crit1_dD1 * N12CritSens[0] + dN12Crit2_dD1 * N12CritSens[1];
 
-  TacsScalar dN12Crit1_dD2 =
+  const TacsScalar dN12Crit1_dD2 =
       sqrt(D1 * root) * (-5.045 * D3 + 8.125 * root) / (D2 * L2 * root);
-  TacsScalar dN12Crit2_dD2 =
+  const TacsScalar dN12Crit2_dD2 =
       sqrt(D1 * D3) * (3.752 * D1 * D2 + 1.064 * D3 * root) / (D2 * D32 * L2);
 
   *D2Sens = dN12Crit1_dD2 * N12CritSens[0] + dN12Crit2_dD2 * N12CritSens[1];
 
-  TacsScalar dN12Crit1_dD3 = 20.18 * sqrt(D1 * root) / (L2 * root);
-  TacsScalar dN12Crit2_dD3 =
+  const TacsScalar dN12Crit1_dD3 = 20.18 * sqrt(D1 * root) / (L2 * root);
+  const TacsScalar dN12Crit2_dD3 =
       sqrt(D1 * D3) * (-5.628 * D1 * D2 + 23.4 * D32 - 1.064 * D3 * root) /
       (D32 * D3 * L2);
 
   *D3Sens = dN12Crit1_dD3 * N12CritSens[0] + dN12Crit2_dD3 * N12CritSens[1];
 
-  TacsScalar dN12Crit1_dL =
+  const TacsScalar dN12Crit1_dL =
       sqrt(D1 * root) * (-40.36 * D3 - 65.0 * root) / (L3 * root);
 
-  TacsScalar dN12Crit2_dL =
+  const TacsScalar dN12Crit2_dL =
       sqrt(D1 * D3) * (-7.504 * D1 * D2 - 93.6 * D32 - 4.256 * D3 * root) /
       (D32 * L3);
 
@@ -2946,9 +2977,9 @@ bool TACSBladeStiffenedShellConstitutive::testCriticalShearLoadSens(
 TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelope(
     const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
     const TacsScalar N12Crit) {
-  TacsScalar N1Term = N1 / N1Crit;
-  TacsScalar N12Term = N12 / N12Crit;
-  TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
+  const TacsScalar N1Term = N1 / N1Crit;
+  const TacsScalar N12Term = N12 / N12Crit;
+  const TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
   return 0.5 * (N1Term + root);
 }
 
@@ -2959,8 +2990,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::bucklingEnvelopeSens(
     const TacsScalar N12Crit, TacsScalar* const dfdN1,
     TacsScalar* const dfdN1Crit, TacsScalar* const dfdN12,
     TacsScalar* const dfdN12Crit) {
-  TacsScalar N1Term = N1 / N1Crit;
-  TacsScalar N12Term = N12 / N12Crit;
+  const TacsScalar N1Term = N1 / N1Crit;
+  const TacsScalar N12Term = N12 / N12Crit;
   TacsScalar root = sqrt(N1Term * N1Term + 4.0 * N12Term * N12Term);
   if (TacsRealPart(root) == 0.0) {
     root = 1e-13;
@@ -3038,13 +3069,23 @@ bool TACSBladeStiffenedShellConstitutive::testBucklingEnvelopeSens(
           fabs(dfdN12RelError) < tol && fabs(dfdN12CritRelError) < tol);
 }
 
+TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerColumnBuckling(
+    const TacsScalar stiffenerStrain[]) {
+  TacsScalar stiffenerStress[TACSBeamConstitutive::NUM_STRESSES];
+  this->computeStiffenerStress(stiffenerStrain, stiffenerStress);
+  // The first component of the stiffener stress is the axial force
+  TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
+  return -stiffenerStress[0] / fCrit;
+}
+
 TacsScalar
 TACSBladeStiffenedShellConstitutive::computeStiffenerColumnBucklingLoad() {
-  TacsScalar E, G, Izz;
+  TacsScalar E, G;
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
-  Izz = this->computeStiffenerIzz();
-  TacsScalar fCrit = this->computeColumnBucklingLoad(E, Izz, this->panelLength);
+  const TacsScalar Izz = this->computeStiffenerIzz();
+  const TacsScalar fCrit =
+      this->computeColumnBucklingLoad(E, Izz, this->panelLength);
   return fCrit;
 }
 
@@ -3052,10 +3093,10 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingLoadDVSens(
     const TacsScalar scale, TacsScalar dfdx[]) {
   // First compute the sensitivity of the critical load to the E, I and L
   // values of the stiffener
-  TacsScalar E, G, Izz;
+  TacsScalar E, G;
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
-  Izz = this->computeStiffenerIzz();
+  const TacsScalar Izz = this->computeStiffenerIzz();
   TacsScalar dFdE, dFdI, dFdL;
   this->computeColumnBucklingLoadSens(E, Izz, this->panelLength, dFdE, dFdI,
                                       dFdL);
@@ -3081,11 +3122,11 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerColumnBucklingLoadDVSens(
   // fractions)
   for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
     if (this->stiffenerPlyFracNums[ii] >= 0) {
-      int index = this->stiffenerPlyFracLocalNums[ii];
+      const int index = this->stiffenerPlyFracLocalNums[ii];
 
-      TacsScalar* Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
+      const TacsScalar* const Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
 
-      TacsScalar dEdx = Q[0] - (Q[1] * Q[1]) / Q[3];
+      const TacsScalar dEdx = Q[0] - (Q[1] * Q[1]) / Q[3];
       dfdx[index] += scale * dFdE * dEdx;
     }
   }

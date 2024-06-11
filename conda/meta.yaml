@@ -29,6 +29,7 @@ build:
 requirements:
   build:
     - python {{ python }}
+    - sysroot_linux-64>=2.17 # [linux64]
     - numpy   >=1.25
     - openmpi >=4.1.4 # [mpi == "openmpi"]
     - mpich  # [mpi == "mpich"]
@@ -42,6 +43,7 @@ requirements:
 
   host:
     - python {{ python }}
+    - sysroot_linux-64>=2.17 # [linux64]
     - pip
     - numpy   >=1.25
     - openmpi >=4.1.4 # [mpi == "openmpi"]
@@ -58,6 +60,7 @@ requirements:
 
   run:
     - python
+    - sysroot_linux-64>=2.17 # [linux64]
     - numpy <2.0.a0
     - scipy
     - openmpi >=4.1.4 # [mpi == "openmpi"]
