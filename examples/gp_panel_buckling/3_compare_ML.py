@@ -66,7 +66,7 @@ con.setKSWeight(20.0)
 # get the axial loads in nondimensional space w.r.t. rho_0
 n = 500
 plt.style.use(niceplots.get_style())
-rho0_vec = np.linspace(0.5, 10.0, n)
+rho0_vec = np.linspace(0.2, 10.0, n)
 N11cr_vec = np.zeros((n,), dtype=TACS.dtype)
 N12cr_vec = np.zeros((n,), dtype=TACS.dtype)
 
