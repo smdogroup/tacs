@@ -52,21 +52,21 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
 # Set the KS weight really low so that all failure modes make a
 # significant contribution to the failure function derivatives
 con.setKSWeight(20.0)
-#con.setCFShearMode(2)
+con.setCFShearMode(2)
 
 # get the axial loads in nondimensional space w.r.t. rho_0
 n = 500
 plt.style.use(niceplots.get_style())
 rho0_vec = np.linspace(0.5, 10.0, n)
-N11cr_vec = np.zeros((n,), dtype=dtype)
+N12cr_vec = np.zeros((n,), dtype=dtype)
 for gamma in [0.0, 0.1, 0.5, 1.0]:
     for i, rho0 in enumerate(rho0_vec):
-        N11cr_vec[i] = con.nondimCriticalGlobalAxialLoad(rho0, 0.4, gamma)
-    plt.plot(rho0_vec, N11cr_vec, label=f"gamma={gamma:.2f}")
+        N12cr_vec[i] = con.nondimCriticalGlobalShearLoad(rho0, 0.4, gamma)
+    plt.plot(rho0_vec, N12cr_vec, label=f"gamma={gamma:.2f}")
 
 # plot it
 plt.margins(x=0.05, y=0.05)
 plt.xlabel(r"$\rho_0$")
-plt.ylabel(r"$N_{11,cr}^*$")
+plt.ylabel(r"$N_{12,cr}^*$")
 plt.legend()
-plt.savefig("1-verify.png", dpi=400)
+plt.savefig("1-verify-shear2.png", dpi=400)

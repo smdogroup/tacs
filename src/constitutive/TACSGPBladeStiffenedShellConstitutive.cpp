@@ -766,7 +766,7 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
 // Retrieve the design variable for plotting purposes
 TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (!writeNDparamsToDV && !writeIndFailuresToDV) {
+  if (writeDVmode == 0) {
     switch (index) {
       case 0:
         return this->computeEffectiveThickness();
@@ -786,7 +786,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
         // case 7:
         //  return this->panelWidth;
     }
-  } else if (writeNDparamsToDV) {
+  } else if (writeDVmode == 1) {
     TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
     this->computePanelStiffness(panelStiffness);
     const TacsScalar *Ap, *Dp;
@@ -823,7 +823,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
       case 6:
         return zeta;
     }
-  } else {
+  } else {  // writeDVmode == 2
     TacsScalar fails[this->NUM_FAILURES];
     // where to get the strains..
     // TacsScalar aggFail = this->computeFailureValues(e, fails);
@@ -1620,7 +1620,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     delete[] Xtest;
     return dim_factor * nd_factor;
 
-  } else {
+  } else if (this->CFshearMode == 1) {
     // use the CPT closed-form solution to compute the critical global axial
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
@@ -1635,6 +1635,12 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
+  } else {
+    TacsScalar dim_factor =
+        M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
+    TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
+                           2.011 * (xi + 1.0 / rho_0 / rho_0) + 0.501 * gamma;
+    return dim_factor * nd_factor;
   }
 }
 
@@ -1663,7 +1669,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
     // solution)
-    if (this->CFshearMode == 1) {
+    if (this->CFshearMode == 3) {
       // CPT closed-form solution accurate to all Aspect ratios (most accurate)
 
       TacsScalar neg_N12crits[this->NUM_CF_MODES];
@@ -1691,7 +1697,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
           ksAggregation(neg_N12crits, this->NUM_CF_MODES, this->ksWeight);
       return -1.0 * neg_N12crit;
     }
-    if (this->CFshearMode == 2) {
+    if (this->CFshearMode == 1) {
       // CPT closed-form solution accurate only to high ARs (medium accuracy)
       TacsScalar lam1, lam2;  // lam1bar, lam2bar values
       nondimShearParams(xi, gamma, &lam1, &lam2);
@@ -1703,10 +1709,12 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
       return dim_factor *
              nondim_factor;  // aka N12_crit from CPT closed-form solution
     }
-    if (this->CFshearMode == 3) {
-      // TBD on this one, compare to smeared-stiffener approach (limit of
-      // gamma->infty I think?)
-      return 0.0;
+    if (this->CFshearMode == 2) {
+      TacsScalar dim_factor = 1.0;
+      TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
+                             2.011 * xi * (1.0 + 1.0 / rho_0 / rho_0) +
+                             0.501 * gamma;
+      return dim_factor * nd_factor;
     } else {
       return 0.0;
     }
@@ -1872,7 +1880,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     // return the final forward analysis output
     return output;
 
-  } else {
+  } else if (this->CFshearMode == 1) {
     // use the CPT closed-form solution to compute the critical global axial
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
@@ -1918,6 +1926,24 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
 
     // return N12crit from closed-form solution
     return N12crit;
+  } else {  // CFshearMode == 2
+    TacsScalar dim_factor =
+        M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
+    TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
+                           2.011 * xi * (1.0 + 1.0 / rho_0 / rho_0) +
+                           0.501 * gamma;
+    TacsScalar N12crit = dim_factor * nd_factor;
+
+    *D11sens += N12sens * N12crit * 0.25 / D11;
+    *D22sens += N12sens * N12crit * 0.75 / D22;
+    *bsens += N12sens * N12crit * -2.0 / b;
+    *xisens += N12sens * dim_factor * 2.011 * (1.0 + 1.0 / rho_0 / rho_0);
+    TacsScalar rho0_icubed = pow(rho_0, -3.0);
+    *rho_0sens +=
+        N12sens * dim_factor * (2.695 + 2.011 * xi) * -2.0 * rho0_icubed;
+    *gammasens += N12sens * dim_factor * 0.501;
+
+    return N12crit;
   }
 }
 
@@ -1939,7 +1965,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
     delete[] Xtest;
     return dim_factor * nd_factor;
 
-  } else {
+  } else if (this->CFshearMode == 1) {
     // use the CPT closed-form solution to compute the critical global axial
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
@@ -1954,6 +1980,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
         (2.0 * lam1 * lam1 * lam2);
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
+  } else {                 // CFshearMode == 2
+    TacsScalar s_p = this->stiffenerPitch;
+    TacsScalar dim_factor =
+        M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
+    TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
+                           2.011 * xi * (1.0 + 1.0 / rho_0 / rho_0);
+    return dim_factor * nd_factor;
   }
 }
 
@@ -2039,7 +2072,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     // return the final forward analysis output
     return output;
 
-  } else {
+  } else if (this->CFshearMode == 1) {
     // use the CPT closed-form solution to compute the critical global axial
     // load no mode switching in this solution.. (only accurate for higher
     // aspect ratios => hence the need for machine learning for the actual
@@ -2083,6 +2116,24 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     // rho_0sens, zetasens unchanged in closed-form
 
     // return N12crit from closed-form solution
+    return N12crit;
+  } else {  // CFshearMode == 2
+    TacsScalar s_p = this->stiffenerPitch;
+    TacsScalar dim_factor =
+        M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
+    TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
+                           2.011 * xi * (1.0 + 1.0 / rho_0 / rho_0);
+    TacsScalar N12crit = dim_factor * nd_factor;
+
+    // compute the overall sensitivities
+    *D11sens += N12sens * N12crit * 0.25 / D11;
+    *D22sens += N12sens * N12crit * 0.75 / D22;
+    *spitchsens += N12sens * N12crit * -2.0 / this->stiffenerPitch;
+    *xisens += N12sens * dim_factor * 2.011 * (1.0 + 1.0 / rho_0 / rho_0);
+    TacsScalar rho0_icubed = pow(rho_0, -3.0);
+    *rho_0sens +=
+        N12sens * dim_factor * (2.695 + 2.011 * xi) * -2.0 * rho0_icubed;
+
     return N12crit;
   }
 }

@@ -140,9 +140,6 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param flangeFraction Stiffener base width as a fraction of the stiffener
    * @param panelGPs PanelGP object (one for each TACS component) that contains
    * the GP objects or None if using CF
-   * @param CFshearMode int toggle to change method for closed-form shear mode
-   * [1 - all AR most general, 2 - high AR approx, 3 - smeared stiffener (TBD on
-   * 3)]
    */
   TACSGPBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* panelPly, TACSOrthotropicPly* stiffenerPly,
@@ -240,6 +237,13 @@ class TACSGPBladeStiffenedShellConstitutive
   // set the KS weight for the failure constraints and the GP models (if GP
   // models are active)
   void setKSWeight(double ksWeight);
+
+  // set the closed-form shear mode [1 - regular, 2 - analytic surogate]
+  void setCFShearMode(int newMode) { CFshearMode = newMode; }
+
+  // set the DV write out modes for f5 files [0 - regular DVs, 1 - ND, 2 - fail
+  // indexes]
+  void setWriteDVMode(int newMode) { writeDVmode = newMode; }
 
   // ==============================================================================
   // Verification purpose public routines
@@ -950,8 +954,7 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // debugging modes
   // should all be false if not debugging
-  bool writeNDparamsToDV = true;
-  bool writeIndFailuresToDV = false;
+  int writeDVmode = 0;  // 0 - normal DVs, 1 - NDparams, 2 - failure indexes
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't

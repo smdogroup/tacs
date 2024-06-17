@@ -243,6 +243,8 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
         TacsScalar nondimCriticalLocalShearLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar zeta)
         TacsScalar nondimStiffenerCripplingLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta)
         TacsScalar testAllTests(TacsScalar epsilon, int printLevel)
+        void setCFShearMode(int mode)
+        void setWriteDVMode(int mode)
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):

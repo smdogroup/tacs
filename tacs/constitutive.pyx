@@ -1443,6 +1443,32 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         # if self.crippling_gp_ptr:
         #     self.crippling_gp_ptr.setKS(ksWeight)
 
+    def setCFShearMode(self, int newMode):
+        """
+        Update the closed-form shear mode (1 - regular CF (inf AR), 2 - analytic shear surrogate)
+
+        Parameters
+        ----------
+        newMode: int
+            new mode input for the CF shear buckling modes
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setCFShearMode(newMode)
+
+    def setWriteDVMode(self, int newMode):
+        """
+        Set mode for writing DV inputs to the .f5 files
+        0 - write DVs, 1 - write nondim params, 2 - write failure indexes
+        this is a useful tool to investigate and debug final designs.
+
+        Parameters
+        ----------
+        newMode: int
+            new mode input for the writeDVMode
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setWriteDVMode(newMode)
+
     def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
         """Set the lower and upper bounds for the stiffener pitch design variable
 

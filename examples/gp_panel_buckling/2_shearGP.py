@@ -2,12 +2,15 @@
 Check axial closed-form modes in GPBladeStiffenedShellConstitutive class are reasonable
 @Author Sean Engelstad
 @Date 05/16/2024
+
+Use the repo https://github.com/smdogroup/ml_buckling
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
 import niceplots
 from tacs import TACS, constitutive
+import ml_buckling as mlb
 
 DEG2RAD = np.pi / 180.0
 
@@ -33,6 +36,11 @@ ortho_prop = constitutive.MaterialProperties(
 )
 ortho_ply = constitutive.OrthotropicPly(1e-3, ortho_prop)
 
+# build the axial GP object (which is the main ML object we are testing for this example)
+# however it is used inside of the constitutive object so we need to build that too
+shearGP = constitutive.ShearGP.from_csv(csv_file=mlb.shearGP_csv)
+panelGP = constitutive.PanelGPs(shearGP=shearGP)
+
 # don't put in any GP models (so using closed-form solutions rn)
 con = constitutive.GPBladeStiffenedShellConstitutive(
     panelPly=ortho_ply,
@@ -48,25 +56,25 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
     stiffenerPlyFracs=np.array([0.6, 0.4], dtype=dtype),
     panelWidth=1.0,
     flangeFraction=0.8,
+    panelGPs=panelGP,
 )
 # Set the KS weight really low so that all failure modes make a
 # significant contribution to the failure function derivatives
 con.setKSWeight(20.0)
-#con.setCFShearMode(2)
 
 # get the axial loads in nondimensional space w.r.t. rho_0
 n = 500
 plt.style.use(niceplots.get_style())
 rho0_vec = np.linspace(0.5, 10.0, n)
-N11cr_vec = np.zeros((n,), dtype=dtype)
+N12cr_vec = np.zeros((n,), dtype=TACS.dtype)
 for gamma in [0.0, 0.1, 0.5, 1.0]:
     for i, rho0 in enumerate(rho0_vec):
-        N11cr_vec[i] = con.nondimCriticalGlobalAxialLoad(rho0, 0.4, gamma)
-    plt.plot(rho0_vec, N11cr_vec, label=f"gamma={gamma:.2f}")
+        N12cr_vec[i] = con.nondimCriticalGlobalShearLoad(rho0, 0.4, gamma, 0.0)
+    plt.plot(rho0_vec, N12cr_vec, label=f"gamma={gamma:.2f}")
 
 # plot it
 plt.margins(x=0.05, y=0.05)
 plt.xlabel(r"$\rho_0$")
-plt.ylabel(r"$N_{11,cr}^*$")
+plt.ylabel(r"$N_{12,cr}^*$")
 plt.legend()
-plt.savefig("1-verify.png", dpi=400)
+plt.savefig("2-verify-ML-shear.png", dpi=400)
