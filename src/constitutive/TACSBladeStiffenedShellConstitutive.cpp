@@ -38,6 +38,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     TacsScalar _stiffenerThick, int _stiffenerThickNum, int _numStiffenerPlies,
     TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
     int _stiffenerPlyFracNums[], TacsScalar _flangeFraction,
+    bool _includePanelMaterialFailure, bool _includeStiffenerMaterialFailure,
     bool _includeGlobalBuckling, bool _includeLocalBuckling,
     bool _includeStiffenerColumnBuckling, bool _includeStiffenerCrippling) {
   this->panelPly = _panelPly;
@@ -49,6 +50,8 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->kcorr = _kcorr;
 
   // --- Failure mode flags ---
+  this->includePanelMaterialFailure = _includePanelMaterialFailure;
+  this->includeStiffenerMaterialFailure = _includeStiffenerMaterialFailure;
   this->includeGlobalBuckling = _includeGlobalBuckling;
   this->includeLocalBuckling = _includeLocalBuckling;
   this->includeStiffenerColumnBuckling = _includeStiffenerColumnBuckling;
@@ -858,10 +861,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeFailureValues(
   this->transformStrain(e, stiffenerStrain);
 
   // --- Panel material failure ---
-  if (this->includeMaterialFailure) {
+  if (this->includePanelMaterialFailure) {
     fails[0] = this->computePanelFailure(e);
+  }
 
-    // --- Stiffener material failure ---
+  // --- Stiffener material failure ---
+  if (this->includeStiffenerMaterialFailure) {
     fails[1] = this->computeStiffenerFailure(stiffenerStrain);
   }
 
@@ -904,6 +909,14 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
     fails[ii] = DUMMY_FAIL_VALUE;
   }
 
+  // --- Material failure ---
+  TacsScalar panelFailSens[this->NUM_STRESSES];
+  memset(panelFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  if (this->includePanelMaterialFailure) {
+    // First compute the sensitivity of the panel failure value
+    fails[0] = this->evalPanelFailureStrainSens(e, panelFailSens);
+  }
+
   TacsScalar stiffenerStrainSens[TACSBeamConstitutive::NUM_STRESSES],
       stiffenerMatFailSens[this->NUM_STRESSES];
   memset(stiffenerStrainSens, 0,
@@ -912,14 +925,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
 
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
   this->transformStrain(e, stiffenerStrain);
-
-  // --- Material failure ---
-  TacsScalar panelFailSens[this->NUM_STRESSES];
-  memset(panelFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
-  if (this->includeMaterialFailure) {
-    // First compute the sensitivity of the panel failure value
-    fails[0] = this->evalPanelFailureStrainSens(e, panelFailSens);
-
+  if (this->includeStiffenerMaterialFailure) {
     // And now for the stiffener failure value, first in terms of the beam
     // strains, and then transformed back to shell strains
     fails[1] = this->evalStiffenerFailureStrainSens(stiffenerStrain,
@@ -997,10 +1003,12 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   this->transformStrain(strain, stiffenerStrain);
 
   // Sensitivity of the panel failure value to it's DVs
-  if (this->includeMaterialFailure) {
+  if (this->includePanelMaterialFailure) {
     this->addPanelFailureDVSens(strain, scale * dKSdf[0],
                                 &dfdx[this->panelDVStartNum]);
+  }
 
+  if (this->includeStiffenerMaterialFailure) {
     // Add the direct sensitivity of the stiffener failure value w.r.t DVs
     // Sensitivity of the panel failure value to it's DVs
     this->addStiffenerFailureDVSens(stiffenerStrain, scale * dKSdf[1],

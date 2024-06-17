@@ -911,6 +911,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
+        bool includePanelMaterialFailure=True,
+        bool includeStiffenerMaterialFailure=True,
         bool includeGlobalBuckling=True,
         bool includeLocalBuckling=True,
         bool includeStiffenerColumnBuckling=True,
@@ -964,6 +966,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             <TacsScalar*>stiffenerPlyFracs.data,
             <int*>stiffenerPlyFracNums.data,
             flangeFraction,
+            includePanelMaterialFailure,
+            includeStiffenerMaterialFailure,
             includeGlobalBuckling,
             includeLocalBuckling,
             includeStiffenerColumnBuckling,
@@ -974,7 +978,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 
     def setFailureModes(
         self,
-        includeMaterialFailure=None,
+        includePanelMaterialFailure=None,
+        includeStiffenerMaterialFailure=None,
         includeGlobalBuckling=None,
         includeLocalBuckling=None,
         includeStiffenerColumnBuckling=None,
@@ -982,8 +987,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
     ):
 
         if self.blade_ptr:
-            if includeMaterialFailure is not None:
-                self.blade_ptr.setIncludeMaterialFailure(includeMaterialFailure)
+            if includePanelMaterialFailure is not None:
+                self.blade_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
+            if includeStiffenerMaterialFailure is not None:
+                self.blade_ptr.setIncludeStiffenerMaterialFailure(includeStiffenerMaterialFailure)
             if includeGlobalBuckling is not None:
                 self.blade_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
             if includeLocalBuckling is not None:

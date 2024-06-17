@@ -140,7 +140,8 @@ class ConstitutiveTest(unittest.TestCase):
 
         # These are the individual failure modes that can be enabled/disabled in the model. We will run the failure sensitivity tests with each enabled individually and then again with all enabled.
         self.failure_modes = [
-            "MaterialFailure",
+            "PanelMaterialFailure",
+            "StiffenerMaterialFailure",
             "GlobalBuckling",
             "LocalBuckling",
             "StiffenerColumnBuckling",

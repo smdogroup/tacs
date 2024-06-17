@@ -131,6 +131,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param _stiffenerPlyFracNums Stiffener ply fraction design variable numbers
    * @param _flangeFraction Stiffener base width as a fraction of the stiffener
    * height
+   * @param _includePanelMaterialFailure Whether to include panel material
+   * failure in the aggregated failure criteria
+   * @param _includeStiffenerMaterialFailure Whether to include stiffener
+   * material failure in the aggregated failure criteria
    * @param _includeGlobalBuckling Whether to include global panel buckling in
    * the aggregated failure criteria
    * @param _includeLocalBuckling Whether to include local inter-stringer
@@ -151,6 +155,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       int _stiffenerThickNum, int _numStiffenerPlies,
       TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
       int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0,
+      bool _includePanelMaterialFailure = true,
+      bool _includeStiffenerMaterialFailure = true,
       bool _includeGlobalBuckling = true, bool _includeLocalBuckling = true,
       bool _includeStiffenerColumnBuckling = true,
       bool _includeStiffenerCrippling = true);
@@ -162,13 +168,24 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // ==============================================================================
 
   /**
-   * @brief Enable or disable the material failure mode in the aggregated
+   * @brief Enable or disable the panel material failure mode in the aggregated
    * failure criteria
    *
-   * @param includeMaterialFailure Whether to include material failure
+   * @param includePanelMaterialFailure Whether to include material failure
    */
-  void setIncludeMaterialFailure(bool _includMaterialFailure) {
-    this->includeMaterialFailure = _includMaterialFailure;
+  void setIncludePanelMaterialFailure(bool _includePanelMaterialFailure) {
+    this->includePanelMaterialFailure = _includePanelMaterialFailure;
+  }
+
+  /**
+   * @brief Enable or disable the stiffener material failure mode in the
+   * aggregated failure criteria
+   *
+   * @param includeStiffenerMaterialFailure Whether to include material failure
+   */
+  void setIncludeStiffenerMaterialFailure(
+      bool _includeStiffenerMaterialFailure) {
+    this->includeStiffenerMaterialFailure = _includeStiffenerMaterialFailure;
   }
 
   /**
@@ -1264,7 +1281,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int numGeneralDV;        ///< Number of general DVs
   int numPanelDV;          ///< Number of panel DVs
   int numStiffenerDV;      ///< Number of stiffener DVs
-  bool includeMaterialFailure =
+  bool includePanelMaterialFailure =
+      true;  ///< Whether to consider panel material failure
+  bool includeStiffenerMaterialFailure =
       true;  ///< Whether to consider panel material failure
   bool includeGlobalBuckling =
       true;  ///< Whether to consider global panel buckling failure
