@@ -71,6 +71,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             # Set convergence to be tight for test
             problem.setOption("L2Convergence", 1e-20)
             problem.setOption("L2ConvergenceRel", 1e-20)
+            problem.setOption("resetBeforeSolve", True)
             return setupHemisphereProblem(fea_assembler, problem)
 
         class Top(Multipoint):
