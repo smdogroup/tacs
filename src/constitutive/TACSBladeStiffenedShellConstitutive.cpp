@@ -906,7 +906,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
 
   TacsScalar stiffenerStrainSens[TACSBeamConstitutive::NUM_STRESSES],
       stiffenerMatFailSens[this->NUM_STRESSES];
-  memset(stiffenerStrainSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  memset(stiffenerStrainSens, 0,
+         TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
   memset(stiffenerMatFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
 
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
