@@ -279,10 +279,7 @@ class ContinuationSolver(BaseSolver):
         USE_PREDICTOR = self.getOption("UsePredictor")
         # PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
 
-        self.initializeSolve()
-
-        if u0 is not None:
-            self.stateVec.copyValues(u0)
+        self.initializeSolve(u0=u0)
 
         # Compute the internal and external forcing vectors at the current point
         self.computeForceVectors()
