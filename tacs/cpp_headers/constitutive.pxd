@@ -1,7 +1,5 @@
 #  This file is part of TACS: The Toolkit for the Analysis of Composite
 #  Structures, a parallel finite-element code for structural and
-#  multidisciplinary de#  This file is part of TACS: The Toolkit for the Analysis of Composite
-#  Structures, a parallel finite-element code for structural and
 #  multidisciplinary design optimization.
 #
 #  Copyright (C) 2014 Georgia Tech Research Corporation

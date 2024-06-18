@@ -175,7 +175,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_failure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
