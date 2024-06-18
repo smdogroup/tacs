@@ -910,11 +910,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
-        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
-        bool includeGlobalBuckling=True,
-        bool includeLocalBuckling=True,
-        bool includeStiffenerColumnBuckling=True,
-        bool includeStiffenerCrippling=True
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None
         ):
 
         numPanelPlies = len(panelPlyAngles)
@@ -963,35 +959,10 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             <TacsScalar*>stiffenerPlyAngles.data,
             <TacsScalar*>stiffenerPlyFracs.data,
             <int*>stiffenerPlyFracNums.data,
-            flangeFraction,
-            includeGlobalBuckling,
-            includeLocalBuckling,
-            includeStiffenerColumnBuckling,
-            includeStiffenerCrippling
+            flangeFraction
         )
         self.ptr = self.cptr = self.blade_ptr
         self.ptr.incref()
-
-    def setFailureModes(
-        self,
-        includeMaterialFailure=None,
-        includeGlobalBuckling=None,
-        includeLocalBuckling=None,
-        includeStiffenerColumnBuckling=None,
-        includeStiffenerCrippling=None,
-    ):
-
-        if self.blade_ptr:
-            if includeMaterialFailure is not None:
-                self.blade_ptr.setIncludeMaterialFailure(includeMaterialFailure)
-            if includeGlobalBuckling is not None:
-                self.blade_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
-            if includeLocalBuckling is not None:
-                self.blade_ptr.setIncludeLocalBuckling(includeLocalBuckling)
-            if includeStiffenerColumnBuckling is not None:
-                self.blade_ptr.setIncludeStiffenerColumnBuckling(includeStiffenerColumnBuckling)
-            if includeStiffenerCrippling is not None:
-                self.blade_ptr.setIncludeStiffenerCrippling(includeStiffenerCrippling)
 
     def setKSWeight(self, double ksWeight):
         """

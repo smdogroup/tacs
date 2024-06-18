@@ -1,5 +1,7 @@
 #  This file is part of TACS: The Toolkit for the Analysis of Composite
 #  Structures, a parallel finite-element code for structural and
+#  multidisciplinary de#  This file is part of TACS: The Toolkit for the Analysis of Composite
+#  Structures, a parallel finite-element code for structural and
 #  multidisciplinary design optimization.
 #
 #  Copyright (C) 2014 Georgia Tech Research Corporation
@@ -152,19 +154,46 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             TacsScalar[], # stiffenerPlyAngles
             TacsScalar[], # stiffenerPlyFracs
             int[], # stiffenerPlyFracNums
-            TacsScalar, # flangeFraction
-            bool, # includeGlobalBuckling,
-            bool, # includeLocalBuckling,
-            bool, # includeStiffenerColumnBuckling,
-            bool, # includeStiffenerCrippling
+            TacsScalar # flangeFraction
         )
         int getNumPanelPlies()
         int getNumStiffenerPlies()
-        void setIncludeMaterialFailure(bool _includeMaterialFailure)
-        void setIncludeGlobalBuckling(bool _includeGlobalBuckling)
-        void setIncludeLocalBuckling(bool _includeLocalBuckling)
-        void setIncludeStiffenerColumnBuckling(bool _includeStiffenerColumnBuckling)
-        void setIncludeStiffenerCrippling(bool _includeStiffenerCrippling)
+        void setKSWeight(double ksWeight)
+        void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setPanelThicknessBounds(TacsScalar lowerBound, TacsScalar upperBound)
+        void setStiffenerPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+        void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
+
+cdef extern from "TACSBladeStiffenedShellConstitutive.h":
+    cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
+        TACSBladeStiffenedShellConstitutive(
+            TACSOrthotropicPly*, # panelPly
+            TACSOrthotropicPly*, # stiffenerPly
+            TacsScalar, # kcorr
+            TacsScalar, # panelLength
+            int, # panelLengthNum
+            TacsScalar, # stiffenerPitch
+            int, # stiffenerPitchNum
+            TacsScalar, # panelThick
+            int, # panelThickNum
+            int, # numPanelPlies
+            TacsScalar[], # panelPlyAngles
+            TacsScalar[], # panelPlyFracs
+            int[], # panelPlyFracNums
+            TacsScalar, # stiffenerHeight
+            int, # stiffenerHeightNum
+            TacsScalar, # stiffenerThick
+            int, # stiffenerThickNum
+            int, # numStiffenerPlies
+            TacsScalar[], # stiffenerPlyAngles
+            TacsScalar[], # stiffenerPlyFracs
+            int[], # stiffenerPlyFracNums
+            TacsScalar # flangeFraction
+        )
+        int getNumPanelPlies()
+        int getNumStiffenerPlies()
         void setKSWeight(double ksWeight)
         void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
         void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
