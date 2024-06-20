@@ -1060,7 +1060,6 @@ class TACSQuadraticRotation {
                                   TacsScalar res[]) {
     TacsScalar *r = &res[offset];
     const TacsScalar *q = &vars[offset];
-    const TacsScalar *qdot = &dvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       // D = (t^{x} + 0.5*(q^{x}t)^{x} - 0.5*t^{x}*q^{x})
@@ -1085,7 +1084,6 @@ class TACSQuadraticRotation {
 
       r += vars_per_node;
       q += vars_per_node;
-      qdot += vars_per_node;
 
       dd += 3;
       t += 3;
@@ -1154,8 +1152,6 @@ class TACSQuadraticRotation {
       Diddot[8] = 0.5 * (qiddot[0] * ti[0] + qiddot[1] * ti[1]);
     }
 
-    const TacsScalar *q = &vars[offset];
-    const TacsScalar *qdot = &dvars[offset];
     TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
@@ -1249,9 +1245,6 @@ class TACSQuadraticRotation {
           }
         }
       }
-
-      q += vars_per_node;
-      qdot += vars_per_node;
 
       dd += 3;
       t += 3;
@@ -2146,7 +2139,6 @@ class TACSQuaternionRotation {
                                   TacsScalar res[]) {
     TacsScalar *r = &res[offset];
     const TacsScalar *q = &vars[offset];
-    const TacsScalar *qdot = &dvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       // D = d(Qdot*t)/d(qdot)
@@ -2173,7 +2165,6 @@ class TACSQuaternionRotation {
 
       r += vars_per_node;
       q += vars_per_node;
-      qdot += vars_per_node;
 
       dd += 3;
       t += 3;
@@ -2264,8 +2255,6 @@ class TACSQuaternionRotation {
       Diddot[11] = 2.0 * (qiddot[1] * ti[0] + qiddot[2] * ti[1]);
     }
 
-    const TacsScalar *q = &vars[offset];
-    const TacsScalar *qdot = &dvars[offset];
     TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
@@ -2374,9 +2363,6 @@ class TACSQuaternionRotation {
           }
         }
       }
-
-      q += vars_per_node;
-      qdot += vars_per_node;
 
       dd += 3;
       t += 3;

@@ -692,8 +692,9 @@ void TACSMg::applyFactor(TACSVec *bvec, TACSVec *xvec) {
     if (monitor) {
       for (int k = 0; k < nlevels; k++) {
         char descript[128];
-        sprintf(descript, "TACSMg cumulative level %2d time %15.8e\n", k,
-                cumulative_level_time[k]);
+        snprintf(descript, sizeof(descript),
+                 "TACSMg cumulative level %2d time %15.8e\n", k,
+                 cumulative_level_time[k]);
         monitor->print(descript);
       }
     }
