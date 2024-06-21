@@ -911,12 +911,6 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
-        bool includePanelMaterialFailure=True,
-        bool includeStiffenerMaterialFailure=True,
-        bool includeGlobalBuckling=True,
-        bool includeLocalBuckling=True,
-        bool includeStiffenerColumnBuckling=True,
-        bool includeStiffenerCrippling=True
         ):
 
         numPanelPlies = len(panelPlyAngles)
@@ -965,13 +959,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             <TacsScalar*>stiffenerPlyAngles.data,
             <TacsScalar*>stiffenerPlyFracs.data,
             <int*>stiffenerPlyFracNums.data,
-            flangeFraction,
-            includePanelMaterialFailure,
-            includeStiffenerMaterialFailure,
-            includeGlobalBuckling,
-            includeLocalBuckling,
-            includeStiffenerColumnBuckling,
-            includeStiffenerCrippling
+            flangeFraction
         )
         self.ptr = self.cptr = self.blade_ptr
         self.ptr.incref()

@@ -153,12 +153,6 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             TacsScalar[], # stiffenerPlyFracs
             int[], # stiffenerPlyFracNums
             TacsScalar, # flangeFraction
-            bool, # includePanelMaterialFailure,
-            bool, # includeStiffenerMaterialFailure,
-            bool, # includeGlobalBuckling,
-            bool, # includeLocalBuckling,
-            bool, # includeStiffenerColumnBuckling,
-            bool, # includeStiffenerCrippling
         )
         int getNumPanelPlies()
         int getNumStiffenerPlies()

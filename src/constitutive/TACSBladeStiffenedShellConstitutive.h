@@ -131,18 +131,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param _stiffenerPlyFracNums Stiffener ply fraction design variable numbers
    * @param _flangeFraction Stiffener base width as a fraction of the stiffener
    * height
-   * @param _includePanelMaterialFailure Whether to include panel material
-   * failure in the aggregated failure criteria
-   * @param _includeStiffenerMaterialFailure Whether to include stiffener
-   * material failure in the aggregated failure criteria
-   * @param _includeGlobalBuckling Whether to include global panel buckling in
-   * the aggregated failure criteria
-   * @param _includeLocalBuckling Whether to include local inter-stringer
-   * buckling in the aggregated failure criteria
-   * @param _includeStiffenerColumnBuckling Whether to include stiffener column
-   * buckling in the aggregated failure criteria
-   * @param _includeStiffenerCrippling Whether to include stiffener crippling in
-   * the aggregated failure criteria
    */
   TACSBladeStiffenedShellConstitutive(
       TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
@@ -154,12 +142,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       int _stiffenerHeightNum, TacsScalar _stiffenerThick,
       int _stiffenerThickNum, int _numStiffenerPlies,
       TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
-      int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0,
-      bool _includePanelMaterialFailure = true,
-      bool _includeStiffenerMaterialFailure = true,
-      bool _includeGlobalBuckling = true, bool _includeLocalBuckling = true,
-      bool _includeStiffenerColumnBuckling = true,
-      bool _includeStiffenerCrippling = true);
+      int _stiffenerPlyFracNums[], TacsScalar _flangeFraction = 1.0);
 
   ~TACSBladeStiffenedShellConstitutive();
 

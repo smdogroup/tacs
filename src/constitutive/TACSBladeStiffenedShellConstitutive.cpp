@@ -37,10 +37,7 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
     TacsScalar _stiffenerHeight, int _stiffenerHeightNum,
     TacsScalar _stiffenerThick, int _stiffenerThickNum, int _numStiffenerPlies,
     TacsScalar _stiffenerPlyAngles[], TacsScalar _stiffenerPlyFracs[],
-    int _stiffenerPlyFracNums[], TacsScalar _flangeFraction,
-    bool _includePanelMaterialFailure, bool _includeStiffenerMaterialFailure,
-    bool _includeGlobalBuckling, bool _includeLocalBuckling,
-    bool _includeStiffenerColumnBuckling, bool _includeStiffenerCrippling) {
+    int _stiffenerPlyFracNums[], TacsScalar _flangeFraction) {
   this->panelPly = _panelPly;
   this->panelPly->incref();
 
@@ -48,14 +45,6 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->stiffenerPly->incref();
 
   this->kcorr = _kcorr;
-
-  // --- Failure mode flags ---
-  this->includePanelMaterialFailure = _includePanelMaterialFailure;
-  this->includeStiffenerMaterialFailure = _includeStiffenerMaterialFailure;
-  this->includeGlobalBuckling = _includeGlobalBuckling;
-  this->includeLocalBuckling = _includeLocalBuckling;
-  this->includeStiffenerColumnBuckling = _includeStiffenerColumnBuckling;
-  this->includeStiffenerCrippling = _includeStiffenerCrippling;
 
   this->numDesignVars = this->numGeneralDV = this->numPanelDV =
       this->numStiffenerDV = 0;
