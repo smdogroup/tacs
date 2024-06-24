@@ -70,6 +70,11 @@
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
         <span class="c1"># Solution Options</span>
+        <span class="s2">&quot;resetBeforeSolve&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="nb">bool</span><span class="p">,</span>
+            <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;Reset the states before every solve, this can be useful for avoiding issues when testing derivatives against finite-difference/complex-step&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
         <span class="s2">&quot;linearSolver&quot;</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">str</span><span class="p">,</span>
             <span class="s2">&quot;GMRES&quot;</span><span class="p">,</span>
@@ -393,6 +398,16 @@
                 <span class="n">freq</span><span class="o">=</span><span class="n">opt</span><span class="p">(</span><span class="s2">&quot;monitorFrequency&quot;</span><span class="p">),</span>
             <span class="p">)</span>
 
+        <span class="c1"># Pass new matrix and preconditioner to nonlinear solver linear solvers</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setOperators</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PC</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setOperators</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">PC</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
         <span class="c1"># Linear solver factor flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span>
@@ -441,6 +456,7 @@
                 <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
                 <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;printLevel&quot;</span><span class="p">,</span>
             <span class="p">]:</span>
                 <span class="n">createVariables</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -930,6 +946,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="c1"># Set problem vars to assembler</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;resetBeforeSolve&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zeroVariables</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
         <span class="c1"># Check if we need to initialize</span>

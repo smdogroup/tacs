@@ -332,10 +332,7 @@
         <span class="n">USE_PREDICTOR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UsePredictor&quot;</span><span class="p">)</span>
         <span class="c1"># PREDICTOR_USE_DERIVATIVE = self.getOption(&quot;predictorUseDerivative&quot;)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">u0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">(</span><span class="n">u0</span><span class="o">=</span><span class="n">u0</span><span class="p">)</span>
 
         <span class="c1"># Compute the internal and external forcing vectors at the current point</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">computeForceVectors</span><span class="p">()</span>
@@ -474,7 +471,8 @@
                     <span class="n">loadStepDirection</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="c1"># If the inner solve failed then we&#39;ll reduce the step size and try again, unless we&#39;ve hit the increment or step size limits</span>
                 <span class="k">elif</span> <span class="ow">not</span> <span class="n">isLastIncrement</span> <span class="ow">and</span> <span class="n">stepSize</span> <span class="o">&gt;</span> <span class="n">MIN_STEP</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">incStartState</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">setStateFunc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span>
                     <span class="n">currentLambda</span> <span class="o">-=</span> <span class="n">stepSize</span> <span class="o">*</span> <span class="n">loadStepDirection</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">setLambdaFunc</span><span class="p">(</span><span class="n">currentLambda</span><span class="p">)</span>
                     <span class="n">stepSize</span> <span class="o">*=</span> <span class="n">STEP_RETRACT_FACTOR</span>
