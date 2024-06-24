@@ -800,6 +800,7 @@ class PanelLengthConstraint(TACSConstraint):
                         "constitutive object. This is not allowed. "
                         "This constitutive object cannot use a "
                         "panel-type constitutive object. "
+                        f"On compID {compID}"
                         f"CompIDs are: {repr(compIDs)}"
                     )
                 nodeChain = nodeChain[:-1]
