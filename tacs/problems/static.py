@@ -31,6 +31,11 @@ class StaticProblem(TACSProblem):
     defaultOptions = {
         "outputDir": [str, "./", "Output directory for F5 file writer."],
         # Solution Options
+        "resetBeforeSolve": [
+            bool,
+            False,
+            "Reset the states before every solve, this can be useful for avoiding issues when testing derivatives against finite-difference/complex-step",
+        ],
         "linearSolver": [
             str,
             "GMRES",
@@ -354,6 +359,16 @@ class StaticProblem(TACSProblem):
                 freq=opt("monitorFrequency"),
             )
 
+        # Pass new matrix and preconditioner to nonlinear solver linear solvers
+        if self.nonlinearSolver is not None:
+            self.nonlinearSolver.linearSolver.setOperators(self.K, self.PC)
+            try:
+                self.nonlinearSolver.innerSolver.linearSolver.setOperators(
+                    self.K, self.PC
+                )
+            except AttributeError:
+                pass
+
         # Linear solver factor flag
         self._jacobianUpdateRequired = True
         self._preconditionerUpdateRequired = True
@@ -400,6 +415,7 @@ class StaticProblem(TACSProblem):
                 "printtiming",
                 "numbersolutions",
                 "outputdir",
+                "printLevel",
             ]:
                 createVariables = False
 
@@ -841,6 +857,8 @@ class StaticProblem(TACSProblem):
         self.callCounter += 1
 
         # Set problem vars to assembler
+        if self.getOption("resetBeforeSolve"):
+            self.zeroVariables()
         self._updateAssemblerVars()
 
         # Check if we need to initialize
