@@ -374,6 +374,8 @@ for constraint in constraints:
 if comm.rank == 0:
     pprint(funcs)
 
+FEAAssembler.writeBDF("maneuverProblem.bdf", problem)
+
 # Solve adjoints and evaluate function sensitivities
 funcsSens = {}
 problem.evalFunctionsSens(funcsSens)
