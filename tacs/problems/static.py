@@ -34,7 +34,7 @@ class StaticProblem(TACSProblem):
         "resetBeforeSolve": [
             bool,
             False,
-            "Reset the states before every solve, this can be useful for avoiding issues when testing derivatives with dinite-difference/complex-step",
+            "Reset the states before every solve, this can be useful for avoiding issues when testing derivatives against finite-difference/complex-step",
         ],
         "linearSolver": [
             str,
