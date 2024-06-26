@@ -579,6 +579,26 @@ class TACSConstitutive : public TACSObject {
   }
 
   /**
+    Evaluate the failure index (if defined) at the given quadrature point
+
+    @param elemIndex The local element index
+    @param pt The parametric point
+    @param X The physical node location
+    @param strain The strain value
+    @param The failure index
+    @return The failure value
+  */
+  virtual TacsScalar evalFailureFieldValue(int elemIndex, const double pt[],
+                                           const TacsScalar X[],
+                                           const TacsScalar strain[],
+                                           int failIndex) {
+    if (failIndex == 0) {
+      return evalFailure(elemIndex, pt, X, strain);
+    }
+    return 0.0;
+  }
+
+  /**
     Compute a two-dimensional representation of the failure envelope
   */
   void getFailureEnvelope(int npts, int elemIndex, const double pt[],
