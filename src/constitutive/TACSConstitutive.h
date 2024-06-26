@@ -589,8 +589,9 @@ class TACSConstitutive : public TACSObject {
     @return The failure value
   */
   virtual TacsScalar evalFailureFieldValue(int elemIndex, const double pt[],
-                                 const TacsScalar X[],
-                                 const TacsScalar strain[], int failIndex) {
+                                           const TacsScalar X[],
+                                           const TacsScalar strain[],
+                                           int failIndex) {
     if (failIndex == 0) {
       return evalFailure(elemIndex, pt, X, strain);
     }
