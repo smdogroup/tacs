@@ -223,6 +223,7 @@ We have successfully built TACS on the NASA High End Computing Capability system
 A number of changes are necessary to the default ``Makefile.in`` file:
 
 - If using intel compilers and one of the ``mpi-hpe`` modules, use ``CXX = icpc -lmpi``
+- To build a TACS binary that will work on all node types, use the optimization flags recommended in the `HECC documentation <https://www.nas.nasa.gov/hecc/support/kb/recommended-compiler-options_99.html>`_, ``-O3 -axCORE-AVX512,CORE-AVX2 -xAVX`` 
 - If you run into issues related to OpenMP, add ``-qopenmp`` to the end of the `SO_LINK_FLAGS`` entry
 - To link to Intel's MKL in place of standard blas and lapack, replace the default ``LAPACK_LIBS`` line with:
 
