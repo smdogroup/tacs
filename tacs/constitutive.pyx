@@ -1106,6 +1106,7 @@ cdef class GaussianProcess:
         return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
 
     def setKS(self, TacsScalar ksWeight):
+        print("Warning: need to retrain the weights as KS has changed\n")
         self.base_gp.setKS(ksWeight)
 
     def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):

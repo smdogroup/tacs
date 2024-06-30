@@ -1618,6 +1618,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     Xtest[3] = log(one + 1000.0 * zeta);
     TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(2, Xtest));
     delete[] Xtest;
+    TacsScalar output = dim_factor * nd_factor;
     return dim_factor * nd_factor;
 
   } else if (this->CFshearMode == 1) {
@@ -1639,7 +1640,9 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
-                           2.011 * (xi + 1.0 / rho_0 / rho_0) + 0.501 * gamma;
+                           2.011 * xi * (1.0 + 1.0 / rho_0 / rho_0) +
+                           0.501 * gamma;
+    TacsScalar N12 = dim_factor * nd_factor;
     return dim_factor * nd_factor;
   }
 }

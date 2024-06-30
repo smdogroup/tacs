@@ -112,7 +112,7 @@ class TACSGaussianProcessModel : public TACSObject {
   TacsScalar* Xtrain;
   TacsScalar* alpha;
 
-  TacsScalar ks;  // ks setting for smooth kernel functions
+  TacsScalar ks = 10.0;  // ks setting for smooth kernel functions
 };
 
 class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {

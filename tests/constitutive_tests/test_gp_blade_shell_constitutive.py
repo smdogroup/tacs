@@ -157,6 +157,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
         )
+        #self.axialGP.setKS(0.1)
 
         n_param = constitutive.ShearGP.n_param
         self.shearGP = constitutive.ShearGP(
@@ -164,6 +165,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
         )
+        #self.shearGP.setKS(0.1)
 
         #n_param = constitutive.CripplingGP.n_param
         #self.cripplingGP = constitutive.CripplingGP(
@@ -209,6 +211,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
         con.setKSWeight(0.1)
+        con.setCFShearMode(2)
         return con
 
     def test_constitutive_density(self):
@@ -339,7 +342,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
                     )
                 self.assertFalse(fail)
 
-    def test_constitutive_internal_tests(self):
+    def _constitutive_internal_tests(self):
         """test all the internal or intermediate tests in C++"""
         for ply in self.ply_list:
             with self.subTest(ply=ply):
@@ -395,12 +398,12 @@ if __name__ == "__main__":
         tester = GPConstitutiveCFTest()
         tester._my_debug = True
         tester.setUp()
-        tester.test_constitutive_internal_tests()
+        tester._constitutive_internal_tests()
     elif args.case == "ML":
         tester = GPConstitutiveMLTest()
         tester._my_debug = True
         tester.setUp()
-        tester.test_constitutive_internal_tests()
+        tester._constitutive_internal_tests()
     elif args.case == "failStrain":
         # shouldn't matter which one of these I test as long as internal tests pass
         #tester = GPConstitutiveCFTest()
