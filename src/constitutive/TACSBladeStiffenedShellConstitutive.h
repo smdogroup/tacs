@@ -1066,9 +1066,12 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar* panelPlyFailSens;
   TacsScalar* stiffenerPlyFailSens;
 
-  static const char* constName;        ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
       3;                              ///< Number of entries in the ABar matrix
   static const int NUM_FAILURES = 4;  ///< Number of failure modes
+ private:
+  // private so that subclass constName for GP buckling constraints doesn't
+  // conflict
+  static const char* constName;  ///< Constitutive model name
 };
