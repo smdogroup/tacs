@@ -119,12 +119,8 @@ class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
  public:
   TACSAxialGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                                 const TacsScalar alpha[])
-      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha) {
-    setDefaultHyperParameters();
-  };
+      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha){};
   ~TACSAxialGaussianProcessModel(){};
-  void setDefaultHyperParameters();
-
   TacsScalar testKernelSens(TacsScalar epsilon, int printLevel);
 
  protected:
@@ -133,9 +129,6 @@ class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
   TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain);
   void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
                   const TacsScalar* Xtrain, TacsScalar* Xtestsens);
-
-  // set the default hyperparameters of the model
-  TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
@@ -148,11 +141,6 @@ class TACSShearGaussianProcessModel : public TACSAxialGaussianProcessModel {
                                 const TacsScalar alpha[])
       : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha){};
   ~TACSShearGaussianProcessModel(){};
-  // void setdefaultHyperParameters();
-  //  protected:
-  // set the default hyperparameters of the model
-  // for now just use the same routine as the axial one
-  // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 };
 
 class TACSCripplingGaussianProcessModel : public TACSAxialGaussianProcessModel {
@@ -161,9 +149,4 @@ class TACSCripplingGaussianProcessModel : public TACSAxialGaussianProcessModel {
                                     const TacsScalar alpha[])
       : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha){};
   ~TACSCripplingGaussianProcessModel(){};
-  // void setdefaultHyperParameters();
-  //  protected:
-  // set the default hyperparameters of the model
-  // for now just use the same routine as the axial one
-  // const TacsScalar S1, S2, c, L1, S4, S5, L2, alpha1, L3, S6;
 };
