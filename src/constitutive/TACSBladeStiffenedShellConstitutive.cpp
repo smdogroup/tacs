@@ -21,6 +21,11 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
+// Explicit definition of static constexpr member, for some reason if this is
+// not included, TACS will throw a linker error complaining that
+// DUMMY_FAIL_VALUE is an undefined symbol when compiled in complex mode.
+constexpr TacsScalar TACSBladeStiffenedShellConstitutive::DUMMY_FAIL_VALUE;
+
 const char* const TACSBladeStiffenedShellConstitutive::constName =
     "TACSBladeStiffenedShellConstitutive";
 
@@ -1085,7 +1090,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
     TacsScalar fails[this->NUM_FAILURES];
     computeFailureValues(strain, fails);
     TacsScalar failVal = fails[failIndex - 1];
-    if (failVal == this->DUMMY_FAIL_VALUE) {
+    if (TacsRealPart(failVal) == TacsRealPart(this->DUMMY_FAIL_VALUE)) {
       return 0.0;
     } else {
       return failVal;
