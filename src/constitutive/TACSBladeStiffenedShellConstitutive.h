@@ -382,6 +382,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
+  // Retrieve failure mode values for plotting purposes
+  TacsScalar evalFailureFieldValue(int elemIndex, const double pt[],
+                                   const TacsScalar X[],
+                                   const TacsScalar strain[], int failIndex);
+
   /**
    * @brief Compute the effective tensile thickness of the stiffened shell
    *
