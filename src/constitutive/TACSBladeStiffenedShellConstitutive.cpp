@@ -1228,12 +1228,15 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalDesignFieldValue(
 TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int failIndex) {
-  if (failIndex < 0 || failIndex >= this->NUM_FAILURES) {
+  if (failIndex == 0) {
+    return this->evalFailure(elemIndex, pt, X, strain);
+  } else if (failIndex >= 1 && failIndex <= this->NUM_FAILURES) {
+    TacsScalar fails[this->NUM_FAILURES];
+    computeFailureValues(strain, fails);
+    return fails[failIndex - 1];
+  } else {
     return 0.0;
   }
-  TacsScalar fails[this->NUM_FAILURES];
-  computeFailureValues(strain, fails);
-  return fails[failIndex];
 }
 
 TacsScalar
