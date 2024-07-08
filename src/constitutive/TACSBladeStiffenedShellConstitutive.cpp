@@ -3477,7 +3477,6 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
   const int hNum = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
   const int tNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
   const int numPlies = this->numStiffenerPlies;
-  const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
   const bool computeThicknessSens = (this->stiffenerThickNum >= 0);
   const bool computeHeightSens = (this->stiffenerHeightNum >= 0);
 
