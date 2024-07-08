@@ -1084,7 +1084,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
   } else if (failIndex >= 1 && failIndex <= this->NUM_FAILURES) {
     TacsScalar fails[this->NUM_FAILURES];
     computeFailureValues(strain, fails);
-    return fails[failIndex - 1];
+    TacsScalar failVal = fails[failIndex - 1];
+    if (failVal == this->DUMMY_FAIL_VALUE) {
+      return 0.0;
+    } else {
+      return failVal;
+    }
   } else {
     return 0.0;
   }
