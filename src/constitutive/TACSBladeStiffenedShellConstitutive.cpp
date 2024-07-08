@@ -1225,6 +1225,17 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
+TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
+    int elemIndex, const double pt[], const TacsScalar X[],
+    const TacsScalar strain[], int failIndex) {
+  if (failIndex < 0 || failIndex >= this->NUM_FAILURES) {
+    return 0.0;
+  }
+  TacsScalar fails[this->NUM_FAILURES];
+  computeFailureValues(strain, fails);
+  return fails[failIndex];
+}
+
 TacsScalar
 TACSBladeStiffenedShellConstitutive::computeEffectiveBendingThickness() {
   TacsScalar IStiff = this->computeStiffenerIzz();
