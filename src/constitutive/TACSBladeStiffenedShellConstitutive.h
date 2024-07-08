@@ -930,6 +930,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @brief Compute the critical axial load for the global buckling of the
    * stiffened panel
    *
+   * This is just the classic Euler buckling load computed using the bending
+   * stiffness of the skin+stiffener cross section about it's centroid.
+   *
    * @param D1 1-direction bending stiffness, computed by
    * `computeCriticalGlobalBucklingStiffness`
    * @param L Panel length
@@ -1129,6 +1132,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @brief Compute the strength ratio for the stiffener column buckling failure
    * mode
    *
+   * This failure mode is based on the simple Euler buckling formula for a beam
+   * pinned at both ends. See sections 8.3 and 9.2.1.2 in "Design and Analysis
+   * of Composite Structures with Application to Aerospace Structures, 2nd
+   * Edition" by Christos Kassapoglou.
+   *
    * @param stiffenerStrain Stiffener centroid strains
    * @return TacsScalar Strength ratio
    */
@@ -1242,6 +1250,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
 
   /**
    * @brief Compute the strength ratio with respect to stiffener crippling
+   *
+   * Uses methods described in section 8.5 of "Design and Analysis of Composite
+   * Structures with Application to Aerospace Structures, 2nd Edition" by
+   * Christos Kassapoglou.
    *
    * @param stiffenerStrain Stiffener centroid beam strains
    * @return TacsScalar Strength ratio

@@ -3227,7 +3227,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerCripplingValues(
   // t is the flange thickness
   //
   // Here we compute the ultimate compressive load using the same criteria
-  // used to compute the stiffener material failure value but using on the
+  // used to compute the stiffener material failure value but using only the
   // axial strain component. This gives: SR_Crippling = SR_comp/1.63 *
   // (b/t)^0.717 Where SR_Crippling is the crippling strength ratio SR_comp is
   // the strength ratio computed using only the compressive component of the
@@ -3320,6 +3320,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerCripplingValues(
     }
   }
 }
+
 TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerCrippling(
     const TacsScalar stiffenerStrain[]) {
   const int numPlies = this->numStiffenerPlies;
