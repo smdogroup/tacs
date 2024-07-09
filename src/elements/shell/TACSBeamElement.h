@@ -2224,10 +2224,11 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
       if (write_flag & TACS_OUTPUT_EXTRAS) {
         for (int failInd = 0; failInd < 7; failInd++) {
           data[failInd] =
-              con->evalFailureFieldValue(elemIndex, pt, X, e, failInd);
+              con->evalFailureFieldValue(elemIndex, pt, X0.x, e, failInd);
         }
         for (int dvInd = 0; dvInd < 7; dvInd++) {
-          data[dvInd + 7] = con->evalDesignFieldValue(elemIndex, pt, X, dvInd);
+          data[dvInd + 7] =
+              con->evalDesignFieldValue(elemIndex, pt, X0.x, dvInd);
         }
         data += 14;
       }
