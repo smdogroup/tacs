@@ -2811,11 +2811,6 @@ void TACSBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
   this->bucklingEnvelopeSens(-panelStress[0], N1Crit, panelStress[2], N12Crit,
                              &dfdN1Local, &dfdN1CritLocal, &dfdN12Local,
                              &dfdN12CritLocal);
-  // dfdN1Local *= dKSdf[2];
-  // dfdN12Local *= dKSdf[2];
-  // dfdN1CritLocal *= dKSdf[2];
-  // dfdN12CritLocal *= dKSdf[2];
-
   // Convert sensitivity w.r.t applied loads into sensitivity w.r.t DVs
   TacsScalar dfdPanelStress[NUM_STRESSES];
   memset(dfdPanelStress, 0, NUM_STRESSES * sizeof(TacsScalar));
