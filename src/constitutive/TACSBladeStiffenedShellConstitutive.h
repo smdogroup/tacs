@@ -81,13 +81,20 @@ void printStiffnessMatrix(const TacsScalar* const C);
  * depends on the Orthotropic ply objects you pass to this class) is computed at
  * the upper and lower surface of the panel and at the tip of the stiffener,
  * this calculation is performed for every ply angle present in the panel and
- * stiffener laminate. Additionally buckling criteria are computed for combined
+ * stiffener laminate. Buckling criteria are computed for combined
  * shear and axial buckling for both a global buckling mode (i.e the entire
  * panel buckles) and a local buckling mode (i.e. the panel buckles between a
- * pair of stiffeners). These buckling failure values are aggregated along with
- * the material failure values into a single failure value using KS aggregation.
- * The smoothness and conservatism of this aggregation can be controlled using
- * the `setKSWeight` method.
+ * pair of stiffeners). Finally, two stiffener buckling criteria are also
+ * evaluated, one for global column buckling of the stiffener, and one for
+ * crippling of the flanges. These buckling failure values are aggregated along
+ * with the material failure values into a single failure value using KS
+ * aggregation. The smoothness and conservatism of this aggregation can be
+ * controlled using the `setKSWeight` method.
+ *
+ * WARNING: The stiffener flange crippling failure criterion uses a
+ * semi-empirical method that is only deemed valid for laminates consisting of
+ * >=25% 0 degree plies and >= 25% +-45 degree plies (as in the sum of + and -
+ * 45 degree ply fractions is >= 25%)
  *
  * The panel length design variables do not directly affect the stiffness or
  * stresses computed by the model, their only role is to allow the computation
@@ -780,6 +787,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   /**
    * @brief Compute the stiffener centroid height, this is the height relative
    * to the bottom surface of the stiffener, NOT the mid-plane of the panel.
+   *
+   * Also note that, since the stiffener is assume to be on the opposite side of
+   * the shell from the shell normal (3-direction), the stiffener centroid
+   * offset used throughout this class will use the negative of this height
+   * value
    *
    * @return TacsScalar The stiffener centroid height
    */
