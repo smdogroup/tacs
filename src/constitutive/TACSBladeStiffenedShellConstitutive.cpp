@@ -2184,9 +2184,9 @@ void TACSBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
   dfdD2 *= dfdN12CritGlobal;
   dfdD3 *= dfdN12CritGlobal;
   dfdPanelLength *= dfdN12CritGlobal;
-  // N1CritGlobal = M_PI * M_PI * D1 / (L * L);
-  dfdD1 += dfdN1CritGlobal * (M_PI * M_PI / (L * L));
-  dfdPanelLength += dfdN1CritGlobal * (-2.0 * M_PI * M_PI * D1 / (L * L * L));
+  const TacsScalar N1CritGlobal = M_PI * M_PI * D1 / (L * L);
+  dfdD1 += dfdN1CritGlobal * N1CritGlobal / D1;
+  dfdPanelLength += dfdN1CritGlobal * -2.0 * N1CritGlobal / L;
 
   if (this->panelLengthNum >= 0) {
     dfdx[this->panelLengthLocalNum] += scale * dfdPanelLength;
