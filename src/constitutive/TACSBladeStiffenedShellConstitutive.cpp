@@ -2714,12 +2714,12 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalLocalPanelBuckling(
 
 TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
     TacsScalar D1, TacsScalar D2, TacsScalar D3, TacsScalar L) {
-  double ks = 50.0;
-  TacsScalar xi = sqrt(D1 * D2) / D3;
+  constexpr double ks = 50.0;
+  const TacsScalar xi = sqrt(D1 * D2) / D3;
 
-  TacsScalar N12_crit_1 =
+  const TacsScalar N12_crit_1 =
       (4.0 / (L * L)) * sqrt(D3 * D1 * xi) * (8.125 + 5.045 / xi);
-  TacsScalar N12_crit_2 =
+  const TacsScalar N12_crit_2 =
       (4.0 / (L * L)) * sqrt(D1 * D3) * (11.7 + 0.532 * xi + 0.938 * xi * xi);
 
   TacsScalar N12_min = 0.0;
@@ -2729,8 +2729,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
     N12_min = N12_crit_2;
   }
 
-  TacsScalar N12_diff = fabs(N12_crit_1 - N12_crit_2);
-  TacsScalar N12_crit = N12_min - log(1.0 + exp(-ks * N12_diff)) / ks;
+  const TacsScalar N12_diff = fabs(N12_crit_1 - N12_crit_2);
+  const TacsScalar N12_crit = N12_min - log(1.0 + exp(-ks * N12_diff)) / ks;
 
   return N12_crit;
 }
@@ -2896,9 +2896,9 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoadSens(
   N12CritVals[1] =
       -(4.0 / L2) * sqrt(D1 * D3) * (11.7 + 0.532 * xi + 0.938 * xi * xi);
 
-  TacsScalar N12Crit, N12CritSens[2];
-  N12Crit = ksAggregationSens(N12CritVals, 2, 50., N12CritSens);
-  N12Crit *= -1.0;
+  TacsScalar N12CritSens[2];
+  const TacsScalar N12Crit =
+      -ksAggregationSens(N12CritVals, 2, 50., N12CritSens);
 
   const TacsScalar dN12Crit1_dD1 =
       sqrt(D1 * root) * (5.045 * D3 + 24.375 * root) / (D1 * L2 * root);
