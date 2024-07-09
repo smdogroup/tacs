@@ -2161,10 +2161,6 @@ void TACSBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
   this->bucklingEnvelopeSens(-stress[0], N1Crit, stress[2], N12Crit,
                              &dfdN1Global, &dfdN1CritGlobal, &dfdN12Global,
                              &dfdN12CritGlobal);
-  // dfdN1Global *= dKSdf[3];
-  // dfdN12Global *= dKSdf[3];
-  // dfdN1CritGlobal *= dKSdf[3];
-  // dfdN12CritGlobal *= dKSdf[3];
 
   // Add the sensitivity of the buckling failure criteria due to the
   // dependence of the applied loads on the DVs
