@@ -2717,6 +2717,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
   constexpr double ks = 50.0;
   const TacsScalar xi = sqrt(D1 * D2) / D3;
 
+  // NOTE: sqrt(D3 * D1 * xi) = (D1^3 * D2)^0.25
   const TacsScalar N12_crit_1 =
       (4.0 / (L * L)) * sqrt(D3 * D1 * xi) * (8.125 + 5.045 / xi);
   const TacsScalar N12_crit_2 =
