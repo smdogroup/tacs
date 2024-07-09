@@ -557,7 +557,7 @@ void TACSBladeStiffenedShellConstitutive::evalMassMoments(
   TacsScalar stiffenerDensity = this->stiffenerPly->getDensity();
   TacsScalar stiffenerArea = this->computeStiffenerArea();
   TacsScalar stiffenerOffset =
-      this->computeStiffenerCentroidHeight() - 0.5 * pThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * pThick;
   TacsScalar stiffenerMOI = this->computeStiffenerMOI();
 
   moments[0] =
@@ -601,11 +601,13 @@ void TACSBladeStiffenedShellConstitutive::addMassMomentsDVSens(
   TacsScalar stiffenerDensity = this->stiffenerPly->getDensity();
   TacsScalar stiffenerArea = this->computeStiffenerArea();
   TacsScalar stiffenerOffset =
-      this->computeStiffenerCentroidHeight() - 0.5 * pThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * pThick;
   TacsScalar stiffenerMOI = this->computeStiffenerMOI();
 
   TacsScalar dzdt, dzdh;
   this->computeStiffenerCentroidHeightSens(dzdt, dzdh);
+  dzdt *= -1;
+  dzdh *= -1;
 
   TacsScalar dAdt, dAdh;
   this->computeStiffenerAreaSens(dAdt, dAdh);
@@ -757,8 +759,10 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   this->computeStiffenerJxxSens(dJdt, dJdh);
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
-  z = this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+  z = -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
   this->computeStiffenerCentroidHeightSens(dzdt, dzdh);
+  dzdt *= -1;
+  dzdh *= -1;
 
   // Sensitivity of the panel stress values to it's DVs (this has been proven
   // correct)
@@ -1103,7 +1107,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
 TacsScalar
 TACSBladeStiffenedShellConstitutive::computeEffectiveBendingThickness() {
   TacsScalar IStiff = this->computeStiffenerIzz();
-  TacsScalar zStiff = this->computeStiffenerCentroidHeight();
+  TacsScalar zStiff = -this->computeStiffenerCentroidHeight();
   TacsScalar t = this->panelThick;
   TacsScalar AStiff = this->computeStiffenerArea();
   TacsScalar Ieff = t * t * t / 12.0 +
@@ -1181,7 +1185,7 @@ void TACSBladeStiffenedShellConstitutive::transformStrain(
     const TacsScalar panelStrain[], TacsScalar stiffenerStrain[]) {
   // Compute the offset of the stiffener centroid from the shell mid-plane
   TacsScalar z =
-      this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
   // Axial strain (contains contribution from panel bending)
   stiffenerStrain[0] = panelStrain[0] + z * panelStrain[3];
@@ -1200,7 +1204,7 @@ void TACSBladeStiffenedShellConstitutive::transformStrain(
 void TACSBladeStiffenedShellConstitutive::transformStrainSens(
     const TacsScalar stiffenerStrainSens[], TacsScalar panelStrainSens[]) {
   TacsScalar z =
-      this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
   panelStrainSens[0] = stiffenerStrainSens[0];
   panelStrainSens[1] = 0.0;
@@ -1220,7 +1224,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStress(
   TacsScalar pInv = 1.0 / this->stiffenerPitch;
   // Compute the offset of the stiffener centroid from the shell mid-plane
   TacsScalar z =
-      this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
   panelStress[0] += pInv * stiffenerStress[0];
   panelStress[2] += pInv * 0.5 * stiffenerStress[5];
@@ -1235,7 +1239,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStiffness(
   TacsScalar pInv = 1.0 / this->stiffenerPitch;
   // Compute the offset of the stiffener centroid from the shell mid-plane
   TacsScalar z =
-      this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
+      -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
 
   // Some shorthand for the entries of the stiffness matrix
   TacsScalar* A = &(panelStiffness[0]);
@@ -1281,6 +1285,8 @@ void TACSBladeStiffenedShellConstitutive::addStrainTransformProductDVsens(
   TacsScalar dzdtp, dzdhs, dzdts;
   dzdtp = -0.5;
   this->computeStiffenerCentroidHeightSens(dzdts, dzdhs);
+  dzdts *= -1;
+  dzdhs *= -1;
 
   // The sensitivities of the transformation matrix w.r.t the offset are:
   // dTe[0,3]/dz = 1
@@ -1766,7 +1772,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerFailure(
   TACSOrthotropicPly* ply = this->stiffenerPly;
 
   // Compute the strain state at the tip of the stiffener
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   TacsScalar zTipOffset =
       -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
   TacsScalar plyStrain[3];
@@ -1806,7 +1812,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerFailureStrainSens(
   memset(sens, 0, numStrain * sizeof(TacsScalar));
 
   // Compute the strain state at the tip of the stiffener
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   TacsScalar zTipOffset =
       -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
   TacsScalar tipStrain[3];
@@ -1851,11 +1857,13 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerFailureDVSens(
   const int hNum = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
   const int tNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
 
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   TacsScalar zTipOffset =
       -(this->stiffenerHeight + this->stiffenerThick) - zCentroid;
   TacsScalar dZdh, dZdt;
   this->computeStiffenerCentroidHeightSens(dZdt, dZdh);
+  dZdt *= -1;
+  dZdh *= -1;
   TacsScalar dTipStraindh, dTipStraindt;
   dTipStraindh = -dZdh - 1.0;
   dTipStraindt = -dZdt - 1.0;
@@ -1922,16 +1930,16 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerAreaSens(
 
 TacsScalar
 TACSBladeStiffenedShellConstitutive::computeStiffenerCentroidHeight() {
-  return -((1.0 + 0.5 * this->flangeFraction) * this->stiffenerThick +
-           0.5 * this->stiffenerHeight) /
+  return ((1.0 + 0.5 * this->flangeFraction) * this->stiffenerThick +
+          0.5 * this->stiffenerHeight) /
          (1.0 + this->flangeFraction);
 }
 
 void TACSBladeStiffenedShellConstitutive::computeStiffenerCentroidHeightSens(
     TacsScalar& dzdt, TacsScalar& dzdh) {
   TacsScalar kf = this->flangeFraction;
-  dzdh = -0.5 / (1.0 + kf);
-  dzdt = -(1.0 + 0.5 * kf) / (1.0 + kf);
+  dzdh = 0.5 / (1.0 + kf);
+  dzdt = (1.0 + 0.5 * kf) / (1.0 + kf);
 }
 
 TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerIzz() {
@@ -1994,8 +2002,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeStiffenerMOI() {
   TacsScalar z1 = -(st + 0.5 * sh);  // Centroid of the stiffener web
   TacsScalar z2 = -(0.5 * st);       // Centroid of the stiffener flange
   TacsScalar zc =
-      this->computeStiffenerCentroidHeight();  // Centroid of the whole
-                                               // stiffener section
+      -this->computeStiffenerCentroidHeight();  // Centroid of the whole
+                                                // stiffener section
 
   // Offsets of each area from the centroid of the whole stiffener section
   TacsScalar dz1 = z1 - zc;
@@ -2070,7 +2078,7 @@ void TACSBladeStiffenedShellConstitutive::
   As = this->computeStiffenerArea();
   Ip = ps * tp3 / 12.0;
   Is = this->computeStiffenerIzz();
-  zs = this->computeStiffenerCentroidHeight();
+  zs = -this->computeStiffenerCentroidHeight();
   Js = this->computeStiffenerJxx();
   Jp = ps * tp3 / 12.0;
 
@@ -2280,7 +2288,7 @@ void TACSBladeStiffenedShellConstitutive::
   As = this->computeStiffenerArea();
   Ip = ps * tp3 / 12.0;
   Is = this->computeStiffenerIzz();
-  zs = this->computeStiffenerCentroidHeight();
+  zs = -this->computeStiffenerCentroidHeight();
   Js = this->computeStiffenerJxx();
   Jp = ps * tp3 / 12.0;
 
@@ -2416,6 +2424,8 @@ void TACSBladeStiffenedShellConstitutive::
   // ZsSens
   TacsScalar dZdt, dZdh, dzdtp;
   this->computeStiffenerCentroidHeightSens(dZdt, dZdh);
+  dZdt *= -1;
+  dZdh *= -1;
   *tsSens += ZsSens * dZdt;
   *hsSens += ZsSens * dZdh;
 }
@@ -3250,7 +3260,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerCripplingValues(
   // We compute the crippling criteria for both the web and
   // the flange of the stiffener.
   TACSOrthotropicPly* ply = this->stiffenerPly;
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
 
   TacsScalar flangeCrippleFactor = computeCripplingFactor(
@@ -3362,7 +3372,7 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
 
   // --- Flange crippling ---
   TACSOrthotropicPly* ply = this->stiffenerPly;
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
 
   TacsScalar flangeCrippleFactor = computeCripplingFactor(
@@ -3487,8 +3497,10 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
 
   // --- Flange crippling ---
   TacsScalar dzCentroiddh, dzCentroiddt;
-  TacsScalar zCentroid = this->computeStiffenerCentroidHeight();
+  TacsScalar zCentroid = -this->computeStiffenerCentroidHeight();
   this->computeStiffenerCentroidHeightSens(dzCentroiddt, dzCentroiddh);
+  dzCentroiddt *= -1;
+  dzCentroiddh *= -1;
   TacsScalar zFlange = -0.5 * this->stiffenerThick - zCentroid;
   const TacsScalar dzFlangedt = -0.5 - dzCentroiddt;
   const TacsScalar dzFlangedh = -dzCentroiddh;
