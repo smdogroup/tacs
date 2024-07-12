@@ -4,6 +4,7 @@ import openmdao.api as om
 
 from mphys.mask_converter import MaskedConverter, MaskedVariableDescription
 
+from .utils import _log_function_call
 
 class TacsMesh(om.IndepVarComp):
     """
@@ -18,6 +19,7 @@ class TacsMesh(om.IndepVarComp):
             recordable=False,
         )
 
+    @_log_function_call
     def setup(self):
         fea_assembler = self.options["fea_assembler"]
         xpts = fea_assembler.getOrigNodes()
@@ -40,6 +42,7 @@ class TacsMeshGroup(om.Group):
             recordable=False,
         )
 
+    @_log_function_call
     def setup(self):
         fea_assembler = self.options["fea_assembler"]
         self.add_subsystem("fea_mesh", TacsMesh(fea_assembler=fea_assembler))

@@ -3,6 +3,7 @@ import numpy as np
 import openmdao.api as om
 from openmdao.utils.mpi import MPI
 
+from .utils import _log_function_call
 
 class TacsDVComp(om.ExplicitComponent):
     """
@@ -28,6 +29,7 @@ class TacsDVComp(om.ExplicitComponent):
             desc="Flag for whether or not to separate out point mass dvs using user-defined names",
         )
 
+    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.src_indices = self.get_dv_src_indices()
@@ -75,6 +77,7 @@ class TacsDVComp(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
 
+    @_log_function_call
     def compute(self, inputs, outputs):
         # Create serial array to holding all dv vals
         tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
@@ -87,6 +90,7 @@ class TacsDVComp(om.ExplicitComponent):
         # Slice full array with src_indices to get distributed dv array
         outputs["tacs_dvs"] = full_dv_array[self.src_indices]
 
+    @_log_function_call
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
         dfull_dv_array = np.zeros(tot_ndv, dtype=inputs["dv_struct"].dtype)

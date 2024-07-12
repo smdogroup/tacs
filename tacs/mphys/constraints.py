@@ -1,6 +1,7 @@
 import numpy as np
 import openmdao.api as om
 
+from .utils import _log_function_call
 
 class ConstraintComponent(om.ExplicitComponent):
     """
@@ -17,6 +18,7 @@ class ConstraintComponent(om.ExplicitComponent):
         self.old_dvs = None
         self.old_xs = None
 
+    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.constr = self.options["constraint_object"]
@@ -104,6 +106,7 @@ class ConstraintComponent(om.ExplicitComponent):
         xsNeedUpdate = self.comm.allreduce(tmp2)
         return dvsNeedUpdate, xsNeedUpdate
 
+    @_log_function_call
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -115,6 +118,7 @@ class ConstraintComponent(om.ExplicitComponent):
             key = self.constr.name + "_" + con_name
             outputs[con_name] = funcs[key]
 
+    @_log_function_call
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         # always update internal because same tacs object could be used by multiple scenarios
         # and we need to load this scenario's state back into TACS before doing derivatives

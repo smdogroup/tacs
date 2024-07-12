@@ -4,7 +4,7 @@ import tacs.problems
 from .functions import TacsFunctions, MassFunctions, MASS_FUNCS_CLASSES
 from .buckling import TacsBuckling
 from .constraints import ConstraintComponent
-
+from .utils import _log_function_call
 
 class TacsPostcouplingGroup(om.Group):
     def initialize(self):
@@ -17,6 +17,7 @@ class TacsPostcouplingGroup(om.Group):
         self.options.declare("constraint_setup", default=None)
         self.options.declare("buckling_setup", default=None)
 
+    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]

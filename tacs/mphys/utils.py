@@ -1,3 +1,4 @@
+from functools import wraps
 import warnings
 import tacs
 
@@ -64,3 +65,24 @@ def add_tacs_constraints(model, scenario):
                         model.add_constraint(
                             name, lower=lb, upper=ub, linear=True
                         )
+
+# Set this to true to turn on function call logging in TACS MPhys classes
+DEBUG_LOGGING = False
+
+
+def _log_function_call(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if DEBUG_LOGGING:
+            message = f"Calling {method.__qualname__}"
+            if hasattr(self, "sp"):
+                message += f" for {self.sp.name} problem"
+
+            if self.comm.rank == 0:
+                print(f"\n{'='*len(message)}", flush=True)
+                print(message, flush=True)
+                print(f"{'='*len(message)}", flush=True)
+
+        return method(self, *args, **kwargs)
+
+    return wrapped_method

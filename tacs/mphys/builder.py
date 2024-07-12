@@ -9,7 +9,7 @@ from tacs.mphys.mesh import TacsMeshGroup
 from tacs.mphys.precoupling import TacsPrecouplingGroup
 from tacs.mphys.coupling import TacsCouplingGroup
 from tacs.mphys.postcoupling import TacsPostcouplingGroup
-
+from tacs.mphys.utils import _log_function_call
 
 class TacsBuilder(Builder):
     def __init__(
@@ -232,6 +232,7 @@ class TacsBuilder(Builder):
         # Set up elements and TACS assembler
         self.fea_assembler.initialize(self.element_callback)
 
+    @_log_function_call
     def get_coupling_group_subsystem(self, scenario_name=None):
         """
         The subsystem that this builder will add to the CouplingGroup
@@ -257,6 +258,7 @@ class TacsBuilder(Builder):
             res_ref=self.res_ref,
         )
 
+    @_log_function_call
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
         """
         The subsystem that contains the subsystem that will return the mesh
@@ -274,6 +276,7 @@ class TacsBuilder(Builder):
         """
         return TacsMeshGroup(fea_assembler=self.fea_assembler)
 
+    @_log_function_call
     def get_pre_coupling_subsystem(self, scenario_name=None):
         """
         Method that returns the openmdao subsystem to be added to each scenario before the coupling group
@@ -294,6 +297,7 @@ class TacsBuilder(Builder):
             separate_mass_dvs=self.separate_mass_dvs,
         )
 
+    @_log_function_call
     def get_post_coupling_subsystem(self, scenario_name=None):
         """
         Method that returns the openmdao subsystem to be added to each scenario after the coupling group
