@@ -52,6 +52,8 @@ import numpy as np
 import openmdao.api as om
 from mphys import Multipoint
 from mphys.scenario_structural import ScenarioStructural
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 # ==============================================================================
 # Extension modules
@@ -69,7 +71,9 @@ parser.add_argument(
     help="Use stiffener pitch as a design variable",
 )
 parser.add_argument(
-    "--usePlyFracDV", action="store_true", help="Use ply fractions as design variables"
+    "--usePlyFracDV",
+    action="store_true",
+    help="Use ply fractions as design variables",
 )
 parser.add_argument(
     "--includeStiffenerBuckling",
@@ -102,11 +106,24 @@ Yt = 96.5e6
 Yc = 338e6
 S12 = 124e6
 
-# Shell thickness
-ply_thickness = 1.25e-3  # m
-plate_thickness = 0.05  # m
-tMin = 0.002  # m
-tMax = 0.05  # m
+# Baseline panel sizing
+panelLength = length
+
+stiffenerPitch = 0.125
+stiffenerPitchMin = 0.1
+stiffenerPitchMax = width / 2
+
+panelThickness = 2.1717e-3
+panelThicknessMin = 0.6e-3
+panelThicknessMax = 0.1
+
+stiffenerHeight = 57e-3
+stiffenerHeightMin = 25e-3
+stiffenerHeightMax = 0.15
+
+stiffenerThickness = stiffenerHeight / 8.8
+stiffenerThicknessMin = 0.6e-3
+stiffenerThicknessMax = 0.1
 
 # Ply angles/initial ply fractions
 ply_angles = np.deg2rad([0.0, -45.0, 45.0, 90.0])
@@ -118,7 +135,9 @@ Ny = 350e3  # N/m
 Nxy = 175e3  # N/m
 
 
-def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+def element_callback(
+    dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
+):
     # Create ply object
     ortho_prop = constitutive.MaterialProperties(
         rho=rho,
@@ -134,62 +153,57 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
         Yc=Yc,
         S12=S12,
     )
-    ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
+    ply = constitutive.OrthotropicPly(0.1, ortho_prop)
 
     # --- Define skin/stiffener design variables ---
     currentDVNum = dvNum
 
-    panelLength = length
     panelLengthNum = -1
 
-    stiffenerPitch = 0.125
-    stiffenerPitchMin = 0.1
-    stiffenerPitchMax = width / 2
-    stiffPitchScale = 10.0
     if args.useStiffPitchDV:
         stiffenerPitchNum = currentDVNum
         currentDVNum = currentDVNum + 1
     else:
         stiffenerPitchNum = -1
 
-    panelThickness = 2.1717e-3
-    panelThicknessMin = 0.6e-3
-    panelThicknessMax = 0.1
-    panelThicknessScale = 1e2
     panelThicknessNum = currentDVNum
     currentDVNum = currentDVNum + 1
 
     # Assign each ply fraction a unique DV
     if args.usePlyFracDV:
         skin_ply_fraction_dv_nums = np.array(
-            [currentDVNum, currentDVNum + 1, currentDVNum + 2, currentDVNum + 3],
+            [
+                currentDVNum,
+                currentDVNum + 1,
+                currentDVNum + 2,
+                currentDVNum + 3,
+            ],
             dtype=np.intc,
         )
         currentDVNum = currentDVNum + 4
 
-    stiffenerHeight = 57e-3
-    stiffenerHeightMin = 25e-3
-    stiffenerHeightMax = 0.15
-    stiffenerHeightScale = 1e1
     stiffenerHeightNum = currentDVNum
     currentDVNum = currentDVNum + 1
 
-    stiffenerThickness = stiffenerHeight / 8.8
-    stiffenerThicknessMin = 0.6e-3
-    stiffenerThicknessMax = 0.1
-    stiffenerThicknessScale = 1e2
     stiffenerThicknessNum = currentDVNum
     currentDVNum = currentDVNum + 1
 
     # Assign each ply fraction a unique DV
     if args.usePlyFracDV:
         stiffener_ply_fraction_dv_nums = np.array(
-            [currentDVNum, currentDVNum + 1, currentDVNum + 2, currentDVNum + 3],
+            [
+                currentDVNum,
+                currentDVNum + 1,
+                currentDVNum + 2,
+                currentDVNum + 3,
+            ],
             dtype=np.intc,
         )
     else:
         skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
-        stiffener_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
+        stiffener_ply_fraction_dv_nums = -np.ones(
+            len(ply_angles), dtype=np.intc
+        )
 
     con = constitutive.BladeStiffenedShellConstitutive(
         panelPly=ply,
@@ -213,7 +227,9 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     )
     con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
     con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
-    con.setStiffenerThicknessBounds(stiffenerThicknessMin, stiffenerThicknessMax)
+    con.setStiffenerThicknessBounds(
+        stiffenerThicknessMin, stiffenerThicknessMax
+    )
     con.setPanelPlyFractionBounds(
         np.array([0.05, 0.05, 0.05, 0.05]), np.array([1.0, 1.0, 1.0, 1.0])
     )
@@ -228,7 +244,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     if args.useStiffPitchDV:
         con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerHeightMax)
     else:
-        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch)
+        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch-10e-3)
 
     con.setFailureModes(
         includePanelMaterialFailure=True,
@@ -247,6 +263,10 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     elem = elements.Quad4Shell(transform, con)
 
     # Design variable scaling factors
+    stiffPitchScale = 10.0
+    panelThicknessScale = 1e2
+    stiffenerHeightScale = 1e1
+    stiffenerThicknessScale = 1e2
     DVScales = []
     if args.useStiffPitchDV:
         DVScales.append(stiffPitchScale)
@@ -347,11 +367,17 @@ def problem_setup(scenario_name, fea_assembler, problem):
         )
         # xMin face shear in -y direction
         addForceToEdge(
-            problem, xMinNodeIDs, cornerNodes, [0.0, -Nxy * length, 0.0, 0.0, 0.0, 0.0]
+            problem,
+            xMinNodeIDs,
+            cornerNodes,
+            [0.0, -Nxy * length, 0.0, 0.0, 0.0, 0.0],
         )
         # xMax face shear in +y direction
         addForceToEdge(
-            problem, xMaxNodeIDs, cornerNodes, [0.0, Nxy * length, 0.0, 0.0, 0.0, 0.0]
+            problem,
+            xMaxNodeIDs,
+            cornerNodes,
+            [0.0, Nxy * length, 0.0, 0.0, 0.0, 0.0],
         )
     elif scenario_name == "Pressure":
         allComponents = fea_assembler.selectCompIDs()
@@ -383,7 +409,9 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
             constr.addConstraint(
                 "SkinPlyFracSum",
                 allComponents,
-                dvIndices=list(range(firstSkinPlyFracNum, firstSkinPlyFracNum + 4)),
+                dvIndices=list(
+                    range(firstSkinPlyFracNum, firstSkinPlyFracNum + 4)
+                ),
                 dvWeights=[1.0, 1.0, 1.0, 1.0],
                 lower=1.0,
                 upper=1.0,
@@ -403,7 +431,9 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
                 "StiffenerPlyFracSum",
                 allComponents,
                 dvIndices=list(
-                    range(firstStiffenerPlyFracNum, firstStiffenerPlyFracNum + 4)
+                    range(
+                        firstStiffenerPlyFracNum, firstStiffenerPlyFracNum + 4
+                    )
                 ),
                 dvWeights=[1.0, 1.0, 1.0, 1.0],
                 lower=1.0,
@@ -413,7 +443,10 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
             constr.addConstraint(
                 "StiffenerLaminateBalance",
                 allComponents,
-                dvIndices=[firstStiffenerPlyFracNum + 1, firstStiffenerPlyFracNum + 2],
+                dvIndices=[
+                    firstStiffenerPlyFracNum + 1,
+                    firstStiffenerPlyFracNum + 2,
+                ],
                 dvWeights=[1.0, -1.0],
                 lower=0.0,
                 upper=0.0,
@@ -460,10 +493,14 @@ class PlateModel(Multipoint):
             # We only need to setup the design variable and mesh components once as both scenarios will use the same design variables and mesh coordinates.
             if ii == 0:
                 init_dvs = struct_builder.get_initial_dvs()
-                dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
+                dvs = self.add_subsystem(
+                    "dvs", om.IndepVarComp(), promotes=["*"]
+                )
                 dvs.add_output("dv_struct", init_dvs)
                 lb, ub = struct_builder.get_dv_bounds()
-                structDVScaling = np.array(struct_builder.fea_assembler.scaleList)
+                structDVScaling = np.array(
+                    struct_builder.fea_assembler.scaleList
+                )
                 self.add_design_var(
                     "dv_struct", lower=lb, upper=ub, scaler=structDVScaling
                 )
@@ -501,7 +538,9 @@ class PlateModel(Multipoint):
                     if all(lb == ub):
                         self.add_constraint(name, equals=lb, linear=True)
                     else:
-                        self.add_constraint(name, lower=lb, upper=ub, linear=True)
+                        self.add_constraint(
+                            name, lower=lb, upper=ub, linear=True
+                        )
 
 
 # ==============================================================================
@@ -544,24 +583,119 @@ prob.run_driver()
 
 # --- Print out optimal values ---
 dv_struct = prob.get_val("dv_struct")
-currentDVNum = 0
 
-print("Optimal design variables:")
-print("================================")
+
+currentDVNum = 0
 if args.useStiffPitchDV:
-    print(f"Stiffener pitch: {dv_struct[currentDVNum]*1e3} mm")
+    optStiffPitch = dv_struct[currentDVNum]
     currentDVNum += 1
-print(f"Panel thickness: {dv_struct[currentDVNum]*1e3} mm")
+else:
+    optStiffPitch = stiffenerPitch
+optSkinThickness = dv_struct[currentDVNum]
 currentDVNum += 1
 if args.usePlyFracDV:
-    print("Skin ply fractions:")
-    print(dv_struct[currentDVNum : currentDVNum + 4])
+    optSkinPlyFrac = dv_struct[currentDVNum : currentDVNum + 4]
     currentDVNum += 4
-print(f"Stiffener height: {dv_struct[currentDVNum]*1e3} mm")
+else:
+    optSkinPlyFrac = skin_ply_fractions
+optStiffHeight = dv_struct[currentDVNum]
 currentDVNum += 1
-print(f"Stiffener thickness: {dv_struct[currentDVNum]*1e3} mm")
+optStiffThickness = dv_struct[currentDVNum]
 currentDVNum += 1
 if args.usePlyFracDV:
-    print("Stiffener ply fractions:")
-    print(dv_struct[currentDVNum : currentDVNum + 4])
+    optStiffPlyFrac = dv_struct[currentDVNum : currentDVNum + 4]
     currentDVNum += 4
+else:
+    optStiffPlyFrac = stiffener_ply_fractions
+
+print("Optimal sizing:")
+print("================================")
+print(f"Stiffener pitch: {optStiffPitch*1e3} mm")
+print(f"Panel thickness: {optSkinThickness*1e3} mm")
+print("Skin ply fractions:")
+print(optSkinPlyFrac)
+print(f"Stiffener height: {optStiffHeight*1e3} mm")
+print(f"Stiffener thickness: {optStiffThickness*1e3} mm")
+print("Stiffener ply fractions:")
+print(optStiffPlyFrac)
+
+
+def plotDesign(ax, stiffPitch, skinThickness, stiffenerHeight, stiffThickness):
+    """Plot a stiffened panel cross section
+
+    Parameters
+    ----------
+    ax : matplotlib axis
+        Axis to plot on
+    stiffPitch : float
+        Stiffener pitch
+    skinThickness : float
+        Panel skin thickness
+    stiffenerHeight : float
+        Stiffener height
+    stiffThickness : float
+        Stiffener thickness
+    """
+
+    totalWidth = stiffPitch + stiffenerHeight
+
+    # Plot skin
+    skin = mpatches.Rectangle(
+        (-stiffenerHeight / 2, 0), totalWidth, skinThickness, color="blue"
+    )
+    ax.add_artist(skin)
+
+    # Stiffeners
+    for xCentre in [0, stiffPitch]:
+        flange = mpatches.Rectangle(
+            (xCentre - stiffenerHeight / 2, skinThickness),
+            stiffenerHeight,
+            stiffThickness,
+            color="orange",
+        )
+        web = mpatches.Rectangle(
+            (xCentre - stiffThickness / 2, skinThickness + stiffThickness),
+            stiffThickness,
+            stiffenerHeight,
+            color="orange",
+        )
+        ax.add_artist(flange)
+        ax.add_artist(web)
+
+    xMargin = 0.05*totalWidth
+    yMargin = 0.05*stiffenerHeight
+    ax.set_xlim(-stiffenerHeight / 2 - xMargin, -stiffenerHeight / 2 + totalWidth + xMargin)
+    ax.set_ylim(-yMargin, skinThickness + stiffThickness + stiffenerHeight + yMargin)
+
+
+fig, axes = plt.subplots(2, 1, sharex=True, sharey=True)
+
+# First axes, baseline design
+ax = axes[0]
+ax.set_aspect("equal")
+ax.set_title("Baseline design")
+plotDesign(
+    ax,
+    stiffenerPitch * 1e3,
+    panelThickness * 1e3,
+    stiffenerHeight * 1e3,
+    stiffenerThickness * 1e3,
+)
+ax.set_xlim()
+
+# Second axes, optimal design
+ax = axes[1]
+ax.set_aspect("equal")
+ax.set_title("Optimal design")
+plotDesign(
+    ax,
+    optStiffPitch * 1e3,
+    optSkinThickness * 1e3,
+    optStiffHeight * 1e3,
+    optStiffThickness * 1e3,
+)
+ax.autoscale()
+plt.tight_layout()
+
+plt.savefig("CrossSection.pdf")
+plt.savefig("CrossSection.png")
