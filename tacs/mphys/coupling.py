@@ -9,7 +9,7 @@ from mphys.mask_converter import (
 )
 
 from .solver import TacsSolver
-from .utils import _log_function_call
+
 
 class TacsCouplingGroup(om.Group):
     def initialize(self):
@@ -21,7 +21,6 @@ class TacsCouplingGroup(om.Group):
         self.options.declare("problem_setup", default=None)
         self.options.declare("res_ref", default=None)
 
-    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]

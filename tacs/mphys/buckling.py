@@ -2,7 +2,6 @@ import numpy as np
 
 import openmdao.api as om
 
-from tacs.mphys.utils import _log_function_call
 
 class TacsBuckling(om.ExplicitComponent):
     """
@@ -19,7 +18,6 @@ class TacsBuckling(om.ExplicitComponent):
 
         self.check_partials = False
 
-    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
@@ -73,7 +71,6 @@ class TacsBuckling(om.ExplicitComponent):
         self.bp.setDesignVars(inputs["tacs_dvs"])
         self.bp.setNodes(inputs["x_struct0"])
 
-    @_log_function_call
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -94,7 +91,6 @@ class TacsBuckling(om.ExplicitComponent):
             self.bp.writeSolution(number=self.solution_counter)
             self.solution_counter += 1
 
-    @_log_function_call
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
             if not self.check_partials:

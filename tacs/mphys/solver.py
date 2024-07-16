@@ -2,7 +2,6 @@ import numpy as np
 
 import openmdao.api as om
 
-from .utils import _log_function_call
 
 class TacsSolver(om.ImplicitComponent):
     """
@@ -28,7 +27,6 @@ class TacsSolver(om.ImplicitComponent):
         self.old_dvs = None
         self.old_xs = None
 
-    @_log_function_call
     def setup(self):
         self.check_partials = self.options["check_partials"]
         self.fea_assembler = self.options["fea_assembler"]
@@ -122,7 +120,6 @@ class TacsSolver(om.ImplicitComponent):
             self.sp.setVariables(outputs[self.states_name])
         self.sp._updateAssemblerVars()
 
-    @_log_function_call
     def apply_nonlinear(self, inputs, outputs, residuals):
         self._update_internal(inputs, outputs)
 
@@ -133,7 +130,6 @@ class TacsSolver(om.ImplicitComponent):
 
         self.sp.getResidual(res=residuals[self.states_name], Fext=Fext)
 
-    @_log_function_call
     def solve_nonlinear(self, inputs, outputs):
         self._update_internal(
             inputs
@@ -155,7 +151,6 @@ class TacsSolver(om.ImplicitComponent):
         if not hasConverged:
             raise om.AnalysisError("TACS solver did not converge")
 
-    @_log_function_call
     def solve_linear(self, d_outputs, d_residuals, mode):
         if mode == "fwd":
             if self.check_partials:
@@ -168,7 +163,6 @@ class TacsSolver(om.ImplicitComponent):
                 d_outputs[self.states_name], d_residuals[self.states_name]
             )
 
-    @_log_function_call
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         self._update_internal(inputs, outputs)
         if mode == "fwd":

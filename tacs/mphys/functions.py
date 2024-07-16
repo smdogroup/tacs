@@ -4,8 +4,6 @@ import openmdao.api as om
 
 from tacs import functions
 
-from .utils import _log_function_call
-
 
 # All TACS function types that should be included under mass funcs group
 MASS_FUNCS_CLASSES = [
@@ -30,7 +28,6 @@ class TacsFunctions(om.ExplicitComponent):
 
         self.check_partials = False
 
-    @_log_function_call
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
@@ -92,7 +89,6 @@ class TacsFunctions(om.ExplicitComponent):
         self.sp.writeSolution(number=self.solution_counter)
         self.solution_counter += 1
 
-    @_log_function_call
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -107,7 +103,6 @@ class TacsFunctions(om.ExplicitComponent):
         if self.auto_write_solution:
             self.write_solution()
 
-    @_log_function_call
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
             if not self.check_partials:
@@ -186,7 +181,6 @@ class MassFunctions(om.ExplicitComponent):
         self.sp.setDesignVars(inputs["tacs_dvs"])
         self.sp.setNodes(inputs["x_struct0"])
 
-    @_log_function_call
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
 
@@ -198,7 +192,6 @@ class MassFunctions(om.ExplicitComponent):
             key = self.sp.name + "_" + func_name
             outputs[func_name] = funcs[key]
 
-    @_log_function_call
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
             if not self.check_partials:

@@ -4,7 +4,6 @@ import openmdao.api as om
 from mphys.mask_converter import UnmaskedConverter, MaskedVariableDescription
 
 from .dv import TacsDVComp
-from .utils import _log_function_call
 
 
 class TacsPrecouplingGroup(om.Group):
@@ -26,7 +25,6 @@ class TacsPrecouplingGroup(om.Group):
             desc="Flag for whether or not to separate out point mass dvs using user-defined names",
         )
 
-    @_log_function_call
     def setup(self):
         # Promote state variables/rhs with physics-specific tag that MPhys expects
         promotes_inputs = ["*"]
