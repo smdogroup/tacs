@@ -148,7 +148,7 @@ class PlateModel(Multipoint):
         self.connect("dv_struct", "pressure_load.dv_struct")
 
     def configure(self):
-        add_tacs_constraints(self, self.pressure_load)
+        add_tacs_constraints(self.pressure_load)
 
 
 ################################################################################
