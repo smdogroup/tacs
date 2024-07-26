@@ -152,6 +152,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             def configure(self):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
                 self.add_constraint("analysis.ks_vmfailure", upper=1.0)
+                self.add_objective("analysis.mass")
 
         prob = om.Problem()
         prob.model = Top()
