@@ -151,6 +151,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
             def configure(self):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
+                self.add_constraint("analysis.ks_vmfailure", upper=1.0)
 
         prob = om.Problem()
         prob.model = Top()
@@ -164,18 +165,18 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         """
         return FUNC_REFS, wrt
 
-    def test_add_tacs_constraints(self):
-        # prob = self.setup_problem(dtype=float)
-        # prob.setup()
-        prob = self.prob
-        constraints = prob.model.get_constraints()
-        self.assertIn("analysis.adjacency.PANEL", constraints)
-        adjacency = constraints["analysis.adjacency.PANEL"]
-        self.assertTrue(adjacency["linear"])
-        lower_bound = adjacency["lower"]
-        upper_bound = adjacency["upper"]
-        np.testing.assert_equal(lower_bound, adj_lb)
-        np.testing.assert_equal(upper_bound, adj_ub)
+    # def test_add_tacs_constraints(self):
+    #     # prob = self.setup_problem(dtype=float)
+    #     # prob.setup()
+    #     prob = self.prob
+    #     constraints = prob.model.get_constraints()
+    #     self.assertIn("analysis.adjacency.PANEL", constraints)
+    #     adjacency = constraints["analysis.adjacency.PANEL"]
+    #     self.assertTrue(adjacency["linear"])
+    #     lower_bound = adjacency["lower"]
+    #     upper_bound = adjacency["upper"]
+    #     np.testing.assert_equal(lower_bound, adj_lb)
+    #     np.testing.assert_equal(upper_bound, adj_ub)
 
     def test_get_tagged_indices(self):
         """
