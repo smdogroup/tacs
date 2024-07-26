@@ -651,13 +651,13 @@ def plotDesign(ax, stiffPitch, skinThickness, stiffenerHeight, stiffThickness):
             (xCentre - stiffenerHeight / 2, skinThickness),
             stiffenerHeight,
             stiffThickness,
-            color="orange",
+            color="orange"
         )
         web = mpatches.Rectangle(
             (xCentre - stiffThickness / 2, skinThickness + stiffThickness),
             stiffThickness,
             stiffenerHeight,
-            color="orange",
+            color="orange"
         )
         ax.add_artist(flange)
         ax.add_artist(web)
@@ -668,7 +668,7 @@ def plotDesign(ax, stiffPitch, skinThickness, stiffenerHeight, stiffThickness):
     ax.set_ylim(-yMargin, skinThickness + stiffThickness + stiffenerHeight + yMargin)
 
 
-fig, axes = plt.subplots(2, 1, sharex=True, sharey=True)
+fig, axes = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(16, 12))
 
 # First axes, baseline design
 ax = axes[0]
