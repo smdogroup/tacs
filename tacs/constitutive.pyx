@@ -910,7 +910,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
-        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         ):
 
         numPanelPlies = len(panelPlyAngles)
@@ -963,6 +963,30 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         )
         self.ptr = self.cptr = self.blade_ptr
         self.ptr.incref()
+
+    def setFailureModes(
+        self,
+        includePanelMaterialFailure=None,
+        includeStiffenerMaterialFailure=None,
+        includeGlobalBuckling=None,
+        includeLocalBuckling=None,
+        includeStiffenerColumnBuckling=None,
+        includeStiffenerCrippling=None,
+    ):
+
+        if self.blade_ptr:
+            if includePanelMaterialFailure is not None:
+                self.blade_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
+            if includeStiffenerMaterialFailure is not None:
+                self.blade_ptr.setIncludeStiffenerMaterialFailure(includeStiffenerMaterialFailure)
+            if includeGlobalBuckling is not None:
+                self.blade_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
+            if includeLocalBuckling is not None:
+                self.blade_ptr.setIncludeLocalBuckling(includeLocalBuckling)
+            if includeStiffenerColumnBuckling is not None:
+                self.blade_ptr.setIncludeStiffenerColumnBuckling(includeStiffenerColumnBuckling)
+            if includeStiffenerCrippling is not None:
+                self.blade_ptr.setIncludeStiffenerCrippling(includeStiffenerCrippling)
 
     def setKSWeight(self, double ksWeight):
         """
