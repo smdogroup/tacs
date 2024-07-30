@@ -279,10 +279,7 @@ class ContinuationSolver(BaseSolver):
         USE_PREDICTOR = self.getOption("UsePredictor")
         # PREDICTOR_USE_DERIVATIVE = self.getOption("predictorUseDerivative")
 
-        self.initializeSolve()
-
-        if u0 is not None:
-            self.stateVec.copyValues(u0)
+        self.initializeSolve(u0=u0)
 
         # Compute the internal and external forcing vectors at the current point
         self.computeForceVectors()
@@ -421,7 +418,8 @@ class ContinuationSolver(BaseSolver):
                     loadStepDirection = 1
                 # If the inner solve failed then we'll reduce the step size and try again, unless we've hit the increment or step size limits
                 elif not isLastIncrement and stepSize > MIN_STEP:
-                    self.setStateFunc(self.incStartState)
+                    self.stateVec.copyValues(self.incStartState)
+                    self.setStateFunc(self.stateVec)
                     currentLambda -= stepSize * loadStepDirection
                     self.setLambdaFunc(currentLambda)
                     stepSize *= STEP_RETRACT_FACTOR
