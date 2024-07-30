@@ -208,4 +208,27 @@ or alternatively, you can use the shortcut in the ``Makefile`` and type:
 Once this process is complete the python interface install should be complete and tacs should be importable from python.
 
 
+Installation tips for common HPC systems
+****************************************
 
+NASA HECC
+=========
+
+We have successfully built TACS on the NASA High End Computing Capability system using the following modules:
+::
+
+    Currently Loaded Modulefiles:
+     1) pkgsrc/2023Q3   2) mpi-hpe/mpt.2.28_25Apr23_rhel87   3) comp-intel/2020.4.304   4) python3/3.11.5
+
+A number of changes are necessary to the default ``Makefile.in`` file:
+
+- If using intel compilers and one of the ``mpi-hpe`` modules, use ``CXX = icpc -lmpi``
+- To build a TACS binary that will work on all node types, use the optimization flags recommended in the `HECC documentation <https://www.nas.nasa.gov/hecc/support/kb/recommended-compiler-options_99.html>`_, ``-O3 -axCORE-AVX512,CORE-AVX2 -xAVX`` 
+- If you run into issues related to OpenMP, add ``-qopenmp`` to the end of the `SO_LINK_FLAGS`` entry
+- To link to Intel's MKL in place of standard blas and lapack, replace the default ``LAPACK_LIBS`` line with:
+
+::
+
+    MKLPATH=${MKLROOT}/lib/intel64
+    MKL_LIBS = -Wl,--start-group ${MKLPATH}/libmkl_intel_lp64.a ${MKLPATH}/libmkl_sequential.a ${MKLPATH}/libmkl_core.a -Wl,--end-group -lpthread
+    LAPACK_LIBS = -limf ${MKL_LIBS}
