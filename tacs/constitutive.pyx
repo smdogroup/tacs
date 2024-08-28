@@ -1098,6 +1098,15 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 cdef class GaussianProcess:
+    # optimal hyperparameters from latest hyperparameter optimization
+    theta_opt = np.array([
+        0.3, 0.5878862050193697, 0.4043476413181697, 0.062024271977149964, 0.28832170210483743,
+        0.1194932804411767, 0.1123780262980141, 1.73775353254897, 0.8195497528948904,
+        1.0610251099528003, 1.1194429640030266, 0.2249190070996631, 0.09951153203496944,
+        0.08479401236107026, 0.09638992095113237, 0.9596691316041401
+    ])
+
+
     # base class so no constructor here    
     def predict_mean_test_data(
         self,
@@ -1105,15 +1114,71 @@ cdef class GaussianProcess:
     ):
         return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
 
-    def setKS(self, TacsScalar ksWeight):
-        print("Warning: need to retrain the weights as KS has changed\n")
+    def getNparam(self):
+        return self.base_gp.getNparam()
+
+    def getNtrain(self):
+        return self.base_gp.getNtrain()
+
+    def getTrainingData(self):
+        """return numpy array of size (n_train*n_param,)"""
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray train_data = np.zeros((ntrain*nparam,), dtype=dtype)
+        self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
+        return train_data
+
+    def setKS(self, TacsScalar ksWeight, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """note you need to also have the training outputs if you want to change ks and alpha"""
+        # print("Warning: need to retrain the weights as KS has changed\n")
         self.base_gp.setKS(ksWeight)
+        self.recompute_alpha(Ytrain)
+        return
+
+    def setTheta(self, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """note you need to also have the training outputs if you want to change theta and alpha"""
+        # print("Warning: need to retrain the weights as KS has changed\n")
+        self.base_gp.setTheta(<TacsScalar*>theta.data)
+        self.recompute_alpha(Ytrain)
+        return
 
     def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
         """
         run all the GP derivative tests
         """
         return self.base_gp.testAllGPTests(epsilon, printLevel)
+
+    def kernel(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+    ):
+        """method used to compute the full kernel matrix for re-training alpha"""
+        return self.base_gp.kernel(<TacsScalar*>Xtest.data, <TacsScalar*>Xtrain.data)
+
+    def recompute_alpha(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """compute updated training weights after changing KS or hyperparameters"""
+        #return
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray theta = np.zeros((14,), dtype=dtype)
+        cdef np.ndarray Xtrain = np.zeros((ntrain * nparam,), dtype=dtype)
+        self.base_gp.getTheta(<TacsScalar*>theta.data)
+        self.base_gp.getTrainingData(<TacsScalar*>theta.data)
+        cdef TacsScalar sigma_n = theta[-1]
+        
+        # make the training matrix
+        cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
+            self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
+        ] for j in range(ntrain)])
+
+        # recompute the training weights
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] alpha = np.linalg.solve(kernel_matrix, Ytrain)
+        self.base_gp.setAlpha(<TacsScalar*>alpha.data)
+        return
 
 cdef class AxialGP(GaussianProcess):
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
@@ -1134,20 +1199,23 @@ cdef class AxialGP(GaussianProcess):
         # stagger the array entries
         for iparam in range(4):
             Xtrain[iparam::4] = Xtrain_mat[:,iparam]
-        
-        return cls(n_train, Xtrain, alpha)
 
+        theta_opt = cls.theta_opt
+
+        return cls(n_train, Xtrain, alpha, theta_opt)
 
     def __cinit__(
         self,
         int n_train, 
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
     ):
         self.axial_gp = new TACSAxialGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
+            <TacsScalar*>theta.data,
         )
         self.base_gp = self.axial_gp
         
@@ -1164,11 +1232,13 @@ cdef class ShearGP(AxialGP):
         int n_train, 
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
     ):
         self.gp = new TACSShearGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
+            <TacsScalar*>theta.data,
         )
         self.base_gp = self.axial_gp = self.gp
 
@@ -1185,11 +1255,13 @@ cdef class CripplingGP(AxialGP):
         int n_train, 
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
     ):
         self.gp = new TACSCripplingGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
+            <TacsScalar*>theta.data,
         )
         self.base_gp = self.axial_gp = self.gp
 

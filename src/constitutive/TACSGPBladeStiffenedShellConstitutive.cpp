@@ -3378,13 +3378,13 @@ void TACSGPBladeStiffenedShellConstitutive::setKSWeight(double ksWeight) {
 
   // set KS into each GP model (for differentiable / smooth kernel functions) if
   // they exist
-  if (this->getAxialGP()) {
-    this->getAxialGP()->setKS(ksWeight);
-  }
-  if (this->getShearGP()) {
-    this->getShearGP()->setKS(ksWeight);
-  }
-  if (this->getCripplingGP()) {
-    this->getCripplingGP()->setKS(ksWeight);
-  }
+  // if (this->getAxialGP()) {
+  //   this->getAxialGP()->setKS(ksWeight);
+  // }
+  // if (this->getShearGP()) {
+  //   this->getShearGP()->setKS(ksWeight);
+  // }
+  // if (this->getCripplingGP()) {
+  //   this->getCripplingGP()->setKS(ksWeight);
+  // }
 }

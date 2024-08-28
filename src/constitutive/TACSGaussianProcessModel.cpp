@@ -2,7 +2,8 @@
 
 TACSGaussianProcessModel::TACSGaussianProcessModel(int n_train, int n_param,
                                                    const TacsScalar Xtrain[],
-                                                   const TacsScalar alpha[]) {
+                                                   const TacsScalar alpha[],
+                                                   const TacsScalar theta[]) {
   // constructor for the base TACSGaussianProcessModel class
   this->n_train = n_train;
   this->n_param = n_param;
@@ -17,6 +18,14 @@ TACSGaussianProcessModel::TACSGaussianProcessModel(int n_train, int n_param,
   for (int jj = 0; jj < n_train; jj++) {
     this->alpha[jj] = alpha[jj];
   }
+
+  this->theta = new TacsScalar[n_theta];
+  for (int kk = 0; kk < n_theta; kk++) {
+    this->theta[kk] = theta[kk];
+  }
+
+  this->ks = 10.0;
+
 }
 
 TACSGaussianProcessModel::~TACSGaussianProcessModel() {
@@ -26,6 +35,9 @@ TACSGaussianProcessModel::~TACSGaussianProcessModel() {
 
   delete[] this->alpha;
   this->alpha = nullptr;
+
+  delete[] this->theta;
+  this->theta = nullptr;
 }
 
 TacsScalar TACSGaussianProcessModel::predictMeanTestData(
@@ -39,7 +51,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestData(
   // add the coefficient alpha for it
   for (int itrain = 0; itrain < n_train; itrain++) {
     TacsScalar* loc_Xtrain = &Xtrain[n_param * itrain];
-    TacsScalar mkernel = kernel(Xtest, loc_Xtrain);
+    // TacsScalar mkernel = kernel(Xtest, loc_Xtrain);
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
   }
   return Ytest;
@@ -74,20 +86,24 @@ TacsScalar TACSAxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
 
-  // if want to change ks need to retrain the model to new ks value at start
-  // means compute new alpha value (so fix for now)
-  TacsScalar bilinear_kernel =
-      0.1 + soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
+  TacsScalar d0 = Xtest[0] - Xtrain[0];
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar one = 1.0;
-  TacsScalar fact1 = soft_relu(one - soft_abs(Xtest[1], this->ks), this->ks);
-  TacsScalar fact2 = soft_relu(one - soft_abs(Xtrain[1], this->ks), this->ks);
-  TacsScalar SE_kernel = 0.02 * exp(-0.5 * d1 * d1 / 0.2 / 0.2) * fact1 * fact2;
+  TacsScalar d2 = Xtest[2] - Xtrain[2];
+  TacsScalar d3 = Xtest[3] - Xtrain[3];
 
-  TacsScalar inner_kernel =
-      bilinear_kernel * (1.0 + 0.1 * Xtest[2] * Xtrain[2]) + SE_kernel +
-      0.1 * Xtest[0] * Xtrain[0];
-  return inner_kernel * (1.0 + 0.01 * Xtest[3] * Xtrain[3]);
+  TacsScalar bilinear_kernel = this->theta[0] + 
+    soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
+  TacsScalar SE_kernel = this->theta[1] * exp(-0.5 * (pow(d1/theta[2], 2.0) + pow(d2 / theta[3], 2.0)));
+  TacsScalar SE_kernel2 = this->theta[4] * exp(-0.5 * (pow(d0/theta[5], 2.0) + pow(d3 / theta[6], 2.0)));
+  TacsScalar SE_window = soft_relu(theta[7] - soft_abs(Xtest[1], this->ks), this->ks) * 
+                         soft_relu(theta[7] - soft_abs(Xtrain[1], this->ks), this->ks) *
+                         soft_relu(theta[8] - Xtest[2], this->ks) * 
+                         soft_relu(theta[8] - Xtrain[2], this->ks);
+  TacsScalar gamma_kernel = this->theta[9] + this->theta[10] * Xtest[2] * Xtrain[2];
+  TacsScalar xi_kernel = this->theta[11] * Xtest[0] * Xtrain[0] + this->theta[12] * pow(Xtest[0] * Xtrain[0], 2.0);
+  TacsScalar zeta_kernel = this->theta[13] * Xtest[3] * Xtrain[3] + this->theta[14] * pow(Xtest[3] * Xtrain[3], 2.0);
+
+  return bilinear_kernel * gamma_kernel + SE_kernel * SE_window + SE_kernel2 + xi_kernel + zeta_kernel;
 }
 
 void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
@@ -102,47 +118,59 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
 
-  TacsScalar bilinear_kernel =
-      0.1 + soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
+  TacsScalar d0 = Xtest[0] - Xtrain[0];
   TacsScalar d1 = Xtest[1] - Xtrain[1];
-  TacsScalar one = 1.0;
-  TacsScalar fact1 = soft_relu(one - soft_abs(Xtest[1], this->ks), this->ks);
-  TacsScalar fact2 = soft_relu(one - soft_abs(Xtrain[1], this->ks), this->ks);
-  TacsScalar SE_fact = exp(-0.5 * d1 * d1 / 0.2 / 0.2);
-  TacsScalar SE_kernel = 0.02 * SE_fact * fact1 * fact2;
+  TacsScalar d2 = Xtest[2] - Xtrain[2];
+  TacsScalar d3 = Xtest[3] - Xtrain[3];
 
-  TacsScalar xi_kernel = 0.1 * Xtest[0] * Xtrain[0];
-  TacsScalar gamma_kernel = 1.0 + 0.1 * Xtest[2] * Xtrain[2];
-  TacsScalar zeta_kernel = 1.0 + 0.01 * Xtest[3] * Xtrain[3];
-  TacsScalar inner_kernel =
-      bilinear_kernel * gamma_kernel + SE_kernel + xi_kernel;
-  TacsScalar output = inner_kernel * zeta_kernel;
+  TacsScalar bilinear_kernel = this->theta[0] + 
+    soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
+  TacsScalar SE_kernel = this->theta[1] * exp(-0.5 * (pow(d1/theta[2], 2.0) + pow(d2 / theta[3], 2.0)));
+  TacsScalar SE_kernel2 = this->theta[4] * exp(-0.5 * (pow(d0/theta[5], 2.0) + pow(d3 / theta[6], 2.0)));
+  TacsScalar SE_window = soft_relu(theta[7] - soft_abs(Xtest[1], this->ks), this->ks) * 
+                         soft_relu(theta[7] - soft_abs(Xtrain[1], this->ks), this->ks) *
+                         soft_relu(theta[8] - Xtest[3], this->ks) * 
+                         soft_relu(theta[8] - Xtrain[3], this->ks);
+  TacsScalar gamma_kernel = this->theta[9] + this->theta[10] * Xtest[2] * Xtrain[2];
+  TacsScalar xi_kernel = this->theta[11] * Xtest[0] * Xtrain[0] + this->theta[12] * pow(Xtest[0] * Xtrain[0], 2.0);
+  TacsScalar zeta_kernel = this->theta[13] * Xtest[3] * Xtrain[3] + this->theta[14] * pow(Xtest[3] * Xtrain[3], 2.0);
+
+  // the main output of the kernel forward analysis
+  TacsScalar output = bilinear_kernel * gamma_kernel + SE_kernel * SE_window + SE_kernel2 + xi_kernel + zeta_kernel;
 
   // sensitivity section
   // ---------------------------------------------------
+  // hold derivatives w.r.t. Xtest[0], ..., Xtest[3] of the kernel
   TacsScalar* jacobian = new TacsScalar[4];
 
   // log(xi) direction 0
-  TacsScalar xi_kernel_sens = 0.1 * Xtrain[0];
-  jacobian[0] = xi_kernel_sens * zeta_kernel;
+  TacsScalar xi_kernel_sens = this->theta[11] * Xtrain[0] + 2.0 * this->theta[12] * Xtest[0] * pow(Xtrain[0], 2.0);
+  TacsScalar SE_kernel2_sens = SE_kernel2 * -d0 / pow(theta[5], 2.0);
+  jacobian[0] = xi_kernel_sens + SE_kernel2_sens;
 
   // log(rho_0) direction 1
   TacsScalar BL_kernel_sens = soft_relu_sens(-Xtest[1], this->ks) * -1.0 *
                               soft_relu(-Xtrain[1], this->ks);
-  TacsScalar SE_kernel_sens = SE_fact * -d1 / 0.2 / 0.2 * 0.02 * fact1 * fact2;
-  SE_kernel_sens +=
-      0.02 * SE_fact *
-      soft_relu_sens(one - soft_abs(Xtest[1], this->ks), this->ks) *
-      -soft_abs_sens(Xtest[1], this->ks) * fact2;
-  jacobian[1] = SE_kernel_sens * zeta_kernel;
+  TacsScalar SE_kernel_sens = SE_kernel * -d1 / pow(theta[2], 2.0);
+  TacsScalar test_rho0_fact = soft_relu(theta[7] - soft_abs(Xtrain[1], this->ks), this->ks);
+  TacsScalar test_rho0_fact_deriv = soft_relu_sens(theta[7] - soft_abs(Xtest[1], this->ks), this->ks) * 
+                                    -soft_abs_sens(Xtest[1], this->ks);
+  TacsScalar SE_window_sens = SE_window * test_rho0_fact_deriv / test_rho0_fact;
+  jacobian[1] = BL_kernel_sens * gamma_kernel + SE_kernel_sens * SE_window + SE_kernel * SE_window_sens;
 
   // log(1+gamma) direction 2
-  TacsScalar gamma_kernel_sens = 0.1 * Xtrain[2];
-  jacobian[2] = bilinear_kernel * gamma_kernel_sens * zeta_kernel;
+  TacsScalar gamma_kernel_sens = theta[10] * Xtrain[2];
+  TacsScalar SE_kernel_sens2 = SE_kernel * -d2 / pow(theta[3], 2.0);
+  TacsScalar SE_window_sens2 = SE_window * soft_relu_sens(theta[8] - Xtest[2], this->ks) /
+   soft_relu(theta[8] - Xtest[2], this->ks);
+
+  // TacsScalar gamma_kernel_sens = 0.1 * Xtrain[2];
+  jacobian[2] = bilinear_kernel * gamma_kernel_sens + SE_kernel_sens * SE_window + SE_kernel * SE_window_sens2;
 
   // log(zeta) direction 3
-  TacsScalar zeta_kernel_sens = 0.01 * Xtrain[3];
-  jacobian[3] = inner_kernel * zeta_kernel_sens;
+  TacsScalar SE_kernel2_sens2 = SE_kernel2 * -d3 / pow(theta[6], 2.0);
+  TacsScalar zeta_kernel_sens = theta[13] * Xtrain[3] + theta[14] * Xtest[3] * pow(Xtest[3], 2.0);
+  jacobian[3] = SE_kernel2_sens + zeta_kernel_sens;
 
   // scale up the Xtestsens by the backpropagated values
   for (int ii = 0; ii < 4; ii++) {

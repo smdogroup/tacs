@@ -171,10 +171,18 @@ cdef extern from "TACSGaussianProcessModel.h":
             int, # n_param
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
+            TacsScalar[], # theta
         )
         void setKS(TacsScalar ksWeight)
         TacsScalar testAllGPTests(TacsScalar epsilon, int printLevel)
         TacsScalar predictMeanTestData(TacsScalar*)
+        void setAlpha(TacsScalar*)
+        void setTheta(TacsScalar*)
+        TacsScalar kernel(TacsScalar*, TacsScalar*)
+        int getNparam()
+        int getNtrain()
+        void getTheta(TacsScalar*)
+        void getTrainingData(TacsScalar*)
 
 cdef extern from "TACSGaussianProcessModel.h":
     cdef cppclass TACSAxialGaussianProcessModel(TACSGaussianProcessModel):
@@ -182,6 +190,7 @@ cdef extern from "TACSGaussianProcessModel.h":
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
+            TacsScalar[], # theta
         )
 
 cdef extern from "TACSGaussianProcessModel.h":
@@ -190,6 +199,7 @@ cdef extern from "TACSGaussianProcessModel.h":
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
+            TacsScalar[], # theta
         )
 cdef extern from "TACSGaussianProcessModel.h":
     cdef cppclass TACSCripplingGaussianProcessModel(TACSAxialGaussianProcessModel):
@@ -197,6 +207,7 @@ cdef extern from "TACSGaussianProcessModel.h":
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
+            TacsScalar[], # theta
         )
 
 cdef extern from "TACSPanelGPs.h":
