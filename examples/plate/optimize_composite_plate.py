@@ -44,9 +44,7 @@ P = 100e3
 
 
 # Callback function used to setup TACS element objects and DVs
-def element_callback(
-    dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
-):
+def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Create ply object
     ortho_prop = constitutive.MaterialProperties(
         rho=rho,
@@ -135,15 +133,11 @@ class PlateModel(Multipoint):
         dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
         dvs.add_output("dv_struct", dv_array)
 
-        self.add_subsystem(
-            "mesh", struct_builder.get_mesh_coordinate_subsystem()
-        )
+        self.add_subsystem("mesh", struct_builder.get_mesh_coordinate_subsystem())
         self.mphys_add_scenario(
             "pressure_load", ScenarioStructural(struct_builder=struct_builder)
         )
-        self.mphys_connect_scenario_coordinate_source(
-            "mesh", "pressure_load", "struct"
-        )
+        self.mphys_connect_scenario_coordinate_source("mesh", "pressure_load", "struct")
 
         self.connect("dv_struct", "pressure_load.dv_struct")
 

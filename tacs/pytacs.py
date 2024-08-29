@@ -959,9 +959,7 @@ class pyTACS(BaseUI):
                 Yc = matInfo.Yc
                 S12 = matInfo.S
 
-                if (
-                    S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0
-                ):
+                if S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0:
                     self._TACSWarning(
                         f"MAT8 card {matInfo.mid} has a zero strength, check Xc, Xt, Yc, Yt, and S12."
                         "Otherwise Tsai-Wu Failure criterion is undefined or infinity."

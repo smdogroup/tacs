@@ -13,6 +13,7 @@ def exp_kernel1(xp, xq, sigma_f, L):
     # xp, xq are Nx1, Nx1 vectors
     return sigma_f**2 * np.exp(-0.5 * (xp - xq).T @ (xp - xq) / L**2)
 
+
 class CompositeMaterialUtility:
     """
     utility class for computing composite material properties at an orientation
@@ -69,6 +70,7 @@ class CompositeMaterialUtility:
         return (
             f"E11 = {self.E11}, E22 = {self.E22}, nu12 = {self.nu12}, G12 = {self.G12}"
         )
+
 
 class FlatPlateAnalysis:
     def __init__(
@@ -204,13 +206,13 @@ class FlatPlateAnalysis:
             cls.hexcelIM7,
             cls.victrexAE,
         ]
-    
+
     @classmethod
-    def get_material_from_str(cls, mat_name:str):
+    def get_material_from_str(cls, mat_name: str):
         method_names = [_.__qualname__ for _ in cls.get_materials()]
         materials = cls.get_materials()
         _method = None
-        for i,method_name in enumerate(method_names):
+        for i, method_name in enumerate(method_names):
             if mat_name in method_name:
                 _method = materials[i]
         assert _method is not None
@@ -408,9 +410,7 @@ class FlatPlateAnalysis:
         get the exx so that lambda = kx_0 the affine buckling coefficient for pure axial load
         out of the buckling analysis!
         """
-        exx_T = (
-            np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
-        )
+        exx_T = np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
         return exx_T
 
     @property
@@ -427,7 +427,14 @@ class FlatPlateAnalysis:
         option = 2
         # option 1 - based on self derivation (but didn't match data well)
         if option == 1:
-            exy_T = np.pi**2 * (self.D11 * self.D22)**0.5 / self.a / self.b / self.h / self.G12
+            exy_T = (
+                np.pi**2
+                * (self.D11 * self.D22) ** 0.5
+                / self.a
+                / self.b
+                / self.h
+                / self.G12
+            )
         # option 2 - based on NASA non-dimensional buckling parameter derivation (much better)
         elif option == 2:
             exy_T = (
@@ -780,6 +787,7 @@ class FlatPlateAnalysis:
             # Add scale for thickness dv
             scale = [100.0]
             return elemList, scale
+
         return elemCallBack
 
     def run_static_analysis(self, base_path=None, write_soln=False):
@@ -832,7 +840,7 @@ class FlatPlateAnalysis:
         FEAAssembler.initialize(self._elemCallBack())
 
         # set complex step Gmatrix into all elements through assembler
-        #FEAAssembler.assembler.setComplexStepGmatrix(True)
+        # FEAAssembler.assembler.setComplexStepGmatrix(True)
 
         # Setup buckling problem
         bucklingProb = FEAAssembler.createBucklingProblem(

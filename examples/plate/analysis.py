@@ -13,6 +13,7 @@ We consider three structural problems:
             L = 1.0 m
     3. A modal problem where the dynamic eigenmodes are solved for the plate structure
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
