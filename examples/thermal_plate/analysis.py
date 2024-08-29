@@ -13,6 +13,7 @@ This example runs to problem cases:
     1. A transient problem where the bc's are applied time t=0
     2. A static problem that represents the steady state solution of the above at t=infinty
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

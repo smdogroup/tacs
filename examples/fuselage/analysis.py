@@ -3,6 +3,7 @@ Fuselage section example provided in AFEM library.
 The fuselage is subjected to a cabin pressure of 1 atm and 1G gravity load.
 User can run this example using aluminum or composite material properties.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

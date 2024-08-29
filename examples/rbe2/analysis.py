@@ -2,6 +2,7 @@
 RBE2 example where an RBE2 is used to connect two separate cantilevered plate sections.
 A load is applied at the centroid of the RBE2.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
