@@ -160,7 +160,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.panelPlyFracNums,
             self.stiffenerHeightNum,
             self.stiffenerThicknessNum,
-            self.stiffenerPlyFracNums
+            self.stiffenerPlyFracNums,
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives

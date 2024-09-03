@@ -86,7 +86,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             Helper function to add fixed forces and eval functions
             to structural problems used in tacs builder
             """
-            bucklingOptions = {"writeSolution":False}
+            bucklingOptions = {"writeSolution": False}
             problem = fea_assembler.createBucklingProblem(
                 "buckling", sigma=1e0, numEigs=2, options=bucklingOptions
             )
