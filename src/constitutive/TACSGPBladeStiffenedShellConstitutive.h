@@ -950,7 +950,7 @@ class TACSGPBladeStiffenedShellConstitutive
   static const int NUM_FAILURES = 5;  ///< Number of failure modes
 
   // different mode for computing the shear closed form solution
-  int CFshearMode = 2;
+  int CFshearMode = 1; // default is modified Middlestedt solution now as that is more accurate in stiffened panel regime
 
   // debugging modes
   // should all be false if not debugging

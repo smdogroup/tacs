@@ -1594,9 +1594,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
 
   } else if (this->CFshearMode == 1) {
     // use the CPT closed-form solution to compute the critical global axial
-    // load no mode switching in this solution.. (only accurate for higher
-    // aspect ratios => hence the need for machine learning for the actual
-    // solution)
+    // load no mode switching in this solution.. (some error at low aspect ratios
     TacsScalar lam1, lam2;  // lam1bar, lam2bar values
     nondimShearParams(xi, gamma, &lam1, &lam2);
     TacsScalar dim_factor =
@@ -1605,9 +1603,11 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma) /
         (2.0 * lam1 * lam1 * lam2);
+    // accounts for high and low ARs here
+    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
-  } else {
+  } else { // CFshearMode == 2 (not the most accurate at stiffened panels - unconservative)
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
     TacsScalar nd_factor = 3.274 + 2.695 / rho_0 / rho_0 +
@@ -1640,39 +1640,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
 
   } else {
     // use the CPT closed-form solution to compute the critical global axial
-    // load no mode switching in this solution.. (only accurate for higher
-    // aspect ratios => hence the need for machine learning for the actual
-    // solution)
-    if (this->CFshearMode == 3) {
-      // CPT closed-form solution accurate to all Aspect ratios (most accurate)
-
-      TacsScalar neg_N12crits[this->NUM_CF_MODES];
-      TacsScalar dim_factor = 1.0;
-      for (int _m1 = 1; _m1 < this->NUM_CF_MODES + 1; _m1++) {
-        TacsScalar __m1 = _m1;
-        // compute non-dimensional forms of lam1, lam2
-        TacsScalar lam1 = rho_0 / __m1;
-        TacsScalar term2 = pow((3.0 + xi) / 9.0 + 4.0 / 3.0 * lam1 * lam1 * xi +
-                                   4.0 / 3.0 * pow(lam1, 4.0),
-                               0.5);
-        TacsScalar lam2 = pow(-lam1 * lam1 - xi / 3.0 + term2, 0.5);
-        TacsScalar nondim_factor =
-            (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) +
-             pow(lam2, 4.0) + 2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma) /
-            (2.0 * lam1 * lam1 * lam2);
-        neg_N12crits[_m1 - 1] =
-            -1.0 * dim_factor * nondim_factor;  // negated only because we have
-                                                // to do KS min aggregate later
-      }
-
-      // compute KS aggregation for -N11crit for each mode then negate again
-      // (because we want minimum N11crit so maximize negative N11crit)
-      TacsScalar neg_N12crit =
-          ksAggregation(neg_N12crits, this->NUM_CF_MODES, this->ksWeight);
-      return -1.0 * neg_N12crit;
-    }
+    // load no mode switching in this solution..
     if (this->CFshearMode == 1) {
-      // CPT closed-form solution accurate only to high ARs (medium accuracy)
+      // CPT closed-form solution now accurate for low and high ARs with some area at intermediate..
       TacsScalar lam1, lam2;  // lam1bar, lam2bar values
       nondimShearParams(xi, gamma, &lam1, &lam2);
       TacsScalar dim_factor = 1.0;
@@ -1680,6 +1650,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
           (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
            2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma) /
           (2.0 * lam1 * lam1 * lam2);
+      // accounts for high and low ARs here
+      nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
       return dim_factor *
              nondim_factor;  // aka N12_crit from CPT closed-form solution
     }
@@ -1952,6 +1924,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
+    // accounts for high and low ARs here
+    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
   } else {                 // CFshearMode == 2
@@ -1995,6 +1969,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
+    // accounts for high and low ARs here
+    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
   }

@@ -1098,15 +1098,6 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 cdef class GaussianProcess:
-    # optimal hyperparameters from latest hyperparameter optimization
-    theta_opt = np.array([
-        0.3, 0.5878862050193697, 0.4043476413181697, 0.062024271977149964, 0.28832170210483743,
-        0.1194932804411767, 0.1123780262980141, 1.73775353254897, 0.8195497528948904,
-        1.0610251099528003, 1.1194429640030266, 0.2249190070996631, 0.09951153203496944,
-        0.08479401236107026, 0.09638992095113237, 0.9596691316041401
-    ])
-
-
     # base class so no constructor here    
     def predict_mean_test_data(
         self,
@@ -1184,7 +1175,7 @@ cdef class AxialGP(GaussianProcess):
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
-    def from_csv(cls, csv_file="_buckling_data/axial_data.csv"):
+    def from_csv(cls, csv_file, theta_csv):
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
         # optional import
         import pandas as pd
@@ -1200,7 +1191,8 @@ cdef class AxialGP(GaussianProcess):
         for iparam in range(4):
             Xtrain[iparam::4] = Xtrain_mat[:,iparam]
 
-        theta_opt = cls.theta_opt
+        theta_df = pd.read_csv(theta_csv)
+        theta_opt = theta_df[theta_df.columns[-1]].to_numpy(dtype=dtype)
 
         return cls(n_train, Xtrain, alpha, theta_opt)
 
@@ -1223,9 +1215,9 @@ cdef class ShearGP(AxialGP):
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
-    def from_csv(cls, csv_file="_buckling_data/shear_data.csv"):
+    def from_csv(cls, csv_file, theta_csv):
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
-        return super(ShearGP,cls).from_csv(csv_file)
+        return super(ShearGP,cls).from_csv(csv_file, theta_csv)
 
     def __cinit__(
         self,
@@ -1246,9 +1238,9 @@ cdef class CripplingGP(AxialGP):
     n_param = 4 # [log(1+xi), log(rho0), log(genEps), log(1+10^3 * zeta)]
 
     @classmethod
-    def from_csv(cls, csv_file="_buckling_data/crippling_data.csv"):
+    def from_csv(cls, csv_file, theta_csv):
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
-        return super(CripplingGP,cls).from_csv(csv_file)
+        return super(CripplingGP,cls).from_csv(csv_file, theta_csv)
 
     def __cinit__(
         self,

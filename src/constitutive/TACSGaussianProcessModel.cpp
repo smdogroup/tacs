@@ -91,19 +91,19 @@ TacsScalar TACSAxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
   TacsScalar d2 = Xtest[2] - Xtrain[2];
   TacsScalar d3 = Xtest[3] - Xtrain[3];
 
-  TacsScalar bilinear_kernel = this->theta[0] + 
-    soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
-  TacsScalar SE_kernel = this->theta[1] * exp(-0.5 * (pow(d1/theta[2], 2.0) + pow(d2 / theta[3], 2.0)));
-  TacsScalar SE_kernel2 = this->theta[4] * exp(-0.5 * (pow(d0/theta[5], 2.0) + pow(d3 / theta[6], 2.0)));
-  TacsScalar SE_window = soft_relu(theta[7] - soft_abs(Xtest[1], this->ks), this->ks) * 
-                         soft_relu(theta[7] - soft_abs(Xtrain[1], this->ks), this->ks) *
-                         soft_relu(theta[8] - Xtest[2], this->ks) * 
-                         soft_relu(theta[8] - Xtrain[2], this->ks);
-  TacsScalar gamma_kernel = this->theta[9] + this->theta[10] * Xtest[2] * Xtrain[2];
-  TacsScalar xi_kernel = this->theta[11] * Xtest[0] * Xtrain[0] + this->theta[12] * pow(Xtest[0] * Xtrain[0], 2.0);
-  TacsScalar zeta_kernel = this->theta[13] * Xtest[3] * Xtrain[3] + this->theta[14] * pow(Xtest[3] * Xtrain[3], 2.0);
+  TacsScalar d_gamma_rho_train = theta[2] + theta[3] * Xtrain[2] - Xtrain[1];
+  TacsScalar d_gamma_rho_test = theta[2] + theta[3] * Xtest[2] - Xtest[1];
 
-  return bilinear_kernel * gamma_kernel + SE_kernel * SE_window + SE_kernel2 + xi_kernel + zeta_kernel;
+  TacsScalar bilinear_kernel = theta[0] + theta[1] * soft_relu(d_gamma_rho_train, ks) * 
+        soft_relu(d_gamma_rho_test, ks);
+  TacsScalar gamma_kernel = theta[4] + theta[5] * Xtrain[2] * Xtest[2];
+  TacsScalar SE_kernel = theta[6] * exp(-0.5 * pow(d1 / theta[7], 2.0));
+  TacsScalar SE_window = soft_relu(theta[8] - soft_abs(d_gamma_rho_train, ks), ks) * 
+                             soft_relu(theta[8] - soft_abs(d_gamma_rho_test, ks), ks);
+  TacsScalar xi_kernel = Xtrain[0] * Xtest[0] * (theta[9] + theta[10] * Xtrain[0] * Xtest[0]);
+  TacsScalar zeta_kernel = Xtrain[3] * Xtest[3] * (theta[11] + theta[12] * Xtrain[3] * Xtest[3]);
+
+  return bilinear_kernel * gamma_kernel + SE_kernel * SE_window + xi_kernel + zeta_kernel;
 }
 
 void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
@@ -122,6 +122,8 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   TacsScalar d1 = Xtest[1] - Xtrain[1];
   TacsScalar d2 = Xtest[2] - Xtrain[2];
   TacsScalar d3 = Xtest[3] - Xtrain[3];
+
+  // TODO : need to fix this and update with latest kernel..
 
   TacsScalar bilinear_kernel = this->theta[0] + 
     soft_relu(-Xtest[1], this->ks) * soft_relu(-Xtrain[1], this->ks);
