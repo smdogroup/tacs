@@ -238,7 +238,7 @@ class TacsAim:
     @root_broadcast
     def get_config_parameter(self, param_name: str):
         return self.geometry.cfgpmtr[param_name].value
-        
+
     @parallel
     def set_design_parameter(self, param_name: str, value: float):
         self.geometry.despmtr[param_name].value = value

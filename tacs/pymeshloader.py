@@ -221,9 +221,9 @@ class pyMeshLoader(BaseUI):
             self.elemConnectivity[tacsElementID] = self.idMap(
                 conn, self.nastranToTACSNodeIDDict
             )
-            self.elemConnectivityPointer[
-                tacsElementID + 1
-            ] = self.elemConnectivityPointer[tacsElementID] + len(element.nodes)
+            self.elemConnectivityPointer[tacsElementID + 1] = (
+                self.elemConnectivityPointer[tacsElementID] + len(element.nodes)
+            )
 
         # Allocate list for user-specified tacs element objects
         self.elemObjects = [None] * elementObjectCounter

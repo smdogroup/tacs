@@ -2,6 +2,7 @@
 Cylindrical beam constructed from shell elements. The beam is cantilevered at
 one end and loaded at the other using an RBE3.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

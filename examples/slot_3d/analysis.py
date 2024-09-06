@@ -3,6 +3,7 @@ Structural model of a slot made from 3D tetrahedral elements.
 The slot is constrained at its bolt holes and a set of point
 forces are applied at the top of the slot.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

@@ -13,6 +13,7 @@ The I-beam is modeled through a combination of two element types:
 The tip deflection of the model is given by the following formula
     v_tip = V * L^3 / (3 * E * I) = 1.4285714285714286
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

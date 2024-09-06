@@ -132,10 +132,12 @@ innerRadius = np.min(nodeRadius)
 outerRadius = np.max(nodeRadius)
 totalForce = PMax * (outerRadius - innerRadius)
 loadPointFactors = [
-    1.0
-    if nodeRadius[ii - 1] <= (innerRadius + 1e-4)
-    or nodeRadius[ii - 1] >= (outerRadius - 1e-4)
-    else 2.0
+    (
+        1.0
+        if nodeRadius[ii - 1] <= (innerRadius + 1e-4)
+        or nodeRadius[ii - 1] >= (outerRadius - 1e-4)
+        else 2.0
+    )
     for ii in loadPointNodeIDs
 ]
 factorSum = np.sum(loadPointFactors)

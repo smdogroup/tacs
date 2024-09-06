@@ -2,7 +2,7 @@ import warnings
 import tacs
 
 
-def add_tacs_constraints(model, scenario):
+def add_tacs_constraints(scenario):
     """Call this in the configure method to add all TACS constraints functions
     in a TacsPostcouplingGroup as constraints in an OpenMDAO model. This saves
     you having to call OpenMDAO's `add_constraint` method for each constraint
@@ -14,8 +14,6 @@ def add_tacs_constraints(model, scenario):
 
     Parameters
     ----------
-    model : OpenMDAO model
-        Model to add constraints to
     scenario : MPhys scenario
         Scenario containing a TACS postcoupling group with constraints
     """
@@ -45,22 +43,20 @@ def add_tacs_constraints(model, scenario):
             bounds = {}
             constraint.getConstraintBounds(bounds)
             for conName in constraintFuncNames:
-                if model.comm.rank == 0:
+                if scenario.comm.rank == 0:
                     print("Adding TACS constraint: ", conName)
-                name = f"{scenario.name}.{system.name}.{conName}"
+                name = f"{system.name}.{conName}"
                 # Panel length constraints are nonlinear, all other constrain
                 # types (DV and adjacency) are linear
                 if isinstance(
                     constraint,
                     tacs.constraints.panel_length.PanelLengthConstraint,
                 ):
-                    model.add_constraint(name, equals=0.0, scaler=1.0)
+                    scenario.add_constraint(name, equals=0.0, scaler=1.0)
                 else:
                     lb = bounds[f"{system.name}_{conName}"][0]
                     ub = bounds[f"{system.name}_{conName}"][1]
                     if all(lb == ub):
-                        model.add_constraint(name, equals=lb, linear=True)
+                        scenario.add_constraint(name, equals=lb, linear=True)
                     else:
-                        model.add_constraint(
-                            name, lower=lb, upper=ub, linear=True
-                        )
+                        scenario.add_constraint(name, lower=lb, upper=ub, linear=True)
