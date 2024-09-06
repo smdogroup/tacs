@@ -13,12 +13,6 @@ caps_loader = importlib.util.find_spec("pyCAPS")
 if caps_loader is not None:
     from .tacs_model import *
 
-openmdao_loader = importlib.util.find_spec("openmdao")
-
-# import the openmdao component only if available to load
-if openmdao_loader is not None:
-    from .tacs_component import *
-
 from .gif_writer import *
 from .analysis_function import *
 from .constraints import *
