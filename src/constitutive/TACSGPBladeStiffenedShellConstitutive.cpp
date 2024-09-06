@@ -1604,7 +1604,12 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
          2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma) /
         (2.0 * lam1 * lam1 * lam2);
     // accounts for high and low ARs here
-    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
+    // smooth max of (1,rho_0^{-2})
+    TacsScalar neg_shear_geom[2];
+    neg_shear_geom[0] = -1.0;
+    neg_shear_geom[1] = -1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    nondim_factor *= shear_geom_ks;
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
   } else { // CFshearMode == 2 (not the most accurate at stiffened panels - unconservative)
@@ -1650,8 +1655,15 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
           (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
            2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma) /
           (2.0 * lam1 * lam1 * lam2);
+      
       // accounts for high and low ARs here
-      nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
+      // smooth max of (1,rho_0^{-2})
+      TacsScalar neg_shear_geom[2];
+      neg_shear_geom[0] = -1.0;
+      neg_shear_geom[1] = -1.0/rho_0/rho_0;
+      TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+      nondim_factor *= shear_geom_ks;
+
       return dim_factor *
              nondim_factor;  // aka N12_crit from CPT closed-form solution
     }
@@ -1846,7 +1858,16 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
          2.0 * xi * (lam1 * lam1 + lam2 * lam2) + gamma);
     TacsScalar den = 2.0 * lam1 * lam1 * lam2;
     TacsScalar nondim_factor = num / den;
-    TacsScalar N12crit = dim_factor * nondim_factor;
+    
+    // accounts for high and low ARs here
+    // smooth max of (1,rho_0^{-2})
+    TacsScalar neg_shear_geom[2];
+    neg_shear_geom[0] = -1.0;
+    neg_shear_geom[1] = -1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+
+    // final forward output
+    TacsScalar N12crit = dim_factor * nondim_factor * shear_geom_ks;
 
     // sensitivities for the non_dim factor
 
@@ -1859,16 +1880,25 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
             den -
         num * 2.0 * lam1 * lam1 / den / den;
 
+     // compute KS aggregation sensitivity
+    TacsScalar neg_shear_geom_sens[2];
+    TacsScalar neg_N11crit = ksAggregationSens(
+        neg_shear_geom, 2, this->ksWeight, neg_shear_geom_sens);
+    TacsScalar sg2_sens = neg_shear_geom_sens[1];
+    TacsScalar c_rho0_sens = -2.0 * neg_shear_geom[1] / rho_0;
+
+
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
     *D22sens += N12sens * N12crit * 0.75 / D22;
     *bsens += N12sens * N12crit * -2.0 / b;
     *xisens += N12sens * dim_factor *
                (dNDlam1 * dl1xi + dNDlam2 * dl2xi +
-                2.0 * (lam1 * lam1 + lam2 * lam2) / den);
+                2.0 * (lam1 * lam1 + lam2 * lam2) / den) * shear_geom_ks;
     *gammasens += N12sens * dim_factor *
-                  (dNDlam1 * dl1gamma + dNDlam2 * dl2gamma + 1.0 / den);
-    // *rho_0sens, *zetasens are unchanged in closed-form
+                  (dNDlam1 * dl1gamma + dNDlam2 * dl2gamma + 1.0 / den) * shear_geom_ks;
+    *rho_0sens += N12sens * c_rho0_sens * dim_factor * nondim_factor;
+    // *zetasens are unchanged in closed-form
 
     // return N12crit from closed-form solution
     return N12crit;
@@ -1924,10 +1954,16 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
+
     // accounts for high and low ARs here
-    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
+    // smooth max of (1,rho_0^{-2})
+    TacsScalar neg_shear_geom[2];
+    neg_shear_geom[0] = -1.0;
+    neg_shear_geom[1] = -1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    
     return dim_factor *
-           nondim_factor;  // aka N12_crit from CPT closed-form solution
+           nondim_factor * shear_geom_ks;  // aka N12_crit from CPT closed-form solution
   } else {                 // CFshearMode == 2
     TacsScalar s_p = this->stiffenerPitch;
     TacsScalar dim_factor =
@@ -1969,8 +2005,15 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
         (1.0 + pow(lam1, 4.0) + 6.0 * pow(lam1 * lam2, 2.0) + pow(lam2, 4.0) +
          2.0 * xi * (lam1 * lam1 + lam2 * lam2)) /
         (2.0 * lam1 * lam1 * lam2);
+
     // accounts for high and low ARs here
-    nondim_factor *= std::max(1.0, TacsRealPart(1.0/rho_0/rho_0));
+    // smooth max of (1,rho_0^{-2})
+    TacsScalar neg_shear_geom[2];
+    neg_shear_geom[0] = -1.0;
+    neg_shear_geom[1] = -1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    nondim_factor *= shear_geom_ks;
+
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
   }
@@ -2043,10 +2086,18 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
                       pow(lam2, 4.0) + 2.0 * xi * (lam1 * lam1 + lam2 * lam2));
     TacsScalar den = 2.0 * lam1 * lam1 * lam2;
     TacsScalar nondim_factor = num / den;
-    TacsScalar N12crit = dim_factor * nondim_factor;
+
+    // accounts for high and low ARs here
+    // smooth max of (1,rho_0^{-2})
+    TacsScalar neg_shear_geom[2];
+    neg_shear_geom[0] = -1.0;
+    neg_shear_geom[1] = -1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+
+    // final forward output
+    TacsScalar N12crit = dim_factor * nondim_factor * shear_geom_ks;
 
     // sensitivities for the non_dim factor
-
     TacsScalar dNDlam1 =
         (4.0 * pow(lam1, 3.0) + 12.0 * lam1 * lam2 * lam2 + 4.0 * lam1 * xi) /
             den -
@@ -2056,14 +2107,22 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
             den -
         num * 2.0 * lam1 * lam1 / den / den;
 
+    // compute KS aggregation sensitivity
+    TacsScalar neg_shear_geom_sens[2];
+    TacsScalar neg_N11crit = ksAggregationSens(
+        neg_shear_geom, 2, this->ksWeight, neg_shear_geom_sens);
+    TacsScalar sg2_sens = neg_shear_geom_sens[1];
+    TacsScalar c_rho0_sens = -2.0 * neg_shear_geom[1] / rho_0;    
+
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
     *D22sens += N12sens * N12crit * 0.75 / D22;
     *spitchsens += N12sens * N12crit * -2.0 / this->stiffenerPitch;
     *xisens += N12sens * dim_factor *
                (dNDlam1 * dl1xi + dNDlam2 * dl2xi +
-                2.0 * (lam1 * lam1 + lam2 * lam2) / den);
-    // rho_0sens, zetasens unchanged in closed-form
+                2.0 * (lam1 * lam1 + lam2 * lam2) / den) * shear_geom_ks;
+    *rho_0sens += N12sens * c_rho0_sens * dim_factor * nondim_factor;
+    // zetasens unchanged in closed-form
 
     // return N12crit from closed-form solution
     return N12crit;
@@ -2854,7 +2913,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
-  const int n_tests = 4;
+  const int n_tests = 6;
   TacsScalar* relErrors = new TacsScalar[n_tests];
 
   if (printLevel != 0) {
@@ -2868,6 +2927,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
   // final crit load tests
   relErrors[2] = testCriticalGlobalShearLoad(epsilon, printLevel);
   relErrors[3] = testCriticalLocalShearLoad(epsilon, printLevel);
+  relErrors[4] = testCriticalGlobalShearLoad_LowAR(epsilon, printLevel);
+  relErrors[5] = testCriticalLocalShearLoad_LowAR(epsilon, printLevel);
 
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
@@ -2884,6 +2945,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
     printf("\ttestNondimShearParams = %.4e\n", TacsRealPart(relErrors[1]));
     printf("\ttestGlobalShearLoad = %.4e\n", TacsRealPart(relErrors[2]));
     printf("\ttestLocalShearLoad = %.4e\n", TacsRealPart(relErrors[3]));
+    printf("\ttestGlobalShearLoad_LowAR = %.4e\n", TacsRealPart(relErrors[4]));
+    printf("\ttestLocalShearLoad_LowAR = %.4e\n", TacsRealPart(relErrors[5]));
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
@@ -3115,6 +3178,81 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   return relError;
 }
 
+TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad_LowAR(
+    TacsScalar epsilon, int printLevel) {
+  // perform complex-step or finite difference check (depending on the value of
+  // _eps/epsilon) generate random input perturbation and output perturbation
+  // test vectors
+  const int n_input = 7;
+  TacsScalar* p_input = new TacsScalar[n_input];
+  for (int ii = 0; ii < n_input; ii++) {
+    p_input[ii] = ((double)rand() / (RAND_MAX));
+  }
+  TacsScalar p_output = ((double)rand() / (RAND_MAX));
+
+  // compute initial values
+  TacsScalar* x0 = new TacsScalar[n_input];
+  x0[0] = 10.2412;  // D11
+  x0[1] = 5.4323;   // D22
+  x0[2] = 2.134;    // b
+  x0[3] = 0.2543;   // rho0
+  x0[4] = 1.24332;  // xi
+  x0[5] = 0.2454;   // gamma
+  x0[6] = 1e-3;     // zeta
+
+  // perform central difference over rho_0 function on [D11,D22,a,b]
+  TacsScalar f0, f1, f2;
+
+  TacsScalar* x = new TacsScalar[n_input];
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i] - p_input[i] * epsilon;
+  }
+  this->panelGPs->resetSavedData();
+  f0 = computeCriticalGlobalShearLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
+
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i] + p_input[i] * epsilon;
+  }
+  this->panelGPs->resetSavedData();
+  f2 = computeCriticalGlobalShearLoad(x[0], x[1], x[2], x[3], x[4], x[5], x[6]);
+
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
+
+  // now perform the adjoint sensitivity
+  TacsScalar* input_sens = new TacsScalar[n_input];
+  memset(input_sens, 0, n_input * sizeof(TacsScalar));
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i];
+  }
+  this->panelGPs->resetSavedData();
+  computeCriticalGlobalShearLoadSens(
+      p_output, x[0], x[1], x[2], x[3], x[4], x[5], x[6], &input_sens[0],
+      &input_sens[1], &input_sens[2], &input_sens[3], &input_sens[4],
+      &input_sens[5], &input_sens[6]);
+  TacsScalar adjTD = 0.0;
+  for (int j = 0; j < n_input; j++) {
+    adjTD += input_sens[j] * p_input[j];
+  }
+  adjTD = TacsRealPart(adjTD);
+
+  // compute relative error
+  TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalGlobalShearLoad:_LowAR\n");
+    printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
+    printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));
+    printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
+  }
+
+  // free pointers
+  delete[] p_input;
+  delete[] x0;
+  delete[] x;
+  delete[] input_sens;
+
+  return relError;
+}
+
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
     TacsScalar epsilon, int printLevel) {
   // perform complex-step or finite difference check (depending on the value of
@@ -3190,6 +3328,83 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
 
   return relError;
 }
+
+TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad_LowAR(
+    TacsScalar epsilon, int printLevel) {
+  // perform complex-step or finite difference check (depending on the value of
+  // _eps/epsilon) generate random input perturbation and output perturbation
+  // test vectors
+  const int n_input = 6;
+  TacsScalar* p_input = new TacsScalar[n_input];
+  for (int ii = 0; ii < n_input; ii++) {
+    p_input[ii] = ((double)rand() / (RAND_MAX));
+  }
+  TacsScalar p_output = ((double)rand() / (RAND_MAX));
+
+  // compute initial values
+  TacsScalar* x0 = new TacsScalar[n_input];
+  x0[0] = 10.2412;               // D11
+  x0[1] = 5.4323;                // D22
+  x0[2] = this->stiffenerPitch;  // s_p
+  x0[3] = 1.24332;               // xi
+  x0[4] = 0.34251;                // rho0
+  x0[5] = 1e-3;                  // zeta
+
+  // perform central difference over rho_0 function on [D11,D22,a,b]
+  TacsScalar f0, f1, f2;
+
+  TacsScalar* x = new TacsScalar[n_input];
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i] - p_input[i] * epsilon;
+  }
+  this->stiffenerPitch = x0[2] - p_input[2] * epsilon;
+  this->panelGPs->resetSavedData();
+  f0 = computeCriticalLocalShearLoad(x[0], x[1], x[3], x[4], x[5]);
+
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i] + p_input[i] * epsilon;
+  }
+  this->panelGPs->resetSavedData();
+  this->stiffenerPitch = x0[2] + p_input[2] * epsilon;
+  f2 = computeCriticalLocalShearLoad(x[0], x[1], x[3], x[4], x[5]);
+
+  TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
+
+  // now perform the adjoint sensitivity
+  TacsScalar* input_sens = new TacsScalar[n_input];
+  memset(input_sens, 0, n_input * sizeof(TacsScalar));
+  this->stiffenerPitch = x0[2];
+  for (int i = 0; i < n_input; i++) {
+    x[i] = x0[i];
+  }
+  this->panelGPs->resetSavedData();
+  computeCriticalLocalShearLoadSens(
+      p_output, x[0], x[1], x[3], x[4], x[5], &input_sens[0], &input_sens[1],
+      &input_sens[2], &input_sens[3], &input_sens[4], &input_sens[5]);
+  TacsScalar adjTD = 0.0;
+  for (int j = 0; j < n_input; j++) {
+    adjTD += input_sens[j] * p_input[j];
+  }
+  adjTD = TacsRealPart(adjTD);
+
+  // compute relative error
+  TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
+  if (printLevel != 0) {
+    printf("\tTACSGPBladeStiffened..testCriticalLocalShearLoad_LowAR:\n");
+    printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
+    printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));
+    printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
+  }
+
+  // free pointers
+  delete[] p_input;
+  delete[] x0;
+  delete[] x;
+  delete[] input_sens;
+
+  return relError;
+}
+
 
 TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
     TacsScalar epsilon, int printLevel) {
