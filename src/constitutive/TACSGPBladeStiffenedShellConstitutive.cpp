@@ -96,6 +96,12 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalFailure(
     const TacsScalar e[]) {
   TacsScalar fails[this->NUM_FAILURES];
   TacsScalar aggFail = this->computeFailureValues(e, fails);
+
+  // printf("Failure values: ");
+  // for (int ii = 0; ii < this->NUM_FAILURES; ii++) {
+  //   printf("%f ", TacsRealPart(fails[ii]));
+  // }
+  // printf("aggFail: %f\n", TacsRealPart(aggFail));
   return aggFail;
 }
 
@@ -146,6 +152,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   TacsScalar globalAxialFail = -panelStress[0] / N1CritGlobal;
   TacsScalar globalShearFail = panelStress[2] / N12CritGlobal;
 
+  // printf("global N11cr ratio = %.6f\n", globalAxialFail);
+  // printf("global N12cr ratio = %.6f\n", globalShearFail);
+
   fails[2] = this->bucklingEnvelope(-panelStress[0], N1CritGlobal,
                                     panelStress[2], N12CritGlobal);
 
@@ -162,6 +171,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // load Nxy
   TacsScalar localAxialFail = -panelStress[0] / N1CritLocal;
   TacsScalar localShearFail = panelStress[2] / N12CritLocal;
+
+  // printf("local N11cr ratio = %.6f\n", localAxialFail);
+  // printf("local N12cr ratio = %.6f\n", localShearFail);
 
   fails[3] = this->bucklingEnvelope(-panelStress[0], N1CritLocal,
                                     panelStress[2], N12CritLocal);
@@ -1605,10 +1617,10 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
         (2.0 * lam1 * lam1 * lam2);
     // accounts for high and low ARs here
     // smooth max of (1,rho_0^{-2})
-    TacsScalar neg_shear_geom[2];
-    neg_shear_geom[0] = -1.0;
-    neg_shear_geom[1] = -1.0/rho_0/rho_0;
-    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    TacsScalar shear_geom[2];
+    shear_geom[0] = 1.0;
+    shear_geom[1] = 1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
     nondim_factor *= shear_geom_ks;
     return dim_factor *
            nondim_factor;  // aka N12_crit from CPT closed-form solution
@@ -1658,10 +1670,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
       
       // accounts for high and low ARs here
       // smooth max of (1,rho_0^{-2})
-      TacsScalar neg_shear_geom[2];
-      neg_shear_geom[0] = -1.0;
-      neg_shear_geom[1] = -1.0/rho_0/rho_0;
-      TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+      TacsScalar shear_geom[2];
+      shear_geom[0] = 1.0;
+      shear_geom[1] = 1.0/rho_0/rho_0;
+      TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
       nondim_factor *= shear_geom_ks;
 
       return dim_factor *
@@ -1861,10 +1873,10 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     
     // accounts for high and low ARs here
     // smooth max of (1,rho_0^{-2})
-    TacsScalar neg_shear_geom[2];
-    neg_shear_geom[0] = -1.0;
-    neg_shear_geom[1] = -1.0/rho_0/rho_0;
-    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    TacsScalar shear_geom[2];
+    shear_geom[0] = 1.0;
+    shear_geom[1] = 1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
 
     // final forward output
     TacsScalar N12crit = dim_factor * nondim_factor * shear_geom_ks;
@@ -1881,11 +1893,11 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
         num * 2.0 * lam1 * lam1 / den / den;
 
      // compute KS aggregation sensitivity
-    TacsScalar neg_shear_geom_sens[2];
-    TacsScalar neg_N11crit = ksAggregationSens(
-        neg_shear_geom, 2, this->ksWeight, neg_shear_geom_sens);
-    TacsScalar sg2_sens = neg_shear_geom_sens[1];
-    TacsScalar c_rho0_sens = -2.0 * neg_shear_geom[1] / rho_0;
+    TacsScalar shear_geom_sens[2];
+    ksAggregationSens(
+        shear_geom, 2, this->ksWeight, shear_geom_sens);
+    TacsScalar sg2_sens = shear_geom_sens[1];
+    TacsScalar c_rho0_sens = -2.0 * sg2_sens / rho_0;
 
 
     // compute the overall sensitivities
@@ -1957,10 +1969,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
 
     // accounts for high and low ARs here
     // smooth max of (1,rho_0^{-2})
-    TacsScalar neg_shear_geom[2];
-    neg_shear_geom[0] = -1.0;
-    neg_shear_geom[1] = -1.0/rho_0/rho_0;
-    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    TacsScalar shear_geom[2];
+    shear_geom[0] = 1.0;
+    shear_geom[1] = 1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
     
     return dim_factor *
            nondim_factor * shear_geom_ks;  // aka N12_crit from CPT closed-form solution
@@ -2008,10 +2020,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
 
     // accounts for high and low ARs here
     // smooth max of (1,rho_0^{-2})
-    TacsScalar neg_shear_geom[2];
-    neg_shear_geom[0] = -1.0;
-    neg_shear_geom[1] = -1.0/rho_0/rho_0;
-    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    TacsScalar shear_geom[2];
+    shear_geom[0] = 1.0;
+    shear_geom[1] = 1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
     nondim_factor *= shear_geom_ks;
 
     return dim_factor *
@@ -2089,10 +2101,10 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
 
     // accounts for high and low ARs here
     // smooth max of (1,rho_0^{-2})
-    TacsScalar neg_shear_geom[2];
-    neg_shear_geom[0] = -1.0;
-    neg_shear_geom[1] = -1.0/rho_0/rho_0;
-    TacsScalar shear_geom_ks = -1.0 * ksAggregation(neg_shear_geom, 2, this->ksWeight);
+    TacsScalar shear_geom[2];
+    shear_geom[0] = 1.0;
+    shear_geom[1] = 1.0/rho_0/rho_0;
+    TacsScalar shear_geom_ks = ksAggregation(shear_geom, 2, this->ksWeight);
 
     // final forward output
     TacsScalar N12crit = dim_factor * nondim_factor * shear_geom_ks;
@@ -2108,11 +2120,11 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
         num * 2.0 * lam1 * lam1 / den / den;
 
     // compute KS aggregation sensitivity
-    TacsScalar neg_shear_geom_sens[2];
-    TacsScalar neg_N11crit = ksAggregationSens(
-        neg_shear_geom, 2, this->ksWeight, neg_shear_geom_sens);
-    TacsScalar sg2_sens = neg_shear_geom_sens[1];
-    TacsScalar c_rho0_sens = -2.0 * neg_shear_geom[1] / rho_0;    
+    TacsScalar shear_geom_sens[2];
+    ksAggregationSens(
+        shear_geom, 2, this->ksWeight, shear_geom_sens);
+    TacsScalar sg2_sens = shear_geom_sens[1];
+    TacsScalar c_rho0_sens = -2.0 * sg2_sens / rho_0;    
 
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
