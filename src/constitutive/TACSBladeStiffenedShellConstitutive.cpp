@@ -3182,8 +3182,6 @@ TACSBladeStiffenedShellConstitutive::evalStiffenerColumnBucklingStrainSens(
   TacsScalar stiffenerStress[numStress];
   TACSBeamConstitutive::computeStress(C, stiffenerStrain, stiffenerStress);
 
-  const TacsScalar columnBucklingLoad =
-      this->computeStiffenerColumnBucklingLoad();
   const TacsScalar stiffenerAxialLoad = -stiffenerStress[0];
   const TacsScalar fCrit = this->computeStiffenerColumnBucklingLoad();
   memset(sens, 0, numStress * sizeof(TacsScalar));
@@ -3484,8 +3482,7 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
 
   this->computeStiffenerCripplingValues(stiffenerStrain, plyFailValues);
 
-  const TacsScalar fail =
-      ksAggregationSens(plyFailValues, 2 * numPlies, this->ksWeight, dKSdFail);
+  ksAggregationSens(plyFailValues, 2 * numPlies, this->ksWeight, dKSdFail);
 
   // --- Flange crippling ---
   TacsScalar dzCentroiddh, dzCentroiddt;
