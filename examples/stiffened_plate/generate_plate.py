@@ -6,15 +6,11 @@ from pprint import pprint
 from scipy.spatial.transform import Rotation
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--nex", type=int, default=20, help="# elements from top to bottom"
-)
+parser.add_argument("--nex", type=int, default=20, help="# elements from top to bottom")
 parser.add_argument(
     "--ney", type=int, default=40, help="# elements around circumference"
 )
-parser.add_argument(
-    "--pinEdges", action="store_true", help="Pin edges of plate"
-)
+parser.add_argument("--pinEdges", action="store_true", help="Pin edges of plate")
 args = parser.parse_args()
 
 # Overall dimensions
@@ -128,9 +124,7 @@ def write_bulk_line(key, items, format="small"):
 
 # Write nodes
 for i in range(n1 * n2):
-    write_bulk_line(
-        "GRID", [i + 1, 0, nmat[i, 0], nmat[i, 1], nmat[i, 2], 0, 0, 0]
-    )
+    write_bulk_line("GRID", [i + 1, 0, nmat[i, 0], nmat[i, 1], nmat[i, 2], 0, 0, 0])
 
 # Write elements
 compID = 1
