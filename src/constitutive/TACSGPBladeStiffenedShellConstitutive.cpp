@@ -116,12 +116,15 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
       panelStress[NUM_STRESSES];
   this->computePanelStiffness(panelStiffness);
   const TacsScalar *Ap, *Dp;
+  TacsScalar D11p, D22p, D66p;
   this->extractTangentStiffness(panelStiffness, &Ap, NULL, &Dp, NULL, NULL);
   this->computePanelStress(e, panelStress);
+  this->computeCriticalPanelGlobalBucklingStiffness(D11p, D22p, D66p);
 
   // Compute panel dimensions, material props and non-dimensional parameters
   TacsScalar N1CritGlobal, N12CritGlobal;
-  TacsScalar D11p = Dp[0], D12p = Dp[1], D22p = Dp[3], D66p = Dp[5];
+  // TacsScalar D11p = Dp[0], D12p = Dp[1], D22p = Dp[3], D66p = Dp[5];
+  TacsScalar D12p = Dp[1], D66p = Dp[5];
   TacsScalar A11p = Ap[0], A66p = Ap[5];
   TacsScalar delta, rho0Panel, xiPanel, gamma, a, b, zetaPanel;
   a = this->panelLength;
@@ -741,6 +744,229 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
   delete[] stiffNDsens;
   delete[] Ds_sens;
   delete[] As_sens;
+}
+
+void TACSBladeStiffenedShellConstitutive::
+    computeCriticalPanelGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
+                                           TacsScalar* D3) {
+  // Compute the Q matrices for the panel and stiffener
+  TacsScalar QPanel[this->NUM_Q_ENTRIES], QStiffener[this->NUM_Q_ENTRIES];
+  this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
+                                this->panelPlyFracs, QPanel);
+  this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,
+                                this->stiffenerPlyFracs, QStiffener);
+
+  TacsScalar E1p, E1s, Ap, As, Ip, Is, Jp, Js, zs, tp, ps, tp3;
+  tp = this->panelThick;
+  tp3 = tp * tp * tp;
+  ps = this->stiffenerPitch;
+  Ap = tp * ps;
+  As = this->computeStiffenerArea();
+  Ip = ps * tp3 / 12.0;
+  Is = this->computeStiffenerIzz();
+  zs = this->computeStiffenerCentroidHeight();
+  Js = this->computeStiffenerJxx();
+  Jp = ps * tp3 / 12.0;
+
+  // Compute the effective modulii of the panel and stiffener
+  E1p = QPanel[0] - QPanel[1] * QPanel[1] / QPanel[3];
+  E1s = QStiffener[0] - QStiffener[1] * QStiffener[1] / QStiffener[3];
+
+  // --- 1-Direction bending stiffness ---
+  // Compute the modulus weighted centroid of the panel and stiffener
+  TacsScalar zn = E1s * As * (-0.5 * tp + zs) / (E1s * As + E1p * Ap);
+
+  // don't include stiffener D1 in this term
+  *D1 = (E1p * (Ip + Ap * zn * zn)) /
+        ps;
+
+  // --- 2-direction bending stiffness ---
+  // TacsScalar D2Panel = (tp3 * QPanel[3]) / 12.0;
+  // TacsScalar D2Stiff = ((tp + 0.5 * ts) * (tp + 0.5 * ts) * (tp + 0.5 * ts) *
+  //                       (QPanel[3] + QStiffener[3])) /
+  //                      6.0;
+  // *D2 = ps / ((ps - hs * kf) / D2Panel + (hs * kf) / D2Stiff);
+  // NOTE: I am ignoring the contribution of the stiffener flange to the
+  // 2-direction bending stiffness so that the stiffness used for the buckling
+  // calculation is consistent with the stiffness matrix. Not sure whether this
+  // is a good idea or not.
+  *D2 = tp3 / 12.0 * QPanel[3];
+
+  // --- Twisting stiffness ---
+  // Compute the shear modulus weighted centroid of the panel and stiffener
+  TacsScalar zg = 0.25 * QStiffener[5] * As * (-0.5 * tp + zs) /
+                  (QStiffener[5] * As + QPanel[5] * Ap);
+  *D3 = (QPanel[5] * (Jp + Ap * zg * zg)) / ps;
+
+  TacsScalar C[NUM_TANGENT_STIFFNESS_ENTRIES];
+}
+
+void TACSBladeStiffenedShellConstitutive::
+    computeCriticalPanelGlobalBucklingStiffnessSens(
+        const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
+        TacsScalar* psSens, TacsScalar* tpSens, TacsScalar* hsSens,
+        TacsScalar* tsSens, TacsScalar QpanelSens[], TacsScalar QstiffSens[]) {
+  // Zero the sensitivities
+  *tpSens = 0.0;
+  *psSens = 0.0;
+  *hsSens = 0.0;
+  *tsSens = 0.0;
+  memset(QstiffSens, 0, NUM_Q_ENTRIES * sizeof(TacsScalar));
+  memset(QpanelSens, 0, NUM_Q_ENTRIES * sizeof(TacsScalar));
+
+  // Compute the Q matrices for the panel and stiffener
+  TacsScalar QPanel[this->NUM_Q_ENTRIES], QStiffener[this->NUM_Q_ENTRIES];
+  this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
+                                this->panelPlyFracs, QPanel);
+  this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,
+                                this->stiffenerPlyFracs, QStiffener);
+
+  TacsScalar E1p, E1s, Ap, As, Ip, Is, Jp, Js, zs, tp, ps, tp3;
+  tp = this->panelThick;
+  tp3 = tp * tp * tp;
+  ps = this->stiffenerPitch;
+  Ap = tp * ps;
+  As = this->computeStiffenerArea();
+  Ip = ps * tp3 / 12.0;
+  Is = this->computeStiffenerIzz();
+  zs = this->computeStiffenerCentroidHeight();
+  Js = this->computeStiffenerJxx();
+  Jp = ps * tp3 / 12.0;
+
+  // Compute the effective modulii of the panel and stiffener
+  E1p = QPanel[0] - QPanel[1] * QPanel[1] / QPanel[3];
+  E1s = QStiffener[0] - QStiffener[1] * QStiffener[1] / QStiffener[3];
+
+  // --- 1-Direction bending stiffness ---
+
+  // Compute the modulus weighted centroid of the panel and stiffener
+  TacsScalar zn = E1s * As * (-0.5 * tp + zs) / (E1s * As + E1p * Ap);
+  TacsScalar zn2 = zn * zn;
+  TacsScalar zns2 = (zn - zs) * (zn - zs);
+  TacsScalar pInv = 1.0 / ps;
+
+  // D1 = (E1p * (Ip + Ap * zn * zn) + E1s * (Is + As * (zn - zs) * (zn - zs)))
+  // / ps;
+
+  TacsScalar E1pSens = dfdD1 * ((Ap * zn2 + Ip) / ps);
+  TacsScalar IpSens = dfdD1 * (E1p / ps);
+  TacsScalar ApSens = dfdD1 * (E1p * zn2 / ps);
+  TacsScalar ZnSens =
+      dfdD1 * (2.0 * (Ap * E1p * zn + As * E1s * (zn - zs)) / ps);
+  TacsScalar E1sSens = 0.0;
+  TacsScalar IsSens = 0.0;
+  TacsScalar AsSens = 0.0;
+  TacsScalar ZsSens = 0.0;
+  *psSens +=
+      dfdD1 * ((-E1p * (Ap * zn2 + Ip)) * pInv * pInv);
+
+  // --- 2-direction bending stiffness ---
+  // D2 = tp3 / 12.0 * QPanel[3];
+  *tpSens = dfdD2 * tp * tp / 4.0 * QPanel[3];
+  QpanelSens[3] = dfdD2 * tp3 / 12.0;
+
+  // --- Twisting stiffness ---
+  // D3 = (Gp * (Jp + Ap * zg**2) + 1 / 4 * Gs * (Js + As * (zg - zs) ** 2)) /
+  // ps Compute the shear modulus weighted centroid of the panel and stiffener
+  TacsScalar Gp = QPanel[5];
+  TacsScalar Gs = QStiffener[5];
+  TacsScalar zg = 0.25 * Gs * As * (-0.5 * tp + zs) / (Gs * As + Gp * Ap);
+  TacsScalar zg2 = zg * zg;
+  TacsScalar zgs2 = (zg - zs) * (zg - zs);
+
+  TacsScalar GpSens = dfdD3 * ((Ap * zg2 + Jp) / ps);
+  TacsScalar JpSens = dfdD3 * (Gp / ps);
+  TacsScalar zgSens =
+      dfdD3 * ((2.0 * Ap * Gp * zg ) / ps);
+  TacsScalar GsSens = 0.0;
+  TacsScalar JsSens = 0.0;
+  ApSens += dfdD3 * (Gp * zg2 / ps);
+  // AsSens += dfdD3 * (0.25 * Gs * zgs2 / ps);
+  // ZsSens += dfdD3 * (0.5 * As * Gs * (-zg + zs) / ps);
+  *psSens += dfdD3 * ((-Gp * (Ap * zg2 + Jp)) *
+                      pInv * pInv);
+
+  // Now we need to propogate the sensitivities w.r.t intermediate variables
+  // back to the inputs we want :
+  // zn = E1s * As * (-0.5 * tp + zs) / (E1s * As + E1p * Ap);
+  TacsScalar AE2 = (Ap * E1p + As * E1s) * (Ap * E1p + As * E1s);
+  E1sSens += ZnSens * (-Ap * As * E1p * (0.5 * tp - zs) / AE2);
+  AsSens += ZnSens * (-Ap * E1p * E1s * (0.5 * tp - zs) / AE2);
+  *tpSens += ZnSens * (-0.5 * As * E1s / (Ap * E1p + As * E1s));
+  ZsSens += ZnSens * (As * E1s / (Ap * E1p + As * E1s));
+  E1pSens += ZnSens * (Ap * As * E1s * (0.5 * tp - zs) / AE2);
+  ApSens += ZnSens * (As * E1p * E1s * (0.5 * tp - zs) / AE2);
+
+  // zg = 0.25 * QStiffener[5] * As * (-0.5 * tp + zs) / (QStiffener[5] * As +
+  // QPanel[5] * Ap);
+  TacsScalar AG2 = (Ap * Gp + As * Gs) * (Ap * Gp + As * Gs);
+  GsSens += zgSens * (-0.25 * Ap * As * Gp * (0.5 * tp - zs) / AG2);
+  AsSens += zgSens * (-0.25 * Ap * Gp * Gs * (0.5 * tp - zs) / AG2);
+  *tpSens += zgSens * (-0.125 * As * Gs / (Ap * Gp + As * Gs));
+  ZsSens += zgSens * (0.25 * As * Gs / (Ap * Gp + As * Gs));
+  GpSens += zgSens * (0.25 * Ap * As * Gs * (0.5 * tp - zs) / AG2);
+  ApSens += zgSens * (0.25 * As * Gp * Gs * (0.5 * tp - zs) / AG2);
+
+  // E1pSens
+  // E1p = QPanel[0] - QPanel[1] * QPanel[1] / QPanel[3];
+  QpanelSens[0] += E1pSens;
+  QpanelSens[1] += E1pSens * (-2.0 * QPanel[1] / QPanel[3]);
+  QpanelSens[3] +=
+      E1pSens * ((QPanel[1] * QPanel[1]) / (QPanel[3] * QPanel[3]));
+
+  // E1sSens
+  // E1s = QStiff[0] - QStiff[1] * QStiff[1] / QStiff[3];
+  QstiffSens[0] += E1sSens;
+  QstiffSens[1] += E1sSens * (-2.0 * QStiffener[1] / QStiffener[3]);
+  QstiffSens[3] += E1sSens * ((QStiffener[1] * QStiffener[1]) /
+                              (QStiffener[3] * QStiffener[3]));
+
+  // GpSens
+  // Gp = QPanel[5]
+  QpanelSens[5] += GpSens;
+
+  // GsSens
+  // Gs = QStiffener[5]
+  QstiffSens[5] += GsSens;
+
+  // IpSens
+  // Ip = ps * tp3 / 12.0;
+  *tpSens += IpSens * ps * (tp * tp / 4.0);
+  *psSens += IpSens * (tp3 / 12.0);
+
+  // JpSens
+  // Jp = ps * tp3 / 12.0
+  *psSens += JpSens * tp3 / 12.0;
+  *tpSens += JpSens * ps * tp * tp / 4.0;
+
+  // ApSens
+  // Ap = tp * ps
+  *psSens += ApSens * tp;
+  *tpSens += ApSens * ps;
+
+  // AsSens
+  TacsScalar dAdt, dAdh;
+  this->computeStiffenerAreaSens(dAdt, dAdh);
+  *tsSens += AsSens * dAdt;
+  *hsSens += AsSens * dAdh;
+
+  // Js
+  TacsScalar dJdt, dJdh;
+  this->computeStiffenerJxxSens(dJdt, dJdh);
+  *tsSens += JsSens * dJdt;
+  *hsSens += JsSens * dJdh;
+
+  // IsSens
+  TacsScalar dIdt, dIdh;
+  this->computeStiffenerIzzSens(dIdt, dIdh);
+  *tsSens += IsSens * dIdt;
+  *hsSens += IsSens * dIdh;
+
+  // ZsSens
+  TacsScalar dZdt, dZdh, dzdtp;
+  this->computeStiffenerCentroidHeightSens(dZdt, dZdh);
+  *tsSens += ZsSens * dZdt;
+  *hsSens += ZsSens * dZdh;
 }
 
 // Retrieve the design variable for plotting purposes

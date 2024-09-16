@@ -841,6 +841,14 @@ class TACSGPBladeStiffenedShellConstitutive
   void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
                          TacsScalar* lam1bar, TacsScalar* lam2bar);
 
+  void computeCriticalPanelGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
+                                           TacsScalar* D3);
+
+  void computeCriticalPanelGlobalBucklingStiffnessSens(
+        const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
+        TacsScalar* psSens, TacsScalar* tpSens, TacsScalar* hsSens,
+        TacsScalar* tsSens, TacsScalar QpanelSens[], TacsScalar QstiffSens[]);
+
   /**
    * @brief Compute the derivatives of lam2sq  for the critical shear load
    * closed-form solution.
