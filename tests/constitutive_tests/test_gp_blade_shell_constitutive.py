@@ -156,6 +156,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             n_train,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
+            theta=np.random.rand(14).astype(self.dtype),
         )
         #self.axialGP.setKS(0.1)
 
@@ -164,6 +165,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             n_train,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
+            theta=np.random.rand(14).astype(self.dtype),
         )
         #self.shearGP.setKS(0.1)
 

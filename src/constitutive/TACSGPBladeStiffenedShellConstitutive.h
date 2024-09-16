@@ -776,6 +776,13 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar testCriticalGlobalShearLoad(const TacsScalar epsilon,
                                          int printLevel);
 
+    /**
+   *
+   * @brief Test the critical global shear load function
+   */
+  TacsScalar testCriticalGlobalShearLoad_LowAR(const TacsScalar epsilon,
+                                         int printLevel);
+
   /**
    * @brief Compute the critical shear load for local buckling
    *
@@ -826,6 +833,13 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Test the critical local shear load function
    */
   TacsScalar testCriticalLocalShearLoad(const TacsScalar epsilon,
+                                        int printLevel);
+
+  /**
+   *
+   * @brief Test the critical local shear load function
+   */
+  TacsScalar testCriticalLocalShearLoad_LowAR(const TacsScalar epsilon,
                                         int printLevel);
 
   /**
