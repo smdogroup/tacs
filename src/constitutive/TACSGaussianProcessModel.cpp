@@ -135,6 +135,7 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
   // ---------------------------------------------------
   // hold derivatives w.r.t. Xtest[0], ..., Xtest[3] of the kernel
   TacsScalar* jacobian = new TacsScalar[4];
+  memset(jacobian, 0.0, 4 * sizeof(TacsScalar));
 
   // jacobian of x_xi = log(xi) direction 0
   TacsScalar xi_kernel_sens = theta[4] * Xtrain[0] + 2.0 * theta[5] * Xtrain[0] * Xtrain[0] * Xtest[0];
@@ -161,7 +162,7 @@ void TACSAxialGaussianProcessModel::kernelSens(const TacsScalar ksens,
                 SE_kernel_sens_gam * SE_window + SE_kernel * SE_window_sens_gam;
 
   // log(zeta) direction 3
-  TacsScalar zeta_kernel_sens = theta[6] * Xtrain[3] + theta[7] * Xtest[3] * pow(Xtest[3], 2.0);
+  TacsScalar zeta_kernel_sens = theta[6] * Xtrain[3] + theta[7] * Xtest[3] * 2.0 * pow(Xtrain[3], 2.0);
   jacobian[3] = zeta_kernel_sens;
 
   // scale up the Xtestsens by the backpropagated values
@@ -290,12 +291,15 @@ TacsScalar TACSAxialGaussianProcessModel::testKernelSens(TacsScalar epsilon,
 
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
+  // temp test only certain kernel derivs
+  // p_input[0] = p_input[1] = p_input[2] = 0.0;
+
   // compute initial values
   TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 0.43243;  // log(xi)
-  x0[1] = 1.64243;  // log(rho0)
+  x0[1] = 0.9847;  // log(rho0)
   x0[2] = 0.12345;  // log(1+gamma)
-  x0[3] = 4.13432;  // log(zeta)
+  x0[3] = 0.53432;  // log(zeta)
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;

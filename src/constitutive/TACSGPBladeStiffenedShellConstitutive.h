@@ -5,7 +5,7 @@ Constraints
 ====================================================================================
 @File    :   TACSGPBladeStiffenedShellConstutive.h
 @Date    :   2024/04/24
-@Author  :   Sean Phillip Engelstad, Alasdair Christian Gray
+@Author  :   Sean Phillip Engelstad
 @Description : Constitutive model for a blade-stiffened shell. Based on the FSDT
 blade models adopted by Alasdair Christian Gray in the
 TACSBladeStiffenedShellConstutitutive.h class and the original one by Graeme
@@ -495,9 +495,11 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Compute the non-dimensional stiffener area ratio delta = E1s * As /
    * (E1p * s_p * h) based on the DVs => stiffenerPitch, panelThick,
    * stiffenerHeight, stiffenerThick
-   *
+   * 
+   * @param E1p effective E11p modulus
+   * @param E1s effective E11s modulus
    */
-  TacsScalar computeStiffenerAreaRatio();
+  TacsScalar computeStiffenerAreaRatio(const TacsScalar E1p, const TacsScalar E1s);
 
   /**
    * @brief Compute the sensitivities of the non-dimensional stiffener area
@@ -505,17 +507,20 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @param deltasens backpropagated sensitivity w.r.t the stiffener area ratio
    * delta
+   * @param E1p effective E11p modulus
+   * @param E1s effective E11s modulus
    * @param sthickSens stiffener thickness sens
    * @param sheightSens stiffener height sens
    * @param spitchSens stiffener pitch sens
    * @param pthickSens panel thickness sens
+   * @param E1pSens effective E11p modulus sens
+   * @param E1sSens effective E11s modulus sens
    *
    */
-  TacsScalar computeStiffenerAreaRatioSens(const TacsScalar deltasens,
-                                           TacsScalar* sthickSens,
-                                           TacsScalar* sheightSens,
-                                           TacsScalar* spitchSens,
-                                           TacsScalar* pthickSens);
+  TacsScalar computeStiffenerAreaRatioSens(
+    const TacsScalar deltasens, const TacsScalar E1p, const TacsScalar E1s, 
+    TacsScalar* sthickSens, TacsScalar* sheightSens,
+    TacsScalar* spitchSens, TacsScalar* pthickSens, TacsScalar* E1psens, TacsScalar* E1ssens);
 
   /**
    *
@@ -529,40 +534,32 @@ class TACSGPBladeStiffenedShellConstitutive
    * stiffenerHeight, stiffenerThick
    *
    * @param D11 the D11 stiffness of the plate
+   * @param E1s the E1s effective stiffener modulus
+   * @param zn the overall centroid
    */
-  TacsScalar computeStiffenerStiffnessRatio(const TacsScalar D11);
-
-  /**
-   *
-   * @brief Return the bending stiffness of an individual stiffener
-   *
-   **/
-  TacsScalar computeStiffenerBendingStiffness();
-
-  /**
-   *
-   * @brief Returns the 1x2 Jacobian of the stiffener bending stiffness
-   *computation in 2 separate scalars
-   *
-   **/
-  TacsScalar computeStiffenerBendingStiffnessSens(TacsScalar& sthickSens,
-                                                  TacsScalar& sheightSens);
+  TacsScalar computeStiffenerStiffnessRatio(const TacsScalar D11, const TacsScalar E1s, const TacsScalar zn);
 
   /**
    * @brief Compute the sensitivities of the non-dimensional  stiffener-to-panel
    * stiffness ratio gamma = E1s * Is / (sp * D11)
    *
-   * @param gammasens backpropagated derivative through gamma output
+   * @param gammaSens backpropagated derivative through gamma output
    * @param D11 the D11 stiffness of the plate
-   * @param D11sens sensitivity w.r.t. the D11 stiffness
+   * @param E1s the E1s effective stiffener modulus
+   * @param zn the overall centroid
+   * @param D11Sens sensitivity w.r.t. the D11 stiffness
    * @param sthickSens stiffener thickness sens
    * @param sheightSens stiffener height sens
    * @param spitchSens stiffener pitch sens
+   * @param E1sSens E1s effective stiffener modulus sens
+   * @param znSens overall centroid sens
    *
    */
   TacsScalar computeStiffenerStiffnessRatioSens(
-      const TacsScalar gammasens, const TacsScalar D11, TacsScalar* D11sens,
-      TacsScalar* sthickSens, TacsScalar* sheightSens, TacsScalar* spitchSens);
+    const TacsScalar gammaSens, const TacsScalar D11, const TacsScalar E1s, 
+    const TacsScalar zn, TacsScalar* D11Sens,
+    TacsScalar* sthickSens, TacsScalar* sheightSens, TacsScalar* spitchSens, 
+    TacsScalar *E1sSens, TacsScalar* znSens);
 
   /**
    *
@@ -630,6 +627,13 @@ class TACSGPBladeStiffenedShellConstitutive
       const TacsScalar delta, const TacsScalar rho_0, const TacsScalar xi,
       const TacsScalar gamma, const TacsScalar zeta);
 
+  TacsScalar computeOverallCentroid(const TacsScalar E1p, const TacsScalar E1s);
+
+  void computeOverallCentroidSens(
+    const TacsScalar znSens, const TacsScalar E1p, const TacsScalar E1s, 
+    TacsScalar* sthickSens, TacsScalar* sheightSens, TacsScalar* pthickSens,
+    TacsScalar* spitchSens, TacsScalar *E1pSens, TacsScalar *E1sSens);
+
   /**
    * @brief Compute the sensitivities w.r.t. the critical axial load
    * for the global buckling of the stiffened panel
@@ -668,6 +672,27 @@ class TACSGPBladeStiffenedShellConstitutive
    * @brief Test the critical global axial load function
    */
   TacsScalar testCriticalGlobalAxialLoad(const TacsScalar epsilon,
+                                         int printLevel);
+
+  /**
+   *
+   * @brief Test the overall centroid method
+   */
+  TacsScalar testOverallCentroid(const TacsScalar epsilon,
+                                         int printLevel);
+
+  /**
+   *
+   * @brief Test the computation of D11p with overall centroid
+   */
+  TacsScalar testPanelGlobalBucklingStiffness(const TacsScalar epsilon,
+                                         int printLevel);
+
+  /**
+   *
+   * @brief Test the other util tests
+   */
+  TacsScalar testOtherTests(const TacsScalar epsilon,
                                          int printLevel);
 
   /**
@@ -855,13 +880,13 @@ class TACSGPBladeStiffenedShellConstitutive
   void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
                          TacsScalar* lam1bar, TacsScalar* lam2bar);
 
-  void computeCriticalPanelGlobalBucklingStiffness(TacsScalar* D1, TacsScalar* D2,
-                                           TacsScalar* D3);
+  void computePanelGlobalBucklingStiffness(
+      const TacsScalar E1p, const TacsScalar zn, TacsScalar* D1);
 
-  void computeCriticalPanelGlobalBucklingStiffnessSens(
-        const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
-        TacsScalar* psSens, TacsScalar* tpSens, TacsScalar* hsSens,
-        TacsScalar* tsSens, TacsScalar QpanelSens[], TacsScalar QstiffSens[]);
+  void computePanelGlobalBucklingStiffnessSens(
+        const TacsScalar D1Sens, const TacsScalar E1p, const TacsScalar zn,
+        TacsScalar* spitchSens, TacsScalar* pthickSens,
+        TacsScalar* E1pSens, TacsScalar* znSens);
 
   /**
    * @brief Compute the derivatives of lam2sq  for the critical shear load

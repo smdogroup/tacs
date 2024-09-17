@@ -149,7 +149,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
         # construct the optional ML models
-        n_train = 4
+        n_train = 100
 
         n_param = constitutive.AxialGP.n_param
         self.axialGP = constitutive.AxialGP(
@@ -158,7 +158,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train).astype(self.dtype),
             theta=np.random.rand(14).astype(self.dtype),
         )
-        #self.axialGP.setKS(0.1)
+        # self.axialGP.setKS(0.1)
 
         n_param = constitutive.ShearGP.n_param
         self.shearGP = constitutive.ShearGP(
@@ -167,21 +167,18 @@ class GPConstitutiveMLTest(unittest.TestCase):
             alpha=np.random.rand(n_train).astype(self.dtype),
             theta=np.random.rand(14).astype(self.dtype),
         )
-        #self.shearGP.setKS(0.1)
+        # self.shearGP.setKS(0.1)
 
-        #n_param = constitutive.CripplingGP.n_param
-        #self.cripplingGP = constitutive.CripplingGP(
+        # n_param = constitutive.CripplingGP.n_param
+        # self.cripplingGP = constitutive.CripplingGP(
         #    n_train,
         #    Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
         #    alpha=np.random.rand(n_train).astype(self.dtype),
-        #)
+        # )
         self.cripplingGP = None
 
         self.panelGPs = constitutive.PanelGPs(
-            self.axialGP,
-            self.shearGP,
-            self.cripplingGP,
-            saveData=False
+            self.axialGP, self.shearGP, self.cripplingGP, saveData=False
         )
 
     def get_con(self, ply):
@@ -208,7 +205,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.stiffenerThicknessNum,
             self.stiffenerPlyFracNums,
             self.panelWidthNum,
-            self.panelGPs
+            self.panelGPs,
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
@@ -394,7 +391,11 @@ if __name__ == "__main__":
     parent_parser.add_argument("--case", type=str, default="full")
     args = parent_parser.parse_args()
 
-    assert args.case in ["CF", "ML", "failStrain", "failDV", "full"]
+    cases = ["CF", "ML", "full"]
+    cases += ["failStrain-CF", "failStrain-ML"]
+    cases += ["failDV-CF", "failDV-ML"]
+
+    assert args.case in cases
 
     if args.case == "CF":
         tester = GPConstitutiveCFTest()
@@ -406,16 +407,26 @@ if __name__ == "__main__":
         tester._my_debug = True
         tester.setUp()
         tester._constitutive_internal_tests()
-    elif args.case == "failStrain":
+    elif args.case == "failStrain-CF":
         # shouldn't matter which one of these I test as long as internal tests pass
-        #tester = GPConstitutiveCFTest()
+        tester = GPConstitutiveCFTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure_strain_sens()
+    elif args.case == "failStrain-ML":
+        # shouldn't matter which one of these I test as long as internal tests pass
         tester = GPConstitutiveMLTest()
         tester._my_debug = True
         tester.setUp()
         tester.test_constitutive_failure_strain_sens()
-    elif args.case == "failDV":
+    elif args.case == "failDV-CF":
         # shouldn't matter which one of these I test as long as internal tests pass
-        #tester = GPConstitutiveCFTest()
+        tester = GPConstitutiveCFTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure()
+    elif args.case == "failDV-ML":
+        # shouldn't matter which one of these I test as long as internal tests pass
         tester = GPConstitutiveMLTest()
         tester._my_debug = True
         tester.setUp()
