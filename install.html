@@ -223,6 +223,29 @@ This option is on by default in newer pip versions and therefore should not be n
 </section>
 </section>
 </section>
+<section id="installation-tips-for-common-hpc-systems">
+<h1>Installation tips for common HPC systems<a class="headerlink" href="#installation-tips-for-common-hpc-systems" title="Link to this heading">¶</a></h1>
+<section id="nasa-hecc">
+<h2>NASA HECC<a class="headerlink" href="#nasa-hecc" title="Link to this heading">¶</a></h2>
+<p>We have successfully built TACS on the NASA High End Computing Capability system using the following modules:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Currently</span> <span class="n">Loaded</span> <span class="n">Modulefiles</span><span class="p">:</span>
+ <span class="mi">1</span><span class="p">)</span> <span class="n">pkgsrc</span><span class="o">/</span><span class="mi">2023</span><span class="n">Q3</span>   <span class="mi">2</span><span class="p">)</span> <span class="n">mpi</span><span class="o">-</span><span class="n">hpe</span><span class="o">/</span><span class="n">mpt</span><span class="mf">.2.28_25</span><span class="n">Apr23_rhel87</span>   <span class="mi">3</span><span class="p">)</span> <span class="n">comp</span><span class="o">-</span><span class="n">intel</span><span class="o">/</span><span class="mf">2020.4.304</span>   <span class="mi">4</span><span class="p">)</span> <span class="n">python3</span><span class="o">/</span><span class="mf">3.11.5</span>
+</pre></div>
+</div>
+<p>A number of changes are necessary to the default <code class="docutils literal notranslate"><span class="pre">Makefile.in</span></code> file:</p>
+<ul class="simple">
+<li><p>If using intel compilers and one of the <code class="docutils literal notranslate"><span class="pre">mpi-hpe</span></code> modules, use <code class="docutils literal notranslate"><span class="pre">CXX</span> <span class="pre">=</span> <span class="pre">icpc</span> <span class="pre">-lmpi</span></code></p></li>
+<li><p>To build a TACS binary that will work on all node types, use the optimization flags recommended in the <a class="reference external" href="https://www.nas.nasa.gov/hecc/support/kb/recommended-compiler-options_99.html">HECC documentation</a>, <code class="docutils literal notranslate"><span class="pre">-O3</span> <span class="pre">-axCORE-AVX512,CORE-AVX2</span> <span class="pre">-xAVX</span></code></p></li>
+<li><p>If you run into issues related to OpenMP, add <code class="docutils literal notranslate"><span class="pre">-qopenmp</span></code> to the end of the <cite>SO_LINK_FLAGS`</cite> entry</p></li>
+<li><p>To link to Intel's MKL in place of standard blas and lapack, replace the default <code class="docutils literal notranslate"><span class="pre">LAPACK_LIBS</span></code> line with:</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>MKLPATH=${MKLROOT}/lib/intel64
+MKL_LIBS = -Wl,--start-group ${MKLPATH}/libmkl_intel_lp64.a ${MKLPATH}/libmkl_sequential.a ${MKLPATH}/libmkl_core.a -Wl,--end-group -lpthread
+LAPACK_LIBS = -limf ${MKL_LIBS}
+</pre></div>
+</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -247,6 +270,10 @@ This option is on by default in newer pip versions and therefore should not be n
 <li><a class="reference internal" href="#installing-the-python-interface">Installing the python interface</a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installation-tips-for-common-hpc-systems">Installation tips for common HPC systems</a><ul>
+<li><a class="reference internal" href="#nasa-hecc">NASA HECC</a></li>
 </ul>
 </li>
 </ul>
