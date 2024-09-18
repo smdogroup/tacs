@@ -69,6 +69,8 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     this->panelGPs->incref();
   }
 
+  memset(storedFails, 0.0, (NUM_FAILURES+2) * sizeof(TacsScalar));
+
   // default value of ksWeight
   this->setKSWeight(80.0);
 }
@@ -98,9 +100,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalFailure(
   TacsScalar aggFail = this->computeFailureValues(e, fails);
 
   // printf("Failure values: ");
-  // for (int ii = 0; ii < this->NUM_FAILURES; ii++) {
-  //   printf("%f \n", TacsRealPart(fails[ii]));
-  // }
+  for (int ii = 0; ii < this->NUM_FAILURES; ii++) {
+    // printf("%f \n", TacsRealPart(fails[ii]));
+    storedFails[ii] = fails[ii];
+  }
   // printf("aggFail: %f\n", TacsRealPart(aggFail));
   return aggFail;
 }
@@ -171,6 +174,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeFailureValues(
   // panel stress (closed-form instead for stiffener properties)
   TacsScalar globalAxialFail = -panelStress[0] / N1CritGlobal;
   TacsScalar globalShearFail = panelStress[2] / N12CritGlobal;
+
+  storedFails[NUM_FAILURES] = globalAxialFail;
+  storedFails[NUM_FAILURES + 1] = globalShearFail;
 
   // printf("global N11cr ratio = %.6f\n", globalAxialFail);
   // printf("global N12cr ratio = %.6f\n", globalShearFail);
@@ -874,7 +880,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
       case 0:
         return this->computeEffectiveThickness();
       case 1:
-        return this->computeEffectiveBendingThickness();
+        // return this->computeEffectiveBendingThickness();
+        return this->panelWidth;
       case 2:
         return this->panelLength;
       case 3:
@@ -939,25 +946,22 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
         return zeta;
     }
   } else {  // writeDVmode == 2
-    TacsScalar fails[this->NUM_FAILURES];
-    // where to get the strains..
-    // TacsScalar aggFail = this->computeFailureValues(e, fails);
 
     switch (index) {
       case 0:
-        return fails[0];
+        return storedFails[0];
       case 1:
-        return fails[1];
+        return storedFails[1];
       case 2:
-        return fails[2];
+        return storedFails[2];
       case 3:
-        return fails[3];
+        return storedFails[3];
       case 4:
-        return fails[4];
+        return storedFails[4];
       case 5:
-        return 0.0;
+        return storedFails[5];
       case 6:
-        return 0.0;
+        return storedFails[6];
     }
   }
 

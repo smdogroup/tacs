@@ -1002,6 +1002,7 @@ class TACSGPBladeStiffenedShellConstitutive
   // debugging modes
   // should all be false if not debugging
   int writeDVmode = 0;  // 0 - normal DVs, 1 - NDparams, 2 - failure indexes
+  TacsScalar storedFails[NUM_FAILURES+2];
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't
