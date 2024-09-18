@@ -1410,7 +1410,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
 
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) / b / b / (1.0 + delta);
     TacsScalar N11crStar = -1.0 * neg_N11crit / dim_factor;
-    printf("N11cr* = %.4f\n", N11crStar);
+    // printf("N11cr* = %.4f\n", N11crStar);
     return -1.0 * neg_N11crit;
   }
 }
