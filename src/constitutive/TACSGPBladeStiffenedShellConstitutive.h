@@ -412,7 +412,7 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar testAffineAspectRatio(const TacsScalar epsilon, int printLevel);
 
   /**
-   * @brief Compute the non-dimensional generalized rigidity xi = (D12 + 2 D66)
+   * @brief Compute the non-dimensional laminate isotropy xi = (D12 + 2 D66)
    * / sqrt(D11 * D22)
    *
    * @param D11 D11 stiffness
@@ -421,7 +421,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D66 D66 stiffness
    *
    */
-  static inline TacsScalar computeGeneralizedRigidity(const TacsScalar D11,
+  static inline TacsScalar computeLaminateIsotropy(const TacsScalar D11,
                                                       const TacsScalar D22,
                                                       const TacsScalar D12,
                                                       const TacsScalar D66) {
@@ -429,7 +429,7 @@ class TACSGPBladeStiffenedShellConstitutive
   }
 
   /**
-   * @brief Compute the derivatives of the non-dimensional generalized rigidity
+   * @brief Compute the derivatives of the non-dimensional laminate isotropy
    * xi = (D12 + 2 D66) / sqrt(D11 * D22)
    *
    * @param xisens backpropagated sensitivity w.r.t. xi
@@ -443,7 +443,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D66sens Sensitivity w.r.t. the D66 stiffness
    *
    */
-  TacsScalar computeGeneralizedRigiditySens(
+  TacsScalar computeLaminateIsotropySens(
       const TacsScalar xisens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar D12, const TacsScalar D66, TacsScalar* D11sens,
       TacsScalar* D22sens, TacsScalar* D12sens, TacsScalar* D66sens);
@@ -452,7 +452,7 @@ class TACSGPBladeStiffenedShellConstitutive
    *
    * @brief Test the generalized rigidity sensitivity.
    */
-  TacsScalar testGeneralizedRigidity(const TacsScalar epsilon, int printLevel);
+  TacsScalar testLaminateIsotropy(const TacsScalar epsilon, int printLevel);
 
   /**
    * @brief Compute the non-dimensional generalized Poisson's ratio eps = 1/xi *
@@ -752,8 +752,8 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D11 the D11 stiffness of the plate
    * @param D22 the D22 stiffness of the plate
    * @param b the panel width
-   * @param xi the generalized rigidity
    * @param rho_0 the affine aspect ratio
+   * @param xi the generalized rigidity
    * @param gamma the stiffener-to-(local panel) bending stiffness ratio
    * @param zeta the transverse shear stiffness parameter
    *
@@ -762,7 +762,7 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeCriticalGlobalShearLoad(
       const TacsScalar D11, const TacsScalar D22, const TacsScalar b,
-      const TacsScalar xi, const TacsScalar rho_0, const TacsScalar gamma,
+      const TacsScalar rho_0, const TacsScalar xi, const TacsScalar gamma,
       const TacsScalar zeta);
 
   /**
@@ -773,15 +773,15 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D11 the D11 stiffness of the plate
    * @param D22 the D22 stiffness of the plate
    * @param b the panel width
-   * @param xi the generalized rigidity
    * @param rho_0 the generalized affine aspect ratio
+   * @param xi the generalized rigidity
    * @param gamma the stiffener-to-(local panel) bending stiffness ratio
    * @param zeta the transverse shear stiffness parameter
    * @param D11sens sensitivity w.r.t. the D11 stiffness of the plate
    * @param D22sens sensitivity w.r.t. the D22 stiffness of the plate
    * @param bsens sensitivity w.r.t. the panel width
-   * @param xisens sensitivity w.r.t. the generalized rigidity
    * @param rho_0sens sensitivity w.r.t. the affine aspect ratio
+   * @param xisens sensitivity w.r.t. the generalized rigidity
    * @param gammasens sensitivity w.r.t. the stiffener-to-(local panel) bending
    * @param zetasens sensitivity w.r.t. the transverse shear stiffness parameter
    * stiffness ratio
@@ -789,10 +789,10 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeCriticalGlobalShearLoadSens(
       const TacsScalar N12sens, const TacsScalar D11, const TacsScalar D22,
-      const TacsScalar b, const TacsScalar xi, const TacsScalar rho_0,
+      const TacsScalar b, const TacsScalar rho_0, const TacsScalar xi,
       const TacsScalar gamma, const TacsScalar zeta, TacsScalar* D11sens,
-      TacsScalar* D22sens, TacsScalar* bsens, TacsScalar* xisens,
-      TacsScalar* rho_0sens, TacsScalar* gammasens, TacsScalar* zetasens);
+      TacsScalar* D22sens, TacsScalar* bsens, TacsScalar* rho_0sens, 
+      TacsScalar* xisens, TacsScalar* gammasens, TacsScalar* zetasens);
 
   /**
    *
@@ -815,8 +815,8 @@ class TACSGPBladeStiffenedShellConstitutive
    * input:
    * @param D11 the D11 stiffness of the plate
    * @param D22 the D22 stiffness of the plate
-   * @param xi the generalized rigidity
    * @param rho_0 the affine aspect ratio
+   * @param xi the generalized rigidity
    * @param zeta the transverse shear stiffness parameter
    *
    * returns:
@@ -824,8 +824,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeCriticalLocalShearLoad(const TacsScalar D11,
                                            const TacsScalar D22,
-                                           const TacsScalar xi,
                                            const TacsScalar rho_0,
+                                           const TacsScalar xi,
                                            const TacsScalar zeta);
 
   /**
@@ -837,21 +837,22 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param D11 the D11 stiffness of the plate
    * @param D22 the D22 stiffness of the plate
    * @param b the panel width
+   * @param rho0 the affine aspect ratio
    * @param xi the generalized rigidity
    * @param gamma the stiffener-to-(local panel) bending stiffness ratio
    * @param D11sens sensitivity w.r.t. the D11 stiffness of the plate
    * @param D22sens sensitivity w.r.t. the D22 stiffness of the plate
    * @param spitchsens sensitivity w.r.t. the stiffener pitch
-   * @param xisens sensitivity w.r.t. the generalized rigidity
    * @param rho_0sens sensitivity w.r.t. the affine aspect ratio
+   * @param xisens sensitivity w.r.t. the generalized rigidity
    * @param zeta sensitivity w.r.t. the transverse shear stiffness parameter
    * @return TacsScalar The critical shear buckling load
    */
   TacsScalar computeCriticalLocalShearLoadSens(
       const TacsScalar N12sens, const TacsScalar D11, const TacsScalar D22,
-      const TacsScalar xi, const TacsScalar rho_0, const TacsScalar zeta,
+      const TacsScalar rho_0, const TacsScalar xi, const TacsScalar zeta,
       TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* spitchsens,
-      TacsScalar* xisens, TacsScalar* rho_0sens, TacsScalar* zetasens);
+      TacsScalar* rho_0sens, TacsScalar* xisens, TacsScalar* zetasens);
 
   /**
    *
