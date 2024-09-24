@@ -92,16 +92,16 @@ args = parser.parse_args()
 
 
 # Overall plate dimensions
-width = 1.0
-length = 6.2577
+width = 0.422
+length = 1.0
 
 # Material properties (UD tape properties from textbook case)
 rho = 1609.0
 E1 = 138e9
-E2 = 138e9
-nu12 = 0.3
-G12 = E1 / 2.0 / (1+nu12)
-G13 = E1 / 2.0 / (1+nu12)
+E2 = 9.177e9
+nu12 = 0.326
+G12 = 4.957e9
+G13 = 4.957e9
 Xt = 2068e6
 Xc = 1723e6
 Yt = 96.5e6
@@ -112,7 +112,7 @@ S12 = 124e6
 panelLength = length
 panelWidth = width
 
-stiffenerPitch = 0.5
+stiffenerPitch = 0.111
 stiffenerPitchMin = 0.1
 stiffenerPitchMax = 0.7
 
@@ -120,22 +120,22 @@ panelThickness = 1e-2
 panelThicknessMin = 0.6e-3
 panelThicknessMax = 0.1
 
-stiffenerHeight = 76e-3
+stiffenerHeight = 27.4e-3
 stiffenerHeightMin = 25e-3
 stiffenerHeightMax = 0.15
 
-stiffenerThickness = 3.83e-3
+stiffenerThickness = 5.49e-3
 stiffenerThicknessMin = 0.6e-3
 stiffenerThicknessMax = 0.1
 
 # Ply angles/initial ply fractions
-ply_angles = np.deg2rad([0.0])
-skin_ply_fractions = np.array([1.0])
-stiffener_ply_fractions = np.array([1.0])
+ply_angles = np.deg2rad([0.0, 45.0])
+skin_ply_fractions = np.array([0.7, 0.3])
+stiffener_ply_fractions = np.array([0.7, 0.3])
 
 # Shear and compressive traction loads
-Ny = 1.28145e5  # N/m
-Nxy = 175e3  # N/m
+Ny = 30209  # N/m
+Nxy = 0.0  # N/m
 
 
 def element_callback(
@@ -178,12 +178,10 @@ def element_callback(
             [
                 currentDVNum,
                 currentDVNum + 1,
-                currentDVNum + 2,
-                currentDVNum + 3,
             ],
             dtype=np.intc,
         )
-        currentDVNum = currentDVNum + 1
+        currentDVNum += 2
 
     stiffenerHeightNum = currentDVNum
     currentDVNum = currentDVNum + 1
@@ -197,12 +195,10 @@ def element_callback(
             [
                 currentDVNum,
                 currentDVNum + 1,
-                currentDVNum + 2,
-                currentDVNum + 3,
             ],
             dtype=np.intc,
         )
-        currentDVNum += 1
+        currentDVNum += 2
     else:
         skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
         stiffener_ply_fraction_dv_nums = -np.ones(
@@ -266,7 +262,7 @@ def element_callback(
     # )
 
     # stiffeners and 0 degree plies are oriented with the y direction
-    refAxis = np.array([1.0, 0.0, 0.0])
+    refAxis = np.array([0.0, 1.0, 0.0])
     transform = elements.ShellRefAxisTransform(refAxis)
 
     # Pass back the appropriate tacs element object
