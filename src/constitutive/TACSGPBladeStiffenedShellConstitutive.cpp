@@ -882,6 +882,9 @@ void TACSGPBladeStiffenedShellConstitutive::addFailureDVSens(
   delete[] stiffNDsens;
   delete[] Ds_sens;
   delete[] As_sens;
+  delete E1p_bar;
+  delete E1s_bar;
+  delete zn_bar;
 }
 
 void TACSGPBladeStiffenedShellConstitutive::
