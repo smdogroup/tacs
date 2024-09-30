@@ -2,6 +2,7 @@
 6 noded beam model 1 meter long in x direction.
 We apply a tip load in the z direction and clamp it at the root.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

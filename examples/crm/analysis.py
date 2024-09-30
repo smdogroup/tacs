@@ -7,6 +7,7 @@ The script runs the structural analysis, evaluates the wing mass and von misses 
 and computes sensitivities with respect to wingbox thicknesses and node xyz locations.
 The sensitivities are then verified against finite-difference or complex step approximations.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
