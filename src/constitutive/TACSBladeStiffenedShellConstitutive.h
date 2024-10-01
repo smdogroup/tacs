@@ -82,9 +82,9 @@ void printStiffnessMatrix(const TacsScalar* const C);
  * the upper and lower surface of the panel and at the tip of the stiffener,
  * this calculation is performed for every ply angle present in the panel and
  * stiffener laminate. Buckling criteria are computed for combined
- * shear and axial buckling for both a global buckling mode (i.e the entire
- * panel buckles) and a local buckling mode (i.e. the panel buckles between a
- * pair of stiffeners). Finally, two stiffener buckling criteria are also
+ * shear and axial buckling for both a local buckling mode (i.e. the panel
+ * buckles between a pair of stiffeners) and a global buckling mode (i.e the
+ * entire panel buckles). Finally, two stiffener buckling criteria are also
  * evaluated, one for global column buckling of the stiffener, and one for
  * crippling of the flanges. These buckling failure values are aggregated along
  * with the material failure values into a single failure value using KS

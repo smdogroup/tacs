@@ -749,17 +749,14 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   TacsScalar pInv = 1.0 / this->stiffenerPitch;
   TacsScalar stiffScale = pInv * scale;
 
-  TacsScalar A, dAdt, dAdh, Izz, dIzzdt, dIzzdh, J, dJdt, dJdh, z, dzdt, dzdh,
-      E, G;
+  TacsScalar A, dAdt, dAdh, dIzzdt, dIzzdh, dJdt, dJdh, dzdt, dzdh, E, G;
   A = this->computeStiffenerArea();
   this->computeStiffenerAreaSens(dAdt, dAdh);
-  Izz = this->computeStiffenerIzz();
+  this->computeStiffenerIzz();
   this->computeStiffenerIzzSens(dIzzdt, dIzzdh);
-  J = this->computeStiffenerJxx();
   this->computeStiffenerJxxSens(dJdt, dJdh);
   this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
                                 this->stiffenerPlyFracs, &E, &G);
-  z = -this->computeStiffenerCentroidHeight() - 0.5 * this->panelThick;
   this->computeStiffenerCentroidHeightSens(dzdt, dzdh);
   dzdt *= -1;
   dzdh *= -1;
@@ -989,7 +986,6 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   // forward and backward differentiation and ends up recomputing a lot of
   // stuff. It should be rewritten to use only forward or only backward
   // differentiation in future.
-  const int numDV = this->numDesignVars;
 
   // Compute the failure values and then compute the
   // sensitivity of the aggregate failure value w.r.t. them
@@ -1121,12 +1117,6 @@ TACSBladeStiffenedShellConstitutive::computeEffectiveBendingThickness() {
 
 // Compute the stiffness matrix
 void TACSBladeStiffenedShellConstitutive::computeStiffness(TacsScalar C[]) {
-  TacsScalar* A = &C[0];
-  TacsScalar* B = &C[6];
-  TacsScalar* D = &C[12];
-  TacsScalar* As = &C[18];
-  TacsScalar* drill = &C[21];
-
   // --- Zero out the C matrix ---
   memset(C, 0, this->NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
@@ -1366,7 +1356,6 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
   if (this->panelThickNum >= 0) {
     int index = this->panelThickLocalNum - this->panelDVStartNum;
     TacsScalar t24 = this->panelThick * this->panelThick / 4.0;
-    TacsScalar tInv = 1.0 / this->panelThick;
     TacsScalar AMatProd, DMatProd, AsMatProd, drillProd;
 
     TacsScalar QPanel[this->NUM_Q_ENTRIES];
@@ -1434,7 +1423,6 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
 void TACSBladeStiffenedShellConstitutive::computePanelStiffness(
     TacsScalar C[]) {
   TacsScalar* A = &C[0];
-  TacsScalar* B = &C[6];
   TacsScalar* D = &C[12];
   TacsScalar* As = &C[18];
 
@@ -1571,7 +1559,6 @@ void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
   if (this->panelThickNum >= 0) {
     TACSOrthotropicPly* ply = this->panelPly;
     const int numPlies = this->numPanelPlies;
-    const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
     TacsScalar* dKSdFail = this->panelPlyFailSens;
     TacsScalar* fails = this->panelPlyFailValues;
     const TacsScalar* angles = this->panelPlyAngles;
@@ -1696,7 +1683,6 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerStressDVSens(
           this->stiffenerPlyFracLocalNums[ii] - this->stiffenerDVStartNum;
 
       TacsScalar* Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
-      TacsScalar* Abar = &(this->stiffenerQMats[ii * NUM_ABAR_ENTRIES]);
 
       TacsScalar dEdx = Q[0] - (Q[1] * Q[1]) / Q[3];
       TacsScalar dGdx = Q[5];
@@ -2197,7 +2183,6 @@ void TACSBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
       globalBucklingQstiffSens);
 
   // --- Panel thickness sensitivity ---
-  TacsScalar t = this->panelThick;
   if (this->panelThickNum >= 0) {
     const int dvNum = this->panelThickLocalNum;
     dfdx[dvNum] += scale * globalBucklingtpSens;
@@ -2418,7 +2403,7 @@ void TACSBladeStiffenedShellConstitutive::
   *hsSens += IsSens * dIdh;
 
   // ZsSens
-  TacsScalar dZdt, dZdh, dzdtp;
+  TacsScalar dZdt, dZdh;
   this->computeStiffenerCentroidHeightSens(dZdt, dZdh);
   dZdt *= -1;
   dZdh *= -1;
