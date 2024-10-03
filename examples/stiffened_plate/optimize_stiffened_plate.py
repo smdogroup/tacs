@@ -243,8 +243,8 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     con.setFailureModes(
         includePanelMaterialFailure=True,
         includeStiffenerMaterialFailure=True,
-        includeGlobalBuckling=True,
         includeLocalBuckling=True,
+        includeGlobalBuckling=True,
         includeStiffenerColumnBuckling=args.includeStiffenerBuckling,
         includeStiffenerCrippling=args.includeStiffenerBuckling,
     )

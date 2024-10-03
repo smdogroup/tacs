@@ -142,8 +142,8 @@ class ConstitutiveTest(unittest.TestCase):
         self.failure_modes = [
             "PanelMaterialFailure",
             "StiffenerMaterialFailure",
-            "GlobalBuckling",
             "LocalBuckling",
+            "GlobalBuckling",
             "StiffenerColumnBuckling",
             "StiffenerCrippling",
         ]
