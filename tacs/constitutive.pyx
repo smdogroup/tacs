@@ -968,8 +968,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         self,
         includePanelMaterialFailure=None,
         includeStiffenerMaterialFailure=None,
-        includeGlobalBuckling=None,
         includeLocalBuckling=None,
+        includeGlobalBuckling=None,
         includeStiffenerColumnBuckling=None,
         includeStiffenerCrippling=None,
     ):
