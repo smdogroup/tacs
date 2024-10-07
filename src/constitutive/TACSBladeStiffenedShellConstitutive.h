@@ -79,9 +79,9 @@ void printStiffnessMatrix(const TacsScalar* const C);
  * The failure criterion returned by this model combines numerous possible
  * failure modes into a single value. A material failure criterion (which one
  * depends on the Orthotropic ply objects you pass to this class) is computed at
- * the upper and lower surface of the panel and at the tip of the stiffener,
- * this calculation is performed for every ply angle present in the panel and
- * stiffener laminate. Buckling criteria are computed for combined
+ * the upper and lower surface of the panel and at the top and bottom of the
+ * stiffener, this calculation is performed for every ply angle present in the
+ * panel and stiffener laminate. Buckling criteria are computed for combined
  * shear and axial buckling for both a local buckling mode (i.e. the panel
  * buckles between a pair of stiffeners) and a global buckling mode (i.e the
  * entire panel buckles). Finally, two stiffener buckling criteria are also
@@ -89,7 +89,18 @@ void printStiffnessMatrix(const TacsScalar* const C);
  * crippling of the flanges. These buckling failure values are aggregated along
  * with the material failure values into a single failure value using KS
  * aggregation. The smoothness and conservatism of this aggregation can be
- * controlled using the `setKSWeight` method.
+ * controlled using the `setKSWeight` method. The inclusion of each one of the 6
+ * failure modes can be controlled using the `setFailureModes` method.
+ *
+ * In output files written by TACS, the various failure mode values are stored
+ * in the failure0-6 variables:
+ * - failure0: Aggregated failure across all enabled modes
+ * - failure1: Panel material failure
+ * - failure2: Stiffener material failure
+ * - failure3: Inter-stiffener panel buckling
+ * - failure4: Global panel buckling
+ * - failure5: Stiffener column buckling
+ * - failure6: Stiffener flange crippling
  *
  * WARNING: The stiffener flange crippling failure criterion uses a
  * semi-empirical method that is only deemed valid for laminates consisting of
