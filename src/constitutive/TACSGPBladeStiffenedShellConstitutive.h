@@ -243,6 +243,10 @@ class TACSGPBladeStiffenedShellConstitutive
   // indexes]
   void setWriteDVMode(int newMode) { writeDVmode = newMode; }
 
+  // choose whether to use CPT (classical plate theory) analytical solution (True)
+  // or DOD experimental buckling solution (False)
+  void setCPTstiffenerCrippling(bool _CPTstiffenerCrippling) {CPTstiffenerCrippling = _CPTstiffenerCrippling;}
+
   // ==============================================================================
   // Verification purpose public routines
   // ==============================================================================

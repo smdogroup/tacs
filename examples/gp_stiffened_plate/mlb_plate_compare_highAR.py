@@ -231,17 +231,17 @@ def element_callback(
         panelWidthNum=panelWidthNum,
         flangeFraction=0.0,
     )
-    con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
-    con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
-    con.setStiffenerThicknessBounds(
-        stiffenerThicknessMin, stiffenerThicknessMax
-    )
-    con.setPanelPlyFractionBounds(
-        np.array([1.0]), np.array([1.0])
-    )
-    con.setStiffenerPlyFractionBounds(
-        np.array([1.0]), np.array([1.0])
-    )
+    # con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
+    # con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
+    # con.setStiffenerThicknessBounds(
+    #     stiffenerThicknessMin, stiffenerThicknessMax
+    # )
+    # con.setPanelPlyFractionBounds(
+    #     np.array([1.0]), np.array([1.0])
+    # )
+    # con.setStiffenerPlyFractionBounds(
+    #     np.array([1.0]), np.array([1.0])
+    # )
 
     # We need to enforce that stiffenerHeight <= stiffenerPitch, if we are not
     # using a stiffener pitch DV we can simply enforce this as an upper bound

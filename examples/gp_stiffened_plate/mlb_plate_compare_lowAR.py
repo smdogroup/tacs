@@ -581,6 +581,7 @@ else:
 prob.setup(mode="rev")
 
 prob.run_model()
+print("done", flush=True)
 exit()
 
 # Output N2 representation of OpenMDAO model

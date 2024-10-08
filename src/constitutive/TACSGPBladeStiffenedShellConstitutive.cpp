@@ -181,6 +181,9 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalGlobalPanelBuckling(const 
     xiGlobal, gamma, zetaPanel
   ); 
 
+  printf("N1CritGLobal = %.8e\n", N1CritGlobal);
+  printf("N12CritGlobal = %.8e\n", N12CritGlobal);
+
   // compute the combined loading buckling failure index
   return this->bucklingEnvelope(-panelStress[0], N1CritGlobal,
                                     panelStress[2], N12CritGlobal);

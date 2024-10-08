@@ -1400,8 +1400,6 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
     panelGPs: TACSPanelGPs
         container for the three GP models for each panel / TACS component
-    CFshearMode: int
-        setting for CF version for nondim outputs (1 - all ARs, 2 - only high ARs, 3 - smeared model)
 
     Raises
     ------
@@ -1523,14 +1521,45 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         """
         if self.gp_blade_ptr:
             self.gp_blade_ptr.setKSWeight(ksWeight)
-        # then also call on GP models
-        # right now need to call on the GPs as you create them instead
-        # if self.axial_gp_ptr:
-        #     self.axial_gp_ptr.setKS(ksWeight)
-        # if self.shear_gp_ptr:
-        #     self.shear_gp_ptr.setKS(ksWeight)
-        # if self.crippling_gp_ptr:
-        #     self.crippling_gp_ptr.setKS(ksWeight)
+        # used to also call setKSWeight on GP Models (but that requires re-training, so not doing that)
+
+    def setCPTstiffenerCrippling(self, bool CPTcripplingMode):
+        """
+        choose whether to use stiffener crippling by:
+        CPT solution from Sean's paper if CPTcripplingMode = True
+        DOD experimental solution from Ali's superclass if CPTcripplingMode = False
+
+        Parameters
+        ----------
+        CPTcripplingMode : bool
+            whether to use CPT crippling solution or not
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setCPTstiffenerCrippling(CPTcripplingMode)
+
+    def setFailureModes(
+        self,
+        includePanelMaterialFailure=None,
+        includeStiffenerMaterialFailure=None,
+        includeLocalBuckling=None,
+        includeGlobalBuckling=None,
+        includeStiffenerColumnBuckling=None,
+        includeStiffenerCrippling=None,
+    ):
+
+        if self.gp_blade_ptr:
+            if includePanelMaterialFailure is not None:
+                self.gp_blade_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
+            if includeStiffenerMaterialFailure is not None:
+                self.gp_blade_ptr.setIncludeStiffenerMaterialFailure(includeStiffenerMaterialFailure)
+            if includeGlobalBuckling is not None:
+                self.gp_blade_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
+            if includeLocalBuckling is not None:
+                self.gp_blade_ptr.setIncludeLocalBuckling(includeLocalBuckling)
+            if includeStiffenerColumnBuckling is not None:
+                self.gp_blade_ptr.setIncludeStiffenerColumnBuckling(includeStiffenerColumnBuckling)
+            if includeStiffenerCrippling is not None:
+                self.gp_blade_ptr.setIncludeStiffenerCrippling(includeStiffenerCrippling)
 
     def setWriteDVMode(self, int newMode):
         """
