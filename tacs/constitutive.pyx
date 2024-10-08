@@ -1532,18 +1532,6 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         # if self.crippling_gp_ptr:
         #     self.crippling_gp_ptr.setKS(ksWeight)
 
-    def setCFShearMode(self, int newMode):
-        """
-        Update the closed-form shear mode (1 - regular CF (inf AR), 2 - analytic shear surrogate)
-
-        Parameters
-        ----------
-        newMode: int
-            new mode input for the CF shear buckling modes
-        """
-        if self.gp_blade_ptr:
-            self.gp_blade_ptr.setCFShearMode(newMode)
-
     def setWriteDVMode(self, int newMode):
         """
         Set mode for writing DV inputs to the .f5 files

@@ -210,7 +210,6 @@ class GPConstitutiveMLTest(unittest.TestCase):
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
         con.setKSWeight(0.1)
-        con.setCFShearMode(2)
         return con
 
     def test_constitutive_density(self):
