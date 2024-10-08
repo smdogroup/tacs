@@ -94,10 +94,10 @@ class TACSGaussianProcessModel : public TACSObject {
   int getNparam() { return n_param; };
   TacsScalar getKS() { return ks; };
   void setKS(TacsScalar ks) { this->ks = ks; };
-  void setAlpha(TacsScalar* alpha) {this->alpha = alpha;};
-  void setTheta(TacsScalar* theta) {this->theta = theta;};
-  void getTrainingData(TacsScalar* Xtrain) {Xtrain = this->Xtrain;};
-  void getTheta(TacsScalar* theta) {theta = this->theta;};
+  void setAlpha(TacsScalar* alpha) { this->alpha = alpha; };
+  void setTheta(TacsScalar* theta) { this->theta = theta; };
+  void getTrainingData(TacsScalar* Xtrain) { Xtrain = this->Xtrain; };
+  void getTheta(TacsScalar* theta) { theta = this->theta; };
   // virtual functions for the kernel definition and its sensitivity
   virtual TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) {
     return 0.0;
@@ -116,7 +116,7 @@ class TACSGaussianProcessModel : public TACSObject {
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
   TacsScalar* Xtrain;
   TacsScalar* alpha;
-  TacsScalar* theta; // hyperparameters
+  TacsScalar* theta;  // hyperparameters
 
   TacsScalar ks = 10.0;  // ks setting for smooth kernel functions
 };
@@ -124,7 +124,8 @@ class TACSGaussianProcessModel : public TACSObject {
 class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
  public:
   TACSAxialGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                                const TacsScalar alpha[], const TacsScalar theta[])
+                                const TacsScalar alpha[],
+                                const TacsScalar theta[])
       : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha, theta){};
   ~TACSAxialGaussianProcessModel(){};
   TacsScalar testKernelSens(TacsScalar epsilon, int printLevel);
@@ -134,7 +135,6 @@ class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
   TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain);
 
  protected:
-  
   void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
                   const TacsScalar* Xtrain, TacsScalar* Xtestsens);
 
@@ -146,7 +146,8 @@ class TACSAxialGaussianProcessModel : public TACSGaussianProcessModel {
 class TACSShearGaussianProcessModel : public TACSAxialGaussianProcessModel {
  public:
   TACSShearGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                                const TacsScalar alpha[], const TacsScalar theta[])
+                                const TacsScalar alpha[],
+                                const TacsScalar theta[])
       : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha, theta){};
   ~TACSShearGaussianProcessModel(){};
 };
@@ -154,7 +155,8 @@ class TACSShearGaussianProcessModel : public TACSAxialGaussianProcessModel {
 class TACSCripplingGaussianProcessModel : public TACSAxialGaussianProcessModel {
  public:
   TACSCripplingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
-                                    const TacsScalar alpha[], const TacsScalar theta[])
+                                    const TacsScalar alpha[],
+                                    const TacsScalar theta[])
       : TACSAxialGaussianProcessModel(n_train, Xtrain, alpha, theta){};
   ~TACSCripplingGaussianProcessModel(){};
 };

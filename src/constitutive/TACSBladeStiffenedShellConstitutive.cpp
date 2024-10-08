@@ -217,7 +217,8 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   this->stiffenerPlyFailSens = new TacsScalar[2 * this->numStiffenerPlies];
 
   // initialize the functions using the base class
-  // these function pointers are overwritten in the derived class for GP/ML buckling
+  // these function pointers are overwritten in the derived class for GP/ML
+  // buckling
   evalLocalPanelBuckling = [this](const TacsScalar e[]) {
     return this->_evalLocalPanelBuckling(e);
   };
@@ -227,27 +228,38 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   evalStiffenerCrippling = [this](const TacsScalar stiffenerStrain[]) {
     return this->_evalStiffenerCrippling(stiffenerStrain);
   };
-  evalLocalPanelBucklingStrainSens = [this](const TacsScalar e[], TacsScalar localBucklingSens[]) {
+  evalLocalPanelBucklingStrainSens = [this](const TacsScalar e[],
+                                            TacsScalar localBucklingSens[]) {
     return this->_evalLocalPanelBucklingStrainSens(e, localBucklingSens);
   };
-  evalGlobalPanelBucklingStrainSens = [this](const TacsScalar e[], TacsScalar globalBucklingSens[]) {
+  evalGlobalPanelBucklingStrainSens = [this](const TacsScalar e[],
+                                             TacsScalar globalBucklingSens[]) {
     return this->_evalGlobalPanelBucklingStrainSens(e, globalBucklingSens);
   };
-  evalStiffenerCripplingStrainSens = [this](const TacsScalar stiffenerStrain[], TacsScalar stiffenerStrainSens[]) {
-    return this->_evalStiffenerCripplingStrainSens(stiffenerStrain, stiffenerStrainSens);
+  evalStiffenerCripplingStrainSens = [this](const TacsScalar stiffenerStrain[],
+                                            TacsScalar stiffenerStrainSens[]) {
+    return this->_evalStiffenerCripplingStrainSens(stiffenerStrain,
+                                                   stiffenerStrainSens);
   };
-  addLocalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
-                                   const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
-    return this->_addLocalPanelBucklingDVSens(elemIndex, scale, pt, X, strain, dvLen, dfdx);
+  addLocalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
+                                       const double pt[], const TacsScalar X[],
+                                       const TacsScalar strain[], int dvLen,
+                                       TacsScalar dfdx[]) {
+    return this->_addLocalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
+                                              dvLen, dfdx);
   };
-  addGlobalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
-                                   const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
-    return this->_addGlobalPanelBucklingDVSens(elemIndex, scale, pt, X, strain, dvLen, dfdx);
+  addGlobalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
+                                        const double pt[], const TacsScalar X[],
+                                        const TacsScalar strain[], int dvLen,
+                                        TacsScalar dfdx[]) {
+    return this->_addGlobalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
+                                               dvLen, dfdx);
   };
-  addStiffenerCripplingDVSens = [this](const TacsScalar scale, const TacsScalar stiffenerStrain[], TacsScalar dfdx[]) {
+  addStiffenerCripplingDVSens = [this](const TacsScalar scale,
+                                       const TacsScalar stiffenerStrain[],
+                                       TacsScalar dfdx[]) {
     return this->_addStiffenerCripplingDVSens(scale, stiffenerStrain, dfdx);
   };
-
 }
 
 // ==============================================================================
