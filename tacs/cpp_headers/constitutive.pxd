@@ -252,6 +252,7 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
             TacsScalar, # panelWidth
             int, # panelWidthNum
             TacsScalar, # flangeFraction,
+            bool, # CPTstiffenerCrippling
             TACSPanelGPs*, # panelGPs object container
         )
         TacsScalar nondimCriticalGlobalAxialLoad(TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta)

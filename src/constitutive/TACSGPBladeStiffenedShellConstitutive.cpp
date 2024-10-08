@@ -210,10 +210,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalGlobalPanelBuckling(const
   TacsScalar N12CritGlobal = computeCriticalGlobalShearLoad(
     D11Global, D22p, b, rho0Global,
     xiGlobal, gamma, zetaPanel
-  ); 
-
-  printf("N1CritGLobal = %.8e\n", N1CritGlobal);
-  printf("N12CritGlobal = %.8e\n", N12CritGlobal);
+  );
 
   // compute the combined loading buckling failure index
   return this->bucklingEnvelope(-panelStress[0], N1CritGlobal,
@@ -1439,7 +1436,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerStiffnessRatioSens(
   // backpropagate to intermediate quantities As, Is, zs, zn
   TacsScalar AsSens = IstotSens * (zn - zs) * (zn - zs);
   TacsScalar IsSens = IstotSens;
-  TacsScalar zsSens = IstotSens * As * 2.0 * (zs - zn);
+  TacsScalar zsSens = -1.0 * IstotSens * As * 2.0 * (zs - zn);
   *znSens += IstotSens * As * 2.0 * (zn - zs);
 
   // backpropgate from intermediate quantities to DVs or material, etc.

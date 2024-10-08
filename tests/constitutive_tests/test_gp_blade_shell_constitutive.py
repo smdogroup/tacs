@@ -205,7 +205,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.stiffenerThicknessNum,
             self.stiffenerPlyFracNums,
             self.panelWidthNum,
-            self.panelGPs,
+            panelGPs=self.panelGPs,
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives

@@ -1397,8 +1397,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   std::function<TacsScalar(const TacsScalar[],TacsScalar[])> evalLocalPanelBucklingStrainSens;
   std::function<TacsScalar(const TacsScalar[],TacsScalar[])> evalGlobalPanelBucklingStrainSens;
   std::function<TacsScalar(const TacsScalar[],TacsScalar[])> evalStiffenerCripplingStrainSens;
-  std::function<void(int,TacsScalar,const double[],const TacsScalar[],const TacsScalar[],int dvLen,TacsScalar[])> addLocalPanelBucklingDVSens;
-  std::function<void(int,TacsScalar,const double[],const TacsScalar[],const TacsScalar[],int dvLen,TacsScalar[])> addGlobalPanelBucklingDVSens;
+  std::function<void(int,TacsScalar,const double[],const TacsScalar[],const TacsScalar[],int,TacsScalar[])> addLocalPanelBucklingDVSens;
+  std::function<void(int,TacsScalar,const double[],const TacsScalar[],const TacsScalar[],int,TacsScalar[])> addGlobalPanelBucklingDVSens;
   std::function<void(const TacsScalar, const TacsScalar[], TacsScalar[])> addStiffenerCripplingDVSens;
 
   static const char* const constName;  ///< Constitutive model name

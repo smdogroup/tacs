@@ -1433,6 +1433,7 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         int stiffenerThickNum = -1,
         np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         int panelWidthNum = -1,
+        bool CPTstiffenerCrippling = False,
         PanelGPs panelGPs = None,
         ):
 
@@ -1489,6 +1490,7 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             panelWidth,
             panelWidthNum,
             flangeFraction,
+            CPTstiffenerCrippling,
             panel_gp_ptr,
         )
         # copy pointers to all superclasses
