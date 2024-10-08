@@ -54,7 +54,7 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
 # con.setKSWeight(20.0)
 # con.setCFShearMode(2)
 
-xi = 1.0 # 0.4
+xi = 1.0  # 0.4
 
 # get the axial loads in nondimensional space w.r.t. rho_0
 n = 500

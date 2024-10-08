@@ -100,8 +100,8 @@ rho = 1609.0
 E1 = 138e9
 E2 = 138e9
 nu12 = 0.3
-G12 = E1 / 2.0 / (1+nu12)
-G13 = E1 / 2.0 / (1+nu12)
+G12 = E1 / 2.0 / (1 + nu12)
+G13 = E1 / 2.0 / (1 + nu12)
 Xt = 2068e6
 Xc = 1723e6
 Yt = 96.5e6
@@ -131,16 +131,14 @@ stiffenerThicknessMax = 0.1
 # Ply angles/initial ply fractions
 ply_angles = np.deg2rad([0.0])
 skin_ply_fractions = np.array([1.0])
-stiffener_ply_fractions =  np.array([1.0])
+stiffener_ply_fractions = np.array([1.0])
 
 # Shear and compressive traction loads
 Ny = 121167  # N/m
 Nxy = 0.0  # N/m
 
 
-def element_callback(
-    dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
-):
+def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Create ply object
     ortho_prop = constitutive.MaterialProperties(
         rho=rho,
@@ -199,9 +197,7 @@ def element_callback(
         currentDVNum += 1
     else:
         skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
-        stiffener_ply_fraction_dv_nums = -np.ones(
-            len(ply_angles), dtype=np.intc
-        )
+        stiffener_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
 
     panelWidthNum = -1
     # currentDVNum += 1
@@ -231,15 +227,9 @@ def element_callback(
     )
     con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
     con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
-    con.setStiffenerThicknessBounds(
-        stiffenerThicknessMin, stiffenerThicknessMax
-    )
-    con.setPanelPlyFractionBounds(
-        np.array([0.0]), np.array([1.0])
-    )
-    con.setStiffenerPlyFractionBounds(
-        np.array([0.0]), np.array([1.0])
-    )
+    con.setStiffenerThicknessBounds(stiffenerThicknessMin, stiffenerThicknessMax)
+    con.setPanelPlyFractionBounds(np.array([0.0]), np.array([1.0]))
+    con.setStiffenerPlyFractionBounds(np.array([0.0]), np.array([1.0]))
 
     # We need to enforce that stiffenerHeight <= stiffenerPitch, if we are not
     # using a stiffener pitch DV we can simply enforce this as an upper bound
@@ -248,7 +238,7 @@ def element_callback(
     if args.useStiffPitchDV:
         con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerHeightMax)
     else:
-        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch-10e-3)
+        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch - 10e-3)
 
     # con.setFailureModes(
     #     includePanelMaterialFailure=True,
@@ -413,9 +403,7 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
             constr.addConstraint(
                 "SkinPlyFracSum",
                 allComponents,
-                dvIndices=list(
-                    range(firstSkinPlyFracNum, firstSkinPlyFracNum + 4)
-                ),
+                dvIndices=list(range(firstSkinPlyFracNum, firstSkinPlyFracNum + 4)),
                 dvWeights=[1.0, 1.0, 1.0, 1.0],
                 lower=1.0,
                 upper=1.0,
@@ -435,9 +423,7 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
                 "StiffenerPlyFracSum",
                 allComponents,
                 dvIndices=list(
-                    range(
-                        firstStiffenerPlyFracNum, firstStiffenerPlyFracNum + 4
-                    )
+                    range(firstStiffenerPlyFracNum, firstStiffenerPlyFracNum + 4)
                 ),
                 dvWeights=[1.0, 1.0, 1.0, 1.0],
                 lower=1.0,
@@ -500,14 +486,10 @@ class PlateModel(Multipoint):
             # We only need to setup the design variable and mesh components once as both scenarios will use the same design variables and mesh coordinates.
             if ii == 0:
                 init_dvs = struct_builder.get_initial_dvs()
-                dvs = self.add_subsystem(
-                    "dvs", om.IndepVarComp(), promotes=["*"]
-                )
+                dvs = self.add_subsystem("dvs", om.IndepVarComp(), promotes=["*"])
                 dvs.add_output("dv_struct", init_dvs)
                 lb, ub = struct_builder.get_dv_bounds()
-                structDVScaling = np.array(
-                    struct_builder.fea_assembler.scaleList
-                )
+                structDVScaling = np.array(struct_builder.fea_assembler.scaleList)
                 self.add_design_var(
                     "dv_struct", lower=lb, upper=ub, scaler=structDVScaling
                 )
@@ -545,9 +527,7 @@ class PlateModel(Multipoint):
                     if all(lb == ub):
                         self.add_constraint(name, equals=lb, linear=True)
                     else:
-                        self.add_constraint(
-                            name, lower=lb, upper=ub, linear=True
-                        )
+                        self.add_constraint(name, lower=lb, upper=ub, linear=True)
 
 
 # ==============================================================================
@@ -660,20 +640,22 @@ def plotDesign(ax, stiffPitch, skinThickness, stiffenerHeight, stiffThickness):
             (xCentre - stiffenerHeight / 2, skinThickness),
             stiffenerHeight,
             stiffThickness,
-            color="orange"
+            color="orange",
         )
         web = mpatches.Rectangle(
             (xCentre - stiffThickness / 2, skinThickness + stiffThickness),
             stiffThickness,
             stiffenerHeight,
-            color="orange"
+            color="orange",
         )
         ax.add_artist(flange)
         ax.add_artist(web)
 
-    xMargin = 0.05*totalWidth
-    yMargin = 0.05*stiffenerHeight
-    ax.set_xlim(-stiffenerHeight / 2 - xMargin, -stiffenerHeight / 2 + totalWidth + xMargin)
+    xMargin = 0.05 * totalWidth
+    yMargin = 0.05 * stiffenerHeight
+    ax.set_xlim(
+        -stiffenerHeight / 2 - xMargin, -stiffenerHeight / 2 + totalWidth + xMargin
+    )
     ax.set_ylim(-yMargin, skinThickness + stiffThickness + stiffenerHeight + yMargin)
 
 

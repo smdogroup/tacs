@@ -60,7 +60,7 @@ rho0_vec = np.linspace(0.31, 10.0, n)
 N11cr_vec = np.zeros((n,), dtype=dtype)
 N12cr_vec = np.zeros((n,), dtype=dtype)
 
-#rho0 = 0.3121
+# rho0 = 0.3121
 xi = 0.9487
 gamma = 5.868
 for i, rho0 in enumerate(rho0_vec):

@@ -96,7 +96,9 @@ TacsScalar TACSAxialGaussianProcessModel::kernel(const TacsScalar* Xtest,
   TacsScalar xi_kernel = 1.0 + Xtrain[0] * Xtest[0] * (theta[4] + theta[5] * Xtrain[0] * Xtest[0]);
   TacsScalar zeta_kernel = Xtrain[3] * Xtest[3] * (theta[6] + theta[7] * Xtrain[3] * Xtest[3]);
 
-  TacsScalar SE_kernel = theta[8] * exp(-0.5 * pow((d_gamma_rho_test - d_gamma_rho_train) / theta[9], 2.0) - 0.5 * pow(d2 / theta[10], 2.0));
+  TacsScalar arg1 = (d_gamma_rho_test - d_gamma_rho_train) / theta[9];
+  TacsScalar arg2 = d2 / theta[10];
+  TacsScalar SE_kernel = theta[8] * exp(-0.5 * arg1 * arg1 - 0.5 * arg2 * arg2);
   TacsScalar SE_window = soft_relu(theta[11] - soft_abs(d_gamma_rho_train, ks), ks) * 
                              soft_relu(theta[11] - soft_abs(d_gamma_rho_test, ks), ks);
   
@@ -250,6 +252,7 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
+    printf("x[%d] = %.8e\n", i, x[i]);
   }
   predictMeanTestDataSens(p_output, x, input_sens);
   TacsScalar adjTD = 0.0;
@@ -316,6 +319,7 @@ TacsScalar TACSAxialGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   }
   f2 = kernel(x, Xtrain);
 
+  TacsScalar temp = p_output * (f2 - f0);
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity

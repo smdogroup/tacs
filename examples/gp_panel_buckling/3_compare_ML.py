@@ -70,14 +70,14 @@ rho0_vec = np.linspace(0.2, 10.0, n)
 N11cr_vec = np.zeros((n,), dtype=TACS.dtype)
 N12cr_vec = np.zeros((n,), dtype=TACS.dtype)
 
-#rho0 = 0.3121
+# rho0 = 0.3121
 xi = 0.9487
 gamma = 5.868
 zeta = 0.0035
 
 for i, rho0 in enumerate(rho0_vec):
     N11cr_vec[i] = con.nondimCriticalGlobalAxialLoad(rho0, xi, gamma, zeta)
-    N12cr_vec[i] = con.nondimCriticalGlobalShearLoad(rho0, xi, gamma, zeta) 
+    N12cr_vec[i] = con.nondimCriticalGlobalShearLoad(rho0, xi, gamma, zeta)
 plt.plot(rho0_vec, N11cr_vec, label="axial")
 plt.plot(rho0_vec, N12cr_vec, label="shear")
 
