@@ -46,7 +46,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         else:
             self.rtol = 2e-3
             self.atol = 1e-3
-            self.dh = 1e-6
+            self.dh = 1e-8
 
         # Instantiate FEA Assembler
         fea_assembler = pytacs.pyTACS(bdf_file, comm)

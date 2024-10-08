@@ -140,7 +140,7 @@ jobs:
           zip -r ../tacs-docs.zip .;
       - name: 'Upload docs'
         if: ${{ matrix.PUBLISH_DOCS }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: tacs-docs
           path: docs/tacs-docs.zip

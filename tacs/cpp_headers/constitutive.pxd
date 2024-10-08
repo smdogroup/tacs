@@ -152,10 +152,16 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
             TacsScalar[], # stiffenerPlyAngles
             TacsScalar[], # stiffenerPlyFracs
             int[], # stiffenerPlyFracNums
-            TacsScalar # flangeFraction
+            TacsScalar, # flangeFraction
         )
         int getNumPanelPlies()
         int getNumStiffenerPlies()
+        void setIncludePanelMaterialFailure(bool _includePanelMaterialFailure)
+        void setIncludeStiffenerMaterialFailure(bool _includeStiffenerMaterialFailure)
+        void setIncludeGlobalBuckling(bool _includeGlobalBuckling)
+        void setIncludeLocalBuckling(bool _includeLocalBuckling)
+        void setIncludeStiffenerColumnBuckling(bool _includeStiffenerColumnBuckling)
+        void setIncludeStiffenerCrippling(bool _includeStiffenerCrippling)
         void setKSWeight(double ksWeight)
         void setStiffenerPitchBounds(TacsScalar lowerBound, TacsScalar upperBound)
         void setStiffenerHeightBounds(TacsScalar lowerBound, TacsScalar upperBound)
@@ -256,6 +262,8 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
         TacsScalar testAllTests(TacsScalar epsilon, int printLevel)
         void setCFShearMode(int mode)
         void setWriteDVMode(int mode)
+
+
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):

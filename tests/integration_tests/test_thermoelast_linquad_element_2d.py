@@ -59,7 +59,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         else:
             self.rtol = 1e-2
             self.atol = 1e-4
-            self.dh = 1e-8
+            self.dh = 1e-6
 
         # Get the MPI communicator size
         rank = comm.rank

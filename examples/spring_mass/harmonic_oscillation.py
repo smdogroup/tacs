@@ -8,6 +8,7 @@ and eigenmode found from the modal problem to drive the new transient problem at
 the model's first natural frequency. We then plot the respone of both
 the baseline and resonating transient problem.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================

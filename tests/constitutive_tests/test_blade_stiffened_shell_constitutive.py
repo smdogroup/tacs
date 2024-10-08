@@ -34,15 +34,15 @@ class ConstitutiveTest(unittest.TestCase):
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
 
-        self.panelLength = 2.0
+        self.panelLength = 2.1
         self.panelLengthNum = 0
-        self.stiffenerPitch = 0.2
+        self.stiffenerPitch = 0.178
         self.stiffenerPitchNum = 1
-        self.stiffenerHeight = 0.075
+        self.stiffenerHeight = 0.314
         self.stiffenerHeightNum = 2
-        self.stiffenerThickness = 1e-2
+        self.stiffenerThickness = 1.23e-2
         self.stiffenerThicknessNum = 3
-        self.panelThickness = 1.5e-2
+        self.panelThickness = 1.586e-2
         self.panelThicknessNum = 4
 
         self.numPanelPlies = 3
@@ -69,11 +69,13 @@ class ConstitutiveTest(unittest.TestCase):
             [
                 self.panelLength,
                 self.stiffenerPitch,
-                self.stiffenerHeight,
-                self.stiffenerThickness,
                 self.panelThickness,
             ]
             + list(self.panelPlyFracs)
+            + [
+                self.stiffenerHeight,
+                self.stiffenerThickness,
+            ]
             + list(self.stiffenerPlyFracs)
         )
         self.dvs = np.array(self.dvs, dtype=self.dtype)
@@ -136,6 +138,17 @@ class ConstitutiveTest(unittest.TestCase):
 
         self.ply_list = [iso_ply, ortho_ply]
 
+        # These are the individual failure modes that can be enabled/disabled in the model. We will run the failure sensitivity tests with each enabled individually and then again with all enabled.
+        self.failure_modes = [
+            "PanelMaterialFailure",
+            "StiffenerMaterialFailure",
+            "LocalBuckling",
+            "GlobalBuckling",
+            "StiffenerColumnBuckling",
+            "StiffenerCrippling",
+        ]
+        self.failure_modes_to_test = self.failure_modes + ["all"]
+
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
@@ -164,7 +177,7 @@ class ConstitutiveTest(unittest.TestCase):
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
-        con.setKSWeight(0.1)
+        con.setKSWeight(1.0)
         return con
 
     def test_constitutive_density(self):
@@ -257,43 +270,64 @@ class ConstitutiveTest(unittest.TestCase):
     #             )
     #             self.assertFalse(fail)
 
-    def test_constitutive_failure(self):
+    def test_constitutive_failure_dv_sens(self):
         # Test failure dv sensitivity
         for ply in self.ply_list:
             with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = False
-                for _ in range(self.numFailureTests):
-                    fail = fail or constitutive.TestConstitutiveFailure(
-                        con,
-                        self.elem_index,
-                        self.pt,
-                        self.x,
-                        self.dvs,
-                        self.dh,
-                        self.print_level,
-                        self.atol,
-                        self.rtol,
-                    )
-                self.assertFalse(fail)
+                for enabled_failure_mode in self.failure_modes_to_test:
+                    with self.subTest(failure_mode=enabled_failure_mode):
+                        includeFailureModes = {}
+                        for failure_mode in self.failure_modes:
+                            includeFailureModes[f"include{failure_mode}"] = (
+                                failure_mode == enabled_failure_mode
+                                or enabled_failure_mode == "all"
+                            )
+                        con = self.get_con(ply)
+                        con.setFailureModes(**includeFailureModes)
+                        fail = False
+                        for _ in range(self.numFailureTests):
+                            fail = fail or constitutive.TestConstitutiveFailure(
+                                con,
+                                self.elem_index,
+                                self.pt,
+                                self.x,
+                                self.dvs,
+                                self.dh,
+                                self.print_level,
+                                self.atol,
+                                self.rtol,
+                            )
+                        self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = False
-                for _ in range(self.numFailureTests):
-                    fail = fail or constitutive.TestConstitutiveFailureStrainSens(
-                        con,
-                        self.elem_index,
-                        self.pt,
-                        self.x,
-                        self.dh,
-                        self.print_level,
-                        self.rtol,
-                        self.atol,
-                    )
-                self.assertFalse(fail)
+                for enabled_failure_mode in self.failure_modes_to_test:
+                    with self.subTest(failure_mode=enabled_failure_mode):
+                        includeFailureModes = {}
+                        for failure_mode in self.failure_modes:
+                            includeFailureModes[f"include{failure_mode}"] = (
+                                failure_mode == enabled_failure_mode
+                                or enabled_failure_mode == "all"
+                            )
+                        con = self.get_con(ply)
+                        con.setFailureModes(**includeFailureModes)
+                        fail = False
+                        for _ in range(self.numFailureTests):
+                            fail = (
+                                fail
+                                or constitutive.TestConstitutiveFailureStrainSens(
+                                    con,
+                                    self.elem_index,
+                                    self.pt,
+                                    self.x,
+                                    self.dh,
+                                    self.print_level,
+                                    self.rtol,
+                                    self.atol,
+                                )
+                            )
+                        self.assertFalse(fail)
 
 
 if __name__ == "__main__":

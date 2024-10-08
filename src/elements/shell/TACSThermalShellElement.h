@@ -1451,11 +1451,14 @@ void TACSThermalShellElement<quadrature, basis, director, model>::getOutputData(
         data += 9;
       }
       if (write_flag & TACS_OUTPUT_EXTRAS) {
-        data[0] = con->evalFailure(elemIndex, pt, X, e);
-        data[1] = con->evalDesignFieldValue(elemIndex, pt, X, 0);
-        data[2] = con->evalDesignFieldValue(elemIndex, pt, X, 1);
-        data[3] = con->evalDesignFieldValue(elemIndex, pt, X, 2);
-        data += 4;
+        for (int failInd = 0; failInd < 7; failInd++) {
+          data[failInd] =
+              con->evalFailureFieldValue(elemIndex, pt, X, e, failInd);
+        }
+        for (int dvInd = 0; dvInd < 7; dvInd++) {
+          data[dvInd + 7] = con->evalDesignFieldValue(elemIndex, pt, X, dvInd);
+        }
+        data += 14;
       }
     }
   }

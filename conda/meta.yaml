@@ -29,6 +29,7 @@ build:
 requirements:
   build:
     - python {{ python }}
+    - sysroot_linux-64>=2.17 # [linux64]
     - numpy   >=1.25
     - openmpi >=4.1.4 # [mpi == "openmpi"]
     - mpich  # [mpi == "mpich"]
@@ -36,12 +37,13 @@ requirements:
     - mpich-mpicxx  # [mpi == "mpich"]
     - {{ compiler('cxx') }}
     - make
-    - mpi4py >=3.1.1
+    - mpi4py >=3.1.1,<4.0.0
     - cython >=3.0.0
     - setuptools
 
   host:
     - python {{ python }}
+    - sysroot_linux-64>=2.17 # [linux64]
     - pip
     - numpy   >=1.25
     - openmpi >=4.1.4 # [mpi == "openmpi"]
@@ -52,12 +54,13 @@ requirements:
     - lapack
     - metis ==5.1.0
     - tecio
-    - mpi4py >=3.1.1
+    - mpi4py >=3.1.1,<4.0.0
     - cython >=3.0.0
     - setuptools
 
   run:
     - python
+    - sysroot_linux-64>=2.17 # [linux64]
     - numpy <2.0.a0
     - scipy
     - openmpi >=4.1.4 # [mpi == "openmpi"]
@@ -65,7 +68,7 @@ requirements:
     - libopenblas
     - lapack
     - metis ==5.1.0
-    - mpi4py >=3.1.1
+    - mpi4py >=3.1.1,<4.0.0
     - pynastran >=1.4.0
     - numba >=0.55.2
 
