@@ -2150,9 +2150,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     TacsScalar shear_geom_sens[2];
     ksAggregationSens(
         shear_geom, 2, this->ksWeight, shear_geom_sens);
-    TacsScalar sg2_sens = shear_geom_sens[1];
-    TacsScalar c_rho0_sens = -2.0 * sg2_sens / rho_0;
-
+    TacsScalar c_rho0_sens = shear_geom_sens[1] * shear_geom[1] * -2.0 / rho_0;
 
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
@@ -2352,8 +2350,7 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     TacsScalar shear_geom_sens[2];
     ksAggregationSens(
         shear_geom, 2, this->ksWeight, shear_geom_sens);
-    TacsScalar sg2_sens = shear_geom_sens[1];
-    TacsScalar c_rho0_sens = -2.0 * sg2_sens / rho_0;    
+    TacsScalar c_rho0_sens = shear_geom_sens[1] * shear_geom[1] * -2.0 / rho_0; 
 
     // compute the overall sensitivities
     *D11sens += N12sens * N12crit * 0.25 / D11;
