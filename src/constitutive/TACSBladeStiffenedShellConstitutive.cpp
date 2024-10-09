@@ -215,51 +215,6 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // Arrays for storing ply failure sensitivities
   this->panelPlyFailSens = new TacsScalar[2 * this->numPanelPlies];
   this->stiffenerPlyFailSens = new TacsScalar[2 * this->numStiffenerPlies];
-
-  // initialize the functions using the base class
-  // these function pointers are overwritten in the derived class for GP/ML
-  // buckling
-  evalLocalPanelBuckling = [this](const TacsScalar e[]) {
-    return this->_evalLocalPanelBuckling(e);
-  };
-  evalGlobalPanelBuckling = [this](const TacsScalar e[]) {
-    return this->_evalGlobalPanelBuckling(e);
-  };
-  evalStiffenerCrippling = [this](const TacsScalar stiffenerStrain[]) {
-    return this->_evalStiffenerCrippling(stiffenerStrain);
-  };
-  evalLocalPanelBucklingStrainSens = [this](const TacsScalar e[],
-                                            TacsScalar localBucklingSens[]) {
-    return this->_evalLocalPanelBucklingStrainSens(e, localBucklingSens);
-  };
-  evalGlobalPanelBucklingStrainSens = [this](const TacsScalar e[],
-                                             TacsScalar globalBucklingSens[]) {
-    return this->_evalGlobalPanelBucklingStrainSens(e, globalBucklingSens);
-  };
-  evalStiffenerCripplingStrainSens = [this](const TacsScalar stiffenerStrain[],
-                                            TacsScalar stiffenerStrainSens[]) {
-    return this->_evalStiffenerCripplingStrainSens(stiffenerStrain,
-                                                   stiffenerStrainSens);
-  };
-  addLocalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
-                                       const double pt[], const TacsScalar X[],
-                                       const TacsScalar strain[], int dvLen,
-                                       TacsScalar dfdx[]) {
-    return this->_addLocalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
-                                              dvLen, dfdx);
-  };
-  addGlobalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
-                                        const double pt[], const TacsScalar X[],
-                                        const TacsScalar strain[], int dvLen,
-                                        TacsScalar dfdx[]) {
-    return this->_addGlobalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
-                                               dvLen, dfdx);
-  };
-  addStiffenerCripplingDVSens = [this](const TacsScalar scale,
-                                       const TacsScalar stiffenerStrain[],
-                                       TacsScalar dfdx[]) {
-    return this->_addStiffenerCripplingDVSens(scale, stiffenerStrain, dfdx);
-  };
 }
 
 // ==============================================================================
@@ -2076,7 +2031,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerMOISens(
 // Buckling functions
 // ==============================================================================
 
-TacsScalar TACSBladeStiffenedShellConstitutive::_evalGlobalPanelBuckling(
+TacsScalar TACSBladeStiffenedShellConstitutive::evalGlobalPanelBuckling(
     const TacsScalar e[]) {
   TacsScalar stress[TACSShellConstitutive::NUM_STRESSES];
   TacsScalar D1, D2, D3;
@@ -2147,7 +2102,7 @@ void TACSBladeStiffenedShellConstitutive::
 }
 
 TacsScalar
-TACSBladeStiffenedShellConstitutive::_evalGlobalPanelBucklingStrainSens(
+TACSBladeStiffenedShellConstitutive::evalGlobalPanelBucklingStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   TacsScalar stiffness[NUM_TANGENT_STIFFNESS_ENTRIES], stress[NUM_STRESSES];
   this->computeStiffness(stiffness);
@@ -2176,7 +2131,7 @@ TACSBladeStiffenedShellConstitutive::_evalGlobalPanelBucklingStrainSens(
   return strengthRatio;
 }
 
-void TACSBladeStiffenedShellConstitutive::_addGlobalPanelBucklingDVSens(
+void TACSBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
   TacsScalar stress[NUM_STRESSES];
@@ -2720,7 +2675,7 @@ void TACSBladeStiffenedShellConstitutive::testGlobalBucklingStiffnessSens() {
   delete[] DVPert;
 }
 
-TacsScalar TACSBladeStiffenedShellConstitutive::_evalLocalPanelBuckling(
+TacsScalar TACSBladeStiffenedShellConstitutive::evalLocalPanelBuckling(
     const TacsScalar e[]) {
   // Compute panel stiffness matrix and loads
   TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
@@ -2767,7 +2722,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::computeCriticalShearLoad(
 }
 
 TacsScalar
-TACSBladeStiffenedShellConstitutive::_evalLocalPanelBucklingStrainSens(
+TACSBladeStiffenedShellConstitutive::evalLocalPanelBucklingStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   // Compute panel stiffness matrix and loads
   TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES],
@@ -2802,7 +2757,7 @@ TACSBladeStiffenedShellConstitutive::_evalLocalPanelBucklingStrainSens(
   return strengthRatio;
 }
 
-void TACSBladeStiffenedShellConstitutive::_addLocalPanelBucklingDVSens(
+void TACSBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
   // Compute panel stiffness matrix and loads
@@ -3361,7 +3316,7 @@ void TACSBladeStiffenedShellConstitutive::computeStiffenerCripplingValues(
   }
 }
 
-TacsScalar TACSBladeStiffenedShellConstitutive::_evalStiffenerCrippling(
+TacsScalar TACSBladeStiffenedShellConstitutive::evalStiffenerCrippling(
     const TacsScalar stiffenerStrain[]) {
   const int numPlies = this->numStiffenerPlies;
   this->computeStiffenerCripplingValues(stiffenerStrain,
@@ -3373,7 +3328,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::_evalStiffenerCrippling(
 }
 
 TacsScalar
-TACSBladeStiffenedShellConstitutive::_evalStiffenerCripplingStrainSens(
+TACSBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
     const TacsScalar stiffenerStrain[], TacsScalar sens[]) {
   const int numPlies = this->numStiffenerPlies;
   const int numStrain = TACSBeamConstitutive::NUM_STRESSES;
@@ -3497,7 +3452,7 @@ TACSBladeStiffenedShellConstitutive::_evalStiffenerCripplingStrainSens(
   return fail;
 }
 
-void TACSBladeStiffenedShellConstitutive::_addStiffenerCripplingDVSens(
+void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     const TacsScalar scale, const TacsScalar stiffenerStrain[],
     TacsScalar dfdx[]) {
   TACSOrthotropicPly* ply = this->stiffenerPly;

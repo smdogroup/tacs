@@ -77,50 +77,6 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
 
   // default value of ksWeight
   this->setKSWeight(100.0);
-
-  // initialize the functions using the subclass (and this overwrides the
-  // buckling load predictions of the superclass)
-  evalLocalPanelBuckling = [this](const TacsScalar e[]) {
-    return this->_evalLocalPanelBuckling(e);
-  };
-  evalGlobalPanelBuckling = [this](const TacsScalar e[]) {
-    return this->_evalGlobalPanelBuckling(e);
-  };
-  evalStiffenerCrippling = [this](const TacsScalar stiffenerStrain[]) {
-    return this->_evalStiffenerCrippling(stiffenerStrain);
-  };
-  evalLocalPanelBucklingStrainSens = [this](const TacsScalar e[],
-                                            TacsScalar localBucklingSens[]) {
-    return this->_evalLocalPanelBucklingStrainSens(e, localBucklingSens);
-  };
-  evalGlobalPanelBucklingStrainSens = [this](const TacsScalar e[],
-                                             TacsScalar globalBucklingSens[]) {
-    return this->_evalGlobalPanelBucklingStrainSens(e, globalBucklingSens);
-  };
-  evalStiffenerCripplingStrainSens = [this](const TacsScalar stiffenerStrain[],
-                                            TacsScalar stiffenerStrainSens[]) {
-    return this->_evalStiffenerCripplingStrainSens(stiffenerStrain,
-                                                   stiffenerStrainSens);
-  };
-  addLocalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
-                                       const double pt[], const TacsScalar X[],
-                                       const TacsScalar strain[], int dvLen,
-                                       TacsScalar dfdx[]) {
-    return this->_addLocalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
-                                              dvLen, dfdx);
-  };
-  addGlobalPanelBucklingDVSens = [this](int elemIndex, TacsScalar scale,
-                                        const double pt[], const TacsScalar X[],
-                                        const TacsScalar strain[], int dvLen,
-                                        TacsScalar dfdx[]) {
-    return this->_addGlobalPanelBucklingDVSens(elemIndex, scale, pt, X, strain,
-                                               dvLen, dfdx);
-  };
-  addStiffenerCripplingDVSens = [this](const TacsScalar scale,
-                                       const TacsScalar stiffenerStrain[],
-                                       TacsScalar dfdx[]) {
-    return this->_addStiffenerCripplingDVSens(scale, stiffenerStrain, dfdx);
-  };
 }
 
 // ==============================================================================
@@ -141,7 +97,7 @@ TACSGPBladeStiffenedShellConstitutive::
 // Override Failure constraint and sensitivities
 // ==============================================================================
 
-TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalLocalPanelBuckling(
+TacsScalar TACSGPBladeStiffenedShellConstitutive::evalLocalPanelBuckling(
     const TacsScalar e[]) {
   // this routine computes N11,cr for the local panel section with size a x s_p
   // (in between stiffeners)
@@ -180,7 +136,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalLocalPanelBuckling(
                                 N12CritLocal);
 }
 
-TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalGlobalPanelBuckling(
+TacsScalar TACSGPBladeStiffenedShellConstitutive::evalGlobalPanelBuckling(
     const TacsScalar e[]) {
   // this routine computes N11,cr for the global panel with the stiffeners
   // applied
@@ -232,7 +188,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalGlobalPanelBuckling(
                                 N12CritGlobal);
 }
 
-TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalStiffenerCrippling(
+TacsScalar TACSGPBladeStiffenedShellConstitutive::evalStiffenerCrippling(
     const TacsScalar stiffenerStrain[]) {
   if (CPTstiffenerCrippling) {  // use predictions for Sean's paper
     // compute D matrix of the stiffener (treating it like a panel for
@@ -270,13 +226,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::_evalStiffenerCrippling(
 
   } else {  // CPTstiffenerCrippling = false
     // the DOD experimental stiffener crippling solution from Ali's superclass
-    return TACSBladeStiffenedShellConstitutive::_evalStiffenerCrippling(
+    return TACSBladeStiffenedShellConstitutive::evalStiffenerCrippling(
         stiffenerStrain);
   }
 }
 
 TacsScalar
-TACSGPBladeStiffenedShellConstitutive::_evalLocalPanelBucklingStrainSens(
+TACSGPBladeStiffenedShellConstitutive::evalLocalPanelBucklingStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   // this routine computes N11,cr for the local panel section with size a x s_p
   // (in between stiffeners)
@@ -327,7 +283,7 @@ TACSGPBladeStiffenedShellConstitutive::_evalLocalPanelBucklingStrainSens(
 }
 
 TacsScalar
-TACSGPBladeStiffenedShellConstitutive::_evalGlobalPanelBucklingStrainSens(
+TACSGPBladeStiffenedShellConstitutive::evalGlobalPanelBucklingStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   // this routine computes N11,cr for the global panel with the stiffeners
   // applied
@@ -393,7 +349,7 @@ TACSGPBladeStiffenedShellConstitutive::_evalGlobalPanelBucklingStrainSens(
 }
 
 TacsScalar
-TACSGPBladeStiffenedShellConstitutive::_evalStiffenerCripplingStrainSens(
+TACSGPBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
     const TacsScalar stiffenerStrain[], TacsScalar sens[]) {
   if (CPTstiffenerCrippling) {  // use predictions for Sean's paper
     // compute D matrix of the stiffener (treating it like a panel for
@@ -441,11 +397,11 @@ TACSGPBladeStiffenedShellConstitutive::_evalStiffenerCripplingStrainSens(
   } else {  // CPTstiffenerCrippling = false
     // the DOD experimental stiffener crippling solution from Ali's superclass
     return TACSBladeStiffenedShellConstitutive::
-        _evalStiffenerCripplingStrainSens(stiffenerStrain, sens);
+        evalStiffenerCripplingStrainSens(stiffenerStrain, sens);
   }
 }
 
-void TACSGPBladeStiffenedShellConstitutive::_addLocalPanelBucklingDVSens(
+void TACSGPBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
   // scale is scale * dKSdf[2] here so already backpropped to the combined
@@ -602,7 +558,7 @@ void TACSGPBladeStiffenedShellConstitutive::_addLocalPanelBucklingDVSens(
   delete[] NDsens;
 }
 
-void TACSGPBladeStiffenedShellConstitutive::_addGlobalPanelBucklingDVSens(
+void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int dvLen, TacsScalar dfdx[]) {
   // scale is scale * dKSdf[3] here so already backpropped to the combined
@@ -821,7 +777,7 @@ void TACSGPBladeStiffenedShellConstitutive::_addGlobalPanelBucklingDVSens(
   delete zn_bar;
 }
 
-void TACSGPBladeStiffenedShellConstitutive::_addStiffenerCripplingDVSens(
+void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     const TacsScalar scale, const TacsScalar stiffenerStrain[],
     TacsScalar dfdx[]) {
   if (CPTstiffenerCrippling) {  // use predictions for Sean's paper
@@ -972,7 +928,7 @@ void TACSGPBladeStiffenedShellConstitutive::_addStiffenerCripplingDVSens(
 
   } else {  // CPTstiffenerCrippling = false
     // the DOD experimental stiffener crippling solution from Ali's superclass
-    return TACSBladeStiffenedShellConstitutive::_addStiffenerCripplingDVSens(
+    return TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
         scale, stiffenerStrain, dfdx);
   }
 }

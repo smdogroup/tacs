@@ -887,7 +887,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param e Shell strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalGlobalPanelBuckling(const TacsScalar e[]);
+  virtual TacsScalar evalGlobalPanelBuckling(const TacsScalar e[]);
 
   /**
    * @brief Compute the panel + stiffener stiffness values used to compute the
@@ -909,8 +909,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param sens Sensitivity of the output w.r.t the shell strains
    * @return TacsScalar Strength Ratio
    */
-  TacsScalar _evalGlobalPanelBucklingStrainSens(const TacsScalar e[],
-                                                TacsScalar sens[]);
+  virtual TacsScalar evalGlobalPanelBucklingStrainSens(const TacsScalar e[],
+                                                       TacsScalar sens[]);
 
   /**
    * @brief Add the derivative of the global panel buckling strength ratio w.r.t
@@ -924,10 +924,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
     @param dvLen The length of the design vector (not used)
     @param dfdx The DV sensitivity array to add to
    */
-  void _addGlobalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
-                                     const double pt[], const TacsScalar X[],
-                                     const TacsScalar strain[], int dvLen,
-                                     TacsScalar dfdx[]);
+  virtual void addGlobalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
+                                            const double pt[],
+                                            const TacsScalar X[],
+                                            const TacsScalar strain[],
+                                            int dvLen, TacsScalar dfdx[]);
 
   /**
    * @brief Compute the sensitivities of the panel + stiffener stiffness values
@@ -975,7 +976,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param e Shell strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalLocalPanelBuckling(const TacsScalar e[]);
+  virtual TacsScalar evalLocalPanelBuckling(const TacsScalar e[]);
 
   /**
    * @brief Compute the critical axial load for local buckling of the panel
@@ -1002,8 +1003,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param sens Sensitivity of the output w.r.t the shell strains
    * @return TacsScalar Strength Ratio
    */
-  TacsScalar _evalLocalPanelBucklingStrainSens(const TacsScalar e[],
-                                               TacsScalar sens[]);
+  virtual TacsScalar evalLocalPanelBucklingStrainSens(const TacsScalar e[],
+                                                      TacsScalar sens[]);
 
   /**
    * @brief Add the derivative of the local panel buckling strength ratio w.r.t
@@ -1017,10 +1018,11 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
     @param dvLen The length of the design vector (not used)
     @param dfdx The DV sensitivity array to add to
    */
-  void _addLocalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
-                                    const double pt[], const TacsScalar X[],
-                                    const TacsScalar strain[], int dvLen,
-                                    TacsScalar dfdx[]);
+  virtual void addLocalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
+                                           const double pt[],
+                                           const TacsScalar X[],
+                                           const TacsScalar strain[], int dvLen,
+                                           TacsScalar dfdx[]);
 
   /**
    * @brief Compute the sensitivity of the critical axial load for local
@@ -1283,16 +1285,16 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param stiffenerStrain Stiffener centroid beam strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+  virtual TacsScalar evalStiffenerCrippling(const TacsScalar stiffenerStrain[]);
   void computeStiffenerCripplingValues(const TacsScalar stiffenerStrain[],
                                        TacsScalar plyFailValues[]);
 
-  TacsScalar _evalStiffenerCripplingStrainSens(
+  virtual TacsScalar evalStiffenerCripplingStrainSens(
       const TacsScalar stiffenerStrain[], TacsScalar sens[]);
 
-  void _addStiffenerCripplingDVSens(const TacsScalar scale,
-                                    const TacsScalar stiffenerStrain[],
-                                    TacsScalar dfdx[]);
+  virtual void addStiffenerCripplingDVSens(const TacsScalar scale,
+                                           const TacsScalar stiffenerStrain[],
+                                           TacsScalar dfdx[]);
 
   // ==============================================================================
   // Attributes
@@ -1390,25 +1392,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar** stiffenerPlyFailStrainSens;
   TacsScalar* panelPlyFailSens;
   TacsScalar* stiffenerPlyFailSens;
-
-  // function pointers for overridden buckling loads for ML/GP buckling subclass
-  std::function<TacsScalar(const TacsScalar[])> evalLocalPanelBuckling;
-  std::function<TacsScalar(const TacsScalar[])> evalGlobalPanelBuckling;
-  std::function<TacsScalar(const TacsScalar[])> evalStiffenerCrippling;
-  std::function<TacsScalar(const TacsScalar[], TacsScalar[])>
-      evalLocalPanelBucklingStrainSens;
-  std::function<TacsScalar(const TacsScalar[], TacsScalar[])>
-      evalGlobalPanelBucklingStrainSens;
-  std::function<TacsScalar(const TacsScalar[], TacsScalar[])>
-      evalStiffenerCripplingStrainSens;
-  std::function<void(int, TacsScalar, const double[], const TacsScalar[],
-                     const TacsScalar[], int, TacsScalar[])>
-      addLocalPanelBucklingDVSens;
-  std::function<void(int, TacsScalar, const double[], const TacsScalar[],
-                     const TacsScalar[], int, TacsScalar[])>
-      addGlobalPanelBucklingDVSens;
-  std::function<void(const TacsScalar, const TacsScalar[], TacsScalar[])>
-      addStiffenerCripplingDVSens;
 
   static const char* const constName;  ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix

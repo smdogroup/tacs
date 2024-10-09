@@ -343,7 +343,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param e Shell strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalLocalPanelBuckling(const TacsScalar e[]);
+  TacsScalar evalLocalPanelBuckling(const TacsScalar e[]) override;
 
   /**
    * @brief Compute the strength ratio for the global buckling of the panel
@@ -351,7 +351,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param e Shell strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalGlobalPanelBuckling(const TacsScalar e[]);
+  TacsScalar evalGlobalPanelBuckling(const TacsScalar e[]) override;
 
   /**
    * @brief Compute the strength ratio with respect to stiffener crippling
@@ -365,7 +365,8 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param stiffenerStrain Stiffener centroid beam strains
    * @return TacsScalar Strength ratio
    */
-  TacsScalar _evalStiffenerCrippling(const TacsScalar stiffenerStrain[]);
+  TacsScalar evalStiffenerCrippling(
+      const TacsScalar stiffenerStrain[]) override;
 
   /**
    * @brief Compute the sensitivity of the local panel buckling strength ratio
@@ -374,8 +375,8 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param sens Sensitivity of the output w.r.t the shell strains
    * @return TacsScalar Strength Ratio
    */
-  TacsScalar _evalLocalPanelBucklingStrainSens(const TacsScalar e[],
-                                               TacsScalar sens[]);
+  TacsScalar evalLocalPanelBucklingStrainSens(const TacsScalar e[],
+                                              TacsScalar sens[]) override;
 
   /**
    * @brief Compute the sensitivity of the global buckling strength ratio w.r.t
@@ -385,11 +386,11 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param sens Sensitivity of the output w.r.t the shell strains
    * @return TacsScalar Strength Ratio
    */
-  TacsScalar _evalGlobalPanelBucklingStrainSens(const TacsScalar e[],
-                                                TacsScalar sens[]);
+  TacsScalar evalGlobalPanelBucklingStrainSens(const TacsScalar e[],
+                                               TacsScalar sens[]) override;
 
-  TacsScalar _evalStiffenerCripplingStrainSens(
-      const TacsScalar stiffenerStrain[], TacsScalar sens[]);
+  TacsScalar evalStiffenerCripplingStrainSens(
+      const TacsScalar stiffenerStrain[], TacsScalar sens[]) override;
 
   /**
    * @brief Add the derivative of the local panel buckling strength ratio w.r.t
@@ -403,10 +404,10 @@ class TACSGPBladeStiffenedShellConstitutive
     @param dvLen The length of the design vector (not used)
     @param dfdx The DV sensitivity array to add to
    */
-  void _addLocalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
-                                    const double pt[], const TacsScalar X[],
-                                    const TacsScalar strain[], int dvLen,
-                                    TacsScalar dfdx[]);
+  void addLocalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
+                                   const double pt[], const TacsScalar X[],
+                                   const TacsScalar strain[], int dvLen,
+                                   TacsScalar dfdx[]) override;
 
   /**
    * @brief Add the derivative of the global panel buckling strength ratio w.r.t
@@ -420,14 +421,14 @@ class TACSGPBladeStiffenedShellConstitutive
     @param dvLen The length of the design vector (not used)
     @param dfdx The DV sensitivity array to add to
    */
-  void _addGlobalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
-                                     const double pt[], const TacsScalar X[],
-                                     const TacsScalar strain[], int dvLen,
-                                     TacsScalar dfdx[]);
+  void addGlobalPanelBucklingDVSens(int elemIndex, TacsScalar scale,
+                                    const double pt[], const TacsScalar X[],
+                                    const TacsScalar strain[], int dvLen,
+                                    TacsScalar dfdx[]) override;
 
-  void _addStiffenerCripplingDVSens(const TacsScalar scale,
-                                    const TacsScalar stiffenerStrain[],
-                                    TacsScalar dfdx[]);
+  void addStiffenerCripplingDVSens(const TacsScalar scale,
+                                   const TacsScalar stiffenerStrain[],
+                                   TacsScalar dfdx[]) override;
 
   // ==============================================================================
   // Stiffener crippling helper functions
