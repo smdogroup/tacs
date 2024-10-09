@@ -2167,6 +2167,36 @@ class pyTACS(BaseUI):
         return constr
 
     @postinitialize_method
+    def createPanelWidthConstraint(self, name, options=None):
+        """Create a new PanelWidthConstraint for enforcing that the panel
+        width DV values passed to components match the actual panel widths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to DVConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.{PanelWidthConstraint}
+            PanelWidthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.PanelWidthConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
     def createVolumeConstraint(self, name, options=None):
         """
         Create a new VolumeConstraint for constraining the size of a closed volume.
