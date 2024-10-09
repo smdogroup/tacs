@@ -6064,8 +6064,8 @@ void TACSAssembler::getAverageStresses(ElementType elem_type,
       dvarsVec->getValues(len, nodes, dvars);
       ddvarsVec->getValues(len, nodes, ddvars);
 
-      elements[i]->getAverageStresses(i, elem_type, elemXpts, vars, dvars, ddvars,
-                                      &avgStresses[0]);
+      elements[i]->getAverageStresses(i, elem_type, elemXpts, vars, dvars,
+                                      ddvars, &avgStresses[0]);
     }
   }
 
