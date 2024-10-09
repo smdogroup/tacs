@@ -277,7 +277,6 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
-    printf("x[%d] = %.8e\n", i, x[i]);
   }
   predictMeanTestDataSens(p_output, x, input_sens);
   TacsScalar adjTD = 0.0;
