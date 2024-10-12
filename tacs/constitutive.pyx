@@ -1122,21 +1122,59 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
 
 cdef class GaussianProcess:
+    """
+    Base class for constructing Gaussian Process ML models to predict buckling loads.
+    This is an abstract base class and hence has no constructor, only methods used by its subclasses.
+    """
     # base class so no constructor here    
     def predict_mean_test_data(
         self,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
     ):
+        """
+        This method makes buckling predictions at each point of an Xtest dataset and returns the Ytest tensor of buckling load predictions.
+        Note that the Xtest inputs and Ytest outputs are in log-space (more details below).
+
+        Parameters
+        ----------
+        Xtest - np.ndarray
+            a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
+            specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        
+        Returns:
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
+        """
         return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
 
     def getNparam(self):
+        """
+        Get the number of input parameters in the Gaussian Process model (4 for all of the current base classes)
+
+        Returns:
+            nparams (int) : the number of input parameters in Xtest [4 for the current implemented classes]
+        """
         return self.base_gp.getNparam()
 
     def getNtrain(self):
+        """
+        Get the number of input training data points used in the model training weights
+
+        Returns:
+            ntrain (int) : the number of training data points in alpha_train, the training weights
+        """
         return self.base_gp.getNtrain()
 
     def getTrainingData(self):
-        """return numpy array of size (n_train*n_param,)"""
+        """
+        Get the training dataset Xtrain used for training the Gaussian Process ML model
+
+        Returns:
+            Xtrain (np.ndarray) : a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+            or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        """
         cdef int ntrain = self.getNtrain()
         cdef int nparam = self.getNparam()
         cdef np.ndarray train_data = np.zeros((ntrain*nparam,), dtype=dtype)
@@ -1145,7 +1183,20 @@ cdef class GaussianProcess:
 
     def setKS(self, TacsScalar ksWeight, 
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
-        """note you need to also have the training outputs if you want to change ks and alpha"""
+        """
+        Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
+
+        Parameters
+        ----------
+        ksWeight : float
+            the Kresselmeier-Steinhauser aggregation parameter rho_KS used for smooth relu and smooth abs value
+            in the GP kernel functions.
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
         # print("Warning: need to retrain the weights as KS has changed\n")
         self.base_gp.setKS(ksWeight)
         self.recompute_alpha(Ytrain)
@@ -1154,7 +1205,19 @@ cdef class GaussianProcess:
     def setTheta(self, 
             np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
-        """note you need to also have the training outputs if you want to change theta and alpha"""
+        """
+        Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
+
+        Parameters
+        ----------
+        theta : np.ndarray
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
         # print("Warning: need to retrain the weights as KS has changed\n")
         self.base_gp.setTheta(<TacsScalar*>theta.data)
         self.recompute_alpha(Ytrain)
@@ -1162,7 +1225,17 @@ cdef class GaussianProcess:
 
     def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
         """
-        run all the GP derivative tests
+        run all the internal Gaussian Process ML model derivative tests
+
+        Parameters
+        ----------
+        epsilon : TacsScalar
+            the step size for each derivative test
+        printLevel : int
+            an input of 0 does not print each derivative test result, an input of 1 does print each test result to terminal.
+
+        Returns:
+            max relative error (TacsScalar) : the max relative error among all internal derivative tests of the model
         """
         return self.base_gp.testAllGPTests(epsilon, printLevel)
 
@@ -1171,11 +1244,35 @@ cdef class GaussianProcess:
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
     ):
-        """method used to compute the full kernel matrix for re-training alpha"""
+        """
+        call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
+        this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
+        match those of the ml_buckling repo. 
+
+        Parameters
+        ----------
+        Xtest : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the test datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
+        Xtrain : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the training datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
+        """
         return self.base_gp.kernel(<TacsScalar*>Xtest.data, <TacsScalar*>Xtrain.data)
 
     def recompute_alpha(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
-        """compute updated training weights after changing KS or hyperparameters"""
+        """
+        a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
+        this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
+        for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
+            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
+
+        Parameters
+        ----------
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
         #return
         cdef int ntrain = self.getNtrain()
         cdef int nparam = self.getNparam()
@@ -1196,10 +1293,49 @@ cdef class GaussianProcess:
         return
 
 cdef class AxialGP(GaussianProcess):
+    """
+    Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
+    Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
+    The ML model uses non-dimensional inputs and outputs as follows:
+        log(N_11,cr^*) = AxialGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+    The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
+
+    Parameters
+    ----------
+    Xtrain : np.ndarray
+        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+    alpha : np.ndarray
+        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
+    theta : np.ndarray
+        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
+    """
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file, theta_csv):
+        """
+        Construct an AxialGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        the training weights of the ML model and the optimal hyperparameters theta.
+            This is the method commonly used to construct the AxialGP. Namely using the ml_buckling
+        The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
+        and is the following:
+            axial_gp = AxialGP.from_csv(
+                csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
+            )
+
+        Parameters
+        ----------
+        csv_file : filepath or str
+            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
+        theta_csv : filepath or str
+            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
+
+        Returns:
+            AxialGP object
+        """
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
         # optional import
         import pandas as pd
@@ -1236,10 +1372,50 @@ cdef class AxialGP(GaussianProcess):
         self.base_gp = self.axial_gp
         
 cdef class ShearGP(AxialGP):
+    """
+    Gaussian Process ML model to predict N_12,cr^* non-dimensional buckling loads of global shear modes.
+    Local shear mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
+    The ML model uses non-dimensional inputs and outputs as follows:
+        log(N_12,cr^*) = ShearGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+    The shearGP model accomodoates making multiple test point predictions in parallel as do many ML models.
+
+    Parameters
+    ----------
+    Xtrain : np.ndarray
+        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+    alpha : np.ndarray
+        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
+    theta : np.ndarray
+        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
+    """
+
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file, theta_csv):
+        """
+        Construct a ShearGP from csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        the training weights of the ML model and the optimal hyperparameters theta.
+            This is the method commonly used to construct the ShearGP. Namely using the ml_buckling
+        The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
+        and is the following:
+            shear_gp = ShearGP.from_csv(
+                csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv
+            )
+
+        Parameters
+        ----------
+        csv_file : filepath or str
+            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
+        theta_csv : filepath or str
+            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
+
+        Returns:
+            ShearGP object
+        """
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
         return super(ShearGP,cls).from_csv(csv_file, theta_csv)
 
@@ -1259,10 +1435,45 @@ cdef class ShearGP(AxialGP):
         self.base_gp = self.axial_gp = self.gp
 
 cdef class CripplingGP(AxialGP):
+    """
+    Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of stiffener crippling modes.
+    The ML model uses non-dimensional inputs and outputs as follows:
+        log(N_11,cr^*) = CripplingGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+    The cripplingGP model accomodoates making multiple test point predictions in parallel as do many ML models.
+
+    Parameters
+    ----------
+    Xtrain : np.ndarray
+        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+    alpha : np.ndarray
+        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
+    theta : np.ndarray
+        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
+    """
     n_param = 4 # [log(1+xi), log(rho0), log(genEps), log(1+10^3 * zeta)]
 
     @classmethod
     def from_csv(cls, csv_file, theta_csv):
+        """
+        Construct a CripplingGP from csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        the training weights of the ML model and the optimal hyperparameters theta.
+            This is the method commonly used to construct the CripplingGP. Namely using the ml_buckling
+        This class is not constructed in the ml_buckling repo since it was deemed that cripling closed-form solution is fairly 
+            accurate for blade stiffeners => as the aspect ratios are fairly high.
+
+        Parameters
+        ----------
+        csv_file : filepath or str
+            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
+        theta_csv : filepath or str
+            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
+
+        Returns:
+            CripplingGP object
+        """
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
         return super(CripplingGP,cls).from_csv(csv_file, theta_csv)
 
@@ -1282,18 +1493,38 @@ cdef class CripplingGP(AxialGP):
         self.base_gp = self.axial_gp = self.gp
 
 cdef class PanelGPs:
-    # base class so no constructor here 
     """
+    This object holds the individual GP objects for a single panel. One PanelGP object is shared among the constitutive
+    object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
+    only one call to each GP object is required per panel (speeds up computation time).
+    The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
+    (assuming each TACSComponent is associated with a different panel). 
+
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
+    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+
+    def callback_generator(tacs_component_names):
+        axialGP = constitutive.AxialGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+        shearGP = constitutive.ShearGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+
+        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+
+            # get the panelGPs object associated with this tacs component
+            panelGPs = panelGP_dict[compDescript]
+
+            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+
+    Parameters
+    ----------
     axialGP : TACSAxialGaussianProcessModel, optional
         GP model for axial buckling data, if None uses closed-form instead
     shearGP : TACSShearGaussianProcessModel, optional
         GP model for shear buckling data, if None uses closed-form instead
     cripplingGP : TACSCripplingGaussianProcessModel, optional
         GP model for crippling buckling data, if None uses closed-form instead
-
-    return:
-    -------
-    object meant to built for each panel in the class
+    saveData : bool
+        whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
     """
     def __cinit__(
         self,
@@ -1330,7 +1561,19 @@ cdef class PanelGPs:
         bool saveData = True,
         ):
         """
-        make the dictionary of PanelGP objects from the list of TACS components
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
+            { tacs_component (str) : PanelGPs object }      
+
+        Parameters
+        ----------
+        axialGP : TACSAxialGaussianProcessModel, optional
+            GP model for axial buckling data, if None uses closed-form instead
+        shearGP : TACSShearGaussianProcessModel, optional
+            GP model for shear buckling data, if None uses closed-form instead
+        cripplingGP : TACSCripplingGaussianProcessModel, optional
+            GP model for crippling buckling data, if None uses closed-form instead
+        saveData : bool
+            whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
         """
         _dict = {}
         for comp_name in tacs_components:
@@ -1342,15 +1585,23 @@ cdef class PanelGPs:
             )
         return _dict
 
-# don't make this class a subclass of BladeStiffenedShellConstitutive here because
-# otherwise it tries to call the subclass constructor too and that is unnecessary
 cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
-    """This constitutive class models a shell stiffened with T-shaped stiffeners.
-    The stiffeners are not explicitly modelled.
-    Instead, their stiffness is "smeared" across the shell.
+    """"
+    This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
 
-    The novelty of this class as opposed to the BladeStiffenedShellConstitutive base class
-    is the addition of more accurate buckling constraints through Gaussian Processes of Machine Learning.
+    This class is a subclass of the BladeStiffenedShellConstitutive base class
+    and includes higher-fidelity buckling constraints using Gaussian Processes for Machine Learning.
+    The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
+
+    For the methods below, consider a panel with dimensions a the panel length, b the panel width,
+        h the panel thickness, and stiffeners along the length or 1-direction.
+    The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
+        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
+    For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
+        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+        by Sean Engelstad, Brian Burke, Graeme Kennedy.
 
     Parameters
     ----------
@@ -1398,6 +1649,8 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
     panelWidthNum : int, optional
         Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    CPTstiffenerCrippling : bool
+        whether to use CPT (classical plate theory) for stiffener crippling buckling predictions in the closed-form solution case (default False)
     panelGPs: TACSPanelGPs
         container for the three GP models for each panel / TACS component
 
@@ -1498,18 +1751,120 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         self.ptr.incref()
 
     def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the global axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / b^2 / (1 + delta)
+                with delta = E1s * As / (E1p * sp * h)
+        """
         return self.gp_blade_ptr.nondimCriticalGlobalAxialLoad(rho_0, xi, gamma, zeta)
 
     def nondimCriticalLocalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the local axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the center of the skin, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2
+        """
         return self.gp_blade_ptr.nondimCriticalLocalAxialLoad(rho_0, xi, zeta)
 
     def nondimCriticalGlobalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the global shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / b^2
+        """
         return self.gp_blade_ptr.nondimCriticalGlobalShearLoad(rho_0, xi, gamma, zeta)
 
     def nondimCriticalLocalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the local shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        D11 here is for the center of the panel, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / s_p^2
+        """
         return self.gp_blade_ptr.nondimCriticalLocalShearLoad(rho_0, xi, zeta)
 
     def nondimStiffenerCripplingLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the stiffener crippling mode of the stiffener.
+        Each of the material parameters here 
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the stiffener, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2; here D11 is for the local panel centroid
+        """
         return self.gp_blade_ptr.nondimStiffenerCripplingLoad(rho_0, xi, genPoiss, zeta)
 
     def setKSWeight(self, double ksWeight):
@@ -1548,7 +1903,24 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
         includeStiffenerColumnBuckling=None,
         includeStiffenerCrippling=None,
     ):
-
+        """
+        set the individual failure modes used in the GP constitutive class used in the failure index computation
+        
+        Parameters
+        ----------
+        includePanelMaterialFailure : bool
+            use the panel material failure mode in the failure index
+        includeStiffenerMaterialFailure : bool
+            use the stiffener material failure mode in the failure index
+        includeLocalBuckling : bool
+            use the local buckling failure mode in the failure index
+        includeGlobalBuckling : bool
+            use the global buckling failure mode in the failure index
+        includeStiffenerColumnBuckling : bool
+            use the stiffener column buckling failure mode in the failure index
+        includeStiffenerCrippling : bool
+            use the stiffener crippling failure mode in the failure index
+        """
         if self.gp_blade_ptr:
             if includePanelMaterialFailure is not None:
                 self.gp_blade_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
