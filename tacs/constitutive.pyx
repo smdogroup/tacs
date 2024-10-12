@@ -1786,8 +1786,6 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
         xi : float
             the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
-        gamma : float
-            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
         zeta : float
             the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
 
@@ -1832,8 +1830,6 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
         xi : float
             the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
-        gamma : float
-            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
         zeta : float
             the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
 
@@ -1846,8 +1842,7 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
     def nondimStiffenerCripplingLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta=0.0):
         """
         predict the non-dimensional buckling load N11,cr^* for the stiffener crippling mode of the stiffener.
-        Each of the material parameters here 
-        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Uses the closed-form solution if PanelGPs.cripplingGP is None or the cripplingGP ML model if PanelGPs.cripplingGP is not None
 
 
         Parameters
@@ -1856,14 +1851,14 @@ cdef class GPBladeStiffenedShellConstitutive(ShellConstitutive):
             the affine aspect ratio of the stiffener, rho_0 = a/b * 4thRoot(D22 / D11)
         xi : float
             the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
-        gamma : float
-            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        genPoiss : float
+            the generalized Poisson's ratio for weak BCs such as the stiffener with its free edge, eps = D12 / (D12 + 2 * D66)
         zeta : float
             the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
 
         Returns:
             N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
-                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2; here D11 is for the local panel centroid
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11s * D22s) / h_s^2; here D11s, D22s are for the stiffener laminate
         """
         return self.gp_blade_ptr.nondimStiffenerCripplingLoad(rho_0, xi, genPoiss, zeta)
 
