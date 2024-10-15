@@ -377,7 +377,8 @@ cdef extern from "TACSAssembler.h":
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
                               MatrixOrientation matOr,
-                              TacsScalar loadScale)
+                              TacsScalar loadScale,
+                              bool applyBCs)
         void assembleMatType(ElementMatrixType matType,
                              TACSMat *A, MatrixOrientation matOr,
                              TacsScalar loadScale)
@@ -395,7 +396,8 @@ cdef extern from "TACSAssembler.h":
                        TACSBVec **dfdx)
         void addSVSens(double alpha, double beta, double gamma,
                        int numFuncs, TACSFunction **funcs,
-                       TACSBVec **fuSens)
+                       TACSBVec **fuSens,
+                       bool applyBCs)
         void addAdjointResProducts(double scale, int numAdjoints,
                                    TACSBVec **adjoint, TACSBVec **dfdx,
                                    TacsScalar loadScale)

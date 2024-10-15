@@ -4257,7 +4257,8 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
                                      TacsScalar gamma, TACSBVec *residual,
                                      TACSMat *A, MatrixOrientation matOr,
-                                     const TacsScalar lambda) {
+                                     const TacsScalar lambda,
+                                     const bool applyBCs) {
   // Zero the residual and the matrix
   if (residual) {
     residual->zeroEntries();
@@ -4365,7 +4366,9 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
   }
 
   // Apply the appropriate boundary conditions
-  A->applyBCs(bcMap);
+  if (applyBCs) {
+    A->applyBCs(bcMap);
+  }
 }
 
 /**
@@ -4898,7 +4901,8 @@ void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
 */
 void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
                               TacsScalar gamma, int numFuncs,
-                              TACSFunction **funcs, TACSBVec **dfdu) {
+                              TACSFunction **funcs, TACSBVec **dfdu,
+                              const bool applyBCs) {
   // First check if this is the right assembly object
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k] && this != funcs[k]->getAssembler()) {
@@ -4966,7 +4970,9 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k]) {
       dfdu[k]->endSetValues(TACS_ADD_VALUES);
-      dfdu[k]->applyBCs(bcMap);
+      if (applyBCs) {
+        dfdu[k]->applyBCs(bcMap);
+      }
     }
   }
 }

@@ -222,7 +222,8 @@ class TACSAssembler : public TACSObject {
   void assembleJacobian(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         TACSBVec *residual, TACSMat *A,
                         MatrixOrientation matOr = TACS_MAT_NORMAL,
-                        const TacsScalar lambda = 1.0);
+                        const TacsScalar lambda = 1.0,
+                        const bool applyBCs = true);
   void assembleMatType(ElementMatrixType matType, TACSMat *A,
                        MatrixOrientation matOr = TACS_MAT_NORMAL,
                        const TacsScalar lambda = 1.0);
@@ -265,7 +266,8 @@ class TACSAssembler : public TACSObject {
   void addDVSens(TacsScalar coef, int numFuncs, TACSFunction **funcs,
                  TACSBVec **dfdx);
   void addSVSens(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                 int numFuncs, TACSFunction **funcs, TACSBVec **dfdu);
+                 int numFuncs, TACSFunction **funcs, TACSBVec **dfdu,
+                 const bool applyBCs = true);
   void addAdjointResProducts(TacsScalar scale, int numAdjoints,
                              TACSBVec **adjoint, TACSBVec **dfdx,
                              const TacsScalar lambda = 1.0);
@@ -500,7 +502,7 @@ class TACSAssembler : public TACSObject {
     // Information for adjoint-dR/dx products
     int numAdjoints;
     TACSBVec **adjoints;
-  } * tacsPInfo;
+  } *tacsPInfo;
 
   // The pthread data required to pthread tacs operations
   int numCompletedElements;     // Keep track of how much work has been done
