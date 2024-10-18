@@ -1666,8 +1666,18 @@ class StaticProblem(TACSProblem):
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
-
-        self.K.mult(self.phi, self.res)
+        self.res.zeroEntries()
+        self.assembler.addJacobianVecProduct(
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            self.phi,
+            self.res,
+            tacs.TACS.TRANSPOSE,
+            self._loadScale,
+            applyBCs=False,
+        )
         # Add bc terms back in
         self.res.axpy(1.0, bcTerms)
 
