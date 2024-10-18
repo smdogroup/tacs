@@ -259,6 +259,33 @@ class PanelLengthConstraint(TACSConstraint):
             self.constraintsUpToDate[key] = False
             self.constraintsSensUpToDate[key] = False
 
+    def computeRefAxis(self, refAxis: np.ndarray, comp_bndry_node_coords: np.ndarray):
+        """
+        remove the panelNormal from the refAxis
+
+        Parameters
+        ----------
+        refAxis : numpy.ndarray
+            an array of size (3,) for the xyz coordinates of the original refAxis from transform object
+        comp_bndry_node_coords : numpy.ndarray
+            an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component
+
+        Returns
+        -------
+        numpy.ndarray
+            an array of size (3,) for xyz coords of the panel length axis after the panelNormal component has been removed
+        """
+        # For a more accurate length calculation, roject the ref axis
+        # onto the "average" plane of the baseline panel geometry by
+        # using an SVD to compute a normal vector
+        centroid = np.mean(comp_bndry_node_coords, axis=0, keepdims=True)
+        centredPoints = comp_bndry_node_coords - centroid
+        _, _, VT = np.linalg.svd(centredPoints, full_matrices=False)
+        panelNormal = VT[-1]
+        refAxis -= np.dot(refAxis, panelNormal) * panelNormal
+        refAxis /= np.linalg.norm(refAxis)
+        return refAxis
+
     def addConstraint(self, conName, compIDs=None, lower=None, upper=None, dvIndex=0):
         """
         Generic method to adding a new constraint set for TACS.
@@ -325,15 +352,8 @@ class PanelLengthConstraint(TACSConstraint):
                         f"The elements in component {self.meshLoader.compDescripts[compID]} do not have a reference axis. Please define one by using the 'ShellRefAxisTransform' class with your elements"
                     ) from e
 
-                # For a more accurate length calculation, roject the ref axis
-                # onto the "average" plane of the baseline panel geometry by
-                # using an SVD to compute a normal vector
-                centroid = np.mean(boundaryNodeCoords[compID], axis=0, keepdims=True)
-                centredPoints = boundaryNodeCoords[compID] - centroid
-                _, _, VT = np.linalg.svd(centredPoints, full_matrices=False)
-                panelNormal = VT[-1]
-                refAxis -= np.dot(refAxis, panelNormal) * panelNormal
-                refAxis /= np.linalg.norm(refAxis)
+                # remove the panelNormal from the adjusted ref axis
+                refAxis = self.computeRefAxis(refAxis, boundaryNodeCoords[compID])
                 refAxes.append(refAxis)
 
                 # Now figure out where the DV for this component lives

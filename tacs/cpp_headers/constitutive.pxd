@@ -191,25 +191,8 @@ cdef extern from "TACSGaussianProcessModel.h":
         void getTrainingData(TacsScalar*)
 
 cdef extern from "TACSGaussianProcessModel.h":
-    cdef cppclass TACSAxialGaussianProcessModel(TACSGaussianProcessModel):
-        TACSAxialGaussianProcessModel(
-            int, # n_train
-            TacsScalar[], # Xtrain
-            TacsScalar[], # alpha
-            TacsScalar[], # theta
-        )
-
-cdef extern from "TACSGaussianProcessModel.h":
-    cdef cppclass TACSShearGaussianProcessModel(TACSAxialGaussianProcessModel):
-        TACSShearGaussianProcessModel(
-            int, # n_train
-            TacsScalar[], # Xtrain
-            TacsScalar[], # alpha
-            TacsScalar[], # theta
-        )
-cdef extern from "TACSGaussianProcessModel.h":
-    cdef cppclass TACSCripplingGaussianProcessModel(TACSAxialGaussianProcessModel):
-        TACSCripplingGaussianProcessModel(
+    cdef cppclass TACSBucklingGaussianProcessModel(TACSGaussianProcessModel):
+        TACSBucklingGaussianProcessModel(
             int, # n_train
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
@@ -219,9 +202,9 @@ cdef extern from "TACSGaussianProcessModel.h":
 cdef extern from "TACSPanelGPs.h":
     cdef cppclass TACSPanelGPs:
         TACSPanelGPs(
-            TACSAxialGaussianProcessModel*, # axial GP
-            TACSShearGaussianProcessModel*, # shear GP
-            TACSCripplingGaussianProcessModel*, # crippling GP
+            TACSBucklingGaussianProcessModel*, # axial GP
+            TACSBucklingGaussianProcessModel*, # shear GP
+            TACSBucklingGaussianProcessModel*, # crippling GP
             bool,
         )
 

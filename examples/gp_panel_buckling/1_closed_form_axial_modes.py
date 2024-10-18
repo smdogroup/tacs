@@ -49,10 +49,6 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
     panelWidth=1.0,
     flangeFraction=0.8,
 )
-# Set the KS weight really low so that all failure modes make a
-# significant contribution to the failure function derivatives
-# con.setKSWeight(20.0)
-# con.setCFShearMode(2)
 
 xi = 1.0  # 0.4
 

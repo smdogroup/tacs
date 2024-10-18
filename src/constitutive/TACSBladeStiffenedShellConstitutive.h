@@ -18,7 +18,6 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 // =============================================================================
 // Extension Includes
 // =============================================================================
-#include <functional>
 
 #include "TACSBeamConstitutive.h"
 #include "TACSMaterialProperties.h"

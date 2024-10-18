@@ -1292,12 +1292,13 @@ cdef class GaussianProcess:
         self.base_gp.setAlpha(<TacsScalar*>alpha.data)
         return
 
-cdef class AxialGP(GaussianProcess):
+cdef class BucklingGP(GaussianProcess):
     """
     Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
     Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
     The ML model uses non-dimensional inputs and outputs as follows:
-        log(N_11,cr^*) = AxialGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+        log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+        log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
     The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
 
     Parameters
@@ -1316,92 +1317,15 @@ cdef class AxialGP(GaussianProcess):
     @classmethod
     def from_csv(cls, csv_file, theta_csv):
         """
-        Construct an AxialGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
         the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the AxialGP. Namely using the ml_buckling
+            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
         The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
         and is the following:
-            axial_gp = AxialGP.from_csv(
+            axial_gp = BucklingGP.from_csv(
                 csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
             )
-
-        Parameters
-        ----------
-        csv_file : filepath or str
-            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
-            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
-        theta_csv : filepath or str
-            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
-
-        Returns:
-            AxialGP object
-        """
-        # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
-        # optional import
-        import pandas as pd
-
-        df = pd.read_csv(csv_file)
-        Xtrain_mat = df[df.columns[1:5]].to_numpy(dtype=dtype)
-        alpha = df[df.columns[-1]].to_numpy(dtype=dtype)
-        n_train = Xtrain_mat.shape[0]
-        n_param = 4
-
-        Xtrain = np.zeros((n_train*n_param,), dtype=dtype)
-        # stagger the array entries
-        for iparam in range(4):
-            Xtrain[iparam::4] = Xtrain_mat[:,iparam]
-
-        theta_df = pd.read_csv(theta_csv)
-        theta_opt = theta_df[theta_df.columns[-1]].to_numpy(dtype=dtype)
-
-        return cls(n_train, Xtrain, alpha, theta_opt)
-
-    def __cinit__(
-        self,
-        int n_train, 
-        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
-    ):
-        self.axial_gp = new TACSAxialGaussianProcessModel(
-            n_train,
-            <TacsScalar*>Xtrain.data,
-            <TacsScalar*>alpha.data,
-            <TacsScalar*>theta.data,
-        )
-        self.base_gp = self.axial_gp
-        
-cdef class ShearGP(AxialGP):
-    """
-    Gaussian Process ML model to predict N_12,cr^* non-dimensional buckling loads of global shear modes.
-    Local shear mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
-    The ML model uses non-dimensional inputs and outputs as follows:
-        log(N_12,cr^*) = ShearGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
-    The shearGP model accomodoates making multiple test point predictions in parallel as do many ML models.
-
-    Parameters
-    ----------
-    Xtrain : np.ndarray
-        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
-        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
-        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
-    alpha : np.ndarray
-        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
-    theta : np.ndarray
-        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
-    """
-
-    n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
-
-    @classmethod
-    def from_csv(cls, csv_file, theta_csv):
-        """
-        Construct a ShearGP from csv_files in the ml_buckling repo (or your own dataset csv files) which contain
-        the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the ShearGP. Namely using the ml_buckling
-        The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
-        and is the following:
-            shear_gp = ShearGP.from_csv(
+            shear_gp = BucklingGP.from_csv(
                 csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv
             )
 
@@ -1414,10 +1338,26 @@ cdef class ShearGP(AxialGP):
             path to a csv file that holds the theta hyperparameters in one column with 13 entries.
 
         Returns:
-            ShearGP object
+            BucklingGP object
         """
         # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
-        return super(ShearGP,cls).from_csv(csv_file, theta_csv)
+        # optional import
+
+        full_arr = np.loadtxt(csv_file, skiprows=1, delimiter=",")
+        Xtrain_mat = full_arr[:, 1:5].astype(dtype=dtype)
+        alpha = full_arr[:, -1].astype(dtype=dtype)
+
+        n_train = Xtrain_mat.shape[0]
+        n_param = 4
+
+        Xtrain = np.zeros((n_train*n_param,), dtype=dtype)
+        # stagger the array entries
+        for iparam in range(4):
+            Xtrain[iparam::4] = Xtrain_mat[:,iparam]
+
+        theta_opt = np.loadtxt(theta_csv, skiprows=1, delimiter=",")[:,-1].astype(dtype=dtype)
+
+        return cls(n_train, Xtrain, alpha, theta_opt)
 
     def __cinit__(
         self,
@@ -1426,71 +1366,13 @@ cdef class ShearGP(AxialGP):
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
         np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
     ):
-        self.gp = new TACSShearGaussianProcessModel(
+        self.buckling_gp = new TACSBucklingGaussianProcessModel(
             n_train,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
             <TacsScalar*>theta.data,
         )
-        self.base_gp = self.axial_gp = self.gp
-
-cdef class CripplingGP(AxialGP):
-    """
-    Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of stiffener crippling modes.
-    The ML model uses non-dimensional inputs and outputs as follows:
-        log(N_11,cr^*) = CripplingGP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
-    The cripplingGP model accomodoates making multiple test point predictions in parallel as do many ML models.
-
-    Parameters
-    ----------
-    Xtrain : np.ndarray
-        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
-        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
-        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
-    alpha : np.ndarray
-        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
-    theta : np.ndarray
-        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
-    """
-    n_param = 4 # [log(1+xi), log(rho0), log(genEps), log(1+10^3 * zeta)]
-
-    @classmethod
-    def from_csv(cls, csv_file, theta_csv):
-        """
-        Construct a CripplingGP from csv_files in the ml_buckling repo (or your own dataset csv files) which contain
-        the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the CripplingGP. Namely using the ml_buckling
-        This class is not constructed in the ml_buckling repo since it was deemed that cripling closed-form solution is fairly 
-            accurate for blade stiffeners => as the aspect ratios are fairly high.
-
-        Parameters
-        ----------
-        csv_file : filepath or str
-            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
-            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
-        theta_csv : filepath or str
-            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
-
-        Returns:
-            CripplingGP object
-        """
-        # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
-        return super(CripplingGP,cls).from_csv(csv_file, theta_csv)
-
-    def __cinit__(
-        self,
-        int n_train, 
-        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
-        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
-    ):
-        self.gp = new TACSCripplingGaussianProcessModel(
-            n_train,
-            <TacsScalar*>Xtrain.data,
-            <TacsScalar*>alpha.data,
-            <TacsScalar*>theta.data,
-        )
-        self.base_gp = self.axial_gp = self.gp
+        self.base_gp = self.buckling_gp
 
 cdef class PanelGPs:
     """
@@ -1504,8 +1386,8 @@ cdef class PanelGPs:
     # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
 
     def callback_generator(tacs_component_names):
-        axialGP = constitutive.AxialGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
-        shearGP = constitutive.ShearGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
         panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
 
         def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
@@ -1517,32 +1399,32 @@ cdef class PanelGPs:
 
     Parameters
     ----------
-    axialGP : TACSAxialGaussianProcessModel, optional
+    BucklingGP : TACSAxialGaussianProcessModel, optional
         GP model for axial buckling data, if None uses closed-form instead
-    shearGP : TACSShearGaussianProcessModel, optional
+    BucklingGP : TACSShearGaussianProcessModel, optional
         GP model for shear buckling data, if None uses closed-form instead
-    cripplingGP : TACSCripplingGaussianProcessModel, optional
+    BucklingGP : TACSCripplingGaussianProcessModel, optional
         GP model for crippling buckling data, if None uses closed-form instead
     saveData : bool
         whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
     """
     def __cinit__(
         self,
-        AxialGP axialGP = None, 
-        ShearGP shearGP = None,
-        CripplingGP cripplingGP = None,
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
         bool saveData = True,
     ):   
         # make null ptrs for GPs if not defined and store them in this class too
-        cdef TACSAxialGaussianProcessModel *axial_gp_ptr = NULL
+        cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
         if axialGP is not None:
-            axial_gp_ptr = (<AxialGP>axialGP).axial_gp
-        cdef TACSShearGaussianProcessModel *shear_gp_ptr = NULL
+            axial_gp_ptr = (<BucklingGP>axialGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *shear_gp_ptr = NULL
         if shearGP is not None:
-            shear_gp_ptr = (<ShearGP>shearGP).gp
-        cdef TACSCripplingGaussianProcessModel *crippling_gp_ptr = NULL
+            shear_gp_ptr = (<BucklingGP>shearGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *crippling_gp_ptr = NULL
         if cripplingGP is not None:
-            crippling_gp_ptr = (<CripplingGP>cripplingGP).gp
+            crippling_gp_ptr = (<BucklingGP>cripplingGP).buckling_gp
 
         self.gptr = new TACSPanelGPs(
             axial_gp_ptr,
@@ -1555,9 +1437,9 @@ cdef class PanelGPs:
     def component_dict(
         cls, 
         tacs_components, # list of strings of each tacs component name
-        AxialGP axialGP = None, 
-        ShearGP shearGP = None,
-        CripplingGP cripplingGP = None,
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
         bool saveData = True,
         ):
         """
@@ -1566,11 +1448,11 @@ cdef class PanelGPs:
 
         Parameters
         ----------
-        axialGP : TACSAxialGaussianProcessModel, optional
+        BucklingGP : TACSAxialGaussianProcessModel, optional
             GP model for axial buckling data, if None uses closed-form instead
-        shearGP : TACSShearGaussianProcessModel, optional
+        BucklingGP : TACSShearGaussianProcessModel, optional
             GP model for shear buckling data, if None uses closed-form instead
-        cripplingGP : TACSCripplingGaussianProcessModel, optional
+        BucklingGP : TACSCripplingGaussianProcessModel, optional
             GP model for crippling buckling data, if None uses closed-form instead
         saveData : bool
             whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)

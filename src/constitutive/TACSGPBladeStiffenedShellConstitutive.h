@@ -33,80 +33,29 @@ constraints of the stiffened panels.
 
 /**
  * @brief Constitutive model for a blade-stiffened shell
+ * this class inherits from TACSBladeStiffenedShellConstitutive.cpp, and
+ * overwrites some buckling predictions using machine learning or more accurate
+ * closed-form solutions for global and local buckling.
  *
- * This constitutive class models a shell stiffened with T-shaped stiffeners.
- * The stiffeners are not explicitly modelled. Instead, their stiffness is
- * "smeared" across the shell.
+ * The TACSPanelGPs object is input into this class for each panel (see
+ * smdogroup/ml_buckling repo on examples from the python side), which is useful
+ * in saving and reloading buckling predictions for each element in the same
+ * panel / TACS component (to speedup computation). To use Machine Learning
+ * buckling predictions with a Gaussian Process model for global and local
+ * buckling, the user should create TACSAxialGaussianProcessModel and
+ * TACSShearGaussianProcessModel objects in the TACSPanelGPs. If the
+ * TACSAxialGaussianProcessModel or TACSShearGaussianProcessModel objects are
+ * empty or the TACSPanelGPs is empty, then the axial or shear buckling loads
+ * will use closed-form solution buckling predictions instead. Note that either
+ * the Axial GP or the shear GP can each be provided or not. Data for the
+ * trained GP models is located on the smdogroup/ml_buckling github repo.
  *
- *                         |                      |         ^
- *                         |                      |         |
- *                         |                      |         |
- *                         |                      |       height
- *                         | <-------pitch------> |         |
- * Stiffener               |                      |         v
- * thickness ---> -----------------      -----------------
- *     --------------------------------------------------- <--- Panel thickness
+ * The main differences in this class and its superclass
+ * TACSBladeStiffenedShellConstitutive.cpp for the constructor are the new
+ * inputs for panelWidth and panelWidthNum, an additional flag for
+ * CPTstiffenerCrippling, and the PanelGPs object which holds machine learning
+ * objects.
  *
- *     ----------> 2-direction
- *     |
- *     |
- *     |
- *     |
- *     v
- *     3-direction (shell normal)
- *
- * The stiffener is modelled as a T-shaped beam as shown above, and is modelled
- * as pointing in the opposite of the shell normal. The thickness of the
- * stiffener web and flange are the same. The ratio of the stiffener flange
- * width to the stiffener height is controlled by the flangeFraction parameter,
- * which defaults to 1.0 (i.e. the flange width is equal to the stiffener
- * height). This value can be set when creating the constitutive object and is
- * then fixed.
- *
- * The panel and stiffener are modelled as laminates, both of which are
- * parameterised by an arbitrary number of ply angles and fractions. The
- * laminate properties are then computed using a smeared stiffness approach,
- * which assumes that the various ply angles are distributed evenly throughout
- * the thickness of the panel. This is a valid assumption for thick laminates.
- *
- * The design variables (in order) for this constitutive model are:
- * - Panel Length
- * - Stiffener pitch
- * - Panel thickness
- * - Panel ply fractions
- * - Stiffener height
- * - Stiffener thickness
- * - Stiffener ply fractions
- * - Panel Width
- * NOTE : the panelLength design variable is removed from the
- * TACSBladeStiffenedShellConstitutive.h model
- *
- * The failure criterion returned by this model combines numerous possible
- * failure modes into a single value. A material failure criterion (which one
- * depends on the Orthotropic ply objects you pass to this class) is computed at
- * the upper and lower surface of the panel and at the tip of the stiffener,
- * this calculation is performed for every ply angle present in the panel and
- * stiffener laminate. Additionally buckling criteria are computed for combined
- * shear and axial buckling for both a global buckling mode (i.e the entire
- * panel buckles) and a local buckling mode (i.e. the panel buckles between a
- * pair of stiffeners) and a stiffener crippling mode. These buckling failure
- * values are aggregated along with the material failure values into a single
- * failure value using KS aggregation. The smoothness and conservatism of
- * this aggregation can be controlled using the `setKSWeight` method.
- *
- * The panel length design variables do not directly affect the stiffness or
- * stresses computed by the model, their only role is to allow the computation
- * of the critical buckling loads used in the buckling failure criteria. When
- * using this constitutive model, you must also add a set of
- * PanelLengthConstraints to force the panel length design variables to be equal
- * to the true physical panel length. Despite seeming needlessly complex, this
- * approach is necessary because this constitutive model has no information
- * about the geometry of your finite element model and so cannot compute the
- * panel length itself.
- *
- * WARNING: If you use ply fractions as design variables, it is currently up to
- * you to add DVConstraints to ensure that the sum of the fractions is equal
- * to 1.0. This is not done automatically (yet).
  */
 class TACSGPBladeStiffenedShellConstitutive
     : public TACSBladeStiffenedShellConstitutive {
@@ -165,31 +114,59 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the nondimensional parameter computations against finite
-   * difference.
+   * difference. Tests all non-dimensional parameter subtests inside this one
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error among all non-dimensional parameter
+   * subtests
    */
   TacsScalar testNondimensionalParameters(TacsScalar epsilon, int printLevel);
 
   /**
    *
-   * @brief Test the axial critical loads.
+   * @brief Test the axial critical loads => includes global axial and local
+   * axial buckling subtests
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of global axial and local axial subtests
    */
   TacsScalar testAxialCriticalLoads(TacsScalar epsilon, int printLevel);
 
   /**
    *
-   * @brief Test the shear critical loads.
+   * @brief Test the shear critical loads => includes local shear and global
+   * shear subtests
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testShearCriticalLoads(TacsScalar epsilon, int printLevel);
 
   /**
    *
-   * @brief Test the crippling critical loads.
+   * @brief Test the crippling critical loads
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testStiffenerCripplingLoad(TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test all GP tests
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error among all the subtest derivative tests
    */
   TacsScalar testAllTests(TacsScalar epsilon, int printLevel);
 
@@ -198,21 +175,21 @@ class TACSGPBladeStiffenedShellConstitutive
   // ==============================================================================
 
   // get the three Gaussian Process model pointers
-  TACSAxialGaussianProcessModel* getAxialGP() {
+  TACSBucklingGaussianProcessModel* getAxialGP() {
     if (this->panelGPs) {
       return this->panelGPs->getAxialGP();
     } else {
       return nullptr;
     }
   }
-  TACSShearGaussianProcessModel* getShearGP() {
+  TACSBucklingGaussianProcessModel* getShearGP() {
     if (this->panelGPs) {
       return this->panelGPs->getShearGP();
     } else {
       return nullptr;
     }
   }
-  TACSCripplingGaussianProcessModel* getCripplingGP() {
+  TACSBucklingGaussianProcessModel* getCripplingGP() {
     if (this->panelGPs) {
       return this->panelGPs->getCripplingGP();
     } else {
@@ -389,6 +366,14 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar evalGlobalPanelBucklingStrainSens(const TacsScalar e[],
                                                TacsScalar sens[]) override;
 
+  /**
+   * @brief Compute the sensitivity of the stiffener crippling strength ratio
+   * w.r.t the stiffener strains
+   *
+   * @param stiffenerStrain stiffener shell strains strains
+   * @param sens Sensitivity of the output w.r.t the shell strains
+   * @return TacsScalar Strength Ratio
+   */
   TacsScalar evalStiffenerCripplingStrainSens(
       const TacsScalar stiffenerStrain[], TacsScalar sens[]) override;
 
@@ -426,6 +411,15 @@ class TACSGPBladeStiffenedShellConstitutive
                                     const TacsScalar strain[], int dvLen,
                                     TacsScalar dfdx[]) override;
 
+  /**
+   * @brief Compute the sensitivity of the stiffener crippling strength ratio
+   * w.r.t the design variables
+   *
+   * @param scale the derivative scalar for the stiffener crippling failure
+   * index coming in
+   * @param stiffenerStrain the shell strains in the stiffener
+   * @param dfdx the output DV derivatives sensitivity
+   */
   void addStiffenerCripplingDVSens(const TacsScalar scale,
                                    const TacsScalar stiffenerStrain[],
                                    TacsScalar dfdx[]) override;
@@ -434,9 +428,25 @@ class TACSGPBladeStiffenedShellConstitutive
   // Stiffener crippling helper functions
   // ==============================================================================
 
+  /**
+   * @brief compute the in plane load in the stiffener N11,stiff
+   *
+   * @param stiffenerStrain the midplane strains in the stiffener
+   * @param A11s the A11 material constant for the stiffener
+   * @return the stiffener in plane load N11,stiff
+   */
   TacsScalar computeStiffenerInPlaneLoad(const TacsScalar stiffenerStrain[],
                                          TacsScalar* A11s);
 
+  /**
+   * @brief compute the DV sensitivities of the stiffener in plane load
+   * N11,stiff
+   *
+   * @param scale the derivative df/dN11,stiff of the output in plane load
+   * @param stiffenerStrain the midplane strains eps11 in the stiffener shell
+   * @param dN11_stiff the jacobian dstiff_fail_index / dN11,stiff
+   * @param dfdx the final updated DV derivatives df/dx
+   */
   TacsScalar computeStiffenerInPlaneLoadSens(const TacsScalar scale,
                                              const TacsScalar stiffenerStrain[],
                                              const TacsScalar dN11_stiff,
@@ -489,6 +499,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the affine aspect ratio sensitivity.
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testAffineAspectRatio(const TacsScalar epsilon, int printLevel);
 
@@ -532,6 +547,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the generalized rigidity sensitivity.
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testLaminateIsotropy(const TacsScalar epsilon, int printLevel);
 
@@ -568,6 +588,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the generalized poisson's ratio sensitivity.
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testGeneralizedPoissonsRatio(const TacsScalar epsilon,
                                           int printLevel);
@@ -607,6 +632,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the stiffener area ratio sensitivity aka delta parameter
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testStiffenerAreaRatio(const TacsScalar epsilon, int printLevel);
 
@@ -648,6 +678,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the stiffener stiffness ratio sensitivity aka gamma parameter
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testStiffenerStiffnessRatio(const TacsScalar epsilon,
                                          int printLevel);
@@ -688,6 +723,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the transverse shear parameter sensitivity aka zeta parameter
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testTransverseShearParameter(const TacsScalar epsilon,
                                           int printLevel);
@@ -711,6 +751,12 @@ class TACSGPBladeStiffenedShellConstitutive
       const TacsScalar delta, const TacsScalar rho_0, const TacsScalar xi,
       const TacsScalar gamma, const TacsScalar zeta);
 
+  /*
+   * computes the overall centroid zc of the panel and stiffener cross-section
+   * in the 23-plane
+   *
+   * @param
+   */
   TacsScalar computeOverallCentroid(const TacsScalar E1p, const TacsScalar E1s);
 
   void computeOverallCentroidSens(const TacsScalar znSens, const TacsScalar E1p,
@@ -756,6 +802,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the critical global axial load function
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalGlobalAxialLoad(const TacsScalar epsilon,
                                          int printLevel);
@@ -763,12 +814,22 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the overall centroid method
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testOverallCentroid(const TacsScalar epsilon, int printLevel);
 
   /**
    *
    * @brief Test the computation of D11p with overall centroid
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testPanelGlobalBucklingStiffness(const TacsScalar epsilon,
                                               int printLevel);
@@ -776,6 +837,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the other util tests
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testOtherTests(const TacsScalar epsilon, int printLevel);
 
@@ -824,6 +890,11 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the critical local axial load function
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalLocalAxialLoad(const TacsScalar epsilon,
                                         int printLevel);
@@ -881,13 +952,23 @@ class TACSGPBladeStiffenedShellConstitutive
   /**
    *
    * @brief Test the critical global shear load function
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalGlobalShearLoad(const TacsScalar epsilon,
                                          int printLevel);
 
   /**
    *
-   * @brief Test the critical global shear load function
+   * @brief Test the critical global shear load function at low rho0
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalGlobalShearLoad_LowAR(const TacsScalar epsilon,
                                                int printLevel);
@@ -940,14 +1021,24 @@ class TACSGPBladeStiffenedShellConstitutive
 
   /**
    *
-   * @brief Test the critical local shear load function
+   * @brief Test the critical local shear load function at high AR rho0
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalLocalShearLoad(const TacsScalar epsilon,
                                         int printLevel);
 
   /**
    *
-   * @brief Test the critical local shear load function
+   * @brief Test the critical local shear load function at low AR rho0
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testCriticalLocalShearLoad_LowAR(const TacsScalar epsilon,
                                               int printLevel);
@@ -965,9 +1056,33 @@ class TACSGPBladeStiffenedShellConstitutive
   void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
                          TacsScalar* lam1bar, TacsScalar* lam2bar);
 
+  /**
+   * @brief Compute the panel global buckling constant D11 adjusted for the
+   * overall centroid of the panel & stiffener
+   *
+   * @param E1p the effective modulus of the panel Q11 - Q12^2 / Q22
+   * @param zn the overall centroid in the 23-plane or 1-plane of the panel &
+   * stiffeners
+   * @return the overall centroid-adjusted D11 constant
+   */
   void computePanelGlobalBucklingStiffness(const TacsScalar E1p,
                                            const TacsScalar zn, TacsScalar* D1);
 
+  /**
+   * @brief compute sensitivities of the overall centroid-adjusted D11 material
+   * constant
+   *
+   * @param D1Sens the derivative at the D11 level df/dD11, input for
+   * backpropagation
+   * @param E1p the effective modulus of the panel Q11 - Q12^2 / Q22
+   * @param zn the overall centroid in the 23-plane or 1-plane of the panel &
+   * stiffeners
+   * @param spitchsens the output sensitivity of stiffener pitch df/dspitch
+   * @param pthicksens the output sensitivity of panel thickness df/dpthick
+   * @param E1pSens the output sensitivity of effective modulus of the panel
+   * df/dE1p
+   * @param znSens the output sensitivity of the overall centroid, df/dzn
+   */
   void computePanelGlobalBucklingStiffnessSens(
       const TacsScalar D1Sens, const TacsScalar E1p, const TacsScalar zn,
       TacsScalar* spitchSens, TacsScalar* pthickSens, TacsScalar* E1pSens,
@@ -994,18 +1109,50 @@ class TACSGPBladeStiffenedShellConstitutive
 
   /**
    *
-   * @brief Test the nondimShearParams function
+   * @brief Test the nondimShearParams function used in the shear buckling loads
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testNondimShearParams(const TacsScalar epsilon, int printLevel);
 
+  /**
+   * @brief the constraint for shear buckling closed-form solution R(lam1, lam2)
+   *  which is reformulated as constraint on just lam2_bar R(lam2_bar)
+   *
+   * @param lam2sq input lam2_bar^2 non-dimensional mode shape parameter for the
+   * shear mode
+   * @param xi the non-dimensional laminate isotropy
+   * @param gamma the non-dimensional stiffener stiffness ratio
+   * @return the residual R(lam2_bar^2)
+   */
   TacsScalar lam2Constraint(const TacsScalar lam2sq, const TacsScalar xi,
                             const TacsScalar gamma);
+
+  /**
+   * @brief the derivative of the shear buckling closed-form solution constraint
+   * reformulated as R(lam2_bar) = 0
+   *
+   * @param lam2sq input lam2_bar^2 non-dimensional mode shape parameter for the
+   * shear mode
+   * @param xi the non-dimensional laminate isotropy
+   * @param gamma the non-dimensional stiffener stiffness ratio
+   * @return returns the Jacobian of the constraint, dR/dlam2_bar
+   */
   TacsScalar lam2ConstraintDeriv(const TacsScalar lam2sq, const TacsScalar xi,
                                  const TacsScalar gamma);
 
   /**
    *
-   * @brief Test the lam2Constraint function
+   * @brief Test the lam2Constraint function used in the shear buckling
+   * closed-form solution
+   * @param epsilon the step size for a finite difference or complex-step test
+   * (multiply by 1j if complex-step)
+   * @param printLevel an integer flag, with 0 to not print the test result to
+   * terminal and 1 to print to terminal
+   * @return the maximum relative error of the derivative test
    */
   TacsScalar testLam2Constraint(const TacsScalar epsilon, int printLevel);
 
@@ -1067,7 +1214,8 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // --- Design variable values ---
   TacsScalar panelWidth;  ///< Panel width
-  int NUM_CF_MODES = 50;  // number of modes used in closed-form method
+  static const int NUM_CF_MODES =
+      50;  // number of modes used in closed-form method
 
   TacsScalar panelWidthLowerBound = 0.0;
   TacsScalar panelWidthUpperBound = 1e20;
@@ -1081,6 +1229,10 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // debugging modes
   int writeDVmode = 0;  // 0 - normal DVs, 1 - NDparams
+
+  // pointers for Xtest vectors used in GP computation
+  TacsScalar *XtestAxial, *XtestShear, *XtestCrippling;
+  TacsScalar *XtestAxialSens, *XtestShearSens, *XtestCripplingSens;
 
  private:
   // private so that subclass constName for GP buckling constraints doesn't

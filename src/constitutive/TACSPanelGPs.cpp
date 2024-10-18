@@ -1,8 +1,8 @@
 #include "TACSPanelGPs.h"
 
-TACSPanelGPs::TACSPanelGPs(TACSAxialGaussianProcessModel* axialGP,
-                           TACSShearGaussianProcessModel* shearGP,
-                           TACSCripplingGaussianProcessModel* cripplingGP,
+TACSPanelGPs::TACSPanelGPs(TACSBucklingGaussianProcessModel* axialGP,
+                           TACSBucklingGaussianProcessModel* shearGP,
+                           TACSBucklingGaussianProcessModel* cripplingGP,
                            bool saveData) {
   this->axialGP = axialGP;
   if (this->axialGP) {

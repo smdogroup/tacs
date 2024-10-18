@@ -7,7 +7,7 @@ Buckling Constraints
 @Date    :   2024/04/24
 @Author  :   Sean Phillip Engelstad
 @Description : Constitutive model for a blade-stiffened shell. Based on the FSDT
-blade models adopted by Alasdair Christian Gray in the
+blade models adopted by Alasdair Christison Gray in the
 TACSBladeStiffenedShellConstutitutive.h class and the original one by Graeme
 Kennedy. Gaussian Processes for Machine Learning are used for the buckling
 constraints of the stiffened panels.
@@ -75,6 +75,20 @@ TACSGPBladeStiffenedShellConstitutive::TACSGPBladeStiffenedShellConstitutive(
     this->panelGPs->incref();
   }
 
+  // allocate Xtest temporary vectors for each GP
+  if (this->getAxialGP()) {
+    XtestAxial = new TacsScalar[this->getAxialGP()->getNparam()];
+    XtestAxialSens = new TacsScalar[this->getAxialGP()->getNparam()];
+  }
+  if (this->getShearGP()) {
+    XtestShear = new TacsScalar[this->getShearGP()->getNparam()];
+    XtestShearSens = new TacsScalar[this->getShearGP()->getNparam()];
+  }
+  if (this->getCripplingGP()) {
+    XtestCrippling = new TacsScalar[this->getCripplingGP()->getNparam()];
+    XtestCripplingSens = new TacsScalar[this->getCripplingGP()->getNparam()];
+  }
+
   // default value of ksWeight
   this->setKSWeight(100.0);
 }
@@ -90,6 +104,30 @@ TACSGPBladeStiffenedShellConstitutive::
   if (this->panelGPs) {
     this->panelGPs->decref();
     this->panelGPs = nullptr;
+  }
+
+  if (this->getAxialGP()) {
+    delete[] XtestAxial;
+    XtestAxial = nullptr;
+
+    delete[] XtestAxialSens;
+    XtestAxialSens = nullptr;
+  }
+
+  if (this->getShearGP()) {
+    delete[] XtestShear;
+    XtestShear = nullptr;
+
+    delete[] XtestShearSens;
+    XtestShearSens = nullptr;
+  }
+
+  if (this->getCripplingGP()) {
+    delete[] XtestCrippling;
+    XtestCrippling = nullptr;
+
+    delete[] XtestCripplingSens;
+    XtestCripplingSens = nullptr;
   }
 }
 
@@ -461,17 +499,17 @@ void TACSGPBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
   // them into the dfdx) DVsens format [0 - panel length, 1 - stiff pitch, 2 -
   // panel thick,
   //                3 - stiff height, 4 - stiff thick, 5 - panel width]
-  TacsScalar* DVsens = new TacsScalar[6];
+  TacsScalar DVsens[6];
   memset(DVsens, 0, 6 * sizeof(TacsScalar));
 
   // define the material sensivitiies
-  TacsScalar* Dpsens = new TacsScalar[4];  // D11Local,D12,D22,D66
-  TacsScalar* Apsens = new TacsScalar[4];  // A11,A12,A22,A66
+  TacsScalar Dpsens[4];  // D11Local,D12,D22,D66
+  TacsScalar Apsens[4];  // A11,A12,A22,A66
   memset(Dpsens, 0, 4 * sizeof(TacsScalar));
   memset(Apsens, 0, 4 * sizeof(TacsScalar));
 
   // define the non-dimensional (ND) sensitivities [rho0Local, xiLocal, zeta]
-  TacsScalar* NDsens = new TacsScalar[3];
+  TacsScalar NDsens[3];
   memset(NDsens, 0, 3 * sizeof(TacsScalar));
 
   // backprop from the critical axial + shear local buckling loads to the
@@ -550,12 +588,6 @@ void TACSGPBladeStiffenedShellConstitutive::addLocalPanelBucklingDVSens(
   if (this->panelWidthLocalNum >= 0) {
     dfdx[this->panelWidthLocalNum] += scale * DVsens[5];
   }
-
-  // free up pointers for intermed sensitivities
-  delete[] DVsens;
-  delete[] Dpsens;
-  delete[] Apsens;
-  delete[] NDsens;
 }
 
 void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
@@ -632,23 +664,21 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
   // them into the dfdx) DVsens format [0 - panel length, 1 - stiff pitch, 2 -
   // panel thick,
   //                3 - stiff height, 4 - stiff thick, 5 - panel width]
-  TacsScalar* DVsens = new TacsScalar[6];
+  TacsScalar DVsens[6];
   memset(DVsens, 0, 6 * sizeof(TacsScalar));
 
   // sensitivities for E1p, E1s, zn which we'll handle later
-  TacsScalar* E1p_bar = new TacsScalar(0.0);
-  TacsScalar* E1s_bar = new TacsScalar(0.0);
-  TacsScalar* zn_bar = new TacsScalar(0.0);
+  TacsScalar E1p_bar = 0.0, E1s_bar = 0.0, zn_bar = 0.0;
 
   // define the material sensivitiies
-  TacsScalar* Dpsens = new TacsScalar[4];  // D11Global,D12,D22,D66
-  TacsScalar* Apsens = new TacsScalar[4];  // A11,A12,A22,A66
+  TacsScalar Dpsens[4];  // D11Global,D12,D22,D66
+  TacsScalar Apsens[4];  // A11,A12,A22,A66
   memset(Dpsens, 0, 4 * sizeof(TacsScalar));
   memset(Apsens, 0, 4 * sizeof(TacsScalar));
 
   // define the non-dimensional (ND) sensitivities [rho0Global, xiGlobal, delta,
   // gamma, zeta]
-  TacsScalar* NDsens = new TacsScalar[5];
+  TacsScalar NDsens[5];
   memset(NDsens, 0, 5 * sizeof(TacsScalar));
 
   // backprop from the critical axial + shear local buckling loads to the
@@ -672,11 +702,11 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
                               &Dpsens[0], &Dpsens[2], &Dpsens[1],
                               &Dpsens[3]);  // 1 - backprop from xiGlobal
   computeStiffenerAreaRatioSens(NDsens[2], E1p, E1s, &DVsens[4], &DVsens[3],
-                                &DVsens[1], &DVsens[2], E1p_bar,
-                                E1s_bar);  // 2 - backprop from delta
+                                &DVsens[1], &DVsens[2], &E1p_bar,
+                                &E1s_bar);  // 2 - backprop from delta
   computeStiffenerStiffnessRatioSens(
       NDsens[3], D11Global, E1s, zn, &Dpsens[0], &DVsens[4], &DVsens[3],
-      &DVsens[1], E1s_bar, zn_bar);  // 3 - backprop from gamma
+      &DVsens[1], &E1s_bar, &zn_bar);  // 3 - backprop from gamma
   computeTransverseShearParameterSens(
       NDsens[4], A66p, A11p, b, h, &Apsens[3], &Apsens[0], &DVsens[5],
       &DVsens[2]);  // 4 - backprop from zetaPanel
@@ -685,11 +715,11 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
   // ---------------------------------
   // backprop D11p global panel buckling to E1p, E1s and DV sensitivities
   computePanelGlobalBucklingStiffnessSens(Dpsens[0], E1p, zn, &DVsens[1],
-                                          &DVsens[2], E1p_bar, zn_bar);
+                                          &DVsens[2], &E1p_bar, &zn_bar);
 
   // backpropagate zn_bar (sens) to E1p, E1s sensitivities
-  computeOverallCentroidSens(*zn_bar, E1p, E1s, &DVsens[4], &DVsens[3],
-                             &DVsens[2], &DVsens[1], E1p_bar, E1s_bar);
+  computeOverallCentroidSens(zn_bar, E1p, E1s, &DVsens[4], &DVsens[3],
+                             &DVsens[2], &DVsens[1], &E1p_bar, &E1s_bar);
 
   // now backprop to panel ply fraction sensitivities through E1p_bar
   for (int plyNum = 0; plyNum < this->numPanelPlies; plyNum++) {
@@ -697,7 +727,7 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
     if (dvNum >= 0) {
       const TacsScalar* Q = &(this->panelQMats[plyNum * NUM_Q_ENTRIES]);
       TacsScalar jac = (Q[0] - Q[1] * Q[1] / Q[3]);  // dE1p / dply_frac[i]
-      dfdx[dvNum] += scale * (*E1p_bar) * jac;
+      dfdx[dvNum] += scale * E1p_bar * jac;
     }
   }
 
@@ -707,7 +737,7 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
     if (dvNum >= 0) {
       const TacsScalar* Q = &(this->stiffenerQMats[plyNum * NUM_Q_ENTRIES]);
       TacsScalar jac = (Q[0] - Q[1] * Q[1] / Q[3]);  // dE1p / dply_frac[i]
-      dfdx[dvNum] += scale * (*E1s_bar) * jac;
+      dfdx[dvNum] += scale * E1s_bar * jac;
     }
   }
 
@@ -766,15 +796,6 @@ void TACSGPBladeStiffenedShellConstitutive::addGlobalPanelBucklingDVSens(
   if (this->panelWidthLocalNum >= 0) {
     dfdx[this->panelWidthLocalNum] += scale * DVsens[5];
   }
-
-  // free up pointers for intermed sensitivities
-  delete[] DVsens;
-  delete[] Dpsens;
-  delete[] Apsens;
-  delete[] NDsens;
-  delete E1p_bar;
-  delete E1s_bar;
-  delete zn_bar;
 }
 
 void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
@@ -785,18 +806,18 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     // previous section writes directly into dfdx, this section writes into
     // DVsens DVsens format [0 - panel length, 1 - stiff pitch, 2 - panel thick,
     //                3 - stiff height, 4 - stiff thick, 5 - panel width]
-    TacsScalar* DVsens = new TacsScalar[6];
+    TacsScalar DVsens[6];
     memset(DVsens, 0, 6 * sizeof(TacsScalar));
 
     // setup new ND parameter array for stiffener computation
     // ND parameter sens [xi, rho0, genPoiss, zeta]
-    TacsScalar* stiffNDsens = new TacsScalar[4];
+    TacsScalar stiffNDsens[4];
     memset(stiffNDsens, 0, 4 * sizeof(TacsScalar));
 
     // set initial A,D matrix, nondim parameter and DV sensitivities to
     // backpropagate to.
-    TacsScalar* Ds_sens = new TacsScalar[4];  // D11,D12,D22,D66
-    TacsScalar* As_sens = new TacsScalar[4];  // A11,A12,A22,A66
+    TacsScalar Ds_sens[4];  // D11,D12,D22,D66
+    TacsScalar As_sens[4];  // A11,A12,A22,A66
     memset(Ds_sens, 0, 4 * sizeof(TacsScalar));
     memset(As_sens, 0, 4 * sizeof(TacsScalar));
 
@@ -918,13 +939,6 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     if (this->panelWidthLocalNum >= 0) {
       dfdx[this->panelWidthLocalNum] += scale * DVsens[5];
     }
-
-    // free up pointers after go out of scope (to prevent memory leaks)
-    // ---------------------------------------------------
-    delete[] DVsens;
-    delete[] stiffNDsens;
-    delete[] Ds_sens;
-    delete[] As_sens;
 
   } else {  // CPTstiffenerCrippling = false
     // the DOD experimental stiffener crippling solution from Ali's superclass
@@ -1460,14 +1474,13 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoad(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor =
         M_PI * M_PI * sqrt(D11 * D22) / b / b / (1.0 + delta);
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(0, Xtest));
-    delete[] Xtest;
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] = log(one + gamma);
+    XtestAxial[3] = log(one + 1000.0 * zeta);
+    TacsScalar nd_factor =
+        exp(this->panelGPs->predictMeanTestData(0, XtestAxial));
     return dim_factor * nd_factor;
 
   } else {
@@ -1504,18 +1517,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalAxialLoad(
   if (this->getAxialGP()) {
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = 1.0;
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] = log(one + gamma);
+    XtestAxial[3] = log(one + 1000.0 * zeta);
 
     // don't need to use the saved data here since this routine is only meant to
     // be called on a single constitutive object (not a whole mesh with O(1e4)
     // const objects)
-    TacsScalar nd_factor = exp(this->getAxialGP()->predictMeanTestData(Xtest));
-    delete[] Xtest;
+    TacsScalar nd_factor =
+        exp(this->getAxialGP()->predictMeanTestData(XtestAxial));
     return dim_factor * nd_factor;
 
   } else {
@@ -1552,28 +1564,26 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor =
         M_PI * M_PI * sqrt(D11 * D22) / b / b / (1.0 + delta);
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(one + gamma);
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->panelGPs->predictMeanTestData(0, Xtest);
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] = log(one + gamma);
+    XtestAxial[3] = log(one + 1000.0 * zeta);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(0, XtestAxial);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
     // compute sensitivities backwards propagated out of the GP
     // back to the nondim parameter inputs, (this part differentiates the
     // nondim_factor)
-    int n_axial_param = this->getAxialGP()->getNparam();
-    TacsScalar* Xtestsens = new TacsScalar[n_axial_param];
     TacsScalar Ysens = N1sens * output;
-    this->panelGPs->predictMeanTestDataSens(0, Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(0, Ysens, XtestAxial,
+                                            XtestAxialSens);
     *xisens +=
-        Xtestsens[0] / (one + xi);  // chain rule dlog(one + xi)/dxi = 1/xi
-    *rho_0sens += Xtestsens[1] / rho_0;
-    *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
+        XtestAxialSens[0] / (one + xi);  // chain rule dlog(one + xi)/dxi = 1/xi
+    *rho_0sens += XtestAxialSens[1] / rho_0;
+    *gammasens += XtestAxialSens[2] / (1.0 + gamma);
+    *zetasens += XtestAxialSens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // compute the sensivities of inputs in the dimensional constant
     // (this part differentiates the dim factor)
@@ -1581,10 +1591,6 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalAxialLoadSens(
     *D22sens += Ysens * 0.5 / D22;
     *bsens += Ysens * -2.0 / b;
     *deltasens += Ysens * -1.0 / (1.0 + delta);
-
-    // free pointers
-    delete[] Xtest;
-    delete[] Xtestsens;
 
     return output;
 
@@ -1654,14 +1660,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoad(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) /
                             this->stiffenerPitch / this->stiffenerPitch;
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(1, Xtest));
-    delete[] Xtest;
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestAxial[3] = log(one + 1000.0 * zeta);
+    TacsScalar nd_factor =
+        exp(this->panelGPs->predictMeanTestData(1, XtestAxial));
     return dim_factor * nd_factor;
 
   } else {
@@ -1693,17 +1699,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalAxialLoad(
   if (this->getAxialGP()) {
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = 1.0;
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestAxial[3] = log(one + 1000.0 * zeta);
     // don't need to use the saved data here since this routine is only meant to
     // be called on a single constitutive object (not a whole mesh with O(1e4)
     // const objects)
-    TacsScalar nd_factor = exp(this->getAxialGP()->predictMeanTestData(Xtest));
-    delete[] Xtest;
+    TacsScalar nd_factor =
+        exp(this->getAxialGP()->predictMeanTestData(XtestAxial));
     return dim_factor * nd_factor;
 
   } else {
@@ -1739,38 +1745,33 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalAxialLoadSens(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) /
                             this->stiffenerPitch / this->stiffenerPitch;
-    TacsScalar* Xtest = new TacsScalar[this->getAxialGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestAxial[0] = log(one + xi);
+    XtestAxial[1] = log(rho_0);
+    XtestAxial[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestAxial[3] = log(one + 1000.0 * zeta);
 
-    TacsScalar arg = this->panelGPs->predictMeanTestData(1, Xtest);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(1, XtestAxial);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
     // backwards propagate sensitivities out of the axialGP model to nondim
     // params, (this part differentiates the nondim_factor)
-    int n_axial_param = this->getAxialGP()->getNparam();
-    TacsScalar* Xtestsens = new TacsScalar[n_axial_param];
     TacsScalar Ysens = N1sens * output;
-    this->panelGPs->predictMeanTestDataSens(1, Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(1, Ysens, XtestAxial,
+                                            XtestAxialSens);
 
-    *xisens += Xtestsens[0] / (one + xi);
+    *xisens += XtestAxialSens[0] / (one + xi);
     *rho_0sens +=
-        Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
+        XtestAxialSens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
+    *zetasens += XtestAxialSens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
     *D11sens += Ysens * 0.5 / D11;
     *D22sens += Ysens * 0.5 / D22;
     *spitchsens += Ysens * -2.0 / this->stiffenerPitch;
-
-    // free pointers
-    delete[] Xtest;
-    delete[] Xtestsens;
 
     // return the final forward analysis output
     return output;
@@ -1839,15 +1840,14 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoad(
     // use Gaussian processes to compute the critical global shear load
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(2, Xtest));
-    delete[] Xtest;
+    XtestShear[3] = log(one + 1000.0 * zeta);
+    TacsScalar nd_factor =
+        exp(this->panelGPs->predictMeanTestData(2, XtestShear));
     TacsScalar output = dim_factor * nd_factor;
     return dim_factor * nd_factor;
 
@@ -1881,18 +1881,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalGlobalShearLoad(
   if (this->getShearGP()) {
     // use Gaussian processes to compute the critical global shear load
     TacsScalar dim_factor = 1.0;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestShear[3] = log(one + 1000.0 * zeta);
     // don't need to use the saved data here since this routine is only meant to
     // be called on a single constitutive object (not a whole mesh with O(1e4)
     // const objects)
-    TacsScalar nd_factor = exp(this->getShearGP()->predictMeanTestData(Xtest));
-    delete[] Xtest;
+    TacsScalar nd_factor =
+        exp(this->getShearGP()->predictMeanTestData(XtestShear));
     return dim_factor * nd_factor;
 
   } else {
@@ -2041,39 +2040,33 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalGlobalShearLoadSens(
     // use Gaussian processes to compute the critical global shear load
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / b / b;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] = log(
         one + gamma);  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->panelGPs->predictMeanTestData(2, Xtest);
+    XtestShear[3] = log(one + 1000.0 * zeta);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(2, XtestShear);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
     // backwards propagate sensitivities out of the axialGP model to nondim
     // params, (this part differentiates the nondim_factor)
-    int n_shear_param = this->getShearGP()->getNparam();
-    TacsScalar* Xtestsens = new TacsScalar[n_shear_param];
     TacsScalar Ysens = N12sens * output;
-    this->panelGPs->predictMeanTestDataSens(2, Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(2, Ysens, XtestShear,
+                                            XtestShearSens);
 
-    *xisens += Xtestsens[0] / (one + xi);
+    *xisens += XtestShearSens[0] / (one + xi);
     *rho_0sens +=
-        Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *gammasens += Xtestsens[2] / (1.0 + gamma);
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
+        XtestShearSens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
+    *gammasens += XtestShearSens[2] / (1.0 + gamma);
+    *zetasens += XtestShearSens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs (this part differentiates the dim_factor)
     *D11sens += Ysens * 0.25 / D11;
     *D22sens += Ysens * 0.75 / D22;
     *bsens += Ysens * -2.0 / b;
-
-    // free pointers
-    delete[] Xtest;
-    delete[] Xtestsens;
 
     // return the final forward analysis output
     return output;
@@ -2152,14 +2145,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoad(
     TacsScalar s_p = this->stiffenerPitch;
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(3, Xtest));
-    delete[] Xtest;
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestShear[3] = log(one + 1000.0 * zeta);
+    TacsScalar nd_factor =
+        exp(this->panelGPs->predictMeanTestData(3, XtestShear));
     return dim_factor * nd_factor;
 
   } else {
@@ -2194,17 +2187,17 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimCriticalLocalShearLoad(
     // use Gaussian processes to compute the critical global shear load
     TacsScalar s_p = this->stiffenerPitch;
     TacsScalar dim_factor = 1.0;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestShear[3] = log(one + 1000.0 * zeta);
     // don't need to use the saved data here since this routine is only meant to
     // be called on a single constitutive object (not a whole mesh with O(1e4)
     // const objects)
-    TacsScalar nd_factor = exp(this->getShearGP()->predictMeanTestData(Xtest));
-    delete[] Xtest;
+    TacsScalar nd_factor =
+        exp(this->getShearGP()->predictMeanTestData(XtestShear));
     return dim_factor * nd_factor;
 
   } else {
@@ -2244,37 +2237,32 @@ TACSGPBladeStiffenedShellConstitutive::computeCriticalLocalShearLoadSens(
     TacsScalar s_p = this->stiffenerPitch;
     TacsScalar dim_factor =
         M_PI * M_PI * pow(D11 * D22 * D22 * D22, 0.25) / s_p / s_p;
-    TacsScalar* Xtest = new TacsScalar[this->getShearGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = 0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->panelGPs->predictMeanTestData(3, Xtest);
+    XtestShear[0] = log(one + xi);
+    XtestShear[1] = log(rho_0);
+    XtestShear[2] =
+        0.0;  // log(1+gamma) = 0 since gamma=0 for unstiffened panel
+    XtestShear[3] = log(one + 1000.0 * zeta);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(3, XtestShear);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
     // backwards propagate sensitivities out of the axialGP model to nondim
     // params, (this part differentiates the nondim_factor)
-    int n_shear_param = this->getShearGP()->getNparam();
-    TacsScalar* Xtestsens = new TacsScalar[n_shear_param];
     TacsScalar Ysens = N12sens * output;
-    this->panelGPs->predictMeanTestDataSens(3, Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(3, Ysens, XtestShear,
+                                            XtestShearSens);
 
-    *xisens += Xtestsens[0] / (one + xi);
+    *xisens += XtestShearSens[0] / (one + xi);
     *rho_0sens +=
-        Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
+        XtestShearSens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
+    *zetasens += XtestShearSens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating dim_factor)
     *D11sens += Ysens * 0.25 / D11;
     *D22sens += Ysens * 0.75 / D22;
     *spitchsens += Ysens * -2.0 / s_p;
-
-    // free pointers
-    delete[] Xtest;
-    delete[] Xtestsens;
 
     // return the final forward analysis output
     return output;
@@ -2349,14 +2337,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoad(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) /
                             this->stiffenerHeight / this->stiffenerHeight;
-    TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar nd_factor = exp(this->panelGPs->predictMeanTestData(4, Xtest));
-    delete[] Xtest;
+    XtestCrippling[0] = log(one + xi);
+    XtestCrippling[1] = log(rho_0);
+    XtestCrippling[2] = log(genPoiss);
+    XtestCrippling[3] = log(one + 1000.0 * zeta);
+    TacsScalar nd_factor =
+        exp(this->panelGPs->predictMeanTestData(4, XtestCrippling));
     return dim_factor * nd_factor;
 
   } else {
@@ -2375,18 +2362,16 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::nondimStiffenerCripplingLoad(
   if (this->getCripplingGP()) {
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = 1.0;
-    TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + 1000.0 * zeta);
+    XtestCrippling[0] = log(one + xi);
+    XtestCrippling[1] = log(rho_0);
+    XtestCrippling[2] = log(genPoiss);
+    XtestCrippling[3] = log(one + 1000.0 * zeta);
     // don't need to use the saved data here since this routine is only meant to
     // be called on a single constitutive object (not a whole mesh with O(1e4)
     // const objects)
     TacsScalar nd_factor =
-        exp(this->getCripplingGP()->predictMeanTestData(Xtest));
-    delete[] Xtest;
+        exp(this->getCripplingGP()->predictMeanTestData(XtestCrippling));
     return dim_factor * nd_factor;
 
   } else {
@@ -2409,38 +2394,32 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingLoadSens(
     // use Gaussian processes to compute the critical global axial load
     TacsScalar dim_factor = M_PI * M_PI * sqrt(D11 * D22) /
                             this->stiffenerHeight / this->stiffenerHeight;
-    TacsScalar* Xtest = new TacsScalar[this->getCripplingGP()->getNparam()];
     TacsScalar one = 1.0;
-    Xtest[0] = log(one + xi);
-    Xtest[1] = log(rho_0);
-    Xtest[2] = log(genPoiss);
-    Xtest[3] = log(one + 1000.0 * zeta);
-    TacsScalar arg = this->panelGPs->predictMeanTestData(4, Xtest);
+    XtestCrippling[0] = log(one + xi);
+    XtestCrippling[1] = log(rho_0);
+    XtestCrippling[2] = log(genPoiss);
+    XtestCrippling[3] = log(one + 1000.0 * zeta);
+    TacsScalar arg = this->panelGPs->predictMeanTestData(4, XtestCrippling);
     TacsScalar nondim_factor = exp(arg);
     TacsScalar output = dim_factor * nondim_factor;
 
     // backwards propagate sensitivities out of the crippling model to nondim
     // params, (this part differentiates the nondim_factor)
-    int n_crippling_param = this->getCripplingGP()->getNparam();
-    TacsScalar* Xtestsens = new TacsScalar[n_crippling_param];
     TacsScalar Ysens = N1sens * output;
-    this->panelGPs->predictMeanTestDataSens(4, Ysens, Xtest, Xtestsens);
+    this->panelGPs->predictMeanTestDataSens(4, Ysens, XtestCrippling,
+                                            XtestCripplingSens);
 
-    *xisens += Xtestsens[0] / (one + xi);
-    *rho_0sens +=
-        Xtestsens[1] / rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
-    *genPoiss_sens += Xtestsens[2] / genPoiss;
-    *zetasens += Xtestsens[3] / (one + 1000.0 * zeta) * 1000.0;
+    *xisens += XtestCripplingSens[0] / (one + xi);
+    *rho_0sens += XtestCripplingSens[1] /
+                  rho_0;  // chain rule dlog(rho_0) / drho_0 = 1/rho_0
+    *genPoiss_sens += XtestCripplingSens[2] / genPoiss;
+    *zetasens += XtestCripplingSens[3] / (one + 1000.0 * zeta) * 1000.0;
 
     // backpropagate the dimensional factor terms out to the material and
     // geometric DVs, (this part is differentiating the dimensional factor)
     *D11sens += Ysens * 0.5 / D11;
     *D22sens += Ysens * 0.5 / D22;
     *sheightsens += Ysens * -2.0 / this->stiffenerHeight;
-
-    // free pointers
-    delete[] Xtest;
-    delete[] Xtestsens;
 
     // return the final forward analysis output
     return output;
@@ -2478,14 +2457,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 4;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.341;  // D11
   x0[1] = 5.216;   // D22
   x0[2] = 3.124;   // a
@@ -2494,7 +2472,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -2508,7 +2485,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeAffineAspectRatioSens(p_output, x0[0], x0[1], x0[2], x0[3],
                                &input_sens[0], &input_sens[1], &input_sens[2],
@@ -2528,12 +2504,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAffineAspectRatio(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2543,14 +2513,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLaminateIsotropy(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 4;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.341;  // D11
   x0[1] = 5.216;   // D22
   x0[2] = 6.132;   // D12
@@ -2559,7 +2528,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLaminateIsotropy(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -2573,7 +2541,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLaminateIsotropy(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeLaminateIsotropySens(p_output, x0[0], x0[1], x0[2], x0[3],
                               &input_sens[0], &input_sens[1], &input_sens[2],
@@ -2593,12 +2560,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLaminateIsotropy(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2608,21 +2569,19 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 2;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.341;  // D12
   x0[1] = 5.381;   // D66
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -2636,7 +2595,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeGeneralizedPoissonsRatioSens(p_output, x0[0], x0[1], &input_sens[0],
                                       &input_sens[1]);
@@ -2655,12 +2613,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testGeneralizedPoissonsRatio(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2670,14 +2622,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = this->stiffenerThick;
   x0[1] = this->stiffenerHeight;
   x0[2] = this->stiffenerPitch;
@@ -2718,7 +2669,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
   E1s -= p_input[5] * epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeStiffenerAreaRatioSens(p_output, E1p, E1s, &input_sens[0],
                                 &input_sens[1], &input_sens[2], &input_sens[3],
@@ -2738,11 +2688,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerAreaRatio(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2752,14 +2697,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2143;  // D11
   x0[1] = this->stiffenerThick;
   x0[2] = this->stiffenerHeight;
@@ -2800,7 +2744,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
   zn -= p_input[5] * epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeStiffenerStiffnessRatioSens(
       p_output, D11, E1s, zn, &input_sens[0], &input_sens[1], &input_sens[2],
@@ -2820,11 +2763,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerStiffnessRatio(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2834,14 +2772,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 4;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 100.234;  // A66
   x0[1] = 421.341;  // A11
   x0[2] = 2.134;    // b
@@ -2850,7 +2787,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -2864,7 +2800,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeTransverseShearParameterSens(p_output, x0[0], x0[1], x0[2], x0[3],
                                       &input_sens[0], &input_sens[1],
@@ -2884,12 +2819,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testTransverseShearParameter(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -2897,7 +2826,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimensionalParameters(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 6;
-  TacsScalar* relErrors = new TacsScalar[n_tests];
+  TacsScalar relErrors[n_tests];
 
   if (printLevel != 0) {
     printf("\nTACSGPBladeStiffened..testNondimensionalParmeters start::\n");
@@ -2936,7 +2865,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimensionalParameters(
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
-  delete[] relErrors;
   return maxRelError;
 }
 
@@ -2944,7 +2872,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAxialCriticalLoads(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 2;
-  TacsScalar* relErrors = new TacsScalar[n_tests];
+  TacsScalar relErrors[n_tests];
 
   if (printLevel != 0) {
     printf("\nTACSGPBladeStiffened..testAxialCriticalLoads start::\n");
@@ -2970,7 +2898,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAxialCriticalLoads(
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
-  delete[] relErrors;
   return maxRelError;
 }
 
@@ -2980,7 +2907,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 8;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
@@ -2988,7 +2915,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;  // D11
   x0[1] = 5.4323;   // D22
   x0[2] = 2.134;    // b
@@ -3001,7 +2927,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3019,7 +2944,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
@@ -3044,12 +2968,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalAxialLoad(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3059,14 +2977,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;               // D11
   x0[1] = 5.4323;                // D22
   x0[2] = this->stiffenerPitch;  // s_p
@@ -3077,7 +2994,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3095,7 +3011,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   this->stiffenerPitch = x0[2];
   for (int i = 0; i < n_input; i++) {
@@ -3120,12 +3035,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalAxialLoad(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3135,14 +3044,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testOverallCentroid(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = this->stiffenerThick;
   x0[1] = this->stiffenerHeight;
   x0[2] = this->panelThick;
@@ -3181,7 +3089,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testOverallCentroid(
   E1s -= p_input[5] * epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computeOverallCentroidSens(p_output, E1p, E1s, &input_sens[0], &input_sens[1],
                              &input_sens[2], &input_sens[3], &input_sens[4],
@@ -3202,11 +3109,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testOverallCentroid(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3217,14 +3119,13 @@ TACSGPBladeStiffenedShellConstitutive::testPanelGlobalBucklingStiffness(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 4;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = this->stiffenerPitch;
   x0[1] = this->panelThick;
   x0[2] = 1.734e2;  // E11p (lower value to make test easier)
@@ -3255,7 +3156,6 @@ TACSGPBladeStiffenedShellConstitutive::testPanelGlobalBucklingStiffness(
   zn -= p_input[3] * epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   computePanelGlobalBucklingStiffnessSens(p_output, E1p, zn, &input_sens[0],
                                           &input_sens[1], &input_sens[2],
@@ -3276,11 +3176,6 @@ TACSGPBladeStiffenedShellConstitutive::testPanelGlobalBucklingStiffness(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3288,7 +3183,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testOtherTests(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 2;
-  TacsScalar* relErrors = new TacsScalar[n_tests];
+  TacsScalar relErrors[n_tests];
 
   if (printLevel != 0) {
     printf("\nTACSGPBladeStiffened..testOtherTests start::\n");
@@ -3316,7 +3211,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testOtherTests(
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
-  delete[] relErrors;
   return maxRelError;
 }
 
@@ -3324,7 +3218,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 6;
-  TacsScalar* relErrors = new TacsScalar[n_tests];
+  TacsScalar relErrors[n_tests];
 
   if (printLevel != 0) {
     printf("\nTACSGPBladeStiffened..testShearCriticalLoads start::\n");
@@ -3360,7 +3254,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testShearCriticalLoads(
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
-  delete[] relErrors;
   return maxRelError;
 }
 
@@ -3370,14 +3263,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 1;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 0.78153;  // lam2Sq
   // x0[1] = 1.24332;   // xi
   // x0[2] = 0.2454;    //gamma
@@ -3387,7 +3279,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3401,7 +3292,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
@@ -3419,12 +3309,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testLam2Constraint(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3434,7 +3318,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 2;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
@@ -3442,22 +3326,16 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
   // p_input[1] = 0.0;
 
   const int n_output = 2;
-  TacsScalar* p_output = new TacsScalar[n_output];
+  TacsScalar p_output[n_output], f0[n_output], f2[n_output];
   for (int ii = 0; ii < n_output; ii++) {
     p_output[ii] = ((double)rand() / (RAND_MAX));
   }
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 1.24332;  // xi
   x0[1] = 0.2454;   // gamma
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
-  TacsScalar *f0, *f2;
-  f0 = new TacsScalar[n_output];
-  f2 = new TacsScalar[n_output];
-
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3474,10 +3352,8 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
   }
 
   // now perform the adjoint sensitivity
-  TacsScalar* _lam = new TacsScalar[n_input];
-  TacsScalar* l1sens = new TacsScalar[n_input];
+  TacsScalar _lam[n_input], l1sens[n_input], l2sens[n_input];
   memset(l1sens, 0, n_input * sizeof(TacsScalar));
-  TacsScalar* l2sens = new TacsScalar[n_input];
   memset(l2sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
@@ -3499,17 +3375,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testNondimShearParams(
     printf("\t\trel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] p_output;
-  delete[] x0;
-  delete[] x;
-  delete[] f0;
-  delete[] f2;
-  delete[] _lam;
-  delete[] l1sens;
-  delete[] l2sens;
-
   return relError;
 }
 
@@ -3519,14 +3384,14 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 7;
-  TacsScalar* p_input = new TacsScalar[n_input];
+
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;  // D11
   x0[1] = 5.4323;   // D22
   x0[2] = 2.134;    // b
@@ -3538,7 +3403,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3554,7 +3418,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
@@ -3579,12 +3442,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3595,14 +3452,13 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad_LowAR(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 7;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;  // D11
   x0[1] = 5.4323;   // D22
   x0[2] = 2.134;    // b
@@ -3614,7 +3470,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad_LowAR(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3630,7 +3485,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad_LowAR(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
@@ -3655,12 +3509,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalGlobalShearLoad_LowAR(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3670,14 +3518,13 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;               // D11
   x0[1] = 5.4323;                // D22
   x0[2] = this->stiffenerPitch;  // s_p
@@ -3688,7 +3535,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3706,7 +3552,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   this->stiffenerPitch = x0[2];
   for (int i = 0; i < n_input; i++) {
@@ -3731,12 +3576,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3747,14 +3586,13 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad_LowAR(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 6;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;               // D11
   x0[1] = 5.4323;                // D22
   x0[2] = this->stiffenerPitch;  // s_p
@@ -3765,7 +3603,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad_LowAR(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3783,7 +3620,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad_LowAR(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   this->stiffenerPitch = x0[2];
   for (int i = 0; i < n_input; i++) {
@@ -3808,12 +3644,6 @@ TACSGPBladeStiffenedShellConstitutive::testCriticalLocalShearLoad_LowAR(
     printf("\t\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3823,7 +3653,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = 7;
-  TacsScalar* p_input = new TacsScalar[n_input];
+  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
@@ -3835,7 +3665,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   }
 
   // compute initial values
-  TacsScalar* x0 = new TacsScalar[n_input];
   x0[0] = 10.2412;                // D11
   x0[1] = 5.4323;                 // D22
   x0[2] = this->stiffenerHeight;  // sheight
@@ -3847,7 +3676,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  TacsScalar* x = new TacsScalar[n_input];
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
@@ -3865,7 +3693,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  TacsScalar* input_sens = new TacsScalar[n_input];
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
   this->stiffenerHeight = x0[2];
   for (int i = 0; i < n_input; i++) {
@@ -3891,12 +3718,6 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testStiffenerCripplingLoad(
     printf("\t rel error = %.4e\n", TacsRealPart(relError));
   }
 
-  // free pointers
-  delete[] p_input;
-  delete[] x0;
-  delete[] x;
-  delete[] input_sens;
-
   return relError;
 }
 
@@ -3904,7 +3725,7 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
     TacsScalar epsilon, int printLevel) {
   // run each of the nondim parameter tests and aggregate the max among them
   const int n_tests = 8;
-  TacsScalar* relErrors = new TacsScalar[n_tests];
+  TacsScalar relErrors[n_tests];
   memset(relErrors, 0, n_tests * sizeof(TacsScalar));
 
   if (printLevel != 0) {
@@ -3972,23 +3793,10 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::testAllTests(
     printf("\tOverall max rel error = %.4e\n\n", TacsRealPart(maxRelError));
   }
 
-  delete[] relErrors;
   return maxRelError;
 }
 
 void TACSGPBladeStiffenedShellConstitutive::setKSWeight(double ksWeight) {
   // call the superclass method to set the ksWeight for this const class
   TACSBladeStiffenedShellConstitutive::setKSWeight(ksWeight);
-
-  // set KS into each GP model (for differentiable / smooth kernel functions) if
-  // they exist
-  // if (this->getAxialGP()) {
-  //   this->getAxialGP()->setKS(ksWeight);
-  // }
-  // if (this->getShearGP()) {
-  //   this->getShearGP()->setKS(ksWeight);
-  // }
-  // if (this->getCripplingGP()) {
-  //   this->getCripplingGP()->setKS(ksWeight);
-  // }
 }

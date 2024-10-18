@@ -47,14 +47,8 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
 cdef class GaussianProcess:
     cdef TACSGaussianProcessModel *base_gp
 
-cdef class AxialGP(GaussianProcess):
-    cdef TACSAxialGaussianProcessModel *axial_gp
-
-cdef class ShearGP(AxialGP):
-    cdef TACSShearGaussianProcessModel *gp
-
-cdef class CripplingGP(AxialGP):
-    cdef TACSCripplingGaussianProcessModel *gp
+cdef class BucklingGP(GaussianProcess):
+    cdef TACSBucklingGaussianProcessModel *buckling_gp
 
 cdef class PanelGPs:
     cdef TACSPanelGPs *gptr
