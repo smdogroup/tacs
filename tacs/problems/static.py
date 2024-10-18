@@ -1018,7 +1018,7 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def updateJacobian(self, res=None):
+    def updateJacobian(self, res=None, applyBCs=True):
         """Update the Jacobian (a.k.a stiffness) matrix
 
         The Jacobian will only actually be updated if the
@@ -1038,6 +1038,7 @@ class StaticProblem(TACSProblem):
                 res,
                 self.K,
                 loadScale=self._loadScale,
+                applyBCs=applyBCs,
             )
             self._jacobianUpdateRequired = False
             self._preconditionerUpdateRequired = True
@@ -1223,7 +1224,7 @@ class StaticProblem(TACSProblem):
 
         # Next we will solve all the adjoints
         # Set adjoint rhs
-        self.addSVSens(evalFuncs, dIdus)
+        self.addSVSens(evalFuncs, dIdus, applyBCs=False)
         adjointRHSTime = time.time()
         for i, f in enumerate(evalFuncs):
             adjointStartTime[f] = time.time()
@@ -1287,7 +1288,7 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def addSVSens(self, evalFuncs, svSensList):
+    def addSVSens(self, evalFuncs, svSensList, applyBCs=False):
         """
         Add the state variable partial sensitivity to the ADjoint RHS for given evalFuncs
 
@@ -1317,7 +1318,7 @@ class StaticProblem(TACSProblem):
             svSensBVecList = svSensList
 
         self.assembler.addSVSens(
-            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma
+            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma, applyBCs
         )
 
         # Update from the BVec values, if the input was a numpy array
@@ -1778,7 +1779,6 @@ class StaticProblem(TACSProblem):
         elif isinstance(states, np.ndarray):
             self.u_array[:] = states[:]
         # Set states to assembler
-        self.assembler.setBCs(self.u)
         self.assembler.setVariables(self.u)
 
         # If this is a nonlinear problem then changing the state will change the jacobian
