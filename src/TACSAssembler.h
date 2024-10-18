@@ -218,7 +218,8 @@ class TACSAssembler : public TACSObject {
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes(TACSBVec *residual, const TacsScalar lambda = 1.0);
+  void assembleRes(TACSBVec *residual, const TacsScalar lambda = 1.0,
+                   const bool applyBCs = true);
   void assembleJacobian(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         TACSBVec *residual, TACSMat *A,
                         MatrixOrientation matOr = TACS_MAT_NORMAL,
@@ -226,16 +227,19 @@ class TACSAssembler : public TACSObject {
                         const bool applyBCs = true);
   void assembleMatType(ElementMatrixType matType, TACSMat *A,
                        MatrixOrientation matOr = TACS_MAT_NORMAL,
-                       const TacsScalar lambda = 1.0);
+                       const TacsScalar lambda = 1.0,
+                       const bool applyBCs = true);
   void assembleMatCombo(ElementMatrixType matTypes[], TacsScalar scale[],
                         int nmats, TACSMat *A,
                         MatrixOrientation matOr = TACS_MAT_NORMAL,
-                        const TacsScalar lambda = 1.0);
+                        const TacsScalar lambda = 1.0,
+                        const bool applyBCs = true);
   void addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                              TacsScalar beta, TacsScalar gamma, TACSBVec *x,
                              TACSBVec *y,
                              MatrixOrientation matOr = TACS_MAT_NORMAL,
-                             const TacsScalar lambda = 1.0);
+                             const TacsScalar lambda = 1.0,
+                             const bool applyBCs = true);
 
   // Assemble data for and compute matrix-free matrix-vector products
   // ----------------------------------------------------------------
@@ -248,7 +252,8 @@ class TACSAssembler : public TACSObject {
                                const TacsScalar data[], TacsScalar temp[],
                                TACSBVec *x, TACSBVec *y,
                                MatrixOrientation matOr = TACS_MAT_NORMAL,
-                               const TacsScalar lambda = 1.0);
+                               const TacsScalar lambda = 1.0,
+                               const bool applyBCs = true);
 
   // Design variable handling
   // ------------------------
@@ -290,7 +295,8 @@ class TACSAssembler : public TACSObject {
                                  TACSBVec *psi, TACSBVec *phi,
                                  TACSBVec *dfdXpts);
   void evalMatSVSensInnerProduct(ElementMatrixType matType, TACSBVec *psi,
-                                 TACSBVec *phi, TACSBVec *res);
+                                 TACSBVec *phi, TACSBVec *res,
+                                 const bool applyBCs = true);
 
   // Return elements and node numbers
   // --------------------------------

@@ -373,7 +373,7 @@ cdef extern from "TACSAssembler.h":
         void getInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void setInitConditions(TACSBVec*, TACSBVec*, TACSBVec*)
         void evalEnergies(TacsScalar*, TacsScalar*)
-        void assembleRes(TACSBVec *residual, TacsScalar loadScale)
+        void assembleRes(TACSBVec *residual, TacsScalar loadScale, bool applyBCs)
         void assembleJacobian(double alpha, double beta, double gamma,
                               TACSBVec *residual, TACSMat *A,
                               MatrixOrientation matOr,
@@ -381,23 +381,22 @@ cdef extern from "TACSAssembler.h":
                               bool applyBCs)
         void assembleMatType(ElementMatrixType matType,
                              TACSMat *A, MatrixOrientation matOr,
-                             TacsScalar loadScale)
+                             TacsScalar loadScale, bool applyBCs)
         void assembleMatCombo(ElementMatrixType*, TacsScalar*, int,
                               TACSMat*, MatrixOrientation matOr,
-                              TacsScalar loadScale)
+                              TacsScalar loadScale, bool applyBCs)
         void addJacobianVecProduct(TacsScalar scale,
                                    double alpha, double beta, double gamma,
                                    TACSBVec *x, TACSBVec *y,
                                    MatrixOrientation matOr,
-                                   TacsScalar loadScale)
+                                   TacsScalar loadScale, bool applyBCs)
         void evalFunctions(int numFuncs, TACSFunction **functions,
                            TacsScalar *funcVals)
         void addDVSens(double coef, int numFuncs, TACSFunction **funcs,
                        TACSBVec **dfdx)
         void addSVSens(double alpha, double beta, double gamma,
                        int numFuncs, TACSFunction **funcs,
-                       TACSBVec **fuSens,
-                       bool applyBCs)
+                       TACSBVec **fuSens, bool applyBCs)
         void addAdjointResProducts(double scale, int numAdjoints,
                                    TACSBVec **adjoint, TACSBVec **dfdx,
                                    TacsScalar loadScale)
@@ -413,7 +412,7 @@ cdef extern from "TACSAssembler.h":
                                       TACSBVec *dfdx)
         void evalMatSVSensInnerProduct(ElementMatrixType matType,
                                        TACSBVec *psi, TACSBVec *phi,
-                                       TACSBVec *res)
+                                       TACSBVec *res, bool applyBCs)
 
         void testElement(int elemNum, int print_level, double dh,
                          double rtol, double atol)

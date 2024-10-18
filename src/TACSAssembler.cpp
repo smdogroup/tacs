@@ -4127,7 +4127,8 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   @param residual The residual vector
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
-void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
+void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
+                                const bool applyBCs) {
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements) {
@@ -4232,7 +4233,9 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   residual->endSetValues(TACS_ADD_VALUES);
 
   // Apply the boundary conditions for the residual
-  residual->applyBCs(bcMap, varsVec);
+  if (applyBCs) {
+    residual->applyBCs(bcMap, varsVec);
+  }
 }
 
 /**
@@ -4360,13 +4363,13 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
     residual->endSetValues(TACS_ADD_VALUES);
   }
 
-  // Apply the boundary conditions
-  if (residual) {
-    residual->applyBCs(bcMap, varsVec);
-  }
-
-  // Apply the appropriate boundary conditions
   if (applyBCs) {
+    // Apply the boundary conditions to the residual
+    if (residual) {
+      residual->applyBCs(bcMap, varsVec);
+    }
+
+    // Apply the appropriate boundary conditions to the matrix
     A->applyBCs(bcMap);
   }
 }
@@ -4383,7 +4386,8 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
 */
 void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
                                     MatrixOrientation matOr,
-                                    const TacsScalar lambda) {
+                                    const TacsScalar lambda,
+                                    const bool applyBCs) {
   // Zero the matrix
   A->zeroEntries();
 
@@ -4463,7 +4467,9 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
   A->beginAssembly();
   A->endAssembly();
 
-  A->applyBCs(bcMap);
+  if (applyBCs) {
+    A->applyBCs(bcMap);
+  }
 }
 
 /**
@@ -4481,8 +4487,8 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
 */
 void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
                                      TacsScalar scale[], int nmats, TACSMat *A,
-                                     MatrixOrientation matOr,
-                                     TacsScalar lambda) {
+                                     MatrixOrientation matOr, TacsScalar lambda,
+                                     const bool applyBCs) {
   // Zero the matrix
   A->zeroEntries();
 
@@ -4558,7 +4564,9 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
   A->beginAssembly();
   A->endAssembly();
 
-  A->applyBCs(bcMap);
+  if (applyBCs) {
+    A->applyBCs(bcMap);
+  }
 }
 
 /**
@@ -5307,7 +5315,8 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
 */
 void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
                                               TACSBVec *psi, TACSBVec *phi,
-                                              TACSBVec *dfdu) {
+                                              TACSBVec *dfdu,
+                                              const bool applyBCs) {
   // Zero the entries in the residual vector
   dfdu->zeroEntries();
 
@@ -5351,7 +5360,9 @@ void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
   dfdu->endSetValues(TACS_ADD_VALUES);
 
   // Apply the boundary conditions to the fully assembled vector
-  dfdu->applyBCs(bcMap);
+  if (applyBCs) {
+    dfdu->applyBCs(bcMap);
+  }
 }
 
 /**
@@ -5379,7 +5390,8 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                                           TacsScalar beta, TacsScalar gamma,
                                           TACSBVec *x, TACSBVec *y,
                                           MatrixOrientation matOr,
-                                          const TacsScalar lambda) {
+                                          const TacsScalar lambda,
+                                          const bool applyBCs) {
   x->beginDistributeValues();
   x->endDistributeValues();
 
@@ -5451,7 +5463,9 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
   y->endSetValues(TACS_ADD_VALUES);
 
   // Set the boundary conditions
-  y->applyBCs(bcMap);
+  if (applyBCs) {
+    y->applyBCs(bcMap);
+  }
 }
 
 /*
@@ -5578,12 +5592,10 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
   @param matOr The orientation of the matrix
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
-void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
-                                            const TacsScalar data[],
-                                            TacsScalar temp[], TACSBVec *x,
-                                            TACSBVec *y,
-                                            MatrixOrientation matOr,
-                                            const TacsScalar lambda) {
+void TACSAssembler::addMatrixFreeVecProduct(
+    ElementMatrixType matType, const TacsScalar data[], TacsScalar temp[],
+    TACSBVec *x, TACSBVec *y, MatrixOrientation matOr, const TacsScalar lambda,
+    const bool applyBCs) {
   x->beginDistributeValues();
   x->endDistributeValues();
 
@@ -5657,7 +5669,9 @@ void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
   y->endSetValues(TACS_ADD_VALUES);
 
   // Set the boundary conditions
-  y->applyBCs(bcMap);
+  if (applyBCs) {
+    y->applyBCs(bcMap);
+  }
 }
 
 /**
