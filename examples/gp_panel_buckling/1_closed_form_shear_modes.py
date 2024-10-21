@@ -52,7 +52,6 @@ con = constitutive.GPBladeStiffenedShellConstitutive(
 # Set the KS weight really low so that all failure modes make a
 # significant contribution to the failure function derivatives
 con.setKSWeight(20.0)
-con.setCFShearMode(1)
 
 # get the axial loads in nondimensional space w.r.t. rho_0
 n = 500
@@ -69,4 +68,4 @@ plt.margins(x=0.05, y=0.05)
 plt.xlabel(r"$\rho_0$")
 plt.ylabel(r"$N_{12,cr}^*$")
 plt.legend()
-plt.savefig("1-verify-shear1.png", dpi=400)
+plt.savefig("1-verify-shear.png", dpi=400)

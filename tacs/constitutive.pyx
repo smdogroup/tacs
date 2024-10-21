@@ -1124,8 +1124,7 @@ cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
             <int*>stiffenerPlyFracNums.data,
             flangeFraction
         )
-        self.ptr = self.base_ptr
-        self.blade_ptr = self.base_ptr
+        self.ptr = self.cptr = self.blade_ptr = self.base_ptr
         self.ptr.incref()
 
     
@@ -1638,8 +1637,8 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
         )
         # copy pointers to all superclasses
         self.gp_blade_ptr = <TACSGPBladeStiffenedShellConstitutive *> self.base_ptr
-        self.ptr = self.gp_blade_ptr # copy constitutive as well
-        self.gp_blade_ptr.incref()
+        self.ptr = self.cptr = self.base_ptr # copy constitutive as well
+        self.ptr.incref()
 
     def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
         """

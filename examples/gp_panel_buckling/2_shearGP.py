@@ -38,7 +38,9 @@ ortho_ply = constitutive.OrthotropicPly(1e-3, ortho_prop)
 
 # build the axial GP object (which is the main ML object we are testing for this example)
 # however it is used inside of the constitutive object so we need to build that too
-shearGP = constitutive.ShearGP.from_csv(csv_file=mlb.shearGP_csv)
+shearGP = constitutive.BucklingGP.from_csv(
+    csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv
+)
 panelGP = constitutive.PanelGPs(shearGP=shearGP)
 
 # don't put in any GP models (so using closed-form solutions rn)
