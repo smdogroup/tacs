@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PanelWidthConstraint &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="VolumeConstraint" href="volume.html" />
+    <link rel="prev" title="PanelLengthConstraint" href="panel_length.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="volume.html" title="VolumeConstraint"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="panel_length.html" title="PanelLengthConstraint"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="constraints.html" accesskey="U">Constraint classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">PanelWidthConstraint</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-tacs.constraints.panel_width">
+<span id="panelwidthconstraint"></span><h1>PanelWidthConstraint<a class="headerlink" href="#module-tacs.constraints.panel_width" title="Link to this heading">¶</a></h1>
+<dl class="simple">
+<dt>Author:</dt><dd><ul class="simple">
+<li><p>Sean P Engelstad, Alasdair Christison Gray</p></li>
+</ul>
+</dd>
+</dl>
+<p>This class implements a constraint which enforces the panel
+width design variable values passed to elements using the GPBladeStiffenedShell
+constitutive model to be consistent with the true width of the panel they are
+a part of.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This class should be created using the
+<a class="reference internal" href="pytacs_module.html#tacs.pytacs.pyTACS.createPanelWidthConstraint" title="tacs.pytacs.pyTACS.createPanelWidthConstraint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createPanelWidthConstraint</span></code></a> method.</p>
+</div>
+<section id="api-reference">
+<h2>API Reference<a class="headerlink" href="#api-reference" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constraints.</span></span><span class="sig-name descname"><span class="pre">PanelWidthConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">assembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputViewer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshLoader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_width.html#PanelWidthConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint" title="Link to this definition">¶</a></dt>
+<dd><p>NOTE: This class should not be initialized directly by the user.
+Use pyTACS.createPanelWidthConstraint instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- Name of this tacs problem</p></li>
+<li><p><strong>assembler</strong> (<a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><em>TACS.Assembler</em></a>) -- Cython object responsible for creating and setting tacs objects used to solve problem</p></li>
+<li><p><strong>comm</strong> (<a class="reference external" href="https://mpi4py.readthedocs.io/en/stable/reference/mpi4py.MPI.Intracomm.html#mpi4py.MPI.Intracomm" title="(in MPI for Python v4.0)"><em>mpi4py.MPI.Intracomm</em></a>) -- The comm object on which to create the pyTACS object.</p></li>
+<li><p><strong>outputViewer</strong> (<em>TACS.TACSToFH5</em>) -- Cython object used to write out f5 files that can be converted and used for postprocessing.</p></li>
+<li><p><strong>meshLoader</strong> (<em>pymeshloader.pyMeshLoader</em>) -- pyMeshLoader object used to create the assembler.</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary holding problem-specific option parameters (case-insensitive).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.computeRefAxis">
+<span class="sig-name descname"><span class="pre">computeRefAxis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">refAxis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_bndry_node_coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_width.html#PanelWidthConstraint.computeRefAxis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.computeRefAxis" title="Link to this definition">¶</a></dt>
+<dd><p>remove the panelNormal from the refAxis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refAxis</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3,) for the xyz coordinates of the original refAxis from transform object</p></li>
+<li><p><strong>comp_bndry_node_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>an array of size (3,) for xyz coords of the panel width axis in the panel</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.addConstraint">
+<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compIDs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dvIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.addConstraint" title="Link to this definition">¶</a></dt>
+<dd><p>Generic method to adding a new constraint set for TACS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>conName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- The user-supplied name for the constraint set. This will
+typically be a string that is meaningful to the user</p></li>
+<li><p><strong>compIDs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>] or </em><em>None</em>) -- List of compIDs to apply constraints to. If None, all compIDs will be used. Defaults to None.</p></li>
+<li><p><strong>lower</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- lower bound for constraint. Not used.</p></li>
+<li><p><strong>upper</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- upper bound for constraint. Not used.</p></li>
+<li><p><strong>dvIndex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) -- Index number of the panel length DV's. Defaults to 0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.dtype">
+<span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.dtype" title="Link to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">float64</span></code></p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.evalConstraints">
+<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.evalConstraints" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate values for constraints. The constraints corresponding to the strings in
+evalCons are evaluated and updated into the provided dictionary.</p>
+<p>The same constraint arrays are returned on every proc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary into which the constraints are saved.</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings.</em>) -- If not none, use these constraints to evaluate.</p></li>
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) -- Flag to supress checking for a valid constraint. Please use
+this option with caution.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraints</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.evalConstraintsSens">
+<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.evalConstraintsSens" title="Link to this definition">¶</a></dt>
+<dd><p>This is the main routine for returning useful (sensitivity)
+information from constraint. The derivatives of the constraints
+corresponding to the strings in evalCons are evaluated and
+updated into the provided dictionary. The derivitives with
+respect to all design variables and node locations are computed.</p>
+<p>The sensitivities returned on each proc are a sparse m x n matrix
+where m is the number of constraints and n is the number of design
+variables or 3x the number of nodes on this proc. The matrix contains
+the sensitivities of all constraints w.r.t only the design
+variables/node coordinates on this proc.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings</em>) -- The constraints the user wants returned</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraintsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.externalClearUpToDate">
+<span class="sig-name descname"><span class="pre">externalClearUpToDate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.externalClearUpToDate" title="Link to this definition">¶</a></dt>
+<dd><p>clear UpToDate by FUNtoFEM which sets variables into
+TACS through a different interface</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getConstraintBounds">
+<span class="sig-name descname"><span class="pre">getConstraintBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getConstraintBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Get bounds for constraints. The constraints corresponding to the strings in
+<cite>evalCons</cite> are evaluated and updated into the provided
+dictionary.</p>
+<p>The panel length constraints are equality constraints so both the upper and lower bounds are zero</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bounds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary into which the constraint bounds are saved.
+Bounds will be saved as a tuple: (lower, upper)</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings.</em>) -- If not none, use these constraints to evaluate.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conBounds</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintBounds</span><span class="p">(</span><span class="n">conBounds</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">conBounds</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: (array([-1e20]), array([1e20]))}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getConstraintKeys">
+<span class="sig-name descname"><span class="pre">getConstraintKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getConstraintKeys" title="Link to this definition">¶</a></dt>
+<dd><p>Return a list of the current constraint key names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>conNames</strong> -- List containing user-defined names for constraint groups added so far.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getConstraintSizes">
+<span class="sig-name descname"><span class="pre">getConstraintSizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getConstraintSizes" title="Link to this definition">¶</a></dt>
+<dd><p>Get number for constraint equations in each set.
+The constraints corresponding to the strings in <cite>evalCons</cite>
+are evaluated and updated into the provided dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sizes</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary into which the constraint sizes are saved.</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings.</em>) -- If not none, use these constraints to evaluate.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conSizes</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintSizes</span><span class="p">(</span><span class="n">conSizes</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">funconSizescs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: 10}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getDesignVarRange">
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
+<dd><p>get the lower/upper bounds for the design variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xlb</strong> (<em>numpy.ndarray</em>) -- The design variable lower bound.</p></li>
+<li><p><strong>xub</strong> (<em>numpy.ndarray</em>) -- The design variable upper bound.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getDesignVars">
+<span class="sig-name descname"><span class="pre">getDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Get the current set of  design variables for this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getNodes">
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getNodes" title="Link to this definition">¶</a></dt>
+<dd><p>Return the mesh coordinates of this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getNumCoordinates">
+<span class="sig-name descname"><span class="pre">getNumCoordinates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getNumCoordinates" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of mesh coordinates on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ncoords</strong> -- Number of mesh coordinates on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getNumDesignVars">
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getNumDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of design variables on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ndvs</strong> -- Number of design variables on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getNumOwnedNodes">
+<span class="sig-name descname"><span class="pre">getNumOwnedNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getNumOwnedNodes" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of nodes owned by this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nnodes</strong> -- Number of nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getNumVariables">
+<span class="sig-name descname"><span class="pre">getNumVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getNumVariables" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of degrees of freedom (states) that are
+on this processor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>nstate</strong> -- number of states.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getOption">
+<span class="sig-name descname"><span class="pre">getOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getOption" title="Link to this definition">¶</a></dt>
+<dd><p>Get a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- Name of option to get</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.getVarsPerNode">
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of variables per node for the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>vpn</strong> -- Number of variables per node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.printDefaultOptions">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">printDefaultOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.printDefaultOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the default solver
+options to the stdout</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.printModifiedOptions">
+<span class="sig-name descname"><span class="pre">printModifiedOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.printModifiedOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted table of all the options that have been
+modified from their defaults</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.printOptions">
+<span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.printOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Prints a nicely formatted dictionary of all the current solver
+options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.setDesignVars">
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.setDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Update the design variables used by tacs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
+looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute if in dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.setNodes">
+<span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.setNodes" title="Link to this definition">¶</a></dt>
+<dd><p>Set the mesh coordinates of the structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.setOption">
+<span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.setOption" title="Link to this definition">¶</a></dt>
+<dd><p>Set a solver option value. The name is not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- Name of option to modify</p></li>
+<li><p><strong>value</strong> (<em>depends on option</em>) -- New option value to set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.setOptions">
+<span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.setOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Dictionary of option names and values to set</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.setVarName">
+<span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.setVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Set a name for the structural variables in pyOpt. Only needs
+to be changed if more than 1 pytacs object is used in an
+optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">PanelWidthConstraint</a><ul>
+<li><a class="reference internal" href="#api-reference">API Reference</a><ul>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.computeRefAxis"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.computeRefAxis()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.addConstraint"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.addConstraint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.dtype"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.evalConstraints"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.evalConstraints()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.evalConstraintsSens"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.evalConstraintsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.externalClearUpToDate"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.externalClearUpToDate()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getConstraintBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getConstraintKeys()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getConstraintSizes"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getConstraintSizes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getDesignVarRange()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getDesignVars"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getNodes"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getNumCoordinates"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getNumCoordinates()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getNumOwnedNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getNumVariables"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getNumVariables()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getOption"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.printDefaultOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.printModifiedOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.printOptions"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.setDesignVars"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.setNodes"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.setOption"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.setOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.setOptions"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.setOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelWidthConstraint.setVarName"><code class="docutils literal notranslate"><span class="pre">PanelWidthConstraint.setVarName()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="panel_length.html"
+                          title="previous chapter">PanelLengthConstraint</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="volume.html"
+                          title="next chapter">VolumeConstraint</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="volume.html" title="VolumeConstraint"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="panel_length.html" title="PanelLengthConstraint"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pytacs.html" >pyTACS</a> &#187;</li>
+          <li class="nav-item nav-item-3"><a href="constraints.html" >Constraint classes</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">PanelWidthConstraint</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

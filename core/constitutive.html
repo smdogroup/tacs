@@ -345,7 +345,7 @@ The following <code class="xref py py-class docutils literal notranslate"><span 
 <dl class="py class">
 <dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BladeStiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive" title="tacs.constitutive.StiffenedShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">StiffenedShellConstitutive</span></code></a></p>
 <p>This constitutive class models a shell stiffened with T-shaped stiffeners.
 The stiffeners are not explicitly modelled.
 Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
@@ -381,108 +381,60 @@ Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
 </ul>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight">
-<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight" title="Link to this definition">¶</a></dt>
-<dd><p>Update the ks weight used for aggregating the different failure modes</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- KS aggregation weight</p>
-</dd>
-</dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the panel ply fraction design variables</p>
-<p>The default bounds are 0 and 1</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.BucklingGP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">BucklingGP</span></span><a class="headerlink" href="#tacs.constitutive.BucklingGP" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.GaussianProcess" title="tacs.constitutive.GaussianProcess"><code class="xref py py-class docutils literal notranslate"><span class="pre">GaussianProcess</span></code></a></p>
+<p>Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
+Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
+The ML model uses non-dimensional inputs and outputs as follows:</p>
+<blockquote>
+<div><p>log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))</p>
+</div></blockquote>
+<p>The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds">
-<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the panel thickness design variable</p>
-<p>The default bounds are 1e-4 and 1e20</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+<li><p><strong>Xtrain</strong> (<em>np.ndarray</em>) -- a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]</p></li>
+<li><p><strong>alpha</strong> (<em>np.ndarray</em>) -- a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)</p></li>
+<li><p><strong>theta</strong> (<em>np.ndarray</em>) -- a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
 <dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the stiffener height design variable</p>
-<p>The default bounds are 1e-3 and 1e20</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
-</ul>
+<dt class="sig sig-object py" id="tacs.constitutive.BucklingGP.from_csv">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csv_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta_csv</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BucklingGP.from_csv" title="Link to this definition">¶</a></dt>
+<dd><p>Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+the training weights of the ML model and the optimal hyperparameters theta.</p>
+<blockquote>
+<div><p>This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling</p>
+</div></blockquote>
+<p>The common construction of this class from the ml_buckling repo, <a class="reference external" href="https://github.com/smdogroup/ml_buckling">https://github.com/smdogroup/ml_buckling</a>,
+and is the following:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>axial_gp = BucklingGP.from_csv(</dt><dd><p>csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the stiffener pitch design variable</p>
-<p>The default bounds are 1e-3 and 1e20</p>
+<p>)
+shear_gp = BucklingGP.from_csv(</p>
+<blockquote>
+<div><p>csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv</p>
+</div></blockquote>
+<p>)</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the stiffener ply fraction design variables</p>
-<p>The default bounds are 0 and 1</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds">
-<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds" title="Link to this definition">¶</a></dt>
-<dd><p>Set the lower and upper bounds for the stiffener thickness design variable</p>
-<p>The default bounds are 1e-4 and 1e20</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
-<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+<li><p><strong>csv_file</strong> (<em>filepath</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].</p></li>
+<li><p><strong>theta_csv</strong> (<em>filepath</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- path to a csv file that holds the theta hyperparameters in one column with 13 entries.</p></li>
+<li><p><strong>Returns</strong> -- BucklingGP object</p></li>
 </ul>
 </dd>
 </dl>
@@ -546,6 +498,370 @@ Assumes 6 dofs.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.bush.html#pyNastran.bdf.cards.properties.bush.PBUSH" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.properties.bush.PBUSH</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GPBladeStiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive" title="tacs.constitutive.StiffenedShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">StiffenedShellConstitutive</span></code></a></p>
+<p>&quot;
+This constitutive class models a shell stiffened with T-shaped stiffeners.
+The stiffeners are not explicitly modelled. Instead, their stiffness is &quot;smeared&quot; across the shell.</p>
+<p>This class is a subclass of the BladeStiffenedShellConstitutive base class
+and includes higher-fidelity buckling constraints using Gaussian Processes for Machine Learning.
+The trained ML models are located on the repo, <a class="reference external" href="https://github.com/smdogroup/ml_buckling">https://github.com/smdogroup/ml_buckling</a>.</p>
+<dl class="simple">
+<dt>For the methods below, consider a panel with dimensions a the panel length, b the panel width,</dt><dd><p>h the panel thickness, and stiffeners along the length or 1-direction.</p>
+</dd>
+<dt>The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener</dt><dd><p>only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).</p>
+</dd>
+</dl>
+<p>The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
+For more information on this constitutive class, see our paper <a class="reference external" href="https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981">https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981</a>,</p>
+<blockquote>
+<div><p>&quot;Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings&quot;
+by Sean Engelstad, Brian Burke, Graeme Kennedy.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>panelPly</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>tacs.constitutive.OrthotropicPly</em></a>) -- Ply model to use for the panel</p></li>
+<li><p><strong>stiffenerPly</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>tacs.constitutive.OrthotropicPly</em></a>) -- Ply model to use for the stiffener</p></li>
+<li><p><strong>panelLength</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Panel length DV value</p></li>
+<li><p><strong>stiffenerPitch</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Stiffener pitch DV value</p></li>
+<li><p><strong>panelThick</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Panel thickness DV value</p></li>
+<li><p><strong>panelPlyAngles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Array of ply angles in the panel</p></li>
+<li><p><strong>panelPlyFracs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Array of ply fractions in the panel</p></li>
+<li><p><strong>stiffenerHeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Stiffener height DV value</p></li>
+<li><p><strong>stiffenerThick</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Stiffener thickness DV value</p></li>
+<li><p><strong>stiffenerPlyAngles</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Array of ply angles for the stiffener</p></li>
+<li><p><strong>stiffenerPlyFracs</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Array of ply fractions for the stiffener</p></li>
+<li><p><strong>panelWidth</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Panel width DV value</p></li>
+<li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>, </em><em>optional</em>) -- Shear correction factor, defaults to 5.0/6.0</p></li>
+<li><p><strong>flangeFraction</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><em>optional</em>) -- Ratio of the stiffener base width to the stiffener height. Defaults to 1.0</p></li>
+<li><p><strong>panelLengthNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>stiffenerPitchNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>panelThickNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>panelPlyFracNums</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><em>np.intc</em><em>]</em><em>, </em><em>optional</em>) -- Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's</p></li>
+<li><p><strong>stiffenerHeightNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>stiffenerThickNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>stiffenerPlyFracNums</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/arrays.scalars.html#numpy.intc" title="(in NumPy v2.1)"><em>numpy.intc</em></a><em>]</em><em>, </em><em>optional</em>) -- Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's</p></li>
+<li><p><strong>panelWidthNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>, </em><em>optional</em>) -- Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1</p></li>
+<li><p><strong>CPTstiffenerCrippling</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) -- whether to use CPT (classical plate theory) for stiffener crippling buckling predictions in the closed-form solution case (default False)</p></li>
+<li><p><strong>panelGPs</strong> (<em>TACSPanelGPs</em>) -- container for the three GP models for each panel / TACS component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalAxialLoad">
+<span class="sig-name descname"><span class="pre">nondimCriticalGlobalAxialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalAxialLoad" title="Link to this definition">¶</a></dt>
+<dd><p>predict the non-dimensional buckling load N11,cr^* for the global axial mode of a panel.
+Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho_0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)</p></li>
+<li><p><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)</p></li>
+<li><p><strong>zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the transverse shear parameters, zeta = A11 / A66 * (h/b)^2</p></li>
+<li><p><strong>Returns</strong> -- <dl class="simple">
+<dt>N11,cr^* (float)<span class="classifier">the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by</span></dt><dd><p>N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / b^2 / (1 + delta)
+with delta = E1s * As / (E1p * sp * h)</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalShearLoad">
+<span class="sig-name descname"><span class="pre">nondimCriticalGlobalShearLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalShearLoad" title="Link to this definition">¶</a></dt>
+<dd><p>predict the non-dimensional buckling load N12,cr^* for the global shear mode of a panel.
+Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho_0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)</p></li>
+<li><p><strong>gamma</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)</p></li>
+<li><p><strong>zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the transverse shear parameters, zeta = A11 / A66 * (h/b)^2</p></li>
+<li><p><strong>Returns</strong> -- <dl class="simple">
+<dt>N12,cr^* (float)<span class="classifier">the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by</span></dt><dd><p>N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / b^2</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalAxialLoad">
+<span class="sig-name descname"><span class="pre">nondimCriticalLocalAxialLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalAxialLoad" title="Link to this definition">¶</a></dt>
+<dd><p>predict the non-dimensional buckling load N11,cr^* for the local axial mode of a panel.
+Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+Here D11 is for the center of the skin, and the other Dij are for the panel at the panel center.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho_0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)</p></li>
+<li><p><strong>zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the transverse shear parameters, zeta = A11 / A66 * (h/b)^2</p></li>
+<li><p><strong>Returns</strong> -- <dl class="simple">
+<dt>N11,cr^* (float)<span class="classifier">the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by</span></dt><dd><p>N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalShearLoad">
+<span class="sig-name descname"><span class="pre">nondimCriticalLocalShearLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalShearLoad" title="Link to this definition">¶</a></dt>
+<dd><p>predict the non-dimensional buckling load N12,cr^* for the local shear mode of a panel.
+Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+D11 here is for the center of the panel, and the other Dij are for the panel at the panel center.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho_0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)</p></li>
+<li><p><strong>zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the transverse shear parameters, zeta = A11 / A66 * (h/b)^2</p></li>
+<li><p><strong>Returns</strong> -- <dl class="simple">
+<dt>N12,cr^* (float)<span class="classifier">the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by</span></dt><dd><p>N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / s_p^2</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimStiffenerCripplingLoad">
+<span class="sig-name descname"><span class="pre">nondimStiffenerCripplingLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rho_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">genPoiss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zeta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimStiffenerCripplingLoad" title="Link to this definition">¶</a></dt>
+<dd><p>predict the non-dimensional buckling load N11,cr^* for the stiffener crippling mode of the stiffener.
+Uses the closed-form solution if PanelGPs.cripplingGP is None or the cripplingGP ML model if PanelGPs.cripplingGP is not None</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rho_0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the affine aspect ratio of the stiffener, rho_0 = a/b * 4thRoot(D22 / D11)</p></li>
+<li><p><strong>xi</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)</p></li>
+<li><p><strong>genPoiss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the generalized Poisson's ratio for weak BCs such as the stiffener with its free edge, eps = D12 / (D12 + 2 * D66)</p></li>
+<li><p><strong>zeta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the transverse shear parameters, zeta = A11 / A66 * (h/b)^2</p></li>
+<li><p><strong>Returns</strong> -- <dl class="simple">
+<dt>N11,cr^* (float)<span class="classifier">the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by</span></dt><dd><p>N11,cr = (N11,cr^*) * pi^2 * sqrt(D11s * D22s) / h_s^2; here D11s, D22s are for the stiffener laminate</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.setCPTstiffenerCrippling">
+<span class="sig-name descname"><span class="pre">setCPTstiffenerCrippling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">CPTcripplingMode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.setCPTstiffenerCrippling" title="Link to this definition">¶</a></dt>
+<dd><p>choose whether to use stiffener crippling by:
+CPT solution from Sean's paper if CPTcripplingMode = True
+DOD experimental solution from Ali's superclass if CPTcripplingMode = False</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>CPTcripplingMode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) -- whether to use CPT crippling solution or not</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.setWriteDVMode">
+<span class="sig-name descname"><span class="pre">setWriteDVMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">newMode</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.setWriteDVMode" title="Link to this definition">¶</a></dt>
+<dd><p>Set mode for writing DV inputs to the .f5 files
+0 - write DVs, 1 - write nondim params, 2 - write failure indexes
+this is a useful tool to investigate and debug final designs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>newMode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) -- new mode input for the writeDVMode</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GPBladeStiffenedShellConstitutive.test_all_derivative_tests">
+<span class="sig-name descname"><span class="pre">test_all_derivative_tests</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">printLevel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.test_all_derivative_tests" title="Link to this definition">¶</a></dt>
+<dd><p>test all the internal derivative tests</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">GaussianProcess</span></span><a class="headerlink" href="#tacs.constitutive.GaussianProcess" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Base class for constructing Gaussian Process ML models to predict buckling loads.
+This is an abstract base class and hence has no constructor, only methods used by its subclasses.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.getNparam">
+<span class="sig-name descname"><span class="pre">getNparam</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.getNparam" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of input parameters in the Gaussian Process model (4 for all of the current base classes)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the number of input parameters in Xtest [4 for the current implemented classes]</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>nparams (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.getNtrain">
+<span class="sig-name descname"><span class="pre">getNtrain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.getNtrain" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of input training data points used in the model training weights</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the number of training data points in alpha_train, the training weights</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>ntrain (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.getTrainingData">
+<span class="sig-name descname"><span class="pre">getTrainingData</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.getTrainingData" title="Link to this definition">¶</a></dt>
+<dd><p>Get the training dataset Xtrain used for training the Gaussian Process ML model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Xtrain (np.ndarray)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.kernel">
+<span class="sig-name descname"><span class="pre">kernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xtest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xtrain</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.kernel" title="Link to this definition">¶</a></dt>
+<dd><p>call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
+this function is for debugging purposes only =&gt; to make sure the kernel functions implemented inside the TACS GP models
+match those of the ml_buckling repo.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xtest</strong> (<em>np.ndarray</em>) -- a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the test datapoint.
+the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].</p></li>
+<li><p><strong>Xtrain</strong> (<em>np.ndarray</em>) -- a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the training datapoint.
+the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.predict_mean_test_data">
+<span class="sig-name descname"><span class="pre">predict_mean_test_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xtest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.predict_mean_test_data" title="Link to this definition">¶</a></dt>
+<dd><p>This method makes buckling predictions at each point of an Xtest dataset and returns the Ytest tensor of buckling load predictions.
+Note that the Xtest inputs and Ytest outputs are in log-space (more details below).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>np.ndarray</strong> (<em>Xtest -</em>) -- a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
+namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
+specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]</p></li>
+<li><p><strong>Returns</strong> -- Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load
+outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.recompute_alpha">
+<span class="sig-name descname"><span class="pre">recompute_alpha</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Ytrain</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.recompute_alpha" title="Link to this definition">¶</a></dt>
+<dd><p>a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
+this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
+for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.</p>
+<blockquote>
+<div><p>this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Ytrain</strong> (<em>np.ndarray</em>) -- training dataset log(buckling load) outputs in order to retrain the ML model,
+it's a rank-1 tensor of size (Ntrain,)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.setKS">
+<span class="sig-name descname"><span class="pre">setKS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ytrain</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.setKS" title="Link to this definition">¶</a></dt>
+<dd><p>Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
+Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,</p>
+<blockquote>
+<div><p>and Ytrain is not stored in the GP data structure.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- the Kresselmeier-Steinhauser aggregation parameter rho_KS used for smooth relu and smooth abs value
+in the GP kernel functions.</p></li>
+<li><p><strong>Ytrain</strong> (<em>np.ndarray</em>) -- training dataset log(buckling load) outputs in order to retrain the ML model,
+it's a rank-1 tensor of size (Ntrain,)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.setTheta">
+<span class="sig-name descname"><span class="pre">setTheta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ytrain</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.setTheta" title="Link to this definition">¶</a></dt>
+<dd><p>Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
+Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,</p>
+<blockquote>
+<div><p>and Ytrain is not stored in the GP data structure.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>np.ndarray</em>) -- rank 1-tensor of model hyperparameters (currently a length 13 1-tensor).</p></li>
+<li><p><strong>Ytrain</strong> (<em>np.ndarray</em>) -- training dataset log(buckling load) outputs in order to retrain the ML model,
+it's a rank-1 tensor of size (Ntrain,)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.GaussianProcess.test_all_gp_tests">
+<span class="sig-name descname"><span class="pre">test_all_gp_tests</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">printLevel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.GaussianProcess.test_all_gp_tests" title="Link to this definition">¶</a></dt>
+<dd><p>run all the internal Gaussian Process ML model derivative tests</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epsilon</strong> (<em>TacsScalar</em>) -- the step size for each derivative test</p></li>
+<li><p><strong>printLevel</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) -- an input of 0 does not print each derivative test result, an input of 1 does print each test result to terminal.</p></li>
+<li><p><strong>Returns</strong> -- max relative error (TacsScalar) : the max relative error among all internal derivative tests of the model</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -739,6 +1055,60 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 <dt class="sig sig-object py" id="tacs.constitutive.LamParamShellConstitutive">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.PanelGPs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">PanelGPs</span></span><a class="headerlink" href="#tacs.constitutive.PanelGPs" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.13)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>This object holds the individual GP objects for a single panel. One PanelGP object is shared among the constitutive
+object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
+only one call to each GP object is required per panel (speeds up computation time).
+The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
+(assuming each TACSComponent is associated with a different panel).</p>
+<p>The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
+# now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel</p>
+<dl>
+<dt>def callback_generator(tacs_component_names):</dt><dd><p>axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )</p>
+<p>def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, <a href="#id1"><span class="problematic" id="id2">**</span></a>kwargs):</p>
+<blockquote>
+<div><p># get the panelGPs object associated with this tacs component
+panelGPs = panelGP_dict[compDescript]</p>
+<p># ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.</p>
+</div></blockquote>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>BucklingGP</strong> (<em>TACSCripplingGaussianProcessModel</em><em>, </em><em>optional</em>) -- GP model for axial buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>BucklingGP</strong> -- GP model for shear buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>BucklingGP</strong> -- GP model for crippling buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>saveData</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) -- whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.PanelGPs.component_dict">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">component_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tacs_components</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axialGP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shearGP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cripplingGP</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saveData</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.PanelGPs.component_dict" title="Link to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:</dt><dd><p>{ tacs_component (str) : PanelGPs object }</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>BucklingGP</strong> (<em>TACSCripplingGaussianProcessModel</em><em>, </em><em>optional</em>) -- GP model for axial buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>BucklingGP</strong> -- GP model for shear buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>BucklingGP</strong> -- GP model for crippling buckling data, if None uses closed-form instead</p></li>
+<li><p><strong>saveData</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) -- whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -942,6 +1312,140 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">StiffenedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<p>This is a base class for both the BladeStiffenedShellConstitutive and the
+GPBladeStiffenedShellConstitutive classes</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setFailureModes">
+<span class="sig-name descname"><span class="pre">setFailureModes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">includePanelMaterialFailure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeStiffenerMaterialFailure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeLocalBuckling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeGlobalBuckling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeStiffenerColumnBuckling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeStiffenerCrippling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setFailureModes" title="Link to this definition">¶</a></dt>
+<dd><p>Turn on or off each failure mode in the KS failure index computation.
+If any of the entries are None, they are not modified and will be included in the failure index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>includePanelMaterialFailure</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include panel material / panel stress failure in the failure index</p></li>
+<li><p><strong>includeStiffenerMaterialFailure</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include stiffener material / stiffener stress failure in the failure index</p></li>
+<li><p><strong>includeLocalBuckling</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include local buckling (in between stiffeners) in the failure index</p></li>
+<li><p><strong>includeGlobalBuckling</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include global buckling (modes for the full stiffened panel) in the failure index</p></li>
+<li><p><strong>includeStiffenerColumnBuckling</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include column buckling failure in the failure index</p></li>
+<li><p><strong>includeStiffenerCrippling</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em> or </em><em>None</em>) -- whether to include stiffener crippling failure in the failure index</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setKSWeight">
+<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setKSWeight" title="Link to this definition">¶</a></dt>
+<dd><p>Update the ks weight used for aggregating the different failure modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a>) -- KS aggregation weight</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setPanelPlyFractionBounds">
+<span class="sig-name descname"><span class="pre">setPanelPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setPanelPlyFractionBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the panel ply fraction design variables</p>
+<p>The default bounds are 0 and 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setPanelThicknessBounds">
+<span class="sig-name descname"><span class="pre">setPanelThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setPanelThicknessBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the panel thickness design variable</p>
+<p>The default bounds are 1e-4 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setStiffenerHeightBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerHeightBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerHeightBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener height design variable</p>
+<p>The default bounds are 1e-3 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setStiffenerPitchBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerPitchBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerPitchBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener pitch design variable</p>
+<p>The default bounds are 1e-3 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setStiffenerPlyFractionBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerPlyFractionBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerPlyFractionBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener ply fraction design variables</p>
+<p>The default bounds are 0 and 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a><em>]</em>) -- Upper bounds</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> -- Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.StiffenedShellConstitutive.setStiffenerThicknessBounds">
+<span class="sig-name descname"><span class="pre">setStiffenerThicknessBounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowerBound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upperBound</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerThicknessBounds" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lower and upper bounds for the stiffener thickness design variable</p>
+<p>The default bounds are 1e-4 and 1e20</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowerBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Lower bound</p></li>
+<li><p><strong>upperBound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.13)"><em>complex</em></a>) -- Upper bound</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -977,14 +1481,9 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 <li><a class="reference internal" href="#tacs.constitutive.BasicBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">BasicBeamConstitutive.generateBDFCard()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive</span></code></a><ul>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setKSWeight"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setKSWeight()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setPanelPlyFractionBounds()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setPanelThicknessBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setPanelThicknessBounds()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerHeightBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerHeightBounds()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPitchBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerPitchBounds()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerPlyFractionBounds()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive.setStiffenerThicknessBounds"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive.setStiffenerThicknessBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BladeStiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">BladeStiffenedShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.BucklingGP"><code class="docutils literal notranslate"><span class="pre">BucklingGP</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.BucklingGP.from_csv"><code class="docutils literal notranslate"><span class="pre">BucklingGP.from_csv()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a><ul>
@@ -993,6 +1492,29 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalAxialLoad"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.nondimCriticalGlobalAxialLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalGlobalShearLoad"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.nondimCriticalGlobalShearLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalAxialLoad"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.nondimCriticalLocalAxialLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimCriticalLocalShearLoad"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.nondimCriticalLocalShearLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.nondimStiffenerCripplingLoad"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.nondimStiffenerCripplingLoad()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.setCPTstiffenerCrippling"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.setCPTstiffenerCrippling()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.setWriteDVMode"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.setWriteDVMode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GPBladeStiffenedShellConstitutive.test_all_derivative_tests"><code class="docutils literal notranslate"><span class="pre">GPBladeStiffenedShellConstitutive.test_all_derivative_tests()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess"><code class="docutils literal notranslate"><span class="pre">GaussianProcess</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.getNparam"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.getNparam()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.getNtrain"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.getNtrain()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.getTrainingData"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.getTrainingData()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.kernel"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.kernel()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.predict_mean_test_data"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.predict_mean_test_data()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.recompute_alpha"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.recompute_alpha()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.setKS"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.setKS()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.setTheta"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.setTheta()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.GaussianProcess.test_all_gp_tests"><code class="docutils literal notranslate"><span class="pre">GaussianProcess.test_all_gp_tests()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.GeneralMassConstitutive"><code class="docutils literal notranslate"><span class="pre">GeneralMassConstitutive</span></code></a><ul>
@@ -1013,6 +1535,10 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.LamParamShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.PanelGPs"><code class="docutils literal notranslate"><span class="pre">PanelGPs</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.PanelGPs.component_dict"><code class="docutils literal notranslate"><span class="pre">PanelGPs.component_dict()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.constitutive.PhaseChangeMaterialConstitutive"><code class="docutils literal notranslate"><span class="pre">PhaseChangeMaterialConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PlaneStressConstitutive"><code class="docutils literal notranslate"><span class="pre">PlaneStressConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PointMassConstitutive"><code class="docutils literal notranslate"><span class="pre">PointMassConstitutive</span></code></a></li>
@@ -1026,6 +1552,17 @@ Weighting factor used for topology optimization. 0.0 corresponds to void,
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setFailureModes"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setFailureModes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setKSWeight"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setKSWeight()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setPanelPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setPanelPlyFractionBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setPanelThicknessBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setPanelThicknessBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerHeightBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setStiffenerHeightBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerPitchBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setStiffenerPitchBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerPlyFractionBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setStiffenerPlyFractionBounds()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.StiffenedShellConstitutive.setStiffenerThicknessBounds"><code class="docutils literal notranslate"><span class="pre">StiffenedShellConstitutive.setStiffenerThicknessBounds()</span></code></a></li>
 </ul>
 </li>
 </ul>

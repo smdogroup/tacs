@@ -14,7 +14,7 @@
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="VolumeConstraint" href="volume.html" />
+    <link rel="next" title="PanelWidthConstraint" href="panel_width.html" />
     <link rel="prev" title="DVConstraint" href="dvcon.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
@@ -27,7 +27,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="volume.html" title="VolumeConstraint"
+          <a href="panel_width.html" title="PanelWidthConstraint"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="dvcon.html" title="DVConstraint"
@@ -94,6 +94,13 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.externalClearUpToDate">
+<span class="sig-name descname"><span class="pre">externalClearUpToDate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_length.html#PanelLengthConstraint.externalClearUpToDate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.externalClearUpToDate" title="Link to this definition">¶</a></dt>
+<dd><p>clear UpToDate by FUNtoFEM which sets variables into
+TACS through a different interface</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.setNodes">
 <span class="sig-name descname"><span class="pre">setNodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xpts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_length.html#PanelLengthConstraint.setNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.setNodes" title="Link to this definition">¶</a></dt>
 <dd><p>Set the mesh coordinates of the structure.</p>
@@ -101,6 +108,26 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.computeRefAxis">
+<span class="sig-name descname"><span class="pre">computeRefAxis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">refAxis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_bndry_node_coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_length.html#PanelLengthConstraint.computeRefAxis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.computeRefAxis" title="Link to this definition">¶</a></dt>
+<dd><p>remove the panelNormal from the refAxis</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>refAxis</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3,) for the xyz coordinates of the original refAxis from transform object</p></li>
+<li><p><strong>comp_bndry_node_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>an array of size (3,) for xyz coords of the panel length axis after the panelNormal component has been removed</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -454,7 +481,9 @@ optimization</p>
 <li><a class="reference internal" href="#api-reference">API Reference</a><ul>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setDesignVars"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.externalClearUpToDate"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.externalClearUpToDate()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setNodes"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.computeRefAxis"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.computeRefAxis()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.addConstraint"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.addConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getConstraintBounds()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getConstraintSizes"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getConstraintSizes()</span></code></a></li>
@@ -493,8 +522,8 @@ optimization</p>
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="volume.html"
-                          title="next chapter">VolumeConstraint</a></p>
+    <p class="topless"><a href="panel_width.html"
+                          title="next chapter">PanelWidthConstraint</a></p>
   </div>
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -520,7 +549,7 @@ optimization</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="volume.html" title="VolumeConstraint"
+          <a href="panel_width.html" title="PanelWidthConstraint"
              >next</a> |</li>
         <li class="right" >
           <a href="dvcon.html" title="DVConstraint"

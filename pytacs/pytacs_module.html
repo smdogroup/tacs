@@ -1107,6 +1107,27 @@ length DV values passed to components match the actual panel lengths.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createPanelWidthConstraint">
+<span class="sig-name descname"><span class="pre">createPanelWidthConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createPanelWidthConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createPanelWidthConstraint" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new PanelWidthConstraint for enforcing that the panel
+width DV values passed to components match the actual panel widths.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) -- Name to assign constraint.</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) -- Class-specific options to pass to DVConstraint instance (case-insensitive).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>constraint</strong> -- PanelWidthConstraint object used for calculating constraints.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tacs.constraints.{PanelWidthConstraint}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createVolumeConstraint">
 <span class="sig-name descname"><span class="pre">createVolumeConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createVolumeConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createVolumeConstraint" title="Link to this definition">¶</a></dt>
 <dd><p>Create a new VolumeConstraint for constraining the size of a closed volume.
@@ -1282,6 +1303,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createAdjacencyConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createAdjacencyConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createDVConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createDVConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createPanelLengthConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createPanelLengthConstraint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createPanelWidthConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createPanelWidthConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createVolumeConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createVolumeConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumComponents"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumComponents()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.dtype"><code class="docutils literal notranslate"><span class="pre">pyTACS.dtype</span></code></a></li>

@@ -277,6 +277,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
+<div class="viewcode-block" id="PanelLengthConstraint.externalClearUpToDate">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.externalClearUpToDate">[docs]</a>
+    <span class="k">def</span> <span class="nf">externalClearUpToDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        clear UpToDate by FUNtoFEM which sets variables into</span>
+<span class="sd">        TACS through a different interface</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">return</span></div>
+
+
 <div class="viewcode-block" id="PanelLengthConstraint.setNodes">
 <a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.setNodes">[docs]</a>
     <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
@@ -293,6 +305,36 @@
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">constraintsSensUpToDate</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="PanelLengthConstraint.computeRefAxis">
+<a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.computeRefAxis">[docs]</a>
+    <span class="k">def</span> <span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        remove the panelNormal from the refAxis</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        refAxis : numpy.ndarray</span>
+<span class="sd">            an array of size (3,) for the xyz coordinates of the original refAxis from transform object</span>
+<span class="sd">        comp_bndry_node_coords : numpy.ndarray</span>
+<span class="sd">            an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            an array of size (3,) for xyz coords of the panel length axis after the panelNormal component has been removed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># For a more accurate length calculation, roject the ref axis</span>
+        <span class="c1"># onto the &quot;average&quot; plane of the baseline panel geometry by</span>
+        <span class="c1"># using an SVD to compute a normal vector</span>
+        <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">comp_bndry_node_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">centredPoints</span> <span class="o">=</span> <span class="n">comp_bndry_node_coords</span> <span class="o">-</span> <span class="n">centroid</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">VT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">centredPoints</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">panelNormal</span> <span class="o">=</span> <span class="n">VT</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">refAxis</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">refAxis</span><span class="p">,</span> <span class="n">panelNormal</span><span class="p">)</span> <span class="o">*</span> <span class="n">panelNormal</span>
+        <span class="n">refAxis</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">refAxis</span></div>
 
 
 <div class="viewcode-block" id="PanelLengthConstraint.addConstraint">
@@ -363,15 +405,8 @@
                         <span class="sa">f</span><span class="s2">&quot;The elements in component </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">compDescripts</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span><span class="si">}</span><span class="s2"> do not have a reference axis. Please define one by using the &#39;ShellRefAxisTransform&#39; class with your elements&quot;</span>
                     <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
 
-                <span class="c1"># For a more accurate length calculation, roject the ref axis</span>
-                <span class="c1"># onto the &quot;average&quot; plane of the baseline panel geometry by</span>
-                <span class="c1"># using an SVD to compute a normal vector</span>
-                <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">centredPoints</span> <span class="o">=</span> <span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">]</span> <span class="o">-</span> <span class="n">centroid</span>
-                <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">VT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">centredPoints</span><span class="p">,</span> <span class="n">full_matrices</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="n">panelNormal</span> <span class="o">=</span> <span class="n">VT</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-                <span class="n">refAxis</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">refAxis</span><span class="p">,</span> <span class="n">panelNormal</span><span class="p">)</span> <span class="o">*</span> <span class="n">panelNormal</span>
-                <span class="n">refAxis</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+                <span class="c1"># remove the panelNormal from the adjusted ref axis</span>
+                <span class="n">refAxis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">computeRefAxis</span><span class="p">(</span><span class="n">refAxis</span><span class="p">,</span> <span class="n">boundaryNodeCoords</span><span class="p">[</span><span class="n">compID</span><span class="p">])</span>
                 <span class="n">refAxes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
 
                 <span class="c1"># Now figure out where the DV for this component lives</span>
@@ -851,6 +886,7 @@
                         <span class="s2">&quot;constitutive object. This is not allowed. &quot;</span>
                         <span class="s2">&quot;This constitutive object cannot use a &quot;</span>
                         <span class="s2">&quot;panel-type constitutive object. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;On compID </span><span class="si">{</span><span class="n">compID</span><span class="si">}</span><span class="s2">&quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;CompIDs are: </span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
                 <span class="n">nodeChain</span> <span class="o">=</span> <span class="n">nodeChain</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
