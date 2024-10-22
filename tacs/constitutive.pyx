@@ -849,7 +849,25 @@ cdef class StiffenedShellConstitutive(ShellConstitutive):
         includeStiffenerColumnBuckling=None,
         includeStiffenerCrippling=None,
     ):
+        """
+        Turn on or off each failure mode in the KS failure index computation.
+        If any of the entries are None, they are not modified and will be included in the failure index.
 
+        Parameters
+        ----------
+        includePanelMaterialFailure : bool or None
+            whether to include panel material / panel stress failure in the failure index
+        includeStiffenerMaterialFailure : bool or None
+            whether to include stiffener material / stiffener stress failure in the failure index
+        includeLocalBuckling : bool or None
+            whether to include local buckling (in between stiffeners) in the failure index
+        includeGlobalBuckling : bool or None
+            whether to include global buckling (modes for the full stiffened panel) in the failure index
+        includeStiffenerColumnBuckling : bool or None
+            whether to include column buckling failure in the failure index
+        includeStiffenerCrippling : bool or None
+            whether to include stiffener crippling failure in the failure index
+        """
         if self.base_ptr:
             if includePanelMaterialFailure is not None:
                 self.base_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)

@@ -7,4 +7,5 @@ Constraint classes
   adjacency
   dvcon
   panel_length
+  panel_width
   volume
