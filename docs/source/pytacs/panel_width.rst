@@ -1,4 +1,4 @@
-PanelLengthConstraint
+PanelWidthConstraint
 ---------------------
 .. automodule:: tacs.constraints.panel_width
 
