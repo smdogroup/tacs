@@ -66,6 +66,12 @@ from tacs.mphys import TacsBuilder
 # ==============================================================================
 parser = argparse.ArgumentParser()
 parser.add_argument(
+    "--useGP",
+    default=False,
+    action="store_true",
+    help="whether to use the Gaussian process buckling predictions or not",
+)
+parser.add_argument(
     "--useStiffPitchDV",
     action="store_true",
     help="Use stiffener pitch as a design variable",
@@ -108,6 +114,7 @@ S12 = 124e6
 
 # Baseline panel sizing
 panelLength = length
+panelWidth = width
 
 stiffenerPitch = 0.125
 stiffenerPitchMin = 0.1
@@ -201,26 +208,54 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
         skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
         stiffener_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
 
-    con = constitutive.BladeStiffenedShellConstitutive(
-        panelPly=ply,
-        stiffenerPly=ply,
-        panelLength=panelLength,
-        stiffenerPitch=stiffenerPitch,
-        panelThick=panelThickness,
-        panelPlyAngles=ply_angles,
-        panelPlyFracs=skin_ply_fractions,
-        stiffenerHeight=stiffenerHeight,
-        stiffenerThick=stiffenerThickness,
-        stiffenerPlyAngles=ply_angles,
-        stiffenerPlyFracs=stiffener_ply_fractions,
-        panelLengthNum=panelLengthNum,
-        stiffenerPitchNum=stiffenerPitchNum,
-        panelThickNum=panelThicknessNum,
-        panelPlyFracNums=skin_ply_fraction_dv_nums,
-        stiffenerHeightNum=stiffenerHeightNum,
-        stiffenerThickNum=stiffenerThicknessNum,
-        stiffenerPlyFracNums=stiffener_ply_fraction_dv_nums,
-    )
+    if not (args.useGP):
+        con = constitutive.BladeStiffenedShellConstitutive(
+            panelPly=ply,
+            stiffenerPly=ply,
+            panelLength=panelLength,
+            stiffenerPitch=stiffenerPitch,
+            panelThick=panelThickness,
+            panelPlyAngles=ply_angles,
+            panelPlyFracs=skin_ply_fractions,
+            stiffenerHeight=stiffenerHeight,
+            stiffenerThick=stiffenerThickness,
+            stiffenerPlyAngles=ply_angles,
+            stiffenerPlyFracs=stiffener_ply_fractions,
+            panelLengthNum=panelLengthNum,
+            stiffenerPitchNum=stiffenerPitchNum,
+            panelThickNum=panelThicknessNum,
+            panelPlyFracNums=skin_ply_fraction_dv_nums,
+            stiffenerHeightNum=stiffenerHeightNum,
+            stiffenerThickNum=stiffenerThicknessNum,
+            stiffenerPlyFracNums=stiffener_ply_fraction_dv_nums,
+        )
+    else:  # args.useGP is True
+        panelWidthNum = -1
+
+        con = constitutive.GPBladeStiffenedShellConstitutive(
+            panelPly=ply,
+            stiffenerPly=ply,
+            panelLength=panelLength,
+            stiffenerPitch=stiffenerPitch,
+            panelThick=panelThickness,
+            panelPlyAngles=ply_angles,
+            panelPlyFracs=skin_ply_fractions,
+            stiffenerHeight=stiffenerHeight,
+            stiffenerThick=stiffenerThickness,
+            stiffenerPlyAngles=ply_angles,
+            stiffenerPlyFracs=stiffener_ply_fractions,
+            panelLengthNum=panelLengthNum,
+            stiffenerPitchNum=stiffenerPitchNum,
+            panelThickNum=panelThicknessNum,
+            panelPlyFracNums=skin_ply_fraction_dv_nums,
+            stiffenerHeightNum=stiffenerHeightNum,
+            stiffenerThickNum=stiffenerThicknessNum,
+            stiffenerPlyFracNums=stiffener_ply_fraction_dv_nums,
+            panelWidth=panelWidth,
+            panelWidthNum=panelWidthNum,
+            flangeFraction=0.0,
+        )
+
     con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
     con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
     con.setStiffenerThicknessBounds(stiffenerThicknessMin, stiffenerThicknessMax)
