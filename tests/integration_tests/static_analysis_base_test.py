@@ -388,7 +388,7 @@ class StaticTestCase:
 
             # Assemble the transpose stiffness matrix
             self.assembler.assembleJacobian(
-                self.alpha, self.beta, self.gamma, None, self.mat, TACS.TRANSPOSE
+                self.alpha, self.beta, self.gamma, None, self.mat, TACS.NORMAL
             )
             self.pc.factor()
 
@@ -397,6 +397,7 @@ class StaticTestCase:
                 self.func_list, self.dfdu_list, self.alpha, self.beta, self.gamma
             )
             for i in range(len(self.func_list)):
+                self.assembler.applyBCs(self.dfdu_list[i])
                 self.gmres.solve(self.dfdu_list[i], self.adjoint_list[i])
 
         def zero_tacs_vecs(self):
