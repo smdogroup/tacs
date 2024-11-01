@@ -396,7 +396,7 @@ cdef extern from "TACSAssembler.h":
                        TACSBVec **dfdx)
         void addSVSens(double alpha, double beta, double gamma,
                        int numFuncs, TACSFunction **funcs,
-                       TACSBVec **fuSens, bool applyBCs)
+                       TACSBVec **fuSens)
         void addAdjointResProducts(double scale, int numAdjoints,
                                    TACSBVec **adjoint, TACSBVec **dfdx,
                                    TacsScalar loadScale)

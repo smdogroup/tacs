@@ -2286,7 +2286,7 @@ cdef class Assembler:
         return
 
     def addSVSens(self, funclist, dfdulist, double alpha=1.0,
-                  double beta=0.0, double gamma=0.0, bool applyBCs=True):
+                  double beta=0.0, double gamma=0.0):
 
         """
         Evaluate the derivative of the function w.r.t. the state
@@ -2316,7 +2316,7 @@ cdef class Assembler:
             dfdu[i] = (<Vec>dfdulist[i]).getBVecPtr()
 
         # Evaluate the derivative of the functions
-        self.ptr.addSVSens(alpha, beta, gamma, num_funcs, funcs, dfdu, applyBCs)
+        self.ptr.addSVSens(alpha, beta, gamma, num_funcs, funcs, dfdu)
 
         free(funcs)
         free(dfdu)

@@ -1224,7 +1224,7 @@ class StaticProblem(TACSProblem):
 
         # Next we will solve all the adjoints
         # Set adjoint rhs
-        self.addSVSens(evalFuncs, dIdus, applyBCs=False)
+        self.addSVSens(evalFuncs, dIdus)
         adjointRHSTime = time.time()
         for i, f in enumerate(evalFuncs):
             adjointStartTime[f] = time.time()
@@ -1288,7 +1288,7 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def addSVSens(self, evalFuncs, svSensList, applyBCs=False):
+    def addSVSens(self, evalFuncs, svSensList):
         """
         Add the state variable partial sensitivity to the ADjoint RHS for given evalFuncs
 
@@ -1318,7 +1318,7 @@ class StaticProblem(TACSProblem):
             svSensBVecList = svSensList
 
         self.assembler.addSVSens(
-            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma, applyBCs
+            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma
         )
 
         # Update from the BVec values, if the input was a numpy array

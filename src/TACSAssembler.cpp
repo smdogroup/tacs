@@ -4909,8 +4909,7 @@ void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
 */
 void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
                               TacsScalar gamma, int numFuncs,
-                              TACSFunction **funcs, TACSBVec **dfdu,
-                              const bool applyBCs) {
+                              TACSFunction **funcs, TACSBVec **dfdu) {
   // First check if this is the right assembly object
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k] && this != funcs[k]->getAssembler()) {
@@ -4978,9 +4977,6 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k]) {
       dfdu[k]->endSetValues(TACS_ADD_VALUES);
-      if (applyBCs) {
-        dfdu[k]->applyBCs(bcMap);
-      }
     }
   }
 }

@@ -271,8 +271,7 @@ class TACSAssembler : public TACSObject {
   void addDVSens(TacsScalar coef, int numFuncs, TACSFunction **funcs,
                  TACSBVec **dfdx);
   void addSVSens(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                 int numFuncs, TACSFunction **funcs, TACSBVec **dfdu,
-                 const bool applyBCs = true);
+                 int numFuncs, TACSFunction **funcs, TACSBVec **dfdu);
   void addAdjointResProducts(TacsScalar scale, int numAdjoints,
                              TACSBVec **adjoint, TACSBVec **dfdx,
                              const TacsScalar lambda = 1.0);
