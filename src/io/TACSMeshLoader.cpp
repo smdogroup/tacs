@@ -706,10 +706,13 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
 
             // Check if the number of nodes is within the prescribed limits
             if (num_conn < TacsMeshLoaderElementLimits[index][0]) {
-              fprintf(stderr,
-                      "TACSMeshLoader: Number of nodes for element %s "
-                      "not within limits\n",
-                      TacsMeshLoaderElementTypes[index]);
+              fprintf(
+                  stderr,
+                  "TACSMeshLoader: Number of nodes for element %s "
+                  "not within limits, must be between %d and %d, but has %d\n",
+                  TacsMeshLoaderElementTypes[index],
+                  TacsMeshLoaderElementLimits[index][0],
+                  TacsMeshLoaderElementLimits[index][1], num_conn);
               fail = 1;
               break;
             }
@@ -899,17 +902,26 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
               file_conn[elem_conn_size + 1] = temp_nodes[1] - 1;
               file_conn[elem_conn_size + 2] = temp_nodes[3] - 1;
               file_conn[elem_conn_size + 3] = temp_nodes[2] - 1;
+            } else if (strncmp(line, "CQUAD16", 7) == 0) {
+              const int nodeOrder[16] = {0,  4,  5,  1, 11, 12, 13, 6,
+                                         10, 15, 14, 7, 3,  9,  8,  2};
+              for (int k = 0; k < 16; k++) {
+                file_conn[elem_conn_size + k] = temp_nodes[nodeOrder[k]] - 1;
+              }
+            } else if (strncmp(line, "CQUAD25", 7) == 0) {
+              const int nodeOrder[25] = {0,  4,  5,  6,  1,  15, 16, 20, 17,
+                                         7,  14, 23, 24, 21, 8,  13, 19, 22,
+                                         18, 9,  3,  12, 11, 10, 2};
+              for (int k = 0; k < 25; k++) {
+                file_conn[elem_conn_size + k] = temp_nodes[nodeOrder[k]] - 1;
+              }
             } else if (strncmp(line, "CQUAD9", 6) == 0 ||
                        strncmp(line, "CQUAD", 5) == 0) {
-              file_conn[elem_conn_size] = temp_nodes[0] - 1;
-              file_conn[elem_conn_size + 1] = temp_nodes[4] - 1;
-              file_conn[elem_conn_size + 2] = temp_nodes[1] - 1;
-              file_conn[elem_conn_size + 3] = temp_nodes[7] - 1;
-              file_conn[elem_conn_size + 4] = temp_nodes[8] - 1;
-              file_conn[elem_conn_size + 5] = temp_nodes[5] - 1;
-              file_conn[elem_conn_size + 6] = temp_nodes[3] - 1;
-              file_conn[elem_conn_size + 7] = temp_nodes[6] - 1;
-              file_conn[elem_conn_size + 8] = temp_nodes[2] - 1;
+              const int nodeOrder[9] = {0, 4, 1, 7, 8, 5, 3, 6, 2};
+
+              for (int k = 0; k < 9; k++) {
+                file_conn[elem_conn_size + k] = temp_nodes[nodeOrder[k]] - 1;
+              }
             } else if (strncmp(line, "CHEXA", 5) == 0) {
               file_conn[elem_conn_size] = temp_nodes[0] - 1;
               file_conn[elem_conn_size + 1] = temp_nodes[1] - 1;

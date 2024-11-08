@@ -19,11 +19,11 @@
 #ifndef TACS_MESH_LOADER_H
 #define TACS_MESH_LOADER_H
 
-const int TacsMeshLoaderNumElementTypes = 10;
+const int TacsMeshLoaderNumElementTypes = 12;
 
 const char *TacsMeshLoaderElementTypes[] = {
-    "CBAR",  "CQUADR",  "CQUAD4", "CQUAD8", "CQUAD9",
-    "CQUAD", "CHEXA27", "CHEXA",  "CTRIA3", "CTETRA"};
+    "CBAR",    "CQUADR", "CQUAD4",  "CQUAD8", "CQUAD9", "CQUAD16",
+    "CQUAD25", "CQUAD",  "CHEXA27", "CHEXA",  "CTRIA3", "CTETRA"};
 
 // Lower and upper limits for the number of nodes
 const int TacsMeshLoaderElementLimits[][2] = {{2, 2},    // CBAR
@@ -31,6 +31,8 @@ const int TacsMeshLoaderElementLimits[][2] = {{2, 2},    // CBAR
                                               {4, 4},    // CQUAD4
                                               {8, 8},    // CQUAD8
                                               {9, 9},    // CQUAD9
+                                              {16, 16},  // CQUAD16
+                                              {25, 25},  // CQUAD25
                                               {9, 9},    // CQUAD
                                               {27, 27},  // CHEXA27
                                               {8, 8},    // CHEXA
