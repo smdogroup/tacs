@@ -123,7 +123,7 @@ elif order == 3:
                 [2, 1],
                 [1, 2],
                 [0, 1],
-                [1,1]
+                [1, 1],
             ]
             elementDef = ["CQUAD9", elem, elem]
             nodeIDs = [nodes[i + node[0], j + node[1]] for node in nodeOrdering]
