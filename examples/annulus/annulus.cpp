@@ -41,11 +41,13 @@ int main(int argc, char *argv[]) {
   TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
   TACSElementBasis *quad_basis = new TACSQuadraticQuadBasis();
   TACSElementBasis *cubic_basis = new TACSCubicQuadBasis();
+  TACSElementBasis *quartic_basis = new TACSQuarticQuadBasis();
 
   // Create the element type
   TACSElement2D *linear_element = new TACSElement2D(model, linear_basis);
   TACSElement2D *quad_element = new TACSElement2D(model, quad_basis);
   TACSElement2D *cubic_element = new TACSElement2D(model, cubic_basis);
+  TACSElement2D *quartic_element = new TACSElement2D(model, quartic_basis);
 
   // The TACSAssembler object - which should be allocated if the mesh
   // is loaded correctly
@@ -78,6 +80,8 @@ int main(int argc, char *argv[]) {
             elem = quad_element;
           } else if (strcmp(elem_descript, "CQUAD16") == 0) {
             elem = cubic_element;
+          } else if (strcmp(elem_descript, "CQUAD25") == 0) {
+            elem = quartic_element;
           }
 
           // Set the element object into the mesh loader class
