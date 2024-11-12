@@ -3,4 +3,4 @@
 # Minimum requirements for the build system to execute.
 requires = ['setuptools>=45.0,<72.0', 'wheel', 'cython>=3.0.0', 'numpy>=1.25,<2.0.0',
             # Build against an old version (3.1.5) of mpi4py for forward compatibility
-            'mpi4py==3.1.6']
+            'mpi4py==3.1.5']
