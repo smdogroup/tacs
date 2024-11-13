@@ -77,6 +77,26 @@
   - Comments start with a dollar sign
 */
 
+const int TACSMeshLoader::NumElementTypes = 12;
+
+const char *TACSMeshLoader::ElementTypes[] = {
+    "CBAR",    "CQUADR", "CQUAD4",  "CQUAD8", "CQUAD9", "CQUAD16",
+    "CQUAD25", "CQUAD",  "CHEXA27", "CHEXA",  "CTRIA3", "CTETRA"};
+
+// Lower and upper limits for the number of nodes
+const int TACSMeshLoader::ElementLimits[][2] = {{2, 2},    // CBAR
+                                                {4, 4},    // CQUADR
+                                                {4, 4},    // CQUAD4
+                                                {8, 8},    // CQUAD8
+                                                {9, 9},    // CQUAD9
+                                                {16, 16},  // CQUAD16
+                                                {25, 25},  // CQUAD25
+                                                {9, 9},    // CQUAD
+                                                {27, 27},  // CHEXA27
+                                                {8, 8},    // CHEXA
+                                                {3, 3},    // CTRIA3
+                                                {4, 10}};  // CTETRA
+
 /*
   Functions for sorting a list such that:
 
@@ -679,10 +699,10 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
           // Loop over the number of types and determine the number of
           // nodes
           int index = -1;
-          for (int k = 0; k < TacsMeshLoaderNumElementTypes; k++) {
-            int len = strlen(TacsMeshLoaderElementTypes[k]);
-            if (strncmp(line, TacsMeshLoaderElementTypes[k], len) == 0) {
-              max_num_conn = TacsMeshLoaderElementLimits[k][1];
+          for (int k = 0; k < this->NumElementTypes; k++) {
+            int len = strlen(this->ElementTypes[k]);
+            if (strncmp(line, this->ElementTypes[k], len) == 0) {
+              max_num_conn = this->ElementLimits[k][1];
               index = k;
 
               // Check if we should use the extended width or not
@@ -705,14 +725,13 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
             }
 
             // Check if the number of nodes is within the prescribed limits
-            if (num_conn < TacsMeshLoaderElementLimits[index][0]) {
+            if (num_conn < this->ElementLimits[index][0]) {
               fprintf(
                   stderr,
                   "TACSMeshLoader: Number of nodes for element %s "
                   "not within limits, must be between %d and %d, but has %d\n",
-                  TacsMeshLoaderElementTypes[index],
-                  TacsMeshLoaderElementLimits[index][0],
-                  TacsMeshLoaderElementLimits[index][1], num_conn);
+                  this->ElementTypes[index], this->ElementLimits[index][0],
+                  this->ElementLimits[index][1], num_conn);
               fail = 1;
               break;
             }
@@ -871,10 +890,10 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
           // Loop over the number of types and determine the number of
           // nodes
           int index = -1;
-          for (int k = 0; k < TacsMeshLoaderNumElementTypes; k++) {
-            int len = strlen(TacsMeshLoaderElementTypes[k]);
-            if (strncmp(line, TacsMeshLoaderElementTypes[k], len) == 0) {
-              max_num_conn = TacsMeshLoaderElementLimits[k][1];
+          for (int k = 0; k < this->NumElementTypes; k++) {
+            int len = strlen(this->ElementTypes[k]);
+            if (strncmp(line, this->ElementTypes[k], len) == 0) {
+              max_num_conn = this->ElementLimits[k][1];
               index = k;
 
               // Check if we should use the extended width or not
@@ -950,7 +969,7 @@ int TACSMeshLoader::scanBDFFile(const char *file_name) {
                 strcpy(&component_elems[9 * (component_num - 1)], "CTETRA10");
               } else {
                 strcpy(&component_elems[9 * (component_num - 1)],
-                       TacsMeshLoaderElementTypes[index]);
+                       this->ElementTypes[index]);
               }
             }
           } else {
