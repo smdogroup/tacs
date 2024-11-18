@@ -19,24 +19,6 @@
 #ifndef TACS_MESH_LOADER_H
 #define TACS_MESH_LOADER_H
 
-const int TacsMeshLoaderNumElementTypes = 10;
-
-const char *TacsMeshLoaderElementTypes[] = {
-    "CBAR",  "CQUADR",  "CQUAD4", "CQUAD8", "CQUAD9",
-    "CQUAD", "CHEXA27", "CHEXA",  "CTRIA3", "CTETRA"};
-
-// Lower and upper limits for the number of nodes
-const int TacsMeshLoaderElementLimits[][2] = {{2, 2},    // CBAR
-                                              {4, 4},    // CQUADR
-                                              {4, 4},    // CQUAD4
-                                              {8, 8},    // CQUAD8
-                                              {9, 9},    // CQUAD9
-                                              {9, 9},    // CQUAD
-                                              {27, 27},  // CHEXA27
-                                              {8, 8},    // CHEXA
-                                              {3, 3},    // CTRIA3
-                                              {4, 10}};  // CTETRA
-
 /*
   This class provides a limited capability to read in nodal and
   connectivity information from a .bdf file - and could be extended
@@ -157,6 +139,13 @@ class TACSMeshLoader : public TACSObject {
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
   TacsScalar *bc_vals;
+
+  static const int NumElementTypes;
+
+  static const char *ElementTypes[];
+
+  // Lower and upper limits for the number of nodes
+  static const int ElementLimits[][2];
 };
 
 #endif  // TACS_MESH_LOADER_H
