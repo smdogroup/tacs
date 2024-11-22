@@ -1517,7 +1517,7 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
 
     // Print out the results to stdout
     char outname[128];
-    sprintf(outname, "Jacobian col %d", ii);
+    snprintf(outname, sizeof(outname), "Jacobian col %d", ii);
     writeErrorComponents(stdout, outname, res, fd, 8);
   }
 }

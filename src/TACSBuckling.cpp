@@ -20,6 +20,56 @@
 
 #include "tacslapack.h"
 
+class TACSMatCombo : public TACSMat {
+ public:
+  TACSMatCombo(TacsScalar _Acoef, TacsScalar _Bcoef, TACSMat *_A, TACSMat *_B,
+               TACSAssembler *_assembler) {
+    Acoef = _Acoef;
+    Bcoef = _Bcoef;
+
+    A = _A;
+    B = _B;
+    A->incref();
+    B->incref();
+
+    assembler = _assembler;
+    assembler->incref();
+
+    temp = assembler->createVec();
+    temp->incref();
+  }
+  ~TACSMatCombo() {
+    A->decref();
+    B->decref();
+    assembler->decref();
+    temp->decref();
+  }
+
+  TACSVec *createVec() { return A->createVec(); }
+
+  void setCoefficients(TacsScalar _Acoef, TacsScalar _Bcoef) {
+    Acoef = _Acoef;
+    Bcoef = _Bcoef;
+  }
+
+  void mult(TACSVec *x, TACSVec *y) {
+    A->mult(x, y);
+    if (!(TacsRealPart(Acoef) == 1.0)) {
+      y->scale(Acoef);
+    }
+
+    B->mult(x, temp);
+    y->axpy(Bcoef, temp);
+    assembler->applyBCs(y);
+  }
+
+ private:
+  TacsScalar Acoef, Bcoef;
+  TACSMat *A, *B;
+  TACSAssembler *assembler;
+  TACSBVec *temp;
+};
+
 /*
   Implementation of the buckling/frequency analysis
 */
@@ -834,7 +884,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "JD computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "JD computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   } else {
@@ -880,7 +930,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "Lanczos computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "Lanczos computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   }
@@ -961,6 +1011,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
                                       eigvec, eigvec, dfdx);
 
   // Finish computing the derivative
+  // Note - this shouldn't be needed since the eigenvalues are M-orthogonal
   if (mmat) {
     mmat->mult(eigvec, res);
   }
@@ -1016,6 +1067,168 @@ void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
   dfdXpt->beginSetValues(TACS_ADD_VALUES);
   dfdXpt->endSetValues(TACS_ADD_VALUES);
   dfdXpt->scale(scale);
+}
+
+/*
+  Compute the derivative a function of interest with respect to design variables
+  given the derivative of the eigenvalues and eigenvectors with respect to a
+  function of interest.
+*/
+void TACSFrequencyAnalysis::addEigenSens(int neigs, TacsScalar dfdlam[],
+                                         TACSBVec *dfdq[], TACSBVec *dfdx,
+                                         TACSBVec *dfdXpt, int use_cg,
+                                         double rtol, double atol) {
+  TacsScalar *eigs = new TacsScalar[neigs];
+  TACSVec **Cvecs = new TACSVec *[neigs];
+  TACSBVec **eigvecs = new TACSBVec *[neigs];
+
+  // Assemble the mass matrix
+  assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
+
+  for (int i = 0; i < neigs; i++) {
+    // Create space for the eigenvector
+    eigvecs[i] = assembler->createVec();
+    eigvecs[i]->incref();
+
+    // Extract the eigenvalue and eigenvector
+    TacsScalar error;
+    eigs[i] = extractEigenvector(i, eigvecs[i], &error);
+
+    // Now, create the constraint space vector
+    TACSBVec *vec = assembler->createVec();
+    vec->incref();
+
+    // Form the matrix-vector product C = M * eigvec
+    mmat->mult(eigvecs[i], vec);
+    Cvecs[i] = vec;
+  }
+
+  // Allocate the constraint
+  TACSKSMConstraint *con = new TACSKSMConstraint(neigs, Cvecs);
+  con->incref();
+
+  if (mg) {
+    assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+
+    // Factor the matrix - associated with the stiffness matrix
+    pc->factor();
+  } else {
+    // Assemble a linear combination of the mass and stiffness matrices
+    // kmat = K - fact * eigs[0] * M
+    double fact = 0.99;  // This should be a parameter
+    ElementMatrixType kmat_types[2] = {TACS_STIFFNESS_MATRIX, TACS_MASS_MATRIX};
+    TacsScalar kscale[2];
+    kscale[0] = 1.0;
+    kscale[1] = 0.0;  // -fact * eigs[0];
+    assembler->assembleMatCombo(kmat_types, kscale, 2, kmat);
+
+    // Factor the matrix
+    pc->factor();
+
+    // Now assemble the stiffness and mass matrices again
+    assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
+  }
+
+  // Create the combo matrix operator
+  TACSMatCombo *combo = new TACSMatCombo(1.0, 0.0, kmat, mmat, assembler);
+  combo->incref();
+
+  TACSKsm *ksm = NULL;
+
+  if (use_cg) {
+    ksm = new PCG(combo, pc, 100, 10, con);
+    ksm->incref();
+
+    int mpi_rank;
+    MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+    ksm->setMonitor(new KSMPrintStdout("PCG", mpi_rank, 1));
+  } else {
+    int gmres_iters = 25;
+    int nrestart = 5;
+    int is_flexible = 0;
+    ksm = new GMRES(combo, pc, gmres_iters, nrestart, is_flexible, con);
+    ksm->incref();
+
+    int mpi_rank;
+    MPI_Comm_rank(assembler->getMPIComm(), &mpi_rank);
+    ksm->setMonitor(new KSMPrintStdout("GMRES", mpi_rank, 1));
+  }
+
+  ksm->setTolerances(rtol, atol);
+
+  // Set the adjoint vector
+  TACSBVec *psi = res;
+
+  for (int i = 0; i < neigs; i++) {
+    // Assemble the linear system mmat = K - eigs[i] * M
+    combo->setCoefficients(1.0, -eigs[i]);
+
+    // Solve the constrained problem
+    ksm->solve(dfdq[i], psi);
+    psi->scale(-1.0);
+
+    for (int j = 0; j < neigs; j++) {
+      if (i != j) {
+        TacsScalar theta = dfdq[i]->dot(eigvecs[j]) / (eigs[i] - eigs[j]);
+        psi->axpy(theta, eigvecs[j]);
+      }
+    }
+
+    // Add the contribution from the derivative of the eigenvalues
+    psi->axpy(dfdlam[i], eigvecs[i]);
+
+    // Add the material derivatives
+    if (dfdx) {
+      assembler->addMatDVSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, psi,
+                                          eigvecs[i], dfdx);
+      assembler->addMatDVSensInnerProduct(-eigs[i], TACS_MASS_MATRIX, psi,
+                                          eigvecs[i], dfdx);
+    }
+
+    // Add the coordinate derivatives
+    if (dfdXpt) {
+      assembler->addMatXptSensInnerProduct(1.0, TACS_STIFFNESS_MATRIX, psi,
+                                           eigvecs[i], dfdXpt);
+      assembler->addMatXptSensInnerProduct(-eigs[i], TACS_MASS_MATRIX, psi,
+                                           eigvecs[i], dfdXpt);
+    }
+
+    // Add the contribution from alpha
+    TacsScalar alpha = -0.5 * dfdq[i]->dot(eigvecs[i]);
+    if (dfdx) {
+      assembler->addMatDVSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
+                                          eigvecs[i], dfdx);
+    }
+
+    // Add the coordinate derivatives
+    if (dfdXpt) {
+      assembler->addMatXptSensInnerProduct(alpha, TACS_MASS_MATRIX, eigvecs[i],
+                                           eigvecs[i], dfdXpt);
+    }
+  }
+
+  if (dfdx) {
+    dfdx->beginSetValues(TACS_ADD_VALUES);
+    dfdx->endSetValues(TACS_ADD_VALUES);
+  }
+
+  if (dfdXpt) {
+    dfdXpt->beginSetValues(TACS_ADD_VALUES);
+    dfdXpt->endSetValues(TACS_ADD_VALUES);
+  }
+
+  // Free memory
+  for (int i = 0; i < neigs; i++) {
+    eigvecs[i]->decref();
+    Cvecs[i]->decref();
+  }
+  delete[] eigvecs;
+  delete[] Cvecs;
+  delete[] eigs;
+
+  combo->decref();
+  con->decref();
+  ksm->decref();
 }
 
 /*!

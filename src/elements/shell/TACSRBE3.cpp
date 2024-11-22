@@ -700,7 +700,7 @@ void TACSRBE3::addAdjResXptProduct(
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar fXptSens[]) {
   TacsScalar Xcg[3], sXcg[3], Jcg[3][3], sJcg[3][3], W[3], Lc, sLc;
-  const TacsScalar *X0, *Xn, *un, *F0, *M0, *u0, *t0, *tn;
+  const TacsScalar *X0, *Xn, *un, *F0, *M0, *tn;
   TacsScalar *sXpts, *sXn, *sX0;
   TacsScalar *maskedVars;
 
@@ -918,8 +918,6 @@ void TACSRBE3::addAdjResXptProduct(
        transpose of the load transfer matrix above (using the Lagrange
        multiplier method) to figure out what the coefficients need to be. */
     // start with dependent node (again, trivial)
-    u0 = &vars[0];  // dep node displacements
-    t0 = &vars[3];  // dep nodes rotations
 
     // displacements
     res[0] = 0.0;  // u
@@ -1329,7 +1327,7 @@ TacsScalar TACSRBE3::getMomentsOfInertiaSens(
   TacsScalar Icg[9], r[3], sr[3], temp[9], sIcg[9], stemp[9], c[6], Lc;
   Lc = 0.0;
   *sLc = 0.0;
-  TacsScalar detIcg, sdetIcg;
+  TacsScalar sdetIcg;
   for (int j = 0; j < 9; j++) {
     Icg[j] = sIcg[j] = 0.0;
   }
@@ -1413,7 +1411,7 @@ TacsScalar TACSRBE3::getMomentsOfInertiaSens(
   }
 
   // Find sensitivity of inverse matrix
-  detIcg = inv3x3Sens(Icg, sIcg, temp, stemp, &sdetIcg);
+  inv3x3Sens(Icg, sIcg, temp, stemp, &sdetIcg);
 
   // Recast into 2D array
   for (int row = 0; row < 3; row++) {
