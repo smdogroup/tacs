@@ -5,17 +5,11 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
-from collections import OrderedDict
-from baseclasses import StructProblem as MACHStructProblem
-from pygeo import DVGeometry
+from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
-from mpi4py import MPI
 
 import tacs.TACS
-from srjz.ffd.apply_dvs import dvDict
-
-from examples.nonlinear_cantilever.analysis import scale
 
 
 # Define decorator functions for methods that must be called before initialize
@@ -31,7 +25,7 @@ def updateDVGeo(method):
     return wrappedMethod
 
 
-class StructProblem(MACHStructProblem):
+class StructProblem(BaseStructProblem):
     """
     Base class for TACS problem types. Contains methods common to all TACS problems.
     """
