@@ -5,6 +5,8 @@ pyBase_problem
 # =============================================================================
 # Imports
 # =============================================================================
+from functools import wraps
+
 from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
@@ -19,7 +21,7 @@ def updateDVGeo(method):
         if self.DVGeo is not None:
             if not self.DVGeo.pointSetUpToDate(self.ptSetName):
                 coords = self.DVGeo.update(self.ptSetName, config=self.name)
-                self.setNodes(coords)
+                self.staticProblem.setNodes(coords.flatten())
         return method(self, *args, **kwargs)
 
     return wrappedMethod
@@ -184,13 +186,16 @@ class StructProblem(BaseStructProblem):
         if self.DVGeo:
             raise RuntimeError("DVGeo has already been set.")
 
+        if pointSetKwargs is None:
+            pointSetKwargs = {}
+
         self.DVGeo = DVGeo
         # Get the number of geometry variables
         self.numGeoDV = self.DVGeo.getNDV()
 
         self.ptSetName = "tacs_%s_coords" % self.name
         coords0 = self.staticProblem.getNodes()
-        self.DVGeo.addPointSet(coords0, self.ptSetName, **pointSetKwargs)
+        self.DVGeo.addPointSet(coords0.reshape(-1,3), self.ptSetName, **pointSetKwargs)
 
     def setDesignVars(self, x):
         """
@@ -213,12 +218,14 @@ class StructProblem(BaseStructProblem):
         optProb : pyOpt_optimization class
             Optimization problem definition to which variables are added
         """
-        value = self.getOrigDesignVars()
-        lb, ub = self.getDesignVarRange()
-        scale = self.getDesignVarScales()
+        ndv = self.FEAAssembler.getTotalNumDesignVars()
+        if ndv > 0:
+            value = self.getOrigDesignVars()
+            lb, ub = self.getDesignVarRange()
+            scale = self.getDesignVarScales()
 
-        dvName = self.staticProblem.getVarName()
-        optProb.addVar(dvName, "c", value=value, lower=lb, upper=ub, scale=scale)
+            dvName = self.staticProblem.getVarName()
+            optProb.addVar(dvName, "c", value=value, lower=lb, upper=ub, scale=scale)
 
     @updateDVGeo
     def getNodes(self):
@@ -300,7 +307,7 @@ class StructProblem(BaseStructProblem):
         return successFlag
 
     @updateDVGeo
-    def evalFunctions(self, funcs, evalFuncs, ignoreMissing=False):
+    def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
         No current functions
 
@@ -311,11 +318,13 @@ class StructProblem(BaseStructProblem):
         evalFuncs : iterable object containing strings
             The functions that the user wants evaluated
         """
+        if evalFuncs is None:
+            evalFuncs = self.evalFuncs
 
         return self.staticProblem.evalFunctions(funcs, evalFuncs, ignoreMissing)
 
     @updateDVGeo
-    def evalFunctionsSens(self, funcsSens, evalFuncs):
+    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
         Evaluate the sensitivity of the desired functions
 
@@ -326,6 +335,8 @@ class StructProblem(BaseStructProblem):
         evalFuncs : iterable object containing strings
             The functions that the user wants evaluated
         """
+        if evalFuncs is None:
+            evalFuncs = self.evalFuncs
 
         self.staticProblem.evalFunctionsSens(funcsSens, evalFuncs)
 
@@ -334,7 +345,7 @@ class StructProblem(BaseStructProblem):
             for funcName in evalFuncs:
                 funcKey = f"{self.name}_{funcName}"
                 if coordName in funcsSens[funcKey]:
-                    dIdpt = funcsSens.pop(coordName).reshape(-1,3)
+                    dIdpt = funcsSens[funcKey].pop(coordName).reshape(-1,3)
                     dIdx = self.DVGeo.totalSensitivity(dIdpt, self.ptSetName, comm=self.comm, config=self.name)
                     funcsSens[funcKey].update(dIdx)
 
