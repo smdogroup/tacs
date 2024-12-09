@@ -12,8 +12,8 @@ from tacs import elements, constitutive, TACS
 
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
-The plate is structurally loaded under a compression load and a unit force, 
-"f_aero_struct", is applied on on every node. The mass and KSFailure of the plate 
+The plate is structurally loaded under a compression load and a unit force,
+"f_aero_struct", is applied on on every node. The mass and KSFailure of the plate
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
@@ -90,8 +90,9 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             Helper function to add fixed forces and eval functions
             to structural problems used in tacs builder
             """
+            bucklingOptions = {"writeSolution": False}
             problem = fea_assembler.createBucklingProblem(
-                "buckling", sigma=1e0, numEigs=2
+                "buckling", sigma=1e0, numEigs=2, options=bucklingOptions
             )
             problem.setOption("L2Convergence", 1e-20)
             problem.setOption("L2ConvergenceRel", 1e-20)

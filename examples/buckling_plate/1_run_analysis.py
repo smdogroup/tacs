@@ -2,6 +2,7 @@
 Sean Engelstad, Feb 2024
 GT SMDO Lab
 """
+
 from _flat_plate_analysis import FlatPlateAnalysis
 from mpi4py import MPI
 

@@ -142,9 +142,11 @@ class TacsSolver(om.ImplicitComponent):
             self.sp.writeSolution(baseName=f"{self.sp.name}-failed")
             # TODO: In future we could add something here to distinguish between fatal failures and those that could be recovered from
             self.sp.zeroVariables()
-            raise om.AnalysisError("TACS solver did not converge")
 
         self.sp.getVariables(states=outputs[self.states_name])
+
+        if not hasConverged:
+            raise om.AnalysisError("TACS solver did not converge")
 
     def solve_linear(self, d_outputs, d_residuals, mode):
         if mode == "fwd":

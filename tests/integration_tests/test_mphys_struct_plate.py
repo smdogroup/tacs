@@ -37,6 +37,10 @@ wrt = [
 # KS function weight
 ksweight = 10.0
 
+# Adjacency constraint bounds
+adj_lb = -2.5e-3
+adj_ub = 2.5e-3
+
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
@@ -109,7 +113,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             """
             # Setup adjacency constraints for panel thicknesses
             constr = fea_assembler.createAdjacencyConstraint("adjacency")
-            constr.addConstraint("PANEL")
+            constr.addConstraint("PANEL", lower=-2.5e-3, upper=2.5e-3)
             constr_list = [constr]
             return constr_list
 
@@ -159,6 +163,11 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     f"analysis.{MPhysVariables.Structures.Loads.AERODYNAMIC}",
                 )
 
+            def configure(self):
+                tacs.mphys.utils.add_tacs_constraints(self.analysis)
+                self.add_constraint("analysis.ks_vmfailure", upper=1.0)
+                self.add_objective("analysis.mass")
+
         prob = om.Problem()
         prob.model = Top()
 
@@ -171,12 +180,23 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         """
         return FUNC_REFS, wrt
 
+    # def test_add_tacs_constraints(self):
+    #     # prob = self.setup_problem(dtype=float)
+    #     # prob.setup()
+    #     prob = self.prob
+    #     constraints = prob.model.get_constraints()
+    #     self.assertIn("analysis.adjacency.PANEL", constraints)
+    #     adjacency = constraints["analysis.adjacency.PANEL"]
+    #     self.assertTrue(adjacency["linear"])
+    #     lower_bound = adjacency["lower"]
+    #     upper_bound = adjacency["upper"]
+    #     np.testing.assert_equal(lower_bound, adj_lb)
+    #     np.testing.assert_equal(upper_bound, adj_ub)
+
     def test_get_tagged_indices(self):
         """
         Test the get_tagged_indices method
         """
-        prob = self.setup_problem(dtype=float)
-        prob.setup()
 
         # We want to test that:
         # - For each comp_id, get_tagged_indices returns the same indices as `getLocalNodeIDsForComps`
@@ -206,3 +226,9 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         trueNodeIDs = FEAAssembler.getLocalNodeIDsForComps([compIDs[0], compIDs[-1]])
         taggedIndIDs = self.tacs_builder.get_tagged_indices(tags)
         self.assertEqual(sorted(trueNodeIDs), sorted(taggedIndIDs))
+
+
+if __name__ == "__main__":
+    import unittest
+
+    unittest.main()

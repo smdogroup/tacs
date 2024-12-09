@@ -1266,6 +1266,13 @@ cdef class KSM:
             self.ptr.decref()
         return
 
+    def setOperators(self, Mat mat, Pc pc):
+        """
+        Set the matrix and preconditioner operators
+        """
+        self.ptr.setOperators(mat.ptr, pc.ptr)
+        return
+
     def solve(self, Vec b, Vec x, int zero_guess=1):
         """
         Try to solve the linear system using GMRES.
@@ -1606,7 +1613,7 @@ cdef class Assembler:
 
         return
 
-    def getAverageStresses(self):
+    def getAverageStresses(self, int compNum):
         cdef Element elem
         cdef ElementType elem_type
         cdef np.ndarray stresses
@@ -1614,7 +1621,7 @@ cdef class Assembler:
         stresses = np.zeros((9), dtype=dtype)
         elem = self.getElements()[0]
         elem_type = elem.getElementType()
-        self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data)
+        self.ptr.getAverageStresses(elem_type, <TacsScalar*>stresses.data, compNum)
         return stresses
 
     def setDependentNodes(self,

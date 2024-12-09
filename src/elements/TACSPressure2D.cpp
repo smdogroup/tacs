@@ -89,10 +89,12 @@ void TACSPressure2D::addResidual(int elemIndex, double time,
     area *= weight;
 
     // Evaluate the weak form of the model
-    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
+    const int dutSize = 3 * TACSElement2D::MAX_VARS_PER_NODE;
+    const int duxSize = 2 * TACSElement2D::MAX_VARS_PER_NODE;
+    TacsScalar DUt[dutSize];
+    TacsScalar DUx[duxSize];
+    memset(DUt, 0, dutSize * sizeof(TacsScalar));
+    memset(DUx, 0, duxSize * sizeof(TacsScalar));
 
     for (int k = 0; k < 2; k++) {
       DUt[3 * k] = -p * normal[k];
@@ -112,39 +114,9 @@ void TACSPressure2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                  const TacsScalar *dvars,
                                  const TacsScalar *ddvars, TacsScalar *res,
                                  TacsScalar *mat) {
-  // Compute the number of quadrature points
-  const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
-
-  // Loop over each quadrature point and add the residual contribution
-  for (int n = 0; n < nquad; n++) {
-    // Get the quadrature weight
-    double pt[3], tangent[6];
-    double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
-
-    // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
-    TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
-
-    // Compute the inverse of the transformation
-    TacsScalar J[4];
-    inv2x2(Xd, J);
-
-    // Multiply the weight by the quadrature point
-    area *= weight;
-
-    // Evaluate the weak form of the model
-    TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
-    TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
-
-    for (int k = 0; k < 2; k++) {
-      DUt[3 * k] = -p * normal[k];
-    }
-
-    // Add the weak form of the residual at this point
-    if (res) {
-      basis->addWeakResidual(n, pt, area, J, varsPerNode, DUt, DUx, res);
-    }
+  // This element has no Jacobian contributions, so just compute the residual if
+  // it's requested
+  if (res != NULL) {
+    addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   }
 }

@@ -5,10 +5,14 @@ import numpy as np
 from tacs import TACS, constitutive, elements
 
 DEG2RAD = np.pi / 180.0
+np.random.seed(1342342)
 
 
-class ConstitutiveTest(unittest.TestCase):
+class GPConstitutiveMLTest(unittest.TestCase):
+    _my_debug = False
+
     def setUp(self):
+
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-200
@@ -25,7 +29,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = self.rtol
-        self.print_level = 0
+        self.print_level = 2 if self._my_debug else 0
 
         # Set element index
         self.elem_index = 0
@@ -65,6 +69,9 @@ class ConstitutiveTest(unittest.TestCase):
             dtype=np.intc,
         )
 
+        self.panelWidth = 1.0
+        self.panelWidthNum = 5 + self.numPanelPlies + self.numStiffenerPlies
+
         self.dvs = (
             [
                 self.panelLength,
@@ -75,6 +82,7 @@ class ConstitutiveTest(unittest.TestCase):
             ]
             + list(self.panelPlyFracs)
             + list(self.stiffenerPlyFracs)
+            + [self.panelWidth]
         )
         self.dvs = np.array(self.dvs, dtype=self.dtype)
 
@@ -136,11 +144,48 @@ class ConstitutiveTest(unittest.TestCase):
 
         self.ply_list = [iso_ply, ortho_ply]
 
+        self.failure_modes = [
+            "PanelMaterialFailure",
+            "StiffenerMaterialFailure",
+            "LocalBuckling",
+            "GlobalBuckling",
+            "StiffenerColumnBuckling",
+            "StiffenerCrippling",
+        ]
+        self.failure_modes_to_test = self.failure_modes + ["all"]
+
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
+        # construct the optional ML models
+        n_train = 100
+
+        n_param = constitutive.BucklingGP.n_param
+        self.axialGP = constitutive.BucklingGP(
+            n_train,
+            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+            alpha=np.random.rand(n_train).astype(self.dtype),
+            theta=np.random.rand(14).astype(self.dtype),
+        )
+        # self.axialGP.setKS(0.1)
+
+        n_param = constitutive.BucklingGP.n_param
+        self.shearGP = constitutive.BucklingGP(
+            n_train,
+            Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
+            alpha=np.random.rand(n_train).astype(self.dtype),
+            theta=np.random.rand(14).astype(self.dtype),
+        )
+        # self.shearGP.setKS(0.1)
+
+        self.cripplingGP = None
+
+        self.panelGPs = constitutive.PanelGPs(
+            self.axialGP, self.shearGP, self.cripplingGP, saveData=False
+        )
+
     def get_con(self, ply):
-        con = constitutive.BladeStiffenedShellConstitutive(
+        con = constitutive.GPBladeStiffenedShellConstitutive(
             ply,
             ply,
             self.panelLength,
@@ -152,6 +197,7 @@ class ConstitutiveTest(unittest.TestCase):
             self.stiffenerThickness,
             self.stiffenerPlyAngles,
             self.stiffenerPlyFracs,
+            self.panelWidth,
             self.kcorr,
             self.flangeFraction,
             self.panelLengthNum,
@@ -160,7 +206,9 @@ class ConstitutiveTest(unittest.TestCase):
             self.panelPlyFracNums,
             self.stiffenerHeightNum,
             self.stiffenerThicknessNum,
-            self.stiffenerPlyFracNums
+            self.stiffenerPlyFracNums,
+            self.panelWidthNum,
+            panelGPs=self.panelGPs,
         )
         # Set the KS weight really low so that all failure modes make a
         # significant contribution to the failure function derivatives
@@ -257,44 +305,154 @@ class ConstitutiveTest(unittest.TestCase):
     #             )
     #             self.assertFalse(fail)
 
-    def test_constitutive_failure(self):
+    def test_constitutive_failure_dv_sens(self):
         # Test failure dv sensitivity
         for ply in self.ply_list:
             with self.subTest(ply=ply):
-                con = self.get_con(ply)
-                fail = False
-                for _ in range(self.numFailureTests):
-                    fail = fail or constitutive.TestConstitutiveFailure(
-                        con,
-                        self.elem_index,
-                        self.pt,
-                        self.x,
-                        self.dvs,
-                        self.dh,
-                        self.print_level,
-                        self.atol,
-                        self.rtol,
-                    )
-                self.assertFalse(fail)
+                for enabled_failure_mode in self.failure_modes_to_test:
+                    with self.subTest(failure_mode=enabled_failure_mode):
+                        includeFailureModes = {}
+                        for failure_mode in self.failure_modes:
+                            includeFailureModes[f"include{failure_mode}"] = (
+                                failure_mode == enabled_failure_mode
+                                or enabled_failure_mode == "all"
+                            )
+                        con = self.get_con(ply)
+                        con.setFailureModes(**includeFailureModes)
+                        fail = False
+                        for _ in range(self.numFailureTests):
+                            fail = fail or constitutive.TestConstitutiveFailure(
+                                con,
+                                self.elem_index,
+                                self.pt,
+                                self.x,
+                                self.dvs,
+                                self.dh,
+                                self.print_level,
+                                self.atol,
+                                self.rtol,
+                            )
+                        self.assertFalse(fail)
 
     def test_constitutive_failure_strain_sens(self):
         for ply in self.ply_list:
             with self.subTest(ply=ply):
+                for enabled_failure_mode in self.failure_modes_to_test:
+                    with self.subTest(failure_mode=enabled_failure_mode):
+                        includeFailureModes = {}
+                        for failure_mode in self.failure_modes:
+                            includeFailureModes[f"include{failure_mode}"] = (
+                                failure_mode == enabled_failure_mode
+                                or enabled_failure_mode == "all"
+                            )
+                        con = self.get_con(ply)
+                        con.setFailureModes(**includeFailureModes)
+                        fail = False
+                        for _ in range(self.numFailureTests):
+                            fail = (
+                                fail
+                                or constitutive.TestConstitutiveFailureStrainSens(
+                                    con,
+                                    self.elem_index,
+                                    self.pt,
+                                    self.x,
+                                    self.dh,
+                                    self.print_level,
+                                    self.rtol,
+                                    self.atol,
+                                )
+                            )
+                        self.assertFalse(fail)
+
+    def _constitutive_internal_tests(self):
+        """test all the internal or intermediate tests in C++"""
+        for ply in self.ply_list:
+            with self.subTest(ply=ply):
                 con = self.get_con(ply)
-                fail = False
-                for _ in range(self.numFailureTests):
-                    fail = fail or constitutive.TestConstitutiveFailureStrainSens(
-                        con,
-                        self.elem_index,
-                        self.pt,
-                        self.x,
-                        self.dh,
-                        self.print_level,
-                        self.rtol,
-                        self.atol,
-                    )
+                if TACS.dtype is complex:
+                    dh = self.dh * 1j
+                else:
+                    dh = self.dh
+                relError = con.test_all_derivative_tests(
+                    dh, self.print_level
+                )  # self.print_level
+                fail = abs(relError.real) > self.rtol
                 self.assertFalse(fail)
+        if self.print_level != 0:
+            print("All internal tests pass!")
+
+
+class GPConstitutiveCFTest(GPConstitutiveMLTest):
+    """
+    second test with closed-form only, not ML models
+    """
+
+    def setUp(self):
+        super(GPConstitutiveCFTest, self).setUp()
+
+        # change the ML models to None so the constitutive class
+        # uses closed-form solutions for buckling now.
+        self.axialGP = None
+        self.shearGP = None
+        self.cripplingGP = None
+        self.panelGPs = constitutive.PanelGPs(
+            self.axialGP,
+            self.shearGP,
+            self.cripplingGP,
+        )
 
 
 if __name__ == "__main__":
-    unittest.main()
+    # current status of these tests
+    # case == "CF" [runs internal tests] => all pass
+    # case == "ML" [runs internal tests] => all pass
+    # case == "all" [runs internal + external tests] => failure criterion fails.
+
+    import argparse
+
+    parent_parser = argparse.ArgumentParser(add_help=False)
+    parent_parser.add_argument("--case", type=str, default="full")
+    args = parent_parser.parse_args()
+
+    cases = ["CF", "ML", "full"]
+    cases += ["failStrain-CF", "failStrain-ML"]
+    cases += ["failDV-CF", "failDV-ML"]
+
+    assert args.case in cases
+
+    if args.case == "CF":
+        tester = GPConstitutiveCFTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester._constitutive_internal_tests()
+    elif args.case == "ML":
+        tester = GPConstitutiveMLTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester._constitutive_internal_tests()
+    elif args.case == "failStrain-CF":
+        # shouldn't matter which one of these I test as long as internal tests pass
+        tester = GPConstitutiveCFTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure_strain_sens()
+    elif args.case == "failStrain-ML":
+        # shouldn't matter which one of these I test as long as internal tests pass
+        tester = GPConstitutiveMLTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure_strain_sens()
+    elif args.case == "failDV-CF":
+        # shouldn't matter which one of these I test as long as internal tests pass
+        tester = GPConstitutiveCFTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure_dv_sens()
+    elif args.case == "failDV-ML":
+        # shouldn't matter which one of these I test as long as internal tests pass
+        tester = GPConstitutiveMLTest()
+        tester._my_debug = True
+        tester.setUp()
+        tester.test_constitutive_failure_dv_sens()
+    elif args.case == "full":
+        unittest.main()

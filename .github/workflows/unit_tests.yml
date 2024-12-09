@@ -68,9 +68,9 @@ jobs:
           echo "=============================================================";
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: 3.9
@@ -140,14 +140,14 @@ jobs:
           zip -r ../tacs-docs.zip .;
       - name: 'Upload docs'
         if: ${{ matrix.PUBLISH_DOCS }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: tacs-docs
           path: docs/tacs-docs.zip
           retention-days: 7
       - name: 'Deploy docs'
         if: ${{ github.event_name == 'push' && matrix.PUBLISH_DOCS }}
-        uses: JamesIves/github-pages-deploy-action@v4.2.5
+        uses: JamesIves/github-pages-deploy-action@v4.7.1
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.

@@ -41,8 +41,23 @@ cdef class SolidConstitutive(Constitutive):
 cdef class ShellConstitutive(Constitutive):
     cdef TACSShellConstitutive *cptr
 
-cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+cdef class StiffenedShellConstitutive(ShellConstitutive):
+    cdef TACSBladeStiffenedShellConstitutive *base_ptr
+
+cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
     cdef TACSBladeStiffenedShellConstitutive *blade_ptr
+
+cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    cdef TACSGPBladeStiffenedShellConstitutive *gp_blade_ptr
+
+cdef class GaussianProcess:
+    cdef TACSGaussianProcessModel *base_gp
+
+cdef class BucklingGP(GaussianProcess):
+    cdef TACSBucklingGaussianProcessModel *buckling_gp
+
+cdef class PanelGPs:
+    cdef TACSPanelGPs *gptr
 
 cdef class BeamConstitutive(Constitutive):
     cdef TACSBeamConstitutive *cptr
