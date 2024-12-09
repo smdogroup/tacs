@@ -4,7 +4,6 @@ import openmdao.api as om
 
 from tacs import functions
 
-
 # All TACS function types that should be included under mass funcs group
 MASS_FUNCS_CLASSES = [
     functions.StructuralMass,
@@ -20,25 +19,22 @@ class TacsFunctions(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline_vars", default=False)
         self.options.declare("check_partials")
         self.options.declare("write_solution")
 
         self.fea_assembler = None
-
         self.check_partials = False
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
         self.auto_write_solution = self.options["write_solution"]
-        self.conduction = self.options["conduction"]
+        self.discipline_vars = self.options["discipline_vars"]
         self.solution_counter = 0
 
-        if self.conduction:
-            self.states_name = "T_conduct"
-        else:
-            self.states_name = "u_struct"
+        self.coords_name = self.discipline_vars.COORDINATES
+        self.states_name = self.discipline_vars.STATES
 
         # TACS part of setup
         local_ndvs = self.fea_assembler.getNumDesignVars()
@@ -52,19 +48,22 @@ class TacsFunctions(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            self.coords_name,
             distributed=True,
             shape_by_conn=True,
-            desc="structural node coordinates",
+            desc="fem node coordinates",
             tags=["mphys_coordinates"],
         )
         self.add_input(
             self.states_name,
             distributed=True,
             shape_by_conn=True,
-            desc="structural state vector",
+            desc="fem state vector",
             tags=["mphys_coupling"],
         )
+
+        # Prevents OpenMDAO from suppressing this component when using group_by_pre_opt_post feature
+        self.options["always_opt"] = True
 
     def mphys_set_sp(self, sp):
         # this is the external function to set the sp to this component
@@ -81,7 +80,7 @@ class TacsFunctions(om.ExplicitComponent):
 
     def _update_internal(self, inputs):
         self.sp.setDesignVars(inputs["tacs_dvs"])
-        self.sp.setNodes(inputs["x_struct0"])
+        self.sp.setNodes(inputs[self.coords_name])
         self.sp.setVariables(inputs[self.states_name])
 
     def write_solution(self):
@@ -118,9 +117,9 @@ class TacsFunctions(om.ExplicitComponent):
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
 
-                if "x_struct0" in d_inputs:
+                if self.coords_name in d_inputs:
                     self.sp.addXptSens(
-                        [func_name], [d_inputs["x_struct0"]], scale=d_func
+                        [func_name], [d_inputs[self.coords_name]], scale=d_func
                     )
 
                 if self.states_name in d_inputs:
@@ -136,6 +135,7 @@ class MassFunctions(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
+        self.options.declare("discipline_vars", default=False)
         self.options.declare("check_partials")
 
         self.fea_assembler = None
@@ -144,6 +144,9 @@ class MassFunctions(om.ExplicitComponent):
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
+        self.discipline_vars = self.options["discipline_vars"]
+
+        self.coords_name = self.discipline_vars.COORDINATES
 
         # TACS part of setup
         local_ndvs = self.fea_assembler.getNumDesignVars()
@@ -157,10 +160,10 @@ class MassFunctions(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
         self.add_input(
-            "x_struct0",
+            self.coords_name,
             distributed=True,
             shape_by_conn=True,
-            desc="structural node coordinates",
+            desc="fem node coordinates",
             tags=["mphys_coordinates"],
         )
 
@@ -179,7 +182,7 @@ class MassFunctions(om.ExplicitComponent):
 
     def _update_internal(self, inputs):
         self.sp.setDesignVars(inputs["tacs_dvs"])
-        self.sp.setNodes(inputs["x_struct0"])
+        self.sp.setNodes(inputs[self.coords_name])
 
     def compute(self, inputs, outputs):
         self._update_internal(inputs)
@@ -207,7 +210,7 @@ class MassFunctions(om.ExplicitComponent):
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
 
-                if "x_struct0" in d_inputs:
+                if self.coords_name in d_inputs:
                     self.sp.addXptSens(
-                        [func_name], [d_inputs["x_struct0"]], scale=d_func
+                        [func_name], [d_inputs[self.coords_name]], scale=d_func
                     )
