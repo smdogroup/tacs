@@ -2133,7 +2133,7 @@ cdef class Assembler:
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
 
-    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0):
+    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0, bool applyBCs=True):
         """
         Assemble the residual associated with the input load case.
 
@@ -2145,14 +2145,16 @@ cdef class Assembler:
 
         rhs:        the residual output
         loadScale:  Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
-        self.ptr.assembleRes(residual.getBVecPtr(), loadScale)
+        self.ptr.assembleRes(residual.getBVecPtr(), loadScale, applyBCs)
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
                          MatrixOrientation matOr=TACS_MAT_NORMAL,
-                         TacsScalar loadScale=1.0):
+                         TacsScalar loadScale=1.0,
+                         bool applyBCs=True):
         """
         Assemble the Jacobian matrix
 
@@ -2171,18 +2173,19 @@ cdef class Assembler:
         A:         the Jacobian matrix
         matOr:     the matrix orientation NORMAL or TRANSPOSE
         loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
         cdef TACSBVec *res = NULL
         if residual is not None:
             res = residual.getBVecPtr()
 
         self.ptr.assembleJacobian(alpha, beta, gamma,
-                                  res, A.ptr, matOr, loadScale)
+                                  res, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def assembleMatType(self, ElementMatrixType matType,
                         Mat A, MatrixOrientation matOr=TACS_MAT_NORMAL,
-                        TacsScalar loadScale=1.0):
+                        TacsScalar loadScale=1.0, bool applyBCs=True):
 
         """
         Assemble the Jacobian matrix
@@ -2203,14 +2206,15 @@ cdef class Assembler:
         term
         matOr:      the matrix orientation NORMAL or TRANSPOSE
         loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
-        self.ptr.assembleMatType(matType, A.ptr, matOr, loadScale)
+        self.ptr.assembleMatType(matType, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def assembleMatCombo(self, ElementMatrixType matType1, double scale1,
                          ElementMatrixType matType2, double scale2, Mat A,
                          MatrixOrientation matOr=NORMAL,
-                         TacsScalar loadScale=1.0):
+                         TacsScalar loadScale=1.0, bool applyBCs=True):
         """
         Assemble a combination of two matrices
         """
@@ -2222,7 +2226,7 @@ cdef class Assembler:
         matTypes[1] = matType2
         scale[0] = scale1
         scale[1] = scale2
-        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr, loadScale)
+        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def evalFunctions(self, funclist):
@@ -2438,20 +2442,35 @@ cdef class Assembler:
         return
 
     def evalMatSVSensInnerProduct(self, ElementMatrixType matType,
-                                  Vec psi, Vec phi, Vec res):
+                                  Vec psi, Vec phi, Vec res, bool applyBCs=True):
+        """
+        Add the derivative of the inner product of the specified
+        matrix with the input vectors to the state variables.
+
+        matType: the type of matrix to use
+        psi:     the left hand vector in the inner product
+        phi:     the right hand vector in the inner product
+        res:     Vector to store the result in
+        applyBCs: whether to apply the boundary conditions, by default True
+        """
         self.ptr.evalMatSVSensInnerProduct(matType,
-                                           psi.getBVecPtr(), phi.getBVecPtr(), res.getBVecPtr())
+                                           psi.getBVecPtr(), phi.getBVecPtr(), res.getBVecPtr(), applyBCs)
         return
 
     def addJacobianVecProduct(self, TacsScalar scale,
                               double alpha, double beta, double gamma,
                               Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL,
-                              TacsScalar loadScale=1.0):
+                              TacsScalar loadScale=1.0, bool applyBCs=True):
         """
-        Compute the Jacobian-vector product
+        Compute the Jacobian-vector product, see `assembleJacobian`
+
+        x: The vector to multiply
+        y: The vector to add the result of the multiplication to
+
+        For the remining inputs, see `assembleJacobian`
         """
         self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma,
-                                       x.getBVecPtr(), y.getBVecPtr(), matOr, loadScale)
+                                       x.getBVecPtr(), y.getBVecPtr(), matOr, loadScale, applyBCs)
         return
 
     def testElement(self, int elemNum, int print_level,
