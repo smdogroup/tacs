@@ -32,7 +32,7 @@ mv ${TACS_DIR}/lib/libtacs.${SO_EXT} ${PREFIX}/lib;
 mkdir ${PREFIX}/include/tacs;
 find ${TACS_DIR}/src/ -name '*.h' -exec cp -prv '{}' ${PREFIX}/include/tacs ';'
 
-CFLAGS=${PIP_FLAGS} ${PYTHON} -m pip install --no-deps --prefix=${PREFIX} . -vv;
+CPPFLAGS=${PIP_FLAGS} ${PYTHON} -m pip install --no-deps --prefix=${PREFIX} . -vv;
 
 cd ${TACS_DIR}/extern/f5tovtk;
 make default TACS_DIR=${TACS_DIR} \

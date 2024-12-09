@@ -101,5 +101,5 @@ jobs:
           conda install anaconda-client conda-build conda-verify -q -y;
           conda config --set anaconda_upload no;
           cd ${TACS_DIR}/conda;
-          conda build --variants "{scalar: ${{ matrix.SCALAR }}}" -c conda-forge -c smdogroup $BUILD_ARGS --output-folder . .;
+          conda build --variants "{scalar: ${{ matrix.SCALAR }}}" -c smdogroup -c conda-forge $BUILD_ARGS --output-folder . .;
           anaconda upload --label $LABEL ${{ matrix.TARGET }}/*.tar.bz2 --force;
