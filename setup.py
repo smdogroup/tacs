@@ -104,7 +104,7 @@ with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
 optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
-    "mphys": ["mphys>=2.0.0b1", "openmdao>=3.25.0"],
+    "mphys": ["mphys>=2.0.0", "openmdao>=3.25.0"],
     "caps2tacs": ["imageio>=2.16.1"],
 }
 
