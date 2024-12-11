@@ -50,8 +50,8 @@ import argparse
 # ==============================================================================
 import numpy as np
 import openmdao.api as om
-from mphys import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint, MPhysVariables
+from mphys.scenarios import ScenarioStructural
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
@@ -510,7 +510,6 @@ class PlateModel(Multipoint):
                 element_callback=element_callback,
                 problem_setup=problem_setup,
                 constraint_setup=constraint_setup,
-                coupled=False,
                 check_partials=True,
             )
             struct_builder.initialize(self.comm)
@@ -533,8 +532,9 @@ class PlateModel(Multipoint):
             self.mphys_add_scenario(
                 scenarioName, ScenarioStructural(struct_builder=struct_builder)
             )
-            self.mphys_connect_scenario_coordinate_source(
-                "mesh", scenarioName, "struct"
+            self.connect(
+                f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+                f"{scenarioName}.{MPhysVariables.Structures.COORDINATES}",
             )
 
             self.connect("dv_struct", f"{scenarioName}.dv_struct")

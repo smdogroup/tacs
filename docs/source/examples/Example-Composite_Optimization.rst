@@ -180,9 +180,10 @@ We use this builder to create an MPhys :class:`~mphys.StructuralScenario`.
           self.mphys_add_scenario(
               "pressure_load", ScenarioStructural(struct_builder=struct_builder)
           )
-          self.mphys_connect_scenario_coordinate_source(
-            "mesh", "pressure_load", "Structures"
-          )
+        self.connect(
+            f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+            f"pressure_load.{MPhysVariables.Structures.COORDINATES}",
+        )
 
           self.connect("dv_struct", "pressure_load.dv_struct")
 

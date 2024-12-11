@@ -102,7 +102,10 @@ class BeamModel(Multipoint):
         self.mphys_add_scenario(
             "tip_shear", ScenarioStructural(struct_builder=struct_builder)
         )
-        self.mphys_connect_scenario_coordinate_source("mesh", "tip_shear", "Structures")
+        self.connect(
+            f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+            f"tip_shear.{MPhysVariables.Structures.COORDINATES}",
+        )
 
         # Connect dv component to input of structural scenario
         self.connect("dv_struct", "tip_shear.dv_struct")
