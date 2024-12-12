@@ -1,4 +1,5 @@
 import openmdao.api as om
+from mphys.core import MPhysVariables
 
 import tacs.problems
 from .functions import TacsFunctions, MassFunctions, MASS_FUNCS_CLASSES
@@ -10,7 +11,7 @@ class TacsPostcouplingGroup(om.Group):
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
         self.options.declare("check_partials")
-        self.options.declare("conduction", default=False)
+        self.options.declare("discipline_vars")
         self.options.declare("scenario_name", default=None)
         self.options.declare("problem_setup", default=None)
         self.options.declare("write_solution")
@@ -20,7 +21,7 @@ class TacsPostcouplingGroup(om.Group):
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
-        self.conduction = self.options["conduction"]
+        self.discipline_vars = self.options["discipline_vars"]
         self.auto_write_solution = self.options["write_solution"]
 
         # Setup problem based on scenario that's calling builder
@@ -42,13 +43,15 @@ class TacsPostcouplingGroup(om.Group):
 
         # Promote state variables with physics-specific tag that MPhys expects
         promotes_inputs = [
-            ("x_struct0", "unmasker.x_struct0"),
+            (
+                self.discipline_vars.COORDINATES,
+                f"unmasker.{self.discipline_vars.COORDINATES}",
+            ),
             ("tacs_dvs", "distributor.tacs_dvs"),
         ]
-        if self.conduction:
-            promotes_states = [("T_conduct", "solver.T_conduct")]
-        else:
-            promotes_states = [("u_struct", "solver.u_struct")]
+        promotes_states = [
+            (self.discipline_vars.STATES, f"solver.{self.discipline_vars.STATES}")
+        ]
 
         # Add function evaluation component for non-mass outputs
         self.add_subsystem(
@@ -56,7 +59,7 @@ class TacsPostcouplingGroup(om.Group):
             TacsFunctions(
                 fea_assembler=self.fea_assembler,
                 check_partials=self.check_partials,
-                conduction=self.conduction,
+                discipline_vars=self.discipline_vars,
                 write_solution=self.auto_write_solution,
             ),
             promotes_inputs=promotes_inputs + promotes_states,
@@ -76,7 +79,9 @@ class TacsPostcouplingGroup(om.Group):
             self.add_subsystem(
                 "mass_funcs",
                 MassFunctions(
-                    fea_assembler=self.fea_assembler, check_partials=self.check_partials
+                    fea_assembler=self.fea_assembler,
+                    check_partials=self.check_partials,
+                    discipline_vars=self.discipline_vars,
                 ),
                 promotes_inputs=promotes_inputs,
                 promotes_outputs=["*"],
@@ -86,7 +91,10 @@ class TacsPostcouplingGroup(om.Group):
 
         # Setup TACS problem with user-defined output functions
         buckling_setup = self.options["buckling_setup"]
-        if buckling_setup is not None:
+        if (
+            buckling_setup is not None
+            and self.discipline_vars == MPhysVariables.Structures
+        ):
             new_problem = buckling_setup(scenario_name, self.fea_assembler)
             # Check if the user provided back a new problem to overwrite the default
             if isinstance(new_problem, tacs.problems.BucklingProblem):
@@ -98,7 +106,6 @@ class TacsPostcouplingGroup(om.Group):
                     TacsBuckling(
                         fea_assembler=self.fea_assembler,
                         check_partials=self.check_partials,
-                        conduction=self.conduction,
                         write_solution=self.write_solution,
                     ),
                     promotes_inputs=promotes_inputs + promotes_states,
@@ -125,6 +132,7 @@ class TacsPostcouplingGroup(om.Group):
             for constraint in tacs_constraints:
                 con_comp = ConstraintComponent(
                     fea_assembler=self.fea_assembler,
+                    discipline_vars=self.discipline_vars,
                     constraint_object=constraint,
                 )
                 con_group.add_subsystem(

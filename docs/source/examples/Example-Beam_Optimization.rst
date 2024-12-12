@@ -37,8 +37,8 @@ First, we import required libraries, define the model bdf file, and define impor
   import matplotlib.pyplot as plt
   import numpy as np
   import openmdao.api as om
-  from mphys import Multipoint
-  from mphys.scenario_structural import ScenarioStructural
+  from mphys.core import Multipoint, MPhysVariables
+  from mphys.scenarios import ScenarioStructural
 
   from tacs import elements, constitutive, functions
   from tacs.mphys import TacsBuilder
@@ -120,7 +120,6 @@ We use this builder to create an MPhys :class:`~mphys.StructuralScenario`.
               mesh_file=bdf_file,
               element_callback=element_callback,
               problem_setup=problem_setup,
-              coupled=False,
               write_solution=False,
           )
           struct_builder.initialize(self.comm)
@@ -135,7 +134,10 @@ We use this builder to create an MPhys :class:`~mphys.StructuralScenario`.
           self.mphys_add_scenario(
               "tip_shear", ScenarioStructural(struct_builder=struct_builder)
           )
-          self.mphys_connect_scenario_coordinate_source("mesh", "tip_shear", "struct")
+          self.connect(
+              f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+              f"tip_shear.{MPhysVariables.Structures.COORDINATES}",
+          )
 
           # Connect dv component to input of structural scenario
           self.connect("dv_struct", "tip_shear.dv_struct")
@@ -196,7 +198,9 @@ Finally, we can plot the optimized thickness distribution using matplotlib and c
 .. code-block:: python
 
   # Get optimized solution variables
-  x = prob.get_val("mesh.x_struct0", get_remote=True)[:-3:3]
+  x = prob.get_val(f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}", get_remote=True)[
+    :-3:3
+  ]
   t_opt = prob["dv_struct"]
   m_opt = prob["tip_shear.mass"]
 
