@@ -2,10 +2,12 @@ import numpy as np
 
 import openmdao.api as om
 
-from mphys.mask_converter import (
+from mphys.core import (
     MaskedConverter,
     UnmaskedConverter,
     MaskedVariableDescription,
+    DistributedSummer,
+    DistributedVariableDescription,
 )
 
 from .solver import TacsSolver
@@ -15,8 +17,8 @@ class TacsCouplingGroup(om.Group):
     def initialize(self):
         self.options.declare("fea_assembler", recordable=False)
         self.options.declare("check_partials")
-        self.options.declare("conduction", default=False)
-        self.options.declare("coupled", default=False)
+        self.options.declare("discipline_vars")
+        self.options.declare("coupling_loads", default=[])
         self.options.declare("scenario_name", default=None)
         self.options.declare("problem_setup", default=None)
         self.options.declare("res_ref", default=None)
@@ -24,21 +26,20 @@ class TacsCouplingGroup(om.Group):
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
         self.check_partials = self.options["check_partials"]
-        self.coupled = self.options["coupled"]
-        self.conduction = self.options["conduction"]
+        self.coupling_loads = self.options["coupling_loads"]
+        self.coupled = len(self.coupling_loads) > 0
+        self.discipline_vars = self.options["discipline_vars"]
         self.res_ref = self.options["res_ref"]
+
+        self.coords_name = self.discipline_vars.COORDINATES
+        self.states_name = self.discipline_vars.STATES
+        self.rhs_name = "rhs"
 
         # Promote state variables/rhs with physics-specific tag that MPhys expects
         promotes_inputs = [
-            ("x_struct0", "unmasker.x_struct0"),
+            (self.coords_name, f"unmasker.{self.coords_name}"),
             ("tacs_dvs", "distributor.tacs_dvs"),
         ]
-        if self.conduction:
-            self.states_name = "T_conduct"
-            self.rhs_name = "q_conduct"
-        else:
-            self.states_name = "u_struct"
-            self.rhs_name = "f_struct"
 
         # Identify tacs nodes corresponding to lagrange multipliers. These are nodes that are typically added in tacs
         # whenever an element using a lagrange multiplier formulation is used (such as an RBE). It is important that
@@ -57,13 +58,25 @@ class TacsCouplingGroup(om.Group):
         # and creates an unmasked load vector (length = vpn * nnodes), by inserting 0.0 for the forces on
         # the multiplier nodes
         if self.coupled:
-            unmask_output = MaskedVariableDescription(
-                self.rhs_name, shape=nnodes * vpn, tags=["mphys_coupling"]
+            self.rhs_name_masked = f"{self.rhs_name}_masked"
+            input_metadata = []
+            for i, load_name in enumerate(self.coupling_loads):
+                var_desc = DistributedVariableDescription(
+                    name=load_name,
+                    shape=(nnodes - nmult) * vpn,
+                    tags=["mphys_coupling"],
+                )
+                input_metadata.append(var_desc)
+            output_metadata = DistributedVariableDescription(
+                name=self.rhs_name_masked, shape=(nnodes - nmult) * vpn
             )
+            rhs_sum = DistributedSummer(inputs=input_metadata, output=output_metadata)
+            self.add_subsystem("rhs_sum", rhs_sum, promotes_inputs=self.coupling_loads)
+
+            unmask_output = MaskedVariableDescription(self.rhs_name, shape=nnodes * vpn)
             unmask_input = MaskedVariableDescription(
                 self.rhs_name + "_masked",
                 shape=(nnodes - nmult) * vpn,
-                tags=["mphys_coupling"],
             )
             unmasker = UnmaskedConverter(
                 input=unmask_input,
@@ -71,10 +84,9 @@ class TacsCouplingGroup(om.Group):
                 mask=mask.flatten(),
                 distributed=True,
             )
-            self.add_subsystem(
-                "unmasker",
-                unmasker,
-                promotes_inputs=[(self.rhs_name + "_masked", self.rhs_name)],
+            self.add_subsystem("unmasker", unmasker)
+            self.connect(
+                f"rhs_sum.{self.rhs_name}_masked", f"unmasker.{self.rhs_name}_masked"
             )
 
         self.add_subsystem(
@@ -82,8 +94,8 @@ class TacsCouplingGroup(om.Group):
             TacsSolver(
                 fea_assembler=self.fea_assembler,
                 check_partials=self.check_partials,
-                coupled=self.coupled,
-                conduction=self.conduction,
+                coupling_loads=self.coupling_loads,
+                discipline_vars=self.discipline_vars,
                 res_ref=self.res_ref,
             ),
             promotes_inputs=promotes_inputs,

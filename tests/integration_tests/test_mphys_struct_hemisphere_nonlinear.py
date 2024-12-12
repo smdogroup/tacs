@@ -16,14 +16,13 @@ import os
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-import numpy as np
 import openmdao.api as om
-from mphys.multipoint import Multipoint
-from mphys.scenario_structural import ScenarioStructural
+from mphys.core import Multipoint
+from mphys.scenarios import ScenarioStructural
+from mphys.core import MPhysVariables
 
 import tacs.mphys
 from openmdao_analysis_base_test import OpenMDAOTestCase
-from tacs import elements, constitutive, functions
 
 # ==============================================================================
 # Extension modules
@@ -44,7 +43,7 @@ FUNC_REFS = {
     name.replace("_", "."): value for name, value in hemisphereProbRefFuncs.items()
 }
 
-wrt = ["dv_struct", "mesh.fea_mesh.x_struct0"]
+wrt = ["dv_struct", f"mesh.fea_mesh.{MPhysVariables.Structures.Mesh.COORDINATES}"]
 
 
 class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
@@ -81,7 +80,6 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     element_callback=elemCallBack,
                     problem_setup=problem_setup,
                     check_partials=True,
-                    coupled=False,
                     write_solution=False,
                 )
                 tacs_builder.initialize(self.comm)
@@ -99,7 +97,10 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 self.mphys_add_scenario(
                     "RadialForces", ScenarioStructural(struct_builder=tacs_builder)
                 )
-                self.connect("mesh.x_struct0", "RadialForces.x_struct0")
+                self.connect(
+                    f"mesh.{MPhysVariables.Structures.Mesh.COORDINATES}",
+                    f"RadialForces.{MPhysVariables.Structures.COORDINATES}",
+                )
                 self.connect("dv_struct", "RadialForces.dv_struct")
 
         prob = om.Problem()
