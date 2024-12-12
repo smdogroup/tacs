@@ -73,42 +73,38 @@ A diagram of the problem is shown below.</p>
 
 <span class="kn">import</span> <span class="nn">openmdao.api</span> <span class="k">as</span> <span class="nn">om</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">mphys</span> <span class="kn">import</span> <span class="n">Multipoint</span>
-<span class="kn">from</span> <span class="nn">mphys.scenario_structural</span> <span class="kn">import</span> <span class="n">ScenarioStructural</span>
-
-<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys</span> <span class="kn">import</span> <span class="n">TacsBuilder</span>
-
-<span class="c1"># BDF file containing mesh</span>
-<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;partitioned_plate.bdf&quot;</span><span class="p">)</span>
-
-<span class="c1"># Material properties</span>
-<span class="n">rho</span> <span class="o">=</span> <span class="mf">1550.0</span>
-<span class="n">E1</span> <span class="o">=</span> <span class="mf">54e9</span>
-<span class="n">E2</span> <span class="o">=</span> <span class="mf">18e9</span>
-<span class="n">nu12</span> <span class="o">=</span> <span class="mf">0.25</span>
-<span class="n">G12</span> <span class="o">=</span> <span class="mf">9e9</span>
-<span class="n">G13</span> <span class="o">=</span> <span class="mf">9e9</span>
-<span class="n">Xt</span> <span class="o">=</span> <span class="mf">2410.0e6</span>
-<span class="n">Xc</span> <span class="o">=</span> <span class="mf">1040.0e6</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="mf">73.0e6</span>
-<span class="n">Yc</span> <span class="o">=</span> <span class="mf">173.0e6</span>
-<span class="n">S12</span> <span class="o">=</span> <span class="mf">71.0e6</span>
-
-<span class="c1"># Shell thickness</span>
-<span class="n">ply_thickness</span> <span class="o">=</span> <span class="mf">1.25e-3</span>  <span class="c1"># m</span>
-<span class="n">plate_thickness</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
-<span class="n">tMin</span> <span class="o">=</span> <span class="mf">0.002</span>  <span class="c1"># m</span>
-<span class="n">tMax</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
-
-<span class="c1"># Ply angles/initial ply fractions</span>
-<span class="n">ply_angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">45.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">45.0</span><span class="p">,</span> <span class="mf">90.0</span><span class="p">])</span>
-<span class="n">ply_fractions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">])</span>
-
-<span class="c1"># Pressure load to apply to plate</span>
-<span class="n">P</span> <span class="o">=</span> <span class="mf">100e3</span>
+<span class="kn">from</span> <span class="nn">mphys.core</span> <span class="kn">import</span> <span class="n">Multipoint</span>
 </pre></div>
 </div>
+<p>from mphys.scenarios import ScenarioStructural</p>
+<blockquote>
+<div><p>from tacs import elements, constitutive, functions
+from tacs.mphys import TacsBuilder</p>
+<p># BDF file containing mesh
+bdf_file = os.path.join(os.path.dirname(__file__), &quot;partitioned_plate.bdf&quot;)</p>
+<p># Material properties
+rho = 1550.0
+E1 = 54e9
+E2 = 18e9
+nu12 = 0.25
+G12 = 9e9
+G13 = 9e9
+Xt = 2410.0e6
+Xc = 1040.0e6
+Yt = 73.0e6
+Yc = 173.0e6
+S12 = 71.0e6</p>
+<p># Shell thickness
+ply_thickness = 1.25e-3  # m
+plate_thickness = 0.05  # m
+tMin = 0.002  # m
+tMax = 0.05  # m</p>
+<p># Ply angles/initial ply fractions
+ply_angles = np.deg2rad([0.0, 45.0, -45.0, 90.0])
+ply_fractions = np.array([0.25, 0.25, 0.25, 0.25])</p>
+<p># Pressure load to apply to plate
+P = 100e3</p>
+</div></blockquote>
 <p>Next, we define an <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> function for setting up the TACS elements and design variables.
 We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive" title="tacs.constitutive.SmearedCompositeShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a> class here for the constitutive properties, and
 assign four design variable numbers to each element (one for each ply fraction), and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a> element class.</p>
@@ -188,7 +184,7 @@ We can accomplish this by utilizing the <a class="reference internal" href="../p
     <span class="n">constraint_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Fianlly, we define our <code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code> class.
+<p>Fianlly, we define our <a class="reference external" href="https://openmdao.github.io/mphys/basics/model_hierarchy.html#mphys.Multipoint" title="(in MPhys)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code></a> class.
 To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> we defined above.
 We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
 We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
@@ -199,7 +195,6 @@ We use this builder to create an MPhys <code class="xref py py-class docutils li
             <span class="n">element_callback</span><span class="o">=</span><span class="n">element_callback</span><span class="p">,</span>
             <span class="n">problem_setup</span><span class="o">=</span><span class="n">problem_setup</span><span class="p">,</span>
             <span class="n">constraint_setup</span><span class="o">=</span><span class="n">constraint_setup</span><span class="p">,</span>
-            <span class="n">coupled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">check_partials</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">struct_builder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
@@ -212,7 +207,10 @@ We use this builder to create an MPhys <code class="xref py py-class docutils li
         <span class="bp">self</span><span class="o">.</span><span class="n">mphys_add_scenario</span><span class="p">(</span>
             <span class="s2">&quot;pressure_load&quot;</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">mphys_connect_scenario_coordinate_source</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="s2">&quot;pressure_load&quot;</span><span class="p">,</span> <span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+          <span class="sa">f</span><span class="s2">&quot;mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="sa">f</span><span class="s2">&quot;pressure_load.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+      <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="s2">&quot;pressure_load.dv_struct&quot;</span><span class="p">)</span>
 </pre></div>

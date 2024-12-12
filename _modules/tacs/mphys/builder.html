@@ -35,10 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.mphys.builder</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-
-<span class="kn">from</span> <span class="nn">mphys.builder</span> <span class="kn">import</span> <span class="n">Builder</span>
+<span></span><span class="kn">from</span> <span class="nn">mphys.core</span> <span class="kn">import</span> <span class="n">Builder</span><span class="p">,</span> <span class="n">MPhysVariables</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">tacs.pytacs</span> <span class="kn">import</span> <span class="n">pyTACS</span>
@@ -62,7 +59,7 @@
         <span class="n">pytacs_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">check_partials</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">conduction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">coupled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">coupling_loads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">write_solution</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">separate_mass_dvs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">res_ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -141,9 +138,10 @@
 <span class="sd">        conduction : bool, optional</span>
 <span class="sd">            Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.</span>
 <span class="sd">            Defaults to False.</span>
-<span class="sd">        coupled : bool, optional</span>
-<span class="sd">            Flag to determine of if multidisciplinary coupling variables should be turned on</span>
-<span class="sd">            (used in aerostructural/thermostructural analyses). Defaults to True.</span>
+<span class="sd">        coupling_loads : list[str] or str or None, optional</span>
+<span class="sd">            List of coupling loads to add to right handside of FEA state equation. These loads correspond to the nodal</span>
+<span class="sd">            forces on the model. Multiple load sources can be specified, these will be added together before being</span>
+<span class="sd">            applied to the model. This is used in aerostructural/thermostructural analyses. Defaults to None.</span>
 <span class="sd">        write_solution : bool, optional</span>
 <span class="sd">            Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.</span>
 <span class="sd">        separate_mass_dvs : bool, optional</span>
@@ -243,7 +241,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pytacs_options</span> <span class="o">=</span> <span class="n">pytacs_options</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span> <span class="o">=</span> <span class="n">check_partials</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conduction</span> <span class="o">=</span> <span class="n">conduction</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coupled</span> <span class="o">=</span> <span class="n">coupled</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coupling_loads</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span> <span class="o">=</span> <span class="p">[</span><span class="n">coupling_loads</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">coupling_loads</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span> <span class="o">=</span> <span class="n">coupling_loads</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span> <span class="o">=</span> <span class="n">write_solution</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">separate_mass_dvs</span> <span class="o">=</span> <span class="n">separate_mass_dvs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">res_ref</span> <span class="o">=</span> <span class="n">res_ref</span>
@@ -271,7 +274,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler_setup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">)</span>
 
         <span class="c1"># Set up elements and TACS assembler</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">element_callback</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">element_callback</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">conduction</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span> <span class="o">=</span> <span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Thermal</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="o">.</span><span class="n">STATES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="o">.</span><span class="n">TEMPERATURE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span> <span class="o">=</span> <span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="o">.</span><span class="n">STATES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="o">.</span><span class="n">DISPLACEMENTS</span></div>
 
 
 <div class="viewcode-block" id="TacsBuilder.get_coupling_group_subsystem">
@@ -293,9 +303,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">TacsCouplingGroup</span><span class="p">(</span>
             <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
-            <span class="n">conduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conduction</span><span class="p">,</span>
+            <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
             <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
-            <span class="n">coupled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupled</span><span class="p">,</span>
+            <span class="n">coupling_loads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span><span class="p">,</span>
             <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
             <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
             <span class="n">res_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">res_ref</span><span class="p">,</span>
@@ -319,7 +329,10 @@
 <span class="sd">        mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`</span>
 <span class="sd">            The openmdao subsystem that has an output of coordinates.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">TacsMeshGroup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">TacsMeshGroup</span><span class="p">(</span>
+            <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
+            <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TacsBuilder.get_pre_coupling_subsystem">
@@ -342,6 +355,7 @@
             <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
             <span class="n">initial_dv_vals</span><span class="o">=</span><span class="n">initial_dvs</span><span class="p">,</span>
             <span class="n">separate_mass_dvs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">separate_mass_dvs</span><span class="p">,</span>
+            <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -363,7 +377,7 @@
         <span class="k">return</span> <span class="n">TacsPostcouplingGroup</span><span class="p">(</span>
             <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
             <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
-            <span class="n">conduction</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conduction</span><span class="p">,</span>
+            <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
             <span class="n">write_solution</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span><span class="p">,</span>
             <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
             <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
