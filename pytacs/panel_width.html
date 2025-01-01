@@ -83,20 +83,20 @@ Use pyTACS.createPanelWidthConstraint instead.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.computeRefAxis">
-<span class="sig-name descname"><span class="pre">computeRefAxis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">refAxis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_bndry_node_coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_width.html#PanelWidthConstraint.computeRefAxis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.computeRefAxis" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">computeRefAxis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">refAxis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_bndry_node_coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><span class="pre">ndarray</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/constraints/panel_width.html#PanelWidthConstraint.computeRefAxis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.computeRefAxis" title="Link to this definition">¶</a></dt>
 <dd><p>remove the panelNormal from the refAxis</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>refAxis</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3,) for the xyz coordinates of the original refAxis from transform object</p></li>
-<li><p><strong>comp_bndry_node_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component</p></li>
+<li><p><strong>refAxis</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a>) -- an array of size (3,) for the xyz coordinates of the original refAxis from transform object</p></li>
+<li><p><strong>comp_bndry_node_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a>) -- an array of size (3*N,) for the boundary nodal coordinates on the current panel / current TACS component</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>an array of size (3,) for xyz coords of the panel width axis in the panel</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -277,7 +277,7 @@ are evaluated and updated into the provided dictionary.</p>
 <dd class="field-odd"><p><strong>x</strong> -- The current design variable vector set in tacs.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -292,7 +292,7 @@ are evaluated and updated into the provided dictionary.</p>
 the number of structural nodes on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)">numpy.ndarray</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -406,7 +406,7 @@ options to the stdout on the root processor</p>
 <dd><p>Update the design variables used by tacs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em> or </em><em>tacs.TACS.Vec</em>) -- The variables (typically from the optimizer) to set. It
 looks for variable in the <code class="docutils literal notranslate"><span class="pre">self.varName</span></code> attribute if in dict.</p>
 </dd>
 </dl>
@@ -418,7 +418,7 @@ looks for variable in the <code class="docutils literal notranslate"><span class
 <dd><p>Set the mesh coordinates of the structure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.1)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
+<dd class="field-odd"><p><strong>coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.2)"><em>numpy.ndarray</em></a>) -- Structural coordinate in array of size (N * 3) where N is
 the number of structural nodes on this processor.</p>
 </dd>
 </dl>
