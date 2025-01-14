@@ -54,10 +54,6 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     return 3;
   }
 
-  if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
-    return 9;
-  }
-
   if (etype == TACS_ELEMENT_NONE) {
     return 0;
   } else if (etype == TACS_SCALAR_2D_ELEMENT) {
@@ -95,6 +91,9 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 14;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 6;
+    }
+    else if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
+      return 9;
     }
   } else if (etype == TACS_PLANE_STRESS_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -153,31 +152,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         return "Y";
       case 2:
         return "Z";
-      default:
-        return NULL;
-    }
-  }
-
-  if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
-    switch (index) {
-      case 0:
-        return "t0x";
-      case 1:
-        return "t0y";
-      case 2:
-        return "t0z";
-      case 3:
-        return "t1x";
-      case 4:
-        return "t1y";
-      case 5:
-        return "t1z";
-      case 6:
-        return "t2x";
-      case 7:
-        return "t2y";
-      case 8:
-        return "t2z";
       default:
         return NULL;
     }
@@ -376,6 +350,29 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "mz";
         default:
           return NULL;
+      }
+    } if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
+    switch (index) {
+      case 0:
+        return "t0x";
+      case 1:
+        return "t0y";
+      case 2:
+        return "t0z";
+      case 3:
+        return "t1x";
+      case 4:
+        return "t1y";
+      case 5:
+        return "t1z";
+      case 6:
+        return "t2x";
+      case 7:
+        return "t2y";
+      case 8:
+        return "t2z";
+      default:
+        return NULL;
       }
     }
   } else if (etype == TACS_PLANE_STRESS_ELEMENT) {
