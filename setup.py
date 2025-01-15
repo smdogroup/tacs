@@ -104,7 +104,7 @@ with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
 optional_dependencies = {
     "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
-    "mphys": ["mphys>=1.1.0,<2.0.0", "openmdao>=3.25.0"],
+    "mphys": ["mphys>=2.0.0,<3.0.0", "openmdao>=3.25.0"],
     "caps2tacs": ["imageio>=2.16.1"],
 }
 
@@ -119,7 +119,7 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.7.2",
+    version="3.8.0",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -128,7 +128,7 @@ setup(
     python_requires=">=3.9.0",
     install_requires=[
         "numpy<2.0.0",
-        "mpi4py>=3.1.1,<4.0.0",
+        "mpi4py>=3.1.5,<4.0.0",
         "scipy>=1.2.1",
         "pynastran>=1.4.0",
         "numba",

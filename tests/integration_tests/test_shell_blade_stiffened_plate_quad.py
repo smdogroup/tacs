@@ -42,7 +42,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "point_load_cgy": 0.500000000000004,
         "point_load_cgz": -0.0035714285714285718,
         "point_load_compliance": 71.87161795633577,
-        "point_load_ks_vmfailure": 0.3304517634314118,
+        "point_load_ks_failure": 1.55459927291223,
         "point_load_mass": 17.5,
         "pressure_Ixx": 1.4589304315475928,
         "pressure_Ixy": 3.907985046680551e-14,
@@ -54,7 +54,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "pressure_cgy": 0.500000000000004,
         "pressure_cgz": -0.0035714285714285718,
         "pressure_compliance": 377.11604579572935,
-        "pressure_ks_vmfailure": 0.9085085771277308,
+        "pressure_ks_failure": 2.071155983783409,
         "pressure_mass": 17.5,
         "gravity_Ixx": 1.4589304315475928,
         "gravity_Ixy": 3.907985046680551e-14,
@@ -66,7 +66,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_cgy": 0.500000000000004,
         "gravity_cgz": -0.0035714285714285718,
         "gravity_compliance": 11.114479357783475,
-        "gravity_ks_vmfailure": 0.0908244150089233,
+        "gravity_ks_failure": 0.36091429055815866,
         "gravity_mass": 17.5,
         "modal_eigsm.0": 728895.1077101853,
         "modal_eigsm.1": 1591857.6791554866,
@@ -175,7 +175,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction("ks_failure", functions.KSFailure, ksWeight=ksweight)
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]

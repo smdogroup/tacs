@@ -834,7 +834,188 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
                                                     z0=np.real(z0))
         return prop
 
-cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
+cdef class StiffenedShellConstitutive(ShellConstitutive):
+    """
+    This is a base class for both the BladeStiffenedShellConstitutive and the
+    GPBladeStiffenedShellConstitutive classes
+    """
+
+    def setFailureModes(
+        self,
+        includePanelMaterialFailure=None,
+        includeStiffenerMaterialFailure=None,
+        includeLocalBuckling=None,
+        includeGlobalBuckling=None,
+        includeStiffenerColumnBuckling=None,
+        includeStiffenerCrippling=None,
+    ):
+        """
+        Turn on or off each failure mode in the KS failure index computation.
+        If any of the entries are None, they are not modified and will be included in the failure index.
+
+        Parameters
+        ----------
+        includePanelMaterialFailure : bool or None
+            whether to include panel material / panel stress failure in the failure index
+        includeStiffenerMaterialFailure : bool or None
+            whether to include stiffener material / stiffener stress failure in the failure index
+        includeLocalBuckling : bool or None
+            whether to include local buckling (in between stiffeners) in the failure index
+        includeGlobalBuckling : bool or None
+            whether to include global buckling (modes for the full stiffened panel) in the failure index
+        includeStiffenerColumnBuckling : bool or None
+            whether to include column buckling failure in the failure index
+        includeStiffenerCrippling : bool or None
+            whether to include stiffener crippling failure in the failure index
+        """
+        if self.base_ptr:
+            if includePanelMaterialFailure is not None:
+                self.base_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
+            if includeStiffenerMaterialFailure is not None:
+                self.base_ptr.setIncludeStiffenerMaterialFailure(includeStiffenerMaterialFailure)
+            if includeGlobalBuckling is not None:
+                self.base_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
+            if includeLocalBuckling is not None:
+                self.base_ptr.setIncludeLocalBuckling(includeLocalBuckling)
+            if includeStiffenerColumnBuckling is not None:
+                self.base_ptr.setIncludeStiffenerColumnBuckling(includeStiffenerColumnBuckling)
+            if includeStiffenerCrippling is not None:
+                self.base_ptr.setIncludeStiffenerCrippling(includeStiffenerCrippling)
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.base_ptr:
+            self.base_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+        if self.base_ptr:
+            self.base_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
+
+        if self.base_ptr:
+            if len(lowerBound) != self.base_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.base_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
+            self.base_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
+
+        if self.base_ptr:
+            if len(lowerBound) != self.base_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.base_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
+            self.base_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
     """This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled.
     Instead, their stiffness is "smeared" across the shell.
@@ -910,7 +1091,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
         int stiffenerHeightNum = -1,
         int stiffenerThickNum = -1,
-        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
         ):
 
         numPanelPlies = len(panelPlyAngles)
@@ -937,7 +1118,7 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
         if stiffenerPlyFracNums.dtype != np.intc:
             stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
 
-        self.blade_ptr = new TACSBladeStiffenedShellConstitutive(
+        self.base_ptr = new TACSBladeStiffenedShellConstitutive(
             panelPly.ptr,
             stiffenerPly.ptr,
             kcorr,
@@ -961,141 +1142,667 @@ cdef class BladeStiffenedShellConstitutive(ShellConstitutive):
             <int*>stiffenerPlyFracNums.data,
             flangeFraction
         )
-        self.ptr = self.cptr = self.blade_ptr
+        self.ptr = self.cptr = self.blade_ptr = self.base_ptr
         self.ptr.incref()
 
-    def setKSWeight(self, double ksWeight):
+    
+cdef class GaussianProcess:
+    """
+    Base class for constructing Gaussian Process ML models to predict buckling loads.
+    This is an abstract base class and hence has no constructor, only methods used by its subclasses.
+    """
+    # base class so no constructor here    
+    def predict_mean_test_data(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+    ):
         """
-        Update the ks weight used for aggregating the different failure modes
+        This method makes buckling predictions at each point of an Xtest dataset and returns the Ytest tensor of buckling load predictions.
+        Note that the Xtest inputs and Ytest outputs are in log-space (more details below).
+
+        Parameters
+        ----------
+        Xtest - np.ndarray
+            a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
+            specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        
+        Returns:
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
+        """
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+
+    def getNparam(self):
+        """
+        Get the number of input parameters in the Gaussian Process model (4 for all of the current base classes)
+
+        Returns:
+            nparams (int) : the number of input parameters in Xtest [4 for the current implemented classes]
+        """
+        return self.base_gp.getNparam()
+
+    def getNtrain(self):
+        """
+        Get the number of input training data points used in the model training weights
+
+        Returns:
+            ntrain (int) : the number of training data points in alpha_train, the training weights
+        """
+        return self.base_gp.getNtrain()
+
+    def getTrainingData(self):
+        """
+        Get the training dataset Xtrain used for training the Gaussian Process ML model
+
+        Returns:
+            Xtrain (np.ndarray) : a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+            or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        """
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray train_data = np.zeros((ntrain*nparam,), dtype=dtype)
+        self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
+        return train_data
+
+    def setKS(self, TacsScalar ksWeight, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
         ksWeight : float
-            KS aggregation weight
+            the Kresselmeier-Steinhauser aggregation parameter rho_KS used for smooth relu and smooth abs value
+            in the GP kernel functions.
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
         """
-        if self.blade_ptr:
-            self.blade_ptr.setKSWeight(ksWeight)
+        # print("Warning: need to retrain the weights as KS has changed\n")
+        self.base_gp.setKS(ksWeight)
+        self.recompute_alpha(Ytrain)
+        return
 
-    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
-        """Set the lower and upper bounds for the stiffener pitch design variable
-
-        The default bounds are 1e-3 and 1e20
+    def setTheta(self, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
-        lowerBound : float or complex
-            Lower bound
-        upperBound : float or complex
-            Upper bound
+        theta : np.ndarray
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
         """
-        if self.blade_ptr:
-            self.blade_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+        # print("Warning: need to retrain the weights as KS has changed\n")
+        self.base_gp.setTheta(<TacsScalar*>theta.data)
+        self.recompute_alpha(Ytrain)
+        return
 
-    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
-        """Set the lower and upper bounds for the stiffener height design variable
-
-        The default bounds are 1e-3 and 1e20
+    def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
+        """
+        run all the internal Gaussian Process ML model derivative tests
 
         Parameters
         ----------
-        lowerBound : float or complex
-            Lower bound
-        upperBound : float or complex
-            Upper bound
+        epsilon : TacsScalar
+            the step size for each derivative test
+        printLevel : int
+            an input of 0 does not print each derivative test result, an input of 1 does print each test result to terminal.
+
+        Returns:
+            max relative error (TacsScalar) : the max relative error among all internal derivative tests of the model
         """
+        return self.base_gp.testAllGPTests(epsilon, printLevel)
 
-        if self.blade_ptr:
-            self.blade_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
-
-    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
-        """Set the lower and upper bounds for the stiffener thickness design variable
-
-        The default bounds are 1e-4 and 1e20
+    def kernel(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+    ):
+        """
+        call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
+        this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
+        match those of the ml_buckling repo. 
 
         Parameters
         ----------
-        lowerBound : float or complex
-            Lower bound
-        upperBound : float or complex
-            Upper bound
+        Xtest : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the test datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
+        Xtrain : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the training datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
         """
+        return self.base_gp.kernel(<TacsScalar*>Xtest.data, <TacsScalar*>Xtrain.data)
 
-        if self.blade_ptr:
-            self.blade_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
-
-    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
-        """Set the lower and upper bounds for the panel thickness design variable
-
-        The default bounds are 1e-4 and 1e20
+    def recompute_alpha(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
+        this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
+        for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
+            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
 
         Parameters
         ----------
-        lowerBound : float or complex
-            Lower bound
-        upperBound : float or complex
-            Upper bound
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
         """
+        #return
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray theta = np.zeros((14,), dtype=dtype)
+        cdef np.ndarray Xtrain = np.zeros((ntrain * nparam,), dtype=dtype)
+        self.base_gp.getTheta(<TacsScalar*>theta.data)
+        self.base_gp.getTrainingData(<TacsScalar*>theta.data)
+        cdef TacsScalar sigma_n = theta[-1]
+        
+        # make the training matrix
+        cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
+            self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
+        ] for j in range(ntrain)])
 
-        if self.blade_ptr:
-            self.blade_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+        # recompute the training weights
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] alpha = np.linalg.solve(kernel_matrix, Ytrain)
+        self.base_gp.setAlpha(<TacsScalar*>alpha.data)
+        return
 
-    def setStiffenerPlyFractionBounds(
-            self,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+cdef class BucklingGP(GaussianProcess):
+    """
+    Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
+    Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
+    The ML model uses non-dimensional inputs and outputs as follows:
+        log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+        log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+    The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
+
+    Parameters
+    ----------
+    Xtrain : np.ndarray
+        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+    alpha : np.ndarray
+        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
+    theta : np.ndarray
+        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
+    """
+    n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
+
+    @classmethod
+    def from_csv(cls, csv_file, theta_csv):
+        """
+        Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        the training weights of the ML model and the optimal hyperparameters theta.
+            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
+        The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
+        and is the following:
+            axial_gp = BucklingGP.from_csv(
+                csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
+            )
+            shear_gp = BucklingGP.from_csv(
+                csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv
+            )
+
+        Parameters
+        ----------
+        csv_file : filepath or str
+            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
+        theta_csv : filepath or str
+            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
+
+        Returns:
+            BucklingGP object
+        """
+        # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
+        # optional import
+
+        full_arr = np.loadtxt(csv_file, skiprows=1, delimiter=",")
+        Xtrain_mat = full_arr[:, 1:5].astype(dtype=dtype)
+        alpha = full_arr[:, -1].astype(dtype=dtype)
+
+        n_train = Xtrain_mat.shape[0]
+        n_param = 4
+
+        Xtrain = np.zeros((n_train*n_param,), dtype=dtype)
+        # stagger the array entries
+        for iparam in range(4):
+            Xtrain[iparam::4] = Xtrain_mat[:,iparam]
+
+        theta_opt = np.loadtxt(theta_csv, skiprows=1, delimiter=",")[:,-1].astype(dtype=dtype)
+
+        return cls(n_train, Xtrain, alpha, theta_opt)
+
+    def __cinit__(
+        self,
+        int n_train, 
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
+    ):
+        self.buckling_gp = new TACSBucklingGaussianProcessModel(
+            n_train,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+            <TacsScalar*>theta.data,
+        )
+        self.base_gp = self.buckling_gp
+
+cdef class PanelGPs:
+    """
+    This object holds the individual GP objects for a single panel. One PanelGP object is shared among the constitutive
+    object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
+    only one call to each GP object is required per panel (speeds up computation time).
+    The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
+    (assuming each TACSComponent is associated with a different panel). 
+
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
+    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+
+    def callback_generator(tacs_component_names):
+        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+
+        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+
+            # get the panelGPs object associated with this tacs component
+            panelGPs = panelGP_dict[compDescript]
+
+            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+
+    Parameters
+    ----------
+    BucklingGP : TACSAxialGaussianProcessModel, optional
+        GP model for axial buckling data, if None uses closed-form instead
+    BucklingGP : TACSShearGaussianProcessModel, optional
+        GP model for shear buckling data, if None uses closed-form instead
+    BucklingGP : TACSCripplingGaussianProcessModel, optional
+        GP model for crippling buckling data, if None uses closed-form instead
+    saveData : bool
+        whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
+    """
+    def __cinit__(
+        self,
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
+        bool saveData = True,
+    ):   
+        # make null ptrs for GPs if not defined and store them in this class too
+        cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
+        if axialGP is not None:
+            axial_gp_ptr = (<BucklingGP>axialGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *shear_gp_ptr = NULL
+        if shearGP is not None:
+            shear_gp_ptr = (<BucklingGP>shearGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *crippling_gp_ptr = NULL
+        if cripplingGP is not None:
+            crippling_gp_ptr = (<BucklingGP>cripplingGP).buckling_gp
+
+        self.gptr = new TACSPanelGPs(
+            axial_gp_ptr,
+            shear_gp_ptr,
+            crippling_gp_ptr,
+            saveData,
+        )
+
+    @classmethod
+    def component_dict(
+        cls, 
+        tacs_components, # list of strings of each tacs component name
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
+        bool saveData = True,
         ):
-        """Set the lower and upper bounds for the stiffener ply fraction design variables
-
-        The default bounds are 0 and 1
+        """
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
+            { tacs_component (str) : PanelGPs object }      
 
         Parameters
         ----------
-        lowerBound : numpy.ndarray[float or complex]
-            Lower bound
-        upperBound : numpy.ndarray[float or complex]
-            Upper bounds
-
-        Raises
-        ------
-        ValueError
-            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        BucklingGP : TACSAxialGaussianProcessModel, optional
+            GP model for axial buckling data, if None uses closed-form instead
+        BucklingGP : TACSShearGaussianProcessModel, optional
+            GP model for shear buckling data, if None uses closed-form instead
+        BucklingGP : TACSCripplingGaussianProcessModel, optional
+            GP model for crippling buckling data, if None uses closed-form instead
+        saveData : bool
+            whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
         """
+        _dict = {}
+        for comp_name in tacs_components:
+            _dict[comp_name] = cls(
+                axialGP,
+                shearGP,
+                cripplingGP,
+                saveData
+            )
+        return _dict
 
-        if self.blade_ptr:
-            if len(lowerBound) != self.blade_ptr.getNumStiffenerPlies():
-                raise ValueError('lowerBound must have length numStiffenerPlies')
-            if len(upperBound) != self.blade_ptr.getNumStiffenerPlies():
-                raise ValueError('upperBound must have length numStiffenerPlies')
-            self.blade_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    """"
+    This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
 
-    def setPanelPlyFractionBounds(
-            self,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
-            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+    This class is a subclass of the BladeStiffenedShellConstitutive base class
+    and includes higher-fidelity buckling constraints using Gaussian Processes for Machine Learning.
+    The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
+
+    For the methods below, consider a panel with dimensions a the panel length, b the panel width,
+        h the panel thickness, and stiffeners along the length or 1-direction.
+    The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
+        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
+    For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
+        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+        by Sean Engelstad, Brian Burke, Graeme Kennedy.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    panelLength : float or complex
+        Panel length DV value
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    panelThick : float or complex
+        Panel thickness DV value
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    panelWidth : float or complex
+        Panel width DV value
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
+    panelLengthNum : int, optional
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPitchNum : int, optional
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelThickNum : int, optional
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelPlyFracNums : numpy.ndarray[np.intc], optional
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    stiffenerHeightNum : int, optional
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerThickNum : int, optional
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    panelWidthNum : int, optional
+        Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    CPTstiffenerCrippling : bool
+        whether to use CPT (classical plate theory) for stiffener crippling buckling predictions in the closed-form solution case (default False)
+    panelGPs: TACSPanelGPs
+        container for the three GP models for each panel / TACS component
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
+    """
+
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar panelLength,
+        TacsScalar stiffenerPitch,
+        TacsScalar panelThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        TacsScalar stiffenerHeight,
+        TacsScalar stiffenerThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        TacsScalar panelWidth,
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
+        int panelLengthNum = -1,
+        int stiffenerPitchNum = -1,
+        int panelThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
+        int stiffenerHeightNum = -1,
+        int stiffenerThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
+        int panelWidthNum = -1,
+        bool CPTstiffenerCrippling = False,
+        PanelGPs panelGPs = None,
         ):
-        """Set the lower and upper bounds for the panel ply fraction design variables
 
-        The default bounds are 0 and 1
+        # same input checks as superclass BladeStiffenedShellConstitutive
+        numPanelPlies = len(panelPlyAngles)
+        numStiffenerPlies = len(stiffenerPlyAngles)
+
+        if panelPlyFracNums is None:
+            panelPlyFracNums = -np.ones([numPanelPlies], dtype=np.intc)
+        if stiffenerPlyFracNums is None:
+            stiffenerPlyFracNums = -np.ones([numStiffenerPlies], dtype=np.intc)
+
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have same length as panelPlyAngles')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have same length as panelPlyAngles')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have same length as stiffenerPlyAngles')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
+
+        cdef TACSPanelGPs *panel_gp_ptr = NULL
+        if panelGPs is not None:
+            panel_gp_ptr = (<PanelGPs>panelGPs).gptr
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        self.base_ptr = new TACSGPBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            panelWidth,
+            panelWidthNum,
+            flangeFraction,
+            CPTstiffenerCrippling,
+            panel_gp_ptr,
+        )
+        # copy pointers to all superclasses
+        self.gp_blade_ptr = <TACSGPBladeStiffenedShellConstitutive *> self.base_ptr
+        self.ptr = self.cptr = self.base_ptr # copy constitutive as well
+        self.ptr.incref()
+
+    def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the global axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
 
         Parameters
         ----------
-        lowerBound : numpy.ndarray[float or complex]
-            Lower bound
-        upperBound : numpy.ndarray[float or complex]
-            Upper bounds
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
 
-        Raises
-        ------
-        ValueError
-            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / b^2 / (1 + delta)
+                with delta = E1s * As / (E1p * sp * h)
         """
+        return self.gp_blade_ptr.nondimCriticalGlobalAxialLoad(rho_0, xi, gamma, zeta)
 
-        if self.blade_ptr:
-            if len(lowerBound) != self.blade_ptr.getNumPanelPlies():
-                raise ValueError('lowerBound must have length numPanelPlies')
-            if len(upperBound) != self.blade_ptr.getNumPanelPlies():
-                raise ValueError('upperBound must have length numPanelPlies')
-            self.blade_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+    def nondimCriticalLocalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the local axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the center of the skin, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2
+        """
+        return self.gp_blade_ptr.nondimCriticalLocalAxialLoad(rho_0, xi, zeta)
+
+    def nondimCriticalGlobalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the global shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / b^2
+        """
+        return self.gp_blade_ptr.nondimCriticalGlobalShearLoad(rho_0, xi, gamma, zeta)
+
+    def nondimCriticalLocalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the local shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        D11 here is for the center of the panel, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / s_p^2
+        """
+        return self.gp_blade_ptr.nondimCriticalLocalShearLoad(rho_0, xi, zeta)
+
+    def nondimStiffenerCripplingLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the stiffener crippling mode of the stiffener.
+        Uses the closed-form solution if PanelGPs.cripplingGP is None or the cripplingGP ML model if PanelGPs.cripplingGP is not None
+
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the stiffener, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        genPoiss : float
+            the generalized Poisson's ratio for weak BCs such as the stiffener with its free edge, eps = D12 / (D12 + 2 * D66)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11s * D22s) / h_s^2; here D11s, D22s are for the stiffener laminate
+        """
+        return self.gp_blade_ptr.nondimStiffenerCripplingLoad(rho_0, xi, genPoiss, zeta)
+
+    def setCPTstiffenerCrippling(self, bool CPTcripplingMode):
+        """
+        choose whether to use stiffener crippling by:
+        CPT solution from Sean's paper if CPTcripplingMode = True
+        DOD experimental solution from Ali's superclass if CPTcripplingMode = False
+
+        Parameters
+        ----------
+        CPTcripplingMode : bool
+            whether to use CPT crippling solution or not
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setCPTstiffenerCrippling(CPTcripplingMode)
+
+    def setWriteDVMode(self, int newMode):
+        """
+        Set mode for writing DV inputs to the .f5 files
+        0 - write DVs, 1 - write nondim params, 2 - write failure indexes
+        this is a useful tool to investigate and debug final designs.
+
+        Parameters
+        ----------
+        newMode: int
+            new mode input for the writeDVMode
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setWriteDVMode(newMode)
+
+    def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
+        """
+        test all the internal derivative tests 
+        """
+        return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
 
 cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
     """

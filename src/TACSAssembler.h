@@ -92,7 +92,8 @@ class TACSAssembler : public TACSObject {
   int setDependentNodes(const int *_depNodeIndex, const int *_depNodeToTacs,
                         const double *_depNodeWeights);
 
-  void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses);
+  void getAverageStresses(ElementType elem_type, TacsScalar *avgStresses,
+                          int compNum);
   void setComplexStepGmatrix(bool flag);
 
   // Set additional information about the design vector

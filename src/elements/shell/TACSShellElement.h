@@ -1487,20 +1487,14 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
         data += 9;
       }
       if (write_flag & TACS_OUTPUT_EXTRAS) {
-        data[0] = con->evalFailureFieldValue(elemIndex, pt, X, e, 0);
-        data[1] = con->evalFailureFieldValue(elemIndex, pt, X, e, 1);
-        data[2] = con->evalFailureFieldValue(elemIndex, pt, X, e, 2);
-        data[3] = con->evalFailureFieldValue(elemIndex, pt, X, e, 3);
-        data[4] = con->evalFailureFieldValue(elemIndex, pt, X, e, 4);
-        data[5] = con->evalFailureFieldValue(elemIndex, pt, X, e, 5);
-        data[6] = con->evalDesignFieldValue(elemIndex, pt, X, 0);
-        data[7] = con->evalDesignFieldValue(elemIndex, pt, X, 1);
-        data[8] = con->evalDesignFieldValue(elemIndex, pt, X, 2);
-        data[9] = con->evalDesignFieldValue(elemIndex, pt, X, 3);
-        data[10] = con->evalDesignFieldValue(elemIndex, pt, X, 4);
-        data[11] = con->evalDesignFieldValue(elemIndex, pt, X, 5);
-        data[12] = con->evalDesignFieldValue(elemIndex, pt, X, 6);
-        data += 13;
+        for (int failInd = 0; failInd < 7; failInd++) {
+          data[failInd] =
+              con->evalFailureFieldValue(elemIndex, pt, X, e, failInd);
+        }
+        for (int dvInd = 0; dvInd < 7; dvInd++) {
+          data[dvInd + 7] = con->evalDesignFieldValue(elemIndex, pt, X, dvInd);
+        }
+        data += 14;
       }
     }
   }
