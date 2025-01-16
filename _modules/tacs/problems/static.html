@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.problems.static &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -48,24 +48,24 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">copy</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.bdf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
 
-<span class="kn">import</span> <span class="nn">tacs.TACS</span>
-<span class="kn">import</span> <span class="nn">tacs.elements</span>
-<span class="kn">import</span> <span class="nn">tacs.solvers</span>
-<span class="kn">from</span> <span class="nn">tacs.problems.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.elements</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.solvers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.problems.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSProblem</span>
 
 
 <div class="viewcode-block" id="StaticProblem">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem">[docs]</a>
-<span class="k">class</span> <span class="nc">StaticProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StaticProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
     <span class="c1"># Default options for class</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
@@ -167,7 +167,7 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
         <span class="n">assembler</span><span class="p">,</span>
@@ -272,7 +272,7 @@
                     <span class="s2">&quot;&#39;Continuation&#39;&quot;</span>
                 <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal to create the variable required by TACS&quot;&quot;&quot;</span>
 
         <span class="n">opt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span>
@@ -414,7 +414,7 @@
 
 <div class="viewcode-block" id="StaticProblem.setOption">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setOption">[docs]</a>
-    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
@@ -466,7 +466,7 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is a scaling factor applied to all forcing terms</span>
 
 <span class="sd">        Forcing terms includes both the user supplied force vector and the forcing terms coming from aux elements in</span>
@@ -480,7 +480,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span>
 
     <span class="nd">@loadScale</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the scaling applied to external loads</span>
 
 <span class="sd">        This function exists so that calling `problem.loadScale = value` has the same effect as calling::</span>
@@ -498,7 +498,7 @@
 
 <div class="viewcode-block" id="StaticProblem.setLoadScale">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setLoadScale">[docs]</a>
-    <span class="k">def</span> <span class="nf">setLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the scaling applied to external loads</span>
 
 <span class="sd">        Parameters</span>
@@ -513,7 +513,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getLoadScale">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getLoadScale">[docs]</a>
-    <span class="k">def</span> <span class="nf">getLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getLoadScale</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current load scale</span>
 
 <span class="sd">        This function is required by the continuation solver</span>
@@ -528,7 +528,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addFunction">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addFunction">[docs]</a>
-    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to add a function for TACS. It is intended to</span>
 <span class="sd">        be reasonably generic since the user supplies the actual</span>
@@ -563,7 +563,7 @@
 
 <div class="viewcode-block" id="StaticProblem.setDesignVars">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setDesignVars">[docs]</a>
-    <span class="k">def</span> <span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Update the design variables used by tacs.</span>
 
@@ -580,7 +580,7 @@
 
 <div class="viewcode-block" id="StaticProblem.setNodes">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setNodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the mesh coordinates of the structure.</span>
 
@@ -598,7 +598,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addLoadToComponents">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
@@ -648,7 +648,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addLoadToNodes">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadToNodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed point load of F to the</span>
 <span class="sd">        selected node IDs.</span>
@@ -694,7 +694,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addLoadToRHS">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadToRHS">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
 <span class="sd">        right hand side vector given the equation below:</span>
@@ -718,7 +718,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addTractionToComponents">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTractionToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is</span>
@@ -743,7 +743,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addTractionToElements">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTractionToElements">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addTractionToElements</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -777,7 +777,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addPressureToComponents">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addPressureToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
 <span class="sd">        components, defined by COMPIds. The purpose of this routine is</span>
@@ -803,7 +803,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addPressureToElements">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addPressureToElements">[docs]</a>
-    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addPressureToElements</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -837,7 +837,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addInertialLoad">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addInertialLoad">[docs]</a>
-    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed inertial load due to</span>
 <span class="sd">        a uniform acceleration over the entire model.</span>
@@ -853,7 +853,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addCentrifugalLoad">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addCentrifugalLoad">[docs]</a>
-    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed centrifugal load due to a</span>
 <span class="sd">        uniform rotational velocity over the entire model.</span>
@@ -877,7 +877,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addLoadFromBDF">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addLoadFromBDF">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem.</span>
 <span class="sd">        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</span>
@@ -896,7 +896,7 @@
 
     <span class="c1">####### Static solver methods ########</span>
 
-    <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure that the assembler is using</span>
 <span class="sd">        the input variables associated with this problem</span>
@@ -918,7 +918,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">),</span> <span class="mf">0.0</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initializeSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize the solution of the structural system for the</span>
 <span class="sd">        loadCase. The stiffness matrix is assembled and factored.</span>
@@ -929,7 +929,7 @@
 
 <div class="viewcode-block" id="StaticProblem.solve">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.solve">[docs]</a>
-    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solution of the static problem for current load set. The</span>
 <span class="sd">        forces must already be set.</span>
@@ -992,7 +992,7 @@
         <span class="k">return</span> <span class="n">hasConverged</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_solveLinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_solveLinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a linear StaticProblem for a given external force vector</span>
 
 <span class="sd">        Parameters</span>
@@ -1040,7 +1040,7 @@
 
         <span class="k">return</span> <span class="n">hasConverged</span>
 
-    <span class="k">def</span> <span class="nf">_solveNonlinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_solveNonlinear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a nonlinear StaticProblem for a given external force vector</span>
 
 <span class="sd">        Parameters</span>
@@ -1063,7 +1063,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">initNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">externalForce</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
 
         <span class="c1"># We need to update the residual function handle used by the nonlinear solver based on the current external force vector</span>
-        <span class="k">def</span> <span class="nf">resFunc</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">resFunc</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">resFunc</span> <span class="o">=</span> <span class="n">resFunc</span>
@@ -1077,7 +1077,7 @@
         <span class="c1"># Finally return a bool indicating whether the solve was successful</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">hasConverged</span>
 
-    <span class="k">def</span> <span class="nf">_nonlinearCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nonlinearCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Callback function to be called by the nonlinear solver at each iteration</span>
 
 <span class="sd">        Parameters</span>
@@ -1110,7 +1110,7 @@
 
 <div class="viewcode-block" id="StaticProblem.updateJacobian">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.updateJacobian">[docs]</a>
-    <span class="k">def</span> <span class="nf">updateJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the Jacobian (a.k.a stiffness) matrix</span>
 
 <span class="sd">        The Jacobian will only actually be updated if the</span>
@@ -1137,7 +1137,7 @@
 
 <div class="viewcode-block" id="StaticProblem.updatePreconditioner">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.updatePreconditioner">[docs]</a>
-    <span class="k">def</span> <span class="nf">updatePreconditioner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updatePreconditioner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the Jacobian (a.k.a stiffness) matrix preconditioner</span>
 
 <span class="sd">        By default, the static problem uses a full LU factorization of the</span>
@@ -1162,7 +1162,7 @@
 
 <div class="viewcode-block" id="StaticProblem.evalFunctions">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.evalFunctions">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful information from</span>
 <span class="sd">        pytacs. The functions corresponding to the strings in</span>
@@ -1254,7 +1254,7 @@
 
 <div class="viewcode-block" id="StaticProblem.evalFunctionsSens">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.evalFunctionsSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -1391,7 +1391,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addSVSens">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addSVSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">addSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add the state variable partial sensitivity to the ADjoint RHS for given evalFuncs</span>
 
@@ -1432,7 +1432,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addDVSens">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addDVSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">addDVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addDVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add partial sensitivity contribution due to design vars for evalFuncs</span>
 
@@ -1480,7 +1480,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addAdjointResProducts">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addAdjointResProducts">[docs]</a>
-    <span class="k">def</span> <span class="nf">addAdjointResProducts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjointlist</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addAdjointResProducts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjointlist</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add the adjoint product contribution to the design variable sensitivity arrays</span>
 
@@ -1536,7 +1536,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addXptSens">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addXptSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">addXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add partial sensitivity contribution due to nodal coordinates for evalFuncs</span>
 
@@ -1584,7 +1584,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addAdjointResXptSensProducts">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addAdjointResXptSensProducts">[docs]</a>
-    <span class="k">def</span> <span class="nf">addAdjointResXptSensProducts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjointlist</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addAdjointResXptSensProducts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjointlist</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add the adjoint product contribution to the nodal coordinates sensitivity arrays</span>
 
@@ -1641,7 +1641,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getResidual">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getResidual">[docs]</a>
-    <span class="k">def</span> <span class="nf">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This routine is used to evaluate directly the structural</span>
 <span class="sd">        residual. Only typically used with aerostructural analysis.</span>
@@ -1691,7 +1691,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getForces">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getForces">[docs]</a>
-    <span class="k">def</span> <span class="nf">getForces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">externalForceVec</span><span class="p">,</span> <span class="n">internalForceVec</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getForces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">externalForceVec</span><span class="p">,</span> <span class="n">internalForceVec</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the internal and external forces acting on the structure</span>
 
 <span class="sd">        The computations here are based on the residual equation:</span>
@@ -1744,7 +1744,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getJacobian">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getJacobian">[docs]</a>
-    <span class="k">def</span> <span class="nf">getJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the problem&#39;s Jacobian in sciPy sparse matrix format</span>
 
 <span class="sd">        Returns</span>
@@ -1762,7 +1762,7 @@
 
 <div class="viewcode-block" id="StaticProblem.addTransposeJacVecProduct">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTransposeJacVecProduct">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTransposeJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addTransposeJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds product of transpose Jacobian and input vector into output vector as shown below:</span>
 <span class="sd">        prod += scale * J^T . phi</span>
@@ -1807,7 +1807,7 @@
 
 <div class="viewcode-block" id="StaticProblem.zeroVariables">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.zeroVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">zeroVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zeroVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Zero all the tacs solution b-vecs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1819,7 +1819,7 @@
 
 <div class="viewcode-block" id="StaticProblem.zeroLoads">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.zeroLoads">[docs]</a>
-    <span class="k">def</span> <span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Zero all applied loads</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1829,7 +1829,7 @@
 
 <div class="viewcode-block" id="StaticProblem.solveAdjoint">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.solveAdjoint">[docs]</a>
-    <span class="k">def</span> <span class="nf">solveAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solveAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the structural adjoint.</span>
 
@@ -1880,7 +1880,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getVariables">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for the</span>
 <span class="sd">        problem</span>
@@ -1906,7 +1906,7 @@
 
 <div class="viewcode-block" id="StaticProblem.setVariables">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.setVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the structural states for current load case.</span>
 
@@ -1931,7 +1931,7 @@
 
 <div class="viewcode-block" id="StaticProblem.getOutputFileName">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.getOutputFileName">[docs]</a>
-    <span class="k">def</span> <span class="nf">getOutputFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getOutputFileName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Figure out a base path/name for output files</span>
 
 <span class="sd">        Parameters</span>
@@ -1970,7 +1970,7 @@
 
 <div class="viewcode-block" id="StaticProblem.writeSolution">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeSolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
@@ -2003,7 +2003,7 @@
 
 <div class="viewcode-block" id="StaticProblem.writeSolutionHistory">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeSolutionHistory">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeSolutionHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeSolutionHistory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the nonlinear solver history to a file</span>
 
 <span class="sd">        Parameters</span>
@@ -2026,7 +2026,7 @@
 
 <div class="viewcode-block" id="StaticProblem.writeLoadToBDF">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.writeLoadToBDF">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeLoadToBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdfFile</span><span class="p">,</span> <span class="n">loadCaseID</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeLoadToBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bdfFile</span><span class="p">,</span> <span class="n">loadCaseID</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write loads from problem to NASTRAN BDF file.</span>
 <span class="sd">        NOTE: To get correct loads, `solve` method should be called before this method.</span>

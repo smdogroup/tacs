@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Plate under static load &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
@@ -55,8 +55,8 @@ We consider a static case where a 10 kN point force is applied at the plate cent
 <a class="reference internal image-reference" href="../_images/plate.png"><img alt="Plate problem" src="../_images/plate.png" style="width: 800px;" />
 </a>
 <p>First, import required libraries:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">pyTACS</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">pyTACS</span>
 </pre></div>
 </div>
 <p>Next, we must create the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> class.
@@ -78,7 +78,7 @@ as long as property cards exist for every element. This is done by calling the
 <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a> method with no arguments.
 For more information on the pyTACS initialization procedure, see <a class="reference internal" href="../pytacs/pytacs_module.html#initializing"><span class="std std-ref">here</span></a>.
 For this example, we will take the first approach. Our <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> for this model is defined below.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Material properties</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>        <span class="c1"># density kg/m^3</span>
     <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span>            <span class="c1"># Young&#39;s modulus (Pa)</span>

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.mphys.builder &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -35,20 +35,20 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.mphys.builder</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">mphys.core</span> <span class="kn">import</span> <span class="n">Builder</span><span class="p">,</span> <span class="n">MPhysVariables</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mphys.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Builder</span><span class="p">,</span> <span class="n">MPhysVariables</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">from</span> <span class="nn">tacs.pytacs</span> <span class="kn">import</span> <span class="n">pyTACS</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys.mesh</span> <span class="kn">import</span> <span class="n">TacsMeshGroup</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys.precoupling</span> <span class="kn">import</span> <span class="n">TacsPrecouplingGroup</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys.coupling</span> <span class="kn">import</span> <span class="n">TacsCouplingGroup</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys.postcoupling</span> <span class="kn">import</span> <span class="n">TacsPostcouplingGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.pytacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyTACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys.mesh</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsMeshGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys.precoupling</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsPrecouplingGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys.coupling</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsCouplingGroup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys.postcoupling</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsPostcouplingGroup</span>
 
 
 <div class="viewcode-block" id="TacsBuilder">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder">[docs]</a>
-<span class="k">class</span> <span class="nc">TacsBuilder</span><span class="p">(</span><span class="n">Builder</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TacsBuilder</span><span class="p">(</span><span class="n">Builder</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">mesh_file</span><span class="p">,</span>
         <span class="n">assembler_setup</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -253,7 +253,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.initialize">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.initialize">[docs]</a>
-    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comm</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize pyTACS.</span>
 <span class="sd">        This method will be called when the MPI comm is available</span>
@@ -286,7 +286,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_coupling_group_subsystem">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_coupling_group_subsystem">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_coupling_group_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_coupling_group_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The subsystem that this builder will add to the CouplingGroup</span>
 
@@ -314,7 +314,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_mesh_coordinate_subsystem">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_mesh_coordinate_subsystem">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_mesh_coordinate_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_coordinate_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The subsystem that contains the subsystem that will return the mesh</span>
 <span class="sd">        coordinates</span>
@@ -337,7 +337,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_pre_coupling_subsystem">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_pre_coupling_subsystem">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_pre_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_pre_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method that returns the openmdao subsystem to be added to each scenario before the coupling group</span>
 
@@ -361,7 +361,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_post_coupling_subsystem">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_post_coupling_subsystem">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_post_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_post_coupling_subsystem</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scenario_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method that returns the openmdao subsystem to be added to each scenario after the coupling group</span>
 
@@ -388,7 +388,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_ndof">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_ndof">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_ndof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ndof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The number of degrees of freedom used at each output location.</span>
 
@@ -402,7 +402,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_number_of_nodes">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_number_of_nodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_number_of_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_number_of_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of nodes on this processor,</span>
 <span class="sd">        not including lagrange multiplier nodes</span>
@@ -414,7 +414,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_initial_dvs">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_initial_dvs">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_initial_dvs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_initial_dvs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get an array holding all dvs values that have been added to TACS</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -426,7 +426,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_dv_bounds">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_dv_bounds">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_dv_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dv_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get arrays containing the lower and upper bounds for the design variables,</span>
 <span class="sd">        in the form needed by OpenMDAO&#39;s `add_design_variable` method.</span>
 
@@ -445,7 +445,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_dv_scalers">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_dv_scalers">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_dv_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_dv_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an array containing the scaling factors for the design</span>
 <span class="sd">        variables, in the form needed by OpenMDAO&#39;s `add_design_variable`</span>
 <span class="sd">        method.</span>
@@ -460,7 +460,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_ndv">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_ndv">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_ndv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ndv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get total number of structural design variables across all procs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -469,14 +469,14 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_solver">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_solver">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_solver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># this method is only used by the RLT transfer scheme</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="o">.</span><span class="n">assembler</span></div>
 
 
 <div class="viewcode-block" id="TacsBuilder.get_fea_assembler">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_fea_assembler">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_fea_assembler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_fea_assembler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns underlying pytacs object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -485,7 +485,7 @@
 
 <div class="viewcode-block" id="TacsBuilder.get_tagged_indices">
 <a class="viewcode-back" href="../../../mphys/builder.html#tacs.mphys.builder.TacsBuilder.get_tagged_indices">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_tagged_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tagged_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Method that returns grid IDs for a list of body/boundary tags.</span>
 

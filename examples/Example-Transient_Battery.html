@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Battery pack during thermal runaway &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
@@ -69,13 +69,13 @@ The problem domain is shown in the figure below with the BDF component names lab
 </dd>
 </dl>
 <p>First, import required libraries:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">pprint</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mpi4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">MPI</span>
 
-<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">TACS</span><span class="p">,</span> <span class="n">pyTACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">TACS</span><span class="p">,</span> <span class="n">pyTACS</span>
 </pre></div>
 </div>
 <p>Import the bdf file, initialize the pyTACS object, and define the mateterial properties for the problem.
@@ -105,7 +105,7 @@ propertiesfor the battery pack.</p>
 <p>Next, set up the <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function. By checking the <cite>compDescript</cite> value, the elements
 are set with either aluminum material properties, or battery material properties.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The callback function to define the element properties</span>
-<span class="k">def</span> <span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">globalDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">globalDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
     <span class="c1"># Set up property and constitutive objects</span>
     <span class="k">if</span> <span class="n">compDescript</span> <span class="o">==</span> <span class="s1">&#39;Block&#39;</span><span class="p">:</span>  <span class="c1"># If the bdf file labels this component as &quot;Block&quot;, then it is aluminum</span>

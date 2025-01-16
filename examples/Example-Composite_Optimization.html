@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Composite plate optimization with MPhys &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
@@ -69,11 +69,11 @@ A diagram of the problem is shown below.</p>
 <a class="reference internal image-reference" href="../_images/comp_opt_def.png"><img alt="Optimization problem" src="../_images/comp_opt_def.png" style="width: 800px;" />
 </a>
 <p>To begin we first import required libraries, define the model bdf file, and define important problem constants:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">openmdao.api</span> <span class="k">as</span> <span class="nn">om</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">mphys.core</span> <span class="kn">import</span> <span class="n">Multipoint</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmdao.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">om</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mphys.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Multipoint</span>
 </pre></div>
 </div>
 <p>from mphys.scenarios import ScenarioStructural</p>
@@ -109,7 +109,7 @@ P = 100e3</p>
 We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive" title="tacs.constitutive.SmearedCompositeShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a> class here for the constitutive properties, and
 assign four design variable numbers to each element (one for each ply fraction), and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a> element class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
-<span class="k">def</span> <span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Create ply object</span>
     <span class="n">ortho_prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span>
         <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span>
@@ -154,7 +154,7 @@ assign four design variable numbers to each element (one for each ply fraction),
 <p>We define a <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> to add fixed loads and eval functions.
 Here we specify the plate compliance energy (<a class="reference internal" href="../core/functions.html#tacs.functions.Compliance" title="tacs.functions.Compliance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compliance</span></code></a>) as an output for our analysis
 and add our 100 kPa pressure load.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function to add fixed forces and eval functions</span>
 <span class="sd">    to structural problems used in tacs builder</span>
@@ -172,7 +172,7 @@ and add our 100 kPa pressure load.</p>
 This function can be used to add additional relational constraints to the design variables we defined in the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>.
 In particular, we want to enforce a new constraint (100 in total) such that the ply fractions within each element should sum to unity.
 We can accomplish this by utilizing the <a class="reference internal" href="../pytacs/dvcon.html#tacs.constraints.DVConstraint" title="tacs.constraints.DVConstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">DVConstraint</span></code></a> class.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraint_list</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraint_list</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function to setup tacs constraint classes</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -188,8 +188,8 @@ We can accomplish this by utilizing the <a class="reference internal" href="../p
 To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> we defined above.
 We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
 We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PlateModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PlateModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">struct_builder</span> <span class="o">=</span> <span class="n">TacsBuilder</span><span class="p">(</span>
             <span class="n">mesh_file</span><span class="o">=</span><span class="n">bdf_file</span><span class="p">,</span>
             <span class="n">element_callback</span><span class="o">=</span><span class="n">element_callback</span><span class="p">,</span>

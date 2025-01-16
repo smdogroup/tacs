@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Beam optimization with MPhys &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
@@ -68,16 +68,16 @@ can be found independently using:</p>
 <div class="math notranslate nohighlight">
 \[t(x) = \sqrt{\frac{6V\cdot(L-x)}{w\sigma_y}}\]</div>
 <p>First, we import required libraries, define the model bdf file, and define important problem constants:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">openmdao.api</span> <span class="k">as</span> <span class="nn">om</span>
-<span class="kn">from</span> <span class="nn">mphys.core</span> <span class="kn">import</span> <span class="n">Multipoint</span><span class="p">,</span> <span class="n">MPhysVariables</span>
-<span class="kn">from</span> <span class="nn">mphys.scenarios</span> <span class="kn">import</span> <span class="n">ScenarioStructural</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">openmdao.api</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">om</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mphys.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Multipoint</span><span class="p">,</span> <span class="n">MPhysVariables</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">mphys.scenarios</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScenarioStructural</span>
 
-<span class="kn">from</span> <span class="nn">tacs</span> <span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
-<span class="kn">from</span> <span class="nn">tacs.mphys</span> <span class="kn">import</span> <span class="n">TacsBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsBuilder</span>
 
 <span class="c1"># BDF file containing mesh</span>
 <span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;beam_opt.bdf&quot;</span><span class="p">)</span>
@@ -104,7 +104,7 @@ This is a user-defined callback function for setting up TACS elements and elemen
 We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.IsoRectangleBeamConstitutive" title="tacs.constitutive.IsoRectangleBeamConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code></a> class for the constitutive properties,
 assign a design variable number for the thickness parameter, and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Beam2" title="tacs.elements.Beam2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Beam2</span></code></a> element class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
-<span class="k">def</span> <span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Setup (isotropic) property and constitutive objects</span>
     <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">)</span>
     <span class="c1"># Set one thickness dv for every property group</span>
@@ -123,7 +123,7 @@ assign a design variable number for the thickness parameter, and return a <a cla
 This function is called each time a new MPhys Scenario is created.
 This function sets up the <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> by adding fixed loads, modifying options, and adding eval functions.
 Here we specify the beam mass (<a class="reference internal" href="../core/functions.html#tacs.functions.StructuralMass" title="tacs.functions.StructuralMass"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralMass</span></code></a>) and aggregated failure (<a class="reference internal" href="../core/functions.html#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>) as outputs for our analysis and add our 1 kN shear load.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Helper function to add fixed forces and eval functions</span>
 <span class="sd">    to structural problems used in tacs builder</span>
@@ -143,8 +143,8 @@ Here we specify the beam mass (<a class="reference internal" href="../core/funct
 To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> and <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> we defined above.
 We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
 We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">BeamModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BeamModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Initialize MPHYS builder for TACS</span>
         <span class="n">struct_builder</span> <span class="o">=</span> <span class="n">TacsBuilder</span><span class="p">(</span>
             <span class="n">mesh_file</span><span class="o">=</span><span class="n">bdf_file</span><span class="p">,</span>

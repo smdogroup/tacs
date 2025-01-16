@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.problems.modal &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -46,18 +46,18 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">tacs.TACS</span>
-<span class="kn">from</span> <span class="nn">tacs.problems.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.problems.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSProblem</span>
 
 
 <div class="viewcode-block" id="ModalProblem">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem">[docs]</a>
-<span class="k">class</span> <span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
@@ -116,7 +116,7 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
         <span class="n">sigma</span><span class="p">,</span>
@@ -178,7 +178,7 @@
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal to create the objects required by TACS Integrator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -222,7 +222,7 @@
             <span class="n">eig_rtol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create FunctionList dict which maps eigenvalue strings</span>
 <span class="sd">        to mode indices used in evalFunctions method.</span>
@@ -233,7 +233,7 @@
 
 <div class="viewcode-block" id="ModalProblem.setOption">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>
-    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
@@ -263,7 +263,7 @@
 
 <div class="viewcode-block" id="ModalProblem.setValName">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setValName">[docs]</a>
-    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a name for the eigenvalues. Only needs</span>
 <span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
@@ -280,7 +280,7 @@
 
 <div class="viewcode-block" id="ModalProblem.getNumEigs">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">[docs]</a>
-    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
@@ -294,7 +294,7 @@
 
 <div class="viewcode-block" id="ModalProblem.addFunction">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.addFunction">[docs]</a>
-    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -303,7 +303,7 @@
 
 <div class="viewcode-block" id="ModalProblem.evalFunctions">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
 <span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
@@ -359,7 +359,7 @@
 
 <div class="viewcode-block" id="ModalProblem.evalFunctionsSens">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctionsSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -414,7 +414,7 @@
 
     <span class="c1">####### Modal solver methods ########</span>
 
-    <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure that the assembler is using</span>
 <span class="sd">        the input variables associated with this problem</span>
@@ -432,7 +432,7 @@
 
 <div class="viewcode-block" id="ModalProblem.solve">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.solve">[docs]</a>
-    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the eigenvalue problem.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -485,7 +485,7 @@
 
 <div class="viewcode-block" id="ModalProblem.getVariables">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for one mode of the current problem</span>
 
@@ -518,7 +518,7 @@
 
 <div class="viewcode-block" id="ModalProblem.writeSolution">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.writeSolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>

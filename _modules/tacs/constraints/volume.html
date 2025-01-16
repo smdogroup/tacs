@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.constraints.volume &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -52,21 +52,21 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
-<span class="kn">import</span> <span class="nn">pyNastran.bdf</span> <span class="k">as</span> <span class="nn">pn</span>
-<span class="kn">import</span> <span class="nn">pyNastran.converters.tecplot.tecplot</span> <span class="k">as</span> <span class="nn">tp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.bdf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.converters.tecplot.tecplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tp</span>
 
-<span class="kn">from</span> <span class="nn">tacs.constraints.base</span> <span class="kn">import</span> <span class="n">TACSConstraint</span>
-<span class="kn">from</span> <span class="nn">tacs.functions</span> <span class="kn">import</span> <span class="n">EnclosedVolume</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.constraints.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSConstraint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnclosedVolume</span>
 
 
 <div class="viewcode-block" id="VolumeConstraint">
 <a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint">[docs]</a>
-<span class="k">class</span> <span class="nc">VolumeConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VolumeConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
     <span class="c1"># Default options for class</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;volCheckTol&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -82,7 +82,7 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
         <span class="n">assembler</span><span class="p">,</span>
@@ -130,7 +130,7 @@
         <span class="c1"># Set call counter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-    <span class="k">def</span> <span class="nf">_initializeAdjacencyList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initializeAdjacencyList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a list of all components with common edges.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -193,7 +193,7 @@
 
 <div class="viewcode-block" id="VolumeConstraint.addConstraint">
 <a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.addConstraint">[docs]</a>
-    <span class="k">def</span> <span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generic method to adding a new constraint set for TACS.</span>
 
@@ -233,7 +233,7 @@
         <span class="k">return</span> <span class="n">success</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new constraint object for TACS.</span>
 
@@ -365,7 +365,7 @@
             <span class="n">ub</span><span class="o">=</span><span class="n">ubound</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_sortIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">orient1</span><span class="p">,</span> <span class="n">orient2</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sortIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">currID</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">orient1</span><span class="p">,</span> <span class="n">orient2</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sort all compIDs into one of two lists (orient1 or orient2), depending on</span>
 <span class="sd">        the orientation of their neighbor components. This operation is performed recursively.</span>
@@ -392,7 +392,7 @@
 
 <div class="viewcode-block" id="VolumeConstraint.evalConstraints">
 <a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraints">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        evalCons are evaluated and updated into the provided</span>
@@ -431,7 +431,7 @@
 
 <div class="viewcode-block" id="VolumeConstraint.evalConstraintsSens">
 <a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.evalConstraintsSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from constraint. The derivatives of the constraints</span>
@@ -480,7 +480,7 @@
 
 <div class="viewcode-block" id="VolumeConstraint.writeVisualization">
 <a class="viewcode-back" href="../../../pytacs/volume.html#tacs.constraints.VolumeConstraint.writeVisualization">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function can be used to write a tecplot file for</span>
 <span class="sd">        the purposes of visualization.</span>
@@ -629,10 +629,10 @@
 
 
 <span class="c1"># Simple class for handling sparse volume constraints in parallel</span>
-<span class="k">class</span> <span class="nc">ParallelVolumeConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParallelVolumeConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="n">dtype</span> <span class="o">=</span> <span class="n">TACSConstraint</span><span class="o">.</span><span class="n">dtype</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">posCompIDs</span><span class="p">,</span> <span class="n">negCompIDs</span><span class="p">,</span> <span class="n">Xpts0</span><span class="p">,</span> <span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mf">1e20</span>
     <span class="p">):</span>
         <span class="c1"># Number of constraints</span>
@@ -680,7 +680,7 @@
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ub</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ub</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">posVol</span><span class="p">,</span> <span class="n">negVol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">posVolFunc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">negVolFunc</span><span class="p">]</span>
@@ -688,7 +688,7 @@
         <span class="n">totVol</span> <span class="o">=</span> <span class="n">posVol</span> <span class="o">-</span> <span class="n">negVol</span>
         <span class="k">return</span> <span class="n">totVol</span>
 
-    <span class="k">def</span> <span class="nf">evalConSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">totSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
         <span class="c1"># Compute positive and negative volumes contributions to sens</span>
@@ -699,15 +699,15 @@
         <span class="n">totSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">totSens</span>
 
-    <span class="k">def</span> <span class="nf">getBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lb</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
 
 <span class="c1"># Slight modification of pyNASTRAN&#39;s tecplot Zone class</span>
 <span class="c1"># By default this class doesn&#39;t write out the zone title in the tecplot file for some reason</span>
 <span class="c1"># We make a new class here with an overriden method that includes this in the zone header</span>
-<span class="k">class</span> <span class="nc">Zone</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">Zone</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">write_unstructured_zone</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Zone</span><span class="p">(</span><span class="n">tp</span><span class="o">.</span><span class="n">Zone</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_unstructured_zone</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">tecplot_file</span><span class="p">,</span>
         <span class="n">ivars</span><span class="p">,</span>

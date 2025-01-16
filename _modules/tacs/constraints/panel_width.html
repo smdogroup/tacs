@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.constraints.panel_width &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -55,19 +55,19 @@
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># External Python modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">scipy</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Extension modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">.panel_length</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.panel_length</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
 
 
 <div class="viewcode-block" id="PanelWidthConstraint">
 <a class="viewcode-back" href="../../../pytacs/panel_width.html#tacs.constraints.PanelWidthConstraint">[docs]</a>
-<span class="k">class</span> <span class="nc">PanelWidthConstraint</span><span class="p">(</span><span class="n">PanelLengthConstraint</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PanelWidthConstraint</span><span class="p">(</span><span class="n">PanelLengthConstraint</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
         <span class="n">assembler</span><span class="p">,</span>
@@ -107,7 +107,7 @@
 
 <div class="viewcode-block" id="PanelWidthConstraint.computeRefAxis">
 <a class="viewcode-back" href="../../../pytacs/panel_width.html#tacs.constraints.PanelWidthConstraint.computeRefAxis">[docs]</a>
-    <span class="k">def</span> <span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        remove the panelNormal from the refAxis</span>
 

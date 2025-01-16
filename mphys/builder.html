@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>TacsBuilder class &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
     <script src="../_static/documentation_options.js?v=d048f138"></script>
@@ -62,7 +62,7 @@ an OpenMDAO group that contains an analysis condition in a multipoint optimizati
 <li><p><strong>assembler_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for modifying pyTACS assembler prior to initialization.
 This is used for adding point mass DVs to the model. Defaults to None.
 follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">assembler_setup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">assembler_setup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="p">):</span>
 </pre></div>
 </div>
 <p>fea_assembler is the uninitialized pyTACS assembler instance created by the builder.</p>
@@ -70,7 +70,7 @@ follows:</p>
 <li><p><strong>element_callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
 See <a class="reference internal" href="../pytacs/pytacs_module.html#initializing-with-elemcallback"><span class="std std-ref">Initializing with elemCallBack</span></a> for more info.
 The calling sequence for elem_callback <strong>must</strong> be as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">elem_callback</span><span class="p">(</span><span class="n">dv_num</span><span class="p">,</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_descript</span><span class="p">,</span> <span class="n">elem_descripts</span><span class="p">,</span> <span class="n">special_dvs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elem_callback</span><span class="p">(</span><span class="n">dv_num</span><span class="p">,</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_descript</span><span class="p">,</span> <span class="n">elem_descripts</span><span class="p">,</span> <span class="n">special_dvs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 </pre></div>
 </div>
 <p>The dv_num is the current counter which must be used by the
@@ -92,7 +92,7 @@ objects as there are element types in elemDescripts (one for each).</p>
 </p></li>
 <li><p><strong>problem_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
 fixed loads, modifying options, and adding eval functions. The function should have the following structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
 </pre></div>
 </div>
 <p>scenario_name is a str denoting which MPhys Scenario the problem is currently being set up for.
@@ -102,13 +102,13 @@ problem is the tacs.BaseProblem class being setup for this scenario.</p>
 <li><p><strong>constraint_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a series of
 constraints to be run after at the end of an MPhys analysis.
 The function should have the following structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
 </pre></div>
 </div>
 </p></li>
 <li><p><strong>buckling_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
 to be run after at the end of an MPhys analysis. The function should have the following structure:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">buckling_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">)</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">buckling_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">)</span>
 </pre></div>
 </div>
 </p></li>
@@ -132,7 +132,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </dl>
 <p class="rubric">Examples</p>
 <dl>
-<dt>assembler_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="k">def</span> <span class="nf">assembler_setup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="p">):</span>
+<dt>assembler_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="k">def</span><span class="w"> </span><span class="nf">assembler_setup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="c1"># Assign dvs for point mass elements 10401 and 10402</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="c1"># to vary mass values during optimization</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="n">fea_assembler</span><span class="o">.</span><span class="n">assignMassDV</span><span class="p">(</span><span class="s2">&quot;engine_mass&quot;</span><span class="p">,</span> <span class="mi">10401</span><span class="p">)</span>
@@ -140,7 +140,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </pre></div>
 </div>
 </dd>
-<dt>element_callback:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="k">def</span> <span class="nf">elem_callback</span><span class="p">(</span><span class="n">dv_num</span><span class="p">,</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_descript</span><span class="p">,</span> <span class="n">elem_descripts</span><span class="p">,</span> <span class="n">special_dvs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<dt>element_callback:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span> <span class="k">def</span><span class="w"> </span><span class="nf">elem_callback</span><span class="p">(</span><span class="n">dv_num</span><span class="p">,</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_descript</span><span class="p">,</span> <span class="n">elem_descripts</span><span class="p">,</span> <span class="n">special_dvs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="c1"># Material properties</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>        <span class="c1"># density kg/m^3</span>
 <span class="gp">&gt;&gt;&gt; </span>     <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span>            <span class="c1"># Young&#39;s modulus (Pa)</span>
@@ -168,7 +168,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </pre></div>
 </div>
 </dd>
-<dt>problem_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
+<dt>problem_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># Set scenario to its own output directory</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">problem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s1">&#39;outputDir&#39;</span><span class="p">,</span> <span class="n">scenario_name</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt;</span>
@@ -191,7 +191,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </pre></div>
 </div>
 </dd>
-<dt>constraint_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
+<dt>constraint_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># Add constraint on enclosed volume of structure</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">constr</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">createVolumeConstraint</span><span class="p">(</span><span class="s2">&quot;constraints&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="n">constr</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span><span class="s2">&quot;volume&quot;</span><span class="p">)</span>
@@ -199,7 +199,7 @@ from different coupled disciplines are of a similar order of magnitude. Defaults
 </pre></div>
 </div>
 </dd>
-<dt>buckling_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">buckling_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">):</span>
+<dt>buckling_setup:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">buckling_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">):</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># Add buckling analysis only to 2.5g maneuver scenario</span>
 <span class="gp">&gt;&gt;&gt; </span>    <span class="k">if</span> <span class="n">scenario_name</span> <span class="o">==</span> <span class="s2">&quot;maneuver_2_5g&quot;</span><span class="p">:</span>
 <span class="gp">&gt;&gt;&gt; </span>        <span class="n">problem</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">createBucklingProblem</span><span class="p">(</span>

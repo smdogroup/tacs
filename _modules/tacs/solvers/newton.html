@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.solvers.newton &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -50,24 +50,24 @@
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Standard Python modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># External Python modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">mpi4py</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mpi4py</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Extension modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">import</span> <span class="nn">tacs.TACS</span>
-<span class="kn">from</span> <span class="nn">tacs.solvers</span> <span class="kn">import</span> <span class="n">BaseSolver</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.solvers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseSolver</span>
 
 
 <div class="viewcode-block" id="NewtonSolver">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver">[docs]</a>
-<span class="k">class</span> <span class="nc">NewtonSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NewtonSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;MaxIter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">&quot;Maximum number of Newton iterations.&quot;</span><span class="p">],</span>
         <span class="s2">&quot;ForceFirstIter&quot;</span><span class="p">:</span> <span class="p">[</span>
@@ -175,7 +175,7 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">assembler</span><span class="p">:</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Assembler</span><span class="p">,</span>
         <span class="n">setStateFunc</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
@@ -232,7 +232,7 @@
 
 <div class="viewcode-block" id="NewtonSolver.setOption">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.setOption">[docs]</a>
-    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;A thin wrapper around the base setOption method that makes necessary changes when certain options are changed</span>
 
 <span class="sd">        Parameters</span>
@@ -254,7 +254,7 @@
 
 <div class="viewcode-block" id="NewtonSolver.getHistoryVariables">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.getHistoryVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
 
 <span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
@@ -300,7 +300,7 @@
 
 <div class="viewcode-block" id="NewtonSolver.setConvergenceTolerance">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.setConvergenceTolerance">[docs]</a>
-    <span class="k">def</span> <span class="nf">setConvergenceTolerance</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setConvergenceTolerance</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
@@ -321,7 +321,7 @@
 
 <div class="viewcode-block" id="NewtonSolver.solve">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.solve">[docs]</a>
-    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve the residual equations r(u) = 0</span>
@@ -463,7 +463,7 @@
             <span class="n">result</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">energyLineSearch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">energyLineSearch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">MAX_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxIter&quot;</span><span class="p">)</span>
         <span class="n">LINESEARCH_MU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchExpectedDecrease&quot;</span><span class="p">)</span>
         <span class="n">LINESEARCH_ALPHA_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMinStep&quot;</span><span class="p">)</span>

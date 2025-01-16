@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tacs.problems.buckling &#8212; TACS  documentation</title>
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=87629129" />
     <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
     <script src="../../../_static/documentation_options.js?v=d048f138"></script>
@@ -46,18 +46,18 @@
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
 <span class="c1"># =============================================================================</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">tacs.TACS</span>
-<span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TACSProblem</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSProblem</span>
 
 
 <div class="viewcode-block" id="BucklingProblem">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem">[docs]</a>
-<span class="k">class</span> <span class="nc">BucklingProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BucklingProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
@@ -116,7 +116,7 @@
         <span class="p">],</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
         <span class="n">sigma</span><span class="p">,</span>
@@ -178,7 +178,7 @@
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Internal to create the objects required by TACS Integrator</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -230,7 +230,7 @@
             <span class="n">eig_tol</span><span class="o">=</span><span class="n">rtol</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create FunctionList dict which maps eigenvalue strings</span>
 <span class="sd">        to mode indices used in evalFunctions method.</span>
@@ -241,7 +241,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.setOption">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.setOption">[docs]</a>
-    <span class="k">def</span> <span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
@@ -271,7 +271,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.setValName">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.setValName">[docs]</a>
-    <span class="k">def</span> <span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set a name for the eigenvalues. Only needs</span>
 <span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
@@ -288,7 +288,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.getNumEigs">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.getNumEigs">[docs]</a>
-    <span class="k">def</span> <span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
@@ -302,7 +302,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addFunction">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addFunction">[docs]</a>
-    <span class="k">def</span> <span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -311,7 +311,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.evalFunctions">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalFunctions">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
 <span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
@@ -367,7 +367,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.evalFunctionsSens">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalFunctionsSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -445,7 +445,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addLoadToComponents">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">averageLoad</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is to add loads that</span>
@@ -495,7 +495,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addLoadToNodes">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToNodes">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodeIDs</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed point load of F to the</span>
 <span class="sd">        selected node IDs.</span>
@@ -541,7 +541,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addLoadToRHS">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadToRHS">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadToRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fapplied</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL LOAD* directly to the</span>
 <span class="sd">        right hand side vector given the equation below:</span>
@@ -565,7 +565,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addTractionToComponents">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addTractionToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addTractionToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL TRACTION* on one or more</span>
 <span class="sd">        components, defined by COMPIDs. The purpose of this routine is</span>
@@ -590,7 +590,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addTractionToElements">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addTractionToElements">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTractionToElements</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addTractionToElements</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">tractions</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -624,7 +624,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addPressureToComponents">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addPressureToComponents">[docs]</a>
-    <span class="k">def</span> <span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addPressureToComponents</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a *FIXED TOTAL PRESSURE* on one or more</span>
 <span class="sd">        components, defined by COMPIds. The purpose of this routine is</span>
@@ -650,7 +650,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addPressureToElements">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addPressureToElements">[docs]</a>
-    <span class="k">def</span> <span class="nf">addPressureToElements</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addPressureToElements</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">elemIDs</span><span class="p">,</span> <span class="n">pressures</span><span class="p">,</span> <span class="n">faceIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -684,7 +684,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addInertialLoad">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addInertialLoad">[docs]</a>
-    <span class="k">def</span> <span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addInertialLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inertiaVector</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed inertial load due to</span>
 <span class="sd">        a uniform acceleration over the entire model.</span>
@@ -700,7 +700,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addCentrifugalLoad">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addCentrifugalLoad">[docs]</a>
-    <span class="k">def</span> <span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addCentrifugalLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">omegaVector</span><span class="p">,</span> <span class="n">rotCenter</span><span class="p">,</span> <span class="n">firstOrder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed centrifugal load due to a</span>
 <span class="sd">        uniform rotational velocity over the entire model.</span>
@@ -724,7 +724,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addLoadFromBDF">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addLoadFromBDF">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addLoadFromBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loadID</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This method is used to add a fixed load set defined in the BDF file to the problem.</span>
 <span class="sd">        Currently, only supports LOAD, FORCE, MOMENT, GRAV, RFORCE, PLOAD2, and PLOAD4.</span>
@@ -743,7 +743,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.zeroLoads">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.zeroLoads">[docs]</a>
-    <span class="k">def</span> <span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zeroLoads</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Zero all applied loads</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -753,7 +753,7 @@
 
     <span class="c1">####### Buckling solver methods ########</span>
 
-    <span class="k">def</span> <span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Make sure that the assembler is using</span>
 <span class="sd">        the input variables associated with this problem</span>
@@ -776,7 +776,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.solve">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.solve">[docs]</a>
-    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">u0</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">u0</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the eigenvalue problem. The</span>
 <span class="sd">        forces must already be set.</span>
@@ -867,7 +867,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.getVariables">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.getVariables">[docs]</a>
-    <span class="k">def</span> <span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the current state values for one mode of the current problem</span>
 
@@ -900,7 +900,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.getModalError">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.getModalError">[docs]</a>
-    <span class="k">def</span> <span class="nf">getModalError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">getModalError</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the error associated with a particular mode</span>
 
@@ -915,7 +915,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addXptSens">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addXptSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">addXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add partial sensitivity contribution due to nodal coordinates for eigenvalue</span>
 
@@ -955,7 +955,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.addDVSens">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.addDVSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">addDVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addDVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add partial sensitivity contribution due to design variables for eigenvalue</span>
 
@@ -995,7 +995,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.evalSVSens">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalSVSens">[docs]</a>
-    <span class="k">def</span> <span class="nf">evalSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalSVSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add partial sensitivity contribution due to state variables for eigenvalue</span>
 
@@ -1032,7 +1032,7 @@
 
 <div class="viewcode-block" id="BucklingProblem.writeSolution">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.writeSolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
