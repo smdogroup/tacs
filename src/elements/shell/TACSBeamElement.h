@@ -2232,6 +2232,20 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
         }
         data += 14;
       }
+      if (write_flag & TACS_OUTPUT_COORDINATE_FRAME) {
+        data[0] = T.A[0];
+        data[1] = T.A[3];
+        data[2] = T.A[6];
+
+        data[3] = T.A[1];
+        data[4] = T.A[4];
+        data[5] = T.A[7];
+
+        data[6] = T.A[2];
+        data[7] = T.A[5];
+        data[8] = T.A[8];
+        data += 9;
+      }
     }
   }
 }

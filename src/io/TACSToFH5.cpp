@@ -497,12 +497,12 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
 char *TACSToFH5::getElementVarNames(int flag) {
   // Find the first variable name
   char *elem_vars = NULL;
-  char *output_names[3] = {NULL, NULL, NULL};
+  char *output_names[4] = {NULL, NULL, NULL, NULL};
 
-  int out_types[3] = {TACS_OUTPUT_STRAINS, TACS_OUTPUT_STRESSES,
-                      TACS_OUTPUT_EXTRAS};
+  int out_types[4] = {TACS_OUTPUT_STRAINS, TACS_OUTPUT_STRESSES,
+                      TACS_OUTPUT_EXTRAS, TACS_OUTPUT_COORDINATE_FRAME};
 
-  for (int k = 0; k < 3; k++) {
+  for (int k = 0; k < 4; k++) {
     if (flag & out_types[k]) {
       const char *stemp = NULL;
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
@@ -527,7 +527,7 @@ char *TACSToFH5::getElementVarNames(int flag) {
 
   // Count up the size of the elem_vars string
   int elem_size = 1;  // Extra space for either a comma or \0
-  for (int k = 0; k < 3; k++) {
+  for (int k = 0; k < 4; k++) {
     if (output_names[k]) {
       elem_size += strlen(output_names[k]) + 1;
     }
@@ -537,7 +537,7 @@ char *TACSToFH5::getElementVarNames(int flag) {
 
   // Copy the first zone into the list directly
   int k = 0;
-  for (; k < 3; k++) {
+  for (; k < 4; k++) {
     if (output_names[k]) {
       strcpy(elem_vars, output_names[k]);
       k++;
@@ -547,14 +547,14 @@ char *TACSToFH5::getElementVarNames(int flag) {
 
   // For subsequent non-zero zones - add a comma before adding
   // the remainder of the list
-  for (; k < 3; k++) {
+  for (; k < 4; k++) {
     if (output_names[k]) {
       int len = strlen(elem_vars);
       sprintf(&elem_vars[len], ",%s", output_names[k]);
     }
   }
 
-  for (int k = 0; k < 3; k++) {
+  for (int k = 0; k < 4; k++) {
     if (output_names[k]) {
       delete[] output_names[k];
     }
