@@ -109,7 +109,8 @@ void TACSInertialForce2D::addResidual(
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar Xd[4], J[4];
+    TacsScalar X[3], Xd[4], J[4];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
@@ -122,7 +123,7 @@ void TACSInertialForce2D::addResidual(
     memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 2; k++) {
       DUt[3 * k] = -density * inertiaVec[k];
@@ -153,7 +154,8 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar Xd[4], J[4];
+    TacsScalar X[3], Xd[4], J[4];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
     // Multiply the quadrature weight by the quadrature point
@@ -166,7 +168,7 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
 
     // Get the element density
-    TacsScalar density = con->evalDensity(elemIndex, pt, Xpts);
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
 
     for (int k = 0; k < 2; k++) {
       DUt[3 * k] = -density * inertiaVec[k];
