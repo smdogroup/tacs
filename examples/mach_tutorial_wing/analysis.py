@@ -98,6 +98,7 @@ stiffenerThicknessScale = 100.0
 
 # --- Stiffener axis directions ---
 TESparDirection = np.array([0.34968083, 0.93686889, 0.0])
+SpanwiseDirection = np.array([0.0, 1.0, 0.0])
 VerticalDirection = np.array([0.0, 0.0, 1.0])
 
 # ==============================================================================
@@ -128,10 +129,15 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     # The panel length values I set here are approximate, to get the real values, you'd
     # need to run an optimization with panel length design variables and constraints.
     if "SKIN" in compDescript:
+        isInboard = any([name in compDescript for name in ["SKIN.000", "SKIN.001", "SKIN.002"]])
+        if isInboard:
+            refAxis = SpanwiseDirection
+            panelLength = 0.37475
+        else:
+            refAxis = TESparDirection
         plyAngles = skinPlyAngles
         panelPlyFractions = skinPlyFracs
-        refAxis = TESparDirection
-        panelLength = 0.65
+        panelLength = 0.735
     else:
         plyAngles = sparRibPlyAngles
         panelPlyFractions = sparRibPlyFracs
