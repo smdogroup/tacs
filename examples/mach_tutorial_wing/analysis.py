@@ -327,37 +327,36 @@ constraints.append(adjCon)
 
 # Add constraints between the DV's on each panel
 dvCon = FEAAssembler.createDVConstraint("DVCon")
-# Limit the difference in thickness between the panel and stiffener
-# -thickDiffMax <= (panelThickness - stiffenerThickness) <= thickDiffMax
+# Flange thickness should be no more than 15x skin thickness
 dvCon.addConstraint(
-    conName="thickDiffLimit",
-    lower=-thickDiffMax,
-    upper=thickDiffMax,
+    conName="flangeThicknessMax",
+    upper=0.0,
     dvIndices=[2, 4],
-    dvWeights=[1.0, -1.0],
+    dvWeights=[-15.0, 1.0],
 )
+
 # Limit the aspect ratio of the stiffener
-# stiffenerHeight - (stiffAspectMax * stiffenerThickness) <= 0
+# stiffenerHeight - stiffAspectMax * stiffenerThickness <= 0
 dvCon.addConstraint(
     conName="stiffenerAspectMax",
     upper=0.0,
     dvIndices=[3, 4],
     dvWeights=[1.0, -stiffAspectMax],
 )
-# stiffenerHeight - (stiffAspectMin * stiffenerThickness) >= 0
+# stiffenerHeight - stiffAspectMin * stiffenerThickness >= 0
 dvCon.addConstraint(
     conName="stiffenerAspectMin",
     lower=0.0,
     dvIndices=[3, 4],
     dvWeights=[1.0, -stiffAspectMin],
 )
-# Ensure there is space between the stiffeners
-# 2*flangeFraction - stiffenerPitch <= 0
+# Spacing between stiffeners should be greater than stiffener flange width to avoid overlapping stiffeners
+# flangeFraction*stiffenerHeight - stiffenerPitch <= 0
 dvCon.addConstraint(
     conName="stiffSpacingMin",
     upper=0.0,
     dvIndices=[3, 2],
-    dvWeights=[2.0, -1.0],
+    dvWeights=[1.0, -1.0],
 )
 constraints.append(dvCon)
 
