@@ -63,14 +63,14 @@ panelLengthMin = 0.0
 panelLengthScale = 1.0
 
 # Stiffener pitch
-stiffenerPitch = dtype(0.2)  # m
+stiffenerPitch = dtype(0.15)  # m
 stiffenerPitchMax = 0.5  # m
 stiffenerPitchMin = 0.05  # m
 stiffenerPitchScale = 1.0
 
 # Panel thickness
 panelThickness = dtype(0.02)  # m
-panelThicknessMax = 0.1  # m
+panelThicknessMax = 0.0065  # m
 panelThicknessMin = 0.002  # m
 panelThicknessScale = 100.0
 
@@ -86,7 +86,7 @@ stiffenerHeightMin = 0.002  # m
 stiffenerHeightScale = 10.0
 
 # Stiffener thickness
-stiffenerThickness = dtype(0.02)  # m
+stiffenerThickness = dtype(0.006)  # m
 stiffenerThicknessMax = 0.1  # m
 stiffenerThicknessMin = 0.002  # m
 stiffenerThicknessScale = 100.0
@@ -106,6 +106,7 @@ structOptions = {
 
 bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
 FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
+
 
 # ==============================================================================
 # Element callback function
@@ -133,7 +134,9 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     # The panel length values I set here are approximate, to get the real values, you'd
     # need to run an optimization with panel length design variables and constraints.
     if "SKIN" in compDescript:
-        isInboard = any([name in compDescript for name in ["SKIN.000", "SKIN.001", "SKIN.002"]])
+        isInboard = any(
+            [name in compDescript for name in ["SKIN.000", "SKIN.001", "SKIN.002"]]
+        )
         if isInboard:
             refAxis = SpanwiseDirection
             panelLength = 0.37475
@@ -277,8 +280,8 @@ pitchAdjCon = 5e-2  # 5cm
 thickDiffMax = (
     2.5e-3  # 2.5mm, Max allowable thickness difference between skin and stiffener
 )
-stiffAspectMax = 10.0  # Maximum allowable stiffener aspect ratio (height/thickness)
-stiffAspectMin = 2.0  # Minimum allowable stiffener aspect ratio (height/thickness)
+stiffAspectMax = 30.0  # Maximum allowable stiffener aspect ratio (height/thickness)
+stiffAspectMin = 5.0  # Minimum allowable stiffener aspect ratio (height/thickness)
 
 compIDs = {}
 for group in ["SPAR", "U_SKIN", "L_SKIN", "RIB"]:
