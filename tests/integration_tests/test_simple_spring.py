@@ -53,7 +53,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.dh = 1e-6
 
         # Instantiate FEA Assembler
-        struct_options = {}
+        struct_options = {
+            "writeCoordinateFrame": True,
+        }
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 

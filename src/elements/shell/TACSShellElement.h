@@ -1496,6 +1496,20 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
         }
         data += 14;
       }
+      if (write_flag & TACS_OUTPUT_COORDINATE_FRAME) {
+        data[0] = T[0];
+        data[1] = T[3];
+        data[2] = T[6];
+
+        data[3] = T[1];
+        data[4] = T[4];
+        data[5] = T[7];
+
+        data[6] = T[2];
+        data[7] = T[5];
+        data[8] = T[8];
+        data += 9;
+      }
     }
   }
 }
