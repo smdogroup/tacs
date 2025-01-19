@@ -28,11 +28,6 @@ comm = MPI.COMM_WORLD
 
 dtype = TACS.dtype
 
-# Instantiate FEAAssembler
-structOptions = {
-    "printtiming": True,
-}
-
 # ==============================================================================
 # Composite properties
 # ==============================================================================
@@ -102,10 +97,19 @@ SpanwiseDirection = np.array([0.0, 1.0, 0.0])
 VerticalDirection = np.array([0.0, 0.0, 1.0])
 
 # ==============================================================================
+# Create pyTACS assembler
+# ==============================================================================
+structOptions = {
+    "printtiming": True,
+    "writeCoordinateFrame": True,
+}
+
+bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
+FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
+
+# ==============================================================================
 # Element callback function
 # ==============================================================================
-
-
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     prop = constitutive.MaterialProperties(
         rho=compositeProperties["rho"],
@@ -220,16 +224,6 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
     return elem, DVScales
 
-
-# ==============================================================================
-# Create pyTACS assembler
-# ==============================================================================
-structOptions = {
-    "printtiming": True,
-}
-
-bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
-FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
 # Set up elements and TACS assembler
 FEAAssembler.initialize(elemCallBack)
