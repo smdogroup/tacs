@@ -48,8 +48,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-3
             self.dh = 1e-8
 
+        struct_options = {
+            "writeCoordinateFrame": True,
+        }
+
         # Instantiate FEA Assembler
-        fea_assembler = pytacs.pyTACS(bdf_file, comm)
+        fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Material properties
         rho = 27.0  # density kg/m^3

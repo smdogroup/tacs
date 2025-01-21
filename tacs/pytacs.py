@@ -2286,7 +2286,7 @@ class pyTACS(BaseUI):
         if self.getOption("writeLoads"):
             write_flag |= tacs.TACS.OUTPUT_LOADS
         if self.getOption("writeCoordinateFrame"):
-            write_flag |= tacs.TACS.OUTPUT_COORDINATES
+            write_flag |= tacs.TACS.OUTPUT_COORDINATE_FRAME
 
         # Create actual viewer
         if self.getOption("outputElement") is not None:
