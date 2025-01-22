@@ -18,11 +18,11 @@ class TacsBuckling(om.ExplicitComponent):
 
         self.fea_assembler = None
 
-        self.check_partials_mode = False
+        self.under_check_partials = False
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
-        self.check_partials_mode = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.write_solution = self.options["write_solution"]
         self.solution_counter = 0
 
@@ -91,7 +91,7 @@ class TacsBuckling(om.ExplicitComponent):
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
-            if not self.check_partials_mode:
+            if not self.under_check_partials:
                 raise ValueError("TACS forward mode requested but not implemented")
         if mode == "rev":
             # always update internal because same tacs object could be used by multiple scenarios
