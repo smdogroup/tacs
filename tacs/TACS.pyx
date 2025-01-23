@@ -28,7 +28,6 @@ from libc.string cimport const_char
 from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 
-
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
 
@@ -3280,6 +3279,37 @@ cdef class FrequencyAnalysis:
             xptsens (Vec): The vector in which the nodal sensitivity will be stored
         """
         self.ptr.evalEigenXptSens(index, xptsens.getBVecPtr())
+
+    def addEigenSens(self, int neigs, dfdlam, dfdq, dfdx=None, dfdXpts=None,
+                     int use_cg=0, rtol=1e-8, atol=1e-30):
+        """
+        Add the derivative of the function wrt the eigenvalues and eigenvectors
+        """
+
+        cdef TacsScalar *dfdlam_ = NULL
+        cdef TACSBVec **dfdq_ = NULL
+        cdef TACSBVec *dfdx_ = NULL
+        cdef TACSBVec *dfdXpts_ = NULL
+
+        dfdlam_ = <TacsScalar*>malloc(neigs * sizeof(TacsScalar))
+        for i in range(neigs):
+            dfdlam_[i] = dfdlam[i]
+
+        dfdq_ = <TACSBVec**>malloc(neigs * sizeof(TACSBVec*))
+        for i in range(neigs):
+            dfdq_[i] = (<Vec>dfdq[i]).getBVecPtr()
+
+        if dfdx is not None:
+            dfdx_ = (<Vec>dfdx).getBVecPtr()
+        if dfdXpts is not None:
+            dfdXpts_ = (<Vec>dfdXpts).getBVecPtr()
+
+        self.ptr.addEigenSens(neigs, dfdlam_, dfdq_, dfdx_, dfdXpts_, use_cg, rtol, atol)
+
+        free(dfdlam_)
+        free(dfdq_)
+
+        return
 
 cdef class BucklingAnalysis:
     cdef TACSLinearBuckling *ptr

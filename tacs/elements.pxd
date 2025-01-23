@@ -12,10 +12,6 @@
 
 #distutils: language=c++
 
-# Import numpy
-cimport numpy as np
-import numpy as np
-
 # Import from constitutive for definitions
 from tacs.cpp_headers.constitutive cimport *
 from tacs.cpp_headers.TACS cimport *

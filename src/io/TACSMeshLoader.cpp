@@ -1109,7 +1109,7 @@ TACSToFH5 *TACSMeshLoader::createTACSToFH5(TACSAssembler *tacs,
   for (int k = 0; k < num_components; k++) {
     if (strlen(&component_descript[33 * k]) == 0) {
       char name[64];
-      sprintf(name, "Component %d", k);
+      snprintf(name, sizeof(name), "Component %d", k);
       f5->setComponentName(k, name);
     } else {
       f5->setComponentName(k, &component_descript[33 * k]);
