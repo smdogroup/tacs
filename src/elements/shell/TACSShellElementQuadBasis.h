@@ -10,8 +10,8 @@ enum TacsShellTyingStrainComponent {
   TACS_SHELL_G11_COMPONENT = 0,
   TACS_SHELL_G22_COMPONENT = 1,
   TACS_SHELL_G12_COMPONENT = 2,
-  TACS_SHELL_G23_COMPONENT = 3,
-  TACS_SHELL_G13_COMPONENT = 4
+  TACS_SHELL_G13_COMPONENT = 3,
+  TACS_SHELL_G23_COMPONENT = 4
 };
 
 template <int order>
@@ -492,9 +492,9 @@ class TACSShellQuadBasis {
     } else if (index < G12_OFFSET) {
       return TACS_SHELL_G12_COMPONENT;
     } else if (index < G13_OFFSET) {
-      return TACS_SHELL_G23_COMPONENT;
-    } else {
       return TACS_SHELL_G13_COMPONENT;
+    } else {
+      return TACS_SHELL_G23_COMPONENT;
     }
   }
 
