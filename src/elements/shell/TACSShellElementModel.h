@@ -488,6 +488,70 @@ class TACSShellLinearModel {
     du1x[8] = 0.0;
   }
 
+  static inline void evalStrainSensDeriv(const TacsScalar scale, const TacsScalar dfde[],
+                             const TacsScalar u0x[], const TacsScalar u1x[],
+                             const TacsScalar dfded[],
+                             const TacsScalar u0xd[], const TacsScalar u1xd[],
+                             TacsScalar du0x[], TacsScalar du1x[],
+                             TacsScalar de0ty[], TacsScalar du0xd[],
+                             TacsScalar du1xd[], TacsScalar de0tyd[]) {
+    // Evaluate the in-plane strains from the tying strain expressions
+    de0ty[0] = scale * dfde[0];
+    de0ty[1] = 2.0 * scale * dfde[2];
+    de0ty[2] = 2.0 * scale * dfde[7];
+    de0ty[3] = scale * dfde[1];
+    de0ty[4] = 2.0 * scale * dfde[6];
+    de0ty[5] = 0.0;
+
+    de0tyd[0] = scale * dfded[0];
+    de0tyd[1] = 2.0 * scale * dfded[2];
+    de0tyd[2] = 2.0 * scale * dfded[7];
+    de0tyd[3] = scale * dfded[1];
+    de0tyd[4] = 2.0 * scale * dfded[6];
+    de0tyd[5] = 0.0;
+
+    du0x[0] = 0.0;
+    du0x[1] = 0.0;
+    du0x[2] = 0.0;
+    du0x[3] = 0.0;
+    du0x[4] = 0.0;
+    du0x[5] = 0.0;
+    du0x[6] = 0.0;
+    du0x[7] = 0.0;
+    du0x[8] = 0.0;
+
+    du0xd[0] = 0.0;
+    du0xd[1] = 0.0;
+    du0xd[2] = 0.0;
+    du0xd[3] = 0.0;
+    du0xd[4] = 0.0;
+    du0xd[5] = 0.0;
+    du0xd[6] = 0.0;
+    du0xd[7] = 0.0;
+    du0xd[8] = 0.0;
+
+    // Compute the derivative with respect to U1
+    du1x[0] = scale * dfde[3];
+    du1x[1] = scale * dfde[5];
+    du1x[2] = 0.0;
+    du1x[3] = scale * dfde[5];
+    du1x[4] = scale * dfde[4];
+    du1x[5] = 0.0;
+    du1x[6] = 0.0;
+    du1x[7] = 0.0;
+    du1x[8] = 0.0;
+
+    du1xd[0] = scale * dfded[3];
+    du1xd[1] = scale * dfded[5];
+    du1xd[2] = 0.0;
+    du1xd[3] = scale * dfded[5];
+    du1xd[4] = scale * dfded[4];
+    du1xd[5] = 0.0;
+    du1xd[6] = 0.0;
+    du1xd[7] = 0.0;
+    du1xd[8] = 0.0;
+  }
+
   static inline void evalStrainDeriv(
       const TacsScalar u0x[], const TacsScalar u1x[], const TacsScalar e0ty[],
       const TacsScalar u0xd[], const TacsScalar u1xd[],
@@ -1163,6 +1227,74 @@ class TACSShellNonlinearModel {
     du1x[6] = scale * (dfde[3] * u0x[6] + dfde[5] * u0x[7]);
     du1x[7] = scale * (dfde[4] * u0x[7] + dfde[5] * u0x[6]);
     du1x[8] = 0.0;
+  }
+
+  /**
+    Evaluate the derivative of the strain
+  */
+  static void evalStrainSensDeriv(const TacsScalar scale, const TacsScalar dfde[],
+                             const TacsScalar u0x[], const TacsScalar u1x[],
+                             const TacsScalar dfded[],
+                             const TacsScalar u0xd[], const TacsScalar u1xd[],
+                             TacsScalar du0x[], TacsScalar du1x[],
+                             TacsScalar de0ty[], TacsScalar du0xd[],
+                             TacsScalar du1xd[], TacsScalar de0tyd[]) {
+    // Evaluate the in-plane strains from the tying strain expressions
+    de0ty[0] = scale * dfde[0];
+    de0ty[1] = 2.0 * scale * dfde[2];
+    de0ty[2] = 2.0 * scale * dfde[7];
+    de0ty[3] = scale * dfde[1];
+    de0ty[4] = 2.0 * scale * dfde[6];
+    de0ty[5] = 0.0;
+
+    de0tyd[0] = scale * dfded[0];
+    de0tyd[1] = 2.0 * scale * dfded[2];
+    de0tyd[2] = 2.0 * scale * dfded[7];
+    de0tyd[3] = scale * dfded[1];
+    de0tyd[4] = 2.0 * scale * dfded[6];
+    de0tyd[5] = 0.0;
+
+    // Derivative with respect to u0x
+    du0x[0] = scale * (dfde[3] * u1x[0] + dfde[5] * u1x[1]);
+    du0x[1] = scale * (dfde[4] * u1x[1] + dfde[5] * u1x[0]);
+    du0x[2] = 0.0;
+    du0x[3] = scale * (dfde[3] * u1x[3] + dfde[5] * u1x[4]);
+    du0x[4] = scale * (dfde[4] * u1x[4] + dfde[5] * u1x[3]);
+    du0x[5] = 0.0;
+    du0x[6] = scale * (dfde[3] * u1x[6] + dfde[5] * u1x[7]);
+    du0x[7] = scale * (dfde[4] * u1x[7] + dfde[5] * u1x[6]);
+    du0x[8] = 0.0;
+
+    du0xd[0] = scale * (dfde[3] * u1xd[0] + dfde[5] * u1xd[1] + dfded[3] * u1x[0] + dfded[5] * u1x[1]);
+    du0xd[1] = scale * (dfde[4] * u1xd[1] + dfde[5] * u1xd[0] + dfded[4] * u1x[1] + dfded[5] * u1x[0]);
+    du0xd[2] = 0.0;
+    du0xd[3] = scale * (dfde[3] * u1xd[3] + dfde[5] * u1xd[4] + dfded[3] * u1x[3] + dfded[5] * u1x[4]);
+    du0xd[4] = scale * (dfde[4] * u1xd[4] + dfde[5] * u1xd[3] + dfded[4] * u1x[4] + dfded[5] * u1x[3]);
+    du0xd[5] = 0.0;
+    du0xd[6] = scale * (dfde[3] * u1xd[6] + dfde[5] * u1xd[7] + dfded[3] * u1x[6] + dfded[5] * u1x[7]);
+    du0xd[7] = scale * (dfde[4] * u1xd[7] + dfde[5] * u1xd[6] + dfded[4] * u1x[7] + dfded[5] * u1x[6]);
+    du0xd[8] = 0.0;
+
+    // Compute the derivative with respect to U1
+    du1x[0] = scale * (dfde[3] * (1.0 + u0x[0]) + dfde[5] * u0x[1]);
+    du1x[1] = scale * (dfde[5] * (1.0 + u0x[0]) + dfde[4] * u0x[1]);
+    du1x[2] = 0.0;
+    du1x[3] = scale * (dfde[5] * (1.0 + u0x[4]) + dfde[3] * u0x[3]);
+    du1x[4] = scale * (dfde[4] * (1.0 + u0x[4]) + dfde[5] * u0x[3]);
+    du1x[5] = 0.0;
+    du1x[6] = scale * (dfde[3] * u0x[6] + dfde[5] * u0x[7]);
+    du1x[7] = scale * (dfde[4] * u0x[7] + dfde[5] * u0x[6]);
+    du1x[8] = 0.0;
+
+    du1xd[0] = scale * (dfde[3] * u0xd[0] + dfde[5] * u0xd[1] + dfded[3] * (1.0 + u0x[0]) + dfded[5] * u0x[1]);
+    du1xd[1] = scale * (dfde[5] * u0xd[0] + dfde[4] * u0xd[1] + dfded[5] * (1.0 + u0x[0]) + dfded[4] * u0x[1]);
+    du1xd[2] = 0.0;
+    du1xd[3] = scale * (dfde[5] * u0xd[4] + dfde[3] * u0xd[3] + dfded[5] * (1.0 + u0x[4]) + dfded[3] * u0x[3]);
+    du1xd[4] = scale * (dfde[4] * u0xd[4] + dfde[5] * u0xd[3] + dfded[4] * (1.0 + u0x[4]) + dfded[5] * u0x[3]);
+    du1xd[5] = 0.0;
+    du1xd[6] = scale * (dfde[3] * u0xd[6] + dfde[5] * u0xd[7] + dfded[3] * u0x[6] + dfded[5] * u0x[7]);
+    du1xd[7] = scale * (dfde[4] * u0xd[7] + dfde[5] * u0xd[6] + dfded[4] * u0x[7] + dfded[5] * u0x[6]);
+    du1xd[8] = 0.0;
   }
 
   static void evalStrainDeriv(const TacsScalar u0x[], const TacsScalar u1x[],
