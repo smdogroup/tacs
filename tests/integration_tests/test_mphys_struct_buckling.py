@@ -47,7 +47,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.rtol = 1e-7
             self.dh = 1e-50
         else:
-            self.rtol = 1e-1
+            self.rtol = 1e-3
             self.dh = 1e-7
 
         # Callback function used to setup TACS element objects and DVs
