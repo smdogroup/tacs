@@ -48,7 +48,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-50
         else:
             self.rtol = 1e-3
-            self.dh = 1e-7
+            self.dh = 1e-6
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -158,3 +158,11 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         Test partial sensitivities using fd/cs
         """
         return OpenMDAOTestCase.OpenMDAOTest.test_partials(self)
+
+    # This test is very difficult to verify with FD, so we only run it w/ CS
+    @unittest.skipIf(TACS.dtype != complex, "Skipping test in real mode.")
+    def test_totals(self):
+        """
+        Test partial sensitivities using fd/cs
+        """
+        return OpenMDAOTestCase.OpenMDAOTest.test_totals(self)

@@ -82,9 +82,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return [buckle_prob], fea_assembler
 
+    # This test is very difficult to verify with FD, so we only run it w/ CS
     @unittest.skipIf(
         not complex_mode,
-        "test with Gmatrix only in complex mode until analytic one implemented",
+        "Skipping test in real mode.",
     )
     def test_total_dv_sensitivities(self):
         """
@@ -94,7 +95,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
     @unittest.skipIf(
         not complex_mode,
-        "test with Gmatrix only in complex mode until analytic one implemented",
+        "Skipping test in real mode.",
     )
     def test_total_xpt_sensitivities(self):
         """
