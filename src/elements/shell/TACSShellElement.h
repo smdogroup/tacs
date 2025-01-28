@@ -72,14 +72,19 @@ class TACSShellElement : public TACSElement {
 
   void setComplexStepGmatrix(bool complexStepFlag) {
     printf(
-        "DeprecationWarning : This method had has been deprecated. The geometric stiffness matrix is now computed analytically"
-        "for %s.\n", getObjectName());
+        "DeprecationWarning : This method had has been deprecated. The "
+        "geometric stiffness matrix is now computed analytically"
+        "for %s.\n",
+        getObjectName());
   };
 
   bool getComplexStepGmatrix() {
     printf(
-        "DeprecationWarning : This method had has been deprecated. The geometric stiffness matrix is now computed analytically"
-        "for %s.\n", getObjectName());
+        "DeprecationWarning : This method had has been deprecated. The "
+        "geometric stiffness matrix is now computed analytically"
+        "for %s.\n",
+        getObjectName());
+    return false;
   };
 
   double getQuadraturePoint(int n, double pt[]) {
@@ -664,7 +669,9 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   TacsScalar zeros[vars_per_node * num_nodes];
   memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
   TacsScalar matd[vars_per_node * num_nodes * vars_per_node * num_nodes];
-  memset(matd, 0, vars_per_node * num_nodes * vars_per_node * num_nodes * sizeof(TacsScalar));
+  memset(matd, 0,
+         vars_per_node * num_nodes * vars_per_node * num_nodes *
+             sizeof(TacsScalar));
 
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
@@ -724,35 +731,38 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
 
     // Compute the drill strain penalty at each node
-    TacsScalar etn[num_nodes], etnd[num_nodes], detn[num_nodes], detnd[num_nodes];
+    TacsScalar etn[num_nodes], etnd[num_nodes], detn[num_nodes],
+        detnd[num_nodes];
     TacsScalar d2etn[num_nodes * num_nodes];
     memset(detn, 0, num_nodes * sizeof(TacsScalar));
     memset(d2etn, 0, num_nodes * num_nodes * sizeof(TacsScalar));
     memset(detnd, 0, num_nodes * sizeof(TacsScalar));
 
-    // Store information about the transformation and derivatives at each node for
-    // the drilling degrees of freedom
+    // Store information about the transformation and derivatives at each node
+    // for the drilling degrees of freedom
     TacsScalar XdinvTn[9 * num_nodes], Tn[9 * num_nodes];
     TacsScalar u0xn[9 * num_nodes], Ctn[csize];
-    TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director, model>(transform, Xdn, fn, zeros, path, XdinvTn,
-      Tn, u0xn, Ctn, etn, etnd);
+    TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                     model>(transform, Xdn, fn, zeros, path,
+                                            XdinvTn, Tn, u0xn, Ctn, etn, etnd);
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize];
-    director::template computeDirectorRatesDeriv<vars_per_node, offset, num_nodes>(
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 num_nodes>(
         zeros, zeros, zeros, path, fn, d, ddot, dddot, dd);
 
     // Set the total number of tying points needed for this element
     TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
     if (typeid(model) == typeid(TACSShellLinearModel)) {
-      TACSShellNonlinearModel::template computeTyingStrainDeriv<vars_per_node, basis>(Xpts, fn, zeros, d, path, dd,
-                                                             ety, etyd);
+      TACSShellNonlinearModel::template computeTyingStrainDeriv<vars_per_node,
+                                                                basis>(
+          Xpts, fn, zeros, d, path, dd, ety, etyd);
     } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-      TACSShellInplaneNonlinearModel::template computeTyingStrainDeriv<vars_per_node, basis>(Xpts, fn, zeros, d, path, dd,
-                                                             ety, etyd);
-    }
-    else{
-      model::template computeTyingStrainDeriv<vars_per_node, basis>(Xpts, fn, zeros, d, path, dd,
-                                                             ety, etyd);
+      TACSShellInplaneNonlinearModel::template computeTyingStrainDeriv<
+          vars_per_node, basis>(Xpts, fn, zeros, d, path, dd, ety, etyd);
+    } else {
+      model::template computeTyingStrainDeriv<vars_per_node, basis>(
+          Xpts, fn, zeros, d, path, dd, ety, etyd);
     }
 
     // Loop over each quadrature point and add the residual contribution
@@ -776,12 +786,13 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       TacsScalar XdinvT[9], XdinvzT[9];
       TacsScalar u0x[9], u1x[9], u0xd[9], u1xd[9];
       TacsScalar detXd = TacsShellComputeDispGradDeriv<vars_per_node, basis>(
-        pt, Xpts, zeros, fn, d, Xxi, n0, T, path, dd, XdinvT, XdinvzT, u0x, u1x,
-        u0xd, u1xd);
+          pt, Xpts, zeros, fn, d, Xxi, n0, T, path, dd, XdinvT, XdinvzT, u0x,
+          u1x, u0xd, u1xd);
       detXd *= weight;
 
       // Evaluate the tying components of the strain
-      TacsScalar gty[6], gtyd[6];  // The symmetric components of the tying strain
+      TacsScalar gty[6],
+          gtyd[6];  // The symmetric components of the tying strain
       basis::interpTyingStrain(pt, ety, gty);
       basis::interpTyingStrain(pt, etyd, gtyd);
 
@@ -790,16 +801,16 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
       mat3x3SymmTransformTranspose(XdinvT, gtyd, e0tyd);
 
-
       // Compute the set of strain components
       TacsScalar e[9];   // The components of the strain
       TacsScalar ed[9];  // The directional derivative components of the strain
       if (typeid(model) == typeid(TACSShellLinearModel)) {
-        TACSShellNonlinearModel::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd, e0tyd, e, ed);
+        TACSShellNonlinearModel::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd,
+                                                 e0tyd, e, ed);
       } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-        TACSShellInplaneNonlinearModel::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd, e0tyd, e, ed);
-      }
-      else{
+        TACSShellInplaneNonlinearModel::evalStrainDeriv(u0x, u1x, e0ty, u0xd,
+                                                        u1xd, e0tyd, e, ed);
+      } else {
         model::evalStrainDeriv(u0x, u1x, e0ty, u0xd, u1xd, e0tyd, e, ed);
       }
       e[8] = et;
@@ -811,7 +822,8 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
       TacsScalar drill;
       const TacsScalar *A, *B, *D, *As;
-      TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
+      TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As,
+                                                     &drill);
 
       // Compute the stress based on the tangent stiffness
       TacsScalar s[9], sd[9];
@@ -822,12 +834,16 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       // with respect to u0x, u1x and e0ty
       TacsScalar du0x[9], du1x[9], de0ty[6], du0xd[9], du1xd[9], de0tyd[6];
       if (typeid(model) == typeid(TACSShellLinearModel)) {
-        TACSShellNonlinearModel::evalStrainSensDeriv(detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x, du1x, de0ty, du0xd, du1xd, de0tyd);
+        TACSShellNonlinearModel::evalStrainSensDeriv(
+            detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x, du1x, de0ty, du0xd, du1xd,
+            de0tyd);
       } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-        TACSShellInplaneNonlinearModel::evalStrainSensDeriv(detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x, du1x, de0ty, du0xd, du1xd, de0tyd);
-      }
-      else{
-        model::evalStrainSensDeriv(detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x, du1x, de0ty, du0xd, du1xd, de0tyd);
+        TACSShellInplaneNonlinearModel::evalStrainSensDeriv(
+            detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x, du1x, de0ty, du0xd, du1xd,
+            de0tyd);
+      } else {
+        model::evalStrainSensDeriv(detXd, s, u0x, u1x, sd, u0xd, u1xd, du0x,
+                                   du1x, de0ty, du0xd, du1xd, de0tyd);
       }
 
       TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
@@ -835,18 +851,20 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       TacsScalar d2u0xd[81], d2u1xd[81], d2u0xu1xd[81];
       TacsScalar d2e0tyd[36], d2e0tyu0xd[54], d2e0tyu1xd[54];
       if (typeid(model) == typeid(TACSShellLinearModel)) {
-        TACSShellNonlinearModel::evalStrainHessianDeriv(alpha * detXd, s, Cs, u0x, u1x, e0ty,
-                                sd, u0xd, u1xd, e0tyd, d2u0x, d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x,
-                                d2u0xd, d2u1xd, d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
+        TACSShellNonlinearModel::evalStrainHessianDeriv(
+            alpha * detXd, s, Cs, u0x, u1x, e0ty, sd, u0xd, u1xd, e0tyd, d2u0x,
+            d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x, d2u0xd, d2u1xd,
+            d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
       } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-        TACSShellInplaneNonlinearModel::evalStrainHessianDeriv(alpha * detXd, s, Cs, u0x, u1x, e0ty,
-                                sd, u0xd, u1xd, e0tyd, d2u0x, d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x,
-                                d2u0xd, d2u1xd, d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
-      }
-      else{
-        model::evalStrainHessianDeriv(alpha * detXd, s, Cs, u0x, u1x, e0ty,
-                                sd, u0xd, u1xd, e0tyd, d2u0x, d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x,
-                                d2u0xd, d2u1xd, d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
+        TACSShellInplaneNonlinearModel::evalStrainHessianDeriv(
+            alpha * detXd, s, Cs, u0x, u1x, e0ty, sd, u0xd, u1xd, e0tyd, d2u0x,
+            d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x, d2u0xd, d2u1xd,
+            d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
+      } else {
+        model::evalStrainHessianDeriv(
+            alpha * detXd, s, Cs, u0x, u1x, e0ty, sd, u0xd, u1xd, e0tyd, d2u0x,
+            d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x, d2u0xd, d2u1xd,
+            d2u0xu1xd, d2e0tyd, d2e0tyu0xd, d2e0tyu1xd);
       }
 
       // Add the contributions to the residual from du0x and du1x
@@ -865,7 +883,8 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       TacsShellAddDispGradHessian<vars_per_node, basis>(
           pt, T, XdinvT, XdinvzT, d2u0xd, d2u1xd, d2u0xu1xd, matd, d2dd, d2dud);
 
-      // Compute the of the tying strain w.r.t. derivative w.r.t. the coefficients
+      // Compute the of the tying strain w.r.t. derivative w.r.t. the
+      // coefficients
       TacsScalar dgty[6], d2gty[36], dgtyd[6], d2gtyd[36];
       mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
       mat3x3SymmTransformTransHessian(XdinvT, d2e0ty, d2gty);
@@ -887,29 +906,34 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
     // Add the second order terms from the tying strain
     if (typeid(model) == typeid(TACSShellLinearModel)) {
-        TACSShellNonlinearModel::template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
-        alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd, dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
-      } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
-        TACSShellInplaneNonlinearModel::template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
-        alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd, dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
-      }
-      else{
-        model::template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
-        alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd, dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
-      }
+      TACSShellNonlinearModel::template addComputeTyingStrainHessianDeriv<
+          vars_per_node, basis>(alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu,
+                                d2etyd, path, dd, dety_d, d2ety_d, d2etyud,
+                                d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
+    } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
+      TACSShellInplaneNonlinearModel::
+          template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
+              alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd,
+              dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd,
+              d2dud);
+    } else {
+      model::template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
+          alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd,
+          dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
+    }
 
-      // Add the contributions to the stiffness matrix
-      director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+    // Add the contributions to the stiffness matrix
+    director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
         alpha, beta, gamma, zeros, zeros, zeros, fn, dd, d2Tdotd, d2Tdotu, d2d,
         d2du, res, mat);
-      director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+    director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
         alpha, beta, gamma, path, zeros, zeros, fn, dd, d2Tdotd, d2Tdotu, d2dd,
         d2dud, res, matd);
 
-      for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes;
-           i++) {
-        mat[i] = matd[i];
-      }
+    for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes;
+         i++) {
+      mat[i] = matd[i];
+    }
 
     return;
   }
