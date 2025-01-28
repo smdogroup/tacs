@@ -69,7 +69,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             transform = None
             # Set up element
             elem = elements.Quad4Shell(transform, con)
-            elem.setComplexStepGmatrix(True)
             scale = [100.0]
             return elem, scale
 
