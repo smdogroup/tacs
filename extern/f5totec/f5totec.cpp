@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[k], "--use_strands") == 0) {
       use_strands = 1;
     }
-    if (strcmp(argv[k], "--discontinuous") == 0) {
+    if (strcmp(argv[k], "--discontinuous") == 0 || strcmp(argv[k], "-d") == 0) {
       duplicateNodes = true;
     }
   }

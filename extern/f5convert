@@ -25,6 +25,9 @@ To also run recursively in all subdirectories that contain .f5 files:
 To use f5tovtk instead of f5totec:
 > `basename $0` --vtk
 
+To keep data discontinuous across element boundaries instead of averaging data at nodes:
+> `basename $0` -d
+
 This script uses GNU parallel which can be installed on debian using:
 > sudo apt-get install parallel
 
