@@ -668,10 +668,6 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
   memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
   TacsScalar zeros[vars_per_node * num_nodes];
   memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
-  TacsScalar matd[vars_per_node * num_nodes * vars_per_node * num_nodes];
-  memset(matd, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
 
   // Set alpha or gamma based on if this is a stiffness or mass matrix
   if (matType == TACS_STIFFNESS_MATRIX) {
@@ -879,9 +875,9 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
 
       // Add the contributions to the residual from du0x, du1x and dCt
       TacsShellAddDispGradHessian<vars_per_node, basis>(
-          pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x, mat, d2d, d2du);
+          pt, T, XdinvT, XdinvzT, d2u0x, d2u1x, d2u0xu1x, NULL, d2d, d2du);
       TacsShellAddDispGradHessian<vars_per_node, basis>(
-          pt, T, XdinvT, XdinvzT, d2u0xd, d2u1xd, d2u0xu1xd, matd, d2dd, d2dud);
+          pt, T, XdinvT, XdinvzT, d2u0xd, d2u1xd, d2u0xu1xd, mat, d2dd, d2dud);
 
       // Compute the of the tying strain w.r.t. derivative w.r.t. the
       // coefficients
@@ -909,31 +905,23 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
       TACSShellNonlinearModel::template addComputeTyingStrainHessianDeriv<
           vars_per_node, basis>(alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu,
                                 d2etyd, path, dd, dety_d, d2ety_d, d2etyud,
-                                d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
+                                d2etydd, NULL, d2d, d2du, mat, d2dd, d2dud);
     } else if (typeid(model) == typeid(TACSShellInplaneLinearModel)) {
       TACSShellInplaneNonlinearModel::
           template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
               alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd,
-              dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd,
+              dety_d, d2ety_d, d2etyud, d2etydd, NULL, d2d, d2du, mat, d2dd,
               d2dud);
     } else {
       model::template addComputeTyingStrainHessianDeriv<vars_per_node, basis>(
           alpha, Xpts, fn, zeros, d, dety, d2ety, d2etyu, d2etyd, path, dd,
-          dety_d, d2ety_d, d2etyud, d2etydd, mat, d2d, d2du, matd, d2dd, d2dud);
+          dety_d, d2ety_d, d2etyud, d2etydd, NULL, d2d, d2du, mat, d2dd, d2dud);
     }
 
     // Add the contributions to the stiffness matrix
     director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
-        alpha, beta, gamma, zeros, zeros, zeros, fn, dd, d2Tdotd, d2Tdotu, d2d,
-        d2du, res, mat);
-    director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
         alpha, beta, gamma, path, zeros, zeros, fn, dd, d2Tdotd, d2Tdotu, d2dd,
-        d2dud, res, matd);
-
-    for (int i = 0; i < vars_per_node * num_nodes * vars_per_node * num_nodes;
-         i++) {
-      mat[i] = matd[i];
-    }
+        d2dud, NULL, mat);
 
     return;
   }

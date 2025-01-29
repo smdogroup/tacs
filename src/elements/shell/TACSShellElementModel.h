@@ -635,8 +635,10 @@ class TACSShellLinearModel {
         int ii = vars_per_node * (i / 3) + (i % 3);
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           int jj = vars_per_node * (j / 3) + (j % 3);
-          mat[nvars * ii + jj] +=
-              du1[i] * du2[j] + du1[i] * etu[j] + etu[i] * du1[j];
+          if (mat) {
+            mat[nvars * ii + jj] +=
+                du1[i] * du2[j] + du1[i] * etu[j] + etu[i] * du1[j];
+          }
 
           matd[nvars * ii + jj] += du1[i] * etud[j] + etud[i] * du1[j];
         }
@@ -1891,16 +1893,19 @@ class TACSShellNonlinearModel {
         int ii = vars_per_node * (i / 3) + i % 3;
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           int jj = vars_per_node * (j / 3) + j % 3;
-          mat[nvars * ii + jj] +=
-              du1[i] * du2[j] + du1[i] * etup[j] + etup[i] * du1[j];
+          if (mat) {
+            mat[nvars * ii + jj] +=
+                du1[i] * du2[j] + du1[i] * etup[j] + etup[i] * du1[j];
+          }
           matd[nvars * ii + jj] += du1d[i] * du2[j] + du1d[i] * etup[j] +
                                    etupd[i] * du1[j] + du1[i] * du2d[j] +
                                    du1[i] * etupd[j] + etup[i] * du1d[j];
         }
       }
-
-      basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
-                                                3>(pt1, d2Uxi, mat);
+      if (mat) {
+        basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node,
+                                                  3, 3>(pt1, d2Uxi, mat);
+      }
       basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
                                                 3>(pt1, d2Uxid, matd);
     }
