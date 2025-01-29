@@ -608,7 +608,10 @@ void TACSShellElement<quadrature, basis, director, model>::addJacobian(
     du0dot[0] = detXd * (moments[0] * u0ddot[0] + moments[1] * d0ddot[0]);
     du0dot[1] = detXd * (moments[0] * u0ddot[1] + moments[1] * d0ddot[1]);
     du0dot[2] = detXd * (moments[0] * u0ddot[2] + moments[1] * d0ddot[2]);
-    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, du0dot, res);
+    if (res) {
+      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, du0dot,
+                                                                 res);
+    }
 
     TacsScalar dd0dot[3];
     dd0dot[0] = detXd * (moments[1] * u0ddot[0] + moments[2] * d0ddot[0]);
@@ -663,9 +666,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
              sizeof(TacsScalar));
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
-  // Create dummy residual vector
-  TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  // Create dummy zero vector for dvars and ddvars
   TacsScalar zeros[vars_per_node * num_nodes];
   memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
 
@@ -926,8 +927,8 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     return;
   }
   // Add appropriate Jacobian to matrix
-  addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
-              mat);
+  addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, zeros, zeros,
+              NULL, mat);
 }
 
 template <class quadrature, class basis, class director, class model>

@@ -107,8 +107,10 @@ class TACSShellInplaneLinearModel {
       }
 
       basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
-      basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, dUxi,
-                                                                     res);
+      if (res) {
+        basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, dUxi,
+                                                                       res);
+      }
     }
   }
 
