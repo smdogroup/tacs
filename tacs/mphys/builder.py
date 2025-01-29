@@ -200,7 +200,7 @@ class TacsBuilder(Builder):
         self.constraint_setup = constraint_setup
         self.buckling_setup = buckling_setup
         self.pytacs_options = pytacs_options
-        self.check_partials = check_partials
+        self.under_check_partials = check_partials
         self.conduction = conduction
         if isinstance(coupling_loads, str):
             self.coupling_loads = [coupling_loads]
@@ -260,7 +260,7 @@ class TacsBuilder(Builder):
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
             discipline_vars=self.discipline_vars,
-            check_partials=self.check_partials,
+            check_partials=self.under_check_partials,
             coupling_loads=self.coupling_loads,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
@@ -323,7 +323,7 @@ class TacsBuilder(Builder):
         """
         return TacsPostcouplingGroup(
             fea_assembler=self.fea_assembler,
-            check_partials=self.check_partials,
+            check_partials=self.under_check_partials,
             discipline_vars=self.discipline_vars,
             write_solution=self.write_solution,
             scenario_name=scenario_name,
