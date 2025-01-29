@@ -239,7 +239,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">constraint_setup</span> <span class="o">=</span> <span class="n">constraint_setup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buckling_setup</span> <span class="o">=</span> <span class="n">buckling_setup</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pytacs_options</span> <span class="o">=</span> <span class="n">pytacs_options</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span> <span class="o">=</span> <span class="n">check_partials</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">under_check_partials</span> <span class="o">=</span> <span class="n">check_partials</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conduction</span> <span class="o">=</span> <span class="n">conduction</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coupling_loads</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span> <span class="o">=</span> <span class="p">[</span><span class="n">coupling_loads</span><span class="p">]</span>
@@ -304,7 +304,7 @@
         <span class="k">return</span> <span class="n">TacsCouplingGroup</span><span class="p">(</span>
             <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
             <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
-            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
+            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">under_check_partials</span><span class="p">,</span>
             <span class="n">coupling_loads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">coupling_loads</span><span class="p">,</span>
             <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
             <span class="n">problem_setup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">problem_setup</span><span class="p">,</span>
@@ -376,7 +376,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">TacsPostcouplingGroup</span><span class="p">(</span>
             <span class="n">fea_assembler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fea_assembler</span><span class="p">,</span>
-            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">check_partials</span><span class="p">,</span>
+            <span class="n">check_partials</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">under_check_partials</span><span class="p">,</span>
             <span class="n">discipline_vars</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discipline_vars</span><span class="p">,</span>
             <span class="n">write_solution</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">write_solution</span><span class="p">,</span>
             <span class="n">scenario_name</span><span class="o">=</span><span class="n">scenario_name</span><span class="p">,</span>
