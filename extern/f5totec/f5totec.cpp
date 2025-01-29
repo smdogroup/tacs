@@ -253,30 +253,32 @@ int main(int argc, char *argv[]) {
     tec_init = 1;
     delete[] all_vars;
 
-    // Count up the number of times each node is referred to
-    // in the discontinuous element-wise data
-    float *counts = new float[num_points];
-    memset(counts, 0, num_points * sizeof(float));
-    for (int j = 0; j < ptr[num_elements]; j++) {
-      counts[conn[j]] += 1.0;
-    }
-    for (int i = 0; i < num_points; i++) {
-      if (counts[i] != 0.0) {
-        counts[i] = 1.0 / counts[i];
-      }
-    }
-
-    // Nodally average the data
     float *avg_edata = new float[num_points * num_evars_per_node];
-    memset(avg_edata, 0, num_points * num_evars_per_node * sizeof(float));
-    for (int j = 0; j < num_evars_per_node; j++) {
-      for (int k = 0; k < ptr[num_elements]; k++) {
-        avg_edata[num_evars_per_node * conn[k] + j] +=
-            counts[conn[k]] * edata[num_evars_per_node * k + j];
+    if (duplicateNodes) {
+      // Count up the number of times each node is referred to
+      // in the discontinuous element-wise data
+      float *counts = new float[num_points];
+      memset(counts, 0, num_points * sizeof(float));
+      for (int j = 0; j < ptr[num_elements]; j++) {
+        counts[conn[j]] += 1.0;
       }
-    }
+      for (int i = 0; i < num_points; i++) {
+        if (counts[i] != 0.0) {
+          counts[i] = 1.0 / counts[i];
+        }
+      }
 
-    delete[] counts;
+      // Nodally average the data
+      memset(avg_edata, 0, num_points * num_evars_per_node * sizeof(float));
+      for (int j = 0; j < num_evars_per_node; j++) {
+        for (int k = 0; k < ptr[num_elements]; k++) {
+          avg_edata[num_evars_per_node * conn[k] + j] +=
+              counts[conn[k]] * edata[num_evars_per_node * k + j];
+        }
+      }
+
+      delete[] counts;
+    }
 
     if (!(element_comp_num && conn && cdata)) {
       fprintf(stderr,
