@@ -1869,8 +1869,8 @@ class TACSShellNonlinearModel {
 
         basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxi,
                                                                    NULL, d2du);
-        basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxid,
-                                                                   NULL, d2du_d);
+        basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(
+            pt1, d2dUxid, NULL, d2du_d);
       }
 
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
@@ -1898,8 +1898,8 @@ class TACSShellNonlinearModel {
                 du1[i] * du2[j] + du1[i] * etup[j] + etup[i] * du1[j];
           }
           mat_d[nvars * ii + jj] += du1d[i] * du2[j] + du1d[i] * etup[j] +
-                                   etupd[i] * du1[j] + du1[i] * du2d[j] +
-                                   du1[i] * etupd[j] + etup[i] * du1d[j];
+                                    etupd[i] * du1[j] + du1[i] * du2d[j] +
+                                    du1[i] * etupd[j] + etup[i] * du1d[j];
         }
       }
       if (mat) {
