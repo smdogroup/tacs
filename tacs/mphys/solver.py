@@ -22,13 +22,13 @@ class TacsSolver(om.ImplicitComponent):
         self.fea_assembler = None
 
         self.transposed = False
-        self.check_partials = False
+        self.under_check_partials = False
 
         self.old_dvs = None
         self.old_xs = None
 
     def setup(self):
-        self.check_partials = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.fea_assembler = self.options["fea_assembler"]
         self.discipline_vars = self.options["discipline_vars"]
         self.coupling_loads = self.options["coupling_loads"]
@@ -150,7 +150,7 @@ class TacsSolver(om.ImplicitComponent):
 
     def solve_linear(self, d_outputs, d_residuals, mode):
         if mode == "fwd":
-            if self.check_partials:
+            if self.under_check_partials:
                 print("solver fwd")
             else:
                 raise ValueError("forward mode requested but not implemented")
@@ -163,7 +163,7 @@ class TacsSolver(om.ImplicitComponent):
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         self._update_internal(inputs, outputs)
         if mode == "fwd":
-            if not self.check_partials:
+            if not self.under_check_partials:
                 raise ValueError("TACS forward mode requested but not implemented")
 
         if mode == "rev":
