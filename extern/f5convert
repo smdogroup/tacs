@@ -47,16 +47,20 @@ reconvert=false
 quiet=false
 vtk=false
 subdirs=false
+discontinuous=false
 extra_args=""
 nprocs=+0
-while [[ "$#" -gt 0 ]]; do case $1 in
-    -n|--nprocs) nprocs=$2; shift;;
-    -q|--quiet) quiet=true; shift;;
-    -r|--reconvert) reconvert=true; shift;;
-    -s|--subdirs) subdirs=true; shift;;
-    --vtk) vtk=true;;
-    *) echo "Unknown parameter passed: $1"; exit 1;;
-esac; shift; done
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -n|--nprocs) nprocs=$2; shift 2;;
+        -q|--quiet) quiet=true; shift;;
+        -r|--reconvert) reconvert=true; shift;;
+        -s|--subdirs) subdirs=true; shift;;
+        -d|--discontinuous) discontinuous=true; shift;;
+        --vtk) vtk=true; shift;;
+        *) echo "Unknown parameter passed: $1"; exit 1;;
+    esac
+done
 
 f5convert_all() {
 
@@ -64,16 +68,22 @@ f5convert_all() {
     quiet=$2
     vtk=$3
     nprocs=$4
-
-    for value in $reconvert $quiet $vtk $nprocs; do
-        echo $value
-    done
+    discontinuous=$5
 
     if [ $vtk = true ] ; then
         convertCommand=f5tovtk
+        if [ $discontinuous = true ] ; then
+            convertCommand=f5tovtk-element
+        fi
     else
         convertCommand=f5totec
+        if [ $discontinuous = true ] ; then
+            convertCommand="${convertCommand} --discontinuous"
+        fi
     fi
+
+
+    echo "Using $convertCommand"
 
     # Loop through all the f5 files in the current directory and figure out which ones to convert
     filesToConvert=()
@@ -120,8 +130,8 @@ f5convert_all() {
 if [ $subdirs = true ] ; then
     RootDir=$(pwd)
     find . -iname '*.f5' -printf '%h\n' | sort -u | while read i; do
-        cd "$i" && pwd && f5convert_all $reconvert $quiet $vtk $nprocs ; cd "$RootDir"
+        cd "$i" && pwd && f5convert_all $reconvert $quiet $vtk $nprocs $discontinuous ; cd "$RootDir"
     done
 else
-    f5convert_all $reconvert $quiet $vtk $nprocs
+    f5convert_all $reconvert $quiet $vtk $nprocs $discontinuous
 fi
