@@ -1470,7 +1470,8 @@ class TACSShellInplaneNonlinearModel {
           d2d[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * dd2[j] + dd1[i] * etd[j] + etd[i] * dd1[j];
           d2d_d[3 * basis::NUM_NODES * i + j] +=
-              dd1[i] * dd2[j] + dd1[i] * etd[j] + etd[i] * dd1[j];
+              dd1d[i] * dd2[j] + dd1d[i] * etd[j] + etdd[i] * dd1[j] +
+              dd1[i] * dd2d[j] + dd1[i] * etdd[j] + etd[i] * dd1d[j];
         }
       }
 
