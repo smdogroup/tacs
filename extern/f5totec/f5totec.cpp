@@ -165,11 +165,15 @@ int close_tec_file() { return TECEND112(); }
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
-  // Check if we're going to use strands or not
+  // Parse command line arguments
   int use_strands = 0;
+  bool duplicateNodes = false;
   for (int k = 0; k < argc; k++) {
     if (strcmp(argv[k], "--use_strands") == 0) {
       use_strands = 1;
+    }
+    if (strcmp(argv[k], "--discontinuous") == 0) {
+      duplicateNodes = true;
     }
   }
 
@@ -478,7 +482,6 @@ int main(int argc, char *argv[]) {
       }
 
       if (num_elements > 0 && npts > 0) {
-        const bool duplicateNodes = true;
         if (duplicateNodes) {
           // In this case, we duplicate nodes so that every element has its own
           // nodes (e.g first element has nodes 0->n, second elements has nodes
