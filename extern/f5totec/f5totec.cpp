@@ -315,21 +315,28 @@ int main(int argc, char *argv[]) {
         new int[num_basic_elements];  // For each basic element, where does the
                                       // data for the corresponding original
                                       // element start in the element data array
-    int *elem_data_map_ptr = basic_element_data_map;
 
     int *basic_eltypes = new int[num_basic_elements];
     int *basic_element_comp_num = new int[num_basic_elements];
     int *basic_conn = new int[basic_conn_size];
     int *const basic_node_map =
         new int[basic_conn_size];  // Which node in the original element is this
-                                   // node in the basic element
-    int *basic_node_map_ptr = basic_node_map;
+    // node in the basic element
+    int *const basic_node_map_ptr =
+        new int[num_basic_elements];  // Where in basic_node_map does the data
+                                      // for this basic element start
 
-    int *btypes = basic_eltypes;
-    int *belem_comp_num = basic_element_comp_num;
-    int *bconn = basic_conn;
+    // These are pointers that we use to step through the arrays above as we
+    // generate the new basic elements
+    int *basic_eltypes_view = basic_eltypes;
+    int *basic_element_comp_num_view = basic_element_comp_num;
+    int *basic_conn_view = basic_conn;
+    int *basic_node_map_view = basic_node_map;
+    int *basic_node_map_ptr_view = basic_node_map_ptr;
+    int *basic_element_data_map_view = basic_element_data_map;
 
     int origNodeCount = 0;
+    int basicNodeCount = 0;
 
     for (int k = 0; k < num_elements; k++) {
       int numNewElems = 0, numNewNodes = 0;
@@ -340,14 +347,15 @@ int main(int argc, char *argv[]) {
           eltype == TACS_TRI_CUBIC_ELEMENT) {
         TacsConvertVisLayoutToBasicCount(eltype, &numNewElems, &numNewNodes);
         int *tri_conn = new int[numNewNodes];
-        TacsConvertVisLayoutToBasic(eltype, &conn[ptr[k]], btypes, tri_conn);
+        TacsConvertVisLayoutToBasic(eltype, &conn[ptr[k]], basic_eltypes_view,
+                                    tri_conn);
 
         const int convert[] = {0, 1, 2, 2};
         for (int jj = 0; jj < numNewElems; jj++) {
           for (int ii = 0; ii < 4; ii++) {
-            bconn[4 * jj + ii] = tri_conn[3 * jj + convert[ii]];
+            basic_conn_view[4 * jj + ii] = tri_conn[3 * jj + convert[ii]];
           }
-          btypes[jj] = TACS_QUAD_ELEMENT;
+          basic_eltypes_view[jj] = TACS_QUAD_ELEMENT;
         }
         numNewNodes = numNewNodes + numNewElems;
         delete[] tri_conn;
@@ -355,24 +363,33 @@ int main(int argc, char *argv[]) {
       // Plot only the first four nodes (conrners) of higher order tets
       else if (eltype == TACS_TETRA_QUADRATIC_ELEMENT ||
                eltype == TACS_TETRA_CUBIC_ELEMENT) {
-        memcpy(bconn, &conn[ptr[k]], 4 * sizeof(int));
+        memcpy(basic_conn_view, &conn[ptr[k]], 4 * sizeof(int));
         numNewNodes = 4;
         numNewElems = 1;
-        btypes[0] = TACS_TETRA_ELEMENT;
+        basic_eltypes_view[0] = TACS_TETRA_ELEMENT;
       } else {
         TacsConvertVisLayoutToBasicCount(eltype, &numNewElems, &numNewNodes);
-        TacsConvertVisLayoutToBasic(eltype, &conn[ptr[k]], btypes, bconn);
+        TacsConvertVisLayoutToBasic(eltype, &conn[ptr[k]], basic_eltypes_view,
+                                    basic_conn_view);
       }
       // Set the basic element component to match the parent
       for (int ii = 0; ii < numNewElems; ii++) {
-        belem_comp_num[ii] = element_comp_num[k];
+        basic_element_comp_num_view[ii] = element_comp_num[k];
+      }
+      // Set entries in the basic_node_map
+      for (int ii = 0; ii < numNewElems; ii++) {
+        const ElementLayout newElemType = (ElementLayout)basic_eltypes_view[ii];
+        const int numNewElemNodes = TacsGetNumVisNodes(newElemType);
+        basic_node_map_ptr_view[0] = basicNodeCount;
+        basicNodeCount += numNewElemNodes;
+        basic_node_map_ptr_view++;
       }
       // Copy data to the basic element data
       for (int ii = 0; ii < numNewNodes; ii++) {
         // Find which node this is in the original element
         int elemLocalInd = -1;
         for (int jj = 0; jj < nodes_per_elem; jj++) {
-          if (conn[ptr[k] + jj] == bconn[ii]) {
+          if (conn[ptr[k] + jj] == basic_conn_view[ii]) {
             elemLocalInd = jj;
             break;
           }
@@ -381,19 +398,20 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "Error, node not found in original element\n");
           return 1;
         }
-        basic_node_map_ptr[ii] = elemLocalInd;
+        basic_node_map_view[ii] = elemLocalInd;
       }
 
       for (int jj = 0; jj < numNewElems; jj++) {
-        elem_data_map_ptr[jj] = origNodeCount * num_evars_per_node;
+        basic_element_data_map_view[jj] = origNodeCount * num_evars_per_node;
       }
-      origNodeCount += nodes_per_elem;
-      elem_data_map_ptr += numNewElems;
 
-      btypes += numNewElems;
-      belem_comp_num += numNewElems;
-      bconn += numNewNodes;
-      basic_node_map_ptr += numNewNodes;
+      origNodeCount += nodes_per_elem;
+      basic_element_data_map_view += numNewElems;
+
+      basic_eltypes_view += numNewElems;
+      basic_element_comp_num_view += numNewElems;
+      basic_conn_view += numNewNodes;
+      basic_node_map_view += numNewNodes;
     }
 
     int num_comp = loader->getNumComponents();
@@ -544,7 +562,7 @@ int main(int argc, char *argv[]) {
                     convertLocalNodeInd((ElementLayout)zone_btype, nodeInd);
 
                 const int originalElemLocalNodeInd =
-                    basic_node_map[globalElemInd * nodes_per_elem +
+                    basic_node_map[basic_node_map_ptr[globalElemInd] +
                                    basicElemLocalNodeInd];
 
                 nodalData[dupNodeInd] =
@@ -614,6 +632,7 @@ int main(int argc, char *argv[]) {
     delete[] basic_conn;
     delete[] basic_element_comp_num;
     delete[] basic_node_map;
+    delete[] basic_node_map_ptr;
     delete[] basic_element_data_map;
     delete[] compNodeGlobalInd;
     delete[] compBasicElemInd;
