@@ -167,13 +167,13 @@ int main(int argc, char *argv[]) {
 
   // Parse command line arguments
   int use_strands = 0;
-  bool duplicateNodes = false;
+  bool discontinuous = false;
   for (int k = 0; k < argc; k++) {
     if (strcmp(argv[k], "--use_strands") == 0) {
       use_strands = 1;
     }
     if (strcmp(argv[k], "--discontinuous") == 0 || strcmp(argv[k], "-d") == 0) {
-      duplicateNodes = true;
+      discontinuous = true;
     }
   }
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
     delete[] all_vars;
 
     float *avg_edata = new float[num_points * num_evars_per_node];
-    if (duplicateNodes) {
+    if (!discontinuous) {
       // Count up the number of times each node is referred to
       // in the discontinuous element-wise data
       float *counts = new float[num_points];
@@ -484,7 +484,7 @@ int main(int argc, char *argv[]) {
       }
 
       if (num_elements > 0 && npts > 0) {
-        if (duplicateNodes) {
+        if (discontinuous) {
           // In this case, we duplicate nodes so that every element has its own
           // nodes (e.g first element has nodes 0->n, second elements has nodes
           // n+1->2n etc) and we can plot discontinuous data
