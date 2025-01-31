@@ -268,12 +268,12 @@ class TACSShellInplaneLinearModel {
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
       const TacsScalar vars[], const TacsScalar d[], const TacsScalar dety[],
       const TacsScalar d2ety[], const TacsScalar d2etyu[],
-      const TacsScalar d2etyd[], const TacsScalar vars_d[],
-      const TacsScalar d_d[], const TacsScalar dety_d[],
-      const TacsScalar d2ety_d[], const TacsScalar d2etyu_d[],
-      const TacsScalar d2etyd_d[], TacsScalar mat[], TacsScalar d2d[],
-      TacsScalar d2du[], TacsScalar mat_d[], TacsScalar d2d_d[],
-      TacsScalar d2du_d[]) {
+      const TacsScalar d2etyd[], const TacsScalar psi[],
+      const TacsScalar dpsi[], const TacsScalar detypsi[],
+      const TacsScalar d2etypsi[], const TacsScalar d2etyupsi[],
+      const TacsScalar d2etydpsi[], TacsScalar mat[], TacsScalar d2d[],
+      TacsScalar d2du[], TacsScalar matpsi[], TacsScalar d2dpsi[],
+      TacsScalar d2dupsi[]) {
     // Initialize the data
     TacsScalar n0ty[3 * basis::NUM_TYING_POINTS];
     TacsScalar Xxity[6 * basis::NUM_TYING_POINTS];
@@ -319,7 +319,7 @@ class TACSShellInplaneLinearModel {
         basis::getTyingPoint(i2, pt2);
 
         TacsScalar value = d2ety[basis::NUM_TYING_POINTS * i1 + i2];
-        TacsScalar valued = d2ety_d[basis::NUM_TYING_POINTS * i1 + i2];
+        TacsScalar valued = d2etypsi[basis::NUM_TYING_POINTS * i1 + i2];
 
         TacsScalar dUxi2[6], dd02[3];
         TacsScalar dUxi2d[6], dd02d[3];
@@ -414,13 +414,13 @@ class TACSShellInplaneLinearModel {
 
       const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
       const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar *etdd = &d2etyd_d[3 * basis::NUM_NODES * i1];
-      const TacsScalar *etud = &d2etyu_d[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * dd2[j] + dd1[i] * etd[j] + etd[i] * dd1[j];
-          d2d_d[3 * basis::NUM_NODES * i + j] +=
+          d2dpsi[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * etdd[j] + etdd[i] * dd1[j];
         }
       }
@@ -429,14 +429,14 @@ class TACSShellInplaneLinearModel {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * du2[j] + dd1[i] * etu[j];
-          d2du_d[3 * basis::NUM_NODES * i + j] += dd1[i] * etud[j];
+          d2dupsi[3 * basis::NUM_NODES * i + j] += dd1[i] * etud[j];
         }
       }
 
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etd[i] * du1[j];
-          d2du_d[3 * basis::NUM_NODES * i + j] += etdd[i] * du1[j];
+          d2dupsi[3 * basis::NUM_NODES * i + j] += etdd[i] * du1[j];
         }
       }
 
@@ -449,7 +449,7 @@ class TACSShellInplaneLinearModel {
             mat[nvars * ii + jj] +=
                 du1[i] * du2[j] + du1[i] * etu[j] + etu[i] * du1[j];
           }
-          mat_d[nvars * ii + jj] += du1[i] * etud[j] + etud[i] * du1[j];
+          matpsi[nvars * ii + jj] += du1[i] * etud[j] + etud[i] * du1[j];
         }
       }
     }
@@ -1222,12 +1222,12 @@ class TACSShellInplaneNonlinearModel {
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
       const TacsScalar vars[], const TacsScalar d[], const TacsScalar dety[],
       const TacsScalar d2ety[], const TacsScalar d2etyu[],
-      const TacsScalar d2etyd[], const TacsScalar vars_d[],
-      const TacsScalar d_d[], const TacsScalar dety_d[],
-      const TacsScalar d2ety_d[], const TacsScalar d2etyu_d[],
-      const TacsScalar d2etyd_d[], TacsScalar mat[], TacsScalar d2d[],
-      TacsScalar d2du[], TacsScalar mat_d[], TacsScalar d2d_d[],
-      TacsScalar d2du_d[]) {
+      const TacsScalar d2etyd[], const TacsScalar psi[],
+      const TacsScalar dpsi[], const TacsScalar detypsi[],
+      const TacsScalar d2etypsi[], const TacsScalar d2etyupsi[],
+      const TacsScalar d2etydpsi[], TacsScalar mat[], TacsScalar d2d[],
+      TacsScalar d2du[], TacsScalar matpsi[], TacsScalar d2dpsi[],
+      TacsScalar d2dupsi[]) {
     // Initialize the data
     TacsScalar n0ty[3 * basis::NUM_TYING_POINTS];
     TacsScalar Xxity[6 * basis::NUM_TYING_POINTS];
@@ -1249,8 +1249,8 @@ class TACSShellInplaneNonlinearModel {
       basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
       basis::template interpFields<3, 3>(pt, d, d0);
 
-      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars_d, Uxid);
-      basis::template interpFields<3, 3>(pt, d_d, d0d);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi, Uxid);
+      basis::template interpFields<3, 3>(pt, dpsi, d0d);
 
       n0 += 3;
       Xxi += 6;
@@ -1291,7 +1291,7 @@ class TACSShellInplaneNonlinearModel {
         basis::getTyingPoint(i2, pt2);
 
         const TacsScalar value = d2ety[basis::NUM_TYING_POINTS * i1 + i2];
-        const TacsScalar valued = d2ety_d[basis::NUM_TYING_POINTS * i1 + i2];
+        const TacsScalar valued = d2etypsi[basis::NUM_TYING_POINTS * i1 + i2];
 
         TacsScalar dUxi2[6], dd02[3];
         TacsScalar dUxi2d[6], dd02d[3];
@@ -1409,9 +1409,9 @@ class TACSShellInplaneNonlinearModel {
         d2dUxi[9] = 0.5 * alpha * dety[i1];
         d2dUxi[17] = 0.5 * alpha * dety[i1];
 
-        d2dUxid[1] = 0.5 * alpha * dety_d[i1];
-        d2dUxid[9] = 0.5 * alpha * dety_d[i1];
-        d2dUxid[17] = 0.5 * alpha * dety_d[i1];
+        d2dUxid[1] = 0.5 * alpha * detypsi[i1];
+        d2dUxid[9] = 0.5 * alpha * detypsi[i1];
+        d2dUxid[17] = 0.5 * alpha * detypsi[i1];
       } else if (f1 == TACS_SHELL_G13_COMPONENT) {
         // Compute g13 = e1^{T}*G*e3
         dUxi1[0] = 0.5 * (n01[0] + d01[0]);
@@ -1440,9 +1440,9 @@ class TACSShellInplaneNonlinearModel {
         d2dUxi[8] = 0.5 * alpha * dety[i1];
         d2dUxi[16] = 0.5 * alpha * dety[i1];
 
-        d2dUxid[0] = 0.5 * alpha * dety_d[i1];
-        d2dUxid[8] = 0.5 * alpha * dety_d[i1];
-        d2dUxid[16] = 0.5 * alpha * dety_d[i1];
+        d2dUxid[0] = 0.5 * alpha * detypsi[i1];
+        d2dUxid[8] = 0.5 * alpha * detypsi[i1];
+        d2dUxid[16] = 0.5 * alpha * detypsi[i1];
       }
 
       basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
@@ -1457,19 +1457,19 @@ class TACSShellInplaneNonlinearModel {
                                                   3, 3>(pt1, d2Uxi, mat);
       }
       basis::template addInterpGradMixedOuterProduct<3, 3, 3, 3>(pt1, d2dUxid,
-                                                                 NULL, d2du_d);
+                                                                 NULL, d2dupsi);
       basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
-                                                3>(pt1, d2Uxid, mat_d);
+                                                3>(pt1, d2Uxid, matpsi);
 
       const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
       const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar *etdd = &d2etyd_d[3 * basis::NUM_NODES * i1];
-      const TacsScalar *etud = &d2etyu_d[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * dd2[j] + dd1[i] * etd[j] + etd[i] * dd1[j];
-          d2d_d[3 * basis::NUM_NODES * i + j] +=
+          d2dpsi[3 * basis::NUM_NODES * i + j] +=
               dd1d[i] * dd2[j] + dd1d[i] * etd[j] + etdd[i] * dd1[j] +
               dd1[i] * dd2d[j] + dd1[i] * etdd[j] + etd[i] * dd1d[j];
         }
@@ -1479,7 +1479,7 @@ class TACSShellInplaneNonlinearModel {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] +=
               dd1[i] * du2[j] + dd1[i] * etu[j];
-          d2du_d[3 * basis::NUM_NODES * i + j] +=
+          d2dupsi[3 * basis::NUM_NODES * i + j] +=
               dd1d[i] * du2[j] + dd1d[i] * etu[j] + dd1[i] * du2d[j] +
               dd1[i] * etud[j];
         }
@@ -1488,7 +1488,7 @@ class TACSShellInplaneNonlinearModel {
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etd[i] * du1[j];
-          d2du_d[3 * basis::NUM_NODES * i + j] +=
+          d2dupsi[3 * basis::NUM_NODES * i + j] +=
               etdd[i] * du1[j] + etd[i] * du1d[j];
         }
       }
@@ -1502,7 +1502,7 @@ class TACSShellInplaneNonlinearModel {
             mat[nvars * ii + jj] +=
                 du1[i] * du2[j] + du1[i] * etu[j] + etu[i] * du1[j];
           }
-          mat_d[nvars * ii + jj] += du1d[i] * du2[j] + du1d[i] * etu[j] +
+          matpsi[nvars * ii + jj] += du1d[i] * du2[j] + du1d[i] * etu[j] +
                                     etud[i] * du1[j] + du1[i] * du2d[j] +
                                     du1[i] * etud[j] + etu[i] * du1d[j];
         }
