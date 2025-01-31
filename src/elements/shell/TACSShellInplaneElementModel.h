@@ -1503,8 +1503,8 @@ class TACSShellInplaneNonlinearModel {
                 du1[i] * du2[j] + du1[i] * etu[j] + etu[i] * du1[j];
           }
           matpsi[nvars * ii + jj] += du1d[i] * du2[j] + du1d[i] * etu[j] +
-                                    etud[i] * du1[j] + du1[i] * du2d[j] +
-                                    du1[i] * etud[j] + etu[i] * du1d[j];
+                                     etud[i] * du1[j] + du1[i] * du2d[j] +
+                                     du1[i] * etud[j] + etu[i] * du1d[j];
         }
       }
     }
