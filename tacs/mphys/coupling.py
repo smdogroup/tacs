@@ -25,7 +25,7 @@ class TacsCouplingGroup(om.Group):
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
-        self.check_partials = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.coupling_loads = self.options["coupling_loads"]
         self.coupled = len(self.coupling_loads) > 0
         self.discipline_vars = self.options["discipline_vars"]
@@ -93,7 +93,7 @@ class TacsCouplingGroup(om.Group):
             "solver",
             TacsSolver(
                 fea_assembler=self.fea_assembler,
-                check_partials=self.check_partials,
+                check_partials=self.under_check_partials,
                 coupling_loads=self.coupling_loads,
                 discipline_vars=self.discipline_vars,
                 res_ref=self.res_ref,
