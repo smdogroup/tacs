@@ -474,14 +474,16 @@ class TACSLinearizedRotation {
     }
 
     // Update residual
-    TacsScalar *r = &res[offset];
+    if (res) {
+      TacsScalar *r = &res[offset];
 
-    for (int i = 0; i < num_nodes; i++) {
-      crossProductAdd(1.0, t, dd, r);
+      for (int i = 0; i < num_nodes; i++) {
+        crossProductAdd(1.0, t, dd, r);
 
-      r += vars_per_node;
-      dd += 3;
-      t += 3;
+        r += vars_per_node;
+        dd += 3;
+        t += 3;
+      }
     }
   }
 
