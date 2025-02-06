@@ -74,7 +74,7 @@ class StructProblem(BaseStructProblem):
         self._pLoad = self.FEAAssembler.createVec(asBVec=True)
         self._dSdu = self.FEAAssembler.createVec(asBVec=True)
         self._adjRHS = self.FEAAssembler.createVec(asBVec=True)
-        self._dIdU = self.FEAAssembler.createVec(asBVec=True)
+        self._dIdu = self.FEAAssembler.createVec(asBVec=True)
         self._matVecRHS = self.FEAAssembler.createVec(asBVec=True)
         self._matVecSolve = self.FEAAssembler.createVec(asBVec=True)
         self.adjoints = {funcName: self.FEAAssembler.createVec(asBVec=True) for funcName in self.evalFuncs}
@@ -127,12 +127,12 @@ class StructProblem(BaseStructProblem):
         self._adjRHS[:] = value
 
     @property
-    def dIdU(self):
-        return self._dIdU.getArray()
+    def dIdu(self):
+        return self._dIdu.getArray()
 
-    @dIdU.setter
-    def dIdU(self, value):
-        self._dIdU[:] = value
+    @dIdu.setter
+    def dIdu(self, value):
+        self._dIdu[:] = value
 
     @property
     def matVecRHS(self):
@@ -707,7 +707,7 @@ class StructProblem(BaseStructProblem):
         Adjoint RHS should be: dIdu - dAdu^T*psi - dSdu^T*phi
         """
         # Set RHS to dIdu
-        self._adjRHS.copyValues(self.dIdu)
+        self._adjRHS.copyValues(self._dIdu)
 
         # Subtract dSdu if non-zero
         self._adjRHS.axpy(-1.0, self._dSdu)
