@@ -20,7 +20,7 @@ class TacsPostcouplingGroup(om.Group):
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
-        self.check_partials = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.discipline_vars = self.options["discipline_vars"]
         self.auto_write_solution = self.options["write_solution"]
 
@@ -58,7 +58,7 @@ class TacsPostcouplingGroup(om.Group):
             "eval_funcs",
             TacsFunctions(
                 fea_assembler=self.fea_assembler,
-                check_partials=self.check_partials,
+                check_partials=self.under_check_partials,
                 discipline_vars=self.discipline_vars,
                 write_solution=self.auto_write_solution,
             ),
@@ -80,7 +80,7 @@ class TacsPostcouplingGroup(om.Group):
                 "mass_funcs",
                 MassFunctions(
                     fea_assembler=self.fea_assembler,
-                    check_partials=self.check_partials,
+                    check_partials=self.under_check_partials,
                     discipline_vars=self.discipline_vars,
                 ),
                 promotes_inputs=promotes_inputs,
@@ -105,7 +105,7 @@ class TacsPostcouplingGroup(om.Group):
                     "buckling",
                     TacsBuckling(
                         fea_assembler=self.fea_assembler,
-                        check_partials=self.check_partials,
+                        check_partials=self.under_check_partials,
                         write_solution=self.write_solution,
                     ),
                     promotes_inputs=promotes_inputs + promotes_states,
