@@ -561,6 +561,12 @@ class StructProblem(BaseStructProblem):
                 self.adjoints[objective] = self.FEAAssembler.createVec(asBVec=True)
             self.adjoints[objective].getArray()[:] = adjoint[:]
 
+    def setAdjointRHS(self, func):
+        """Set the ADjoint RHS for given func"""
+        self._dIdu.zeroEntries()
+        if func in self.staticProblem.functionList:
+            self.staticProblem.addSVSens([func], [self._dIdu])
+
     def getdSduVec(self, inVec):
         """Evaluate the direct residual"""
         self.phi[:] = inVec
@@ -732,6 +738,8 @@ class StructProblem(BaseStructProblem):
         res = self.temp0
         res.zeroEntries()
 
+        self.FEAAssembler.applyBCsToVec(self._adjRHS)
+
         # First compute the residual
         self.staticProblem.addTransposeJacVecProduct(self._phi, res)
         res.axpy(-1.0, self._adjRHS)  # Add the -RHS
@@ -742,6 +750,8 @@ class StructProblem(BaseStructProblem):
         # Solve Linear System
         self.update.zeroEntries()
         self.staticProblem.solveAdjoint(res, self.update)
+
+        self.FEAAssembler.applyBCsToVec(self.update)
 
         # Update the adjoint vector with the (damped) update
         self._phi.axpy(-damp, self.update)
@@ -769,7 +779,7 @@ class StructProblem(BaseStructProblem):
 
         products = [self.FEAAssembler.createDesignVec() for obj in objectives]
         phiList = [self.getAdjoint(obj) for obj in objectives]
-        self.staticProblem.addAdjointResSensProducts(phiList, products, scale=1.0)
+        self.staticProblem.addAdjointResProducts(phiList, products, scale=1.0)
         dvVals = [self.comm.bcast(dvVec, root=0) for dvVec in products]
 
         return dvVals
