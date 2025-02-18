@@ -122,7 +122,7 @@ jobs:
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
-          conda install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py -q -y;
+          conda install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy<2" -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
