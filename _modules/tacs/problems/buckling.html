@@ -162,17 +162,18 @@
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
 
-        <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
-        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">isNonlinear</span>
-        <span class="p">)</span>
-
         <span class="c1"># Set time eigenvalue parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span> <span class="o">=</span> <span class="n">numEigs</span>
 
         <span class="c1"># String name used in evalFunctions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">&quot;eigsb&quot;</span>
+
+        <span class="c1"># Default setup for common problem class objects, sets up comm and options</span>
+        <span class="n">TACSProblem</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">isNonlinear</span>
+        <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span>
 
         <span class="c1"># Create problem-specific variables</span>
