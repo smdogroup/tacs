@@ -123,17 +123,18 @@ class BucklingProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Default setup for common problem class objects, sets up comm and options
-        TACSProblem.__init__(
-            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
-        )
-
         # Set time eigenvalue parameters
         self.sigma = sigma
         self.numEigs = numEigs
 
         # String name used in evalFunctions
         self.valName = "eigsb"
+
+        # Default setup for common problem class objects, sets up comm and options
+        TACSProblem.__init__(
+            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
+        )
+
         self._initializeFunctionList()
 
         # Create problem-specific variables
