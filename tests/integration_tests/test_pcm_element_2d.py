@@ -72,7 +72,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
             # Set one thickness value for every component
             con = constitutive.PhaseChangeMaterialConstitutive(
-                prop, prop, lh=10.0, Tm=160.0, dT=100.0, t=tplate, tNum=1
+                prop, prop, lh=10.0, Tm=160.0, dT=100.0, t=tplate, tNum=dv_num
             )
 
             model = elements.PCMHeatConduction2D(con)
