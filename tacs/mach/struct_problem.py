@@ -128,11 +128,13 @@ class StructProblem(BaseStructProblem):
 
     @property
     def dIdu(self):
+        self.FEAAssembler.applyBCsToVec(self._dIdu)
         return self._dIdu.getArray()
 
     @dIdu.setter
     def dIdu(self, value):
         self._dIdu[:] = value
+        self.FEAAssembler.applyBCsToVec(self._dIdu)
 
     @property
     def matVecRHS(self):
@@ -581,6 +583,7 @@ class StructProblem(BaseStructProblem):
         self.phi[:] = inVec
         self.temp0.zeroEntries()
         self.staticProblem.addTransposeJacVecProduct(self._phi, self.temp0, scale=1.0)
+        self.FEAAssembler.applyBCsToVec(self.temp0)
         outVec = self.temp0.getArray().copy()
         self.temp0.zeroEntries()
 
@@ -690,9 +693,11 @@ class StructProblem(BaseStructProblem):
 
         # Place the in_vec into the residual vector
         self.temp0.getArray()[:] = inVec[:]
+        self.FEAAssembler.applyBCsToVec(self.temp0)
 
         # Apply the preconditioner ONLY.
         self.staticProblem.PC.applyFactor(self.temp0, self.temp1)
+        self.FEAAssembler.applyBCsToVec(self.temp1)
         outVec = self.temp1.getArray().copy()
 
         # Zero values
