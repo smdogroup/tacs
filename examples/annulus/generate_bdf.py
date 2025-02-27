@@ -1,7 +1,7 @@
 """
 Create a .bdf file for a plane stress problem for a circular annulus
 
-This only creates one quarter of problem. 
+This only creates one quarter of problem.
 """
 
 import argparse
@@ -10,6 +10,22 @@ import numpy as np
 # Note that for performance results we use either:
 # nyelems = 750
 # nyelems = 375
+
+
+def writeElementDefinition(fp, elemType, elemID, compID, nodeIDs):
+    elementDef = [elemType, elemID, compID] + nodeIDs
+    entries = 0
+    defString = ""
+    for entry in elementDef:
+        defString += f"{entry:<8}"
+        entries += 1
+        if entries % 9 == 0:
+            defString += "\n" + 8 * " "
+            entries += 1
+    if defString[-1] != "\n":
+        defString += "\n"
+    fp.write(defString)
+
 
 # Set up the argument parser object
 parser = argparse.ArgumentParser(
@@ -42,7 +58,7 @@ Router = 10.0
 Rinner = 4.0
 
 # Set up the first mapped section
-nodes = np.zeros((nx, ny))
+nodes = np.zeros((nx, ny), dtype=int)
 x = np.zeros((nx, ny))
 y = np.zeros((nx, ny))
 
@@ -87,7 +103,7 @@ if order == 2:
                 % (
                     "CQUAD4",
                     elem,
-                    elem,
+                    1,
                     nodes[i, j],
                     nodes[i + 1, j],
                     nodes[i + 1, j + 1],
@@ -98,28 +114,86 @@ elif order == 3:
     # Output 3rd order elements
     for j in range(0, nodes.shape[1] - 1, order - 1):
         for i in range(0, nodes.shape[0] - 1, order - 1):
-            # Write the connectivity data
-            # CQUAD9 elem id n1 n2 n3 n4 n5 n6
-            #        n7   n8 n9
-            fp.write(
-                "%-8s%8d%8d%8d%8d%8d%8d%8d%8d\n"
-                % (
-                    "CQUAD9",
-                    elem,
-                    elem,
-                    nodes[i, j],
-                    nodes[i + 2, j],
-                    nodes[i + 2, j + 2],
-                    nodes[i, j + 2],
-                    nodes[i + 1, j],
-                    nodes[i + 2, j + 1],
-                )
-            )
-            fp.write(
-                "        %8d%8d%8d\n"
-                % (nodes[i + 1, j + 2], nodes[i, j + 1], nodes[i + 1, j + 1])
-            )
+            nodeOrdering = [
+                [0, 0],
+                [2, 0],
+                [2, 2],
+                [0, 2],
+                [1, 0],
+                [2, 1],
+                [1, 2],
+                [0, 1],
+                [1, 1],
+            ]
+            elementDef = ["CQUAD9", elem, elem]
+            nodeIDs = [nodes[i + node[0], j + node[1]] for node in nodeOrdering]
+            writeElementDefinition(fp, "CQUAD9", elem, 1, nodeIDs)
             elem += 1
+elif order == 4:
+    # Output 3rd order elements
+    for j in range(0, nodes.shape[1] - 1, order - 1):
+        for i in range(0, nodes.shape[0] - 1, order - 1):
+            # Write the connectivity data
+            # CQUAD16 elem id n1 n2 n3 n4 n5 n6
+            #         n7   n8 n9 n10 n11 n12 n13
+            #         n14  n15 n16
+            nodeOrdering = [
+                [0, 0],
+                [3, 0],
+                [3, 3],
+                [0, 3],
+                [1, 0],
+                [2, 0],
+                [3, 1],
+                [3, 2],
+                [2, 3],
+                [1, 3],
+                [0, 2],
+                [0, 1],
+                [1, 1],
+                [2, 1],
+                [2, 2],
+                [1, 2],
+            ]
+            elementDef = ["CQUAD16", elem, elem]
+            nodeIDs = [nodes[i + node[0], j + node[1]] for node in nodeOrdering]
+            writeElementDefinition(fp, "CQUAD16", elem, 1, nodeIDs)
+            elem += 1
+elif order == 5:
+    for j in range(0, nodes.shape[1] - 1, order - 1):
+        for i in range(0, nodes.shape[0] - 1, order - 1):
+            nodeOrdering = [
+                [0, 0],
+                [4, 0],
+                [4, 4],
+                [0, 4],
+                [1, 0],
+                [2, 0],
+                [3, 0],
+                [4, 1],
+                [4, 2],
+                [4, 3],
+                [3, 4],
+                [2, 4],
+                [1, 4],
+                [0, 3],
+                [0, 2],
+                [0, 1],
+                [1, 1],
+                [3, 1],
+                [3, 3],
+                [1, 3],
+                [2, 1],
+                [3, 2],
+                [2, 3],
+                [1, 2],
+                [2, 2],
+            ]
+            elementDef = ["CQUAD25", elem, elem]
+            nodeIDs = [nodes[i + node[0], j + node[1]] for node in nodeOrdering]
+            writeElementDefinition(fp, "CQUAD25", elem, 1, nodeIDs)
+            elem += 1
+
 
 # Set up the plate so that it is fully clamped
 for k in range(ny):
