@@ -386,9 +386,14 @@ class StaticTestCase:
             # Set node locations
             self.assembler.setNodes(self.xpts0)
 
-            # Assemble the transpose stiffness matrix
+            # Assemble the transpose stiffness matrix. Note that this matrix is technically the correct matrix for the adjoint solve because the rows corresponding to fixed DOF are zeroed instead of the columns. However, it works well enough to pass these tests.
             self.assembler.assembleJacobian(
-                self.alpha, self.beta, self.gamma, None, self.mat, TACS.NORMAL
+                self.alpha,
+                self.beta,
+                self.gamma,
+                None,
+                self.mat,
+                TACS.TRANSPOSE,
             )
             self.pc.factor()
 
