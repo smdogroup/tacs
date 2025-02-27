@@ -158,8 +158,8 @@ class OpenMDAOTestCase:
                             rev_error = clean_data[component][in_out_tuple][
                                 error_type
                             ].reverse
-                            clean_data[component][in_out_tuple][
-                                error_type
-                            ] = ErrorTuple(0.0, rev_error, 0.0)
+                            clean_data[component][in_out_tuple][error_type] = (
+                                ErrorTuple(0.0, rev_error, 0.0)
+                            )
 
             return clean_data
