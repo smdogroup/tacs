@@ -1771,6 +1771,7 @@ void TACSBDFIntegrator::initAdjoint(int k) {
           // Add up the contribution from function state derivative to RHS
           assembler->addSVSens(tcoeff, 0.0, 0.0, 1, &funcs[n],
                                &rhs[adj_index * num_funcs + n]);
+          assembler->applyBCs(rhs[adj_index * num_funcs + n]);
         }
       }
     }
@@ -2566,8 +2567,11 @@ void TACSDIRKIntegrator::iterateAdjoint(int k, TACSBVec **adj_rhs) {
     if (k > start_plane && k <= end_plane) {
       assembler->addSVSens(1.0, 0.0, 0.0, num_funcs, funcs,
                            &omega[num_funcs * stage]);
+      assembler->applyBCs(omega[num_funcs * stage]);
+
       assembler->addSVSens(0.0, 1.0, 0.0, num_funcs, funcs,
                            &domega[num_funcs * stage]);
+      assembler->applyBCs(domega[num_funcs * stage]);
     }
 
     // Compute all the contributions to the right-hand-side
