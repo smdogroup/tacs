@@ -209,6 +209,8 @@ class StructProblem(BaseStructProblem):
             Dictionary of variables which may or may not contain the
             design variable names this object needs
         """
+        if self.comm.rank != 0:
+            x = np.empty(0)
         self.staticProblem.setDesignVars(x)
 
     def addVariablesPyOpt(self, optProb):
@@ -221,13 +223,13 @@ class StructProblem(BaseStructProblem):
             Optimization problem definition to which variables are added
         """
         ndv = self.FEAAssembler.getTotalNumDesignVars()
-        if ndv > 0:
+        dvName = self.staticProblem.getVarName()
+        if ndv > 0 and dvName not in optProb.variables:
             value = self.getOrigDesignVars()
             lb, ub = self.getDesignVarRange()
             scale = self.getDesignVarScales()
 
-            dvName = self.staticProblem.getVarName()
-            optProb.addVar(dvName, "c", value=value, lower=lb, upper=ub, scale=scale)
+            optProb.addVarGroup(dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale)
 
     @updateDVGeo
     def getNodes(self):
