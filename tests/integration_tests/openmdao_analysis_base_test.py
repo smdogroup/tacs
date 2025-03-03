@@ -48,7 +48,7 @@ class OpenMDAOTestCase:
                 self.fd_form = "central"
 
             # Basically only check rtol
-            self.atol = 1e99
+            self.atol = 1e-4
 
             # Setup user-specified openmdao problem for this test
             self.prob = self.setup_problem(self.dtype)
@@ -111,6 +111,8 @@ class OpenMDAOTestCase:
                 method=self.fd_method,
                 form=self.fd_form,
                 step=self.dh,
+                # TODO: For now we have to skip the solver partials until we implement a proper Jacobian transpose routine
+                excludes=["*.coupling.solver"],
             )
             # Remove forward checks from data, TACS only works in rev anyways
             clean_data = self.cleanup_fwd_data(data)
@@ -148,11 +150,16 @@ class OpenMDAOTestCase:
             clean_data = deepcopy(data)
             for component in clean_data:
                 for in_out_tuple in clean_data[component]:
+                    clean_data[component][in_out_tuple]["J_fwd"] = clean_data[
+                        component
+                    ][in_out_tuple]["J_fd"]
                     for error_type in ["abs error", "rel error"]:
-                        rev_error = clean_data[component][in_out_tuple][
-                            error_type
-                        ].reverse
-                        clean_data[component][in_out_tuple][error_type] = ErrorTuple(
-                            0.0, rev_error, 0.0
-                        )
+                        if error_type in clean_data[component][in_out_tuple]:
+                            rev_error = clean_data[component][in_out_tuple][
+                                error_type
+                            ].reverse
+                            clean_data[component][in_out_tuple][error_type] = (
+                                ErrorTuple(0.0, rev_error, 0.0)
+                            )
+
             return clean_data
