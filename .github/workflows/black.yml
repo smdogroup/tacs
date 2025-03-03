@@ -12,5 +12,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: psf/black@stable
         with:
-          version: "24.1"
-          options: "--check --diff --verbose"
+          version: "~=24.10"
