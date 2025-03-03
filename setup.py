@@ -106,7 +106,6 @@ optional_dependencies = {
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
     "mphys": ["mphys>=2.0.0,<3.0.0", "openmdao>=3.25.0"],
     "caps2tacs": ["imageio>=2.16.1"],
-    "formatting": ["black==24.1"],
 }
 
 # Add an optional dependency that concatenates all others
