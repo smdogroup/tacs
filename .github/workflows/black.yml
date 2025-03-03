@@ -13,3 +13,4 @@ jobs:
       - uses: psf/black@stable
         with:
           version: "24.1"
+          options: "--check --diff --verbose"
