@@ -1105,9 +1105,11 @@ int main(int argc, char *argv[]) {
   if (grid_study_flag) {
     char file_name[128];
     if (orthotropic_flag) {
-      snprintf(file_name, sizeof(file_name), "ortho_grid_study_order=%d_P=%d.dat", order, P);
+      snprintf(file_name, sizeof(file_name),
+               "ortho_grid_study_order=%d_P=%d.dat", order, P);
     } else {
-      snprintf(file_name, sizeof(file_name), "iso_grid_study_order=%d_P=%d.dat", order, P);
+      snprintf(file_name, sizeof(file_name), "iso_grid_study_order=%d_P=%d.dat",
+               order, P);
     }
     meshStudy(file_name, P, transform, stiffness, load, R, L, alpha, beta,
               order, 8 - order);
@@ -1166,9 +1168,11 @@ int main(int argc, char *argv[]) {
 
   char file_name[128];
   if (orthotropic_flag) {
-    snprintf(file_name, sizeof(file_name), "ortho_cylinder_func_order=%d_nx=%d.dat", order, nx);
+    snprintf(file_name, sizeof(file_name),
+             "ortho_cylinder_func_order=%d_nx=%d.dat", order, nx);
   } else {
-    snprintf(file_name, sizeof(file_name), "iso_cylinder_func_order=%d_nx=%d.dat", order, nx);
+    snprintf(file_name, sizeof(file_name),
+             "iso_cylinder_func_order=%d_nx=%d.dat", order, nx);
   }
 
   FILE *fp = fopen(file_name, "w");

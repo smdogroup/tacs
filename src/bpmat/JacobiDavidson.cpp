@@ -555,8 +555,8 @@ void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
 
   if (ksm_print && print_level > 0) {
     char line[256];
-    snprintf(line, sizeof(line), "%4s %15s %15s %10s\n", "Iter", "JD Residual", "Ritz value",
-            "toler");
+    snprintf(line, sizeof(line), "%4s %15s %15s %10s\n", "Iter", "JD Residual",
+             "Ritz value", "toler");
     ksm_print->print(line);
   }
 
@@ -654,7 +654,7 @@ void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
       if (ksm_print && print_level > 0) {
         char line[256];
         snprintf(line, sizeof(line), "%4d %15.5e %15.5e %10.2e\n", iteration,
-                TacsRealPart(w_norm), theta, toler);
+                 TacsRealPart(w_norm), theta, toler);
         ksm_print->print(line);
       }
 
@@ -897,15 +897,17 @@ void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
     char line[256];
     for (int i = 0; i < nconverged; i++) {
       int index = eigindex[i];
-      snprintf(line, sizeof(line), "Eigenvalue[%2d]: %25.10e Eig. error[%2d]: %25.10e\n", i,
-              TacsRealPart(eigvals[index]), i, TacsRealPart(eigerror[index]));
+      snprintf(line, sizeof(line),
+               "Eigenvalue[%2d]: %25.10e Eig. error[%2d]: %25.10e\n", i,
+               TacsRealPart(eigvals[index]), i, TacsRealPart(eigerror[index]));
       ksm_print->print(line);
     }
 
-    snprintf(line, sizeof(line), "JD number of outer iterations: %2d\n", iteration);
+    snprintf(line, sizeof(line), "JD number of outer iterations: %2d\n",
+             iteration);
     ksm_print->print(line);
     snprintf(line, sizeof(line), "JD number of inner GMRES iterations: %2d\n",
-            gmres_iteration);
+             gmres_iteration);
     ksm_print->print(line);
   }
 
