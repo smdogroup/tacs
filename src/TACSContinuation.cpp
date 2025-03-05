@@ -310,7 +310,7 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
     if (ksm_print) {
       char line[256];
       ksm_print->print("Performing initial Newton iterations\n");
-      sprintf(line, "%5s %9s %10s\n", "Iter", "t", "|R|");
+      snprintf(line, sizeof(line), "%5s %9s %10s\n", "Iter", "t", "|R|");
       ksm_print->print(line);
     }
 
@@ -343,7 +343,7 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
       TacsScalar res_norm = res->norm();
       if (ksm_print) {
         char line[256];
-        sprintf(line, "%5d %9.4f %10.4e\n", k + 1, MPI_Wtime() - t0,
+        snprintf(line, sizeof(line), "%5d %9.4f %10.4e\n", k + 1, MPI_Wtime() - t0,
                 TacsRealPart(res_norm));
         ksm_print->print(line);
       }
@@ -469,10 +469,10 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
 
     if (ksm_print) {
       char line[256];
-      sprintf(line, "Outer iteration %3d: t: %9.4f dp_ds: %10.4e\n",
+      snprintf(line, sizeof(line), "Outer iteration %3d: t: %9.4f dp_ds: %10.4e\n",
               iteration_count, MPI_Wtime() - t0, TacsRealPart(dlambda_ds));
       ksm_print->print(line);
-      sprintf(line, "%5s %9s %10s %10s %10s\n", "Iter", "t", "|R|", "lambda",
+      snprintf(line, sizeof(line), "%5s %9s %10s %10s %10s\n", "Iter", "t", "|R|", "lambda",
               "|u|");
       ksm_print->print(line);
     }
@@ -507,7 +507,7 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
         TacsScalar res_norm = res->norm();
         if (ksm_print) {
           char line[256];
-          sprintf(line, "%5d %9.4f %10.3e %10.3e %10.3e\n", j, MPI_Wtime() - t0,
+          snprintf(line, sizeof(line), "%5d %9.4f %10.3e %10.3e %10.3e\n", j, MPI_Wtime() - t0,
                   TacsRealPart(res_norm), TacsRealPart(lambda),
                   TacsRealPart(vars->norm()));
           ksm_print->print(line);
@@ -542,7 +542,7 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
 
         if (ksm_print) {
           char line[256];
-          sprintf(line,
+          snprintf(line, sizeof(line),
                   "Failed to converge, retrying with step size = %10.3e\n",
                   TacsRealPart(delta_s));
           ksm_print->print(line);

@@ -572,14 +572,14 @@ void SEP::solve(KSMPrint *ksm_print, KSMPrint *ksm_file) {
   // Print out a summary of the eigenvalues and errors
   if (ksm_print) {
     char line[256];
-    sprintf(line, "%3s %18s %18s %10s\n", " ", "eigenvalue", "shift-invert eig",
+    snprintf(line, sizeof(line), "%3s %18s %18s %10s\n", " ", "eigenvalue", "shift-invert eig",
             "error");
     ksm_print->print(line);
 
     for (int i = 0; i < niters; i++) {
       int index = perm[i];
       char line[256];
-      sprintf(line, "%3d %18.10e %18.10e %10.3e\n", i,
+      snprintf(line, sizeof(line), "%3d %18.10e %18.10e %10.3e\n", i,
               TacsRealPart(Op->convertEigenvalue(eigs[index])),
               TacsRealPart(eigs[index]),
               fabs(TacsRealPart(Beta[niters - 1] *
@@ -590,7 +590,7 @@ void SEP::solve(KSMPrint *ksm_print, KSMPrint *ksm_file) {
   // Print the iteration count to file
   if (ksm_file) {
     char line[256];
-    sprintf(line, "%2d\n", niters);
+    snprintf(line, sizeof(line), "%2d\n", niters);
     ksm_file->print(line);
   }
 }
