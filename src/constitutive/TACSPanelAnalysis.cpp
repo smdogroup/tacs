@@ -1717,7 +1717,7 @@ int TACSPanelAnalysis::computeBucklingLoads(TacsScalar Nx, TacsScalar Nxy,
     char *file_name = new char[file_len];
 
     for (int i = 0; i < nloads; i++) {
-      sprintf(file_name, "%sbuckling_mode%02d.dat", prefix, i);
+      snprintf(file_name, file_len, "%sbuckling_mode%02d.dat", prefix, i);
       printPanelMode(file_name, &eigvecs[nvars * i], 125);
     }
 
@@ -2176,7 +2176,7 @@ int TACSPanelAnalysis::computeFrequencies(TacsScalar freq[], int nfreq,
     char *file_name = new char[file_len];
 
     for (int i = 0; i < nfreq; i++) {
-      sprintf(file_name, "%spanel_mode%02d.dat", prefix, i);
+      snprintf(file_name, sizeof(file_name), "%spanel_mode%02d.dat", prefix, i);
       printPanelMode(file_name, &eigvecs[nvars * i], 125);
     }
 
