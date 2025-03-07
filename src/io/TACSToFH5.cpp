@@ -66,7 +66,7 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
 
   for (int k = 0; k < num_components; k++) {
     char comp_name[128];
-    sprintf(comp_name, "Component %d", k);
+    snprintf(comp_name, sizeof(comp_name), "Component %d", k);
     setComponentName(k, comp_name);
   }
 }
@@ -154,7 +154,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     int vars_per_node = assembler->getVarsPerNode();
 
     // Find the maximum string length
-    int str_len = strlen("X,Y,Z") + 1;
+    size_t str_len = strlen("X,Y,Z") + 1;
     int nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
     int k = 0;
     for (; (k < nd && k < vars_per_node); k++) {
@@ -164,7 +164,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     }
     for (; k < vars_per_node; k++) {
       char stemp[64];
-      sprintf(stemp, "v%d", k);
+      snprintf(stemp, sizeof(stemp), "v%d", k);
       str_len += strlen(stemp) + 1;
     }
     int nl = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_LOADS);
@@ -176,17 +176,16 @@ int TACSToFH5::writeToFile(const char *filename) {
     }
     for (; k < vars_per_node; k++) {
       char stemp[64];
-      sprintf(stemp, "f%d", k);
+      snprintf(stemp, sizeof(stemp), "f%d", k);
       str_len += strlen(stemp) + 1;
     }
 
     char *var_names = new char[str_len];
     var_names[0] = '\0';
     if (write_flag & TACS_OUTPUT_NODES) {
-      sprintf(var_names, "X,Y,Z");
+      snprintf(var_names, str_len, "X,Y,Z");
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
-      str_len = strlen(var_names);
       nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
       k = 0;
       for (; (k < nd && k < vars_per_node); k++) {
@@ -194,18 +193,17 @@ int TACSToFH5::writeToFile(const char *filename) {
             TacsGetOutputComponentName(elem_type, TACS_OUTPUT_DISPLACEMENTS, k);
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES)) {
-          sprintf(&(var_names[len]), "%s", stemp);
+          snprintf(&(var_names[len]), str_len - len, "%s", stemp);
         } else {
-          sprintf(&(var_names[len]), ",%s", stemp);
+          snprintf(&(var_names[len]), str_len - len, ",%s", stemp);
         }
       }
       for (; k < vars_per_node; k++) {
         size_t len = strlen(var_names);
-        sprintf(&(var_names[len]), ",v%d", k);
+        snprintf(&(var_names[len]), str_len - len, ",v%d", k);
       }
     }
     if (write_flag & TACS_OUTPUT_LOADS) {
-      str_len = strlen(var_names);
       nl = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_LOADS);
       k = 0;
       for (; (k < nl && k < vars_per_node); k++) {
@@ -214,14 +212,14 @@ int TACSToFH5::writeToFile(const char *filename) {
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES ||
                         write_flag & TACS_OUTPUT_DISPLACEMENTS)) {
-          sprintf(&(var_names[len]), "%s", stemp);
+          snprintf(&(var_names[len]), str_len - len, "%s", stemp);
         } else {
-          sprintf(&(var_names[len]), ",%s", stemp);
+          snprintf(&(var_names[len]), str_len - len, ",%s", stemp);
         }
       }
       for (; k < vars_per_node; k++) {
         size_t len = strlen(var_names);
-        sprintf(&(var_names[len]), ",f%d", k);
+        snprintf(&(var_names[len]), str_len - len, ",f%d", k);
       }
     }
 
@@ -324,7 +322,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     // Write the data with a time stamp from the simulation in TACS
     char data_name[128];
     double t = assembler->getSimulationTime();
-    sprintf(data_name, "continuous data t=%.10e", t);
+    snprintf(data_name, sizeof(data_name), "continuous data t=%.10e", t);
     file->writeZoneData(data_name, var_names, TACSFH5File::FH5_FLOAT, dim1,
                         dim2, float_data);
     delete[] float_data;
@@ -351,7 +349,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     // Write the data with a time stamp from the simulation in TACS
     char data_name[128];
     double t = assembler->getSimulationTime();
-    sprintf(data_name, "element data t=%.10e", t);
+    snprintf(data_name, sizeof(data_name), "element data t=%.10e", t);
     file->writeZoneData(data_name, variable_names, TACSFH5File::FH5_FLOAT, dim1,
                         dim2, float_data);
     delete[] float_data;
@@ -518,7 +516,7 @@ char *TACSToFH5::getElementVarNames(int flag) {
         for (int i = 1; i < nd; i++) {
           stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
           size_t len = strlen(temp);
-          sprintf(&(temp[len]), ",%s", stemp);
+          snprintf(&(temp[len]), str_len - len, ",%s", stemp);
         }
       }
       output_names[k] = temp;
@@ -550,7 +548,7 @@ char *TACSToFH5::getElementVarNames(int flag) {
   for (; k < 4; k++) {
     if (output_names[k]) {
       int len = strlen(elem_vars);
-      sprintf(&elem_vars[len], ",%s", output_names[k]);
+      snprintf(&elem_vars[len], elem_size - len, ",%s", output_names[k]);
     }
   }
 

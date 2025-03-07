@@ -6142,7 +6142,7 @@ void MITC9::testStrain(const TacsScalar X[]) {
 
     // Write out the error components
     char descript[64];
-    sprintf(descript, "B%d", k);
+    snprintf(descript, sizeof(descript), "B%d", k);
     writeErrorComponents(stdout, descript, &B[8 * k], fd, 8);
   }
 }

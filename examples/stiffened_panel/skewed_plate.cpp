@@ -303,7 +303,8 @@ int main(int argc, char *argv[]) {
     // Set the local variables
     tacs->setVariables(vec);
     char file_name[256];
-    sprintf(file_name, "results/tacs_buckling_mode%02d.f5", k);
+    snprintf(file_name, sizeof(file_name), "results/tacs_buckling_mode%02d.f5",
+             k);
     f5->writeToFile(file_name);
   }
 
@@ -322,7 +323,7 @@ int main(int argc, char *argv[]) {
     // Set the local variables
     tacs->setVariables(vec);
     char file_name[256];
-    sprintf(file_name, "results/tacs_mode%02d.f5", k);
+    snprintf(file_name, sizeof(file_name), "results/tacs_mode%02d.f5", k);
     f5->writeToFile(file_name);
 
     if (rank == 0) {

@@ -498,6 +498,9 @@ cdef extern from "TACSBuckling.h":
         TacsScalar extractEigenvector(int, TACSBVec*, TacsScalar*)
         void evalEigenDVSens(int, TACSBVec*)
         void evalEigenXptSens(int, TACSBVec*)
+        void addEigenSens(int neigs, TacsScalar dfdlam[],
+                          TACSBVec *dfdq[], TACSBVec *dfdx,
+                          TACSBVec *dfdXpt, int, double, double)
 
     cdef cppclass TACSLinearBuckling(TACSObject):
         TACSLinearBuckling( TACSAssembler *,

@@ -149,8 +149,6 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar getSigma();
   void setSigma(TacsScalar _sigma);
   void solve(KSMPrint *ksm_print = NULL, int print_level = 0);
-  void evalEigenDVSens(int n, TACSBVec *dfdx);
-  void evalEigenXptSens(int n, TACSBVec *dfdX);
 
   // Extract and check the solution
   // ------------------------------
@@ -158,6 +156,18 @@ class TACSFrequencyAnalysis : public TACSObject {
   TacsScalar extractEigenvector(int n, TACSBVec *ans, TacsScalar *error);
   void checkEigenvector(int n);
   TacsScalar checkOrthogonality();
+
+  // Compute derivatives of the eigenvalues wrt design variables and coordinates
+  // ---------------------------------------------------------------------------
+  void evalEigenDVSens(int n, TACSBVec *dfdx);
+  void evalEigenXptSens(int n, TACSBVec *dfdX);
+
+  // Given the derivative of a function wrt eigenvalues and eigenvectors,
+  // compute the derivative wrt the design variabels and coordinates
+  // ----------------------------------------------------------------------------
+  void addEigenSens(int neigs, TacsScalar dfdlam[], TACSBVec *dfdq[],
+                    TACSBVec *dfdx = NULL, TACSBVec *dfdXpts = NULL,
+                    int use_cg = 0, double rtol = 1e-8, double atol = 1e-30);
 
  private:
   // The TACS assembler object

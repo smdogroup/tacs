@@ -12,17 +12,9 @@
 
 # distutils: language=c++
 
-# For MPI capabilities
-from mpi4py.libmpi cimport *
-cimport mpi4py.MPI as MPI
-
 # Import numpy
 from libc.string cimport const_char
 from libcpp cimport bool
-
-# Import numpy
-cimport numpy as np
-import numpy as np
 
 # Import TACS c++ headers
 from tacs.cpp_headers.TACS cimport *

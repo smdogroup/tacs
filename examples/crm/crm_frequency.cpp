@@ -1,6 +1,7 @@
 #include "JacobiDavidson.h"
 #include "TACSBuckling.h"
 #include "TACSIsoShellConstitutive.h"
+#include "TACSKSFailure.h"
 #include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
 
@@ -9,6 +10,11 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  int use_cg = 0;
+  int num_vecs = 4;  // Number of vectors to include in the eigenvalue function
   int use_lanczos = 1;
   int use_tacs_freq = 0;
   for (int i = 0; i < argc; i++) {
@@ -19,10 +25,20 @@ int main(int argc, char **argv) {
       use_lanczos = 0;
       use_tacs_freq = 1;
     }
+    if (strcmp(argv[i], "use_cg") == 0) {
+      use_cg = 1;
+    }
+    if (sscanf(argv[i], "num_vecs=%d", &num_vecs) == 1) {
+      if (rank == 0) {
+        if (num_vecs < 1) {
+          num_vecs = 1;
+        } else if (num_vecs > 20) {
+          num_vecs = 20;
+        }
+        printf("num_vecs = %d\n", num_vecs);
+      }
+    }
   }
-
-  int rank;
-  MPI_Comm_rank(comm, &rank);
 
   // Write name of BDF file to be load to char array
   const char *filename = "CRM_box_2nd.bdf";
@@ -105,8 +121,8 @@ int main(int argc, char **argv) {
 
     // Perform the Frequency Analysis
     int max_lanczos = 60;
-    int num_eigvals = 20;
-    double eig_tol = 1e-8;
+    int num_eigvals = 20;  // 20;
+    double eig_tol = 1e-12;
     TacsScalar sigma = 10.0;
     int output_freq = 1;
 
@@ -118,7 +134,9 @@ int main(int argc, char **argv) {
     double t1 = MPI_Wtime();
     freq_analysis->solve(ksm_print);
     t1 = MPI_Wtime() - t1;
-    printf("Lanczos time: %15.5e\n", t1);
+    if (rank == 0) {
+      printf("Lanczos time: %15.5e\n", t1);
+    }
 
     TacsScalar freq;
     for (int k = 0; k < num_eigvals; k++) {
@@ -127,9 +145,93 @@ int main(int argc, char **argv) {
       eigvalue = sqrt(eigvalue);
       freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-      printf("TACS frequency[%2d]: %15.6f %15.6f\n", k, TacsRealPart(eigvalue),
-             TacsRealPart(freq));
+      if (rank == 0) {
+        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+               TacsRealPart(eigvalue), TacsRealPart(freq));
+      }
     }
+
+    TACSBVec *x = assembler->createDesignVec();
+    x->incref();
+    assembler->getDesignVars(x);
+
+    // Set the vector
+    TACSBVec *px = assembler->createDesignVec();
+    px->incref();
+
+    TacsScalar *px_array;
+    int size = px->getArray(&px_array);
+    for (int k = 0; k < size; k++) {
+      px_array[k] = 1.0 - 2.0 * (k % 3);
+    }
+
+    // The function values and the derivative
+    TacsScalar f0 = 0.0, f1 = 0.0;
+    TACSBVec *dfdx = assembler->createDesignVec();
+    dfdx->incref();
+
+    TACSFunction *func = new TACSKSFailure(assembler, 100.0);
+    func->incref();
+
+    // Evaluate the function and the derivative for the first
+    TACSBVec **dfdq = new TACSBVec *[num_vecs];
+    TacsScalar *dfdlam = new TacsScalar[num_vecs];
+    for (int i = 0; i < num_vecs; i++) {
+      dfdlam[i] = 0.0;
+      dfdq[i] = assembler->createVec();
+      dfdq[i]->incref();
+
+      TacsScalar error;
+      freq_analysis->extractEigenvector(i, vec, &error);
+
+      TacsScalar fval;
+      assembler->setVariables(vec);
+      assembler->evalFunctions(1, &func, &fval);
+      assembler->addDVSens(1.0, 1, &func, &dfdx);
+      assembler->addSVSens(1.0, 0.0, 0.0, 1, &func, &dfdq[i]);
+      f0 += fval;
+    }
+
+    // Compute the derivative
+    freq_analysis->addEigenSens(num_vecs, dfdlam, dfdq, dfdx, NULL, use_cg);
+
+    // Perturb the design variables
+    double dh = 1e-6;
+    x->axpy(dh, px);
+    assembler->setDesignVars(x);
+
+    // Solve the frequency analysis again
+    freq_analysis->solve(ksm_print);
+
+    for (int i = 0; i < num_vecs; i++) {
+      TacsScalar error;
+      freq_analysis->extractEigenvector(i, vec, &error);
+
+      TacsScalar fval;
+      assembler->setVariables(vec);
+      assembler->evalFunctions(1, &func, &fval);
+      f1 += fval;
+    }
+
+    // Compute the exact solution
+    TacsScalar ans = px->dot(dfdx);
+
+    // Compute the finite difference
+    TacsScalar fd = (f1 - f0) / dh;
+
+    if (rank == 0) {
+      printf("Ans: %25.10e  FD: %25.10e  Rel. Err: %25.10e \n",
+             TacsRealPart(ans), TacsRealPart(fd),
+             TacsRealPart((ans - fd) / fd));
+    }
+
+    func->decref();
+    for (int i = 0; i < num_vecs; i++) {
+      dfdq[i]->decref();
+    }
+    x->decref();
+    dfdx->decref();
+    px->decref();
 
     pc->decref();
     vec->decref();
@@ -158,14 +260,18 @@ int main(int argc, char **argv) {
       freq_analysis->solve(ksm_print);
       t1 = MPI_Wtime() - t1;
 
-      printf("Jacobi-Davidson time: %15.5e\n", t1);
+      if (rank == 0) {
+        printf("Jacobi-Davidson time: %15.5e\n", t1);
+      }
       for (int k = 0; k < num_eigvals; k++) {
         TacsScalar eigvalue = freq_analysis->extractEigenvalue(k, NULL);
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
-               TacsRealPart(eigvalue), TacsRealPart(freq));
+        if (rank == 0) {
+          printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+                 TacsRealPart(eigvalue), TacsRealPart(freq));
+        }
       }
       freq_analysis->decref();
     } else {
@@ -185,15 +291,19 @@ int main(int argc, char **argv) {
       double t1 = MPI_Wtime();
       jd->solve(ksm_print);
       t1 = MPI_Wtime() - t1;
-      printf("Jacobi-Davidson time: %15.5e\n", t1);
+      if (rank == 0) {
+        printf("Jacobi-Davidson time: %15.5e\n", t1);
+      }
 
       for (int k = 0; k < num_eigvals; k++) {
         TacsScalar eigvalue = jd->extractEigenvalue(k, NULL);
         eigvalue = sqrt(eigvalue);
         TacsScalar freq = TacsRealPart(eigvalue) / (2.0 * 3.14159);
 
-        printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
-               TacsRealPart(eigvalue), TacsRealPart(freq));
+        if (rank == 0) {
+          printf("TACS frequency[%2d]: %15.6f %15.6f\n", k,
+                 TacsRealPart(eigvalue), TacsRealPart(freq));
+        }
       }
 
       jd->decref();

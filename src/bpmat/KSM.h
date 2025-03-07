@@ -34,6 +34,11 @@
 enum MatrixOrientation { TACS_MAT_NORMAL, TACS_MAT_TRANSPOSE };
 
 /*
+  The type of orthogonalization to use
+*/
+enum OrthogonalizationType { CLASSICAL_GRAM_SCHMIDT, MODIFIED_GRAM_SCHMIDT };
+
+/*
   Define boundary conditions that are applied after all the
   matrix/vector values have been set.
 
@@ -237,6 +242,46 @@ class KSMPrint : public TACSObject {
   static const char *printName;
 };
 
+/*
+  Constraint class for KSM methods
+
+  Construct a constraint for Krylov methods that takes the form
+
+  V^{T} * x = 0
+
+  This is enforced by computing the action of the operator
+
+  x = (I - V * (V^{T} * V)^{-1} * V^{T}) * x
+
+  The vectors are orthogonalized using Gram Schmidt such that
+
+  V = Q * R
+
+  As a result, the operator can be computed as
+
+  x = (I - Q * Q^{T}) * x
+*/
+class TACSKSMConstraint : public TACSObject {
+ public:
+  TACSKSMConstraint(int _nvecs, TACSVec *_vecs[],
+                    OrthogonalizationType otype = MODIFIED_GRAM_SCHMIDT);
+  ~TACSKSMConstraint();
+
+  void orthogonalize();
+  void apply(TACSVec *x);
+
+ private:
+  // Orthogonalize a vector against a set of vectors
+  void (*ortho)(TacsScalar *, TACSVec *, TACSVec **, int);
+
+  // The size of the constraint space
+  int nvecs;
+  TACSVec **vecs;
+
+  // Temporary scalar values
+  TacsScalar *alpha;
+};
+
 /*!
   The abstract Krylov-subspace method class
 
@@ -327,7 +372,8 @@ class KSMPrintFile : public KSMPrint {
 */
 class PCG : public TACSKsm {
  public:
-  PCG(TACSMat *_mat, TACSPc *_pc, int reset, int _nouter);
+  PCG(TACSMat *_mat, TACSPc *_pc, int reset, int _nouter,
+      TACSKSMConstraint *con = NULL);
   ~PCG();
 
   TACSVec *createVec() { return mat->createVec(); }
@@ -341,6 +387,9 @@ class PCG : public TACSKsm {
   // Operators in the KSM method
   TACSMat *mat;
   TACSPc *pc;
+
+  // Constraints (if any)
+  TACSKSMConstraint *con;
 
   // The relative/absolute tolerances
   double rtol, atol;
@@ -390,9 +439,9 @@ class PCG : public TACSKsm {
 */
 class GMRES : public TACSKsm {
  public:
-  enum OrthoType { CLASSICAL_GRAM_SCHMIDT, MODIFIED_GRAM_SCHMIDT };
-  GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible);
-  GMRES(TACSMat *_mat, int _m, int _nrestart);
+  GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible,
+        TACSKSMConstraint *con = NULL);
+  GMRES(TACSMat *_mat, int _m, int _nrestart, TACSKSMConstraint *con = NULL);
   ~GMRES();
 
   TACSVec *createVec() { return mat->createVec(); }
@@ -401,19 +450,21 @@ class GMRES : public TACSKsm {
   void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
   void setMonitor(KSMPrint *_monitor);
-  void setOrthoType(enum OrthoType otype);
+  void setOrthoType(OrthogonalizationType otype);
   void setTimeMonitor();
   const char *getObjectName();
 
  private:
   // Initialize the class
-  void init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible);
+  void init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible,
+            TACSKSMConstraint *_con);
 
   // Orthogonalize a vector against a set of vectors
   void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
 
   TACSMat *mat;
   TACSPc *pc;
+  TACSKSMConstraint *con;
   int msub;
   int nrestart;
   int isFlexible;
