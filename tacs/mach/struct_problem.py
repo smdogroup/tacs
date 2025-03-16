@@ -57,6 +57,7 @@ class StructProblem(BaseStructProblem):
         self.DVGeo = None
         self.numGeoDV = 0
         self.ptSetName = None
+        self.constraints = []
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
             raise RuntimeError("Provided StaticProblem does not correspond to pyTACS assembler object.")
@@ -213,6 +214,24 @@ class StructProblem(BaseStructProblem):
             x = np.empty(0)
         self.staticProblem.setDesignVars(x)
 
+        for constr in self.constraints:
+            constr.setDesignVars(x)
+
+    def addConstraint(self, constr):
+        """
+        Add pyTACS constraint object to StructProblem.
+
+        Parameters
+        ----------
+        constr : tacs.constraints.TACSConstraint
+            pyTACS Constraint object
+        """
+        if self.staticProblem.assembler != constr.assembler:
+            raise ValueError(f"TACSConstraint object '{constr.name}' and StaticProblem '{self.staticProblem.name}' "
+                             "were not created by same pyTACS assembler")
+
+        self.constraints.append(constr)
+
     def addVariablesPyOpt(self, optProb):
         """
         Add the current set of variables to the optProb object.
@@ -230,6 +249,38 @@ class StructProblem(BaseStructProblem):
             scale = self.getDesignVarScales()
 
             optProb.addVarGroup(dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale)
+
+    def addConstraintsPyOpt(self, optProb):
+        """
+        Add any linear constraints that were generated during setup to
+        the specified pyOpt problem.
+
+        Parameters
+        ----------
+        optProb : :class:`Optimization <pyoptsparse.pyOpt_optimization.Optimization>` instance
+            Optimization problem object to add constraints to
+        """
+        fcon = {}
+        fconSens = {}
+        conSizes = {}
+        conBounds = {}
+        self.evalConstraints(fcon)
+        self.evalConstraintsSens(fconSens)
+        for constr in self.constraints:
+            constr.getConstraintSizes(conSizes)
+            constr.getConstraintBounds(conBounds)
+
+        for conName in fcon:
+            nCon = conSizes[conName]
+            if nCon > 0:
+                # Save the nonlinear constraint name
+                lb, ub = conBounds[conName]
+
+                # Just evaluate the constraint to get the jacobian structure
+                wrt = list(fconSens[conName].keys())
+                optProb.addConGroup(
+                    conName, nCon, wrt=wrt, jac=fconSens[conName], lower=lb, upper=ub
+                )
 
     @updateDVGeo
     def getNodes(self):
@@ -313,7 +364,7 @@ class StructProblem(BaseStructProblem):
     @updateDVGeo
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
         """
-        No current functions
+        Evaluate the current functions
 
         Parameters
         ----------
@@ -326,6 +377,27 @@ class StructProblem(BaseStructProblem):
             evalFuncs = self.evalFuncs
 
         return self.staticProblem.evalFunctions(funcs, evalFuncs, ignoreMissing)
+
+    @updateDVGeo
+    def evalConstraints(self, fcon, evalCons=None, ignoreMissing=False):
+        """
+        Evaluate values for constraints. The constraints corresponding to the strings in
+        evalCons are evaluated and updated into the provided
+        dictionary.
+
+        Parameters
+        ----------
+        fcon : dict
+            Dictionary into which the constraints are saved.
+        evalCons : iterable object containing strings.
+            If not none, use these constraints to evaluate.
+        ignoreMissing : bool
+            Flag to supress checking for a valid constraint. Please use
+            this option with caution.
+        """
+        for constr in self.constraints:
+            if evalCons is None or constr.name in evalCons:
+                constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
     @updateDVGeo
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
@@ -344,6 +416,12 @@ class StructProblem(BaseStructProblem):
 
         self.staticProblem.evalFunctionsSens(funcsSens, evalFuncs)
 
+        for funcName in evalFuncs:
+            funcKey = f"{self.name}_{funcName}"
+            dvKey = self.staticProblem.getVarName()
+            if dvKey in funcsSens[funcKey]:
+                funcsSens[funcKey][dvKey] = self.comm.bcast(funcsSens[funcKey][dvKey], root=0)
+
         if self.DVGeo is not None:
             coordName = self.staticProblem.getCoordName()
             for funcName in evalFuncs:
@@ -352,6 +430,57 @@ class StructProblem(BaseStructProblem):
                     dIdpt = funcsSens[funcKey].pop(coordName).reshape(-1,3)
                     dIdx = self.DVGeo.totalSensitivity(dIdpt, self.ptSetName, comm=self.comm, config=self.name)
                     funcsSens[funcKey].update(dIdx)
+
+    @updateDVGeo
+    def evalConstraintsSens(self, fconSens, evalCons=None):
+        """
+        This is the main routine for returning useful (sensitivity)
+        information from constraint. The derivatives of the constraints
+        corresponding to the strings in evalCons are evaluated and
+        updated into the provided dictionary. The derivatives with
+        respect to all design variables and node locations are computed.
+
+        Parameters
+        ----------
+        fconSens : dict
+            Dictionary into which the derivatives are saved.
+        evalCons : iterable object containing strings
+            The constraints the user wants returned
+        """
+        sens = {}
+        for constr in self.constraints:
+            if evalCons is None or constr.name in evalCons:
+                constr.evalConstraintsSens(sens, evalCons)
+
+        for conKey in sens:
+            dvKey = self.staticProblem.getVarName()
+            if dvKey in sens[conKey]:
+                sens[conKey][dvKey] = self.comm.bcast(sens[conKey][dvKey], root=0)
+
+        if self.DVGeo is not None:
+            self.DVGeo.computeTotalJacobian(self.ptSetName, config=self.name)
+            coordName = self.staticProblem.getCoordName()
+            for conKey in sens:
+                if coordName in sens[conKey]:
+                    # Pop out the constraint sensitivities wrt TACS coords
+                    dIdpt = sens[conKey].pop(coordName)
+                    # Check if sparse constraint coordinate Jacobian is zero before proceeding
+                    if dIdpt.nnz == 0:
+                        continue
+                    dIdx = {}
+                    # Loop through each row of the sparse constraint and compute the Jacobian product with DVGeo
+                    for i in range(dIdpt.shape[0]):
+                        dIdx_i = self.DVGeo.totalSensitivity(dIdpt[i, :].toarray(), self.ptSetName, comm=self.comm,
+                                                             config=self.name)
+                        for dvName in dIdx_i:
+                            if dvName in dIdx:
+                                dIdx[dvName] = np.vstack((dIdx[dvName], dIdx_i[dvName]))
+                            else:
+                                dIdx[dvName] = dIdx_i[dvName]
+                    # Update sensitivity dict with new DVGeo sensitivities
+                    sens[conKey].update(dIdx)
+
+        fconSens.update(sens)
 
     def getVarsPerNode(self):
         """
