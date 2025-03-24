@@ -2567,11 +2567,14 @@ void TACSDIRKIntegrator::iterateAdjoint(int k, TACSBVec **adj_rhs) {
     if (k > start_plane && k <= end_plane) {
       assembler->addSVSens(1.0, 0.0, 0.0, num_funcs, funcs,
                            &omega[num_funcs * stage]);
-      assembler->applyBCs(omega[num_funcs * stage]);
 
       assembler->addSVSens(0.0, 1.0, 0.0, num_funcs, funcs,
                            &domega[num_funcs * stage]);
-      assembler->applyBCs(domega[num_funcs * stage]);
+
+      for (int i = 0; i < num_funcs; i++) {
+        assembler->applyBCs(omega[num_funcs * stage + i]);
+        assembler->applyBCs(domega[num_funcs * stage + i]);
+      }
     }
 
     // Compute all the contributions to the right-hand-side
