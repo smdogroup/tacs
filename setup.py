@@ -127,7 +127,7 @@ setup(
     author_email="graeme.kennedy@ae.gatech.edu",
     python_requires=">=3.9.0",
     install_requires=[
-        "numpy<2.0.0",
+        "numpy",
         "mpi4py>=3.1.5,<4.0.0",
         "scipy>=1.2.1",
         "pynastran>=1.4.0",
