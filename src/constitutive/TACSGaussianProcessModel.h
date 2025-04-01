@@ -24,8 +24,9 @@ buckling constraints of stiffened panels.
 // Class Declaration
 // =============================================================================
 
-class TACSGaussianProcessModel : public TACSObject {
- public:
+class TACSGaussianProcessModel : public TACSObject
+{
+public:
   TACSGaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
                            const TacsScalar alpha[], const TacsScalar theta[]);
   ~TACSGaussianProcessModel();
@@ -43,7 +44,7 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param Xtest the 1-tensor test data inputs [param1, param2, param3, param4]
    * @return the predicted scalar test data Ytest
    */
-  TacsScalar predictMeanTestData(const TacsScalar* Xtest);
+  TacsScalar predictMeanTestData(const TacsScalar *Xtest);
 
   /**
    * @brief backpropagate derivatives df/dYtest to df/dXtest for
@@ -54,8 +55,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * @return the derivative df/dXtest as a 1-tensor
    */
   TacsScalar predictMeanTestDataSens(const TacsScalar Ysens,
-                                     const TacsScalar* Xtest,
-                                     TacsScalar* Xtestsens);
+                                     const TacsScalar *Xtest,
+                                     TacsScalar *Xtestsens);
 
   // TESTING SCRIPTS
   // ---------------
@@ -91,7 +92,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * terminal and 1 to print to terminal
    * @return the relative error for the kernel() and kernelSens derivatives
    */
-  virtual TacsScalar testKernelSens(TacsScalar epsilon, int printLevel) {
+  virtual TacsScalar testKernelSens(TacsScalar epsilon, int printLevel)
+  {
     return 0.0;
   };
 
@@ -102,7 +104,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param rho the smoothing parameter rho_KS
    * @return the soft_relu(x)
    */
-  static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho) {
+  static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho)
+  {
     TacsScalar one = 1.0;
     return 1.0 / rho * log(one + exp(rho * x));
   };
@@ -114,7 +117,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param rho the smoothing parameter rho_KS
    * @return the jacobian dsoft_relu(x)/dx
    */
-  static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho) {
+  static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho)
+  {
     TacsScalar one = 1.0;
     return exp(rho * x) / (one + exp(rho * x));
   };
@@ -129,9 +133,10 @@ class TACSGaussianProcessModel : public TACSObject {
    * @return the relative error of the soft_relu() and soft_relu_sens() jacobian
    * routines compared to finite diff
    */
-  static TacsScalar test_soft_relu(TacsScalar epsilon) {
+  static TacsScalar test_soft_relu(TacsScalar epsilon)
+  {
     TacsScalar x = 1.0,
-               rho = 1.0;  // very low rho for smoother function for deriv test
+               rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_relu(x - epsilon, rho);
     TacsScalar f2 = soft_relu(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -148,7 +153,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param rho the smoothing parameter rho_KS
    * @return the soft_abs(x)
    */
-  static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho) {
+  static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho)
+  {
     return 1.0 / rho * log(exp(-rho * x) + exp(rho * x));
   };
 
@@ -159,7 +165,8 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param rho the smoothing parameter rho_KS
    * @return the jacobian dsoft_abs(x)/dx
    */
-  static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho) {
+  static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho)
+  {
     return (exp(rho * x) - exp(-rho * x)) / (exp(-rho * x) + exp(rho * x));
   };
 
@@ -173,9 +180,10 @@ class TACSGaussianProcessModel : public TACSObject {
    * @return the relative error of the soft_abs() and soft_abs_sens() jacobian
    * routines compared to finite diff
    */
-  static TacsScalar test_soft_abs(TacsScalar epsilon) {
+  static TacsScalar test_soft_abs(TacsScalar epsilon)
+  {
     TacsScalar x = 1.0,
-               rho = 1.0;  // very low rho for smoother function for deriv test
+               rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_abs(x - epsilon, rho);
     TacsScalar f2 = soft_abs(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -192,10 +200,10 @@ class TACSGaussianProcessModel : public TACSObject {
   int getNparam() { return n_param; };
   TacsScalar getKS() { return ks; };
   void setKS(TacsScalar ks) { this->ks = ks; };
-  void setAlpha(TacsScalar* alpha) { this->alpha = alpha; };
-  void setTheta(TacsScalar* theta) { this->theta = theta; };
-  void getTrainingData(TacsScalar* Xtrain) { Xtrain = this->Xtrain; };
-  void getTheta(TacsScalar* theta) { theta = this->theta; };
+  void setAlpha(TacsScalar *alpha) { this->alpha = alpha; };
+  void setTheta(TacsScalar *theta) { this->theta = theta; };
+  void getTrainingData(TacsScalar *Xtrain) { Xtrain = this->Xtrain; };
+  void getTheta(TacsScalar *theta) { theta = this->theta; };
 
   // virtual functions for the kernel definition and its sensitivity
 
@@ -208,10 +216,10 @@ class TACSGaussianProcessModel : public TACSObject {
    * @return the kernel value k(Xtest,Xtrain) which gives correlation between
    * these two points from our model
    */
-  virtual TacsScalar kernel(const TacsScalar* Xtest,
-                            const TacsScalar* Xtrain) = 0;
+  virtual TacsScalar kernel(const TacsScalar *Xtest,
+                            const TacsScalar *Xtrain) = 0;
 
- protected:
+protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * (this is a virtual function here in the base class)
@@ -221,30 +229,34 @@ class TACSGaussianProcessModel : public TACSObject {
    * @param Xtrain the training data point, rank 1-tensor of length n_param
    * @return the derivatives of the Xtest input df/dXtest through the kernel
    */
-  virtual void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
-                          const TacsScalar* Xtrain, TacsScalar* Xtestsens) = 0;
+  virtual void kernelSens(const TacsScalar ksens, const TacsScalar *Xtest,
+                          const TacsScalar *Xtrain, TacsScalar *Xtestsens) = 0;
 
   int n_train;
   int n_param;
-  int n_theta = 14;
+  int n_theta = 6;
+  bool affine = false;
   // rank 1-tensor of length [n_param*n_train] [X]
   // if each point of Xtrain has data [rho0, xi, gamma, delta, zeta] with
   // n_Train=5 then the entries are basically [rho01, xi1, gamma1, delta1,
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
-  TacsScalar* Xtrain;
-  TacsScalar* alpha;
-  TacsScalar* theta;  // hyperparameters
+  TacsScalar *Xtrain;
+  TacsScalar *alpha;
+  TacsScalar *theta; // hyperparameters
 
-  TacsScalar ks = 10.0;  // ks setting for smooth kernel functions
+  // not using this ks anymore though.. it's a trained hyperparameter, so fixed
+  TacsScalar ks;
+  // TacsScalar ks = 10.0; // ks setting for smooth kernel functions
 };
 
-class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
- public:
+class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel
+{
+public:
   TACSBucklingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
                                    const TacsScalar alpha[],
                                    const TacsScalar theta[])
-      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha, theta){};
-  ~TACSBucklingGaussianProcessModel(){};
+      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha, theta) {};
+  ~TACSBucklingGaussianProcessModel() {};
 
   /**
    * @brief test the backpropagation of the kernel() method and its sens routine
@@ -266,9 +278,9 @@ class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
    * @return the kernel value k(Xtest,Xtrain) which gives correlation between
    * these two points from our model
    */
-  TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) override;
+  TacsScalar kernel(const TacsScalar *Xtest, const TacsScalar *Xtrain) override;
 
- protected:
+protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * for AxialGP
@@ -278,8 +290,8 @@ class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
    * @param Xtrain the training data point, rank 1-tensor of length 4
    * @return the derivatives of the Xtest input df/dXtest through the kernel
    */
-  void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
-                  const TacsScalar* Xtrain, TacsScalar* Xtestsens) override;
+  void kernelSens(const TacsScalar ksens, const TacsScalar *Xtest,
+                  const TacsScalar *Xtrain, TacsScalar *Xtestsens) override;
 
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
