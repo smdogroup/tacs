@@ -1342,12 +1342,12 @@ cdef class BucklingGP(GaussianProcess):
     @classmethod
     def from_axial_csv(cls, csv_file, theta_csv):
         # affine is True
-        return from_csv(csv_file, theta_csv, True)
+        return cls.from_csv(csv_file, theta_csv, True)
 
     @classmethod
     def from_shear_csv(cls, csv_file, theta_csv):
         # affine is False
-        return from_csv(csv_file, theta_csv, False)
+        return cls.from_csv(csv_file, theta_csv, False)
 
     @classmethod
     def from_csv(cls, csv_file, theta_csv, affine:bool=True):

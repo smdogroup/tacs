@@ -163,6 +163,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         n_param = constitutive.BucklingGP.n_param
         self.axialGP = constitutive.BucklingGP(
             n_train,
+            True,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
             theta=np.random.rand(14).astype(self.dtype),
@@ -172,6 +173,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         n_param = constitutive.BucklingGP.n_param
         self.shearGP = constitutive.BucklingGP(
             n_train,
+            False,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
             theta=np.random.rand(14).astype(self.dtype),

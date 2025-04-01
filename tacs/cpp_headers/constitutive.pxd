@@ -194,6 +194,7 @@ cdef extern from "TACSGaussianProcessModel.h":
     cdef cppclass TACSBucklingGaussianProcessModel(TACSGaussianProcessModel):
         TACSBucklingGaussianProcessModel(
             int, # n_train
+            bool, # affine
             TacsScalar[], # Xtrain
             TacsScalar[], # alpha
             TacsScalar[], # theta

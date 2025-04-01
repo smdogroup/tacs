@@ -24,11 +24,11 @@ buckling constraints of stiffened panels.
 // Class Declaration
 // =============================================================================
 
-class TACSGaussianProcessModel : public TACSObject
-{
+class TACSGaussianProcessModel : public TACSObject {
 public:
-  TACSGaussianProcessModel(int n_train, int n_param, const TacsScalar Xtrain[],
-                           const TacsScalar alpha[], const TacsScalar theta[]);
+  TACSGaussianProcessModel(int n_train, int n_param, bool affine,
+                           const TacsScalar Xtrain[], const TacsScalar alpha[],
+                           const TacsScalar theta[]);
   ~TACSGaussianProcessModel();
 
   // predict the test data at a single point using a matrix-vector product
@@ -92,8 +92,7 @@ public:
    * terminal and 1 to print to terminal
    * @return the relative error for the kernel() and kernelSens derivatives
    */
-  virtual TacsScalar testKernelSens(TacsScalar epsilon, int printLevel)
-  {
+  virtual TacsScalar testKernelSens(TacsScalar epsilon, int printLevel) {
     return 0.0;
   };
 
@@ -104,8 +103,7 @@ public:
    * @param rho the smoothing parameter rho_KS
    * @return the soft_relu(x)
    */
-  static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho)
-  {
+  static inline TacsScalar soft_relu(TacsScalar x, TacsScalar rho) {
     TacsScalar one = 1.0;
     return 1.0 / rho * log(one + exp(rho * x));
   };
@@ -117,8 +115,7 @@ public:
    * @param rho the smoothing parameter rho_KS
    * @return the jacobian dsoft_relu(x)/dx
    */
-  static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho)
-  {
+  static inline TacsScalar soft_relu_sens(TacsScalar x, TacsScalar rho) {
     TacsScalar one = 1.0;
     return exp(rho * x) / (one + exp(rho * x));
   };
@@ -133,8 +130,7 @@ public:
    * @return the relative error of the soft_relu() and soft_relu_sens() jacobian
    * routines compared to finite diff
    */
-  static TacsScalar test_soft_relu(TacsScalar epsilon)
-  {
+  static TacsScalar test_soft_relu(TacsScalar epsilon) {
     TacsScalar x = 1.0,
                rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_relu(x - epsilon, rho);
@@ -153,8 +149,7 @@ public:
    * @param rho the smoothing parameter rho_KS
    * @return the soft_abs(x)
    */
-  static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho)
-  {
+  static inline TacsScalar soft_abs(TacsScalar x, TacsScalar rho) {
     return 1.0 / rho * log(exp(-rho * x) + exp(rho * x));
   };
 
@@ -165,8 +160,7 @@ public:
    * @param rho the smoothing parameter rho_KS
    * @return the jacobian dsoft_abs(x)/dx
    */
-  static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho)
-  {
+  static inline TacsScalar soft_abs_sens(TacsScalar x, TacsScalar rho) {
     return (exp(rho * x) - exp(-rho * x)) / (exp(-rho * x) + exp(rho * x));
   };
 
@@ -180,8 +174,7 @@ public:
    * @return the relative error of the soft_abs() and soft_abs_sens() jacobian
    * routines compared to finite diff
    */
-  static TacsScalar test_soft_abs(TacsScalar epsilon)
-  {
+  static TacsScalar test_soft_abs(TacsScalar epsilon) {
     TacsScalar x = 1.0,
                rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_abs(x - epsilon, rho);
@@ -249,14 +242,15 @@ protected:
   // TacsScalar ks = 10.0; // ks setting for smooth kernel functions
 };
 
-class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel
-{
+class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
 public:
-  TACSBucklingGaussianProcessModel(int n_train, const TacsScalar Xtrain[],
+  TACSBucklingGaussianProcessModel(int n_train, bool affine,
+                                   const TacsScalar Xtrain[],
                                    const TacsScalar alpha[],
                                    const TacsScalar theta[])
-      : TACSGaussianProcessModel(n_train, N_PARAM, Xtrain, alpha, theta) {};
-  ~TACSBucklingGaussianProcessModel() {};
+      : TACSGaussianProcessModel(n_train, N_PARAM, affine, Xtrain, alpha,
+                                 theta){};
+  ~TACSBucklingGaussianProcessModel(){};
 
   /**
    * @brief test the backpropagation of the kernel() method and its sens routine
