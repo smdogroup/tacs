@@ -4,8 +4,7 @@ TACSGaussianProcessModel::TACSGaussianProcessModel(int n_train, int n_param,
                                                    const bool affine,
                                                    const TacsScalar Xtrain[],
                                                    const TacsScalar alpha[],
-                                                   const TacsScalar theta[])
-{
+                                                   const TacsScalar theta[]) {
   // constructor for the base TACSGaussianProcessModel class
   this->n_train = n_train;
   this->n_param = n_param;
@@ -13,28 +12,24 @@ TACSGaussianProcessModel::TACSGaussianProcessModel(int n_train, int n_param,
 
   // create a new copy of the Xtrain, alpha arrays on this process
   this->Xtrain = new TacsScalar[n_train * n_param];
-  for (int ii = 0; ii < n_train * n_param; ii++)
-  {
+  for (int ii = 0; ii < n_train * n_param; ii++) {
     this->Xtrain[ii] = Xtrain[ii];
   }
 
   this->alpha = new TacsScalar[n_train];
-  for (int jj = 0; jj < n_train; jj++)
-  {
+  for (int jj = 0; jj < n_train; jj++) {
     this->alpha[jj] = alpha[jj];
   }
 
   this->theta = new TacsScalar[n_theta];
-  for (int kk = 0; kk < n_theta; kk++)
-  {
+  for (int kk = 0; kk < n_theta; kk++) {
     this->theta[kk] = theta[kk];
   }
 
   this->ks = 10.0;
 }
 
-TACSGaussianProcessModel::~TACSGaussianProcessModel()
-{
+TACSGaussianProcessModel::~TACSGaussianProcessModel() {
   // destructor for the base TACSGaussianProcessModel class
   delete[] this->Xtrain;
   this->Xtrain = nullptr;
@@ -47,8 +42,7 @@ TACSGaussianProcessModel::~TACSGaussianProcessModel()
 }
 
 TacsScalar
-TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest)
-{
+TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest) {
   // Xtest is an array of size n_param (for one test data point)
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
   // product] where Ytest is a scalar
@@ -61,8 +55,7 @@ TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest)
 
   // iterate over each training data point, get the cross-term covariance and
   // add the coefficient alpha for it
-  for (int itrain = 0; itrain < n_train; itrain++)
-  {
+  for (int itrain = 0; itrain < n_train; itrain++) {
 
     TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
     // TacsScalar mkernel = kernel(Xtest, loc_Xtrain);
@@ -75,8 +68,7 @@ TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest)
 }
 
 TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
-    const TacsScalar Ysens, const TacsScalar *Xtest, TacsScalar *Xtestsens)
-{
+    const TacsScalar Ysens, const TacsScalar *Xtest, TacsScalar *Xtestsens) {
   // Xtest is an array of size n_param (for one test data point)
   // the sensitivity here is on log[nondim-params]
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
@@ -87,8 +79,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
   // add the coefficient alpha for it
   memset(Xtestsens, 0, n_param * sizeof(TacsScalar));
 
-  for (int itrain = 0; itrain < n_train; itrain++)
-  {
+  for (int itrain = 0; itrain < n_train; itrain++) {
     TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
 
@@ -100,31 +91,25 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
 }
 
 TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
-                                                    const TacsScalar *Xtrain)
-{
+                                                    const TacsScalar *Xtrain) {
   // define the kernel function k(*,*) on training and testing points for one
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
 
   TacsScalar relu_term;
-  if (affine)
-  {
+  if (affine) {
     relu_term = soft_relu(-Xtest[1] + 0.25 * Xtest[2], theta[0]) *
                 soft_relu(-Xtrain[1] + 0.25 * Xtrain[2], theta[0]);
-  }
-  else
-  {
+  } else {
     relu_term =
         soft_relu(-Xtest[1], theta[0]) * soft_relu(-Xtrain[1], theta[0]);
   }
 
   TacsScalar gam_term = Xtest[2] * Xtrain[2];
   TacsScalar sum_sq;
-  for (int i = 0; i < 4; i++)
-  {
+  for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
-    if (i == 1 && affine)
-    {
+    if (i == 1 && affine) {
       Xdiff -= 0.25 * (Xtest[2] - Xtrain[2]);
     }
     sum_sq += Xdiff * Xdiff;
@@ -132,14 +117,15 @@ TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
   TacsScalar base = (1.0 + sum_sq / 2.0 / theta[3] / theta[3] / theta[4]);
   TacsScalar RQ_term = pow(base, -theta[4]);
 
+  // printf("RQ_term = %.4e\n", RQ_term);
+
   return relu_term + theta[1] * gam_term + theta[2] * RQ_term + theta[5];
 }
 
 void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
                                                   const TacsScalar *Xtest,
                                                   const TacsScalar *Xtrain,
-                                                  TacsScalar *Xtestsens)
-{
+                                                  TacsScalar *Xtestsens) {
   // add into the Xtestsens (don't reset to zero) for x_test = log[nondim
   // params] vector
 
@@ -148,17 +134,15 @@ void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
   TacsScalar jacobian[4];
+  memset(jacobian, 0.0, 4 * sizeof(TacsScalar));
 
   // relu term contributions, differentiate through the Xtest only
-  if (affine)
-  {
-    jacobian[1] += soft_relu_sens(-Xtest[1] + 0.25 * Xtest[2], theta[0]) * -1.0 *
-                   soft_relu(-Xtrain[1] + 0.25 * Xtrain[2], theta[0]);
+  if (affine) {
+    jacobian[1] += soft_relu_sens(-Xtest[1] + 0.25 * Xtest[2], theta[0]) *
+                   -1.0 * soft_relu(-Xtrain[1] + 0.25 * Xtrain[2], theta[0]);
     jacobian[2] += soft_relu_sens(-Xtest[1] + 0.25 * Xtest[2], theta[0]) *
                    0.25 * soft_relu(-Xtrain[1] + 0.25 * Xtrain[2], theta[0]);
-  }
-  else
-  {
+  } else {
     jacobian[1] += soft_relu_sens(-Xtest[1], theta[0]) * -1.0 *
                    soft_relu(-Xtrain[1], theta[0]);
   }
@@ -168,32 +152,36 @@ void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
 
   // RQ term
   TacsScalar sum_sq;
-  for (int i = 0; i < 4; i++)
-  {
+  for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
+    if (i == 1 && affine) {
+      Xdiff -= 0.25 * (Xtest[2] - Xtrain[2]);
+    }
     sum_sq += Xdiff * Xdiff;
   }
   TacsScalar base = (1.0 + sum_sq / 2.0 / theta[3] / theta[3] / theta[4]);
   TacsScalar RQ_term = theta[2] * pow(base, -theta[4]);
-  for (int i = 0; i < 4; i++)
-  {
-    jacobian[i] += RQ_term * 2 * (Xtest[i] - Xtrain[i]) / base;
+  for (int i = 0; i < 4; i++) {
+    TacsScalar Xdiff = Xtest[i] - Xtrain[i];
+    if (i == 1 && affine) {
+      Xdiff -= 0.25 * (Xtest[2] - Xtrain[2]);
+    }
+    jacobian[i] += RQ_term * -Xdiff / base / theta[3] / theta[3];
   }
-  if (affine)
-  {
-    jacobian[2] += RQ_term * 2 * (0.25 * (Xtest[2] - Xtrain[2]) - (Xtest[1] - Xtrain[1]));
+  if (affine) {
+    jacobian[2] += RQ_term * -0.25 *
+                   (0.25 * (Xtest[2] - Xtrain[2]) - (Xtest[1] - Xtrain[1])) /
+                   base / theta[3] / theta[3];
   }
 
   // multiply by output derivative, through the jacobian
-  for (int ii = 0; ii < 4; ii++)
-  {
+  for (int ii = 0; ii < 4; ii++) {
     Xtestsens[ii] += ksens * jacobian[ii];
   }
 }
 
 TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
-                                                    int printLevel)
-{
+                                                    int printLevel) {
   // run all GP tests
   const int n_tests = 4;
   TacsScalar relErrors[n_tests];
@@ -205,17 +193,14 @@ TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
 
   // get max rel error among them
   TacsScalar maxRelError = 0.0;
-  for (int i = 0; i < n_tests; i++)
-  {
-    if (TacsRealPart(relErrors[i]) > TacsRealPart(maxRelError))
-    {
+  for (int i = 0; i < n_tests; i++) {
+    if (TacsRealPart(relErrors[i]) > TacsRealPart(maxRelError)) {
       maxRelError = relErrors[i];
     }
   }
 
   // get max rel error among them
-  if (printLevel != 0)
-  {
+  if (printLevel != 0) {
     printf("\ntestAllGPtests full results::\n");
     printf("\ttest_soft_relu = %.4e\n", TacsRealPart(relErrors[0]));
     printf("\ttest_soft_abs = %.4e\n", TacsRealPart(relErrors[1]));
@@ -228,8 +213,7 @@ TacsScalar TACSGaussianProcessModel::testAllGPTests(TacsScalar epsilon,
 }
 
 TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
-                                                             int printLevel)
-{
+                                                             int printLevel) {
   // test the sensitivities of the kernel computation
 
   // perform complex-step or finite difference check (depending on the value of
@@ -237,29 +221,25 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   // test vectors
   const int n_input = this->n_param;
   TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
-  for (int ii = 0; ii < n_input; ii++)
-  {
+  for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
   TacsScalar p_output = ((double)rand() / (RAND_MAX));
 
   // compute initial values
-  for (int i0 = 0; i0 < n_input; i0++)
-  {
+  for (int i0 = 0; i0 < n_input; i0++) {
     x0[i0] = ((double)rand() / (RAND_MAX));
   }
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
   f0 = predictMeanTestData(x);
 
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
   f2 = predictMeanTestData(x);
@@ -268,22 +248,19 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
 
   // now perform the adjoint sensitivity
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
   predictMeanTestDataSens(p_output, x, input_sens);
   TacsScalar adjTD = 0.0;
-  for (int j = 0; j < n_input; j++)
-  {
+  for (int j = 0; j < n_input; j++) {
     adjTD += input_sens[j] * p_input[j];
   }
   adjTD = TacsRealPart(adjTD);
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  if (printLevel != 0)
-  {
+  if (printLevel != 0) {
     printf("\t%s..testPredictMeanTestDataSens:\n", typeid(this).name());
     printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
     printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));
@@ -294,8 +271,7 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
 }
 
 TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
-                                                            int printLevel)
-{
+                                                            int printLevel) {
   // test the sensitivities of the kernel computation
 
   // perform complex-step or finite difference check (depending on the value of
@@ -303,8 +279,7 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   // test vectors
   const int n_input = 4;
   TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
-  for (int ii = 0; ii < n_input; ii++)
-  {
+  for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
 
@@ -322,15 +297,13 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
 
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
   TacsScalar *Xtrain = this->Xtrain;
   f0 = kernel(x, Xtrain);
 
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] + p_input[i] * epsilon;
   }
   f2 = kernel(x, Xtrain);
@@ -340,22 +313,19 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
 
   // now perform the adjoint sensitivity
   memset(input_sens, 0, n_input * sizeof(TacsScalar));
-  for (int i = 0; i < n_input; i++)
-  {
+  for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
   kernelSens(p_output, x, Xtrain, input_sens);
   TacsScalar adjTD = 0.0;
-  for (int j = 0; j < n_input; j++)
-  {
+  for (int j = 0; j < n_input; j++) {
     adjTD += input_sens[j] * p_input[j];
   }
   adjTD = TacsRealPart(adjTD);
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
-  if (printLevel != 0)
-  {
+  if (printLevel != 0) {
     printf("\t%s..testKernelSens:\n", typeid(this).name());
     printf("\t\t adjDeriv = %.4e\n", TacsRealPart(adjTD));
     printf("\t\t centralDiff = %.4e\n", TacsRealPart(centralDiff));

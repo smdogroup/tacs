@@ -29,7 +29,8 @@ class GPConstitutiveMLTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = self.rtol
-        self.print_level = 2 if self._my_debug else 0
+        # self.print_level = 2 if self._my_debug else 0
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
@@ -158,7 +159,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
         # construct the optional ML models
-        n_train = 100
+        n_train = 4
 
         n_param = constitutive.BucklingGP.n_param
         self.axialGP = constitutive.BucklingGP(
@@ -166,7 +167,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             True,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(14).astype(self.dtype),
+            theta=np.random.rand(6).astype(self.dtype),
         )
         # self.axialGP.setKS(0.1)
 
@@ -176,7 +177,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             False,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(14).astype(self.dtype),
+            theta=np.random.rand(6).astype(self.dtype),
         )
         # self.shearGP.setKS(0.1)
 
