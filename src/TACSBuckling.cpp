@@ -834,7 +834,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "JD computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "JD computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   } else {
@@ -880,7 +880,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
       t0 = MPI_Wtime() - t0;
 
       char line[256];
-      sprintf(line, "Lanczos computational time: %15.6f\n", t0);
+      snprintf(line, sizeof(line), "Lanczos computational time: %15.6f\n", t0);
       ksm_print->print(line);
     }
   }

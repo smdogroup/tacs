@@ -3068,7 +3068,7 @@ void MITC3::testStrain(const TacsScalar X[]) {
 
   // Write out the error components
   char descript[64];
-  sprintf(descript, "strain after rigid rotation");
+  snprintf(descript, sizeof(descript), "strain after rigid rotation");
   writeErrorComponents(stdout, descript, e, fd, 6);
 
   // Compute the bmatrix
@@ -3111,7 +3111,7 @@ void MITC3::testStrain(const TacsScalar X[]) {
 
     // Write out the error components
     char descript[64];
-    sprintf(descript, "B%d", k);
+    snprintf(descript, sizeof(descript), "B%d", k);
     writeErrorComponents(stdout, descript, &B[6 * k], fd, 6);
   }
 
@@ -3148,6 +3148,6 @@ void MITC3::testStrain(const TacsScalar X[]) {
   getStrain(&u, X, vars, fd);
 
   // Write out the error components of the strain
-  sprintf(descript, "strain before/after rigid rotation");
+  snprintf(descript, sizeof(descript), "strain before/after rigid rotation");
   writeErrorComponents(stdout, descript, e, fd, 6);
 }
