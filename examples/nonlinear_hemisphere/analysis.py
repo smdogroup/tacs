@@ -94,7 +94,7 @@ continuationOptions = {
     "InitialStep": 1.0,
 }
 newtonOptions = {
-    "MaxIter": 50,
+    "MaxIter": 100,
     "UseEW": True,
     "MaxLinIters": 10,
 }
