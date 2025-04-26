@@ -47,7 +47,7 @@ for i in range(n2):
         Y[i, j] = r[1]
         Z[i, j] = r[2]
         if i == 0:
-            if j == n1-1:
+            if j == n1 - 1:
                 bcnodes.append({"nodenum": count, "fixedDOF": "2346"})
             else:
                 bcnodes.append({"nodenum": count, "fixedDOF": "246"})
