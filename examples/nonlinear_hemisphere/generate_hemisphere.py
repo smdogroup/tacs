@@ -46,12 +46,12 @@ for i in range(n2):
         X[i, j] = r[0]
         Y[i, j] = r[1]
         Z[i, j] = r[2]
-        if j == 0:
-            if i == 0:
+        if i == 0:
+            if j == n1 - 1:
                 bcnodes.append({"nodenum": count, "fixedDOF": "2346"})
             else:
                 bcnodes.append({"nodenum": count, "fixedDOF": "246"})
-        elif j == n1 - 1:
+        elif i == n2 - 1:
             bcnodes.append({"nodenum": count, "fixedDOF": "156"})
         count += 1
 nodes = np.stack((X, Y, Z), axis=2)

@@ -972,6 +972,9 @@ class StaticProblem(TACSProblem):
         )
         self.initNorm = np.real(self.externalForce.norm())
 
+        if self.getOption("writeNLIterSolutions"):
+            self.writeSolution(baseName=f"{self.name}-000-NLIter", number=0)
+
         # We need to update the residual function handle used by the nonlinear solver based on the current external force vector
         def resFunc(res):
             self.getResidual(res, Fext=Fext)
