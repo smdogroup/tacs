@@ -1062,6 +1062,9 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">externalForce</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeNLIterSolutions&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">(</span><span class="n">baseName</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-000-NLIter&quot;</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
         <span class="c1"># We need to update the residual function handle used by the nonlinear solver based on the current external force vector</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">resFunc</span><span class="p">(</span><span class="n">res</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="n">Fext</span><span class="p">)</span>
