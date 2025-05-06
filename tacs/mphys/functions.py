@@ -24,11 +24,11 @@ class TacsFunctions(om.ExplicitComponent):
         self.options.declare("write_solution")
 
         self.fea_assembler = None
-        self.check_partials = False
+        self.under_check_partials = False
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
-        self.check_partials = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.auto_write_solution = self.options["write_solution"]
         self.discipline_vars = self.options["discipline_vars"]
         self.solution_counter = 0
@@ -104,7 +104,7 @@ class TacsFunctions(om.ExplicitComponent):
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
-            if not self.check_partials:
+            if not self.under_check_partials:
                 raise ValueError("TACS forward mode requested but not implemented")
         if mode == "rev":
             # always update internal because same tacs object could be used by multiple scenarios
@@ -112,7 +112,8 @@ class TacsFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                d_func = d_outputs[func_name]
+                # Convert seed to scalar
+                d_func = d_outputs[func_name].item()
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
@@ -139,11 +140,11 @@ class MassFunctions(om.ExplicitComponent):
         self.options.declare("check_partials")
 
         self.fea_assembler = None
-        self.check_partials = False
+        self.under_check_partials = False
 
     def setup(self):
         self.fea_assembler = self.options["fea_assembler"]
-        self.check_partials = self.options["check_partials"]
+        self.under_check_partials = self.options["check_partials"]
         self.discipline_vars = self.options["discipline_vars"]
 
         self.coords_name = self.discipline_vars.COORDINATES
@@ -197,7 +198,7 @@ class MassFunctions(om.ExplicitComponent):
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if mode == "fwd":
-            if not self.check_partials:
+            if not self.under_check_partials:
                 raise ValueError("TACS forward mode requested but not implemented")
         if mode == "rev":
             # always update internal because same tacs object could be used by multiple scenarios
@@ -205,7 +206,8 @@ class MassFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                d_func = d_outputs[func_name]
+                # Convert seed to scalar
+                d_func = d_outputs[func_name].item()
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)

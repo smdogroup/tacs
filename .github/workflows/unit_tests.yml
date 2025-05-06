@@ -121,8 +121,8 @@ jobs:
           make TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Install optional dependencies
         run: |
-          # Install petsc for openmdao tests
-          conda install -c conda-forge petsc>=3.19 petsc4py -q -y;
+          # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
+          conda install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy<2" -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
@@ -165,7 +165,7 @@ jobs:
           retention-days: 7
       - name: 'Deploy docs'
         if: ${{ github.event_name == 'push' && matrix.PUBLISH_DOCS }}
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
+        uses: JamesIves/github-pages-deploy-action@v4.7.3
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
