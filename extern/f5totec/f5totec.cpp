@@ -369,11 +369,11 @@ int main( int argc, char * argv[] ){
           int pt;
           for ( int j = 0; j < conn_size; j++ ){
             // Add this element to the reduced connectivity
-            if (basic_ltypes[k] == TACS_QUAD_ELEMENT){
+            if (basic_ltypes[i] == TACS_QUAD_ELEMENT){
               const int convert[] = {0, 1, 3, 2};
               pt = basic_conn[basic_conn_offset + convert[j]];
             }
-            else if (basic_ltypes[k] == TACS_HEXA_ELEMENT){
+            else if (basic_ltypes[i] == TACS_HEXA_ELEMENT){
               const int convert[] = {0, 1, 3, 2, 4, 5, 7, 6};
               pt = basic_conn[basic_conn_offset + convert[j]];
             }
