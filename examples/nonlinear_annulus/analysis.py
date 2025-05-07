@@ -108,6 +108,9 @@ problem = FEAAssembler.createStaticProblem("Annulus", options=probOptions)
 problem.nonlinearSolver.setOptions(continuationOptions)
 problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
 
+# Make sure directory exists
+os.makedirs(problem.getOption("outputDir"), exist_ok=True)
+
 # ==============================================================================
 # Find tip force points
 # ==============================================================================
