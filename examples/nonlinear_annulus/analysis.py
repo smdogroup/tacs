@@ -84,27 +84,32 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
 
 FEAAssembler.initialize(elemCallBack)
-
+USE_PREDICTOR = True
 probOptions = {
     "nRestarts": 3,
     "subSpaceSize": 20,
     "printLevel": 1,
+    "writeNLIterSolutions": True,
+    "outputDir": "WithPredictor" if USE_PREDICTOR else "WithoutPredictor",
 }
 newtonOptions = {
-    "MaxLinIters": 10,
-    "UseEW": True,
+    "MaxLinIters": 0,
+    "skipFirstNLineSearch": 1,
 }
 continuationOptions = {
-    "InitialStep": 0.01,
+    "InitialStep": 0.03,
     "TargetIter": 6,
     "RelTol": 1e-7,
-    "UsePredictor": True,
-    "NumPredictorStates": 6,
+    "UsePredictor": USE_PREDICTOR,
+    "NumPredictorStates": 4,
     "MaxIter": 60,
 }
 problem = FEAAssembler.createStaticProblem("Annulus", options=probOptions)
 problem.nonlinearSolver.setOptions(continuationOptions)
 problem.nonlinearSolver.innerSolver.setOptions(newtonOptions)
+
+# Make sure directory exists
+os.makedirs(problem.getOption("outputDir"), exist_ok=True)
 
 # ==============================================================================
 # Find tip force points
@@ -173,8 +178,8 @@ funcsSens = {}
 problem.solve()
 problem.evalFunctions(funcs)
 problem.evalFunctionsSens(funcsSens)
-problem.writeSolution(outputDir=os.path.dirname(__file__))
-problem.writeSolutionHistory(outputDir=os.path.dirname(__file__))
+problem.writeSolution()
+problem.writeSolutionHistory()
 
 if COMM.rank == 0:
     pprint(funcs)
