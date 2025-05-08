@@ -1021,7 +1021,7 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def updateJacobian(self, res=None):
+    def updateJacobian(self, res=None, applyBCs=True):
         """Update the Jacobian (a.k.a stiffness) matrix
 
         The Jacobian will only actually be updated if the
@@ -1041,6 +1041,7 @@ class StaticProblem(TACSProblem):
                 res,
                 self.K,
                 loadScale=self._loadScale,
+                applyBCs=applyBCs,
             )
             self._jacobianUpdateRequired = False
             self._preconditionerUpdateRequired = True
@@ -1668,8 +1669,18 @@ class StaticProblem(TACSProblem):
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
-
-        self.K.mult(self.phi, self.res)
+        self.res.zeroEntries()
+        self.assembler.addJacobianVecProduct(
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            self.phi,
+            self.res,
+            tacs.TACS.TRANSPOSE,
+            self._loadScale,
+            applyBCs=False,
+        )
         # Add bc terms back in
         self.res.axpy(1.0, bcTerms)
 
@@ -1733,7 +1744,6 @@ class StaticProblem(TACSProblem):
 
         # Solve Linear System
         self.linearSolver.solve(self.adjRHS, self.phi)
-        self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
 
@@ -1781,7 +1791,6 @@ class StaticProblem(TACSProblem):
         elif isinstance(states, np.ndarray):
             self.u_array[:] = states[:]
         # Set states to assembler
-        self.assembler.setBCs(self.u)
         self.assembler.setVariables(self.u)
 
         # If this is a nonlinear problem then changing the state will change the jacobian
