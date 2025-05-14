@@ -14,11 +14,11 @@ This example is based on the composite panel design example example in section
 13.2 of "Design and Analysis of Composite Structures with Applications to
 Aerospace Structures" by Christos Kassapoglou. The task is to size a 0.75 x
 1.5m stiffened panel based on 2 loadcases:
-(a) Uniform pressure of 12,500 Pa
-(b) Applied in-plane loads Nx = − 350 N/mm, Nxy = 175 N/mm
+(a) Uniform pressure of 62,500 Pa
+(b) Applied in-plane loads Nx = −350 N/mm, Nxy = 175 N/mm
 
 The panel should not fail in either case and the out-of-plane deflection
-should be less than 2mm in case (a).
+should be less than 10mm in case (a).
 
 We should not expect to achieve exactly the same result as in the book as
 there are a number of modelling differences between the two cases, including
@@ -27,6 +27,9 @@ but not limited to the following:
 sizing that has a sufficient margin of safety.
 - The textbook case uses J stiffeners, whereas the TACSBladeStiffenedShell
 class uses T stiffeners.
+- I have increased the pressure load and allowable deflection in case (a) by a
+factor of 5 so that the plate is both stiffness and failure critical in this
+case.
 - The textbook case computes the laminate stiffness properties using classical
 lamination theory and a discrete stacking sequence, whereas the
 TACSBladeStiffenedShell class uses smeared stiffness approach that ignores the
@@ -52,8 +55,6 @@ import numpy as np
 import openmdao.api as om
 from mphys.core import Multipoint, MPhysVariables
 from mphys.scenarios import ScenarioStructural
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 
 # ==============================================================================
 # Extension modules
@@ -65,6 +66,7 @@ from tacs.mphys import TacsBuilder
 # Process some command line arguments
 # ==============================================================================
 parser = argparse.ArgumentParser()
+parser.add_argument("--output", default="output", help="Output directory")
 parser.add_argument(
     "--useGP",
     default=False,
@@ -94,6 +96,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+# Create output directory if it doesn't exist
+os.makedirs(args.output, exist_ok=True)
 
 # Overall plate dimensions
 width = 0.75
@@ -141,6 +145,13 @@ stiffener_ply_fractions = np.array([0.59402, 0.16239, 0.16239, 0.0812])
 Ny = 350e3  # N/m
 Nxy = 175e3  # N/m
 
+# Pressure load and max deflection
+MAX_DISP = 10e-3  # m
+PRESSURE_LOAD = 62.5e3  # Pa
+
+flangeFraction = 1.0
+minFlangeGap = 50e-3
+
 
 def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Create ply object
@@ -186,6 +197,8 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
             dtype=np.intc,
         )
         currentDVNum = currentDVNum + 4
+    else:
+        skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
 
     stiffenerHeightNum = currentDVNum
     currentDVNum = currentDVNum + 1
@@ -193,20 +206,8 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     stiffenerThicknessNum = currentDVNum
     currentDVNum = currentDVNum + 1
 
-    # Assign each ply fraction a unique DV
-    if args.usePlyFracDV:
-        stiffener_ply_fraction_dv_nums = np.array(
-            [
-                currentDVNum,
-                currentDVNum + 1,
-                currentDVNum + 2,
-                currentDVNum + 3,
-            ],
-            dtype=np.intc,
-        )
-    else:
-        skin_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
-        stiffener_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
+    # Don't assign a DV to the stiffener ply fractions, optimiser will just make as many plies as possible 0 deg
+    stiffener_ply_fraction_dv_nums = -np.ones(len(ply_angles), dtype=np.intc)
 
     if not (args.useGP):
         con = constitutive.BladeStiffenedShellConstitutive(
@@ -228,6 +229,7 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
             stiffenerHeightNum=stiffenerHeightNum,
             stiffenerThickNum=stiffenerThicknessNum,
             stiffenerPlyFracNums=stiffener_ply_fraction_dv_nums,
+            flangeFraction=flangeFraction,
         )
     else:  # args.useGP is True
         panelWidthNum = -1
@@ -253,27 +255,24 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
             stiffenerPlyFracNums=stiffener_ply_fraction_dv_nums,
             panelWidth=panelWidth,
             panelWidthNum=panelWidthNum,
-            flangeFraction=0.0,
+            flangeFraction=flangeFraction,
         )
 
     con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
     con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
     con.setStiffenerThicknessBounds(stiffenerThicknessMin, stiffenerThicknessMax)
     con.setPanelPlyFractionBounds(
-        np.array([0.05, 0.05, 0.05, 0.05]), np.array([1.0, 1.0, 1.0, 1.0])
-    )
-    con.setStiffenerPlyFractionBounds(
-        np.array([0.25, 0.125, 0.125, 0.05]), np.array([1.0, 1.0, 1.0, 1.0])
+        np.array([0.1, 0.1, 0.1, 0.1]), np.array([1.0, 1.0, 1.0, 1.0])
     )
 
-    # We need to enforce that stiffenerHeight <= stiffenerPitch, if we are not
+    # We need to enforce that stiffenerHeight <= stiffenerPitch - minFlangeGap, if we are not
     # using a stiffener pitch DV we can simply enforce this as an upper bound
     # on the stiffener height, otherwise we need to enforce this using a
     # linear constraint in the constraint_setup function
     if args.useStiffPitchDV:
         con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerHeightMax)
     else:
-        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch - 10e-3)
+        con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerPitch - minFlangeGap)
 
     con.setFailureModes(
         includePanelMaterialFailure=True,
@@ -303,8 +302,6 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     if args.usePlyFracDV:
         DVScales += [1.0] * 4
     DVScales += [stiffenerHeightScale, stiffenerThicknessScale]
-    if args.usePlyFracDV:
-        DVScales += [1.0] * 4
 
     return elem, DVScales
 
@@ -328,7 +325,9 @@ def problem_setup(scenario_name, fea_assembler, problem):
     Helper function to add fixed forces and eval functions
     to structural problems used in tacs builder
     """
-    problem.setOption("outputDir", scenario_name)
+    # Use the output directory specified by the command line argument
+    output_dir = os.path.join(args.output, scenario_name)
+    problem.setOption("outputDir", output_dir)
 
     # Add TACS Functions
     problem.addFunction(
@@ -410,9 +409,9 @@ def problem_setup(scenario_name, fea_assembler, problem):
         )
     elif scenario_name == "Pressure":
         allComponents = fea_assembler.selectCompIDs()
-        problem.addPressureToComponents(allComponents, 12.5e3)
+        problem.addPressureToComponents(allComponents, PRESSURE_LOAD)
 
-        # We need to limit the max Z displacement to < 2mm
+        # We need to limit the max Z displacement to < 10mm
         problem.addFunction(
             "MaxDispZ",
             functions.KSDisplacement,
@@ -453,40 +452,18 @@ def constraint_setup(scenario_name, fea_assembler, constraint_list):
                 upper=0.0,
             )
 
-            firstStiffenerPlyFracNum = 8 if args.useStiffPitchDV else 7
-            constr.addConstraint(
-                "StiffenerPlyFracSum",
-                allComponents,
-                dvIndices=list(
-                    range(firstStiffenerPlyFracNum, firstStiffenerPlyFracNum + 4)
-                ),
-                dvWeights=[1.0, 1.0, 1.0, 1.0],
-                lower=1.0,
-                upper=1.0,
-            )
-            # Fractions of + and -45 degree plies should be equal
-            constr.addConstraint(
-                "StiffenerLaminateBalance",
-                allComponents,
-                dvIndices=[
-                    firstStiffenerPlyFracNum + 1,
-                    firstStiffenerPlyFracNum + 2,
-                ],
-                dvWeights=[1.0, -1.0],
-                lower=0.0,
-                upper=0.0,
-            )
-
-            # There must be at least 10mm between adjacent stiffner flanges, the flange width is equal to the stiffener height so the constraint is
-            # stiffPitch - stiffHeight >= 10mm
+        # Enforce the minimum gap between adjacent stiffner flanges, the flange
+        # width is equal to the stiffener height multiplied by the flange fraction
+        # so the constraint is:
+        # stiffPitch - stiffHeight*flangeFraction >= minFlangeGap
         if args.useStiffPitchDV:
             stiffenerHeightInd = 2 if not args.usePlyFracDV else 6
             constr.addConstraint(
                 "StiffenerOverlap",
                 allComponents,
                 dvIndices=[0, stiffenerHeightInd],
-                dvWeights=[1.0, -1.0],
-                lower=10e-3,
+                dvWeights=[1.0, -flangeFraction],
+                lower=minFlangeGap,
             )
 
         if constr is not None:
@@ -539,7 +516,9 @@ class PlateModel(Multipoint):
 
             self.connect("dv_struct", f"{scenarioName}.dv_struct")
 
-            os.makedirs(scenarioName, exist_ok=True)
+            # Use the output directory specified by the command line argument
+            scenario_output_dir = os.path.join(args.output, scenarioName)
+            os.makedirs(scenario_output_dir, exist_ok=True)
 
     def configure(self):
         # Add TACS constraints
@@ -575,18 +554,15 @@ model.add_objective("CompAndShear.Mass")
 for scenarioName in scenarioNames:
     model.add_constraint(f"{scenarioName}.KSFailure", upper=1.0, linear=False)
 
-model.add_constraint("Pressure.MaxDispZ", upper=2e-3, scaler=1e3)
+model.add_constraint("Pressure.MaxDispZ", upper=MAX_DISP, scaler=1e3)
 
 # Configure optimizer
 debug_print = ["objs", "nl_cons", "ln_cons", "desvars"]
-if args.opt == "slsqp":
-    prob.driver = om.ScipyOptimizeDriver(debug_print=debug_print, maxiter=100)
-    prob.driver.options["optimizer"] = "SLSQP"
-else:
-    prob.driver = om.pyOptSparseDriver(
-        optimizer=args.opt.upper(), print_opt_prob=True, debug_print=debug_print
-    )
-    prob.driver.options["hist_file"] = "structOpt.hst"
+prob.driver = om.pyOptSparseDriver(
+    optimizer=args.opt.upper(), print_opt_prob=True, debug_print=debug_print
+)
+# Use the output directory specified by the command line argument
+prob.driver.options["hist_file"] = os.path.join(args.output, "structOpt.hst")
 
 
 # Setup OpenMDAO problem
@@ -595,14 +571,14 @@ prob.setup(mode="rev")
 prob.run_model()
 
 # Output N2 representation of OpenMDAO model
-om.n2(prob, show_browser=False, outfile="tacs_struct.html")
+# Use the output directory specified by the command line argument
+om.n2(prob, show_browser=False, outfile=os.path.join(args.output, "tacs_struct.html"))
 
 # Run optimization
 prob.run_driver()
 
 # --- Print out optimal values ---
 dv_struct = prob.get_val("dv_struct")
-
 
 currentDVNum = 0
 if args.useStiffPitchDV:
@@ -621,11 +597,7 @@ optStiffHeight = dv_struct[currentDVNum]
 currentDVNum += 1
 optStiffThickness = dv_struct[currentDVNum]
 currentDVNum += 1
-if args.usePlyFracDV:
-    optStiffPlyFrac = dv_struct[currentDVNum : currentDVNum + 4]
-    currentDVNum += 4
-else:
-    optStiffPlyFrac = stiffener_ply_fractions
+optStiffPlyFrac = stiffener_ply_fractions
 
 print("Optimal sizing:")
 print("================================")
@@ -637,86 +609,3 @@ print(f"Stiffener height: {optStiffHeight*1e3} mm")
 print(f"Stiffener thickness: {optStiffThickness*1e3} mm")
 print("Stiffener ply fractions:")
 print(optStiffPlyFrac)
-
-
-def plotDesign(ax, stiffPitch, skinThickness, stiffenerHeight, stiffThickness):
-    """Plot a stiffened panel cross section
-
-    Parameters
-    ----------
-    ax : matplotlib axis
-        Axis to plot on
-    stiffPitch : float
-        Stiffener pitch
-    skinThickness : float
-        Panel skin thickness
-    stiffenerHeight : float
-        Stiffener height
-    stiffThickness : float
-        Stiffener thickness
-    """
-
-    totalWidth = stiffPitch + stiffenerHeight
-
-    # Plot skin
-    skin = mpatches.Rectangle(
-        (-stiffenerHeight / 2, 0), totalWidth, skinThickness, color="blue"
-    )
-    ax.add_artist(skin)
-
-    # Stiffeners
-    for xCentre in [0, stiffPitch]:
-        flange = mpatches.Rectangle(
-            (xCentre - stiffenerHeight / 2, skinThickness),
-            stiffenerHeight,
-            stiffThickness,
-            color="orange",
-        )
-        web = mpatches.Rectangle(
-            (xCentre - stiffThickness / 2, skinThickness + stiffThickness),
-            stiffThickness,
-            stiffenerHeight,
-            color="orange",
-        )
-        ax.add_artist(flange)
-        ax.add_artist(web)
-
-    xMargin = 0.05 * totalWidth
-    yMargin = 0.05 * stiffenerHeight
-    ax.set_xlim(
-        -stiffenerHeight / 2 - xMargin, -stiffenerHeight / 2 + totalWidth + xMargin
-    )
-    ax.set_ylim(-yMargin, skinThickness + stiffThickness + stiffenerHeight + yMargin)
-
-
-fig, axes = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(16, 12))
-
-# First axes, baseline design
-ax = axes[0]
-ax.set_aspect("equal")
-ax.set_title("Baseline design")
-plotDesign(
-    ax,
-    stiffenerPitch * 1e3,
-    panelThickness * 1e3,
-    stiffenerHeight * 1e3,
-    stiffenerThickness * 1e3,
-)
-ax.set_xlim()
-
-# Second axes, optimal design
-ax = axes[1]
-ax.set_aspect("equal")
-ax.set_title("Optimal design")
-plotDesign(
-    ax,
-    optStiffPitch * 1e3,
-    optSkinThickness * 1e3,
-    optStiffHeight * 1e3,
-    optStiffThickness * 1e3,
-)
-ax.autoscale()
-plt.tight_layout()
-
-plt.savefig("CrossSection.pdf")
-plt.savefig("CrossSection.png")

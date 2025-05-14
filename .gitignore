@@ -34,6 +34,10 @@ extern/
 *.su2
 *.tar.gz
 *.png
+*.svg
+*.openmdao_out
+examples/**/*.html
+*.hst
 *.plt
 *.szplt
 *_cs.*
@@ -53,7 +57,6 @@ reports/
 *.vtk
 *.cfg
 *.pkl
-*.png
 *.gif
 *.mp4
 .vscode
