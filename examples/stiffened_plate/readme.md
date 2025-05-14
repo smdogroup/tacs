@@ -1,5 +1,7 @@
-A simple example of optimising a stiffened panel using the blade-stiffened shell constitutive model.
-We will optimise the sizing of the plate and its stiffeners to minimise mass subject to the material and buckling failure criteria included in the TACSBladeStiffenedShell class.
+# Stiffened plate optimization example
+
+A simple example of optimizing a stiffened panel using the blade-stiffened shell constitutive model.
+We will optimize the sizing of the plate and its stiffeners to minimize mass subject to the material and buckling failure criteria included in the `BladeStiffenedShellConstitutive` and `GPBladeStiffenedShellConstitutive` constitutive models.
 
 This example is based on the composite panel design example example in section 13.2 of "Design and Analysis of Composite Structures with Applications to Aerospace Structures" by Christos Kassapoglou.
 The task is to size a 0.75 x 1.5m stiffened panel based on 2 loadcases:
@@ -49,4 +51,4 @@ Max displacement            10                            10                    
 Mass                        9.277                         11.94                      14.62
 ```
 
-![Stiffened Plate Optimisation Results](CrossSectionCombined.png)
+![Stiffened Plate Optimization Results.](CrossSectionCombined.png)
