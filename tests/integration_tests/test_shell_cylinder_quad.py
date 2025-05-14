@@ -62,5 +62,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("compliance", functions.Compliance)
+            problem.setOption("useMonitor", True)
 
         return tacs_probs, fea_assembler
