@@ -178,6 +178,8 @@
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
+        <span class="c1"># Create solver objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_createSolver</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -195,6 +197,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="c1"># Auxiliary element object for applying tractions/pressure</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createSolver</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal to create the solver objects required by TACS&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">aux</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createSchurMat</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createSchurMat</span><span class="p">()</span>
@@ -267,7 +272,7 @@
             <span class="k">pass</span>
         <span class="c1"># Reset solver for all other option changes</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_createSolver</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="BucklingProblem.setValName">
