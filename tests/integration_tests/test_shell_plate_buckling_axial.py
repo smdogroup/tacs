@@ -68,9 +68,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize(elem_call_back)
 
         buckle_prob = fea_assembler.createBucklingProblem("buckling", 10.0, 10)
+        buckle_prob.addLoadFromBDF(loadID=1)
         buckle_prob.setOption("L2Convergence", 1e-20)
         buckle_prob.setOption("L2ConvergenceRel", 1e-20)
-        buckle_prob.addLoadFromBDF(loadID=1)
 
         return [buckle_prob], fea_assembler
 

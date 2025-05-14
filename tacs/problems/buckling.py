@@ -139,6 +139,8 @@ class BucklingProblem(TACSProblem):
 
         # Create problem-specific variables
         self._createVariables()
+        # Create solver objects
+        self._createSolver()
 
     def _createVariables(self):
         """
@@ -156,6 +158,9 @@ class BucklingProblem(TACSProblem):
         self.rhs = self.assembler.createVec()
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
+
+    def _createSolver(self):
+        """Internal to create the solver objects required by TACS"""
 
         self.aux = self.assembler.createSchurMat()
         self.G = self.assembler.createSchurMat()
@@ -226,7 +231,7 @@ class BucklingProblem(TACSProblem):
             pass
         # Reset solver for all other option changes
         else:
-            self._createVariables()
+            self._createSolver()
 
     def setValName(self, valName):
         """
