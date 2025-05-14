@@ -128,6 +128,7 @@ class StaticProblem(TACSProblem):
         ],
     }
 
+    # TACS Jacobian coefficients for stiffness matrix
     ALPHA = 1.0
     BETA = 0.0
     GAMMA = 0.0
