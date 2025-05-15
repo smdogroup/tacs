@@ -41,8 +41,8 @@ TACSGaussianProcessModel::~TACSGaussianProcessModel() {
   this->theta = nullptr;
 }
 
-TacsScalar
-TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest) {
+TacsScalar TACSGaussianProcessModel::predictMeanTestData(
+    const TacsScalar *Xtest) {
   // Xtest is an array of size n_param (for one test data point)
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
   // product] where Ytest is a scalar
@@ -56,7 +56,6 @@ TACSGaussianProcessModel::predictMeanTestData(const TacsScalar *Xtest) {
   // iterate over each training data point, get the cross-term covariance and
   // add the coefficient alpha for it
   for (int itrain = 0; itrain < n_train; itrain++) {
-
     TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
     // TacsScalar mkernel = kernel(Xtest, loc_Xtrain);
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
@@ -289,10 +288,10 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   // p_input[0] = p_input[1] = p_input[2] = 0.0;
 
   // compute initial values
-  x0[0] = 0.43243; // log(xi)
-  x0[1] = 0.9847;  // log(rho0)
-  x0[2] = 0.12345; // log(1+gamma)
-  x0[3] = 0.53432; // log(zeta)
+  x0[0] = 0.43243;  // log(xi)
+  x0[1] = 0.9847;   // log(rho0)
+  x0[2] = 0.12345;  // log(1+gamma)
+  x0[3] = 0.53432;  // log(zeta)
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
   TacsScalar f0, f1, f2;
