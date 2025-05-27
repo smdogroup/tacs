@@ -29,8 +29,8 @@ class GPConstitutiveMLTest(unittest.TestCase):
 
         # Basically, only check relative tolerance
         self.atol = self.rtol
-        self.print_level = 2 if self._my_debug else 0
-        # self.print_level = 2
+        #self.print_level = 2 if self._my_debug else 0
+        self.print_level = 2
 
         # Set element index
         self.elem_index = 0
