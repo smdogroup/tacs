@@ -1,6 +1,6 @@
 name: clang-format Check
 
-on: 
+on:
   push:
     branches: [ master ]
   pull_request:
@@ -14,6 +14,7 @@ jobs:
         path:
           - 'src'
           - 'examples'
+          - 'extern'
     steps:
     - uses: actions/checkout@v4
     - name: Run clang-format style check for C/C++ programs.
