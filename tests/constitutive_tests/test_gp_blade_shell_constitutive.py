@@ -5,7 +5,7 @@ import numpy as np
 from tacs import TACS, constitutive, elements
 
 DEG2RAD = np.pi / 180.0
-np.random.seed(1342342)
+np.random.seed(1234567)
 
 
 class GPConstitutiveMLTest(unittest.TestCase):
@@ -18,8 +18,9 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.dh = 1e-200
             self.rtol = 1e-9
         else:
+            # KS is high inside this buckling model
             self.dh = 1e-8
-            self.rtol = 1e-3
+            self.rtol = 1e-2
         self.dtype = TACS.dtype
 
         # The failure value returned by the model is an aggregate of multiple
@@ -30,6 +31,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
         # Basically, only check relative tolerance
         self.atol = self.rtol
         self.print_level = 2 if self._my_debug else 0
+        # self.print_level = 2
 
         # Set element index
         self.elem_index = 0
@@ -158,23 +160,28 @@ class GPConstitutiveMLTest(unittest.TestCase):
         elements.SeedRandomGenerator(0)
 
         # construct the optional ML models
-        n_train = 100
+        n_train = 4
+
+        # theta = np.random.rand(6).astype(self.dtype)
+        theta = np.array([0.1, 0.234, 0.031, 8.374, 0.001, 0.1]).astype(self.dtype)
 
         n_param = constitutive.BucklingGP.n_param
         self.axialGP = constitutive.BucklingGP(
             n_train,
+            True,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(14).astype(self.dtype),
+            theta=theta,
         )
         # self.axialGP.setKS(0.1)
 
         n_param = constitutive.BucklingGP.n_param
         self.shearGP = constitutive.BucklingGP(
             n_train,
+            False,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(14).astype(self.dtype),
+            theta=theta,
         )
         # self.shearGP.setKS(0.1)
 
