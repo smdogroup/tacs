@@ -18,8 +18,9 @@ class GPConstitutiveMLTest(unittest.TestCase):
             self.dh = 1e-200
             self.rtol = 1e-9
         else:
-            self.dh = 1e-8
-            self.rtol = 1e-3
+            # KS is high inside this buckling model
+            self.dh = 1e-6
+            self.rtol = 1e-2
         self.dtype = TACS.dtype
 
         # The failure value returned by the model is an aggregate of multiple
