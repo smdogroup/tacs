@@ -5,7 +5,7 @@ import numpy as np
 from tacs import TACS, constitutive, elements
 
 DEG2RAD = np.pi / 180.0
-np.random.seed(1342342)
+np.random.seed(1234567)
 
 
 class GPConstitutiveMLTest(unittest.TestCase):
@@ -162,13 +162,16 @@ class GPConstitutiveMLTest(unittest.TestCase):
         # construct the optional ML models
         n_train = 4
 
+        # theta = np.random.rand(6).astype(self.dtype)
+        theta = np.array([0.1, 0.234, 0.031, 8.374, 0.001, 0.1]).astype(self.dtype)
+
         n_param = constitutive.BucklingGP.n_param
         self.axialGP = constitutive.BucklingGP(
             n_train,
             True,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(6).astype(self.dtype),
+            theta=theta,
         )
         # self.axialGP.setKS(0.1)
 
@@ -178,7 +181,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
             False,
             Xtrain=np.random.rand(n_param * n_train).astype(self.dtype),
             alpha=np.random.rand(n_train).astype(self.dtype),
-            theta=np.random.rand(6).astype(self.dtype),
+            theta=theta,
         )
         # self.shearGP.setKS(0.1)
 
