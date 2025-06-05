@@ -52,10 +52,10 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
         # Overwrite default tolerances
         if dtype == complex:
-            self.rtol = 1e-7
+            self.rtol = 1e-10
             self.dh = 1e-50
         else:
-            self.rtol = 1e-2
+            self.rtol = 1e-4
             self.dh = 1e-8
 
         # Callback function used to setup TACS element objects and DVs
