@@ -6,10 +6,12 @@ pyBase_problem
 # Imports
 # =============================================================================
 from functools import wraps
+import copy
 
 from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
+import pyNastran.bdf as pn
 
 import tacs.TACS
 
@@ -951,7 +953,6 @@ class StructProblem(BaseStructProblem):
 
         return dvDict
 
-
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """
         This is a generic shell function that writes the output
@@ -973,3 +974,58 @@ class StructProblem(BaseStructProblem):
             typically used from an external solver
         """
         self.staticProblem.writeSolution(outputDir, baseName, number)
+
+    def writeExternalForceFile(self, fileName):
+        """
+        This function writes the external loads to a file.
+        This is typically used to save loads from an aerostructural run.
+
+        Parameters
+        ----------
+        fileName : str
+            Filename for force file. Should have .dat or .bdf extension
+        """
+        rhs = self.staticProblem.rhs
+        self.temp0.copyValues(rhs)
+        rhs.copyValues(self._Fext)
+        self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
+        rhs.copyValues(self.temp0)
+
+    def readExternalForceFile(self, fileName):
+        """
+        Reads in a force file and sets the external forces in the structural problem.
+        This is typically used to read in loads saved from an aerostructural run.
+
+        Parameters
+        ----------
+        fileName : str
+            Filename for force file. Should have .dat or .bdf extension
+        """
+
+        forceInfo = pn.bdf.read_bdf(fileName, validate=False, xref=False, debug=False, punch=True)
+        bdfInfo = self.staticProblem.bdfInfo
+
+        # Step 1: Store original loads from bdfInfo
+        originalLoads = copy.deepcopy(bdfInfo.loads)
+        originalLoadCombinations = copy.deepcopy(bdfInfo.load_combinations)
+
+        # Step 2: Overwrite bdfInfo loads with forceInfo loads
+        bdfInfo.loads = copy.deepcopy(forceInfo.loads)
+        bdfInfo.load_combinations = copy.deepcopy(forceInfo.load_combinations)
+
+        # Create a copy of the internal loads already added to model
+        F = self.staticProblem.F
+        self.temp0.copyValues(F)
+        # Zero out the loads
+        F.zeroEntries()
+        # Read the external loads
+        self.staticProblem.addLoadFromBDF(0)
+        # Copy new loads to ext load vector
+        self._Fext.copyValues(F)
+        # Set internal loads back to previous values
+        F.copyValues(self.temp0)
+
+        # Step 3: Restore original loads back into bdfInfo
+        bdfInfo.loads = originalLoads
+        bdfInfo.load_combinations = originalLoadCombinations
+
