@@ -1026,10 +1026,15 @@ class StructProblem(BaseStructProblem):
         fileName : str
             Filename for force file. Should have .dat or .bdf extension
         """
+        # We want to isolate only the external loads in the rhs before writing the loads out
         rhs = self.staticProblem.rhs
+        # Save a copy of the rhs vector holding the full loads
         self.temp0.copyValues(rhs)
+        # Replace vector with only external loads
         rhs.copyValues(self._Fext)
+        # Write external loads to bdf
         self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
+        # Reset rhs back to full loads
         rhs.copyValues(self.temp0)
 
     def readExternalForceFile(self, fileName):
