@@ -39,6 +39,7 @@ class StructProblem(BaseStructProblem):
         staticProblem,
         FEAAssembler,
         DVGeo=None,
+        loadFile=None,
     ):
         """
         Parameters
@@ -52,6 +53,10 @@ class StructProblem(BaseStructProblem):
         dvGeo : pygeo.DVGeometry or None
             Object responsible for manipulating the constraints that
             this object is responsible for.
+
+        loadFile : str
+            Filename of the (static) external load file. Should be
+            generated from pyAerostructure.
         """
 
         self.staticProblem = staticProblem
@@ -59,6 +64,7 @@ class StructProblem(BaseStructProblem):
         self.DVGeo = None
         self.numGeoDV = 0
         self.ptSetName = None
+        self.loadFile = loadFile
         self.constraints = []
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
@@ -89,6 +95,9 @@ class StructProblem(BaseStructProblem):
 
         self.callCounter = 0
         self.doDamp = False
+
+        if self.loadFile:
+            self.readExternalForceFile(self.loadFile)
 
     @property
     def name(self):
