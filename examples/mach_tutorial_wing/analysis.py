@@ -28,11 +28,6 @@ comm = MPI.COMM_WORLD
 
 dtype = TACS.dtype
 
-# Instantiate FEAAssembler
-structOptions = {
-    "printtiming": True,
-}
-
 # ==============================================================================
 # Composite properties
 # ==============================================================================
@@ -68,14 +63,14 @@ panelLengthMin = 0.0
 panelLengthScale = 1.0
 
 # Stiffener pitch
-stiffenerPitch = dtype(0.2)  # m
+stiffenerPitch = dtype(0.15)  # m
 stiffenerPitchMax = 0.5  # m
 stiffenerPitchMin = 0.05  # m
 stiffenerPitchScale = 1.0
 
 # Panel thickness
 panelThickness = dtype(0.02)  # m
-panelThicknessMax = 0.1  # m
+panelThicknessMax = 0.0065  # m
 panelThicknessMin = 0.002  # m
 panelThicknessScale = 100.0
 
@@ -91,20 +86,31 @@ stiffenerHeightMin = 0.002  # m
 stiffenerHeightScale = 10.0
 
 # Stiffener thickness
-stiffenerThickness = dtype(0.02)  # m
+stiffenerThickness = dtype(0.006)  # m
 stiffenerThicknessMax = 0.1  # m
 stiffenerThicknessMin = 0.002  # m
 stiffenerThicknessScale = 100.0
 
 # --- Stiffener axis directions ---
 TESparDirection = np.array([0.34968083, 0.93686889, 0.0])
+SpanwiseDirection = np.array([0.0, 1.0, 0.0])
 VerticalDirection = np.array([0.0, 0.0, 1.0])
+
+# ==============================================================================
+# Create pyTACS assembler
+# ==============================================================================
+structOptions = {
+    "printtiming": True,
+    "writeCoordinateFrame": True,
+}
+
+bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
+FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
+
 
 # ==============================================================================
 # Element callback function
 # ==============================================================================
-
-
 def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     prop = constitutive.MaterialProperties(
         rho=compositeProperties["rho"],
@@ -128,10 +134,17 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     # The panel length values I set here are approximate, to get the real values, you'd
     # need to run an optimization with panel length design variables and constraints.
     if "SKIN" in compDescript:
+        isInboard = any(
+            [name in compDescript for name in ["SKIN.000", "SKIN.001", "SKIN.002"]]
+        )
+        if isInboard:
+            refAxis = SpanwiseDirection
+            panelLength = 0.37475
+        else:
+            refAxis = TESparDirection
         plyAngles = skinPlyAngles
         panelPlyFractions = skinPlyFracs
-        refAxis = TESparDirection
-        panelLength = 0.65
+        panelLength = 0.735
     else:
         plyAngles = sparRibPlyAngles
         panelPlyFractions = sparRibPlyFracs
@@ -215,16 +228,6 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     return elem, DVScales
 
 
-# ==============================================================================
-# Create pyTACS assembler
-# ==============================================================================
-structOptions = {
-    "printtiming": True,
-}
-
-bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
-FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
-
 # Set up elements and TACS assembler
 FEAAssembler.initialize(elemCallBack)
 
@@ -277,8 +280,8 @@ pitchAdjCon = 5e-2  # 5cm
 thickDiffMax = (
     2.5e-3  # 2.5mm, Max allowable thickness difference between skin and stiffener
 )
-stiffAspectMax = 10.0  # Maximum allowable stiffener aspect ratio (height/thickness)
-stiffAspectMin = 2.0  # Minimum allowable stiffener aspect ratio (height/thickness)
+stiffAspectMax = 30.0  # Maximum allowable stiffener aspect ratio (height/thickness)
+stiffAspectMin = 5.0  # Minimum allowable stiffener aspect ratio (height/thickness)
 
 compIDs = {}
 for group in ["SPAR", "U_SKIN", "L_SKIN", "RIB"]:
@@ -321,37 +324,36 @@ constraints.append(adjCon)
 
 # Add constraints between the DV's on each panel
 dvCon = FEAAssembler.createDVConstraint("DVCon")
-# Limit the difference in thickness between the panel and stiffener
-# -thickDiffMax <= (panelThickness - stiffenerThickness) <= thickDiffMax
+# Flange thickness should be no more than 15x skin thickness
 dvCon.addConstraint(
-    conName="thickDiffLimit",
-    lower=-thickDiffMax,
-    upper=thickDiffMax,
+    conName="flangeThicknessMax",
+    upper=0.0,
     dvIndices=[2, 4],
-    dvWeights=[1.0, -1.0],
+    dvWeights=[-15.0, 1.0],
 )
+
 # Limit the aspect ratio of the stiffener
-# stiffenerHeight - (stiffAspectMax * stiffenerThickness) <= 0
+# stiffenerHeight - stiffAspectMax * stiffenerThickness <= 0
 dvCon.addConstraint(
     conName="stiffenerAspectMax",
     upper=0.0,
     dvIndices=[3, 4],
     dvWeights=[1.0, -stiffAspectMax],
 )
-# stiffenerHeight - (stiffAspectMin * stiffenerThickness) >= 0
+# stiffenerHeight - stiffAspectMin * stiffenerThickness >= 0
 dvCon.addConstraint(
     conName="stiffenerAspectMin",
     lower=0.0,
     dvIndices=[3, 4],
     dvWeights=[1.0, -stiffAspectMin],
 )
-# Ensure there is space between the stiffeners
-# 2*flangeFraction - stiffenerPitch <= 0
+# Spacing between stiffeners should be greater than stiffener flange width to avoid overlapping stiffeners
+# flangeFraction*stiffenerHeight - stiffenerPitch <= 0
 dvCon.addConstraint(
     conName="stiffSpacingMin",
     upper=0.0,
     dvIndices=[3, 2],
-    dvWeights=[2.0, -1.0],
+    dvWeights=[1.0, -1.0],
 )
 constraints.append(dvCon)
 

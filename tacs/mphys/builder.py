@@ -1,7 +1,4 @@
-import copy
-import warnings
-
-from mphys.builder import Builder
+from mphys.core import Builder, MPhysVariables
 import numpy as np
 
 from tacs.pytacs import pyTACS
@@ -23,7 +20,7 @@ class TacsBuilder(Builder):
         pytacs_options=None,
         check_partials=False,
         conduction=False,
-        coupled=True,
+        coupling_loads=None,
         write_solution=True,
         separate_mass_dvs=False,
         res_ref=None,
@@ -102,9 +99,10 @@ class TacsBuilder(Builder):
         conduction : bool, optional
             Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
             Defaults to False.
-        coupled : bool, optional
-            Flag to determine of if multidisciplinary coupling variables should be turned on
-            (used in aerostructural/thermostructural analyses). Defaults to True.
+        coupling_loads : list[str] or str or None, optional
+            List of coupling loads to add to right handside of FEA state equation. These loads correspond to the nodal
+            forces on the model. Multiple load sources can be specified, these will be added together before being
+            applied to the model. This is used in aerostructural/thermostructural analyses. Defaults to None.
         write_solution : bool, optional
             Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.
         separate_mass_dvs : bool, optional
@@ -202,9 +200,14 @@ class TacsBuilder(Builder):
         self.constraint_setup = constraint_setup
         self.buckling_setup = buckling_setup
         self.pytacs_options = pytacs_options
-        self.check_partials = check_partials
+        self.under_check_partials = check_partials
         self.conduction = conduction
-        self.coupled = coupled
+        if isinstance(coupling_loads, str):
+            self.coupling_loads = [coupling_loads]
+        elif hasattr(coupling_loads, "__iter__"):
+            self.coupling_loads = coupling_loads
+        else:
+            self.coupling_loads = []
         self.write_solution = write_solution
         self.separate_mass_dvs = separate_mass_dvs
         self.res_ref = res_ref
@@ -232,6 +235,13 @@ class TacsBuilder(Builder):
         # Set up elements and TACS assembler
         self.fea_assembler.initialize(self.element_callback)
 
+        if self.conduction:
+            self.discipline_vars = MPhysVariables.Thermal
+            self.discipline_vars.STATES = self.discipline_vars.TEMPERATURE
+        else:
+            self.discipline_vars = MPhysVariables.Structures
+            self.discipline_vars.STATES = self.discipline_vars.DISPLACEMENTS
+
     def get_coupling_group_subsystem(self, scenario_name=None):
         """
         The subsystem that this builder will add to the CouplingGroup
@@ -249,9 +259,9 @@ class TacsBuilder(Builder):
         """
         return TacsCouplingGroup(
             fea_assembler=self.fea_assembler,
-            conduction=self.conduction,
-            check_partials=self.check_partials,
-            coupled=self.coupled,
+            discipline_vars=self.discipline_vars,
+            check_partials=self.under_check_partials,
+            coupling_loads=self.coupling_loads,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,
             res_ref=self.res_ref,
@@ -272,7 +282,10 @@ class TacsBuilder(Builder):
         mesh : :class:`~openmdao.api.Component` or :class:`~openmdao.api.Group`
             The openmdao subsystem that has an output of coordinates.
         """
-        return TacsMeshGroup(fea_assembler=self.fea_assembler)
+        return TacsMeshGroup(
+            fea_assembler=self.fea_assembler,
+            discipline_vars=self.discipline_vars,
+        )
 
     def get_pre_coupling_subsystem(self, scenario_name=None):
         """
@@ -292,6 +305,7 @@ class TacsBuilder(Builder):
             fea_assembler=self.fea_assembler,
             initial_dv_vals=initial_dvs,
             separate_mass_dvs=self.separate_mass_dvs,
+            discipline_vars=self.discipline_vars,
         )
 
     def get_post_coupling_subsystem(self, scenario_name=None):
@@ -309,8 +323,8 @@ class TacsBuilder(Builder):
         """
         return TacsPostcouplingGroup(
             fea_assembler=self.fea_assembler,
-            check_partials=self.check_partials,
-            conduction=self.conduction,
+            check_partials=self.under_check_partials,
+            discipline_vars=self.discipline_vars,
             write_solution=self.write_solution,
             scenario_name=scenario_name,
             problem_setup=self.problem_setup,

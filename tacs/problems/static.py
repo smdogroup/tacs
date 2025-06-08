@@ -128,6 +128,11 @@ class StaticProblem(TACSProblem):
         ],
     }
 
+    # TACS Jacobian coefficients for stiffness matrix
+    ALPHA = 1.0
+    BETA = 0.0
+    GAMMA = 0.0
+
     def __init__(
         self,
         name,
@@ -178,6 +183,8 @@ class StaticProblem(TACSProblem):
 
         # Create problem-specific variables
         self._createVariables()
+        # Create solver objects
+        self._createSolver()
 
         # Setup solver and solver history objects for nonlinear problems
         if self.isNonlinear:
@@ -236,8 +243,6 @@ class StaticProblem(TACSProblem):
     def _createVariables(self):
         """Internal to create the variable required by TACS"""
 
-        opt = self.getOption
-
         # Generic residual vector
         self.res = self.assembler.createVec()
         self.rhs = self.assembler.createVec()
@@ -277,6 +282,14 @@ class StaticProblem(TACSProblem):
         # Load scaling factor
         self._loadScale = 1.0
 
+        # Additional Vecs for updates
+        self.update = self.assembler.createVec()
+
+    def _createSolver(self):
+        """Internal to create the solver objects required by TACS"""
+
+        opt = self.getOption
+
         # Tangent Stiffness --- process the ordering option here:
         ordering = opt("orderingType")
 
@@ -285,22 +298,14 @@ class StaticProblem(TACSProblem):
         # Artificial stiffness for RBE numerical stabilization to stabilize PC
         self.rbeArtificialStiffness = self.assembler.createSchurMat(ordering)
 
-        # Additional Vecs for updates
-        self.update = self.assembler.createVec()
-
-        # Setup PCScMat and KSM solver
-        self.alpha = 1.0
-        self.beta = 0.0
-        self.gamma = 0.0
-
         # Computes stiffness matrix w/o art. terms
         # Set artificial stiffness factors in rbe class to zero
         tacs.elements.RBE2.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
         tacs.elements.RBE3.setScalingParameters(opt("RBEStiffnessScaleFactor"), 0.0)
         self.assembler.assembleJacobian(
-            self.alpha,
-            self.beta,
-            self.gamma,
+            self.ALPHA,
+            self.BETA,
+            self.GAMMA,
             self.res,
             self.K,
             loadScale=self.loadScale,
@@ -314,8 +319,9 @@ class StaticProblem(TACSProblem):
         tacs.elements.RBE3.setScalingParameters(
             opt("RBEStiffnessScaleFactor"), opt("RBEArtificialStiffness")
         )
+        # Setup PCScMat and KSM solver
         self.assembler.assembleJacobian(
-            self.alpha, self.beta, self.gamma, None, self.rbeArtificialStiffness
+            self.ALPHA, self.BETA, self.GAMMA, None, self.rbeArtificialStiffness
         )
         # Subtract full stiffness w/o artificial terms from full stiffness w/ terms
         # to isolate  artificial stiffness terms
@@ -397,7 +403,7 @@ class StaticProblem(TACSProblem):
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
 
-        createVariables = True
+        recreateSolver = True
 
         if self.linearSolver is not None:
             # Update tolerances
@@ -417,11 +423,11 @@ class StaticProblem(TACSProblem):
                 "outputdir",
                 "printLevel",
             ]:
-                createVariables = False
+                recreateSolver = False
 
             # Reset solver for all other option changes
-            if createVariables:
-                self._createVariables()
+            if recreateSolver:
+                self._createSolver()
 
     @property
     def loadScale(self):
@@ -972,6 +978,9 @@ class StaticProblem(TACSProblem):
         )
         self.initNorm = np.real(self.externalForce.norm())
 
+        if self.getOption("writeNLIterSolutions"):
+            self.writeSolution(baseName=f"{self.name}-000-NLIter", number=0)
+
         # We need to update the residual function handle used by the nonlinear solver based on the current external force vector
         def resFunc(res):
             self.getResidual(res, Fext=Fext)
@@ -1032,9 +1041,9 @@ class StaticProblem(TACSProblem):
         if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
             self.assembler.assembleJacobian(
-                self.alpha,
-                self.beta,
-                self.gamma,
+                self.ALPHA,
+                self.BETA,
+                self.GAMMA,
                 res,
                 self.K,
                 loadScale=self._loadScale,
@@ -1317,7 +1326,7 @@ class StaticProblem(TACSProblem):
             svSensBVecList = svSensList
 
         self.assembler.addSVSens(
-            funcHandles, svSensBVecList, self.alpha, self.beta, self.gamma
+            funcHandles, svSensBVecList, self.ALPHA, self.BETA, self.GAMMA
         )
 
         # Update from the BVec values, if the input was a numpy array

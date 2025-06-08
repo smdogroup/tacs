@@ -123,21 +123,24 @@ class BucklingProblem(TACSProblem):
         # Problem name
         self.name = name
 
-        # Default setup for common problem class objects, sets up comm and options
-        TACSProblem.__init__(
-            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
-        )
-
         # Set time eigenvalue parameters
         self.sigma = sigma
         self.numEigs = numEigs
 
         # String name used in evalFunctions
         self.valName = "eigsb"
+
+        # Default setup for common problem class objects, sets up comm and options
+        TACSProblem.__init__(
+            self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
+        )
+
         self._initializeFunctionList()
 
         # Create problem-specific variables
         self._createVariables()
+        # Create solver objects
+        self._createSolver()
 
     def _createVariables(self):
         """
@@ -155,6 +158,9 @@ class BucklingProblem(TACSProblem):
         self.rhs = self.assembler.createVec()
         # Auxiliary element object for applying tractions/pressure
         self.auxElems = tacs.TACS.AuxElements()
+
+    def _createSolver(self):
+        """Internal to create the solver objects required by TACS"""
 
         self.aux = self.assembler.createSchurMat()
         self.G = self.assembler.createSchurMat()
@@ -225,7 +231,7 @@ class BucklingProblem(TACSProblem):
             pass
         # Reset solver for all other option changes
         else:
-            self._createVariables()
+            self._createSolver()
 
     def setValName(self, valName):
         """
