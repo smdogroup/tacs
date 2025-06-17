@@ -88,7 +88,6 @@ jobs:
         with:
           auto-update-conda: true
           channels: conda-forge
-          mamba-version: "*"
           python-version: "3.10"
           conda-remove-defaults: true
 
@@ -96,6 +95,7 @@ jobs:
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
+          conda install -c conda-forge mamba -q -y;
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
             mamba install -c conda-forge sysroot_linux-64=2.17 -q -y;
             mamba install -c conda-forge openblas -q -y;
