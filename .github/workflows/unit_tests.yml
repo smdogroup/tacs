@@ -95,10 +95,10 @@ jobs:
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
-            # conda install -c conda-forge sysroot_linux-64=2.17 -q -y;
+            conda install -c conda-forge sysroot_linux-64=2.17 -q -y;
             conda install -c conda-forge openblas -q -y;
           fi
-          conda install -c conda-forge openmpi openmpi-mpicxx -q -y;
+          conda install -c conda-forge openmpi openmpi-mpicxx 'python!=graalpy' -q -y;
           conda install -c conda-forge lapack -q -y;
           conda install -c conda-forge metis=5.1.0 -q -y;
           cd $TACS_DIR;
