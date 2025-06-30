@@ -128,7 +128,7 @@ setup(
     python_requires=">=3.10.0",
     install_requires=[
         "numpy<3.0.0",
-        "mpi4py>=3.1.5,<4.0.0",
+        "mpi4py>=4.0.3,<5.0.0",
         "scipy>=1.2.1",
         "pynastran>=1.4.0",
         "numba",
