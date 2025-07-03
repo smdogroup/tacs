@@ -56,7 +56,7 @@ METIS_LIB = ${METIS_DIR}/lib/libmetis.a
 
 # AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
 
-# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-7.0.1
+# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-7.10.3
 # The variables below should not need to be altered if you are installing SuiteSparse from the standard release tarball
 
 # SUITESPARSE_CONFIG_DIR = ${SUITESPARSE_DIR}/SuiteSparse_config

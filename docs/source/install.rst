@@ -126,7 +126,7 @@ If you already have these libraries installed, simply adjust the variables in ``
 Go to the directory ``tacs/extern``. Download ``metis-5.1.0`` from `<https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/>`_ and place the file ``metis-5.1.0.tar.gz`` there.
 Note that METIS needs CMake to build and install.
 
-Optionally, you can also place ``SuiteSparse-5.13.0.tar.gz`` (available from `<https://github.com/DrTimothyAldenDavis/SuiteSparse/releases>`_) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.
+Optionally, you can also place the tarball for latest version of SuiteSparse (e.g ``SuiteSparse-7.10.3.tar.gz`` available from `<https://github.com/DrTimothyAldenDavis/SuiteSparse/releases>`_) in the same directory if you want to use the approximate minimum degree ordering routines from SuiteSparse.
 
 Also optionally, place ``tecio.tgz`` (available from `<https://www.tecplot.com/products/tecio-library/>`_) in the same directory if you want to build ``f5totec``.
 Note that TecIO requires the boost library, which can be install with ``sudo apt-get install libboost-dev`` on debian systems.
@@ -223,7 +223,7 @@ We have successfully built TACS on the NASA High End Computing Capability system
 A number of changes are necessary to the default ``Makefile.in`` file:
 
 - If using intel compilers and one of the ``mpi-hpe`` modules, use ``CXX = icpc -lmpi``
-- To build a TACS binary that will work on all node types, use the optimization flags recommended in the `HECC documentation <https://www.nas.nasa.gov/hecc/support/kb/recommended-compiler-options_99.html>`_, ``-O3 -axCORE-AVX512,CORE-AVX2 -xAVX`` 
+- To build a TACS binary that will work on all node types, use the optimization flags recommended in the `HECC documentation <https://www.nas.nasa.gov/hecc/support/kb/recommended-compiler-options_99.html>`_, ``-O3 -axCORE-AVX512,CORE-AVX2 -xAVX``
 - If you run into issues related to OpenMP, add ``-qopenmp`` to the end of the `SO_LINK_FLAGS`` entry
 - To link to Intel's MKL in place of standard blas and lapack, replace the default ``LAPACK_LIBS`` line with:
 
