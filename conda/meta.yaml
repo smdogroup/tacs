@@ -61,7 +61,7 @@ requirements:
   run:
     - python
     - sysroot_linux-64>=2.17 # [linux64]
-    - numpy <2.0.a0
+    - numpy
     - scipy
     - openmpi >=4.1.4 # [mpi == "openmpi"]
     - mpich  # [mpi == "mpich"]

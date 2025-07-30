@@ -119,7 +119,7 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.9.1",
+    version="3.9.2",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
