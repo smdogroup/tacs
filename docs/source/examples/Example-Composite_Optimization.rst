@@ -35,7 +35,7 @@ To begin we first import required libraries, define the model bdf file, and defi
   import openmdao.api as om
   import numpy as np
   from mphys.core import Multipoint
-from mphys.scenarios import ScenarioStructural
+  from mphys.scenarios import ScenarioStructural
 
   from tacs import elements, constitutive, functions
   from tacs.mphys import TacsBuilder
