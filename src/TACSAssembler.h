@@ -184,7 +184,7 @@ class TACSAssembler : public TACSObject {
   void applyTransposeBCs(TACSMat *mat);
 
   // Set the Dirichlet boundary conditions to the state vector
-  void setBCs(TACSVec *vec);
+  void setBCs(TACSVec *vec, const TacsScalar lambda = 1.0);
 
   // Methods for manipulating internal variable values
   // -------------------------------------------------

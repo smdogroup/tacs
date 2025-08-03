@@ -3362,7 +3362,9 @@ void TACSAssembler::applyTransposeBCs(TACSMat *mat) {
 
   @param vec Set the boundary conditions values into this vector
 */
-void TACSAssembler::setBCs(TACSVec *vec) { vec->setBCs(bcMap); }
+void TACSAssembler::setBCs(TACSVec *vec, const TacsScalar lambda) {
+  vec->setBCs(bcMap, lambda);
+}
 
 /**
   Create a distributed matrix
@@ -4234,7 +4236,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
 
   // Apply the boundary conditions for the residual
   if (applyBCs) {
-    residual->applyBCs(bcMap, varsVec);
+    residual->applyBCs(bcMap, varsVec, lambda);
   }
 }
 
@@ -4366,7 +4368,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
   if (applyBCs) {
     // Apply the boundary conditions to the residual
     if (residual) {
-      residual->applyBCs(bcMap, varsVec);
+      residual->applyBCs(bcMap, varsVec, lambda);
     }
 
     // Apply the appropriate boundary conditions to the matrix

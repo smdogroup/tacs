@@ -1959,9 +1959,9 @@ cdef class Assembler:
         self.ptr.applyBCs(mat.ptr)
         return
 
-    def setBCs(self, Vec vec):
+    def setBCs(self, Vec vec, TacsScalar loadScale=1.0):
         """Apply the Dirichlet boundary conditions to the state vector"""
-        self.ptr.setBCs(vec.getBVecPtr())
+        self.ptr.setBCs(vec.getBVecPtr(), loadScale)
         return
 
     def createSchurMat(self, OrderingType order_type=TACS_AMD_ORDER):

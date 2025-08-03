@@ -364,7 +364,7 @@ cdef extern from "TACSAssembler.h":
         double getSimulationTime()
         void applyBCs(TACSVec*)
         void applyBCs(TACSMat*)
-        void setBCs(TACSVec*)
+        void setBCs(TACSVec*, const TacsScalar)
         void zeroVariables()
         void zeroDotVariables()
         void zeroDDotVariables()
