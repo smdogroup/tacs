@@ -35,14 +35,13 @@
 
 class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
  public:
-  TACSIsoRectangleBeamConstitutive(TACSMaterialProperties *properties,
-                                   TacsScalar _width, TacsScalar _thickness,
-                                   int _width_num, int _thickness_num,
-                                   TacsScalar _lb_width, TacsScalar _ub_width,
-                                   TacsScalar _lb_thickness,
-                                   TacsScalar _ub_thickness,
-                                   TacsScalar _w_offset = 0.0,
-                                   TacsScalar _t_offset = 0.0);
+  TACSIsoRectangleBeamConstitutive(
+      TACSMaterialProperties *properties, TacsScalar _width,
+      TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
+      int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
+      TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
+      TacsScalar _w_offset = 0.0, TacsScalar _t_offset = 0.0,
+      TacsScalar _buckle_length_factor = 0.0);
   ~TACSIsoRectangleBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -115,10 +114,11 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
 
  private:
   TACSMaterialProperties *props;
-  TacsScalar width, thickness;
-  int width_num, thickness_num;
+  TacsScalar width, thickness, buckle_length, buckle_length_factor;
+  int width_num, thickness_num, buckle_length_num;
   TacsScalar lb_thickness, ub_thickness;
   TacsScalar lb_width, ub_width;
+  TacsScalar lb_buckle_length, ub_buckle_length;
   TacsScalar ks_weight;
   TacsScalar w_offset, t_offset;
   // The object name
