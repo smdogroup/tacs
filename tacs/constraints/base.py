@@ -200,7 +200,7 @@ class TACSConstraint(TACSSystem):
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
         corresponding to the strings in evalCons are evaluated and
-        updated into the provided dictionary. The derivitives with
+        updated into the provided dictionary. The derivatives with
         respect to all design variables and node locations are computed.
 
         Parameters
