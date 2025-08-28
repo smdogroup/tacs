@@ -520,6 +520,24 @@ cdef class OrthotropicPly:
         """
         return self.props
 
+    def setUseMaxStrainCriterion(self):
+        """
+        Set to use the maximum strain failure criterion.
+        """
+        self.ptr.setUseMaxStrainCriterion()
+
+    def setUseTsaiWuCriterion(self):
+        """
+        Set to use the Tsai-Wu failure criterion.
+        """
+        self.ptr.setUseTsaiWuCriterion()
+
+    def setUseModifiedTsaiWu(self, bool useModifiedTsaiWu):
+        """
+        Set to use the modified Tsai-Wu failure criterion.
+        """
+        self.ptr.setUseModifiedTsaiWu(useModifiedTsaiWu)
+
 cdef class PlaneStressConstitutive(Constitutive):
     """
     This is the base class for the plane stress constitutive objects.
@@ -1145,13 +1163,13 @@ cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
         self.ptr = self.cptr = self.blade_ptr = self.base_ptr
         self.ptr.incref()
 
-    
+
 cdef class GaussianProcess:
     """
     Base class for constructing Gaussian Process ML models to predict buckling loads.
     This is an abstract base class and hence has no constructor, only methods used by its subclasses.
     """
-    # base class so no constructor here    
+    # base class so no constructor here
     def predict_mean_test_data(
         self,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
@@ -1166,12 +1184,12 @@ cdef class GaussianProcess:
             a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
             namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
             specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
-        
+
         Returns:
-            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load
             outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
         """
-        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data)
 
     def getNparam(self):
         """
@@ -1206,7 +1224,7 @@ cdef class GaussianProcess:
         self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
         return train_data
 
-    def setKS(self, TacsScalar ksWeight, 
+    def setKS(self, TacsScalar ksWeight,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
@@ -1227,8 +1245,8 @@ cdef class GaussianProcess:
         self.recompute_alpha(Ytrain)
         return
 
-    def setTheta(self, 
-            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+    def setTheta(self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
@@ -1238,7 +1256,7 @@ cdef class GaussianProcess:
         Parameters
         ----------
         theta : np.ndarray
-            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor).
         Ytrain : np.ndarray
             training dataset log(buckling load) outputs in order to retrain the ML model,
             it's a rank-1 tensor of size (Ntrain,)
@@ -1272,7 +1290,7 @@ cdef class GaussianProcess:
         """
         call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
         this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
-        match those of the ml_buckling repo. 
+        match those of the ml_buckling repo.
 
         Parameters
         ----------
@@ -1306,7 +1324,7 @@ cdef class GaussianProcess:
         self.base_gp.getTheta(<TacsScalar*>theta.data)
         self.base_gp.getTrainingData(<TacsScalar*>theta.data)
         cdef TacsScalar sigma_n = theta[-1]
-        
+
         # make the training matrix
         cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
             self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
@@ -1386,7 +1404,7 @@ cdef class BucklingGP(GaussianProcess):
 
     def __cinit__(
         self,
-        int n_train, 
+        int n_train,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
         np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
@@ -1405,7 +1423,7 @@ cdef class PanelGPs:
     object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
     only one call to each GP object is required per panel (speeds up computation time).
     The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
-    (assuming each TACSComponent is associated with a different panel). 
+    (assuming each TACSComponent is associated with a different panel).
 
     The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
     # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
@@ -1435,11 +1453,11 @@ cdef class PanelGPs:
     """
     def __cinit__(
         self,
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
-    ):   
+    ):
         # make null ptrs for GPs if not defined and store them in this class too
         cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
         if axialGP is not None:
@@ -1460,16 +1478,16 @@ cdef class PanelGPs:
 
     @classmethod
     def component_dict(
-        cls, 
+        cls,
         tacs_components, # list of strings of each tacs component name
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
         ):
         """
         constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
-            { tacs_component (str) : PanelGPs object }      
+            { tacs_component (str) : PanelGPs object }
 
         Parameters
         ----------
@@ -1800,7 +1818,7 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
 
     def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
         """
-        test all the internal derivative tests 
+        test all the internal derivative tests
         """
         return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
 
@@ -1994,6 +2012,37 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
                                                       W1, W3, W1_num, W3_num, ksWeight, epsilon)
         self.ptr = self.cptr
         self.ptr.incref()
+
+cdef class LamParamAllShellConstitutive(ShellConstitutive):
+    cdef TACSLamParamAllShellConstitutive* lam_cptr
+    def __cinit__(
+            self,
+            OrthotropicPly ply,
+            TacsScalar t,
+            int tNum,
+            TacsScalar tlb,
+            TacsScalar tub,
+            np.ndarray[int, ndim=1, mode="c"] lpNums,
+            TacsScalar ksWeight = 30.0
+            ):
+
+        self.lam_cptr = new TACSLamParamAllShellConstitutive(
+            ply.ptr,
+            t,
+            tNum,
+            tlb,
+            tub,
+            <int*>lpNums.data,
+            ksWeight
+        )
+        self.ptr = self.cptr = self.lam_cptr
+        self.ptr.incref()
+
+    def setLaminationParameters(self, np.ndarray[TacsScalar, ndim=1, mode="c"] lp):
+        self.lam_cptr.setLaminationParameters(<TacsScalar*>lp.data)
+
+    def setNumFailAngles(self, int numFailAngles):
+        self.lam_cptr.setNumFailAngles(numFailAngles)
 
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
