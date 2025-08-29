@@ -199,7 +199,7 @@ TacsScalar TACSLamParamAllShellConstitutive::evalDensity(int elemIndex,
   return t * orthoPly->getDensity();
 }
 
-// Add the derivative of the density w.r.t. the design variables CHECK
+// Add the derivative of the density w.r.t. the design variables
 void TACSLamParamAllShellConstitutive::addDensityDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     int dvLen, TacsScalar dfdx[]) {
@@ -296,15 +296,11 @@ void TACSLamParamAllShellConstitutive::evalStress(int elemIndex, const double pt
 }
 
 // Evaluate the derivative of the product of the stress with a vector psi.
-// REFACTOR
 void TACSLamParamAllShellConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
   TacsScalar sA[6], sD[6];
-
-  //sA[0] = sA[1] = sA[2] = sA[3] = sA[4] = sA[5] = 0.0;
-  //sD[0] = sD[1] = sD[2] = sD[3] = sD[4] = sD[5] = 0.0;
 
   if (tNum >= 0) {
     // Calculate the in-plane stiffness using the lamination
@@ -347,8 +343,6 @@ void TACSLamParamAllShellConstitutive::addStressDVSens(
     dfdx[0] +=
         scale * (sAs0 * psi[6] * e[6] + sAs2 * psi[7] * e[7] +
                  0.5 * DRILLING_REGULARIZATION * (sAs0 + sAs2) * psi[8] * e[8]);
-
-    //sD[0] = sD[1] = sD[2] = sD[3] = sD[4] = sD[5] = 0.0;
     dfdx++;
   }
   if (lpNums[1] >= 0) {
@@ -359,13 +353,9 @@ void TACSLamParamAllShellConstitutive::addStressDVSens(
     sA[4] = 0.0;
     sA[5] = -t * U3;
     dfdx[0] += scale * mat3x3SymmInner(sA, &psi[0], &e[0]);
-
-    //sD[0] = sD[1] = sD[2] = sD[3] = sD[4] = sD[5] = 0.0;
     dfdx++;
   }
   if (lpNums[2] >= 0) {
-    //sA[0] = sA[1] = sA[2] = sA[3] = sA[4] = sA[5] = 0.0;
-
     TacsScalar p = t * t * t / 12.0;
     sD[0] = p * U2;
     sD[1] = sD[2] = 0.0;
@@ -375,8 +365,6 @@ void TACSLamParamAllShellConstitutive::addStressDVSens(
     dfdx++;
   }
   if (lpNums[3] >= 0) {
-    //sA[0] = sA[1] = sA[2] = sA[3] = sA[4] = sA[5] = 0.0;
-
     TacsScalar p = t * t * t / 12.0;
     sD[0] = sD[1] = 0.0;
     sD[2] = 0.5 * p * U2;
@@ -387,8 +375,6 @@ void TACSLamParamAllShellConstitutive::addStressDVSens(
     dfdx++;
   }
   if (lpNums[4] >= 0) {
-    //sA[0] = sA[1] = sA[2] = sA[3] = sA[4] = sA[5] = 0.0;
-
     TacsScalar p = t * t * t / 12.0;
     sD[0] = p * U3;
     sD[1] = -p * U3;
@@ -400,8 +386,6 @@ void TACSLamParamAllShellConstitutive::addStressDVSens(
     dfdx++;
   }
   if (lpNums[5] >= 0) {
-    //sA[0] = sA[1] = sA[2] = sA[3] = sA[4] = sA[5] = 0.0;
-
     TacsScalar p = t * t * t / 12.0;
     sD[0] = sD[1] = 0.0;
     sD[2] = p * U3;
@@ -611,7 +595,7 @@ void TACSLamParamAllShellConstitutive::addFailureDVSens(
       weights[k] = exp(ksWeight * (fvals[k] - max)) / ks_sum;
     }
 
-    dfdx[index] += computeFailureDVSens(strain, weights);
+    dfdx[index] += scale *computeFailureDVSens(strain, weights);
     index++;
   }
 }
