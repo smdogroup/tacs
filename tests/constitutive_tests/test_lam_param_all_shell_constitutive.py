@@ -27,7 +27,6 @@ class ConstitutiveTest(unittest.TestCase):
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
 
-
         thickness = 0.1
 
         # Create the isotropic layup
