@@ -198,21 +198,21 @@ class TACSGPBladeStiffenedShellConstitutive
   }
 
   // Retrieve the global design variable numbers
-  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) override;
 
   // Set the element design variable from the design vector
-  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) override;
 
   // Get the element design variables values
-  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) override;
 
   // Get the lower and upper bounds for the design variable values
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
-                        TacsScalar ub[]);
+                        TacsScalar ub[]) override;
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
-                                  const TacsScalar X[], int index);
+                                  const TacsScalar X[], int index) override;
 
   // set the KS weight for the failure constraints and the GP models (if GP
   // models are active)

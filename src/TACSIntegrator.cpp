@@ -35,7 +35,7 @@ TACSIntegrator::TACSIntegrator(TACSAssembler *_assembler, double tinit,
   assembler->incref();
 
   // Set the default prefix = results
-  sprintf(prefix, "./");
+  snprintf(prefix, sizeof(prefix), "./");
 
   // Allocate the total number of time steps
   num_time_steps = int(num_steps);

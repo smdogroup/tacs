@@ -35,10 +35,10 @@ bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
 # nonlinear quadratic
 hemisphereProbRefFuncs = {
-    "RadialForces_Compliance": 7.2965029193800985,
-    "RadialForces_KSFailure": 1.7463666427209559,
-    "RadialForces_MaxYDisp": 0.4132001639932796,
-    "RadialForces_MaxZDisp": 0.5963685461476355,
+    "RadialForces_Compliance": 20.59867522072626,
+    "RadialForces_KSFailure": 2.3731860388536483,
+    "RadialForces_MaxYDisp": 0.4948883544992733,
+    "RadialForces_MaxZDisp": 0.4093283830600901,
 }
 
 STRAIN_TYPE = "nonlinear"
@@ -179,9 +179,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-13
             self.dh = 1e-200
         else:
-            self.rtol = 1e-2
+            self.rtol = 1e-4
             self.atol = 1e-4
-            self.dh = 1e-4
+            self.dh = 1e-8
 
         # ==============================================================================
         # Create pyTACS Assembler and problems

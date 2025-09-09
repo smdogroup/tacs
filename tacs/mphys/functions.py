@@ -112,7 +112,8 @@ class TacsFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                d_func = d_outputs[func_name]
+                # Convert seed to scalar
+                d_func = d_outputs[func_name].item()
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)
@@ -205,7 +206,8 @@ class MassFunctions(om.ExplicitComponent):
             self._update_internal(inputs)
 
             for func_name in d_outputs:
-                d_func = d_outputs[func_name]
+                # Convert seed to scalar
+                d_func = d_outputs[func_name].item()
 
                 if "tacs_dvs" in d_inputs:
                     self.sp.addDVSens([func_name], [d_inputs["tacs_dvs"]], scale=d_func)

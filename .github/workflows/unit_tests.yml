@@ -165,7 +165,7 @@ jobs:
           retention-days: 7
       - name: 'Deploy docs'
         if: ${{ github.event_name == 'push' && matrix.PUBLISH_DOCS }}
-        uses: JamesIves/github-pages-deploy-action@v4.7.2
+        uses: JamesIves/github-pages-deploy-action@v4.7.3
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.
