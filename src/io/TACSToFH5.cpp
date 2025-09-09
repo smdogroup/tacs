@@ -234,10 +234,11 @@ int TACSToFH5::writeToFile(const char *filename) {
     X->getArray(&Xarray);
 
     if (write_flag & TACS_OUTPUT_LOADS) {
-      // Compute the residual w/o external forces to infer the applied load
+      // Compute the residual w/o external forces to infer the applied load and
+      // without applying BCs to include the reaction forces
       F = assembler->createVec();
       F->incref();
-      assembler->assembleRes(F, 0.0);
+      assembler->assembleRes(F, 0.0, false);
       F->getArray(&F_array);
     }
 
