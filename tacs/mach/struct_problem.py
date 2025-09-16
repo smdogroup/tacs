@@ -420,7 +420,7 @@ class StructProblem(BaseStructProblem):
                 constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
     @updateDVGeo
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(self, funcsSens, evalFuncs=None, includeXptSens=False):
         """
         Evaluate the sensitivity of the desired functions
 
@@ -430,6 +430,8 @@ class StructProblem(BaseStructProblem):
             Dictionary into which the function sensitivities are saved
         evalFuncs : iterable object containing strings
             The functions that the user wants evaluated
+        includeXptSens : bool
+            Flag to include sensitivities with respect to the node locations.
         """
         if evalFuncs is None:
             evalFuncs = self.evalFuncs
@@ -444,8 +446,9 @@ class StructProblem(BaseStructProblem):
                     funcsSens[funcKey][dvKey], root=0
                 )
 
+        # Compute the DVGeo sensitivities if requested
+        coordName = self.staticProblem.getCoordName()
         if self.DVGeo is not None:
-            coordName = self.staticProblem.getCoordName()
             for funcName in evalFuncs:
                 funcKey = f"{self.name}_{funcName}"
                 if coordName in funcsSens[funcKey]:
@@ -455,8 +458,15 @@ class StructProblem(BaseStructProblem):
                     )
                     funcsSens[funcKey].update(dIdx)
 
+        # Pop out the node sensitivities if requested
+        elif not includeXptSens:
+            for funcName in evalFuncs:
+                funcKey = f"{self.name}_{funcName}"
+                if coordName in funcsSens[funcKey]:
+                    funcsSens[funcKey].pop(coordName).reshape(-1, 3)
+
     @updateDVGeo
-    def evalConstraintsSens(self, fconSens, evalCons=None):
+    def evalConstraintsSens(self, fconSens, evalCons=None, includeXptSens=False):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -470,6 +480,8 @@ class StructProblem(BaseStructProblem):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeXptSens : bool
+            Flag to include sensitivities with respect to the node locations.
         """
         sens = {}
         for constr in self.constraints:
@@ -481,9 +493,10 @@ class StructProblem(BaseStructProblem):
             if dvKey in sens[conKey]:
                 sens[conKey][dvKey] = self.comm.bcast(sens[conKey][dvKey], root=0)
 
+        # Compute the DVGeo sensitivities if requested
+        coordName = self.staticProblem.getCoordName()
         if self.DVGeo is not None:
             self.DVGeo.computeTotalJacobian(self.ptSetName, config=self.name)
-            coordName = self.staticProblem.getCoordName()
             for conKey in sens:
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
@@ -507,6 +520,12 @@ class StructProblem(BaseStructProblem):
                                 dIdx[dvName] = dIdx_i[dvName]
                     # Update sensitivity dict with new DVGeo sensitivities
                     sens[conKey].update(dIdx)
+
+        # Pop out the node sensitivities if requested
+        elif not includeXptSens:
+            for conKey in sens:
+                if coordName in sens[conKey]:
+                    sens[conKey].pop(coordName).reshape(-1, 3)
 
         fconSens.update(sens)
 
@@ -1016,7 +1035,7 @@ class StructProblem(BaseStructProblem):
         """
         self.staticProblem.writeSolution(outputDir, baseName, number)
 
-    def writeExternalForceFile(self, fileName):
+    def writeExternalForceFile(self, outputDir=None, baseName=None, number=None):
         """
         This function writes the external loads to a file.
         This is typically used to save loads from an aerostructural run.
@@ -1026,6 +1045,10 @@ class StructProblem(BaseStructProblem):
         fileName : str
             Filename for force file. Should have .dat or .bdf extension
         """
+        if baseName is None:
+            baseName = self.name + "_external_forces"
+        # Figure out the output file base name
+        fileName = self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
         # We want to isolate only the external loads in the rhs before writing the loads out
         rhs = self.staticProblem.rhs
         # Save a copy of the rhs vector holding the full loads
