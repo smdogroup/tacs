@@ -92,7 +92,8 @@ class pyMeshLoader(BaseUI):
         self.propertyIDToElementIDDict = (
             self.bdfInfo.get_property_id_to_element_ids_map()
         )
-        for pid in self.propertyIDToElementIDDict:
+        pidList = list(self.propertyIDToElementIDDict.keys())
+        for pid in pidList:
             # If there are no elements referencing this property card, remove it
             if len(self.propertyIDToElementIDDict[pid]) == 0:
                 self.bdfInfo.properties.pop(pid)
