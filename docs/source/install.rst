@@ -160,6 +160,7 @@ After compiling the C++ TACS library, go to the subdirectory ``tacs/extern/f5tov
 
 The ``extern`` directory also contains two bash scripts, ``f5convert`` and ``f5clean``, that can be used to convert and clean ``.f5`` files.
 ``f5convert`` converts any ``.f5`` files that don't have an up-to-date ``.vtk`` or ``.plt`` file, and ``f5clean`` removes the ``.vtk`` or ``.plt`` file corresponding to each ``.f5`` file.
+To keep data in the Paraview/Tecplot files discontinuous across element boundaries instead of averaging data at nodes, use the ``-d`` or ``--discontinuous``` flag.
 Both scripts accept a ``-s`` flag that will also convert or clean the ``.f5`` files in any subdirectories that contain ``.f5`` files.
 Run ``f5convert -h`` or ``f5clean -h`` for more information.
 
