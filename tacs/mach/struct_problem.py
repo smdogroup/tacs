@@ -6,10 +6,12 @@ pyBase_problem
 # Imports
 # =============================================================================
 from functools import wraps
+import copy
 
 from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
+import pyNastran.bdf as pn
 
 import tacs.TACS
 
@@ -37,6 +39,7 @@ class StructProblem(BaseStructProblem):
         staticProblem,
         FEAAssembler,
         DVGeo=None,
+        loadFile=None,
     ):
         """
         Parameters
@@ -50,6 +53,10 @@ class StructProblem(BaseStructProblem):
         dvGeo : pygeo.DVGeometry or None
             Object responsible for manipulating the constraints that
             this object is responsible for.
+
+        loadFile : str
+            Filename of the (static) external load file. Should be
+            generated from pyAerostructure.
         """
 
         self.staticProblem = staticProblem
@@ -57,10 +64,13 @@ class StructProblem(BaseStructProblem):
         self.DVGeo = None
         self.numGeoDV = 0
         self.ptSetName = None
+        self.loadFile = loadFile
         self.constraints = []
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
-            raise RuntimeError("Provided StaticProblem does not correspond to pyTACS assembler object.")
+            raise RuntimeError(
+                "Provided StaticProblem does not correspond to pyTACS assembler object."
+            )
 
         self.comm = self.staticProblem.comm
         if DVGeo:
@@ -78,10 +88,16 @@ class StructProblem(BaseStructProblem):
         self._dIdu = self.FEAAssembler.createVec(asBVec=True)
         self._matVecRHS = self.FEAAssembler.createVec(asBVec=True)
         self._matVecSolve = self.FEAAssembler.createVec(asBVec=True)
-        self.adjoints = {funcName: self.FEAAssembler.createVec(asBVec=True) for funcName in self.evalFuncs}
+        self.adjoints = {
+            funcName: self.FEAAssembler.createVec(asBVec=True)
+            for funcName in self.evalFuncs
+        }
 
         self.callCounter = 0
         self.doDamp = False
+
+        if self.loadFile:
+            self.readExternalForceFile(self.loadFile)
 
     @property
     def name(self):
@@ -198,7 +214,7 @@ class StructProblem(BaseStructProblem):
 
         self.ptSetName = "tacs_%s_coords" % self.name
         coords0 = self.staticProblem.getNodes()
-        self.DVGeo.addPointSet(coords0.reshape(-1,3), self.ptSetName, **pointSetKwargs)
+        self.DVGeo.addPointSet(coords0.reshape(-1, 3), self.ptSetName, **pointSetKwargs)
 
     def setDesignVars(self, x):
         """
@@ -227,8 +243,10 @@ class StructProblem(BaseStructProblem):
             pyTACS Constraint object
         """
         if self.staticProblem.assembler != constr.assembler:
-            raise ValueError(f"TACSConstraint object '{constr.name}' and StaticProblem '{self.staticProblem.name}' "
-                             "were not created by same pyTACS assembler")
+            raise ValueError(
+                f"TACSConstraint object '{constr.name}' and StaticProblem '{self.staticProblem.name}' "
+                "were not created by same pyTACS assembler"
+            )
 
         self.constraints.append(constr)
 
@@ -248,7 +266,9 @@ class StructProblem(BaseStructProblem):
             lb, ub = self.getDesignVarRange()
             scale = self.getDesignVarScales()
 
-            optProb.addVarGroup(dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale)
+            optProb.addVarGroup(
+                dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale
+            )
 
     def addConstraintsPyOpt(self, optProb):
         """
@@ -400,7 +420,7 @@ class StructProblem(BaseStructProblem):
                 constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
     @updateDVGeo
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(self, funcsSens, evalFuncs=None, includeXptSens=False):
         """
         Evaluate the sensitivity of the desired functions
 
@@ -410,6 +430,8 @@ class StructProblem(BaseStructProblem):
             Dictionary into which the function sensitivities are saved
         evalFuncs : iterable object containing strings
             The functions that the user wants evaluated
+        includeXptSens : bool
+            Flag to include sensitivities with respect to the node locations.
         """
         if evalFuncs is None:
             evalFuncs = self.evalFuncs
@@ -420,19 +442,31 @@ class StructProblem(BaseStructProblem):
             funcKey = f"{self.name}_{funcName}"
             dvKey = self.staticProblem.getVarName()
             if dvKey in funcsSens[funcKey]:
-                funcsSens[funcKey][dvKey] = self.comm.bcast(funcsSens[funcKey][dvKey], root=0)
+                funcsSens[funcKey][dvKey] = self.comm.bcast(
+                    funcsSens[funcKey][dvKey], root=0
+                )
 
+        # Compute the DVGeo sensitivities if requested
+        coordName = self.staticProblem.getCoordName()
         if self.DVGeo is not None:
-            coordName = self.staticProblem.getCoordName()
             for funcName in evalFuncs:
                 funcKey = f"{self.name}_{funcName}"
                 if coordName in funcsSens[funcKey]:
-                    dIdpt = funcsSens[funcKey].pop(coordName).reshape(-1,3)
-                    dIdx = self.DVGeo.totalSensitivity(dIdpt, self.ptSetName, comm=self.comm, config=self.name)
+                    dIdpt = funcsSens[funcKey].pop(coordName).reshape(-1, 3)
+                    dIdx = self.DVGeo.totalSensitivity(
+                        dIdpt, self.ptSetName, comm=self.comm, config=self.name
+                    )
                     funcsSens[funcKey].update(dIdx)
 
+        # Pop out the node sensitivities if requested
+        elif not includeXptSens:
+            for funcName in evalFuncs:
+                funcKey = f"{self.name}_{funcName}"
+                if coordName in funcsSens[funcKey]:
+                    funcsSens[funcKey].pop(coordName).reshape(-1, 3)
+
     @updateDVGeo
-    def evalConstraintsSens(self, fconSens, evalCons=None):
+    def evalConstraintsSens(self, fconSens, evalCons=None, includeXptSens=False):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -446,6 +480,8 @@ class StructProblem(BaseStructProblem):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeXptSens : bool
+            Flag to include sensitivities with respect to the node locations.
         """
         sens = {}
         for constr in self.constraints:
@@ -457,9 +493,10 @@ class StructProblem(BaseStructProblem):
             if dvKey in sens[conKey]:
                 sens[conKey][dvKey] = self.comm.bcast(sens[conKey][dvKey], root=0)
 
+        # Compute the DVGeo sensitivities if requested
+        coordName = self.staticProblem.getCoordName()
         if self.DVGeo is not None:
             self.DVGeo.computeTotalJacobian(self.ptSetName, config=self.name)
-            coordName = self.staticProblem.getCoordName()
             for conKey in sens:
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
@@ -470,8 +507,12 @@ class StructProblem(BaseStructProblem):
                     dIdx = {}
                     # Loop through each row of the sparse constraint and compute the Jacobian product with DVGeo
                     for i in range(dIdpt.shape[0]):
-                        dIdx_i = self.DVGeo.totalSensitivity(dIdpt[i, :].toarray(), self.ptSetName, comm=self.comm,
-                                                             config=self.name)
+                        dIdx_i = self.DVGeo.totalSensitivity(
+                            dIdpt[i, :].toarray(),
+                            self.ptSetName,
+                            comm=self.comm,
+                            config=self.name,
+                        )
                         for dvName in dIdx_i:
                             if dvName in dIdx:
                                 dIdx[dvName] = np.vstack((dIdx[dvName], dIdx_i[dvName]))
@@ -479,6 +520,12 @@ class StructProblem(BaseStructProblem):
                                 dIdx[dvName] = dIdx_i[dvName]
                     # Update sensitivity dict with new DVGeo sensitivities
                     sens[conKey].update(dIdx)
+
+        # Pop out the node sensitivities if requested
+        elif not includeXptSens:
+            for conKey in sens:
+                if coordName in sens[conKey]:
+                    sens[conKey].pop(coordName).reshape(-1, 3)
 
         fconSens.update(sens)
 
@@ -757,7 +804,7 @@ class StructProblem(BaseStructProblem):
         svList = [self.FEAAssembler.createVec() for f in evalFuncs]
         self.staticProblem.addSVSens(evalFuncs, svList)
         for i, f in enumerate(evalFuncs):
-            f_mangled = self.name+'_%s'%f
+            f_mangled = self.name + "_%s" % f
             self._matVecRHS.axpy(vecT[f_mangled][0], svList[i])
 
         return self.matVecRHS.copy()
@@ -774,8 +821,10 @@ class StructProblem(BaseStructProblem):
         # # The old way (for testing purposes)
         prodDV = self.FEAAssembler.createDesignVec(asBVec=True)
         for f in evalFuncs:
-            f_mangled = self.name+'_%s'%f
-            self.staticProblem.addDVSens([evalFuncs], [prodDV], scale=vecT[f_mangled][0])
+            f_mangled = self.name + "_%s" % f
+            self.staticProblem.addDVSens(
+                [evalFuncs], [prodDV], scale=vecT[f_mangled][0]
+            )
 
         # Convert result back into a dictionary
         prodDict = self.convertDesignVecToDict(prodDV.getArray())
@@ -783,16 +832,24 @@ class StructProblem(BaseStructProblem):
         if self.DVGeo is not None:
             prodXpt = self.FEAAssembler.createNodeVec(asBVec=True)
             for f in evalFuncs:
-                f_mangled = self.name + '_%s' % f
-                self.staticProblem.addXptSens([evalFuncs], [prodXpt], scale=vecT[f_mangled][0])
+                f_mangled = self.name + "_%s" % f
+                self.staticProblem.addXptSens(
+                    [evalFuncs], [prodXpt], scale=vecT[f_mangled][0]
+                )
             xArray = prodXpt.getArray()
-            xdot = self.DVGeo.totalSensitivity(xArray.reshape(-1, 3), self.ptSetName, comm=self.comm, config=self.name)
+            xdot = self.DVGeo.totalSensitivity(
+                xArray.reshape(-1, 3), self.ptSetName, comm=self.comm, config=self.name
+            )
             prodDict.update(xdot)
 
         return prodDict
 
         if self.DVGeo is not None:
-            prod.update(self.DVGeo.convertSensitivityToDict(np.atleast_2d(prod_arr[self.dvNum:]), out1D=True))
+            prod.update(
+                self.DVGeo.convertSensitivityToDict(
+                    np.atleast_2d(prod_arr[self.dvNum :]), out1D=True
+                )
+            )
 
         return prod
 
@@ -804,7 +861,6 @@ class StructProblem(BaseStructProblem):
         res = self.temp0
         update = self.temp1
         res.getArray()[:] = inVec
-
 
         # Solve
         self.staticProblem.linearSolver.solve(res, update)
@@ -929,15 +985,21 @@ class StructProblem(BaseStructProblem):
         prod : dict
         """
         dvProd = self.FEAAssembler.createDesignVec(asBVec=True)
-        self.staticProblem.addAdjointResProducts([self._matVecSolve], [dvProd], scale=1.0)
+        self.staticProblem.addAdjointResProducts(
+            [self._matVecSolve], [dvProd], scale=1.0
+        )
         # Convert result back into a dictionary
         prodDict = self.convertDesignVecToDict(dvProd.getArray())
 
         if self.DVGeo is not None:
             xptProd = self.FEAAssembler.createNodeVec(asBVec=True)
-            self.staticProblem.addAdjointResXptSensProducts([self._matVecSolve], [xptProd], scale=1.0)
+            self.staticProblem.addAdjointResXptSensProducts(
+                [self._matVecSolve], [xptProd], scale=1.0
+            )
             xArray = xptProd.getArray()
-            xdot = self.DVGeo.totalSensitivity(xArray.reshape(-1, 3), self.ptSetName, comm=self.comm, config=self.name)
+            xdot = self.DVGeo.totalSensitivity(
+                xArray.reshape(-1, 3), self.ptSetName, comm=self.comm, config=self.name
+            )
             prodDict.update(xdot)
 
         return prodDict
@@ -950,7 +1012,6 @@ class StructProblem(BaseStructProblem):
         dvDict = {self.staticProblem.getVarName(): dvVals}
 
         return dvDict
-
 
     def writeSolution(self, outputDir=None, baseName=None, number=None):
         """
@@ -973,3 +1034,68 @@ class StructProblem(BaseStructProblem):
             typically used from an external solver
         """
         self.staticProblem.writeSolution(outputDir, baseName, number)
+
+    def writeExternalForceFile(self, outputDir=None, baseName=None, number=None):
+        """
+        This function writes the external loads to a file.
+        This is typically used to save loads from an aerostructural run.
+
+        Parameters
+        ----------
+        fileName : str
+            Filename for force file. Should have .dat or .bdf extension
+        """
+        if baseName is None:
+            baseName = self.name + "_external_forces"
+        # Figure out the output file base name
+        fileName = self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
+        # We want to isolate only the external loads in the rhs before writing the loads out
+        rhs = self.staticProblem.rhs
+        # Save a copy of the rhs vector holding the full loads
+        self.temp0.copyValues(rhs)
+        # Replace vector with only external loads
+        rhs.copyValues(self._Fext)
+        # Write external loads to bdf
+        self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
+        # Reset rhs back to full loads
+        rhs.copyValues(self.temp0)
+
+    def readExternalForceFile(self, fileName):
+        """
+        Reads in a force file and sets the external forces in the structural problem.
+        This is typically used to read in loads saved from an aerostructural run.
+
+        Parameters
+        ----------
+        fileName : str
+            Filename for force file. Should have .dat or .bdf extension
+        """
+
+        forceInfo = pn.bdf.read_bdf(
+            fileName, validate=False, xref=False, debug=False, punch=True
+        )
+        bdfInfo = self.staticProblem.bdfInfo
+
+        # Step 1: Store original loads from bdfInfo
+        originalLoads = copy.deepcopy(bdfInfo.loads)
+        originalLoadCombinations = copy.deepcopy(bdfInfo.load_combinations)
+
+        # Step 2: Overwrite bdfInfo loads with forceInfo loads
+        bdfInfo.loads = copy.deepcopy(forceInfo.loads)
+        bdfInfo.load_combinations = copy.deepcopy(forceInfo.load_combinations)
+
+        # Create a copy of the internal loads already added to model
+        F = self.staticProblem.F
+        self.temp0.copyValues(F)
+        # Zero out the loads
+        F.zeroEntries()
+        # Read the external loads
+        self.staticProblem.addLoadFromBDF(0)
+        # Copy new loads to ext load vector
+        self._Fext.copyValues(F)
+        # Set internal loads back to previous values
+        F.copyValues(self.temp0)
+
+        # Step 3: Restore original loads back into bdfInfo
+        bdfInfo.loads = originalLoads
+        bdfInfo.load_combinations = originalLoadCombinations
