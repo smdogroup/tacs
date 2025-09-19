@@ -77,6 +77,8 @@ SPC1           1  123456      39
 SPC1           1  123456      40
 $ Femap Property 1 : PLATE
 PSHELL         1       1    .005       1               1              0.
+$ Femap Property 2 : DUMMY
+PSHELL      9999       1    .005       1               1              0.
 $ Femap Material 1 : 2024-T351 Al Plate: t = 0.25 to 0.5 inches
 MAT1           1  1.07+7             .332.5906-4 1.255-5     70.        +
 +         42000.  40000.  38000.
