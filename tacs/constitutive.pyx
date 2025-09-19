@@ -1358,7 +1358,17 @@ cdef class BucklingGP(GaussianProcess):
     n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
 
     @classmethod
-    def from_csv(cls, csv_file, theta_csv):
+    def from_axial_csv(cls, csv_file, theta_csv):
+        # affine is True
+        return cls.from_csv(csv_file, theta_csv, True)
+
+    @classmethod
+    def from_shear_csv(cls, csv_file, theta_csv):
+        # affine is False
+        return cls.from_csv(csv_file, theta_csv, False)
+
+    @classmethod
+    def from_csv(cls, csv_file, theta_csv, affine:bool=True):
         """
         Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
         the training weights of the ML model and the optimal hyperparameters theta.
@@ -1400,17 +1410,19 @@ cdef class BucklingGP(GaussianProcess):
 
         theta_opt = np.loadtxt(theta_csv, skiprows=1, delimiter=",")[:,-1].astype(dtype=dtype)
 
-        return cls(n_train, Xtrain, alpha, theta_opt)
+        return cls(n_train, affine, Xtrain, alpha, theta_opt)
 
     def __cinit__(
         self,
-        int n_train,
+        int n_train, 
+        bool affine,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
         np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
     ):
         self.buckling_gp = new TACSBucklingGaussianProcessModel(
             n_train,
+            affine,
             <TacsScalar*>Xtrain.data,
             <TacsScalar*>alpha.data,
             <TacsScalar*>theta.data,
