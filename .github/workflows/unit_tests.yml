@@ -99,6 +99,8 @@ jobs:
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
             mamba install -c conda-forge sysroot_linux-64=2.17 -q -y;
             mamba install -c conda-forge openblas -q -y;
+          else
+            mamba install -c conda-forge ld64 -q -y;
           fi
           mamba install -c conda-forge openmpi openmpi-mpicxx -q -y;
           mamba install -c conda-forge lapack -q -y;
