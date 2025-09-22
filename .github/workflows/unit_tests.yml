@@ -87,20 +87,24 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: 3.9
+          channels: conda-forge
+          python-version: "3.10"
           conda-remove-defaults: true
 
       - name: Install TACS
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
+          conda install -c conda-forge mamba -q -y;
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
-            conda install -c conda-forge sysroot_linux-64=2.17 -q -y;
-            conda install -c conda-forge openblas -q -y;
+            mamba install -c conda-forge sysroot_linux-64=2.17 -q -y;
+            mamba install -c conda-forge openblas -q -y;
+          else
+            mamba install -c conda-forge ld64 -q -y;
           fi
-          conda install -c conda-forge openmpi openmpi-mpicxx -q -y;
-          conda install -c conda-forge lapack -q -y;
-          conda install -c conda-forge metis=5.1.0 -q -y;
+          mamba install -c conda-forge openmpi openmpi-mpicxx -q -y;
+          mamba install -c conda-forge lapack -q -y;
+          mamba install -c conda-forge metis=5.1.0 -q -y;
           cd $TACS_DIR;
           cp Makefile.in.info Makefile.in;
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
@@ -111,7 +115,7 @@ jobs:
       - name: Install f5totec/f5tovtk
         run: |
           # Sometimes needed for macos runner to prevent it from pulling numpy 2 when installing tecio later
-          conda install -c smdogroup -c conda-forge tecio "numpy<2" -q -y;
+          mamba install -c smdogroup -c conda-forge tecio "numpy<2" -q -y;
           # Compile f5totec/f5tovtk
           cd $TACS_DIR/extern/f5totec;
           make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
@@ -122,7 +126,7 @@ jobs:
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
-          conda install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy<2" -q -y;
+          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy<2" -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
