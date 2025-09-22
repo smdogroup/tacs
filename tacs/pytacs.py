@@ -1165,9 +1165,7 @@ class pyTACS(BaseUI):
                 if propInfo.Type == "BAR":
                     w = propInfo.dim[0]
                     t = propInfo.dim[1]
-                    con = tacs.constitutive.IsoRectangleBeamConstitutive(
-                        mat, w=w, t=t
-                    )
+                    con = tacs.constitutive.IsoRectangleBeamConstitutive(mat, w=w, t=t)
 
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[0]
