@@ -1170,10 +1170,10 @@ class pyTACS(BaseUI):
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[0]
                     r0 = propInfo.dim[1]
-                    d_avg = r0 + r1
+                    d_inner = 2 * r0
                     t_wall = r1 - r0
                     con = tacs.constitutive.IsoTubeBeamConstitutive(
-                        mat, d=d_avg, t=t_wall
+                        mat, d=d_inner, t=t_wall
                     )
 
                 else:
