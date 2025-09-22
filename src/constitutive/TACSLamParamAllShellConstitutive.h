@@ -16,7 +16,6 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-
 #ifndef TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
 #define TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
 
@@ -41,13 +40,9 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
  public:
   static const int MAX_NUM_FAIL_ANGLES = 12;
 
-  TACSLamParamAllShellConstitutive(TACSOrthotropicPly* _orthoPly,
-                  TacsScalar _t,
-                  int _tNum,
-                  TacsScalar _tlb,
-                  TacsScalar _tub,
-                  int _lpNums[],
-                  TacsScalar _ksWeight);
+  TACSLamParamAllShellConstitutive(TACSOrthotropicPly* _orthoPly, TacsScalar _t,
+                                   int _tNum, TacsScalar _tlb, TacsScalar _tub,
+                                   int _lpNums[], TacsScalar _ksWeight);
   ~TACSLamParamAllShellConstitutive();
 
   // -------------------------------------
@@ -75,15 +70,15 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
 
   // Get the lower and upper bounds for the design variable values
-  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[]);
-
-
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // -------------------------------------
   // Evaluate mass properties
   // -------------------------------------
   // Evaluate the mass per unit area
-  TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[]);
+  TacsScalar evalDensity(int elemIndex, const double pt[],
+                         const TacsScalar X[]);
 
   // Add the derivative of the density w.r.t. the design variables
   void addDensityDVSens(int elemIndex, TacsScalar scale, const double pt[],
@@ -98,7 +93,6 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
                             const TacsScalar X[], const TacsScalar scale[],
                             int dvLen, TacsScalar dfdx[]);
 
-
   // -------------------------------------
   // Evaluate thermal properties
   // -------------------------------------
@@ -106,7 +100,6 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   // Evaluate the specific heat. Not implemented for this class.
   TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
                               const TacsScalar X[]);
-
 
   // -------------------------------------
   // Compute stress/strain/stiffness
@@ -122,7 +115,6 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   // Evaluate the tangent stiffness
   void evalTangentStiffness(int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar C[]);
-
 
   // -------------------------------------
   // Compute failure criteria
@@ -152,20 +144,20 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
                                   const TacsScalar X[], int index);
 
  private:
-
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar *_max);
+                      TacsScalar* _max);
   void computeFailureStrainSens(const TacsScalar strain[],
                                 const TacsScalar weights[], TacsScalar sens[]);
-  TacsScalar computeFailureDVSens(const TacsScalar strain[], const TacsScalar weights[]);
+  TacsScalar computeFailureDVSens(const TacsScalar strain[],
+                                  const TacsScalar weights[]);
 
   // Check that the matrix is positive definite (used for testing)
   int checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar *drill);
+                    TacsScalar As[], TacsScalar* drill);
 
   // The number of angles to check for failure < MAX_NUM_FAIL_ANGLES
   int numFailAngles;
@@ -190,9 +182,9 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
 
   // The lamination parameter values
   TacsScalar lp[6];  // The lamination parameters
-  int lpNums[6];     // The design variable numbers for the lamination parameters
+  int lpNums[6];  // The design variable numbers for the lamination parameters
 
   static const char* constName;
 };
 
-#endif // TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
+#endif  // TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
