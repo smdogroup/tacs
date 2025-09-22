@@ -135,7 +135,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return tacs_probs, fea_assembler
 
-    # We have to skip these tests in complex mode because the beam 
+    # We have to skip these tests in complex mode because the beam
     # element uses complex step to approximate the Jacobian and this
     # leads to issues with complex stepping the sensitivities.
     @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
