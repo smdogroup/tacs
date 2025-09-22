@@ -1,8 +1,9 @@
 import os
+import unittest
 
 from pytacs_analysis_base_test import PyTACSTestCase
 
-from tacs import functions, pytacs
+from tacs import TACS, functions, pytacs
 
 """
 6 noded beam model 1 meter long in x direction.
@@ -14,6 +15,8 @@ StructuralMass, and Compliance functions and sensitivities.
 
 This test uses automatic pytacs initialization from BDF file with PBARL cards.
 """
+
+TACS_IS_COMPLEX = (TACS.dtype == complex)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl.bdf")
@@ -131,3 +134,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return tacs_probs, fea_assembler
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()

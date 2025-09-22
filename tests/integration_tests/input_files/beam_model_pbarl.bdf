@@ -3,7 +3,7 @@ NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
 ID FEMAP,FEMAP
 SOL SESTATIC
 CEND
-  TITLE = Beam Test with PBARL
+  TITLE = Beam Test
   ECHO = NONE
   DISPLACEMENT(PLOT) = ALL
   SPCFORCE(PLOT) = ALL
@@ -54,9 +54,9 @@ $ Femap Constraint Set 1 : Case 1
 SPC1           1  123456       1
 $ Tube beam property using PBARL
 PBARL         1       1 MSCBML0    TUBE                                +       
-+           .055    .045      0.        
++            .06     .05      0.        
 $ Femap Material 1 : Aluminum
-MAT1           1    7.+4              .3   2780.      0.      0.        +       
+MAT1           1    7.+4              .3   2700.      0.      0.        +       
 +          2.7+3
 GRID           1       0      0.      0.      0.       0
 GRID           2       0      .2      0.      0.       0

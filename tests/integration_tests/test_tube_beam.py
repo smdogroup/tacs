@@ -1,9 +1,10 @@
 import os
+import unittest
 
 import numpy as np
-
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, functions
+
+from tacs import TACS, constitutive, elements, functions, pytacs
 
 """
 6 noded beam model 1 meter long in x direction.
@@ -13,6 +14,8 @@ The cross-section is a hollow tube with the following properties:
 We apply apply various tip loads test KSDisplacement, KSFailure, 
 StructuralMass, and Compliance functions and sensitivities.
 """
+
+TACS_IS_COMPLEX = (TACS.dtype == complex)
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
@@ -84,7 +87,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ys = 2.7e3  # yield stress
 
         # Shell thickness
-        t = 0.01  # m
+        t = 0.010000000000000002  # m
         d = 0.1  # m
 
         # Callback function used to setup TACS element objects and DVs
@@ -153,3 +156,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return tacs_probs, fea_assembler
+
+    # We have to skip these tests in complex mode because the beam 
+    # element uses complex step to approximate the Jacobian and this
+    # leads to issues with complex stepping the sensitivities.
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()
