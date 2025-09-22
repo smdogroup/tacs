@@ -15,7 +15,7 @@ We apply apply various tip loads test KSDisplacement, KSFailure,
 StructuralMass, and Compliance functions and sensitivities.
 """
 
-TACS_IS_COMPLEX = (TACS.dtype == complex)
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
@@ -87,7 +87,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ys = 2.7e3  # yield stress
 
         # Shell thickness
-        t = 0.010000000000000002  # m
+        t = 0.01  # m
         d = 0.1  # m
 
         # Callback function used to setup TACS element objects and DVs

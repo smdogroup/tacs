@@ -16,7 +16,7 @@ StructuralMass, and Compliance functions and sensitivities.
 This test uses automatic pytacs initialization from BDF file with PBARL cards.
 """
 
-TACS_IS_COMPLEX = (TACS.dtype == complex)
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl.bdf")
@@ -135,6 +135,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         return tacs_probs, fea_assembler
 
+    # We have to skip these tests in complex mode because the beam 
+    # element uses complex step to approximate the Jacobian and this
+    # leads to issues with complex stepping the sensitivities.
     @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
     def test_total_dv_sensitivities(self):
         super().test_total_dv_sensitivities()
