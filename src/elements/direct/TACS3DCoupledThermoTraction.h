@@ -8,9 +8,8 @@
 /*
   The surface traction class for 3D elements
 */
-template <int order>
-class TACS3DThermoTraction : public TACSElement {
- public:
+template <int order> class TACS3DThermoTraction : public TACSElement {
+public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -235,7 +234,7 @@ class TACS3DThermoTraction : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
- private:
+private:
   int surface;
   TacsScalar tx[order * order];
   TacsScalar ty[order * order];
@@ -247,9 +246,8 @@ class TACS3DThermoTraction : public TACSElement {
 /*
   The surface heat flux class for 3D elements
 */
-template <int order>
-class TACS3DHeatFluxTraction : public TACSElement {
- public:
+template <int order> class TACS3DHeatFluxTraction : public TACSElement {
+public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -472,7 +470,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
- private:
+private:
   // Set the base point and direction
   // --------------------------------
   void initBaseDir(int surface) {
@@ -509,9 +507,8 @@ class TACS3DHeatFluxTraction : public TACSElement {
   The surface heat source/sink class for 3D elements; treat it like a
   body force
 */
-template <int order>
-class TACS3DHeatSourceSink : public TACSElement {
- public:
+template <int order> class TACS3DHeatSourceSink : public TACSElement {
+public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -543,7 +540,7 @@ class TACS3DHeatSourceSink : public TACSElement {
     numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
   }
   // Get the number of displacements/nodes
-  int numDisplacements() { return 4; }  // u,v,w,dT
+  int numDisplacements() { return 4; } // u,v,w,dT
   void getShapeFunctions(const double pt[], double N[], double Na[],
                          double Nb[], double Nc[]) {
     double na[order], nb[order], nc[order];
@@ -620,7 +617,7 @@ class TACS3DHeatSourceSink : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
- private:
+private:
   // Information on the heat source/sink
   TacsScalar Q[NUM_NODES];
   // The Gauss quadrature scheme
@@ -633,9 +630,8 @@ class TACS3DHeatSourceSink : public TACSElement {
 /*
   The surface pressure traction class for 3D elements
 */
-template <int order>
-class TACS3DThermoPressureTraction : public TACSElement {
- public:
+template <int order> class TACS3DThermoPressureTraction : public TACSElement {
+public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -830,7 +826,7 @@ class TACS3DThermoPressureTraction : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
- private:
+private:
   int surface;
   TacsScalar pressure;
 
@@ -841,9 +837,8 @@ class TACS3DThermoPressureTraction : public TACSElement {
 /*
   The surface normal heat flux class for 3D elements
 */
-template <int order>
-class TACS3DNormalHeatFluxTraction : public TACSElement {
- public:
+template <int order> class TACS3DNormalHeatFluxTraction : public TACSElement {
+public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -1027,7 +1022,7 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
- private:
+private:
   // Set the base point and direction
   // --------------------------------
   void initBaseDir(int surface) {
@@ -1058,4 +1053,4 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
   double dir1[3], dir2[3], base[3];
 };
 
-#endif  // TACS_3D_COUPLED_THERMO_TRACTION_H
+#endif // TACS_3D_COUPLED_THERMO_TRACTION_H

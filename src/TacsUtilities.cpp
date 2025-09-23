@@ -77,11 +77,12 @@ int TacsUniqueSort(int len, int *array) {
   // Sort the array
   qsort(array, len, sizeof(int), TacsIntegerComparator);
 
-  int i = 0;  // The location from which to take the entires
-  int j = 0;  // The location to place the entries
+  int i = 0; // The location from which to take the entires
+  int j = 0; // The location to place the entries
 
   // Remove the negative entries
-  while (i < len && array[i] < 0) i++;
+  while (i < len && array[i] < 0)
+    i++;
 
   for (; i < len; i++, j++) {
     while ((i < len - 1) && (array[i] == array[i + 1])) {
@@ -123,7 +124,7 @@ int TacsMergeSortedArrays(int na, int *a, int nb, const int *b) {
     }
   }
 
-  int len = na + nb - ndup;  // End of the array
+  int len = na + nb - ndup; // End of the array
   int end = len - 1;
 
   j = nb - 1;
@@ -135,7 +136,7 @@ int TacsMergeSortedArrays(int na, int *a, int nb, const int *b) {
     } else if (b[j] > a[i]) {
       a[end] = b[j];
       end--, j--;
-    } else {  // b[j] == a[i]
+    } else { // b[j] == a[i]
       a[end] = a[i];
       end--, j--, i--;
     }
@@ -166,7 +167,7 @@ int TacsFindInterval(int index, int len, const int intv[]) {
   } else if (index < intv[0]) {
     return -1;
   } else if (index > intv[len - 1]) {
-    return len - 1;  // The number of intervals is equal to len-1
+    return len - 1; // The number of intervals is equal to len-1
   }
 
   int low = 0;
@@ -177,9 +178,9 @@ int TacsFindInterval(int index, int len, const int intv[]) {
   // intv[low] <= index < intv[high]
 
   while (low != high) {
-    if (index < intv[low + 1]) {  // Check the low interval
+    if (index < intv[low + 1]) { // Check the low interval
       return low;
-    } else if (intv[high - 1] <= index) {  // Check the high interval
+    } else if (intv[high - 1] <= index) { // Check the high interval
       return high - 1;
     }
 
@@ -218,9 +219,9 @@ void TacsMatchIntervals(int mpiSize, const int ownerRange[], int nvars,
     // First check the lower bound
     if (ownerRange[n] <= vars[0]) {
       ext_ptr[n] = 0;
-    } else if (ownerRange[n] > vars[nvars - 1]) {  // No more variables
+    } else if (ownerRange[n] > vars[nvars - 1]) { // No more variables
       ext_ptr[n] = nvars;
-    } else {  // Determine the interval using a binary search
+    } else { // Determine the interval using a binary search
       int low = 0;
       int high = nvars - 1;
       int mid = low + (int)((high - low) / 2);
@@ -253,7 +254,7 @@ void TacsExtendArray(int **_array, int oldlen, int newlen) {
   int *oldarray = *_array;
   int *newarray = new int[newlen];
   memcpy(newarray, oldarray, oldlen * sizeof(int));
-  delete[] * _array;
+  delete[] *_array;
   *_array = newarray;
 }
 
@@ -264,7 +265,7 @@ void TacsExtendArray(TacsScalar **_array, int oldlen, int newlen) {
   TacsScalar *oldarray = *_array;
   TacsScalar *newarray = new TacsScalar[newlen];
   memcpy(newarray, oldarray, oldlen * sizeof(TacsScalar));
-  delete[] * _array;
+  delete[] *_array;
   *_array = newarray;
 }
 
@@ -323,8 +324,8 @@ void TacsSortAndUniquifyCSR(int nvars, int *rowp, int *cols, int remove_diag) {
 static int TacsComputeRCMLevSetOrder(const int nvars, const int *rowp,
                                      const int *cols, int *rcm_vars,
                                      int *levset, int root) {
-  int start = 0;  // The start of the current level
-  int end = 0;    // The end of the current level
+  int start = 0; // The start of the current level
+  int end = 0;   // The end of the current level
 
   // Set all the new variable numbers to -1
   for (int k = 0; k < nvars; k++) {

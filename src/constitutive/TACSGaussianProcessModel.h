@@ -25,7 +25,7 @@ buckling constraints of stiffened panels.
 // =============================================================================
 
 class TACSGaussianProcessModel : public TACSObject {
- public:
+public:
   TACSGaussianProcessModel(int n_train, int n_param, bool affine,
                            const TacsScalar Xtrain[], const TacsScalar alpha[],
                            const TacsScalar theta[]);
@@ -132,7 +132,7 @@ class TACSGaussianProcessModel : public TACSObject {
    */
   static TacsScalar test_soft_relu(TacsScalar epsilon) {
     TacsScalar x = 1.0,
-               rho = 1.0;  // very low rho for smoother function for deriv test
+               rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_relu(x - epsilon, rho);
     TacsScalar f2 = soft_relu(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -176,7 +176,7 @@ class TACSGaussianProcessModel : public TACSObject {
    */
   static TacsScalar test_soft_abs(TacsScalar epsilon) {
     TacsScalar x = 1.0,
-               rho = 1.0;  // very low rho for smoother function for deriv test
+               rho = 1.0; // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_abs(x - epsilon, rho);
     TacsScalar f2 = soft_abs(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -212,7 +212,7 @@ class TACSGaussianProcessModel : public TACSObject {
   virtual TacsScalar kernel(const TacsScalar *Xtest,
                             const TacsScalar *Xtrain) = 0;
 
- protected:
+protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * (this is a virtual function here in the base class)
@@ -235,7 +235,7 @@ class TACSGaussianProcessModel : public TACSObject {
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
   TacsScalar *Xtrain;
   TacsScalar *alpha;
-  TacsScalar *theta;  // hyperparameters
+  TacsScalar *theta; // hyperparameters
 
   // not using this ks anymore though.. it's a trained hyperparameter, so fixed
   TacsScalar ks;
@@ -243,7 +243,7 @@ class TACSGaussianProcessModel : public TACSObject {
 };
 
 class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
- public:
+public:
   TACSBucklingGaussianProcessModel(int n_train, bool affine,
                                    const TacsScalar Xtrain[],
                                    const TacsScalar alpha[],
@@ -274,7 +274,7 @@ class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
    */
   TacsScalar kernel(const TacsScalar *Xtest, const TacsScalar *Xtrain) override;
 
- protected:
+protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * for AxialGP

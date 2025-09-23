@@ -59,18 +59,18 @@ class TACSAssembler;
   collective on the tacs_comm communicator.
 */
 class TACSAssembler : public TACSObject {
- public:
+public:
   // There are always 3 coordinates (even for 2D problems)
   static const int TACS_SPATIAL_DIM = 3;
 
   enum OrderingType {
-    NATURAL_ORDER,   // Natural ordering
-    RCM_ORDER,       // Reverse Cuthill Mackee ordering
-    AMD_ORDER,       // Approximate minimum degree
-    ND_ORDER,        // Nested disection
-    TACS_AMD_ORDER,  // Interface variables ordered last
+    NATURAL_ORDER,  // Natural ordering
+    RCM_ORDER,      // Reverse Cuthill Mackee ordering
+    AMD_ORDER,      // Approximate minimum degree
+    ND_ORDER,       // Nested disection
+    TACS_AMD_ORDER, // Interface variables ordered last
     MULTICOLOR_ORDER
-  };  // Multicolor via greedy algorithm
+  }; // Multicolor via greedy algorithm
   enum MatrixOrderingType {
     ADDITIVE_SCHWARZ,
     APPROXIMATE_SCHUR,
@@ -321,7 +321,7 @@ class TACSAssembler : public TACSObject {
   void computeLocalNodeToNodeCSR(int **_rowp, int **_cols, int nodiag = 0);
   void computeNodeToElementCSR(int **_nodeElem, int **_nodeElemIndex);
 
- private:
+private:
   // Get the number of design variable numbers
   // -----------------------------------------
   int getNumDesignVars();
@@ -362,15 +362,15 @@ class TACSAssembler : public TACSObject {
                            int *item, TacsScalar *temp,
                            MatrixOrientation matOr);
 
-  TACSNodeMap *nodeMap;               // Variable ownership map
-  TACSBcMap *bcMap;                   // Boundary condition data
-  TACSBcMap *bcInitMap;               // Initial boundary condition data
-  TACSBVecDistribute *extDist;        // Distribute the vector
-  TACSBVecIndices *extDistIndices;    // The tacsVarNum indices
-  TACSBVecDepNodes *depNodes;         // Dependent variable information
-  TACSNodeMap *designNodeMap;         // Distribution of design variables
-  TACSBVecDistribute *designExtDist;  // Distribute the design variables
-  TACSBVecDepNodes *designDepNodes;   // Dependent design variable information
+  TACSNodeMap *nodeMap;              // Variable ownership map
+  TACSBcMap *bcMap;                  // Boundary condition data
+  TACSBcMap *bcInitMap;              // Initial boundary condition data
+  TACSBVecDistribute *extDist;       // Distribute the vector
+  TACSBVecIndices *extDistIndices;   // The tacsVarNum indices
+  TACSBVecDepNodes *depNodes;        // Dependent variable information
+  TACSNodeMap *designNodeMap;        // Distribution of design variables
+  TACSBVecDistribute *designExtDist; // Distribute the design variables
+  TACSBVecDepNodes *designDepNodes;  // Dependent design variable information
 
   // Reordering information
   TACSBVecIndices *newNodeIndices;
@@ -390,24 +390,24 @@ class TACSAssembler : public TACSObject {
   int meshInitializedFlag;
 
   // Information about the variables and elements
-  int varsPerNode;         // number of variables per node
-  int numElements;         // number of elements
-  int numNodes;            // number of nodes referenced by this process
-  int numOwnedNodes;       // number of nodes owned by this processor
-  int numExtNodes;         // number of extneral nodes
-  int numDependentNodes;   // number of dependent nodes
-  int numMultiplierNodes;  // number of multiplier nodes/elements
-  int designVarsPerNode;   // number of design variables at each design "node"
+  int varsPerNode;        // number of variables per node
+  int numElements;        // number of elements
+  int numNodes;           // number of nodes referenced by this process
+  int numOwnedNodes;      // number of nodes owned by this processor
+  int numExtNodes;        // number of extneral nodes
+  int numDependentNodes;  // number of dependent nodes
+  int numMultiplierNodes; // number of multiplier nodes/elements
+  int designVarsPerNode;  // number of design variables at each design "node"
 
   // Maximum element information
-  int maxElementDesignVars;  // maximum number of design variable
-  int maxElementNodes;       // maximum number of ind. and dep. element nodes
-  int maxElementSize;        // maximum number of variables for any element
-  int maxElementIndepNodes;  // maximum number of independent nodes
+  int maxElementDesignVars; // maximum number of design variable
+  int maxElementNodes;      // maximum number of ind. and dep. element nodes
+  int maxElementSize;       // maximum number of variables for any element
+  int maxElementIndepNodes; // maximum number of independent nodes
 
   // Node numbers that are referred to from this processor
-  int *tacsExtNodeNums;  // node numbers associated with TACS
-  int extNodeOffset;     // Offset into the external nodes
+  int *tacsExtNodeNums; // node numbers associated with TACS
+  int extNodeOffset;    // Offset into the external nodes
 
   // Variables that define the CSR data structure to
   // store the element -> node information
@@ -427,8 +427,8 @@ class TACSAssembler : public TACSObject {
   TACSBVec *xptVec;
 
   // Memory for the element residuals and variables
-  TacsScalar *elementData;  // Space for element residuals/matrices
-  int *elementIData;        // Space for element index data
+  TacsScalar *elementData; // Space for element residuals/matrices
+  int *elementIData;       // Space for element index data
 
   // Memory for the design variables and inddex data
   TacsScalar *elementSensData;
@@ -454,7 +454,7 @@ class TACSAssembler : public TACSObject {
   // relatively easy, while design-variable dependent info is
   // much more challenging!
   class TACSAssemblerPthreadInfo {
-   public:
+  public:
     TACSAssemblerPthreadInfo() {
       assembler = NULL;
       res = NULL;
@@ -494,21 +494,21 @@ class TACSAssembler : public TACSObject {
     TACSFunction::EvaluationType ftype;
 
     int numDesignVars;
-    TacsScalar *fdvSens;  // df/dx
+    TacsScalar *fdvSens; // df/dx
     TACSBVec **fXptSens;
 
     // Information for adjoint-dR/dx products
     int numAdjoints;
     TACSBVec **adjoints;
-  } * tacsPInfo;
+  } *tacsPInfo;
 
   // The pthread data required to pthread tacs operations
-  int numCompletedElements;     // Keep track of how much work has been done
-  TACSThreadInfo *thread_info;  // The pthread object
+  int numCompletedElements;    // Keep track of how much work has been done
+  TACSThreadInfo *thread_info; // The pthread object
 
   // The thread objects
   pthread_t threads[TACSThreadInfo::TACS_MAX_NUM_THREADS];
-  pthread_mutex_t tacs_mutex;  // The mutex for coordinating assembly ops.
+  pthread_mutex_t tacs_mutex; // The mutex for coordinating assembly ops.
 
   // The name of the TACSAssembler object
   static const char *tacsName;
@@ -590,4 +590,4 @@ inline void TACSAssembler::addMatValues(TACSMat *A, const int elemNum,
   }
 }
 
-#endif  // TACS_ASSEMBLER_H
+#endif // TACS_ASSEMBLER_H

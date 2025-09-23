@@ -27,7 +27,7 @@
 */
 
 class TACSFH5File : public TACSObject {
- public:
+public:
   // Data types accepted by FH5: Note that float comes last
   // for backwards compatibility
   enum FH5DataType { FH5_INT = 0, FH5_DOUBLE = 1, FH5_FLOAT = 2 };
@@ -58,10 +58,10 @@ class TACSFH5File : public TACSObject {
   int getZoneData(const char **zone_name, const char **var_names,
                   FH5DataType *_dtype, int *dim1, int *dim2, void **data);
 
- private:
+private:
   // Store information about the location of the data within the file
   class FH5FileInfo {
-   public:
+  public:
     FH5FileInfo() {
       zone_name = NULL;
       next = NULL;
@@ -84,23 +84,23 @@ class TACSFH5File : public TACSObject {
     int dim1, dim2;
     size_t data_offset;
     FH5FileInfo *next;
-  } * root, *tip, *current;
+  } *root, *tip, *current;
 
   // Scan the file and record the header information
   int scanFH5File();
   void deleteFH5FileInfo();
 
-  int num_comp;       // The number of components
-  char **comp_names;  // The component names
+  int num_comp;      // The number of components
+  char **comp_names; // The component names
 
-  int file_for_writing;    // Is this file for writing?
-  MPI_Comm comm;           // The communicator over which the
-  MPI_File fp;             // The MPI file pointer
-  MPI_Offset file_offset;  // The offset into the file
-  MPI_Offset file_end;     // The offset at the end of the file
+  int file_for_writing;   // Is this file for writing?
+  MPI_Comm comm;          // The communicator over which the
+  MPI_File fp;            // The MPI file pointer
+  MPI_Offset file_offset; // The offset into the file
+  MPI_Offset file_end;    // The offset at the end of the file
 
   // Serial file containing the FE solution
   FILE *rfp;
 };
 
-#endif  // FH5_INCLUDE_H
+#endif // FH5_INCLUDE_H

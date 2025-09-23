@@ -23,7 +23,7 @@
 static void extend_int_array(int **array, int old_len, int new_len) {
   int *temp = new int[new_len];
   memcpy(temp, *array, sizeof(int) * old_len);
-  delete[] * array;
+  delete[] *array;
   *array = temp;
 }
 
@@ -1085,7 +1085,7 @@ void TACSCreator::partitionMesh(int split_size, const int *part) {
 
       // Add the elements - minus the diagonal entry
       for (int j = 0; j < row_size; j++) {
-        if (row[j] != i) {  // Not the diagonal
+        if (row[j] != i) { // Not the diagonal
           elem_conn[elem_conn_size] = row[j];
           elem_conn_size++;
         }
@@ -1102,7 +1102,7 @@ void TACSCreator::partitionMesh(int split_size, const int *part) {
 
     // Partition the mesh using METIS.
     if (split_size > 1) {
-      int ncon = 1;  // "It should be at least 1"??
+      int ncon = 1; // "It should be at least 1"??
 
       // Set the default options
       int options[METIS_NOPTIONS];
