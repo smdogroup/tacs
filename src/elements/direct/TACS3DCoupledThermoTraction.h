@@ -8,8 +8,9 @@
 /*
   The surface traction class for 3D elements
 */
-template <int order> class TACS3DThermoTraction : public TACSElement {
-public:
+template <int order>
+class TACS3DThermoTraction : public TACSElement {
+ public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -74,7 +75,7 @@ public:
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -234,7 +235,7 @@ public:
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
-private:
+ private:
   int surface;
   TacsScalar tx[order * order];
   TacsScalar ty[order * order];
@@ -246,8 +247,9 @@ private:
 /*
   The surface heat flux class for 3D elements
 */
-template <int order> class TACS3DHeatFluxTraction : public TACSElement {
-public:
+template <int order>
+class TACS3DHeatFluxTraction : public TACSElement {
+ public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -313,7 +315,7 @@ public:
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -366,7 +368,7 @@ public:
         FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
 
         // Calcualte the Jacobian at the current point
-        const TacsScalar *x = Xpts;
+        const TacsScalar* x = Xpts;
         TacsScalar Xd[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
         for (int k = 0; k < order; k++) {
@@ -470,7 +472,7 @@ public:
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
-private:
+ private:
   // Set the base point and direction
   // --------------------------------
   void initBaseDir(int surface) {
@@ -507,8 +509,9 @@ private:
   The surface heat source/sink class for 3D elements; treat it like a
   body force
 */
-template <int order> class TACS3DHeatSourceSink : public TACSElement {
-public:
+template <int order>
+class TACS3DHeatSourceSink : public TACSElement {
+ public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -540,7 +543,7 @@ public:
     numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
   }
   // Get the number of displacements/nodes
-  int numDisplacements() { return 4; } // u,v,w,dT
+  int numDisplacements() { return 4; }  // u,v,w,dT
   void getShapeFunctions(const double pt[], double N[], double Na[],
                          double Nb[], double Nc[]) {
     double na[order], nb[order], nc[order];
@@ -617,7 +620,7 @@ public:
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
-private:
+ private:
   // Information on the heat source/sink
   TacsScalar Q[NUM_NODES];
   // The Gauss quadrature scheme
@@ -630,8 +633,9 @@ private:
 /*
   The surface pressure traction class for 3D elements
 */
-template <int order> class TACS3DThermoPressureTraction : public TACSElement {
-public:
+template <int order>
+class TACS3DThermoPressureTraction : public TACSElement {
+ public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -669,7 +673,7 @@ public:
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -826,7 +830,7 @@ public:
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
-private:
+ private:
   int surface;
   TacsScalar pressure;
 
@@ -837,8 +841,9 @@ private:
 /*
   The surface normal heat flux class for 3D elements
 */
-template <int order> class TACS3DNormalHeatFluxTraction : public TACSElement {
-public:
+template <int order>
+class TACS3DNormalHeatFluxTraction : public TACSElement {
+ public:
   static const int NUM_NODES = order * order * order;
 
   static const int U_NEGATIVE = 0;
@@ -877,7 +882,7 @@ public:
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -930,7 +935,7 @@ public:
         FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
 
         // Calcualte the Jacobian at the current point
-        const TacsScalar *x = Xpts;
+        const TacsScalar* x = Xpts;
         TacsScalar Xd[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
         for (int k = 0; k < order; k++) {
@@ -1022,7 +1027,7 @@ public:
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[]) {}
 
-private:
+ private:
   // Set the base point and direction
   // --------------------------------
   void initBaseDir(int surface) {
@@ -1053,4 +1058,4 @@ private:
   double dir1[3], dir2[3], base[3];
 };
 
-#endif // TACS_3D_COUPLED_THERMO_TRACTION_H
+#endif  // TACS_3D_COUPLED_THERMO_TRACTION_H

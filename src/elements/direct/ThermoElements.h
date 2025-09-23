@@ -3,8 +3,8 @@
 #include "TACSElement.h"
 
 class ThermoQuad : public TACSElement {
-public:
-  ThermoQuad(int component) : TACSElement(component){};
+ public:
+  ThermoQuad(int component) : TACSElement(component) {};
   virtual void getShapeFunctions(const double pt[], double N[]) = 0;
   virtual void getShapeFunctions(const double pt[], double N[], double Na[],
                                  double Nb[]) = 0;
@@ -25,8 +25,8 @@ public:
 };
 
 class ThermoSolid : public TACSElement {
-public:
-  ThermoSolid(int component) : TACSElement(component){};
+ public:
+  ThermoSolid(int component) : TACSElement(component) {};
   virtual void getShapeFunctions(const double pt[], double N[]) = 0;
   virtual void getShapeFunctions(const double pt[], double N[], double Na[],
                                  double Nb[], double Nc[]) = 0;

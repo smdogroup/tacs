@@ -25,7 +25,7 @@ buckling constraints of stiffened panels.
 // =============================================================================
 
 class TACSGaussianProcessModel : public TACSObject {
-public:
+ public:
   TACSGaussianProcessModel(int n_train, int n_param, bool affine,
                            const TacsScalar Xtrain[], const TacsScalar alpha[],
                            const TacsScalar theta[]);
@@ -44,7 +44,7 @@ public:
    * @param Xtest the 1-tensor test data inputs [param1, param2, param3, param4]
    * @return the predicted scalar test data Ytest
    */
-  TacsScalar predictMeanTestData(const TacsScalar *Xtest);
+  TacsScalar predictMeanTestData(const TacsScalar* Xtest);
 
   /**
    * @brief backpropagate derivatives df/dYtest to df/dXtest for
@@ -55,8 +55,8 @@ public:
    * @return the derivative df/dXtest as a 1-tensor
    */
   TacsScalar predictMeanTestDataSens(const TacsScalar Ysens,
-                                     const TacsScalar *Xtest,
-                                     TacsScalar *Xtestsens);
+                                     const TacsScalar* Xtest,
+                                     TacsScalar* Xtestsens);
 
   // TESTING SCRIPTS
   // ---------------
@@ -132,7 +132,7 @@ public:
    */
   static TacsScalar test_soft_relu(TacsScalar epsilon) {
     TacsScalar x = 1.0,
-               rho = 1.0; // very low rho for smoother function for deriv test
+               rho = 1.0;  // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_relu(x - epsilon, rho);
     TacsScalar f2 = soft_relu(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -176,7 +176,7 @@ public:
    */
   static TacsScalar test_soft_abs(TacsScalar epsilon) {
     TacsScalar x = 1.0,
-               rho = 1.0; // very low rho for smoother function for deriv test
+               rho = 1.0;  // very low rho for smoother function for deriv test
     TacsScalar f0 = soft_abs(x - epsilon, rho);
     TacsScalar f2 = soft_abs(x + epsilon, rho);
     TacsScalar centDiff = (f2 - f0) / 2.0 / epsilon;
@@ -193,10 +193,10 @@ public:
   int getNparam() { return n_param; };
   TacsScalar getKS() { return ks; };
   void setKS(TacsScalar ks) { this->ks = ks; };
-  void setAlpha(TacsScalar *alpha) { this->alpha = alpha; };
-  void setTheta(TacsScalar *theta) { this->theta = theta; };
-  void getTrainingData(TacsScalar *Xtrain) { Xtrain = this->Xtrain; };
-  void getTheta(TacsScalar *theta) { theta = this->theta; };
+  void setAlpha(TacsScalar* alpha) { this->alpha = alpha; };
+  void setTheta(TacsScalar* theta) { this->theta = theta; };
+  void getTrainingData(TacsScalar* Xtrain) { Xtrain = this->Xtrain; };
+  void getTheta(TacsScalar* theta) { theta = this->theta; };
 
   // virtual functions for the kernel definition and its sensitivity
 
@@ -209,10 +209,10 @@ public:
    * @return the kernel value k(Xtest,Xtrain) which gives correlation between
    * these two points from our model
    */
-  virtual TacsScalar kernel(const TacsScalar *Xtest,
-                            const TacsScalar *Xtrain) = 0;
+  virtual TacsScalar kernel(const TacsScalar* Xtest,
+                            const TacsScalar* Xtrain) = 0;
 
-protected:
+ protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * (this is a virtual function here in the base class)
@@ -222,8 +222,8 @@ protected:
    * @param Xtrain the training data point, rank 1-tensor of length n_param
    * @return the derivatives of the Xtest input df/dXtest through the kernel
    */
-  virtual void kernelSens(const TacsScalar ksens, const TacsScalar *Xtest,
-                          const TacsScalar *Xtrain, TacsScalar *Xtestsens) = 0;
+  virtual void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
+                          const TacsScalar* Xtrain, TacsScalar* Xtestsens) = 0;
 
   int n_train;
   int n_param;
@@ -233,9 +233,9 @@ protected:
   // if each point of Xtrain has data [rho0, xi, gamma, delta, zeta] with
   // n_Train=5 then the entries are basically [rho01, xi1, gamma1, delta1,
   // zeta1, rho02, xi2, gamma2, delta2, zeta2, ..., zetaN]
-  TacsScalar *Xtrain;
-  TacsScalar *alpha;
-  TacsScalar *theta; // hyperparameters
+  TacsScalar* Xtrain;
+  TacsScalar* alpha;
+  TacsScalar* theta;  // hyperparameters
 
   // not using this ks anymore though.. it's a trained hyperparameter, so fixed
   TacsScalar ks;
@@ -243,14 +243,14 @@ protected:
 };
 
 class TACSBucklingGaussianProcessModel : public TACSGaussianProcessModel {
-public:
+ public:
   TACSBucklingGaussianProcessModel(int n_train, bool affine,
                                    const TacsScalar Xtrain[],
                                    const TacsScalar alpha[],
                                    const TacsScalar theta[])
       : TACSGaussianProcessModel(n_train, N_PARAM, affine, Xtrain, alpha,
-                                 theta){};
-  ~TACSBucklingGaussianProcessModel(){};
+                                 theta) {};
+  ~TACSBucklingGaussianProcessModel() {};
 
   /**
    * @brief test the backpropagation of the kernel() method and its sens routine
@@ -272,9 +272,9 @@ public:
    * @return the kernel value k(Xtest,Xtrain) which gives correlation between
    * these two points from our model
    */
-  TacsScalar kernel(const TacsScalar *Xtest, const TacsScalar *Xtrain) override;
+  TacsScalar kernel(const TacsScalar* Xtest, const TacsScalar* Xtrain) override;
 
-protected:
+ protected:
   /**
    * @brief backpropagate derivatives of the kernel function to the Xtest input
    * for AxialGP
@@ -284,8 +284,8 @@ protected:
    * @param Xtrain the training data point, rank 1-tensor of length 4
    * @return the derivatives of the Xtest input df/dXtest through the kernel
    */
-  void kernelSens(const TacsScalar ksens, const TacsScalar *Xtest,
-                  const TacsScalar *Xtrain, TacsScalar *Xtestsens) override;
+  void kernelSens(const TacsScalar ksens, const TacsScalar* Xtest,
+                  const TacsScalar* Xtrain, TacsScalar* Xtestsens) override;
 
   // there are 4 parameters [log(xi), log(rho_0), log(1+gamma), log(zeta)] for
   // the axial model
