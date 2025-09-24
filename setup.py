@@ -119,16 +119,16 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.9.1",
+    version="3.9.2",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Graeme J. Kennedy",
     author_email="graeme.kennedy@ae.gatech.edu",
-    python_requires=">=3.9.0",
+    python_requires=">=3.10.0",
     install_requires=[
         "numpy<3.0.0",
-        "mpi4py>=3.1.5,<4.0.0",
+        "mpi4py>=4.0.3,<5.0.0",
         "scipy>=1.2.1",
         "pynastran>=1.4.0",
         "numba",
