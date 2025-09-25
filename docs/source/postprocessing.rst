@@ -291,24 +291,24 @@ In Tecplot, you can visualize deformed surfaces by creating new variables that r
 2. **Create new variables** for deformed coordinates:
    - Go to ``Data > Alter > Specify Equations``
    - Create new variables:
-     - ``XDEF = X + u`` (deformed X coordinate)
-     - ``YDEF = Y + v`` (deformed Y coordinate)  
-     - ``ZDEF = Z + w`` (deformed Z coordinate)
+     - ``{XDEF} = {X} + {u}`` (deformed X coordinate)
+     - ``{YDEF} = {Y} + {v}`` (deformed Y coordinate)  
+     - ``{ZDEF} = {Z} + {w}`` (deformed Z coordinate)
 3. **Create the deformed plot**:
    - Go to ``Plot > 3D``
    - Set ``X``, ``Y``, ``Z`` to ``XDEF``, ``YDEF``, ``ZDEF``
    - Choose appropriate surface rendering (``Surface``, ``Mesh``, or ``Contour``)
 4. **Add displacement magnitude** for color coding:
-   - Create variable: ``DISP_MAG = sqrt(u*u + v*v + w*w)``
+   - Create variable: ``{DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})``
    - Set ``Contour`` to ``DISP_MAG`` to color-code by displacement magnitude
 
 **Example Tecplot equations:**
 ::
 
-   XDEF = X + u
-   YDEF = Y + v
-   ZDEF = Z + w
-   DISP_MAG = sqrt(u*u + v*v + w*w)
+   {XDEF} = {X} + {u}
+   {YDEF} = {Y} + {v}
+   {ZDEF} = {Z} + {w}
+   {DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})
 
 Creating Deformed Geometry in ParaView
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -400,8 +400,8 @@ Here's a complete example of generating and visualizing TACS results with deform
 
 **Tecplot Visualization Steps:**
 1. Open ``wing_analysis.plt``
-2. Create deformed coordinates: ``XDEF = X + 10*u``, ``YDEF = Y + 10*v``, ``ZDEF = Z + 10*w``
-3. Create displacement magnitude: ``DISP_MAG = sqrt(u*u + v*v + w*w)``
+2. Create 10x deformed coordinates: ``{XDEF} = {X} + 10*{u}``, ``{YDEF} = {Y} + 10*{v}``, ``{ZDEF} = {Z} + 10*{w}``
+3. Create displacement magnitude: ``{DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})``
 4. Plot using ``XDEF``, ``YDEF``, ``ZDEF`` with ``DISP_MAG`` coloring
 
 **ParaView Visualization Steps:**
