@@ -179,7 +179,7 @@ Getting Help
 **Community Resources:**
 
 - `GitHub Issues <https://github.com/smdogroup/tacs/issues>`_: Report bugs and request features
-- `TACS Documentation <https://tacs.readthedocs.io>`_: Comprehensive documentation
+- `TACS Documentation <https://smdogroup.github.io/tacs/>`_: Comprehensive documentation
 
 **When Reporting Issues:**
 
