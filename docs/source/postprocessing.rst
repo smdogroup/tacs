@@ -1,22 +1,42 @@
 Postprocessing TACS Solutions
 =============================
 
-TACS provides comprehensive postprocessing capabilities through its native f5 file format and conversion utilities. This section explains how to generate f5 files from TACS analyses and convert them to standard visualization formats.
+TACS provides comprehensive postprocessing capabilities through its native f5 file format and conversion utilities. This section explains how to generate f5 files from TACS analyses and convert them to standard visualization formats for detailed analysis and presentation.
+
+Overview
+--------
+
+The TACS postprocessing workflow consists of three main steps:
+
+1. **Generate f5 files** from your TACS analysis containing solution data
+2. **Convert f5 files** to standard visualization formats (Tecplot or ParaView)
+3. **Visualize and analyze** results using your preferred visualization software
+
+The f5 format stores both nodal (continuous) and element-wise data, making it suitable for comprehensive structural analysis visualization.
 
 F5 File Format
 --------------
 
 TACS uses the f5 file format (based on HDF5) to store solution data in a parallel, binary format. F5 files contain both continuous (nodal) and element-wise data, making them suitable for detailed postprocessing and visualization.
 
+.. important::
+   F5 files are binary and platform-dependent. They should be generated and converted on the same system architecture for best compatibility.
+
+**Key Features of F5 Files:**
+- **Parallel I/O**: Efficient for large-scale parallel simulations
+- **Binary format**: Fast read/write operations and compact storage
+- **Hierarchical structure**: Organized data storage with metadata
+
 Creating F5 Files
 ~~~~~~~~~~~~~~~~~
 
-To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class:
+To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This should be done after solving your analysis but before cleaning up the assembler object.
 
 .. code-block:: cpp
 
    #include "TACSToFH5.h"
    
+   // After solving your analysis (e.g., assembler->solve())
    // Create an TACSToFH5 object for writing output to files
    ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT;
    int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
@@ -27,24 +47,47 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class:
    f5->writeToFile("solution.f5");
    f5->decref();
 
+.. tip::
+   The ``ElementType`` should match the type of elements in your model. Common types include:
+   - ``TACS_BEAM_OR_SHELL_ELEMENT`` for shell and beam elements
+   - ``TACS_SOLID_ELEMENT`` for 3D solid elements
+   - ``TACS_PLANE_STRESS_ELEMENT`` for 2D plane stress elements
+
 Output Flags
 ~~~~~~~~~~~~
 
-The following output flags control what data is written to the f5 file:
+The following output flags control what data is written to the f5 file. You can combine multiple flags using the bitwise OR operator (``|``):
 
-- ``TACS_OUTPUT_CONNECTIVITY``: Element connectivity information
-- ``TACS_OUTPUT_NODES``: Nodal coordinates (X, Y, Z)
-- ``TACS_OUTPUT_DISPLACEMENTS``: Nodal displacements and rotations
-- ``TACS_OUTPUT_STRAINS``: Element strains
-- ``TACS_OUTPUT_STRESSES``: Element stresses
-- ``TACS_OUTPUT_EXTRAS``: Additional quantities (failure indices, design variables)
-- ``TACS_OUTPUT_LOADS``: Applied loads
-- ``TACS_OUTPUT_COORDINATE_FRAME``: Element coordinate frames
+.. list-table:: Output Flags
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Flag
+     - Description
+   * - ``TACS_OUTPUT_CONNECTIVITY``
+     - Element connectivity information (required for visualization)
+   * - ``TACS_OUTPUT_NODES``
+     - Nodal coordinates (X, Y, Z) - essential for geometry visualization
+   * - ``TACS_OUTPUT_DISPLACEMENTS``
+     - Nodal displacements and rotations - needed for deformed shape visualization
+   * - ``TACS_OUTPUT_STRAINS``
+     - Element strains - useful for strain analysis and contour plots
+   * - ``TACS_OUTPUT_STRESSES``
+     - Element stresses - essential for stress analysis and failure assessment
+   * - ``TACS_OUTPUT_EXTRAS``
+     - Additional quantities (failure indices, design variables) - useful for optimization
+   * - ``TACS_OUTPUT_LOADS``
+     - Applied loads - helpful for load verification and visualization
+   * - ``TACS_OUTPUT_COORDINATE_FRAME``
+     - Element coordinate frames - useful for composite material analysis
+
+.. note::
+   For basic visualization, you typically need at least ``TACS_OUTPUT_CONNECTIVITY``, ``TACS_OUTPUT_NODES``, and ``TACS_OUTPUT_DISPLACEMENTS``. Add other flags based on your analysis requirements.
 
 Converting F5 Files
 -------------------
 
-TACS provides two utilities for converting f5 files to standard visualization formats:
+TACS provides two utilities for converting f5 files to standard visualization formats. These utilities are typically located in the ``extern/`` directory of your TACS installation.
 
 f5totec: Convert to Tecplot Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,8 +101,14 @@ The ``f5totec`` utility converts f5 files to Tecplot format (.plt files):
    
    # Convert with strands (for time-dependent data)
    f5totec --use_strands solution.f5
+   
+   # Specify output filename
+   f5totec solution.f5 -o wing_analysis.plt
 
 This creates a ``solution.plt`` file that can be opened in Tecplot.
+
+.. tip::
+   The ``--use_strands`` option is particularly useful for transient analyses or optimization histories where you want to animate the results over time.
 
 f5tovtk: Convert to VTK Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -68,9 +117,21 @@ The ``f5tovtk`` utility converts f5 files to VTK format (.vtk files) for use wit
 
 .. code-block:: bash
 
+   # Basic conversion
    f5tovtk solution.f5
+   
+   # Specify output filename
+   f5tovtk solution.f5 -o wing_analysis.vtk
 
 This creates a ``solution.vtk`` file that can be opened in ParaView.
+
+.. note::
+   Both utilities automatically handle the conversion of element-wise data to nodal data through averaging, making the results suitable for smooth visualization.
+
+**Troubleshooting Conversion Issues:**
+- Ensure the f5 file was generated successfully and contains the expected data
+- Check that the conversion utilities are compiled and accessible in your PATH
+- For large files, conversion may take several minutes - this is normal
 
 Output Variables by Element Type
 --------------------------------
