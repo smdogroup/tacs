@@ -20,6 +20,7 @@ Installation Issues
 *Cause*: TACS C++ library is not in the library path.
 
 *Solutions*:
+
 .. code-block:: bash
 
    # Add TACS lib directory to LD_LIBRARY_PATH
@@ -81,6 +82,7 @@ Postprocessing Issues
 *Cause*: Postprocessing utilities not installed or not in PATH.
 
 *Solutions*:
+
 .. code-block:: bash
 
    # Add to PATH
