@@ -1,5 +1,5 @@
-MACH Interface
-==============
+MACH 
+====
 
 The MACH interface provides a specialized interface for coupling TACS with the MDOLab's MACH library codes, particularly for aerostructural analysis and other multidisciplinary optimization workflows. 
 This interface is built around the :class:`StructProblem` class, which serves as a bridge between TACS structural analysis capabilities and external solvers.
@@ -26,74 +26,12 @@ StructProblem Class
 
 The :class:`StructProblem` class is the core component of the MACH interface. It extends the base structural problem functionality to provide enhanced capabilities for external library integration.
 
-.. class:: StructProblem(staticProblem, FEAAssembler, DVGeo=None, loadFile=None)
+API Reference
+-------------
 
-   Base class for TACS problem types interfacing with external libraries.
-
-   **Parameters:**
-   
-   * **staticProblem** (*tacs.problems.StaticProblem*): StaticProblem object used for modeling and solving static cases
-   * **FEAAssembler** (*tacs.pytacs.pyTACS*): pyTACS assembler object
-   * **DVGeo** (*pygeo.DVGeometry, optional*): Object responsible for manipulating geometric design variables
-   * **loadFile** (*str, optional*): Filename of external load file for coupling
-
-   **Key Methods:**
-
-   .. method:: solve(damp=1.0, useAitkenAcceleration=False, dampLB=0.2, loadScale=1.0)
-
-      Solve the static problem with optional damping and acceleration for coupling.
-
-      **Parameters:**
-      
-      * **damp** (*float*): Damping factor for solution update
-      * **useAitkenAcceleration** (*bool*): Enable Aitken acceleration for aerostructural problems
-      * **dampLB** (*float*): Lower bound for damping parameter
-      * **loadScale** (*float*): Scaling factor for external loads
-
-   .. method:: setExternalForce(Fext)
-
-      Set external coupling forces from external solvers.
-
-      **Parameters:**
-      
-      * **Fext** (*numpy.ndarray or tacs.TACS.Vec*): External force vector
-
-   .. method:: getExternalForce(Fext=None)
-
-      Retrieve current external coupling forces.
-
-      **Returns:**
-      
-      * **Fext** (*numpy.ndarray*): Current external force vector
-
-   .. method:: readExternalForceFile(fileName)
-
-      Read external loads from file for coupling workflows.
-
-      **Parameters:**
-      
-      * **fileName** (*str*): Filename of load file (.dat or .bdf extension)
-
-   .. method:: writeExternalForceFile(outputDir=None, baseName=None, number=None)
-
-      Write external loads to file for coupling workflows.
-
-   .. method:: addConstraint(constr)
-
-      Add TACS constraint object to the problem.
-
-      **Parameters:**
-      
-      * **constr** (*tacs.constraints.TACSConstraint*): Constraint object to add
-
-   .. method:: setDVGeo(DVGeo, pointSetKwargs=None)
-
-      Set the DVGeometry object for geometric design variable manipulation.
-
-      **Parameters:**
-      
-      * **DVGeo** (*pygeo.DVGeometry*): Geometry manipulation object
-      * **pointSetKwargs** (*dict, optional*): Keyword arguments for point set creation
+.. autoclass:: tacs.mach.struct_problem.StructProblem
+   :members:
+   :undoc-members:
 
 Usage Examples
 --------------
