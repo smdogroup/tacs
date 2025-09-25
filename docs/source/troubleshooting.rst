@@ -11,6 +11,7 @@ Installation Issues
 *Cause*: TACS is not installed or not in the Python path.
 
 *Solutions*:
+
 - Ensure conda environment is activated: ``conda activate tacs``
 - Reinstall TACS: ``mamba install -c conda-forge -c smdogroup tacs``
 - For source installation, ensure Python interface is built: ``pip install -e .[all]``
@@ -34,6 +35,7 @@ Installation Issues
 *Cause*: MPI compiler not found or misconfigured.
 
 *Solutions*:
+
 - Ensure MPI is installed: ``which mpicc``
 - Check MPI compiler in Makefile.in: ``CXX = mpicxx``
 - For Intel MPI: ``CXX = icpc -lmpi``
@@ -46,6 +48,7 @@ Analysis Issues
 *Cause*: Poor conditioning, incorrect boundary conditions, or excessive loads.
 
 *Solutions*:
+
 - Check boundary conditions are properly applied
 - Verify loads are reasonable for the structure
 - Ensure material properties are correct
@@ -57,6 +60,7 @@ Analysis Issues
 *Cause*: Mismatch between BDF element types and callback function.
 
 *Solutions*:
+
 - Verify element types in BDF file match callback function
 - Add error handling for unexpected element types:
   .. code-block:: python
@@ -72,6 +76,7 @@ Analysis Issues
 *Cause*: Insufficient memory for analysis or postprocessing.
 
 *Solutions*:
+
 - Consider using more powerful hardware
 
 Postprocessing Issues
@@ -97,6 +102,7 @@ Postprocessing Issues
 *Cause*: Insufficient disk space or memory.
 
 *Solutions*:
+
 - Use essential output flags only
 - Convert files individually
 
@@ -108,6 +114,7 @@ Performance Issues
 *Cause*: Suboptimal settings or hardware limitations.
 
 *Solutions*:
+
 - Use appropriate number of MPI processes
 - Enable optimized BLAS/LAPACK (Intel MKL)
 - Use SuiteSparse for better sparse matrix performance
@@ -121,6 +128,7 @@ Platform-Specific Issues
 *Cause*: Path or permission issues in WSL.
 
 *Solutions*:
+
 - Use forward slashes in paths
 - Ensure proper file permissions
 - Use WSL2 for better performance
@@ -131,6 +139,7 @@ Platform-Specific Issues
 *Cause*: Library path or compiler issues.
 
 *Solutions*:
+
 - Use conda installation for easier setup
 - Ensure Xcode command line tools installed
 - Check library paths: ``otool -L libtacs.so``
@@ -140,6 +149,7 @@ Platform-Specific Issues
 *Cause*: Module conflicts or resource limits.
 
 *Solutions*:
+
 - Use system-provided modules when available
 - Check job resource limits
 - Use appropriate compiler flags
