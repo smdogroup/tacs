@@ -42,19 +42,21 @@ class StructProblem(BaseStructProblem):
         loadFile=None,
     ):
         """
+        Initialize the StructProblem.
+
         Parameters
         ----------
-        problem : tacs.problems.StaticProblem
+        staticProblem : tacs.problems.StaticProblem
             StaticProblem object used for modeling and solving static cases.
 
         FEAAssembler : tacs.pytacs.pyTACS
-            pyTACS assembler object
+            pyTACS assembler object.
 
-        dvGeo : pygeo.DVGeometry or None
-            Object responsible for manipulating the constraints that
-            this object is responsible for.
+        DVGeo : pygeo.DVGeometry, optional
+            Object responsible for manipulating the geometry design variables.
+            If None, no geometric design variables will be used.
 
-        loadFile : str
+        loadFile : str, optional
             Filename of the (static) external load file. Should be
             generated from pyAerostructure.
         """
@@ -101,72 +103,218 @@ class StructProblem(BaseStructProblem):
 
     @property
     def name(self):
+        """
+        Get the name of the structural problem.
+
+        Returns
+        -------
+        str
+            Name of the structural problem.
+        """
         return self.staticProblem.name
 
     @property
     def Fext(self):
+        """
+        Get the external aerodynamic force vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            External aerodynamic force vector as a numpy array.
+        """
         return self._Fext.getArray()
 
     @Fext.setter
     def Fext(self, value):
+        """
+        Set the external aerodynamic force vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray
+            External aerodynamic force vector to set.
+        """
         self._Fext[:] = value
 
     @property
     def phi(self):
+        """
+        Get the adjoint vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Adjoint vector as a numpy array.
+        """
         return self._phi.getArray()
 
     @phi.setter
     def phi(self, value):
+        """
+        Set the adjoint vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray
+            Adjoint vector to set.
+        """
         self._phi[:] = value
 
     @property
     def pLoad(self):
+        """
+        The contribution of the aerodynamic adjoint to the structural 
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        from the structural adjoint RHS.
+
+        Returns
+        -------
+        numpy.ndarray
+            Aerodynamic adjoint contribution to the structural adjoint RHS.
+        """
         return self._pLoad.getArray()
 
-    @phi.setter
-    def phi(self, value):
-        self._phi[:] = value
+    @pLoad.setter
+    def pLoad(self, value):
+        """
+        Set the aerodynamic adjoint contribution to the structural 
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        from the structural adjoint RHS.
+
+        Parameters
+        ----------
+        value : numpy.ndarray
+            Aerodynamic adjoint contribution to the structural adjoint RHS.
+        """
+        self._pLoad[:] = value
 
     @property
     def dSdu(self):
+        """
+        Get the product of the derivative of structural residual with 
+        respect to state variables and the structural adjoint vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Product of the derivative of structural residual with 
+            respect to state variables and the structural adjoint 
+            vector.
+        """
         return self._dSdu.getArray()
 
     @dSdu.setter
     def dSdu(self, value):
+        """
+        Set the product of the derivative of structural residual with 
+        respect to state variables and the structural adjoint vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray
+            Product of the derivative of structural residual with 
+            respect to state variables and the structural adjoint 
+            vector.
+        """
         self._dSdu[:] = value
 
     @property
     def adjRHS(self):
+        """
+        Get the adjoint right-hand side vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Adjoint RHS vector as a numpy array.
+        """
         return self._adjRHS.getArray()
 
     @adjRHS.setter
     def adjRHS(self, value):
+        """
+        Set the adjoint right-hand side vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray or tacs.TACS.Vec
+            Adjoint RHS vector to set.
+        """
         self._adjRHS[:] = value
 
     @property
     def dIdu(self):
+        """
+        Get the derivative of objective function with respect to state variables.
+
+        Returns
+        -------
+        numpy.ndarray
+            Derivative vector as a numpy array with boundary conditions applied.
+        """
         self.FEAAssembler.applyBCsToVec(self._dIdu)
         return self._dIdu.getArray()
 
     @dIdu.setter
     def dIdu(self, value):
+        """
+        Set the derivative of objective function with respect to state variables.
+
+        Parameters
+        ----------
+        value : numpy.ndarray or tacs.TACS.Vec
+            Derivative vector to set.
+        """
         self._dIdu[:] = value
         self.FEAAssembler.applyBCsToVec(self._dIdu)
 
     @property
     def matVecRHS(self):
+        """
+        Get the matrix-vector product right-hand side vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Matrix-vector RHS vector as a numpy array.
+        """
         return self._matVecRHS.getArray()
 
     @matVecRHS.setter
     def matVecRHS(self, value):
+        """
+        Set the matrix-vector product right-hand side vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray or tacs.TACS.Vec
+            Matrix-vector RHS vector to set.
+        """
         self._matVecRHS[:] = value
 
     @property
     def matVecSolve(self):
+        """
+        Get the matrix-vector solve vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Matrix-vector solve vector as a numpy array.
+        """
         return self._matVecSolve.getArray()
 
     @matVecSolve.setter
     def matVecSolve(self, value):
+        """
+        Set the matrix-vector solve vector.
+
+        Parameters
+        ----------
+        value : numpy.ndarray or tacs.TACS.Vec
+            Matrix-vector solve vector to set.
+        """
         self._matVecSolve[:] = value
 
     def getVarName(self):
@@ -535,8 +683,8 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        ndof : int
-            number of degrees of freedom of each node in the domain
+        int
+            Number of degrees of freedom of each node in the domain.
         """
         return self.staticProblem.getVarsPerNode()
 
@@ -546,14 +694,20 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        nnodes : int
-            number of nodes on this processor
+        int
+            Number of nodes on this processor.
         """
         return self.staticProblem.getNumOwnedNodes()
 
     def getOrigDesignVars(self):
         """
-        Get an array holding all dvs values that have been added to TACS
+        Get an array holding the original values for all design 
+        variables added to TACS at time of initialization.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array containing all design variable values across all processors.
         """
         local_dvs = self.FEAAssembler.getOrigDesignVars()
         all_local_dvs = self.comm.allgather(local_dvs)
@@ -561,13 +715,14 @@ class StructProblem(BaseStructProblem):
         return global_dvs.astype(float)
 
     def getDesignVarRange(self):
-        """Get arrays containing the lower and upper bounds for the design variables,
-        in the form needed by OpenMDAO's `add_design_variable` method.
+        """
+        Get arrays containing the lower and upper bounds for the design variables,
+        in the form needed by pyoptsparse.
 
         Returns
         -------
-        list of ndarray
-            lower and upper bounds for the design variables
+        tuple of numpy.ndarray
+            Lower and upper bounds for the design variables.
         """
         local_lb, local_ub = self.FEAAssembler.getDesignVarRange()
         all_lb = self.comm.allgather(local_lb)
@@ -577,66 +732,69 @@ class StructProblem(BaseStructProblem):
         return global_lbs.astype(float), global_ubs.astype(float)
 
     def getDesignVarScales(self):
-        """Get an array containing the scaling factors for the design
-        variables, in the form needed by OpenMDAO's `add_design_variable`
+        """
+        Get an array containing the scaling factors for the design
+        variables, in the form needed by pyoptsparse.
         method.
 
         Returns
         -------
-        array
-            Scaling values
+        numpy.ndarray
+            Scaling values for design variables.
         """
         return np.array(self.FEAAssembler.scaleList)
 
     def getNumDesignVars(self):
         """
-        Get total number of structural design variables across all procs
+        Get total number of structural design variables across all processors.
+
+        Returns
+        -------
+        int
+            Total number of structural design variables.
         """
         return self.FEAAssembler.getTotalNumDesignVars()
 
     def getStates(self, states=None):
         """
-        Return the current state values for the
-        problem
+        Return the current state values for the problem.
 
         Parameters
         ----------
-        states : tacs.TACS.Vec or numpy.ndarray
-            Vector to place current state variables into (optional)
+        states : tacs.TACS.Vec or numpy.ndarray, optional
+            Vector to place current state variables into.
 
         Returns
-        ----------
-        states : numpy.ndarray
-            current state vector
+        -------
+        numpy.ndarray
+            Current state vector.
         """
         return self.staticProblem.getVariables(states)
 
     def setStates(self, states=None):
         """
-        Set the current state values for the
-        problem
+        Set the current state values for the problem.
 
         Parameters
         ----------
         states : tacs.TACS.Vec or numpy.ndarray
-            Vector to replace current state variables with
+            Vector to replace current state variables with.
         """
         self.staticProblem.setVariables(states)
 
     def getExternalForce(self, Fext=None):
         """
-        Return the current external coupling force vector for the
-        problem
+        Return the current external coupling force vector for the problem.
 
         Parameters
         ----------
-        Fext : tacs.TACS.Vec or numpy.ndarray
-            Vector to place current external coupling force vector into (optional)
+        Fext : tacs.TACS.Vec or numpy.ndarray, optional
+            Vector to place current external coupling force vector into.
 
         Returns
-        ----------
-        Fext : numpy.ndarray
-            current external coupling force vector
+        -------
+        numpy.ndarray
+            Current external coupling force vector.
         """
         if isinstance(Fext, tacs.TACS.Vec):
             Fext.copyValues(self._Fext)
@@ -647,13 +805,12 @@ class StructProblem(BaseStructProblem):
 
     def setExternalForce(self, Fext):
         """
-        Return the current external coupling force vector for the
-        problem
+        Set the external coupling force vector for the problem.
 
         Parameters
         ----------
         Fext : tacs.TACS.Vec or numpy.ndarray
-            Vector to place current external coupling force vector into (optional)
+            External coupling force vector to set.
         """
         if isinstance(Fext, tacs.TACS.Vec):
             self._Fext.copyValues(Fext)
@@ -661,6 +818,14 @@ class StructProblem(BaseStructProblem):
             self._Fext.getArray()[:] = Fext[:]
 
     def getStateNorm(self):
+        """
+        Get the norm of the current state vector.
+
+        Returns
+        -------
+        float
+            Norm of the current state vector.
+        """
         u = self.temp0
         self.staticProblem.getVariables(u)
         return u.norm()
@@ -672,9 +837,8 @@ class StructProblem(BaseStructProblem):
 
         Returns
         -------
-        res : tacs.TACS.Vec or numpy.ndarray
+        numpy.ndarray
             Computed residuals for problem.
-
         """
         res = self.temp0
         self.staticProblem.getResidual(res, Fext=self._Fext)
@@ -683,9 +847,16 @@ class StructProblem(BaseStructProblem):
         return resArray
 
     def getResNorms(self):
-        """Return the initial, starting and final Res Norms. Note that
+        """
+        Return the initial, starting and final residual norms. Note that
         the same norms are used for both solution and adjoint
-        computations"""
+        computations.
+
+        Returns
+        -------
+        tuple of float
+            Initial, starting, and final residual norms.
+        """
         initNorm = np.real(self.staticProblem.initNorm)
         startNorm = np.real(self.staticProblem.startNorm)
         finalNorm = np.real(self.staticProblem.finalNorm)
@@ -693,8 +864,18 @@ class StructProblem(BaseStructProblem):
         return (initNorm, startNorm, finalNorm)
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
-        """Set one of these norms if not None.
-        This is typically only used with aerostructural analysis
+        """
+        Set one of these norms if not None.
+        This is typically only used with aerostructural analysis.
+
+        Parameters
+        ----------
+        initNorm : float, optional
+            Initial residual norm to set.
+        startNorm : float, optional
+            Starting residual norm to set.
+        finalNorm : float, optional
+            Final residual norm to set.
         """
         if initNorm is not None:
             self.staticProblem.initNorm = initNorm
@@ -704,19 +885,38 @@ class StructProblem(BaseStructProblem):
             self.staticProblem.finalNorm = finalNorm
 
     def zeroVectors(self):
-        """Zero all the tacs b-vecs"""
+        """
+        Zero all the TACS b-vectors.
+        """
         self.staticProblem.zeroVariables()
         self.update.zeroEntries()
 
     @property
     def evalFuncs(self):
-        """Get strings for added eval functions"""
+        """
+        Get strings for added evaluation functions.
+
+        Returns
+        -------
+        list of str
+            List of function names that can be evaluated.
+        """
         return list(self.staticProblem.getFunctionKeys())
 
     def getAdjoint(self, objective):
-        """Return the adjoint values for objective if they
-        exist. Otherwise just return zeros"""
+        """
+        Return the adjoint values for objective if they exist. Otherwise just return zeros.
 
+        Parameters
+        ----------
+        objective : str
+            Name of the objective function.
+
+        Returns
+        -------
+        numpy.ndarray
+            Adjoint values for the specified objective.
+        """
         if objective in self.adjoints:
             vals = self.adjoints[objective].getArray().copy()
         else:
@@ -742,13 +942,32 @@ class StructProblem(BaseStructProblem):
             self.adjoints[objective].getArray()[:] = adjoint[:]
 
     def setAdjointRHS(self, func):
-        """Set the ADjoint RHS for given func"""
+        """
+        Set the adjoint right-hand side for given function.
+
+        Parameters
+        ----------
+        func : str
+            Name of the function to set adjoint RHS for.
+        """
         self._dIdu.zeroEntries()
         if func in self.staticProblem.functionList:
             self.staticProblem.addSVSens([func], [self._dIdu])
 
     def getdSduVec(self, inVec):
-        """Evaluate the direct residual"""
+        """
+        Evaluate the direct residual.
+
+        Parameters
+        ----------
+        inVec : numpy.ndarray
+            Input vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Direct residual vector.
+        """
         self.phi[:] = inVec
         self.staticProblem.K.mult(self._phi, self.temp0)
         outVec = self.temp0.getArray().copy()
@@ -757,7 +976,19 @@ class StructProblem(BaseStructProblem):
         return outVec
 
     def getdSduTVec(self, inVec):
-        """Evaluate the adjoint residual"""
+        """
+        Evaluate the adjoint residual.
+
+        Parameters
+        ----------
+        inVec : numpy.ndarray
+            Input vector.
+
+        Returns
+        -------
+        numpy.ndarray
+            Adjoint residual vector.
+        """
         self.phi[:] = inVec
         self.temp0.zeroEntries()
         self.staticProblem.addTransposeJacVecProduct(self._phi, self.temp0, scale=1.0)
@@ -768,10 +999,21 @@ class StructProblem(BaseStructProblem):
         return outVec
 
     def getdIdXpt(self, func):
-        """Get the (partial) derivative of the structural objective
+        """
+        Get the (partial) derivative of the structural objective
         with respect to all structural nodes for the current
-        structProblem"""
+        structProblem.
 
+        Parameters
+        ----------
+        func : str
+            Name of the function to compute derivatives for.
+
+        Returns
+        -------
+        tacs.TACS.Vec
+            Derivative vector with respect to structural nodes.
+        """
         dIdXpt = self.FEAAssembler.createNodeVec()
         # Check to see if func is actually a valid TACS function
         if func in self.evalFuncs:
@@ -780,9 +1022,20 @@ class StructProblem(BaseStructProblem):
         return dIdXpt
 
     def getdIdXdv(self, func):
-        """Get the (partial) derivative of the structural objective
-        wrt all structural design variables"""
+        """
+        Get the (partial) derivative of the structural objective
+        with respect to all structural design variables.
 
+        Parameters
+        ----------
+        func : str
+            Name of the function to compute derivatives for.
+
+        Returns
+        -------
+        tacs.TACS.Vec
+            Derivative vector with respect to structural design variables.
+        """
         dIdXdv = self.FEAAssembler.createDesignVec()
 
         # Check to see if func is actually a valid TACS function
@@ -794,11 +1047,24 @@ class StructProblem(BaseStructProblem):
         return dvVal
 
     def getdIduTransProd(self, vecT, evalFuncs=None):
-        """Perform the transpose matvec of the getdIduProd function and
+        """
+        Perform the transpose matvec of the getdIduProd function and
         return a TACS vector. The result is stored locally.
 
-        We assume that structProblem is set and that evalFuncs is valid."""
+        We assume that structProblem is set and that evalFuncs is valid.
 
+        Parameters
+        ----------
+        vecT : dict
+            Dictionary containing transpose vector values.
+        evalFuncs : list of str, optional
+            List of function names to evaluate.
+
+        Returns
+        -------
+        numpy.ndarray
+            Transpose matrix-vector product result.
+        """
         # The old way (for testing purposes)
         self._matVecRHS.zeroEntries()
         svList = [self.FEAAssembler.createVec() for f in evalFuncs]
@@ -810,14 +1076,27 @@ class StructProblem(BaseStructProblem):
         return self.matVecRHS.copy()
 
     def getdIdXdvTransProd(self, vecT, evalFuncs=None):
-        """Perform the transpose matvec of the getdIdXdvProd function and
-        return a vector
+        """
+        Perform the transpose matvec of the getdIdXdvProd function and
+        return a vector.
 
         We assume that structProblem is set and that handles is valid.
 
         Note that handles contains the list of function handles, whereas the
-        names are contained in evalFuncs."""
+        names are contained in evalFuncs.
 
+        Parameters
+        ----------
+        vecT : dict
+            Dictionary containing transpose vector values.
+        evalFuncs : list of str, optional
+            List of function names to evaluate.
+
+        Returns
+        -------
+        dict
+            Dictionary containing transpose matrix-vector product results.
+        """
         # # The old way (for testing purposes)
         prodDV = self.FEAAssembler.createDesignVec(asBVec=True)
         for f in evalFuncs:
@@ -844,19 +1123,21 @@ class StructProblem(BaseStructProblem):
 
         return prodDict
 
-        if self.DVGeo is not None:
-            prod.update(
-                self.DVGeo.convertSensitivityToDict(
-                    np.atleast_2d(prod_arr[self.dvNum :]), out1D=True
-                )
-            )
-
-        return prod
-
     def globalNKPreCon(self, inVec):
-        """This function is ONLY used as a preconditioner to the
-        global Aero-Structural system"""
+        """
+        This function is ONLY used as a preconditioner to the
+        global Aero-Structural system.
 
+        Parameters
+        ----------
+        inVec : numpy.ndarray
+            Input vector for preconditioning.
+
+        Returns
+        -------
+        numpy.ndarray
+            Preconditioned output vector.
+        """
         # Place the in_vec into the residual vector
         res = self.temp0
         update = self.temp1
@@ -873,11 +1154,22 @@ class StructProblem(BaseStructProblem):
         return outVec
 
     def globalAdjointPreCon(self, inVec):
-        """This function is ONLY used as a preconditioner to the
+        """
+        This function is ONLY used as a preconditioner to the
         global Aero-Structural adjoint system. For the linear
         symmetric case this is actually identical to the NKPreCon
-        function above"""
+        function above.
 
+        Parameters
+        ----------
+        inVec : numpy.ndarray
+            Input vector for preconditioning.
+
+        Returns
+        -------
+        numpy.ndarray
+            Preconditioned output vector.
+        """
         # Place the in_vec into the residual vector
         self.temp0.getArray()[:] = inVec[:]
         self.FEAAssembler.applyBCsToVec(self.temp0)
@@ -894,14 +1186,27 @@ class StructProblem(BaseStructProblem):
         return outVec
 
     def globalDirectPreCon(self, inVec):
-        """This function is ONLY used as a preconditioner to the
+        """
+        This function is ONLY used as a preconditioner to the
         global Aero-Structural direct system. For the linear
         symmetric case this is actually identical to the NKPreCon
-        function above"""
+        function above.
+
+        Parameters
+        ----------
+        inVec : numpy.ndarray
+            Input vector for preconditioning.
+
+        Returns
+        -------
+        numpy.ndarray
+            Preconditioned output vector.
+        """
         return self.globalAdjointPreCon(inVec)
 
     def assembleAdjointRHS(self):
-        """Compute the final adjoint RHS:
+        """
+        Compute the final adjoint RHS:
         Adjoint RHS should be: dIdu - dAdu^T*psi - dSdu^T*phi
         """
         # Set RHS to dIdu
@@ -955,11 +1260,21 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.finalNorm = np.real(res.norm())
 
     def getdRdXptPhi(self, objectives):
-        """Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the objectives in the objective list.
+        """
+        Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the objectives in the objective list.
 
         This is the total sensitivity calculation.
-        """
 
+        Parameters
+        ----------
+        objectives : list of str
+            List of objective function names.
+
+        Returns
+        -------
+        list of tacs.TACS.Vec
+            List of sensitivity products for each objective.
+        """
         products = [self.FEAAssembler.createNodeVec() for obj in objectives]
         phiList = [self.getAdjoint(obj) for obj in objectives]
         self.staticProblem.addAdjointResXptSensProducts(phiList, products, scale=1.0)
@@ -967,8 +1282,19 @@ class StructProblem(BaseStructProblem):
         return products
 
     def getdRdXdvPhi(self, objectives):
-        """Get the result of :math:`[dR/dX_{dv}]^T \phi` for the total sensitivity calculation."""
+        """
+        Get the result of :math:`[dR/dX_{dv}]^T \phi` for the total sensitivity calculation.
 
+        Parameters
+        ----------
+        objectives : list of str
+            List of objective function names.
+
+        Returns
+        -------
+        list of tacs.TACS.Vec
+            List of sensitivity products for each objective.
+        """
         products = [self.FEAAssembler.createDesignVec() for obj in objectives]
         phiList = [self.getAdjoint(obj) for obj in objectives]
         self.staticProblem.addAdjointResProducts(phiList, products, scale=1.0)
@@ -977,12 +1303,14 @@ class StructProblem(BaseStructProblem):
         return dvVals
 
     def getdRdXdvTransProd(self):
-        """Perform the transpose matvec of getdRdXdvProd. The result is
+        """
+        Perform the transpose matvec of getdRdXdvProd. The result is
         returned as a dict of numpy arrays.
 
         Returns
         -------
-        prod : dict
+        dict
+            Dictionary containing transpose matrix-vector product results.
         """
         dvProd = self.FEAAssembler.createDesignVec(asBVec=True)
         self.staticProblem.addAdjointResProducts(
@@ -1005,6 +1333,19 @@ class StructProblem(BaseStructProblem):
         return prodDict
 
     def convertDesignVecToDict(self, dvVec):
+        """
+        Convert a design vector to a dictionary format.
+
+        Parameters
+        ----------
+        dvVec : tacs.TACS.Vec or numpy.ndarray
+            Design vector to convert.
+
+        Returns
+        -------
+        dict
+            Dictionary containing the design vector with variable name as key.
+        """
         if isinstance(dvVec, tacs.TACS.Vec):
             dvVec = dvVec.getArray()
 
@@ -1042,8 +1383,12 @@ class StructProblem(BaseStructProblem):
 
         Parameters
         ----------
-        fileName : str
-            Filename for force file. Should have .dat or .bdf extension
+        outputDir : str, optional
+            Output directory for the force file.
+        baseName : str, optional
+            Base name for the force file. If None, uses problem name + "_external_forces".
+        number : int, optional
+            Number to append to the filename.
         """
         if baseName is None:
             baseName = self.name + "_external_forces"
@@ -1068,9 +1413,8 @@ class StructProblem(BaseStructProblem):
         Parameters
         ----------
         fileName : str
-            Filename for force file. Should have .dat or .bdf extension
+            Filename for force file. Should have .dat or .bdf extension.
         """
-
         forceInfo = pn.bdf.read_bdf(
             fileName, validate=False, xref=False, debug=False, punch=True
         )
