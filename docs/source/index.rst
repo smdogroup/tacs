@@ -18,6 +18,7 @@ Getting Started
    install
    interfaces
    postprocessing
+   troubleshooting
 
 Examples
 ========
