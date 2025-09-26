@@ -9,9 +9,9 @@ Overview
 
 The MACH interface is designed for scenarios where TACS needs to be integrated with external computational libraries, such as:
 
-- The aerodynamic solver ADflow for aerostructural coupling
-- The geometric parametrization library pygeo for geometric design variables
-- The optimization library pyoptsparse for optimization
+- The aerodynamic solver `ADflow <https://github.com/mdolab/adflow>`_ for aerostructural coupling
+- The geometric parametrization library `pyGeo <https://github.com/mdolab/pygeo>`_ for geometric design variables
+- The optimization library `pyoptsparse <https://github.com/mdolab/pyoptsparse>`_ for optimization
 
 Key Features
 ------------
@@ -136,5 +136,6 @@ Constraint Handling
 Related Documentation
 ---------------------
 
-- :doc:`../pytacs/pytacs` - pyTACS interface documentation
-- :doc:`../core/TACS` - Core TACS C++ interface documentation
+- `ADflow <https://mdolab-adflow.readthedocs-hosted.com/en/latest/>`_ - ADflow interface documentation
+- `pyGeo <https://mdolab-pygeo.readthedocs-hosted.com/en/latest/>`_ - pyGeo interface documentation
+- `pyoptsparse <https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/>`_ - pyoptsparse interface documentation
