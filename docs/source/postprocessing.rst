@@ -55,7 +55,6 @@ after solving the problem.
 .. code-block:: python
 
    from tacs import pyTACS, TACS
-   import pytacs.tacs_interface as tacs
    bdfFile = "input.bdf"
    options = {# Specify the element type to output in f5 file
               # If not specified, pyTACS will choose this option automatically 
@@ -70,7 +69,7 @@ after solving the problem.
    FEAAssembler.initialize()
    # Creata a pytacs problem
    staticProb = FEAAssembler.createStaticProblem("grav")
-   staticProb.addInertialLoads([0.0, 0.0, -9.81])
+   staticProb.addInertialLoad([0.0, 0.0, -9.81])
    # Solve
    staticProb.solve()
    # Write the solution to an f5 file
