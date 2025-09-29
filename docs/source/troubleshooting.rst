@@ -14,7 +14,7 @@ Installation Issues
 
 - Ensure conda environment is activated: ``conda activate tacs``
 - Reinstall TACS: ``mamba install -c conda-forge -c smdogroup tacs``
-- For source installation, ensure Python interface is built: ``pip install -e .[all]``
+- For source installation, ensure Python interface is built: ``pip install -e .[all]`` or ``make interface``
 
 **ImportError: libtacs.so not found**
 
@@ -72,14 +72,6 @@ Analysis Issues
          else:
              raise ValueError(f"Unexpected element type: {descript}")
 
-**Memory errors with large models**
-
-*Cause*: Insufficient memory for analysis or postprocessing.
-
-*Solutions*:
-
-- Consider using more powerful hardware
-
 Postprocessing Issues
 --------------------
 
@@ -107,20 +99,6 @@ Postprocessing Issues
 - Use essential output flags only
 - Convert files individually
 
-Performance Issues
-------------------
-
-**Slow analysis performance**
-
-*Cause*: Suboptimal settings or hardware limitations.
-
-*Solutions*:
-
-- Use appropriate number of MPI processes
-- Enable optimized BLAS/LAPACK (Intel MKL)
-- Use SuiteSparse for better sparse matrix performance
-- Check system resources: ``htop``
-
 Platform-Specific Issues
 ------------------------
 
@@ -144,17 +122,6 @@ Platform-Specific Issues
 - Use conda installation for easier setup
 - Ensure Xcode command line tools installed
 - Check library paths: ``otool -L libtacs.so``
-
-**HPC System Issues**
-
-*Cause*: Module conflicts or resource limits.
-
-*Solutions*:
-
-- Use system-provided modules when available
-- Check job resource limits
-- Use appropriate compiler flags
-- Contact system administrators
 
 Debugging Tips
 --------------
@@ -180,7 +147,6 @@ Getting Help
 **Community Resources:**
 
 - `GitHub Issues <https://github.com/smdogroup/tacs/issues>`_: Report bugs and request features
-- `TACS Documentation <https://smdogroup.github.io/tacs/>`_: Comprehensive documentation
 
 **When Reporting Issues:**
 

@@ -20,6 +20,7 @@ F5 File Format
 TACS uses the f5 file format (based on HDF5) to store solution data in a parallel, binary format. F5 files contain both continuous (nodal) and element-wise data, making them suitable for detailed postprocessing and visualization.
 
 **Key Features of F5 Files:**
+
 - **Parallel I/O**: Efficient for large-scale parallel simulations
 - **Binary format**: Fast read/write operations and compact storage
 - **Hierarchical structure**: Organized data storage with metadata
@@ -46,6 +47,7 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
 
 .. tip::
    The ``ElementType`` should match the type of elements in your model. Common types include:
+
    - ``TACS_BEAM_OR_SHELL_ELEMENT`` for shell and beam elements
    - ``TACS_SOLID_ELEMENT`` for 3D solid elements
    - ``TACS_PLANE_STRESS_ELEMENT`` for 2D plane stress elements
@@ -95,17 +97,8 @@ The ``f5totec`` utility converts f5 files to Tecplot format (.plt files):
 
    # Basic conversion
    f5totec solution.f5
-   
-   # Convert with strands (for time-dependent data)
-   f5totec --use_strands solution.f5
-   
-   # Specify output filename
-   f5totec solution.f5 -o wing_analysis.plt
 
 This creates a ``solution.plt`` file that can be opened in Tecplot.
-
-.. tip::
-   The ``--use_strands`` option is particularly useful for transient analyses or optimization histories where you want to animate the results over time.
 
 f5tovtk: Convert to VTK Format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,19 +109,19 @@ The ``f5tovtk`` utility converts f5 files to VTK format (.vtk files) for use wit
 
    # Basic conversion
    f5tovtk solution.f5
-   
-   # Specify output filename
-   f5tovtk solution.f5 -o wing_analysis.vtk
 
 This creates a ``solution.vtk`` file that can be opened in ParaView.
 
 .. note::
-   Both utilities automatically handle the conversion of element-wise data to nodal data through averaging, making the results suitable for smooth visualization.
+   When a node is used by multiple elements, each element may have a different value for variables such as stress, 
+   strain, failure criteria, and design variables at that node. f5totec produces a single value for each node by 
+   averaging the values from each element. This can lead to unrealistic values of these variables in certain situations 
+   (e.g design variable values at the boundaries between different components and stress/strain/failure criteria values 
+   at points where shell elements meet at very different orientations.
 
 **Troubleshooting Conversion Issues:**
 - Ensure the f5 file was generated successfully and contains the expected data
 - Check that the conversion utilities are compiled and accessible in your PATH
-- For large files, conversion may take several minutes - this is normal
 
 Output Variables by Element Type
 --------------------------------
@@ -162,7 +155,7 @@ Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
      - Transverse shear strains
    * - 
      - erot
-     - Rotational strain
+     - Drilling strain
    * - Stresses
      - sx0, sy0, sxy0
      - Membrane stress resultants
@@ -174,7 +167,7 @@ Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
      - Transverse shear stress resultants
    * - 
      - srot
-     - Rotational stress
+     - Drilling stress resultant
    * - Extras
      - failure0-failure6
      - Failure indices for different failure criteria
@@ -189,13 +182,13 @@ Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
      - Applied moments
    * - Coordinate Frame
      - t0x, t0y, t0z
-     - First tangent vector components
+     - First element reference frame vector (i.e. reference axis) components
    * - 
      - t1x, t1y, t1z
-     - Second tangent vector components
+     - Second element reference frame vector components
    * - 
      - t2x, t2y, t2z
-     - Normal vector components
+     - Third element reference frame vector (i.e. normal vector) components
 
 Solid Elements (TACS_SOLID_ELEMENT)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -327,13 +320,9 @@ Visualization Tips
 
 1. **Element-wise vs. Nodal Data**: F5 files contain both element-wise and nodal data. The conversion utilities automatically perform nodal averaging for element-wise quantities.
 
-2. **Higher-order Elements**: Higher-order elements are automatically converted to basic element types for visualization (e.g., quadratic triangles become linear triangles).
+2. **Higher-order Elements**: Higher-order elements are split into multiple lower order element for visualization (e.g., each quadratic triangle becomes 3 linear triangles).
 
 3. **Component Separation**: In Tecplot, each component in the model can be written as a separate zone in the output files, making it easy to visualize different parts of the structure.
-
-4. **Time-dependent Data**: Use the ``--use_strands`` option with ``f5totec`` for time-dependent analyses to create animated visualizations.
-
-5. **Large Models**: For very large models, consider using only the essential output flags to reduce file size and processing time.
 
 Visualizing Deformed Surfaces
 -----------------------------
@@ -347,26 +336,21 @@ In Tecplot, you can visualize deformed surfaces by creating new variables that r
 
 1. **Open the converted .plt file** in Tecplot
 2. **Create new variables** for deformed coordinates:
+
    - Go to ``Data > Alter > Specify Equations``
-   - Create new variables:
-     - ``{XDEF} = {X} + {u}`` (deformed X coordinate)
-     - ``{YDEF} = {Y} + {v}`` (deformed Y coordinate)  
-     - ``{ZDEF} = {Z} + {w}`` (deformed Z coordinate)
+   - Under the Equations box enter:
+   
+     ::
+
+      {XDEF} = {X} + {u}
+      {YDEF} = {Y} + {v}
+      {ZDEF} = {Z} + {w}
+
 3. **Create the deformed plot**:
-   - Go to ``Plot > 3D``
+
+   - Go to ``Plot > Assign XYZ...``
    - Set ``X``, ``Y``, ``Z`` to ``XDEF``, ``YDEF``, ``ZDEF``
    - Choose appropriate surface rendering (``Surface``, ``Mesh``, or ``Contour``)
-4. **Add displacement magnitude** for color coding:
-   - Create variable: ``{DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})``
-   - Set ``Contour`` to ``DISP_MAG`` to color-code by displacement magnitude
-
-**Example Tecplot equations:**
-::
-
-   {XDEF} = {X} + {u}
-   {YDEF} = {Y} + {v}
-   {ZDEF} = {Z} + {w}
-   {DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})
 
 Creating Deformed Geometry in ParaView
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,37 +363,41 @@ ParaView provides several methods to visualize deformed surfaces:
    - Select the dataset
    - Go to ``Filters > Alphabetical > Calculator``
 3. **Create deformed coordinates**:
+
    - Set ``Result Array Name`` to ``XDEF``
    - Set ``Function`` to ``X + u``
    - Click ``Apply``
    - Repeat for Y and Z coordinates:
+
      - ``YDEF = Y + v``
      - ``ZDEF = Z + w``
-4. **Create displacement magnitude**:
-   - Add another Calculator filter
-   - Set ``Function`` to ``sqrt(u*u + v*v + w*w)``
-   - Set ``Result Array Name`` to ``DISP_MAG``
-5. **Visualize the deformed surface**:
+4. **Visualize the deformed surface**:
+
    - Set ``Representation`` to ``Surface`` or ``Surface With Edges``
-   - Set ``Coloring`` to ``DISP_MAG`` for displacement-based coloring
 
 **Method 2: Using the Warp By Vector Filter**
+
 1. **Open the .vtk file** in ParaView
 2. **Add Warp By Vector filter**:
+
    - Select the dataset
    - Go to ``Filters > Alphabetical > Warp By Vector``
 3. **Configure the warp**:
+
    - Set ``Vector`` to ``[u, v, w]`` (displacement components)
    - Adjust ``Scale Factor`` to control deformation magnification
    - Click ``Apply``
 4. **Set visualization properties**:
+
    - Choose appropriate representation
    - Color by displacement magnitude or stress/strain variables
 
 **Method 3: Using the Transform Filter**
 1. **Add Transform filter**:
+
    - Go to ``Filters > Alphabetical > Transform``
 2. **Configure translation**:
+
    - Set ``Translation`` to ``[u, v, w]``
    - Enable ``Transform All Input Vectors``
    - Click ``Apply``
@@ -426,46 +414,3 @@ For better visualization, consider these techniques:
 **Animation for Time-Dependent Results:**
 - **Tecplot**: Use the ``Animation`` panel to cycle through time steps
 - **ParaView**: Use the ``Animation View`` to create smooth animations of the deformation
-
-**Combined Visualization:**
-- Show both undeformed (wireframe) and deformed (solid) geometry
-- Use different colors for different displacement components
-- Overlay stress/strain contours on the deformed geometry
-
-Example Workflow
-----------------
-
-Here's a complete example of generating and visualizing TACS results with deformed geometry:
-
-.. code-block:: cpp
-
-   // 1. Create f5 file from TACS analysis
-   ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT;
-   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
-                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
-                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-   TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
-   f5->writeToFile("wing_analysis.f5");
-   f5->decref();
-
-.. code-block:: bash
-
-   # 2. Convert to Tecplot format
-   f5totec wing_analysis.f5
-   
-   # 3. Convert to VTK format for ParaView
-   f5tovtk wing_analysis.f5
-
-**Tecplot Visualization Steps:**
-1. Open ``wing_analysis.plt``
-2. Create 10x deformed coordinates: ``{XDEF} = {X} + 10*{u}``, ``{YDEF} = {Y} + 10*{v}``, ``{ZDEF} = {Z} + 10*{w}``
-3. Create displacement magnitude: ``{DISP_MAG} = sqrt({u}*{u} + {v}*{v} + {w}*{w})``
-4. Plot using ``XDEF``, ``YDEF``, ``ZDEF`` with ``DISP_MAG`` coloring
-
-**ParaView Visualization Steps:**
-1. Open ``wing_analysis.vtk``
-2. Add ``Warp By Vector`` filter with vector ``[u, v, w]``
-3. Set scale factor to 10 for better visibility
-4. Color by displacement magnitude or stress components
-
-The resulting visualizations will show the deformed structure with appropriate scaling and coloring for effective analysis.
