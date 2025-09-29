@@ -28,13 +28,15 @@ TACS uses the f5 file format (based on HDF5) to store solution data in a paralle
 Creating F5 Files
 ~~~~~~~~~~~~~~~~~
 
+**Method 1: Using the Direct (C++) Interface**
+
 To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This should be done after solving your analysis but before cleaning up the assembler object.
 
 .. code-block:: cpp
 
    #include "TACSToFH5.h"
    
-   // After solving your analysis (e.g., assembler->solve())
+   // After solving your analysis
    // Create an TACSToFH5 object for writing output to files
    ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT;
    int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
@@ -44,6 +46,35 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
    f5->incref();
    f5->writeToFile("solution.f5");
    f5->decref();
+
+**Method 2: Using the pyTACS (Python) interface**
+
+To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <problem_classes>` 
+after solving the problem.
+
+.. code-block:: python
+
+   from tacs import pyTACS, TACS
+   import pytacs.tacs_interface as tacs
+   bdfFile = "input.bdf"
+   options = {# Specify the element type to output in f5 file
+              # If not specified, pyTACS will choose this option automatically 
+              # based on first element type in model
+              "outputElement": TACS.BEAM_OR_SHELL_ELEMENT,
+              # Output flags (connectivity/nodes are always written and don't need to be specified)
+              "writeDisplacements": True,
+              "writeStrains": True,
+              "writeStresses": True,
+              "writeExtras": True}
+   FEAAssembler = pyTACS(bdfFile, options=options)
+   FEAAssembler.initialize()
+   # Creata a pytacs problem
+   staticProb = FEAAssembler.createStaticProblem("grav")
+   staticProb.addInertialLoads([0.0, 0.0, -9.81])
+   # Solve
+   staticProb.solve()
+   # Write the solution to an f5 file
+   FEAAssembler.writeSolution("solution.f5")
 
 .. tip::
    The ``ElementType`` should match the type of elements in your model. Common types include:
@@ -120,6 +151,7 @@ This creates a ``solution.vtk`` file that can be opened in ParaView.
    at points where shell elements meet at very different orientations.
 
 **Troubleshooting Conversion Issues:**
+
 - Ensure the f5 file was generated successfully and contains the expected data
 - Check that the conversion utilities are compiled and accessible in your PATH
 
