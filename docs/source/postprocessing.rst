@@ -49,7 +49,7 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
 
 **Method 2: Using the pyTACS (Python) interface**
 
-To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <problem_classes>` 
+To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <pytacs/problems>` 
 after solving the problem.
 
 .. code-block:: python
