@@ -357,60 +357,25 @@ Creating Deformed Geometry in ParaView
 
 ParaView provides several methods to visualize deformed surfaces:
 
-**Method 1: Using the Calculator Filter**
 1. **Open the converted .vtk file** in ParaView
+
 2. **Add Calculator filter**:
    - Select the dataset
    - Go to ``Filters > Alphabetical > Calculator``
+
 3. **Create deformed coordinates**:
 
-   - Set ``Result Array Name`` to ``XDEF``
-   - Set ``Function`` to ``X + u``
+   - Set ``Result Array Name`` to ``def_vec``
+   - Set ``Function`` to ``u*iHat + v*jHat + w*kHat``
    - Click ``Apply``
-   - Repeat for Y and Z coordinates:
 
-     - ``YDEF = Y + v``
-     - ``ZDEF = Z + w``
-4. **Visualize the deformed surface**:
-
-   - Set ``Representation`` to ``Surface`` or ``Surface With Edges``
-
-**Method 2: Using the Warp By Vector Filter**
-
-1. **Open the .vtk file** in ParaView
-2. **Add Warp By Vector filter**:
+4. **Add Warp By Vector filter**:
 
    - Select the dataset
    - Go to ``Filters > Alphabetical > Warp By Vector``
-3. **Configure the warp**:
 
-   - Set ``Vector`` to ``[u, v, w]`` (displacement components)
+5. **Configure the warp**:
+
+   - Set ``Vector`` to ``def_vec``
    - Adjust ``Scale Factor`` to control deformation magnification
    - Click ``Apply``
-4. **Set visualization properties**:
-
-   - Choose appropriate representation
-   - Color by displacement magnitude or stress/strain variables
-
-**Method 3: Using the Transform Filter**
-1. **Add Transform filter**:
-
-   - Go to ``Filters > Alphabetical > Transform``
-2. **Configure translation**:
-
-   - Set ``Translation`` to ``[u, v, w]``
-   - Enable ``Transform All Input Vectors``
-   - Click ``Apply``
-
-Displacement Scaling and Animation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-For better visualization, consider these techniques:
-
-**Displacement Scaling:**
-- **Tecplot**: Multiply displacement components by a scale factor in the equations (e.g., ``XDEF = X + 10*u``)
-- **ParaView**: Use the ``Scale Factor`` in Warp By Vector filter or multiply in Calculator expressions
-
-**Animation for Time-Dependent Results:**
-- **Tecplot**: Use the ``Animation`` panel to cycle through time steps
-- **ParaView**: Use the ``Animation View`` to create smooth animations of the deformation
