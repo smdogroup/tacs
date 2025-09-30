@@ -1138,7 +1138,7 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
-            elif propInfo.type == "PBAR":  # Nastran bar
+            elif propInfo.type in ["PBAR", "PBEAM"]:  # Nastran bar
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
@@ -1157,9 +1157,64 @@ class pyTACS(BaseUI):
                 if k2 is None or k2 > 1e3:
                     k2 = 1e3
 
+                if propInfo.type == "PBEAM":
+                    # For PBAR, we have all we need, but a PBEAM can have
+                    # varying properties along its length, TACS doesn't support
+                    # this so we'll compute average properties and use those
+                    numPropStations = len(area)
+                    if numPropStations == 1:
+                        area = area[0]
+                        I1 = I1[0]
+                        I2 = I2[0]
+                        I12 = I12[0]
+                        J = J[0]
+                    else:
+                        xStations = propInfo.xxb
+                        area = np.trapz(area, xStations)
+                        I1 = np.trapz(I1, xStations)
+                        I2 = np.trapz(I2, xStations)
+                        I12 = np.trapz(I12, xStations)
+                        J = np.trapz(J, xStations)
+
                 con = tacs.constitutive.BasicBeamConstitutive(
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
                 )
+
+            elif propInfo.type == "PBEAML":
+                sectionType = propInfo.beam_type
+                sectionProps = {}
+                if sectionType == "BAR":
+                    sectionProps["w"] = propInfo.dim[:, 0]
+                    sectionProps["t"] = propInfo.dim[:, 1]
+                    conType = tacs.constitutive.IsoRectangleBeamConstitutive
+                elif propInfo.Type == "TUBE":
+                    r1 = propInfo.dim[:, 0]
+                    r0 = propInfo.dim[:, 1]
+                    sectionProps["d_inner"] = 2 * r0
+                    sectionProps["t_wall"] = r1 - r0
+                    conType = tacs.constitutive.IsoTubeBeamConstitutive
+                else:
+                    # Section shape that doesn't have a corresponding TACS
+                    # constitutive class, so we just compute the section properties
+                    # and use BasicBeamConstitutive
+                    sectionProps["A"] = propInfo.Area()
+                    sectionProps["J"] = propInfo.J()
+                    sectionProps["Iz"] = propInfo.I1()
+                    sectionProps["Iy"] = propInfo.I2()
+                    sectionProps["Iyz"] = -propInfo.I12()
+                    conType = tacs.constitutive.BasicBeamConstitutive
+
+                # Whatever properties we're going to pass to the TACS
+                # constitutive model, average them along the element
+                xStations = propInfo.xxb
+                if len(xStations) == 1:
+                    for key, value in sectionProps.items():
+                        sectionProps[key] = value[0]
+                else:
+                    for key, value in sectionProps.items():
+                        sectionProps[key] = np.trapz(value, xStations)
+
+                con = conType(mat, **sectionProps)
 
             elif propInfo.type == "PROD":  # Nastran rod
                 area = propInfo.A
@@ -1189,7 +1244,7 @@ class pyTACS(BaseUI):
                             "Unsupported material coordinate system type "
                             f"'{mcid.type}' for property number {propertyID}."
                         )
-            elif propInfo.type in ["PBAR"]:
+            elif propInfo.type in ["PBAR", "PBEAM", "PBEAML"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
@@ -1230,7 +1285,7 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.Quad9Shell(transform, con)
                 elif descript in ["CTRIA3", "CTRIAR"]:
                     elem = tacs.elements.Tri3Shell(transform, con)
-                elif descript in ["CBAR", "CROD"]:
+                elif descript in ["CBAR", "CROD", "CBEAM"]:
                     elem = tacs.elements.Beam2(transform, con)
                 elif "CTETRA" in descript:
                     # May have variable number of nodes in card
