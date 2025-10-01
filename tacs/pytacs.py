@@ -1178,9 +1178,11 @@ class pyTACS(BaseUI):
 
                 else:
                     # We use the pynastran API to get the area, moments of inertia, and torsional constant
-                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use 
+                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
                     # this more general method
-                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL("PBARL", propInfo.Type, propInfo.dim, propInfo)
+                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
+                        "PBARL", propInfo.Type, propInfo.dim, propInfo
+                    )
                     J = propInfo.J()
                     con = tacs.constitutive.BasicBeamConstitutive(
                         mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
