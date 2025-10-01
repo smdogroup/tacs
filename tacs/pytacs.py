@@ -1177,13 +1177,13 @@ class pyTACS(BaseUI):
                     )
 
                 else:
-                    A = propInfo.Area()
+                    # We use the pynastran API to get the area, moments of inertia, and torsional constant
+                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use 
+                    # this more general method
+                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL("PBARL", propInfo.Type, propInfo.dim, propInfo)
                     J = propInfo.J()
-                    I1 = propInfo.I1()
-                    I2 = propInfo.I2()
-                    I12 = -propInfo.I12()
                     con = tacs.constitutive.BasicBeamConstitutive(
-                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=I12
+                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
                     )
 
             elif propInfo.type == "PROD":  # Nastran rod
