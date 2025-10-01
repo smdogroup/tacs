@@ -60,7 +60,9 @@ after solving the problem.
               # If not specified, pyTACS will choose this option automatically 
               # based on first element type in model
               "outputElement": TACS.BEAM_OR_SHELL_ELEMENT,
-              # Output flags (connectivity/nodes are always written and don't need to be specified)
+              # Output flags
+              "writeConnectivity": True,
+              "writeNodes": True,
               "writeDisplacements": True,
               "writeStrains": True,
               "writeStresses": True,
@@ -73,7 +75,7 @@ after solving the problem.
    # Solve
    staticProb.solve()
    # Write the solution to an f5 file
-   FEAAssembler.writeSolution("solution.f5")
+   FEAAssembler.writeSolution()
 
 .. tip::
    The ``ElementType`` should match the type of elements in your model. Common types include:
@@ -85,29 +87,38 @@ after solving the problem.
 Output Flags
 ~~~~~~~~~~~~
 
-The following output flags control what data is written to the f5 file. You can combine multiple flags using the bitwise OR operator (``|``):
+The following output flags control what data is written to the f5 file. The table shows both the C++ interface flags and their equivalent pyTACS options. You can combine multiple C++ flags using the bitwise OR operator (``|``), while :ref:`pyTACS options<pytacs/pytacs_module:Options>` are set as boolean values in the options dictionary when the :class:`~tacs.pytacs.pyTACS` object is created:
 
 .. list-table:: Output Flags
-   :widths: 30 70
+   :widths: 25 25 50
    :header-rows: 1
 
-   * - Flag
+   * - Direct (C++) Flag
+     - pyTACS (Python) Option
      - Description
    * - ``TACS_OUTPUT_CONNECTIVITY``
+     - ``writeConnectivity``
      - Element connectivity information (required for visualization)
    * - ``TACS_OUTPUT_NODES``
+     - ``writeNodes``
      - Nodal coordinates (X, Y, Z) - essential for geometry visualization
    * - ``TACS_OUTPUT_DISPLACEMENTS``
+     - ``writeDisplacements``
      - Nodal displacements and rotations - needed for deformed shape visualization
    * - ``TACS_OUTPUT_STRAINS``
+     - ``writeStrains``
      - Element strains - useful for strain analysis and contour plots
    * - ``TACS_OUTPUT_STRESSES``
+     - ``writeStresses``
      - Element stresses - essential for stress analysis and failure assessment
    * - ``TACS_OUTPUT_EXTRAS``
+     - ``writeExtras``
      - Additional quantities (failure indices, design variables) - useful for optimization
    * - ``TACS_OUTPUT_LOADS``
+     - ``writeLoads``
      - Applied loads - helpful for load verification and visualization
    * - ``TACS_OUTPUT_COORDINATE_FRAME``
+     - ``writeCoordinateFrame``
      - Element coordinate frames - useful for composite material analysis
 
 .. note::
