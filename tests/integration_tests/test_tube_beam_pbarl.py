@@ -19,7 +19,7 @@ This test uses automatic pytacs initialization from BDF file with PBARL cards.
 TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl_tube.bdf")
 
 ksweight = 10.0
 
