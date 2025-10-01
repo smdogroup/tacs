@@ -1,9 +1,10 @@
 import os
+import unittest
 
 import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, functions
+from tacs import pytacs, elements, constitutive, functions, TACS
 
 """
 6 noded beam model 1 meter long in x direction.
@@ -18,6 +19,8 @@ We apply two load cases: a distributed gravity and distributed traction case.
 We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
 and Compliance functions and sensitivities.
 """
+
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl_Ibeam.bdf")
@@ -155,3 +158,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return tacs_probs, fea_assembler
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()

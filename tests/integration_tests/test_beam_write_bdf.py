@@ -1,8 +1,9 @@
 import os
+import unittest
 import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, functions
+from tacs import pytacs, functions, TACS
 
 """
 This case tests pyTACS's `writeBDF` method for shell elements.
@@ -15,6 +16,8 @@ The test results should be identical to those in test_beam_bend_coupling.py
  
 We test KSDisplacement, StructuralMass, MomentOfInertia, and Compliance functions and sensitivities.
 """
+
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
@@ -152,3 +155,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         return new_tacs_probs, new_fea_assembler
+
+    # We have to skip these tests in complex mode because the beam
+    # element uses complex step to approximate the Jacobian and this
+    # leads to issues with complex stepping the sensitivities.
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()
