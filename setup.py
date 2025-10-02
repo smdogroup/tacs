@@ -125,7 +125,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Graeme J. Kennedy",
     author_email="graeme.kennedy@ae.gatech.edu",
-    python_requires=">=3.9.0",
+    python_requires=">=3.10.0",
     install_requires=[
         "numpy<3.0.0",
         "mpi4py>=4.0.3,<5.0.0",
