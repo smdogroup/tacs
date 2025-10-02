@@ -170,6 +170,9 @@ Output Variables by Element Type
 
 The following tables describe the output variables available for each element type in TACS.
 
+.. tip::
+   For elements that have a local coordinate system (e.g shells and beams), the stress and strain outputs are in the local coordinate system. For example, ``ex0``/``sx0`` are in the direction of the local reference axis, ``ey0``/``sy0`` are in the direction of the second reference frame vector. Other variables, such as forces ``fx``, ``fy``, ``fz`` are given in the global reference frame.
+
 Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
