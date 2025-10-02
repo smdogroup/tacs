@@ -27,11 +27,13 @@ parser.add_argument(
     "-i", "--input", type=str, default="tapered_beam_pbeam.bdf", help="Input BDF file"
 )
 args = parser.parse_args()
+baseName = args.input.split(".bdf")[0]
 
 FEASolver = pyTACS(args.input)
 FEASolver.initialize()
 problems = FEASolver.createTACSProbsFromBDF()
 for problem in problems.values():
     problem.setOption("printLevel", 2)
+    problem.setOption("writeSolution", True)
     problem.solve()
-    problem.writeSolution()
+    problem.writeSolution(baseName=baseName)

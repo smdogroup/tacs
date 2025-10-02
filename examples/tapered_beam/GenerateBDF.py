@@ -62,9 +62,7 @@ def getBeamSectionProperties(
     # Torsional constant J using Roark's formula for a solid rectangular bar
     a = 0.5 * max(width, depth)
     b = 0.5 * min(width, depth)
-    j = (a * b**3) * (
-        16.0 / 3.0 - 3.36 * (b / a) * (1.0 - (b**4) / (12.0 * a**4))
-    )
+    j = (a * b**3) * (16.0 / 3.0 - 3.36 * (b / a) * (1.0 - (b**4) / (12.0 * a**4)))
     return area, i1, i2, j
 
 
