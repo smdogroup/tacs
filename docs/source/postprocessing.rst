@@ -12,8 +12,6 @@ The TACS postprocessing workflow consists of three main steps:
 2. **Convert f5 files** to standard visualization formats (Tecplot or ParaView)
 3. **Visualize and analyze** results using your preferred visualization software
 
-The f5 format stores both nodal (continuous) and element-wise data, making it suitable for comprehensive structural analysis visualization.
-
 F5 File Format
 --------------
 
