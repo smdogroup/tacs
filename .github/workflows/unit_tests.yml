@@ -82,7 +82,7 @@ jobs:
           echo "=============================================================";
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
