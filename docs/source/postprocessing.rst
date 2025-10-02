@@ -47,6 +47,13 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
    f5->writeToFile("solution.f5");
    f5->decref();
 
+.. tip::
+   The ``ElementType`` should match the type of elements in your model. Common types include:
+
+   - ``TACS_BEAM_OR_SHELL_ELEMENT`` for shell and beam elements
+   - ``TACS_SOLID_ELEMENT`` for 3D solid elements
+   - ``TACS_PLANE_STRESS_ELEMENT`` for 2D plane stress elements
+
 **Method 2: Using the pyTACS (Python) interface**
 
 To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <pytacs/problems>` 
@@ -76,13 +83,6 @@ after solving the problem.
    staticProb.solve()
    # Write the solution to an f5 file
    FEAAssembler.writeSolution()
-
-.. tip::
-   The ``ElementType`` should match the type of elements in your model. Common types include:
-
-   - ``TACS_BEAM_OR_SHELL_ELEMENT`` for shell and beam elements
-   - ``TACS_SOLID_ELEMENT`` for 3D solid elements
-   - ``TACS_PLANE_STRESS_ELEMENT`` for 2D plane stress elements
 
 Output Flags
 ~~~~~~~~~~~~
