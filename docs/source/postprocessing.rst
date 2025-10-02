@@ -35,7 +35,7 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
 .. code-block:: cpp
 
    #include "TACSToFH5.h"
-   
+
    // After solving your analysis
    // Create an TACSToFH5 object for writing output to files
    ElementType etype = TACS_BEAM_OR_SHELL_ELEMENT;
@@ -56,7 +56,7 @@ To create an f5 file from a TACS analysis, use the ``TACSToFH5`` class. This sho
 
 **Method 2: Using the pyTACS (Python) interface**
 
-To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <pytacs/problems>` 
+To create an f5 file from a TACS analysis, use the `writeSolution` method of any :doc:`problem class <pytacs/problems>`
 after solving the problem.
 
 .. code-block:: python
@@ -64,7 +64,7 @@ after solving the problem.
    from tacs import pyTACS, TACS
    bdfFile = "input.bdf"
    options = {# Specify the element type to output in f5 file
-              # If not specified, pyTACS will choose this option automatically 
+              # If not specified, pyTACS will choose this option automatically
               # based on first element type in model
               "outputElement": TACS.BEAM_OR_SHELL_ELEMENT,
               # Output flags
@@ -154,10 +154,10 @@ The ``f5tovtk`` utility converts f5 files to VTK format (.vtk files) for use wit
 This creates a ``solution.vtk`` file that can be opened in ParaView.
 
 .. note::
-   When a node is used by multiple elements, each element may have a different value for variables such as stress, 
-   strain, failure criteria, and design variables at that node. f5totec produces a single value for each node by 
-   averaging the values from each element. This can lead to unrealistic values of these variables in certain situations 
-   (e.g design variable values at the boundaries between different components and stress/strain/failure criteria values 
+   When a node is used by multiple elements, each element may have a different value for variables such as stress,
+   strain, failure criteria, and design variables at that node. f5totec produces a single value for each node by
+   averaging the values from each element. This can lead to unrealistic values of these variables in certain situations
+   (e.g design variable values at the boundaries between different components and stress/strain/failure criteria values
    at points where shell elements meet at very different orientations.
 
 **Troubleshooting Conversion Issues:**
@@ -186,52 +186,52 @@ Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
    * - Displacements
      - u, v, w
      - Translational displacements
-   * - 
+   * -
      - rotx, roty, rotz
      - Rotational displacements
    * - Strains
      - ex0, ey0, exy0
      - Membrane strains
-   * - 
+   * -
      - ex1, ey1, exy1
      - Bending strains
-   * - 
+   * -
      - eyz0, exz0
      - Transverse shear strains
-   * - 
+   * -
      - erot
      - Drilling strain
    * - Stresses
      - sx0, sy0, sxy0
      - Membrane stress resultants
-   * - 
+   * -
      - sx1, sy1, sxy1
      - Bending stress resultants
-   * - 
+   * -
      - syz0, sxz0
      - Transverse shear stress resultants
-   * - 
+   * -
      - srot
      - Drilling stress resultant
    * - Extras
      - failure0-failure6
      - Failure indices for different failure criteria
-   * - 
+   * -
      - dv1-dv7
      - Design variables
    * - Loads
      - fx, fy, fz
      - Applied forces
-   * - 
+   * -
      - mx, my, mz
      - Applied moments
    * - Coordinate Frame
      - t0x, t0y, t0z
      - First element reference frame vector (i.e. reference axis) components
-   * - 
+   * -
      - t1x, t1y, t1z
      - Second element reference frame vector components
-   * - 
+   * -
      - t2x, t2y, t2z
      - Third element reference frame vector (i.e. normal vector) components
 
@@ -251,19 +251,19 @@ Solid Elements (TACS_SOLID_ELEMENT)
    * - Strains
      - exx, eyy, ezz
      - Normal strains
-   * - 
+   * -
      - gyz, gxz, gxy
      - Shear strains
    * - Stresses
      - sxx, syy, szz
      - Normal stresses
-   * - 
+   * -
      - syz, sxz, sxy
      - Shear stresses
    * - Extras
      - failure
      - Failure index
-   * - 
+   * -
      - dv1, dv2, dv3
      - Design variables
    * - Loads
@@ -292,7 +292,7 @@ Plane Stress Elements (TACS_PLANE_STRESS_ELEMENT)
    * - Extras
      - failure
      - Failure index
-   * - 
+   * -
      - dv1, dv2, dv3
      - Design variables
    * - Loads
@@ -321,7 +321,7 @@ Scalar Elements (TACS_SCALAR_2D_ELEMENT, TACS_SCALAR_3D_ELEMENT)
    * - Extras
      - failure
      - Failure index
-   * - 
+   * -
      - dv1, dv2, dv3
      - Design variables
    * - Loads
@@ -350,10 +350,10 @@ PCM Elements (TACS_PCM_ELEMENT)
    * - Extras
      - rho
      - Density
-   * - 
+   * -
      - dv1, dv2, dv3
      - Design variables
-   * - 
+   * -
      - phase
      - Phase field
    * - Loads
@@ -384,7 +384,7 @@ In Tecplot, you can visualize deformed surfaces by creating new variables that r
 
    - Go to ``Data > Alter > Specify Equations``
    - Under the Equations box enter:
-   
+
      ::
 
       {XDEF} = {X} + {u}
@@ -396,6 +396,26 @@ In Tecplot, you can visualize deformed surfaces by creating new variables that r
    - Go to ``Plot > Assign XYZ...``
    - Set ``X``, ``Y``, ``Z`` to ``XDEF``, ``YDEF``, ``ZDEF``
    - Choose appropriate surface rendering (``Surface``, ``Mesh``, or ``Contour``)
+
+Tecplot Macro
+^^^^^^^^^^^^^
+You can also automate this process using a Tecplot macro. Place this code in your `tecplot.mcr` file to make it available as a quick macro in the Tecplot GUI:
+
+.. code-block::
+
+    $!MACROFUNCTION NAME = "TACS - Apply Deformations"
+    $!PromptForTextString |DefFactor|
+      Instructions = "Enter scaling factor for deformations"
+
+    $!AlterData
+      Equation = "{X}={X}+|DefFactor|*{u}"
+    $!AlterData
+      Equation = "{Y}={Y}+|DefFactor|*{v}"
+    $!AlterData
+      Equation = "{Z}={Z}+|DefFactor|*{w}"
+    $!ENDMACROFUNCTION
+
+Note that this macro modifies the original X, Y, Z variables, rather than creating new variables for the deformed coordinates as is done above.
 
 Creating Deformed Geometry in ParaView
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
