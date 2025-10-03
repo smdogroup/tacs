@@ -26,7 +26,7 @@ class ConstitutiveTest(unittest.TestCase):
         # Set the variable arrays
         self.x = np.ones(3, dtype=self.dtype)
         self.pt = np.zeros(3)
-        self.dvs = np.array([1.0, 0.1], dtype=self.dtype)
+        self.dvs = np.array([1.0, 0.1, 10.0], dtype=self.dtype)
 
         # Create the isotropic material
         rho = 2700.0
@@ -47,12 +47,24 @@ class ConstitutiveTest(unittest.TestCase):
         )
         t = 0.1
         w = 1.0
+        Lb = 10.0
         wNum = 0
         tNum = 1
+        LbNum = 2
+        Kb = 1.0
 
         # Create stiffness (need class)
         self.con = constitutive.IsoRectangleBeamConstitutive(
-            self.props, t=t, tNum=tNum, w=w, wNum=wNum, wOffset=0.5, tOffset=-0.5
+            self.props,
+            t=t,
+            tNum=tNum,
+            w=w,
+            wNum=wNum,
+            wOffset=0.5,
+            tOffset=-0.5,
+            Lb=Lb,
+            LbNum=LbNum,
+            Kb=Kb,
         )
 
         # Seed random number generator in tacs for consistent test results

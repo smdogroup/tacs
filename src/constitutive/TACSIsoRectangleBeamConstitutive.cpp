@@ -2,22 +2,29 @@
 
 TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
     TACSMaterialProperties* properties, TacsScalar _width,
-    TacsScalar _thickness, int _width_num, int _thickness_num,
-    TacsScalar _lb_width, TacsScalar _ub_width, TacsScalar _lb_thickness,
-    TacsScalar _ub_thickness, TacsScalar _w_offset, TacsScalar _t_offset) {
+    TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
+    int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
+    TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
+    TacsScalar _w_offset, TacsScalar _t_offset,
+    TacsScalar _buckle_length_factor) {
   props = properties;
   props->incref();
 
   thickness = _thickness;
   width = _width;
+  buckle_length = _buckle_length;
   thickness_num = _thickness_num;
   width_num = _width_num;
+  buckle_length_num = _buckle_length_num;
   lb_thickness = _lb_thickness;
   ub_thickness = _ub_thickness;
   lb_width = _lb_width;
   ub_width = _ub_width;
+  lb_buckle_length = 1e-20;
+  ub_buckle_length = 1e20;
   t_offset = _t_offset;
   w_offset = _w_offset;
+  buckle_length_factor = _buckle_length_factor;
 
   ks_weight = 100.0;
 }
@@ -41,6 +48,12 @@ int TACSIsoRectangleBeamConstitutive::getDesignVarNums(int elemIndex, int dvLen,
     }
     index++;
   }
+  if (buckle_length_num >= 0) {
+    if (dvNums && dvLen > index) {
+      dvNums[index] = buckle_length_num;
+    }
+    index++;
+  }
   return index;
 }
 
@@ -55,6 +68,10 @@ int TACSIsoRectangleBeamConstitutive::setDesignVars(int elemIndex, int dvLen,
     thickness = dvs[index];
     index++;
   }
+  if (buckle_length_num >= 0) {
+    buckle_length = dvs[index];
+    index++;
+  }
   return index;
 }
 
@@ -67,6 +84,10 @@ int TACSIsoRectangleBeamConstitutive::getDesignVars(int elemIndex, int dvLen,
   }
   if (thickness_num >= 0) {
     dvs[index] = thickness;
+    index++;
+  }
+  if (buckle_length_num >= 0) {
+    dvs[index] = buckle_length;
     index++;
   }
   return index;
@@ -85,6 +106,11 @@ int TACSIsoRectangleBeamConstitutive::getDesignVarRange(int elemIndex,
   if (thickness_num >= 0) {
     lb[index] = lb_thickness;
     ub[index] = ub_thickness;
+    index++;
+  }
+  if (buckle_length_num >= 0) {
+    lb[index] = lb_buckle_length;
+    ub[index] = ub_buckle_length;
     index++;
   }
   return index;
@@ -342,7 +368,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
                                                          const TacsScalar e[]) {
   // Check the cross-section for failure at the four corners
   TacsScalar e0[6], s0[6];    // 3D stress, NOT beam stresses
-  TacsScalar fail_checks[4];  // fail value a four corners
+  TacsScalar fail_checks[6];  // fail value a four corners
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
   TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
                         (0.5 - t_offset) * thickness};
@@ -371,6 +397,36 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
     }
   }
 
+  if (buckle_length_factor != 0.0) {
+    TacsScalar delta_y = t_offset * thickness;
+    TacsScalar delta_z = w_offset * width;
+    TacsScalar A = thickness * width;
+    TacsScalar t3 = thickness * thickness * thickness;
+    TacsScalar w3 = width * width * width;
+    TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+    TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+    TacsScalar Leff = buckle_length_factor * buckle_length;
+    // We don't include young modulus here since it cancels out in the ratio
+    // later
+    TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
+
+    TacsScalar Pcr1 = M_PI * M_PI * Iy / (Leff * Leff);
+    fail_checks[count] = Nx / Pcr1;
+    if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[count];
+    }
+
+    count += 1;
+
+    TacsScalar Pcr2 = M_PI * M_PI * Iz / (Leff * Leff);
+    fail_checks[count] = Nx / Pcr2;
+    if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[count];
+    }
+
+    count += 1;
+  }
+
   for (int i = 0; i < count; i++) {
     ks_sum += exp(ks_weight * (fail_checks[i] - max_fail));
   }
@@ -384,8 +440,8 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
   // Check the cross-section for failure at the four corners
   TacsScalar e0[6], s0[6];
   TacsScalar dfde0[6], dfds0[6];
-  TacsScalar fail_checks[4];
-  TacsScalar fail_checks_sens[4][6];
+  TacsScalar fail_checks[6];
+  TacsScalar fail_checks_sens[6][6];
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
   TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
                         (0.5 - t_offset) * thickness};
@@ -426,6 +482,44 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     }
   }
 
+  if (buckle_length_factor != 0.0) {
+    TacsScalar delta_y = t_offset * thickness;
+    TacsScalar delta_z = w_offset * width;
+    TacsScalar A = thickness * width;
+    TacsScalar t3 = thickness * thickness * thickness;
+    TacsScalar w3 = width * width * width;
+    TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+    TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+    TacsScalar Leff = buckle_length_factor * buckle_length;
+    TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
+
+    TacsScalar Pcr1 = M_PI * M_PI * Iy / (Leff * Leff);
+    fail_checks[count] = Nx / Pcr1;
+    fail_checks_sens[count][0] = -A / (M_PI * M_PI * Iy / (Leff * Leff));
+    fail_checks_sens[count][2] =
+        delta_y * A / (M_PI * M_PI * Iy / (Leff * Leff));
+    fail_checks_sens[count][3] =
+        delta_z * A / (M_PI * M_PI * Iy / (Leff * Leff));
+    if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[count];
+    }
+
+    count += 1;
+
+    TacsScalar Pcr2 = M_PI * M_PI * Iz / (Leff * Leff);
+    fail_checks[count] = Nx / Pcr2;
+    fail_checks_sens[count][0] = -A / (M_PI * M_PI * Iz / (Leff * Leff));
+    fail_checks_sens[count][2] =
+        delta_y * A / (M_PI * M_PI * Iz / (Leff * Leff));
+    fail_checks_sens[count][3] =
+        delta_z * A / (M_PI * M_PI * Iz / (Leff * Leff));
+    if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[count];
+    }
+
+    count += 1;
+  }
+
   for (int ii = 0; ii < count; ii++) {
     TacsScalar val = exp(ks_weight * (fail_checks[ii] - max_fail));
     ks_sum += val;
@@ -443,17 +537,18 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
 void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], int dvLen, TacsScalar dfdx[]) {
-  int dvNums[2];
+  int dvNums[3];
   dvNums[0] = width_num;
   dvNums[1] = thickness_num;
+  dvNums[2] = buckle_length_num;
   int index = 0;
-  for (int dv_index = 0; dv_index < 2; dv_index++) {
+  for (int dv_index = 0; dv_index < 3; dv_index++) {
     int dvNum = dvNums[dv_index];
     // Check the cross-section for failure at the four corners
     TacsScalar e0[6], s0[6];
     TacsScalar e0d[6], s0d[6];
-    TacsScalar fail_checks[4];
-    TacsScalar fail_checks_sens[4];
+    TacsScalar fail_checks[6];
+    TacsScalar fail_checks_sens[6];
     TacsScalar max_fail = -1e20, ks_sum = 0.0;
     TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
                           (0.5 - t_offset) * thickness};
@@ -500,6 +595,58 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
           max_fail = fail_checks[count];
         }
       }
+    }
+
+    if (buckle_length_factor != 0.0) {
+      TacsScalar dL = 0.0;
+      if (dvNum == buckle_length_num) {
+        dL = 1.0;
+      }
+      TacsScalar delta_y = t_offset * thickness;
+      TacsScalar ddelta_y = t_offset * dthickness;
+      TacsScalar delta_z = w_offset * width;
+      TacsScalar ddelta_z = w_offset * dwidth;
+      TacsScalar A = thickness * width;
+      TacsScalar dA = dthickness * width + thickness * dwidth;
+      TacsScalar t3 = thickness * thickness * thickness;
+      TacsScalar dt3 = 3.0 * thickness * thickness * dthickness;
+      TacsScalar w3 = width * width * width;
+      TacsScalar dw3 = 3.0 * width * width * dwidth;
+      TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+      TacsScalar dIy = 1.0 / 12.0 * (dthickness * w3 + thickness * dw3) +
+                       2.0 * delta_z * ddelta_z * A + delta_z * delta_z * dA;
+      TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+      TacsScalar dIz = 1.0 / 12.0 * (dwidth * t3 + width * dt3) +
+                       2.0 * delta_y * ddelta_y * A + delta_y * delta_y * dA;
+      TacsScalar Leff = buckle_length_factor * buckle_length;
+      TacsScalar dLeff = buckle_length_factor * dL;
+      TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
+      TacsScalar dNx = A * (ddelta_y * e[2] + ddelta_z * e[3]) -
+                       dA * (e[0] - delta_y * e[2] - delta_z * e[3]);
+
+      TacsScalar Pcr1 = M_PI * M_PI * Iy / (Leff * Leff);
+      TacsScalar dPcr1 =
+          M_PI * M_PI *
+          (dIy / (Leff * Leff) - 2.0 * Iy * dLeff / (Leff * Leff * Leff));
+      fail_checks[count] = Nx / Pcr1;
+      fail_checks_sens[count] = dNx / Pcr1 - Nx * dPcr1 / (Pcr1 * Pcr1);
+      if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+        max_fail = fail_checks[count];
+      }
+
+      count += 1;
+
+      TacsScalar Pcr2 = M_PI * M_PI * Iz / (Leff * Leff);
+      TacsScalar dPcr2 =
+          M_PI * M_PI *
+          (dIz / (Leff * Leff) - 2.0 * Iz * dLeff / (Leff * Leff * Leff));
+      fail_checks[count] = Nx / Pcr2;
+      fail_checks_sens[count] = dNx / Pcr2 - Nx * dPcr2 / (Pcr2 * Pcr2);
+      if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
+        max_fail = fail_checks[count];
+      }
+
+      count += 1;
     }
 
     for (int i = 0; i < count; i++) {
