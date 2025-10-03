@@ -1,24 +1,25 @@
 import os
 import unittest
 
-import numpy as np
 from pytacs_analysis_base_test import PyTACSTestCase
 
-from tacs import TACS, constitutive, elements, functions, pytacs
+from tacs import TACS, functions, pytacs
 
 """
 6 noded beam model 1 meter long in x direction.
 The cross-section is a hollow tube with the following properties:
     d = 0.1
     t = 0.01
-We apply apply various tip loads test KSDisplacement, KSFailure, 
+We apply apply various tip loads test KSDisplacement, KSFailure,
 StructuralMass, and Compliance functions and sensitivities.
+
+This test uses automatic pytacs initialization from BDF file with PBARL cards.
 """
 
 TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl_tube.bdf")
 
 ksweight = 10.0
 
@@ -68,6 +69,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     def setup_tacs_problems(self, comm):
         """
         Setup pytacs object for problems we will be testing.
+        Uses automatic initialization from BDF file with PBARL cards.
         """
 
         # Overwrite default check values
@@ -80,38 +82,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-3
             self.dh = 1e-6
 
-        # Material properties
-        rho = 2700.0  # density kg/m^3
-        E = 70.0e3  # Young's modulus (Pa)
-        nu = 0.3  # Poisson's ratio
-        ys = 2.7e3  # yield stress
-
-        # Shell thickness
-        t = 0.01  # m
-        d = 0.1  # m
-
-        # Callback function used to setup TACS element objects and DVs
-        def elem_call_back(
-            dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
-        ):
-            # Setup (isotropic) property and constitutive objects
-            prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-            con = constitutive.IsoTubeBeamConstitutive(
-                prop, t=t, tNum=dv_num, d=d, dNum=dv_num + 1
-            )
-            refAxis = np.array([0.0, 1.0, 0.0])
-            transform = elements.BeamRefAxisTransform(refAxis)
-            # pass back the appropriate tacs element object
-            elem = elements.Beam2(transform, con)
-            return elem
-
         # Instantiate FEA Assembler
         struct_options = {}
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
-        # Set up constitutive objects and elements
-        fea_assembler.initialize(elem_call_back)
+        # Set up constitutive objects and elements automatically from BDF
+        # This will read material properties and PBARL cards from the BDF file
+        fea_assembler.initialize()
 
         # Read in forces from BDF and create tacs struct problems
         tacs_probs = fea_assembler.createTACSProbsFromBDF()
