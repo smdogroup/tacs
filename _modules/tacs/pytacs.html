@@ -69,12 +69,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.bdf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.constitutive</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.constraints</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.elements</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.functions</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.problems</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tacs.TACS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tacs.pymeshloader</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyMeshLoader</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tacs.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseUI</span>
 
@@ -1239,6 +1239,33 @@
                     <span class="n">mat</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="n">area</span><span class="p">,</span> <span class="n">Iy</span><span class="o">=</span><span class="n">I2</span><span class="p">,</span> <span class="n">Iz</span><span class="o">=</span><span class="n">I1</span><span class="p">,</span> <span class="n">Iyz</span><span class="o">=</span><span class="n">I12</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">kz</span><span class="o">=</span><span class="n">k2</span>
                 <span class="p">)</span>
 
+            <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PBARL&quot;</span><span class="p">:</span>  <span class="c1"># Nastran bar w/ cross-section</span>
+                <span class="k">if</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Type</span> <span class="o">==</span> <span class="s2">&quot;BAR&quot;</span><span class="p">:</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">IsoRectangleBeamConstitutive</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Type</span> <span class="o">==</span> <span class="s2">&quot;TUBE&quot;</span><span class="p">:</span>
+                    <span class="n">r1</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">r0</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">d_inner</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">r0</span>
+                    <span class="n">t_wall</span> <span class="o">=</span> <span class="n">r1</span> <span class="o">-</span> <span class="n">r0</span>
+                    <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">IsoTubeBeamConstitutive</span><span class="p">(</span>
+                        <span class="n">mat</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">d_inner</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_wall</span>
+                    <span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># We use the pynastran API to get the area, moments of inertia, and torsional constant</span>
+                    <span class="c1"># The built in methods for I1, I2, etc. don&#39;t support a number of cross section types so we use</span>
+                    <span class="c1"># this more general method</span>
+                    <span class="n">A</span><span class="p">,</span> <span class="n">I1</span><span class="p">,</span> <span class="n">I2</span><span class="p">,</span> <span class="n">I12</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">cards</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">bars</span><span class="o">.</span><span class="n">_bar_areaL</span><span class="p">(</span>
+                        <span class="s2">&quot;PBARL&quot;</span><span class="p">,</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="n">propInfo</span>
+                    <span class="p">)</span>
+                    <span class="n">J</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">J</span><span class="p">()</span>
+                    <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">BasicBeamConstitutive</span><span class="p">(</span>
+                        <span class="n">mat</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="n">A</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">,</span> <span class="n">Iy</span><span class="o">=</span><span class="n">I2</span><span class="p">,</span> <span class="n">Iz</span><span class="o">=</span><span class="n">I1</span><span class="p">,</span> <span class="n">Iyz</span><span class="o">=-</span><span class="n">I12</span>
+                    <span class="p">)</span>
+
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PROD&quot;</span><span class="p">:</span>  <span class="c1"># Nastran rod</span>
                 <span class="n">area</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">A</span>
                 <span class="n">J</span> <span class="o">=</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">j</span>
@@ -1267,7 +1294,7 @@
                             <span class="s2">&quot;Unsupported material coordinate system type &quot;</span>
                             <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">mcid</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">&#39; for property number </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2">.&quot;</span>
                         <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;PBAR&quot;</span><span class="p">]:</span>
+            <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;PBAR&quot;</span><span class="p">,</span> <span class="s2">&quot;PBARL&quot;</span><span class="p">]:</span>
                 <span class="n">refAxis</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;elements&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">g0_vector</span>
                 <span class="n">transform</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">BeamRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PROD&quot;</span><span class="p">:</span>
