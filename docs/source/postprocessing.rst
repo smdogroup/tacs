@@ -17,12 +17,6 @@ F5 File Format
 
 TACS uses the f5 file format (based on HDF5) to store solution data in a parallel, binary format. F5 files contain both continuous (nodal) and element-wise data, making them suitable for detailed postprocessing and visualization.
 
-**Key Features of F5 Files:**
-
-- **Parallel I/O**: Efficient for large-scale parallel simulations
-- **Binary format**: Fast read/write operations and compact storage
-- **Hierarchical structure**: Organized data storage with metadata
-
 Creating F5 Files
 ~~~~~~~~~~~~~~~~~
 
