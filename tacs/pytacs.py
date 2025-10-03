@@ -32,12 +32,12 @@ from functools import wraps
 import numpy as np
 import pyNastran.bdf as pn
 
-import tacs.TACS
 import tacs.constitutive
 import tacs.constraints
 import tacs.elements
 import tacs.functions
 import tacs.problems
+import tacs.TACS
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI
 
@@ -1138,7 +1138,7 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
-            elif propInfo.type in ["PBAR", "PBEAM"]:  # Nastran bar
+            elif propInfo.type == "PBAR":  # Nastran bar
                 area = propInfo.A
                 I1 = propInfo.i1
                 I2 = propInfo.i2
@@ -1157,28 +1157,70 @@ class pyTACS(BaseUI):
                 if k2 is None or k2 > 1e3:
                     k2 = 1e3
 
-                if propInfo.type == "PBEAM":
-                    # For PBAR, we have all we need, but a PBEAM can have
-                    # varying properties along its length, TACS doesn't support
-                    # this so we'll compute average properties and use those
-                    numPropStations = len(area)
-                    if numPropStations == 1:
-                        area = area[0]
-                        I1 = I1[0]
-                        I2 = I2[0]
-                        I12 = I12[0]
-                        J = J[0]
-                    else:
-                        xStations = propInfo.xxb
-                        area = np.trapz(area, xStations)
-                        I1 = np.trapz(I1, xStations)
-                        I2 = np.trapz(I2, xStations)
-                        I12 = np.trapz(I12, xStations)
-                        J = np.trapz(J, xStations)
-
                 con = tacs.constitutive.BasicBeamConstitutive(
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
                 )
+
+            elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
+                if propInfo.Type == "BAR":
+                    w = propInfo.dim[0]
+                    t = propInfo.dim[1]
+                    con = tacs.constitutive.IsoRectangleBeamConstitutive(mat, w=w, t=t)
+
+                elif propInfo.Type == "TUBE":
+                    r1 = propInfo.dim[0]
+                    r0 = propInfo.dim[1]
+                    d_inner = 2 * r0
+                    t_wall = r1 - r0
+                    con = tacs.constitutive.IsoTubeBeamConstitutive(
+                        mat, d=d_inner, t=t_wall
+                    )
+
+                else:
+                    # We use the pynastran API to get the area, moments of inertia, and torsional constant
+                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
+                    # this more general method
+                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
+                        "PBARL", propInfo.Type, propInfo.dim, propInfo
+                    )
+                    J = propInfo.J()
+                    con = tacs.constitutive.BasicBeamConstitutive(
+                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
+                    )
+
+            elif propInfo.type == "PBEAM":
+                area = propInfo.A
+                I1 = propInfo.i1
+                I2 = propInfo.i2
+                # Nastran uses negative convention for POI's
+                I12 = -propInfo.i12
+                J = propInfo.j
+                k1 = propInfo.k1
+                k2 = propInfo.k2
+
+                # pynastran defaults these values to 1e8,
+                # which can lead to scaling issues in the stiffness matrix
+                # We truncate this value to 1e3 to prevent this
+                if k1 is None or k1 > 1e3:
+                    k1 = 1e3
+
+                if k2 is None or k2 > 1e3:
+                    k2 = 1e3
+
+                numPropStations = len(area)
+                if numPropStations == 1:
+                    area = area[0]
+                    I1 = I1[0]
+                    I2 = I2[0]
+                    I12 = I12[0]
+                    J = J[0]
+                else:
+                    xStations = propInfo.xxb
+                    area = np.trapz(area, xStations)
+                    I1 = np.trapz(I1, xStations)
+                    I2 = np.trapz(I2, xStations)
+                    I12 = np.trapz(I12, xStations)
+                    J = np.trapz(J, xStations)
 
             elif propInfo.type == "PBEAML":
                 sectionType = propInfo.beam_type
@@ -1190,8 +1232,8 @@ class pyTACS(BaseUI):
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[:, 0]
                     r0 = propInfo.dim[:, 1]
-                    sectionProps["d_inner"] = 2 * r0
-                    sectionProps["t_wall"] = r1 - r0
+                    sectionProps["d"] = 2 * r0
+                    sectionProps["t"] = r1 - r0
                     conType = tacs.constitutive.IsoTubeBeamConstitutive
                 else:
                     # Section shape that doesn't have a corresponding TACS
@@ -1244,7 +1286,7 @@ class pyTACS(BaseUI):
                             "Unsupported material coordinate system type "
                             f"'{mcid.type}' for property number {propertyID}."
                         )
-            elif propInfo.type in ["PBAR", "PBEAM", "PBEAML"]:
+            elif propInfo.type in ["PBAR", "PBARL", "PBEAM", "PBEAML"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":

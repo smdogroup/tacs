@@ -120,8 +120,8 @@ Now that our problem has been setup with loads and functions we can solve it and
 .. code-block:: python
 
   funcs = {}
-  problem.solve()
-  problem.evalFunctions(funcs)
+  staticProb.solve()
+  staticProb.evalFunctions(funcs)
 
 To get the function sensitivity with respect to the design variables and node locations using the
 :meth:`StaticProblem.evalFunctionsSens <tacs.problems.StaticProblem.evalFunctionsSens>` method.
@@ -129,14 +129,14 @@ To get the function sensitivity with respect to the design variables and node lo
 .. code-block:: python
 
   funcsSens = {}
-  problem.evalFunctionsSens(funcsSens)
+  staticProb.evalFunctionsSens(funcsSens)
 
 Finally, we can write out our solution to an f5 file format for further post-processing and visualization by using the
 :meth:`StaticProblem.writeSolution <tacs.problems.StaticProblem.writeSolution>` method.
 
 .. code-block:: python
 
-  problem.writeSolution()
+  staticProb.writeSolution()
 
 This produces a file called ``point_force_000.f5`` in our runscript directory. This file can be converted into a ``.vtk`` file
 (using ``f5tovtk``) for visualization in Paraview or a ``.plt`` (using ``f5totec``) for visualization in TecPlot using:
