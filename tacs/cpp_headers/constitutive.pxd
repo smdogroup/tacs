@@ -52,6 +52,7 @@ cdef extern from "TACSMaterialProperties.h":
         void setKSWeight(TacsScalar)
         void setUseMaxStrainCriterion()
         void setUseTsaiWuCriterion()
+        void setUseModifiedTsaiWu(bool _useModifiedTsaiWu)
 
 cdef extern from "TACSPlaneStressConstitutive.h":
     cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):
@@ -127,6 +128,20 @@ cdef extern from "TACSLamParamShellConstitutive.h":
                                       TacsScalar, TacsScalar, TacsScalar, int, int, int,
                                       TacsScalar, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
+
+cdef extern from "TACSLamParamAllShellConstitutive.h":
+    cdef cppclass TACSLamParamAllShellConstitutive(TACSShellConstitutive):
+        TACSLamParamAllShellConstitutive(
+            TACSOrthotropicPly*,
+            TacsScalar, # t
+            int, # tNum
+            TacsScalar, # tlb
+            TacsScalar, # tub
+            int[], # lpNums
+            TacsScalar # ksWeight
+        )
+        void setLaminationParameters(TacsScalar[])
+        void setNumFailAngles(int)
 
 cdef extern from "TACSBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
