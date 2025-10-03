@@ -334,7 +334,7 @@ class StiffenerLengthConstraint(TACSConstraint):
             funcsSens[key] = {self.varName: xSens, self.coordName: XptSens}
 
 
-# Simple class for handling sparse volume constraints in parallel
+# Simple class for handling sparse length constraints in parallel
 class SparseLengthConstraint(object):
     dtype = TACSConstraint.dtype
 
