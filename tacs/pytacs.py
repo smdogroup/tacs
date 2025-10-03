@@ -1197,6 +1197,11 @@ class pyTACS(BaseUI):
                 J = propInfo.j
                 k1 = propInfo.k1
                 k2 = propInfo.k2
+                nsm = propInfo.nsm
+                offsetYA = propInfo.n1a  # Y coordinate of neutral axis for end A
+                offsetZA = propInfo.n2a  # Z coordinate of neutral axis for end A
+                offsetYB = propInfo.n1b  # Y coordinate of neutral axis for end B
+                offsetZB = propInfo.n2b  # Z coordinate of neutral axis for end B
 
                 # pynastran defaults these values to 1e8,
                 # which can lead to scaling issues in the stiffness matrix
@@ -1214,6 +1219,7 @@ class pyTACS(BaseUI):
                     I2 = I2[0]
                     I12 = I12[0]
                     J = J[0]
+                    nsm = nsm[0]
                 else:
                     xStations = propInfo.xxb
                     area = np.trapz(area, xStations)
@@ -1221,6 +1227,10 @@ class pyTACS(BaseUI):
                     I2 = np.trapz(I2, xStations)
                     I12 = np.trapz(I12, xStations)
                     J = np.trapz(J, xStations)
+                    nsm = np.trapz(nsm, xStations)
+                con = tacs.constitutive.BasicBeamConstitutive(
+                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
+                )
 
             elif propInfo.type == "PBEAML":
                 sectionType = propInfo.beam_type
