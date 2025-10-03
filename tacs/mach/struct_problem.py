@@ -164,8 +164,8 @@ class StructProblem(BaseStructProblem):
     @property
     def pLoad(self):
         """
-        The contribution of the aerodynamic adjoint to the structural 
-        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        The contribution of the aerodynamic adjoint to the structural
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted
         from the structural adjoint RHS.
 
         Returns
@@ -178,8 +178,8 @@ class StructProblem(BaseStructProblem):
     @pLoad.setter
     def pLoad(self, value):
         """
-        Set the aerodynamic adjoint contribution to the structural 
-        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        Set the aerodynamic adjoint contribution to the structural
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted
         from the structural adjoint RHS.
 
         Parameters
@@ -192,14 +192,14 @@ class StructProblem(BaseStructProblem):
     @property
     def dSdu(self):
         """
-        Get the product of the derivative of structural residual with 
+        Get the product of the derivative of structural residual with
         respect to state variables and the structural adjoint vector.
 
         Returns
         -------
         numpy.ndarray
-            Product of the derivative of structural residual with 
-            respect to state variables and the structural adjoint 
+            Product of the derivative of structural residual with
+            respect to state variables and the structural adjoint
             vector.
         """
         return self._dSdu.getArray()
@@ -207,14 +207,14 @@ class StructProblem(BaseStructProblem):
     @dSdu.setter
     def dSdu(self, value):
         """
-        Set the product of the derivative of structural residual with 
+        Set the product of the derivative of structural residual with
         respect to state variables and the structural adjoint vector.
 
         Parameters
         ----------
         value : numpy.ndarray
-            Product of the derivative of structural residual with 
-            respect to state variables and the structural adjoint 
+            Product of the derivative of structural residual with
+            respect to state variables and the structural adjoint
             vector.
         """
         self._dSdu[:] = value
@@ -701,7 +701,7 @@ class StructProblem(BaseStructProblem):
 
     def getOrigDesignVars(self):
         """
-        Get an array holding the original values for all design 
+        Get an array holding the original values for all design
         variables added to TACS at time of initialization.
 
         Returns
@@ -1393,7 +1393,9 @@ class StructProblem(BaseStructProblem):
         if baseName is None:
             baseName = self.name + "_external_forces"
         # Figure out the output file base name
-        fileName = self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
+        fileName = (
+            self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
+        )
         # We want to isolate only the external loads in the rhs before writing the loads out
         rhs = self.staticProblem.rhs
         # Save a copy of the rhs vector holding the full loads
