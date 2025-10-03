@@ -535,6 +535,11 @@ cdef class OrthotropicPly:
     def setUseModifiedTsaiWu(self, bool useModifiedTsaiWu):
         """
         Set to use the modified Tsai-Wu failure criterion.
+
+        Parameters
+        ----------
+        useModifiedTsaiWu : bool
+            If true, use the modified Tsai-Wu criterion. Otherwise, use the standard Tsai-Wu criterion.
         """
         self.ptr.setUseModifiedTsaiWu(useModifiedTsaiWu)
 
@@ -2014,6 +2019,30 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         self.ptr.incref()
 
 cdef class LamParamAllShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class implements lamination parameter based parametrization of the shell stiffness and strength properties.
+    There are six lamination parameters that define a symmetric balanced laminate.
+    These must be combined with appropriate feasibility domain for the constraint on the values of the lamination parameters.
+    The failure calculations are based on the maximum failure criteria taken from a set of set ply angles.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object containing material properties.
+    t : float or complex
+        The thickness of the ply.
+    tNum : int
+        The thickness design variable number.
+    tlb : float or complex
+        The lower bound for the thickness.
+    tub : float or complex
+        The upper bound for the thickness.
+    lpNums : np.ndarray[int]
+        Array of laminate parameter design variable numbers.
+    ksWeight : float or complex, optional
+        The KS aggregation weight for constraints (default is 30.0).
+    """
+
     cdef TACSLamParamAllShellConstitutive* lam_cptr
     def __cinit__(
             self,
@@ -2039,9 +2068,25 @@ cdef class LamParamAllShellConstitutive(ShellConstitutive):
         self.ptr.incref()
 
     def setLaminationParameters(self, np.ndarray[TacsScalar, ndim=1, mode="c"] lp):
+        """
+        Set the lamination parameters for the constitutive object.
+
+        Parameters
+        ----------
+        lp : np.ndarray[float or complex]
+            A 1-dimensional numpy array containing the lamination parameters.
+        """
         self.lam_cptr.setLaminationParameters(<TacsScalar*>lp.data)
 
     def setNumFailAngles(self, int numFailAngles):
+        """
+        Set the number of failure angles for the constitutive model.
+
+        Parameters
+        ----------
+        numFailAngles : int
+            The number of failure angles to be used in the failure analysis.
+        """
         self.lam_cptr.setNumFailAngles(numFailAngles)
 
 cdef class BasicBeamConstitutive(BeamConstitutive):
