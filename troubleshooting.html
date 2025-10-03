@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Troubleshooting Guide &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <script src="_static/documentation_options.js?v=d048f138"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Plate under static load" href="examples/Example-Plate.html" />
+    <link rel="prev" title="Postprocessing TACS Solutions" href="postprocessing.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="examples/Example-Plate.html" title="Plate under static load"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="postprocessing.html" title="Postprocessing TACS Solutions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Troubleshooting Guide</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="troubleshooting-guide">
+<h1>Troubleshooting Guide<a class="headerlink" href="#troubleshooting-guide" title="Link to this heading">¶</a></h1>
+<p>This guide helps you resolve common issues when using TACS. If you don't find your issue here, check the <a class="reference external" href="https://github.com/smdogroup/tacs/issues">GitHub Issues</a> for community support.</p>
+<section id="installation-issues">
+<h2>Installation Issues<a class="headerlink" href="#installation-issues" title="Link to this heading">¶</a></h2>
+<p><strong>ImportError: No module named 'tacs'</strong></p>
+<p><em>Cause</em>: TACS is not installed or not in the Python path.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Ensure conda environment is activated: <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">tacs</span></code></p></li>
+<li><p>Reinstall TACS: <code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">install</span> <span class="pre">-c</span> <span class="pre">conda-forge</span> <span class="pre">-c</span> <span class="pre">smdogroup</span> <span class="pre">tacs</span></code></p></li>
+<li><p>For source installation, ensure Python interface is built: <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.[all]</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">interface</span></code></p></li>
+</ul>
+<p><strong>ImportError: libtacs.so not found</strong></p>
+<p><em>Cause</em>: TACS C++ library is not in the library path.</p>
+<p><em>Solutions</em>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add TACS lib directory to LD_LIBRARY_PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/path/to/tacs/lib:<span class="nv">$LD_LIBRARY_PATH</span>
+
+<span class="c1"># Or add to your .bashrc for permanent fix</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s1">&#39;export LD_LIBRARY_PATH=/path/to/tacs/lib:$LD_LIBRARY_PATH&#39;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/.bashrc
+</pre></div>
+</div>
+<p><strong>MPI compilation errors</strong></p>
+<p><em>Cause</em>: MPI compiler not found or misconfigured.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Ensure MPI is installed: <code class="docutils literal notranslate"><span class="pre">which</span> <span class="pre">mpicc</span></code></p></li>
+<li><p>Check MPI compiler in Makefile.in: <code class="docutils literal notranslate"><span class="pre">CXX</span> <span class="pre">=</span> <span class="pre">mpicxx</span></code></p></li>
+<li><p>For Intel MPI: <code class="docutils literal notranslate"><span class="pre">CXX</span> <span class="pre">=</span> <span class="pre">icpc</span> <span class="pre">-lmpi</span></code></p></li>
+</ul>
+</section>
+<section id="analysis-issues">
+<h2>Analysis Issues<a class="headerlink" href="#analysis-issues" title="Link to this heading">¶</a></h2>
+<p><strong>Analysis fails to converge</strong></p>
+<p><em>Cause</em>: Poor conditioning, incorrect boundary conditions, or excessive loads.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Check boundary conditions are properly applied</p></li>
+<li><p>Verify loads are reasonable for the structure</p></li>
+<li><p>Ensure material properties are correct</p></li>
+<li><p>Try reducing load magnitude</p></li>
+<li><p>Check for rigid body modes</p></li>
+</ul>
+<p><strong>Element callback errors</strong></p>
+<p><em>Cause</em>: Mismatch between BDF element types and callback function.</p>
+<p><em>Solutions</em>:</p>
+<ul>
+<li><p>Verify element types in BDF file match callback function</p></li>
+<li><p>Add error handling for unexpected element types:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">descript</span> <span class="ow">in</span> <span class="n">elemDescripts</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">descript</span> <span class="o">==</span> <span class="s1">&#39;CQUAD4&#39;</span><span class="p">:</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Quad4Shell</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected element type: </span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="postprocessing-issues">
+<h2>Postprocessing Issues<a class="headerlink" href="#postprocessing-issues" title="Link to this heading">¶</a></h2>
+<p><strong>f5tovtk/f5totec not found</strong></p>
+<p><em>Cause</em>: Postprocessing utilities not installed or not in PATH.</p>
+<p><em>Solutions</em>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add to PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/path/to/tacs/extern/f5tovtk:<span class="nv">$PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/path/to/tacs/extern/f5totec:<span class="nv">$PATH</span>
+
+<span class="c1"># Or use full path</span>
+/path/to/tacs/extern/f5tovtk/f5tovtk<span class="w"> </span>solution.f5
+</pre></div>
+</div>
+<p><strong>Conversion fails with large files</strong></p>
+<p><em>Cause</em>: Insufficient disk space or memory.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Use essential output flags only</p></li>
+<li><p>Convert files individually</p></li>
+</ul>
+</section>
+<section id="platform-specific-issues">
+<h2>Platform-Specific Issues<a class="headerlink" href="#platform-specific-issues" title="Link to this heading">¶</a></h2>
+<p><strong>Windows/WSL Issues</strong></p>
+<p><em>Cause</em>: Path or permission issues in WSL.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Use forward slashes in paths</p></li>
+<li><p>Ensure proper file permissions</p></li>
+<li><p>Use WSL2 for better performance</p></li>
+<li><p>Consider Docker alternative</p></li>
+</ul>
+<p><strong>macOS Issues</strong></p>
+<p><em>Cause</em>: Library path or compiler issues.</p>
+<p><em>Solutions</em>:</p>
+<ul class="simple">
+<li><p>Use conda installation for easier setup</p></li>
+<li><p>Ensure Xcode command line tools installed</p></li>
+<li><p>Check library paths: <code class="docutils literal notranslate"><span class="pre">otool</span> <span class="pre">-L</span> <span class="pre">libtacs.so</span></code></p></li>
+</ul>
+</section>
+<section id="debugging-tips">
+<h2>Debugging Tips<a class="headerlink" href="#debugging-tips" title="Link to this heading">¶</a></h2>
+<p><strong>Check TACS Version</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tacs</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TACS version:&quot;</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Verify Installation</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">tacs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">functions</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">pyTACS</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All modules imported successfully&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h2>
+<p><strong>Community Resources:</strong></p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/smdogroup/tacs/issues">GitHub Issues</a>: Report bugs and request features</p></li>
+</ul>
+<p><strong>When Reporting Issues:</strong></p>
+<p>Include the following information:
+- TACS version: <code class="docutils literal notranslate"><span class="pre">tacs.__version__</span></code>
+- Python version: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">--version</span></code>
+- Operating system and version
+- Complete error message and traceback
+- Minimal code example that reproduces the issue
+- Expected vs. actual behavior</p>
+<p><strong>Useful Commands:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check TACS installation</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import tacs; print(tacs.__version__)&quot;</span>
+
+<span class="c1"># Check MPI</span>
+mpirun<span class="w"> </span>--version
+
+<span class="c1"># Check libraries</span>
+ldd<span class="w"> </span>libtacs.so<span class="w">  </span><span class="c1"># Linux</span>
+otool<span class="w"> </span>-L<span class="w"> </span>libtacs.so<span class="w">  </span><span class="c1"># macOS</span>
+
+<span class="c1"># Check environment</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$LD_LIBRARY_PATH</span>
+<span class="nb">echo</span><span class="w"> </span><span class="nv">$PATH</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Troubleshooting Guide</a><ul>
+<li><a class="reference internal" href="#installation-issues">Installation Issues</a></li>
+<li><a class="reference internal" href="#analysis-issues">Analysis Issues</a></li>
+<li><a class="reference internal" href="#postprocessing-issues">Postprocessing Issues</a></li>
+<li><a class="reference internal" href="#platform-specific-issues">Platform-Specific Issues</a></li>
+<li><a class="reference internal" href="#debugging-tips">Debugging Tips</a></li>
+<li><a class="reference internal" href="#getting-help">Getting Help</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="postprocessing.html"
+                          title="previous chapter">Postprocessing TACS Solutions</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="examples/Example-Plate.html"
+                          title="next chapter">Plate under static load</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="examples/Example-Plate.html" title="Plate under static load"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="postprocessing.html" title="Postprocessing TACS Solutions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Troubleshooting Guide</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

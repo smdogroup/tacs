@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Battery pack during thermal runaway" href="Example-Transient_Battery.html" />
-    <link rel="prev" title="Installation of ESP/CAPS" href="../caps2tacs/main.html" /> 
+    <link rel="prev" title="Troubleshooting Guide" href="../troubleshooting.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -30,7 +30,7 @@
           <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../caps2tacs/main.html" title="Installation of ESP/CAPS"
+          <a href="../troubleshooting.html" title="Troubleshooting Guide"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Plate under static load</a></li> 
@@ -145,19 +145,19 @@ selecting node ID 481 (the node at the center of the plate).</p>
 <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.solve" title="tacs.problems.StaticProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.solve</span></code></a> and
 <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.evalFunctions" title="tacs.problems.StaticProblem.evalFunctions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.evalFunctions</span></code></a> methods, respectively.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">problem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-<span class="n">problem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To get the function sensitivity with respect to the design variables and node locations using the
 <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.evalFunctionsSens" title="tacs.problems.StaticProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.evalFunctionsSens</span></code></a> method.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">problem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Finally, we can write out our solution to an f5 file format for further post-processing and visualization by using the
 <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.writeSolution" title="tacs.problems.StaticProblem.writeSolution"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.writeSolution</span></code></a> method.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">problem</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>This produces a file called <code class="docutils literal notranslate"><span class="pre">point_force_000.f5</span></code> in our runscript directory. This file can be converted into a <code class="docutils literal notranslate"><span class="pre">.vtk</span></code> file
@@ -180,8 +180,8 @@ selecting node ID 481 (the node at the center of the plate).</p>
         <div class="sphinxsidebarwrapper">
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="../caps2tacs/main.html"
-                          title="previous chapter">Installation of ESP/CAPS</a></p>
+    <p class="topless"><a href="../troubleshooting.html"
+                          title="previous chapter">Troubleshooting Guide</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -215,7 +215,7 @@ selecting node ID 481 (the node at the center of the plate).</p>
           <a href="Example-Transient_Battery.html" title="Battery pack during thermal runaway"
              >next</a> |</li>
         <li class="right" >
-          <a href="../caps2tacs/main.html" title="Installation of ESP/CAPS"
+          <a href="../troubleshooting.html" title="Troubleshooting Guide"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Plate under static load</a></li> 

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Postprocessing TACS Solutions &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+    <script src="_static/documentation_options.js?v=d048f138"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Troubleshooting Guide" href="troubleshooting.html" />
+    <link rel="prev" title="Installation of ESP/CAPS" href="caps2tacs/main.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="troubleshooting.html" title="Troubleshooting Guide"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="caps2tacs/main.html" title="Installation of ESP/CAPS"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Postprocessing TACS Solutions</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="postprocessing-tacs-solutions">
+<h1>Postprocessing TACS Solutions<a class="headerlink" href="#postprocessing-tacs-solutions" title="Link to this heading">¶</a></h1>
+<p>TACS provides comprehensive postprocessing capabilities through its native f5 file format and conversion utilities. This section explains how to generate f5 files from TACS analyses and convert them to standard visualization formats for detailed analysis and presentation.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The TACS postprocessing workflow consists of three main steps:</p>
+<ol class="arabic simple">
+<li><p><strong>Generate f5 files</strong> from your TACS analysis containing solution data</p></li>
+<li><p><strong>Convert f5 files</strong> to standard visualization formats (Tecplot or ParaView)</p></li>
+<li><p><strong>Visualize and analyze</strong> results using your preferred visualization software</p></li>
+</ol>
+</section>
+<section id="f5-file-format">
+<h2>F5 File Format<a class="headerlink" href="#f5-file-format" title="Link to this heading">¶</a></h2>
+<p>TACS uses the f5 file format (based on HDF5) to store solution data in a parallel, binary format. F5 files contain both continuous (nodal) and element-wise data, making them suitable for detailed postprocessing and visualization.</p>
+<section id="creating-f5-files">
+<h3>Creating F5 Files<a class="headerlink" href="#creating-f5-files" title="Link to this heading">¶</a></h3>
+<p><strong>Method 1: Using the Direct (C++) Interface</strong></p>
+<p>To create an f5 file from a TACS analysis, use the <code class="docutils literal notranslate"><span class="pre">TACSToFH5</span></code> class. This should be done after solving your analysis but before cleaning up the assembler object.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;TACSToFH5.h&quot;</span>
+
+<span class="c1">// After solving your analysis</span>
+<span class="c1">// Create an TACSToFH5 object for writing output to files</span>
+<span class="n">ElementType</span><span class="w"> </span><span class="n">etype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">TACS_BEAM_OR_SHELL_ELEMENT</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">write_flag</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">TACS_OUTPUT_CONNECTIVITY</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">TACS_OUTPUT_NODES</span><span class="w"> </span><span class="o">|</span>
+<span class="w">                  </span><span class="n">TACS_OUTPUT_DISPLACEMENTS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">TACS_OUTPUT_STRAINS</span><span class="w"> </span><span class="o">|</span>
+<span class="w">                  </span><span class="n">TACS_OUTPUT_STRESSES</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">TACS_OUTPUT_EXTRAS</span><span class="p">);</span>
+<span class="n">TACSToFH5</span><span class="w"> </span><span class="o">*</span><span class="n">f5</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TACSToFH5</span><span class="p">(</span><span class="n">assembler</span><span class="p">,</span><span class="w"> </span><span class="n">etype</span><span class="p">,</span><span class="w"> </span><span class="n">write_flag</span><span class="p">);</span>
+<span class="n">f5</span><span class="o">-&gt;</span><span class="n">incref</span><span class="p">();</span>
+<span class="n">f5</span><span class="o">-&gt;</span><span class="n">writeToFile</span><span class="p">(</span><span class="s">&quot;solution.f5&quot;</span><span class="p">);</span>
+<span class="n">f5</span><span class="o">-&gt;</span><span class="n">decref</span><span class="p">();</span>
+</pre></div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">ElementType</span></code> should match the type of elements in your model. Common types include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TACS_BEAM_OR_SHELL_ELEMENT</span></code> for shell and beam elements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TACS_SOLID_ELEMENT</span></code> for 3D solid elements</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TACS_PLANE_STRESS_ELEMENT</span></code> for 2D plane stress elements</p></li>
+</ul>
+</div>
+<p><strong>Method 2: Using the pyTACS (Python) interface</strong></p>
+<p>To create an f5 file from a TACS analysis, use the <cite>writeSolution</cite> method of any <a class="reference internal" href="pytacs/problems.html"><span class="doc">problem class</span></a>
+after solving the problem.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyTACS</span><span class="p">,</span> <span class="n">TACS</span>
+<span class="n">bdfFile</span> <span class="o">=</span> <span class="s2">&quot;input.bdf&quot;</span>
+<span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="c1"># Specify the element type to output in f5 file</span>
+           <span class="c1"># If not specified, pyTACS will choose this option automatically</span>
+           <span class="c1"># based on first element type in model</span>
+           <span class="s2">&quot;outputElement&quot;</span><span class="p">:</span> <span class="n">TACS</span><span class="o">.</span><span class="n">BEAM_OR_SHELL_ELEMENT</span><span class="p">,</span>
+           <span class="c1"># Output flags</span>
+           <span class="s2">&quot;writeConnectivity&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">&quot;writeNodes&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">&quot;writeDisplacements&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">&quot;writeStrains&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">&quot;writeStresses&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">&quot;writeExtras&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
+<span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+<span class="c1"># Creata a pytacs problem</span>
+<span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">&quot;grav&quot;</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addInertialLoad</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">9.81</span><span class="p">])</span>
+<span class="c1"># Solve</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="c1"># Write the solution to an f5 file</span>
+<span class="n">FEAAssembler</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="output-flags">
+<h3>Output Flags<a class="headerlink" href="#output-flags" title="Link to this heading">¶</a></h3>
+<p>The following output flags control what data is written to the f5 file. The table shows both the C++ interface flags and their equivalent pyTACS options. You can combine multiple C++ flags using the bitwise OR operator (<code class="docutils literal notranslate"><span class="pre">|</span></code>), while <a class="reference internal" href="pytacs/pytacs_module.html#options"><span class="std std-ref">pyTACS options</span></a> are set as boolean values in the options dictionary when the <a class="reference internal" href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> object is created:</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Output Flags</span><a class="headerlink" href="#id1" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Direct (C++) Flag</p></th>
+<th class="head"><p>pyTACS (Python) Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_CONNECTIVITY</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeConnectivity</span></code></p></td>
+<td><p>Element connectivity information (required for visualization)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_NODES</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeNodes</span></code></p></td>
+<td><p>Nodal coordinates (X, Y, Z) - essential for geometry visualization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_DISPLACEMENTS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeDisplacements</span></code></p></td>
+<td><p>Nodal displacements and rotations - needed for deformed shape visualization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_STRAINS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeStrains</span></code></p></td>
+<td><p>Element strains - useful for strain analysis and contour plots</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_STRESSES</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeStresses</span></code></p></td>
+<td><p>Element stresses - essential for stress analysis and failure assessment</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_EXTRAS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeExtras</span></code></p></td>
+<td><p>Additional quantities (failure indices, design variables) - useful for optimization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_LOADS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeLoads</span></code></p></td>
+<td><p>Applied loads - helpful for load verification and visualization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_COORDINATE_FRAME</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">writeCoordinateFrame</span></code></p></td>
+<td><p>Element coordinate frames - useful for composite material analysis</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For basic visualization, you typically need at least <code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_CONNECTIVITY</span></code>, <code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_NODES</span></code>, and <code class="docutils literal notranslate"><span class="pre">TACS_OUTPUT_DISPLACEMENTS</span></code>. Add other flags based on your analysis requirements.</p>
+</div>
+</section>
+</section>
+<section id="converting-f5-files">
+<h2>Converting F5 Files<a class="headerlink" href="#converting-f5-files" title="Link to this heading">¶</a></h2>
+<p>TACS provides two utilities for converting f5 files to standard visualization formats. These utilities are typically located in the <code class="docutils literal notranslate"><span class="pre">extern/</span></code> directory of your TACS installation.</p>
+<section id="f5totec-convert-to-tecplot-format">
+<h3>f5totec: Convert to Tecplot Format<a class="headerlink" href="#f5totec-convert-to-tecplot-format" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> utility converts f5 files to Tecplot format (.plt files):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic conversion</span>
+f5totec<span class="w"> </span>solution.f5
+</pre></div>
+</div>
+<p>This creates a <code class="docutils literal notranslate"><span class="pre">solution.plt</span></code> file that can be opened in Tecplot.</p>
+</section>
+<section id="f5tovtk-convert-to-vtk-format">
+<h3>f5tovtk: Convert to VTK Format<a class="headerlink" href="#f5tovtk-convert-to-vtk-format" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code> utility converts f5 files to VTK format (.vtk files) for use with ParaView:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic conversion</span>
+f5tovtk<span class="w"> </span>solution.f5
+</pre></div>
+</div>
+<p>This creates a <code class="docutils literal notranslate"><span class="pre">solution.vtk</span></code> file that can be opened in ParaView.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When a node is used by multiple elements, each element may have a different value for variables such as stress,
+strain, failure criteria, and design variables at that node. f5totec produces a single value for each node by
+averaging the values from each element. This can lead to unrealistic values of these variables in certain situations
+(e.g design variable values at the boundaries between different components and stress/strain/failure criteria values
+at points where shell elements meet at very different orientations.</p>
+</div>
+<p><strong>Troubleshooting Conversion Issues:</strong></p>
+<ul class="simple">
+<li><p>Ensure the f5 file was generated successfully and contains the expected data</p></li>
+<li><p>Check that the conversion utilities are compiled and accessible in your PATH</p></li>
+</ul>
+</section>
+</section>
+<section id="output-variables-by-element-type">
+<h2>Output Variables by Element Type<a class="headerlink" href="#output-variables-by-element-type" title="Link to this heading">¶</a></h2>
+<p>The following tables describe the output variables available for each element type in TACS.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For elements that have a local coordinate system (e.g shells and beams), the stress and strain outputs are in the local coordinate system. For example, <code class="docutils literal notranslate"><span class="pre">ex0</span></code>/<code class="docutils literal notranslate"><span class="pre">sx0</span></code> are in the direction of the local reference axis, <code class="docutils literal notranslate"><span class="pre">ey0</span></code>/<code class="docutils literal notranslate"><span class="pre">sy0</span></code> are in the direction of the second reference frame vector. Other variables, such as forces <code class="docutils literal notranslate"><span class="pre">fx</span></code>, <code class="docutils literal notranslate"><span class="pre">fy</span></code>, <code class="docutils literal notranslate"><span class="pre">fz</span></code> are given in the global reference frame.</p>
+</div>
+<section id="beam-shell-elements-tacs-beam-or-shell-element">
+<h3>Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)<a class="headerlink" href="#beam-shell-elements-tacs-beam-or-shell-element" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default" id="id2">
+<caption><span class="caption-text">Beam/Shell Element Output Variables</span><a class="headerlink" href="#id2" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Displacements</p></td>
+<td><p>u, v, w</p></td>
+<td><p>Translational displacements</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>rotx, roty, rotz</p></td>
+<td><p>Rotational displacements</p></td>
+</tr>
+<tr class="row-even"><td><p>Strains</p></td>
+<td><p>ex0, ey0, exy0</p></td>
+<td><p>Membrane strains</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>ex1, ey1, exy1</p></td>
+<td><p>Bending strains</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>eyz0, exz0</p></td>
+<td><p>Transverse shear strains</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>erot</p></td>
+<td><p>Drilling strain</p></td>
+</tr>
+<tr class="row-even"><td><p>Stresses</p></td>
+<td><p>sx0, sy0, sxy0</p></td>
+<td><p>Membrane stress resultants</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>sx1, sy1, sxy1</p></td>
+<td><p>Bending stress resultants</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>syz0, sxz0</p></td>
+<td><p>Transverse shear stress resultants</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>srot</p></td>
+<td><p>Drilling stress resultant</p></td>
+</tr>
+<tr class="row-even"><td><p>Extras</p></td>
+<td><p>failure0-failure6</p></td>
+<td><p>Failure indices for different failure criteria</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>dv1-dv7</p></td>
+<td><p>Design variables</p></td>
+</tr>
+<tr class="row-even"><td><p>Loads</p></td>
+<td><p>fx, fy, fz</p></td>
+<td><p>Applied forces</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>mx, my, mz</p></td>
+<td><p>Applied moments</p></td>
+</tr>
+<tr class="row-even"><td><p>Coordinate Frame</p></td>
+<td><p>t0x, t0y, t0z</p></td>
+<td><p>First element reference frame vector (i.e. reference axis) components</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>t1x, t1y, t1z</p></td>
+<td><p>Second element reference frame vector components</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>t2x, t2y, t2z</p></td>
+<td><p>Third element reference frame vector (i.e. normal vector) components</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="solid-elements-tacs-solid-element">
+<h3>Solid Elements (TACS_SOLID_ELEMENT)<a class="headerlink" href="#solid-elements-tacs-solid-element" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default" id="id3">
+<caption><span class="caption-text">Solid Element Output Variables</span><a class="headerlink" href="#id3" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Displacements</p></td>
+<td><p>u, v, w</p></td>
+<td><p>Translational displacements</p></td>
+</tr>
+<tr class="row-odd"><td><p>Strains</p></td>
+<td><p>exx, eyy, ezz</p></td>
+<td><p>Normal strains</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>gyz, gxz, gxy</p></td>
+<td><p>Shear strains</p></td>
+</tr>
+<tr class="row-odd"><td><p>Stresses</p></td>
+<td><p>sxx, syy, szz</p></td>
+<td><p>Normal stresses</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>syz, sxz, sxy</p></td>
+<td><p>Shear stresses</p></td>
+</tr>
+<tr class="row-odd"><td><p>Extras</p></td>
+<td><p>failure</p></td>
+<td><p>Failure index</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>dv1, dv2, dv3</p></td>
+<td><p>Design variables</p></td>
+</tr>
+<tr class="row-odd"><td><p>Loads</p></td>
+<td><p>fx, fy, fz</p></td>
+<td><p>Applied forces</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="plane-stress-elements-tacs-plane-stress-element">
+<h3>Plane Stress Elements (TACS_PLANE_STRESS_ELEMENT)<a class="headerlink" href="#plane-stress-elements-tacs-plane-stress-element" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default" id="id4">
+<caption><span class="caption-text">Plane Stress Element Output Variables</span><a class="headerlink" href="#id4" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Displacements</p></td>
+<td><p>u, v</p></td>
+<td><p>In-plane displacements</p></td>
+</tr>
+<tr class="row-odd"><td><p>Strains</p></td>
+<td><p>exx, eyy, gxy</p></td>
+<td><p>In-plane strains</p></td>
+</tr>
+<tr class="row-even"><td><p>Stresses</p></td>
+<td><p>sxx, syy, sxy</p></td>
+<td><p>In-plane stresses</p></td>
+</tr>
+<tr class="row-odd"><td><p>Extras</p></td>
+<td><p>failure</p></td>
+<td><p>Failure index</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>dv1, dv2, dv3</p></td>
+<td><p>Design variables</p></td>
+</tr>
+<tr class="row-odd"><td><p>Loads</p></td>
+<td><p>fx, fy</p></td>
+<td><p>Applied forces</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="scalar-elements-tacs-scalar-2d-element-tacs-scalar-3d-element">
+<h3>Scalar Elements (TACS_SCALAR_2D_ELEMENT, TACS_SCALAR_3D_ELEMENT)<a class="headerlink" href="#scalar-elements-tacs-scalar-2d-element-tacs-scalar-3d-element" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default" id="id5">
+<caption><span class="caption-text">Scalar Element Output Variables</span><a class="headerlink" href="#id5" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Displacements</p></td>
+<td><p>u</p></td>
+<td><p>Scalar displacement</p></td>
+</tr>
+<tr class="row-odd"><td><p>Strains</p></td>
+<td><p>ux, uy (2D) / ux, uy, uz (3D)</p></td>
+<td><p>Gradient components</p></td>
+</tr>
+<tr class="row-even"><td><p>Stresses</p></td>
+<td><p>sx, sy (2D) / sx, sy, sz (3D)</p></td>
+<td><p>Flux components</p></td>
+</tr>
+<tr class="row-odd"><td><p>Extras</p></td>
+<td><p>failure</p></td>
+<td><p>Failure index</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>dv1, dv2, dv3</p></td>
+<td><p>Design variables</p></td>
+</tr>
+<tr class="row-odd"><td><p>Loads</p></td>
+<td><p>f</p></td>
+<td><p>Applied load</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="pcm-elements-tacs-pcm-element">
+<h3>PCM Elements (TACS_PCM_ELEMENT)<a class="headerlink" href="#pcm-elements-tacs-pcm-element" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default" id="id6">
+<caption><span class="caption-text">PCM Element Output Variables</span><a class="headerlink" href="#id6" title="Link to this table">¶</a></caption>
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Displacements</p></td>
+<td><p>dT</p></td>
+<td><p>Temperature change</p></td>
+</tr>
+<tr class="row-odd"><td><p>Strains</p></td>
+<td><p>gradx, grady</p></td>
+<td><p>Temperature gradient components</p></td>
+</tr>
+<tr class="row-even"><td><p>Stresses</p></td>
+<td><p>fluxx, fluxy</p></td>
+<td><p>Heat flux components</p></td>
+</tr>
+<tr class="row-odd"><td><p>Extras</p></td>
+<td><p>rho</p></td>
+<td><p>Density</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>dv1, dv2, dv3</p></td>
+<td><p>Design variables</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>phase</p></td>
+<td><p>Phase field</p></td>
+</tr>
+<tr class="row-even"><td><p>Loads</p></td>
+<td><p>Q</p></td>
+<td><p>Applied heat source</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="visualization-tips">
+<h2>Visualization Tips<a class="headerlink" href="#visualization-tips" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Element-wise vs. Nodal Data</strong>: F5 files contain both element-wise and nodal data. The conversion utilities automatically perform nodal averaging for element-wise quantities.</p></li>
+<li><p><strong>Higher-order Elements</strong>: Higher-order elements are split into multiple lower order element for visualization (e.g., each quadratic triangle becomes 3 linear triangles).</p></li>
+<li><p><strong>Component Separation</strong>: In Tecplot, each component in the model can be written as a separate zone in the output files, making it easy to visualize different parts of the structure.</p></li>
+</ol>
+</section>
+<section id="visualizing-deformed-surfaces">
+<h2>Visualizing Deformed Surfaces<a class="headerlink" href="#visualizing-deformed-surfaces" title="Link to this heading">¶</a></h2>
+<p>One of the most common postprocessing tasks is visualizing the deformed shape of structures. TACS provides both nodal coordinates (X, Y, Z) and displacements (u, v, w) that can be used to create deformed surface visualizations.</p>
+<section id="creating-deformed-geometry-in-tecplot">
+<h3>Creating Deformed Geometry in Tecplot<a class="headerlink" href="#creating-deformed-geometry-in-tecplot" title="Link to this heading">¶</a></h3>
+<p>In Tecplot, you can visualize deformed surfaces by creating new variables that represent the deformed coordinates:</p>
+<ol class="arabic">
+<li><p><strong>Open the converted .plt file</strong> in Tecplot</p></li>
+<li><p><strong>Create new variables</strong> for deformed coordinates:</p>
+<ul>
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">&gt;</span> <span class="pre">Alter</span> <span class="pre">&gt;</span> <span class="pre">Specify</span> <span class="pre">Equations</span></code></p></li>
+<li><p>Under the Equations box enter:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">XDEF</span><span class="p">}</span> <span class="o">=</span> <span class="p">{</span><span class="n">X</span><span class="p">}</span> <span class="o">+</span> <span class="p">{</span><span class="n">u</span><span class="p">}</span>
+<span class="p">{</span><span class="n">YDEF</span><span class="p">}</span> <span class="o">=</span> <span class="p">{</span><span class="n">Y</span><span class="p">}</span> <span class="o">+</span> <span class="p">{</span><span class="n">v</span><span class="p">}</span>
+<span class="p">{</span><span class="n">ZDEF</span><span class="p">}</span> <span class="o">=</span> <span class="p">{</span><span class="n">Z</span><span class="p">}</span> <span class="o">+</span> <span class="p">{</span><span class="n">w</span><span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Create the deformed plot</strong>:</p>
+<ul class="simple">
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">Plot</span> <span class="pre">&gt;</span> <span class="pre">Assign</span> <span class="pre">XYZ...</span></code></p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">X</span></code>, <code class="docutils literal notranslate"><span class="pre">Y</span></code>, <code class="docutils literal notranslate"><span class="pre">Z</span></code> to <code class="docutils literal notranslate"><span class="pre">XDEF</span></code>, <code class="docutils literal notranslate"><span class="pre">YDEF</span></code>, <code class="docutils literal notranslate"><span class="pre">ZDEF</span></code></p></li>
+<li><p>Choose appropriate surface rendering (<code class="docutils literal notranslate"><span class="pre">Surface</span></code>, <code class="docutils literal notranslate"><span class="pre">Mesh</span></code>, or <code class="docutils literal notranslate"><span class="pre">Contour</span></code>)</p></li>
+</ul>
+</li>
+</ol>
+<section id="tecplot-macro">
+<h4>Tecplot Macro<a class="headerlink" href="#tecplot-macro" title="Link to this heading">¶</a></h4>
+<p>You can also automate this process using a Tecplot macro. Place this code in your <cite>tecplot.mcr</cite> file to make it available as a quick macro in the Tecplot GUI:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$!MACROFUNCTION NAME = &quot;TACS - Apply Deformations&quot;
+$!PromptForTextString |DefFactor|
+  Instructions = &quot;Enter scaling factor for deformations&quot;
+
+$!AlterData
+  Equation = &quot;{X}={X}+|DefFactor|*{u}&quot;
+$!AlterData
+  Equation = &quot;{Y}={Y}+|DefFactor|*{v}&quot;
+$!AlterData
+  Equation = &quot;{Z}={Z}+|DefFactor|*{w}&quot;
+$!ENDMACROFUNCTION
+</pre></div>
+</div>
+<p>Note that this macro modifies the original X, Y, Z variables, rather than creating new variables for the deformed coordinates as is done above.</p>
+</section>
+</section>
+<section id="creating-deformed-geometry-in-paraview">
+<h3>Creating Deformed Geometry in ParaView<a class="headerlink" href="#creating-deformed-geometry-in-paraview" title="Link to this heading">¶</a></h3>
+<p>ParaView provides several methods to visualize deformed surfaces:</p>
+<ol class="arabic simple">
+<li><p><strong>Open the converted .vtk file</strong> in ParaView</p></li>
+<li><p><strong>Add Calculator filter</strong>:
+- Select the dataset
+- Go to <code class="docutils literal notranslate"><span class="pre">Filters</span> <span class="pre">&gt;</span> <span class="pre">Alphabetical</span> <span class="pre">&gt;</span> <span class="pre">Calculator</span></code></p></li>
+<li><p><strong>Create deformed coordinates</strong>:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">Result</span> <span class="pre">Array</span> <span class="pre">Name</span></code> to <code class="docutils literal notranslate"><span class="pre">def_vec</span></code></p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">Function</span></code> to <code class="docutils literal notranslate"><span class="pre">u*iHat</span> <span class="pre">+</span> <span class="pre">v*jHat</span> <span class="pre">+</span> <span class="pre">w*kHat</span></code></p></li>
+<li><p>Click <code class="docutils literal notranslate"><span class="pre">Apply</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Add Warp By Vector filter</strong>:</p>
+<ul class="simple">
+<li><p>Select the dataset</p></li>
+<li><p>Go to <code class="docutils literal notranslate"><span class="pre">Filters</span> <span class="pre">&gt;</span> <span class="pre">Alphabetical</span> <span class="pre">&gt;</span> <span class="pre">Warp</span> <span class="pre">By</span> <span class="pre">Vector</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Configure the warp</strong>:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">Vector</span></code> to <code class="docutils literal notranslate"><span class="pre">def_vec</span></code></p></li>
+<li><p>Adjust <code class="docutils literal notranslate"><span class="pre">Scale</span> <span class="pre">Factor</span></code> to control deformation magnification</p></li>
+<li><p>Click <code class="docutils literal notranslate"><span class="pre">Apply</span></code></p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Postprocessing TACS Solutions</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#f5-file-format">F5 File Format</a><ul>
+<li><a class="reference internal" href="#creating-f5-files">Creating F5 Files</a></li>
+<li><a class="reference internal" href="#output-flags">Output Flags</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#converting-f5-files">Converting F5 Files</a><ul>
+<li><a class="reference internal" href="#f5totec-convert-to-tecplot-format">f5totec: Convert to Tecplot Format</a></li>
+<li><a class="reference internal" href="#f5tovtk-convert-to-vtk-format">f5tovtk: Convert to VTK Format</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#output-variables-by-element-type">Output Variables by Element Type</a><ul>
+<li><a class="reference internal" href="#beam-shell-elements-tacs-beam-or-shell-element">Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)</a></li>
+<li><a class="reference internal" href="#solid-elements-tacs-solid-element">Solid Elements (TACS_SOLID_ELEMENT)</a></li>
+<li><a class="reference internal" href="#plane-stress-elements-tacs-plane-stress-element">Plane Stress Elements (TACS_PLANE_STRESS_ELEMENT)</a></li>
+<li><a class="reference internal" href="#scalar-elements-tacs-scalar-2d-element-tacs-scalar-3d-element">Scalar Elements (TACS_SCALAR_2D_ELEMENT, TACS_SCALAR_3D_ELEMENT)</a></li>
+<li><a class="reference internal" href="#pcm-elements-tacs-pcm-element">PCM Elements (TACS_PCM_ELEMENT)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualization-tips">Visualization Tips</a></li>
+<li><a class="reference internal" href="#visualizing-deformed-surfaces">Visualizing Deformed Surfaces</a><ul>
+<li><a class="reference internal" href="#creating-deformed-geometry-in-tecplot">Creating Deformed Geometry in Tecplot</a><ul>
+<li><a class="reference internal" href="#tecplot-macro">Tecplot Macro</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#creating-deformed-geometry-in-paraview">Creating Deformed Geometry in ParaView</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="caps2tacs/main.html"
+                          title="previous chapter">Installation of ESP/CAPS</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="troubleshooting.html"
+                          title="next chapter">Troubleshooting Guide</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="troubleshooting.html" title="Troubleshooting Guide"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="caps2tacs/main.html" title="Installation of ESP/CAPS"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Postprocessing TACS Solutions</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
