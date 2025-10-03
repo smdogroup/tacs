@@ -213,7 +213,10 @@ intersphinx_mapping = {
     ),
     "mphys": ("https://openmdao.github.io/mphys/", None),
     "pygeo": ("https://mdolab-pygeo.readthedocs-hosted.com/en/latest/", None),
-    "pyoptsparse": ("https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/", None),
+    "pyoptsparse": (
+        "https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/",
+        None,
+    ),
     "mach": ("https://mdolab-mach-aero.readthedocs-hosted.com/", None),
     "adflow": ("https://mdolab-adflow.readthedocs-hosted.com/en/latest/", None),
 }
