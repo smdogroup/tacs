@@ -1947,6 +1947,55 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
         return prop
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
+    """
+    This class implements a lamination parameter based parametrization of the shell stiffness and strength properties.
+    The class is restricted to symmetric balanced laminates.
+    The in-plane properties are parametrized in terms of laminate fractions at the angles 0, +/-45 and 90 degrees. The thickness is treated as a continuous design variable.
+    Additional lamination parameters W1 and W3 are used for the bending stiffness.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object defining the material properties.
+    t : float, optional
+        Shell thickness. Default is 1.0.
+    t_num : int, optional
+        Design variable number for thickness. Default is -1 (inactive).
+    min_t : float, optional
+        Minimum allowable thickness. Default is 1.0.
+    max_t : float, optional
+        Maximum allowable thickness. Default is 1.0.
+    f0 : float, optional
+        Fraction of 0-degree plies. Default is 0.25.
+    f45 : float, optional
+        Fraction of 45-degree plies. Default is 0.5.
+    f90 : float, optional
+        Fraction of 90-degree plies. Default is 0.25.
+    f0_num : int, optional
+        Design variable number for f0. Default is -1 (inactive).
+    f45_num : int, optional
+        Design variable number for f45. Default is -1 (inactive).
+    f90_num : int, optional
+        Design variable number for f90. Default is -1 (inactive).
+    min_f0 : float, optional
+        Minimum allowable fraction for f0. Default is 0.125.
+    min_f45 : float, optional
+        Minimum allowable fraction for f45. Default is 0.125.
+    min_f90 : float, optional
+        Minimum allowable fraction for f90. Default is 0.125.
+    W1 : float, optional
+        First lamination parameter. Default is 0.0.
+    W3 : float, optional
+        Third lamination parameter. Default is 0.0.
+    W1_num : int, optional
+        Design variable number for W1. Default is -1 (inactive).
+    W3_num : int, optional
+        Design variable number for W3. Default is -3 (inactive).
+    ksWeight : float, optional
+        Weight for the KS aggregation function. Default is 30.0.
+    epsilon : float, optional
+        Regularization parameter. Default is 0.0.
+    """
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         cdef TacsScalar t = 1.0
         cdef int t_num = -1
