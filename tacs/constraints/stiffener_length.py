@@ -117,6 +117,11 @@ class StiffenerLengthConstraint(TACSConstraint):
             nComps = self.meshLoader.getNumComponents()
             compIDs = list(range(nComps))
 
+        if lower is None:
+            lower = 0.0
+        if upper is None:
+            upper = 0.0
+
         constrObj = self._createConstraint(dvIndex, compIDs, lower, upper)
         if constrObj.nCon > 0:
             self.constraintList[conName] = constrObj
@@ -334,7 +339,7 @@ class StiffenerLengthConstraint(TACSConstraint):
             funcsSens[key] = {self.varName: xSens, self.coordName: XptSens}
 
 
-# Simple class for handling sparse length constraints in parallel
+# Simple class for handling sparse volume constraints in parallel
 class SparseLengthConstraint(object):
     dtype = TACSConstraint.dtype
 
@@ -368,7 +373,7 @@ class SparseLengthConstraint(object):
         if isinstance(ubound, np.ndarray) and len(ubound) == self.nCon:
             self.ubound = ubound.astype(self.dtype)
         elif isinstance(ubound, float) or isinstance(ubound, complex):
-            self.ub = np.array([ubound] * self.nCon, dtype=self.dtype)
+            self.ubound = np.array([ubound] * self.nCon, dtype=self.dtype)
 
     def evalCon(self, x, Xpts):
         Lexact = self._computeExactLength(Xpts)
@@ -415,7 +420,7 @@ class SparseLengthConstraint(object):
             for end_j in range(2):
                 if self.allEndNodeOwnerProc[con_i, end_j] == self.comm.rank:
                     localNodeID = self.allEndNodeLocalIDs[con_i, end_j]
-                    val = Xpts[3 * localNodeID : 3 * localNodeID + 3] / Lexact
+                    val = Xpts[3 * localNodeID : 3 * localNodeID + 3] / Lexact[con_i]
                     if end_j == 0:
                         val *= -1
                     coordJacVals.extend(val)
