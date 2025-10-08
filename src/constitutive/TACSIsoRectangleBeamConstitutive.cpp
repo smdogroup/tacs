@@ -670,8 +670,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalDesignFieldValue(
     return width;
   } else if (index == 1) {
     return thickness;
-  }
-  else if (index == 2) {
+  } else if (index == 2) {
     return buckle_length;
   }
   return 0.0;
