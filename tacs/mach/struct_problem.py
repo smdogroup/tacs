@@ -11,6 +11,7 @@ import copy
 from baseclasses import StructProblem as BaseStructProblem
 
 import numpy as np
+from mpi4py import MPI
 import pyNastran.bdf as pn
 
 import tacs.TACS
@@ -24,6 +25,8 @@ def updateDVGeo(method):
             if not self.DVGeo.pointSetUpToDate(self.ptSetName):
                 coords = self.DVGeo.update(self.ptSetName, config=self.name)
                 self.staticProblem.setNodes(coords.flatten())
+                for constraint in self.constraints:
+                    constraint.setNodes(coords.flatten())
         return method(self, *args, **kwargs)
 
     return wrappedMethod
@@ -164,8 +167,8 @@ class StructProblem(BaseStructProblem):
     @property
     def pLoad(self):
         """
-        The contribution of the aerodynamic adjoint to the structural 
-        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        The contribution of the aerodynamic adjoint to the structural
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted
         from the structural adjoint RHS.
 
         Returns
@@ -178,8 +181,8 @@ class StructProblem(BaseStructProblem):
     @pLoad.setter
     def pLoad(self, value):
         """
-        Set the aerodynamic adjoint contribution to the structural 
-        adjoint RHS. This term is given by dAdu^T*psi and is subtracted 
+        Set the aerodynamic adjoint contribution to the structural
+        adjoint RHS. This term is given by dAdu^T*psi and is subtracted
         from the structural adjoint RHS.
 
         Parameters
@@ -192,14 +195,14 @@ class StructProblem(BaseStructProblem):
     @property
     def dSdu(self):
         """
-        Get the product of the derivative of structural residual with 
+        Get the product of the derivative of structural residual with
         respect to state variables and the structural adjoint vector.
 
         Returns
         -------
         numpy.ndarray
-            Product of the derivative of structural residual with 
-            respect to state variables and the structural adjoint 
+            Product of the derivative of structural residual with
+            respect to state variables and the structural adjoint
             vector.
         """
         return self._dSdu.getArray()
@@ -207,14 +210,14 @@ class StructProblem(BaseStructProblem):
     @dSdu.setter
     def dSdu(self, value):
         """
-        Set the product of the derivative of structural residual with 
+        Set the product of the derivative of structural residual with
         respect to state variables and the structural adjoint vector.
 
         Parameters
         ----------
         value : numpy.ndarray
-            Product of the derivative of structural residual with 
-            respect to state variables and the structural adjoint 
+            Product of the derivative of structural residual with
+            respect to state variables and the structural adjoint
             vector.
         """
         self._dSdu[:] = value
@@ -649,25 +652,16 @@ class StructProblem(BaseStructProblem):
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
                     dIdpt = sens[conKey].pop(coordName)
-                    # Check if sparse constraint coordinate Jacobian is zero before proceeding
-                    if dIdpt.nnz == 0:
-                        continue
-                    dIdx = {}
-                    # Loop through each row of the sparse constraint and compute the Jacobian product with DVGeo
-                    for i in range(dIdpt.shape[0]):
-                        dIdx_i = self.DVGeo.totalSensitivity(
-                            dIdpt[i, :].toarray(),
-                            self.ptSetName,
-                            comm=self.comm,
-                            config=self.name,
-                        )
-                        for dvName in dIdx_i:
-                            if dvName in dIdx:
-                                dIdx[dvName] = np.vstack((dIdx[dvName], dIdx_i[dvName]))
-                            else:
-                                dIdx[dvName] = dIdx_i[dvName]
+                    # Get the Jacobian
+                    Jacobian = self.DVGeo.JT[self.ptSetName]
+                    # Compute the local Jacobian product
+                    dIdx_local = dIdpt.dot(Jacobian.T)
+                    # Add dvgeo contribution across all procs
+                    dIdx = self.comm.allreduce(dIdx_local.toarray(), op=MPI.SUM)
+                    # Convert to dict
+                    dIdx_dict = self.DVGeo.convertSensitivityToDict(np.atleast_2d(dIdx))
                     # Update sensitivity dict with new DVGeo sensitivities
-                    sens[conKey].update(dIdx)
+                    sens[conKey].update(dIdx_dict)
 
         # Pop out the node sensitivities if requested
         elif not includeXptSens:
@@ -701,7 +695,7 @@ class StructProblem(BaseStructProblem):
 
     def getOrigDesignVars(self):
         """
-        Get an array holding the original values for all design 
+        Get an array holding the original values for all design
         variables added to TACS at time of initialization.
 
         Returns
@@ -1393,7 +1387,9 @@ class StructProblem(BaseStructProblem):
         if baseName is None:
             baseName = self.name + "_external_forces"
         # Figure out the output file base name
-        fileName = self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
+        fileName = (
+            self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
+        )
         # We want to isolate only the external loads in the rhs before writing the loads out
         rhs = self.staticProblem.rhs
         # Save a copy of the rhs vector holding the full loads
