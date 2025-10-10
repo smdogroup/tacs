@@ -69,7 +69,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_ks_failure": 0.36091429055815866,
         "gravity_mass": 17.5,
         "no_load_mass": 17.5,
-        "no_load_ks_failure": 0.027465,
+        "no_load_ks_failure": 0.027465307216702,
         "no_load_compliance": 0.0,
         "no_load_cgx": 0.500000000000004,
         "no_load_cgy": 0.500000000000004,
