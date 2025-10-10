@@ -898,7 +898,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
         sens[1] = F2 / 2.0;
         sens[2] = sqrt(F66);
       } else {
-        // Otherwise, calculate the sensitivity of the failure criteria w.r.t 
+        // Otherwise, calculate the sensitivity of the failure criteria w.r.t
         // the 3 stresses
         fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
 
