@@ -652,6 +652,11 @@ class StructProblem(BaseStructProblem):
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
                     dIdpt = sens[conKey].pop(coordName)
+                    # Check if the constraint sensitivities wrt TACS coords are zero on all procs
+                    total_nnz = self.comm.allreduce(dIdpt.nnz, op=MPI.SUM)
+                    if total_nnz == 0:
+                        # if so, skip DVGeo sensitivities
+                        continue
                     # Get the Jacobian
                     Jacobian = self.DVGeo.JT[self.ptSetName]
                     # Compute the local Jacobian product
