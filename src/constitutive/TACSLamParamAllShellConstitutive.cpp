@@ -141,8 +141,8 @@ int TACSLamParamAllShellConstitutive::getDesignVars(int elemIndex, int dvLen, Ta
 int TACSLamParamAllShellConstitutive::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[], TacsScalar ub[]) {
   int index = 0;
   if (tNum >= 0) {
-    lb[tNum] = tlb;
-    ub[tNum] = tub;
+    lb[index] = tlb;
+    ub[index] = tub;
     index++;
   }
   for (int k = 0; k < 6; k++) {
