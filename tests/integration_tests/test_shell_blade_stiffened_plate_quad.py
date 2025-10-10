@@ -68,6 +68,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_compliance": 11.114479357783475,
         "gravity_ks_failure": 0.36091429055815866,
         "gravity_mass": 17.5,
+        "no_load_mass": 17.5,
+        "no_load_ks_failure": 0.027465,
+        "no_load_compliance": 0.0,
+        "no_load_cgx": 0.500000000000004,
+        "no_load_cgy": 0.500000000000004,
+        "no_load_cgz": -0.0035714285714285718,
         "modal_eigsm.0": 728895.1077101853,
         "modal_eigsm.1": 1591857.6791554866,
         "modal_eigsm.2": 3808105.1801748895,
@@ -170,6 +176,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         sp = fea_assembler.createStaticProblem(name="gravity")
         g = np.array([0.0, 0.0, -981.0], dtype=self.dtype)
         sp.addInertialLoad(g)
+        tacs_probs.append(sp)
+
+        # No load
+        sp = fea_assembler.createStaticProblem(name="no_load")
         tacs_probs.append(sp)
 
         # Add Functions
