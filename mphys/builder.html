@@ -58,8 +58,8 @@ an OpenMDAO group that contains an analysis condition in a multipoint optimizati
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mesh_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> or </em><a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/pyNastran.bdf.bdf.html#pyNastran.bdf.bdf.BDF" title="(in pyNastran 1.5-dev v1.5-dev)"><em>pyNastran.bdf.bdf.BDF</em></a>) -- The BDF file or a pyNastran BDF object to load.</p></li>
-<li><p><strong>assembler_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for modifying pyTACS assembler prior to initialization.
+<li><p><strong>mesh_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/pyNastran.bdf.bdf.html#pyNastran.bdf.bdf.BDF" title="(in pyNastran 1.5-dev v1.5-dev)"><em>pyNastran.bdf.bdf.BDF</em></a>) -- The BDF file or a pyNastran BDF object to load.</p></li>
+<li><p><strong>assembler_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for modifying pyTACS assembler prior to initialization.
 This is used for adding point mass DVs to the model. Defaults to None.
 follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">assembler_setup</span><span class="p">(</span><span class="n">fea_assembler</span><span class="p">):</span>
@@ -67,7 +67,7 @@ follows:</p>
 </div>
 <p>fea_assembler is the uninitialized pyTACS assembler instance created by the builder.</p>
 </p></li>
-<li><p><strong>element_callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
+<li><p><strong>element_callback</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>User-defined callback function for setting up TACS elements and element DVs. Defaults to None.
 See <a class="reference internal" href="../pytacs/pytacs_module.html#initializing-with-elemcallback"><span class="std std-ref">Initializing with elemCallBack</span></a> for more info.
 The calling sequence for elem_callback <strong>must</strong> be as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elem_callback</span><span class="p">(</span><span class="n">dv_num</span><span class="p">,</span> <span class="n">comp_id</span><span class="p">,</span> <span class="n">comp_descript</span><span class="p">,</span> <span class="n">elem_descripts</span><span class="p">,</span> <span class="n">special_dvs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -90,7 +90,7 @@ global DVs that have been added.
 elem_callback must return a list containing as many TACS element
 objects as there are element types in elemDescripts (one for each).</p>
 </p></li>
-<li><p><strong>problem_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
+<li><p><strong>problem_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up the problem by adding
 fixed loads, modifying options, and adding eval functions. The function should have the following structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
 </pre></div>
@@ -99,33 +99,33 @@ fixed loads, modifying options, and adding eval functions. The function should h
 fea_assembler is the uninitialized pyTACS assembler instance created by the builder.
 problem is the tacs.BaseProblem class being setup for this scenario.</p>
 </p></li>
-<li><p><strong>constraint_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a series of
+<li><p><strong>constraint_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a series of
 constraints to be run after at the end of an MPhys analysis.
 The function should have the following structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
 </pre></div>
 </div>
 </p></li>
-<li><p><strong>buckling_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.13)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
+<li><p><strong>buckling_setup</strong> (<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><em>collections.abc.Callable</em></a><em>, </em><em>optional</em>) -- <p>This function is called each time a new MPhys Scenario is created. This function sets up a buckling problem
 to be run after at the end of an MPhys analysis. The function should have the following structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">buckling_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">)</span>
 </pre></div>
 </div>
 </p></li>
-<li><p><strong>pytacs_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a><em>, </em><em>optional</em>) -- Options dictionary passed to pyTACS assembler.</p></li>
-<li><p><strong>check_partials</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) -- This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising
+<li><p><strong>pytacs_options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) -- Options dictionary passed to pyTACS assembler.</p></li>
+<li><p><strong>check_partials</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- This flag allows TACS components partial derivative routines to be evaluated in forward mode without raising
 an error. This lets OpenMDAO's check_partials routine run without errors, allowing users to check TACS'
 reverse derivatives. The forward derivative checks will still not be meaningful since TACS only supports
 reverse mode. Defaults to False.</p></li>
-<li><p><strong>conduction</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
+<li><p><strong>conduction</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine weather TACS component represents a thermal (True) or structural (False) analysis.
 Defaults to False.</p></li>
-<li><p><strong>coupling_loads</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) -- List of coupling loads to add to right handside of FEA state equation. These loads correspond to the nodal
+<li><p><strong>coupling_loads</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>] or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) -- List of coupling loads to add to right handside of FEA state equation. These loads correspond to the nodal
 forces on the model. Multiple load sources can be specified, these will be added together before being
 applied to the model. This is used in aerostructural/thermostructural analyses. Defaults to None.</p></li>
-<li><p><strong>write_solution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.</p></li>
-<li><p><strong>separate_mass_dvs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
+<li><p><strong>write_solution</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine whether to write out TACS solutions to f5 file each design iteration. Defaults to True.</p></li>
+<li><p><strong>separate_mass_dvs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to determine if TACS' mass dvs should be lumped into the struct_dv input vector (False) or
 split into separate OpenMDAO inputs based on their assigned names (True). Defaults to False.</p></li>
-<li><p><strong>res_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.13)"><em>float</em></a><em>, </em><em>optional</em>) -- Reference residual norm to be used by OpenMDAO's residual scaling. Can be useful for ensuring residuals
+<li><p><strong>res_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Reference residual norm to be used by OpenMDAO's residual scaling. Can be useful for ensuring residuals
 from different coupled disciplines are of a similar order of magnitude. Defaults to None.</p></li>
 </ul>
 </dd>
@@ -230,7 +230,7 @@ This method will be called when the MPI comm is available</p>
 <dd><p>The subsystem that this builder will add to the CouplingGroup</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
+<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>subsystem</strong> -- The openmdao subsystem that handles all the computations for
@@ -249,7 +249,7 @@ this solver. Transfer schemes can return multiple subsystems</p>
 coordinates</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
+<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>mesh</strong> -- The openmdao subsystem that has an output of coordinates.</p>
@@ -266,7 +266,7 @@ coordinates</p>
 <dd><p>Method that returns the openmdao subsystem to be added to each scenario before the coupling group</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
+<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>subsystem</strong></p>
@@ -283,7 +283,7 @@ coordinates</p>
 <dd><p>Method that returns the openmdao subsystem to be added to each scenario after the coupling group</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
+<dd class="field-odd"><p><strong>scenario_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The name of the scenario calling the builder.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>subsystem</strong></p>
@@ -303,7 +303,7 @@ coordinates</p>
 <dd class="field-odd"><p><strong>ndof</strong> -- number of degrees of freedom of each node in the domain</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -331,7 +331,7 @@ in the form needed by OpenMDAO's <cite>add_design_variable</cite> method.</p>
 <dd class="field-odd"><p>lower and upper bounds for the design variables</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a> of ndarray</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of ndarray</p>
 </dd>
 </dl>
 </dd></dl>
@@ -375,13 +375,13 @@ method.</p>
 <dd><p>Method that returns grid IDs for a list of body/boundary tags.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a><em>]</em>) -- list of component names or node IDs to include in body</p>
+<dd class="field-odd"><p><strong>tags</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) -- list of component names or node IDs to include in body</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><strong>grid_ids</strong> -- list of grid IDs that correspond to given body/boundary tags</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)">int</a>]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
 </dd>
 </dl>
 </dd></dl>
