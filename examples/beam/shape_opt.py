@@ -32,22 +32,23 @@ from tacs.mach import StructProblem
 from tacs import pyTACS
 from tacs import elements, constitutive, functions
 
-bdf_file = os.path.join(os.path.dirname(__file__), 'Slender_Beam.bdf')
-ffd_file = os.path.join(os.path.dirname(__file__), 'ffd_8_linear.fmt')
+bdf_file = os.path.join(os.path.dirname(__file__), "Slender_Beam.bdf")
+ffd_file = os.path.join(os.path.dirname(__file__), "ffd_8_linear.fmt")
 
 # Beam thickness
-t = 0.01            # m
+t = 0.01  # m
 # Length of beam
 L = 1.0
 
 # Material properties
-rho = 2780.0 # kg /m^3
+rho = 2780.0  # kg /m^3
 E = 70.0e9
 nu = 0.0
 ys = 420.0e6
 
 # Shear force applied at tip
-V = 2.5E4
+V = 2.5e4
+
 
 # Callback function used to setup TACS element objects and DVs
 def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
@@ -62,24 +63,36 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     elem = elements.Quad4Shell(transform, con)
     return elem
 
+
 FEAAssembler = pyTACS(bdf_file)
 FEAAssembler.initialize(element_callback)
 
 DVGeo = DVGeometry(fileName=ffd_file)
 # Create reference axis
-nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex='i', yFraction=0.5)
+nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex="i", yFraction=0.5)
+
 
 # Set up global design variables
 def depth(val, geo):
     for i in range(nRefAxPts):
         geo.scale_y["centerline"].coef[i] = val[i]
 
-DVGeo.addGlobalDV(dvName="depth", value=np.ones(nRefAxPts), func=depth, lower=1e-3, upper=10.0, scale=20.0)
+
+DVGeo.addGlobalDV(
+    dvName="depth",
+    value=np.ones(nRefAxPts),
+    func=depth,
+    lower=1e-3,
+    upper=10.0,
+    scale=20.0,
+)
 
 staticProb = FEAAssembler.createStaticProblem("tip_shear")
 # Add TACS Functions
-staticProb.addFunction('mass', functions.StructuralMass)
-staticProb.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.0, ksWeight=100.0)
+staticProb.addFunction("mass", functions.StructuralMass)
+staticProb.addFunction(
+    "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=100.0
+)
 # Add forces to static problem
 staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
@@ -93,7 +106,7 @@ def structObj(x):
     DVGeo.setDesignVars(x)
     structProb.solve()
     structProb.evalFunctions(funcs)
-    #structProb.evalConstraints(funcs)
+    # structProb.evalConstraints(funcs)
     structProb.writeSolution()
     if structProb.comm.rank == 0:
         print(x)
@@ -106,16 +119,17 @@ def structSens(x, funcs):
     """Evaluate the objective and constraint sensitivities"""
     funcsSens = {}
     structProb.evalFunctionsSens(funcsSens)
-    #structProb.evalConstraintsSens(funcsSens)
+    # structProb.evalConstraintsSens(funcsSens)
     for func in funcsSens:
         funcsSens[func].pop("struct")
     return funcsSens, False
+
 
 # Now we create the structural optimization problem:
 optProb = Optimization("Mass min", structObj)
 optProb.addObj("tip_shear_mass")
 structProb.addVariablesPyOpt(optProb)
-#structProb.addConstraintsPyOpt(optProb)
+# structProb.addConstraintsPyOpt(optProb)
 DVGeo.addVariablesPyOpt(optProb)
 optProb.addCon("tip_shear_ks_vmfailure", upper=1.0)
 

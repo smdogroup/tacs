@@ -76,6 +76,7 @@ Currently supported NASTRAN cards and their corresponding TACS-equivelant classe
     - PSHELL -> :class:`~tacs.constitutive.IsoShellConstitutive`
     - PCOMP -> :class:`~tacs.constitutive.CompositeShellConstitutive`
     - PBAR, PROD -> :class:`~tacs.constitutive.BasicBeamConstitutive`
+    - PBARL -> :class:`~tacs.constitutive.IsoRectangleBeamConstitutive`/:class:`~tacs.constitutive.IsoTubeBeamConstitutive`/:class:`~tacs.constitutive.BasicBeamConstitutive`
     - PSOLID -> :class:`~tacs.constitutive.SolidConstitutive`
     - PBUSH -> :class:`~tacs.constitutive.DOFSpringConstitutive`
 
