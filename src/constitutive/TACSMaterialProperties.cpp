@@ -892,11 +892,11 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     if (useModifiedTsaiWu) {
       if (TacsRealPart(s[0]) == 0.0 && TacsRealPart(s[1]) == 0.0 &&
           TacsRealPart(s[2]) == 0.0) {
-        // If the stress is zero, set the sensitivity to zero to avoid division
-        // by zero
-        sens[0] = 0.0;
-        sens[1] = 0.0;
-        sens[2] = 0.0;
+        // If the stress is zero, set the sensitivity to its limit value
+        // to avoid division by zero
+        sens[0] = F1 / 2.0;
+        sens[1] = F2 / 2.0;
+        sens[2] = sqrt(F66);
       } else {
         // Otherwise, calculate the sensitivity
         fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
