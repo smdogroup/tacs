@@ -113,12 +113,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             S12=S12,
         )
 
-        ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop, max_strain_criterion=False)
+        ortho_ply = constitutive.OrthotropicPly(
+            ply_thickness, ortho_prop, max_strain_criterion=False
+        )
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
+        ):
             # Lamination parameter design variable numbers
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1
-            con = constitutive.LamParamAllShellConstitutive(ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0)
+            con = constitutive.LamParamAllShellConstitutive(
+                ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
+            )
 
             # Set initial lamination parameters and number of failure angles
             lp = 0.6 * np.ones(6)
@@ -154,7 +160,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_failure", functions.KSFailure, ksWeight=ksweight, safetyFactor=1.25)
+            problem.addFunction(
+                "ks_failure", functions.KSFailure, ksWeight=ksweight, safetyFactor=1.25
+            )
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "x_disp",
@@ -174,9 +182,15 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, 10.0],
             )
-            problem.addFunction("cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
-            problem.addFunction("cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
-            problem.addFunction("cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
+            problem.addFunction(
+                "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
+            )
+            problem.addFunction(
+                "cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0]
+            )
+            problem.addFunction(
+                "cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0]
+            )
             problem.addFunction(
                 "Ixx",
                 functions.MomentOfInertia,

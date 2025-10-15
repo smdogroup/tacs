@@ -2,6 +2,7 @@
 The nominal case is a 1m x 1m flat plate under a 1 kN pressure load. The
 perimeter of the plate is fixed in all 6 degrees of freedom.
 """
+
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
@@ -91,13 +92,17 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
             S12=S12,
         )
 
-        ortho_ply = constitutive.OrthotropicPly(tply, ortho_prop, max_strain_criterion=useVMFailure)
+        ortho_ply = constitutive.OrthotropicPly(
+            tply, ortho_prop, max_strain_criterion=useVMFailure
+        )
 
         if useVMFailure:
             print("Setting to use von Mises failure criterion")
             ortho_ply.setUseMaxStrainCriterion()
         else:
-            print(f"Setting to use Tsai-Wu failure criterion (modified: {useModifiedTsaiWu})")
+            print(
+                f"Setting to use Tsai-Wu failure criterion (modified: {useModifiedTsaiWu})"
+            )
             ortho_ply.setUseTsaiWuCriterion()
             ortho_ply.setUseModifiedTsaiWu(useModifiedTsaiWu)
 
@@ -130,7 +135,9 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
 
         elif compLPModel == "LamParamAll":
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1  # 6
-            con = constitutive.LamParamAllShellConstitutive(ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0)
+            con = constitutive.LamParamAllShellConstitutive(
+                ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
+            )
             lp = 0.6 * np.ones(6)
             con.setLaminationParameters(lp)
             con.setNumFailAngles(12)
@@ -148,13 +155,17 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
     FEAAssembler.initialize(elemCallBack)
 
     # Setup static problem
-    staticProb = FEAAssembler.createStaticProblem(name="plate", options=staticProblemOptions)
+    staticProb = FEAAssembler.createStaticProblem(
+        name="plate", options=staticProblemOptions
+    )
 
     # Add functions
     KSWeight = 100.0
     safetyFactor = 1.5
     staticProb.addFunction("mass", functions.StructuralMass)
-    staticProb.addFunction("KSFailure", functions.KSFailure, ksWeight=KSWeight, safetyFactor=safetyFactor)
+    staticProb.addFunction(
+        "KSFailure", functions.KSFailure, ksWeight=KSWeight, safetyFactor=safetyFactor
+    )
 
     F = np.array([0.0, 1e2, 1e3, 0.0, 0.0, 0.0])
     nodeID = 481  # Center of plate
@@ -169,7 +180,9 @@ if __name__ == "__main__":
     comm = MPI.COMM_WORLD
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--writeSol", action="store_true", help="Write solution to file")
+    parser.add_argument(
+        "--writeSol", action="store_true", help="Write solution to file"
+    )
     parser.add_argument(
         "--compLPModel",
         type=str,
@@ -180,13 +193,23 @@ if __name__ == "__main__":
         default="LamParamAll",
         help="What type of composite lamination parameter model to use",
     )
-    parser.add_argument("--useVMFailure", action="store_true", help="Set von Mises failure (Tsai-Wu is default)")
-    parser.add_argument("--useModifiedTsaiWu", action="store_true", help="Use the modified TW failure criterion")
+    parser.add_argument(
+        "--useVMFailure",
+        action="store_true",
+        help="Set von Mises failure (Tsai-Wu is default)",
+    )
+    parser.add_argument(
+        "--useModifiedTsaiWu",
+        action="store_true",
+        help="Use the modified TW failure criterion",
+    )
 
     args = parser.parse_args()
 
     FEAAssembler, staticProb = setup(
-        compLPModel=args.compLPModel, useVMFailure=args.useVMFailure, useModifiedTsaiWu=args.useModifiedTsaiWu
+        compLPModel=args.compLPModel,
+        useVMFailure=args.useVMFailure,
+        useModifiedTsaiWu=args.useModifiedTsaiWu,
     )
     # Solve state
     staticProb.solve()
