@@ -27,36 +27,36 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 1  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        'point_load_Ixx': 0.6458494791666745,
-        'point_load_Ixy': -9.769962616701378e-15,
-        'point_load_Ixz': 0.0,
-        'point_load_Iyy': 0.645849479166678,
-        'point_load_Iyz': 0.0,
-        'point_load_Izz': 1.2916666666666847,
-        'point_load_cgx': 0.49999999999999767,
-        'point_load_cgy': 0.49999999999999756,
-        'point_load_cgz': 0.0,
-        'point_load_compliance': 16.324920003939287,
-        'point_load_ks_failure': 0.19385999383904948,
-        'point_load_mass': 7.750000000000039,
-        'point_load_x_disp': 1.2721909792035588e-13,
-        'point_load_y_disp': 6.52428671136766e-07,
-        'point_load_z_disp': 0.04694360282151677,
-        'pressure_Ixx': 0.6458494791666745,
-        'pressure_Ixy': -9.769962616701378e-15,
-        'pressure_Ixz': 0.0,
-        'pressure_Iyy': 0.645849479166678,
-        'pressure_Iyz': 0.0,
-        'pressure_Izz': 1.2916666666666847,
-        'pressure_cgx': 0.49999999999999767,
-        'pressure_cgy': 0.49999999999999756,
-        'pressure_cgz': 0.0,
-        'pressure_compliance': 111.45175669920174,
-        'pressure_ks_failure': 0.567546232349052,
-        'pressure_mass': 7.750000000000039,
-        'pressure_x_disp': -7.438494264988578e-16,
-        'pressure_y_disp': -7.438494264988578e-16,
-        'pressure_z_disp': 0.17655439644303517,
+        "point_load_Ixx": 0.6458494791666745,
+        "point_load_Ixy": -9.769962616701378e-15,
+        "point_load_Ixz": 0.0,
+        "point_load_Iyy": 0.645849479166678,
+        "point_load_Iyz": 0.0,
+        "point_load_Izz": 1.2916666666666847,
+        "point_load_cgx": 0.49999999999999767,
+        "point_load_cgy": 0.49999999999999756,
+        "point_load_cgz": 0.0,
+        "point_load_compliance": 16.324920003939287,
+        "point_load_ks_failure": 0.19385999383904948,
+        "point_load_mass": 7.750000000000039,
+        "point_load_x_disp": 1.2721909792035588e-13,
+        "point_load_y_disp": 6.52428671136766e-07,
+        "point_load_z_disp": 0.04694360282151677,
+        "pressure_Ixx": 0.6458494791666745,
+        "pressure_Ixy": -9.769962616701378e-15,
+        "pressure_Ixz": 0.0,
+        "pressure_Iyy": 0.645849479166678,
+        "pressure_Iyz": 0.0,
+        "pressure_Izz": 1.2916666666666847,
+        "pressure_cgx": 0.49999999999999767,
+        "pressure_cgy": 0.49999999999999756,
+        "pressure_cgz": 0.0,
+        "pressure_compliance": 111.45175669920174,
+        "pressure_ks_failure": 0.567546232349052,
+        "pressure_mass": 7.750000000000039,
+        "pressure_x_disp": -7.438494264988578e-16,
+        "pressure_y_disp": -7.438494264988578e-16,
+        "pressure_z_disp": 0.17655439644303517,
     }
 
     def setup_tacs_problems(self, comm):
@@ -113,9 +113,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             S12=S12,
         )
 
-        ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop, max_strain_criterion=False)
+        ortho_ply = constitutive.OrthotropicPly(
+            ply_thickness, ortho_prop, max_strain_criterion=False
+        )
 
-        def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
+        ):
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1
             lpNums = np.arange(0, 2, dtype=np.intc) + pfNums[-1] + 1
             con = constitutive.LamParamShellConstitutive(
@@ -170,7 +174,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
-            problem.addFunction("ks_failure", functions.KSFailure, ksWeight=ksweight, safetyFactor=1.25)
+            problem.addFunction(
+                "ks_failure", functions.KSFailure, ksWeight=ksweight, safetyFactor=1.25
+            )
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "x_disp",
@@ -190,9 +196,15 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 ksWeight=ksweight,
                 direction=[0.0, 0.0, 10.0],
             )
-            problem.addFunction("cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0])
-            problem.addFunction("cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0])
-            problem.addFunction("cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0])
+            problem.addFunction(
+                "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
+            )
+            problem.addFunction(
+                "cgy", functions.CenterOfMass, direction=[0.0, 1.0, 0.0]
+            )
+            problem.addFunction(
+                "cgz", functions.CenterOfMass, direction=[0.0, 0.0, 1.0]
+            )
             problem.addFunction(
                 "Ixx",
                 functions.MomentOfInertia,
