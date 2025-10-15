@@ -127,7 +127,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
             # Set initial lamination parameters and number of failure angles
-            lp = 0.6 * np.ones(6)
+            lp = 0.6 * np.ones(6, dtype=self.dtype)
             con.setLaminationParameters(lp)
             con.setNumFailAngles(12)
 
