@@ -8,19 +8,19 @@ from tacs import pytacs, elements, constitutive, functions, TACS
 
 """
 6 noded beam model 1 meter long in x direction.
-The cross-section is a solid rectangle with the following properties:
+The cross-section is a solid rectangle (defined by PBARL) with the 
+following properties:
     w = 0.1
     t = 0.05
 We apply two load cases: a distributed gravity and distributed traction case.
 We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
 and Compliance functions and sensitivities.
-We also apply a constraint on the difference between the width and thickness dvs of the cross-section.
 """
 
 TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/beam_model_pbarl_rect.bdf")
 
 ksweight = 10.0
 
@@ -53,7 +53,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "traction_I_yy": 1.13625,
         "traction_I_yz": 0.0,
         "traction_I_zz": 1.1278125,
-        "dvcon_width_minus_thickness": 0.05,
     }
 
     def setup_tacs_problems(self, comm):
@@ -71,38 +70,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-3
             self.dh = 1e-6
 
-        # Material properties
-        rho = 2700.0  # density kg/m^3
-        E = 70.0e3  # Young's modulus (Pa)
-        nu = 0.3  # Poisson's ratio
-        ys = 2.7e3  # yield stress
-
-        # Beam dimensions
-        t = 0.05  # m
-        w = 0.1  # m
-
-        # Callback function used to setup TACS element objects and DVs
-        def elem_call_back(
-            dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
-        ):
-            # Setup (isotropic) property and constitutive objects
-            prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-            con = constitutive.IsoRectangleBeamConstitutive(
-                prop, t=t, tNum=dv_num, w=w, wNum=dv_num + 1
-            )
-            refAxis = np.array([0.0, 1.0, 0.0])
-            transform = elements.BeamRefAxisTransform(refAxis)
-            # pass back the appropriate tacs element object
-            elem = elements.Beam2(transform, con)
-            return elem
-
         # Instantiate FEA Assembler
         struct_options = {}
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
         # Set up constitutive objects and elements
-        fea_assembler.initialize(elem_call_back)
+        fea_assembler.initialize()
 
         grav_prob = fea_assembler.createStaticProblem("gravity")
         grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
@@ -182,13 +156,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 direction2=[0.0, 0.0, 1.0],
                 aboutCM=True,
             )
-
-        # Add constraint on difference between width and thickness dvs (i.e. con = w - t)
-        constr = fea_assembler.createDVConstraint("dvcon")
-        constr.addConstraint(
-            "width_minus_thickness", dvIndices=[0, 1], dvWeights=[1.0, -1.0]
-        )
-        tacs_probs.append(constr)
 
         return tacs_probs, fea_assembler
 
