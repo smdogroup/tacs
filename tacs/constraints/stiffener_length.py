@@ -77,7 +77,7 @@ class StiffenerLengthConstraint(TACSConstraint):
     def _initializeGlobalToLocalDVDict(self):
         """
         Initialize mapping from global design variable numbers to local design variable numbers.
-        
+
         This method creates a dictionary that maps global design variable indices to local
         design variable indices for the current processor. This is needed for parallel
         constraint evaluation where different processors own different design variables.
@@ -169,7 +169,7 @@ class StiffenerLengthConstraint(TACSConstraint):
         lengthDVsOwnerProc = np.zeros(len(compIDs), dtype=int)
         allEndNodeLocalIDs = np.zeros([len(compIDs), 2], dtype=int)
         allEndNodeOwnerProc = np.zeros([len(compIDs), 2], dtype=int)
-        
+
         for conCount, comp in enumerate(compIDs):
             # Get the TACS element object associated with this compID
             elemObj = self.meshLoader.getElementObject(comp, 0)
@@ -185,7 +185,7 @@ class StiffenerLengthConstraint(TACSConstraint):
                 localDVNum = self.globalToLocalDVNums[globalDVNum]
                 lengthDVs[conCount] = localDVNum
                 lengthDVsOwnerProc[conCount] = self.comm.rank
-            
+
             # Get connectivity and find end nodes of the stiffener chain
             compConn = self.meshLoader.getConnectivityForComp(
                 comp, nastranOrdering=False
@@ -199,7 +199,7 @@ class StiffenerLengthConstraint(TACSConstraint):
                 if nodeID >= 0:  # Valid local node ID
                     allEndNodeLocalIDs[conCount, end_i] = nodeID
                     allEndNodeOwnerProc[conCount, end_i] = self.comm.rank
-        
+
         # Gather information from all processors
         lengthDVs = self.comm.allreduce(lengthDVs)
         allEndNodeLocalIDs = self.comm.allreduce(allEndNodeLocalIDs)
@@ -353,16 +353,17 @@ class StiffenerLengthConstraint(TACSConstraint):
 class SparseLengthConstraint(object):
     """
     A class for handling sparse length constraints in parallel.
-    
+
     This class manages the evaluation of constraints that enforce the consistency
     between design variable length values and the actual geometric length of
     stiffener elements. It handles parallel computation across multiple processors
     where different processors may own different design variables and nodes.
-    
+
     The constraint ensures that the design variable representing the length of
     a stiffener matches the actual geometric distance between the end nodes
     of the stiffener chain.
     """
+
     dtype = TACSConstraint.dtype
 
     def __init__(
@@ -512,14 +513,14 @@ class SparseLengthConstraint(object):
         coordJacRows = []
         coordJacCols = []
         Lexact = self._computeExactLength(Xpts)
-        
+
         for con_i in range(self.nCon):
             # Sensitivity w.r.t. design variables (derivative = 1.0)
             if self.lengthDVsOwnerProc[con_i] == self.comm.rank:
                 dvJacVals.append(1.0)
                 dvJacRows.append(con_i)
                 dvJacCols.append(self.lengthLocalDVNums[con_i])
-            
+
             # Sensitivity w.r.t. node coordinates
             for end_j in range(2):
                 if self.allEndNodeOwnerProc[con_i, end_j] == self.comm.rank:
