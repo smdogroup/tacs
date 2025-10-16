@@ -2189,7 +2189,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
 
     Args:
         props (MaterialProperties): The material property.
-        width (float or complex, optional): Cross-section width (keyword argument). Defaults to 1.0.
+        w (float or complex, optional): Cross-section width (keyword argument). Defaults to 1.0.
         wNum (int, optional): Design variable number to assign to width (keyword argument). Defaults to -1
             (i.e. no design variable).
         wlb (float or complex, optional): Lower bound on width (keyword argument). Defaults to 0.0.
