@@ -420,7 +420,7 @@ class SparseLengthConstraint(object):
             for end_j in range(2):
                 if self.allEndNodeOwnerProc[con_i, end_j] == self.comm.rank:
                     localNodeID = self.allEndNodeLocalIDs[con_i, end_j]
-                    val = Xpts[3 * localNodeID : 3 * localNodeID + 3] / Lexact[con_i]
+                    val = -Xpts[3 * localNodeID : 3 * localNodeID + 3] / Lexact[con_i]
                     if end_j == 0:
                         val *= -1
                     coordJacVals.extend(val)
