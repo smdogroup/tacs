@@ -70,11 +70,18 @@ class StiffenerLengthConstraint(TACSConstraint):
         )
 
         # Setup global to local dv num map for each proc
-        self._initilaizeGlobalToLocalDVDict()
+        self._initializeGlobalToLocalDVDict()
 
         return
 
-    def _initilaizeGlobalToLocalDVDict(self):
+    def _initializeGlobalToLocalDVDict(self):
+        """
+        Initialize mapping from global design variable numbers to local design variable numbers.
+        
+        This method creates a dictionary that maps global design variable indices to local
+        design variable indices for the current processor. This is needed for parallel
+        constraint evaluation where different processors own different design variables.
+        """
         size = self.comm.size
         rank = self.comm.rank
         nLocalDVs = self.getNumDesignVars()
@@ -138,13 +145,9 @@ class StiffenerLengthConstraint(TACSConstraint):
 
         Parameters
         ----------
-        dvIndices : list[int]
-            Index numbers of element DVs to be used in constraint.
+        dvIndex : int
+            Index number of element DV to be used in constraint.
             Defaults to 0.
-
-        dvWeights : list[float or complex]
-            Linear scaling factors for each DV used in constraint definition.
-            If list, should match length of dvIndices. Defaults to 1's.
 
         compIDs: list[int]
             List of compIDs to select.
@@ -157,15 +160,16 @@ class StiffenerLengthConstraint(TACSConstraint):
 
         Returns
         -------
-        constraint : tacs.constraints.base.SparseLinearConstraint or None
+        constraint : SparseLengthConstraint or None
             Constraint object if successful, None otherwise.
 
         """
-        # Assemble constraint info
+        # Assemble constraint info for each component
         lengthDVs = np.zeros(len(compIDs), dtype=int)
         lengthDVsOwnerProc = np.zeros(len(compIDs), dtype=int)
         allEndNodeLocalIDs = np.zeros([len(compIDs), 2], dtype=int)
         allEndNodeOwnerProc = np.zeros([len(compIDs), 2], dtype=int)
+        
         for conCount, comp in enumerate(compIDs):
             # Get the TACS element object associated with this compID
             elemObj = self.meshLoader.getElementObject(comp, 0)
@@ -173,13 +177,16 @@ class StiffenerLengthConstraint(TACSConstraint):
             if not isinstance(conObj, constitutive.IsoRectangleBeamConstitutive):
                 raise ValueError("Only Beams!")
             elemIndex = 0
-            # Get the dvs owned by this element
+            # Get the design variables owned by this element
             globalDvNums = elemObj.getDesignVarNums(elemIndex)
             globalDVNum = globalDvNums[dvIndex]
+            # Map global DV number to local DV number if owned by this processor
             if globalDVNum in self.globalToLocalDVNums:
                 localDVNum = self.globalToLocalDVNums[globalDVNum]
                 lengthDVs[conCount] = localDVNum
                 lengthDVsOwnerProc[conCount] = self.comm.rank
+            
+            # Get connectivity and find end nodes of the stiffener chain
             compConn = self.meshLoader.getConnectivityForComp(
                 comp, nastranOrdering=False
             )
@@ -187,10 +194,13 @@ class StiffenerLengthConstraint(TACSConstraint):
             endNodeLocalIDs = self.meshLoader.getLocalNodeIDsFromGlobal(
                 endNodeGlobalIDs, nastranOrdering=False
             )
+            # Store end node information for constraint evaluation
             for end_i, nodeID in enumerate(endNodeLocalIDs):
-                if nodeID >= 0:
+                if nodeID >= 0:  # Valid local node ID
                     allEndNodeLocalIDs[conCount, end_i] = nodeID
                     allEndNodeOwnerProc[conCount, end_i] = self.comm.rank
+        
+        # Gather information from all processors
         lengthDVs = self.comm.allreduce(lengthDVs)
         allEndNodeLocalIDs = self.comm.allreduce(allEndNodeLocalIDs)
         allEndNodeOwnerProc = self.comm.allreduce(allEndNodeOwnerProc)
@@ -220,9 +230,10 @@ class StiffenerLengthConstraint(TACSConstraint):
           ValueError if checks fail
         """
 
-        # Build adjacency map
+        # Build adjacency map from connectivity list
         adj = defaultdict(set)
         for element in connectivity:
+            # Connect consecutive nodes in each element
             for i in range(len(element) - 1):
                 n1, n2 = element[i], element[i + 1]
                 adj[n1].add(n2)
@@ -249,7 +260,7 @@ class StiffenerLengthConstraint(TACSConstraint):
         # --- 2. Find degree (number of connected neighbors) of each node ---
         degrees = {node: len(neighbors) for node, neighbors in adj.items()}
 
-        # Ends should have degree == 1
+        # Ends should have degree == 1 (only one neighbor)
         ends = [node for node, deg in degrees.items() if deg == 1]
 
         if len(ends) != 2:
@@ -339,8 +350,19 @@ class StiffenerLengthConstraint(TACSConstraint):
             funcsSens[key] = {self.varName: xSens, self.coordName: XptSens}
 
 
-# Simple class for handling sparse volume constraints in parallel
 class SparseLengthConstraint(object):
+    """
+    A class for handling sparse length constraints in parallel.
+    
+    This class manages the evaluation of constraints that enforce the consistency
+    between design variable length values and the actual geometric length of
+    stiffener elements. It handles parallel computation across multiple processors
+    where different processors may own different design variables and nodes.
+    
+    The constraint ensures that the design variable representing the length of
+    a stiffener matches the actual geometric distance between the end nodes
+    of the stiffener chain.
+    """
     dtype = TACSConstraint.dtype
 
     def __init__(
@@ -354,6 +376,28 @@ class SparseLengthConstraint(object):
         lbound,
         ubound,
     ):
+        """
+        Initialize the SparseLengthConstraint object.
+
+        Parameters
+        ----------
+        comm : mpi4py.MPI.Intracomm
+            MPI communicator for parallel operations
+        lengthLocalDVNums : array_like
+            Local design variable numbers for length DVs
+        lengthDVsOwnerProc : array_like
+            Processor ranks that own each length DV
+        allEndNodeLocalIDs : array_like
+            Local node IDs for end nodes of each stiffener (nCon x 2)
+        allEndNodeOwnerProc : array_like
+            Processor ranks that own each end node (nCon x 2)
+        nLocalDVs : int
+            Number of local design variables on this processor
+        lbound : float or array_like
+            Lower bounds for constraints
+        ubound : float or array_like
+            Upper bounds for constraints
+        """
         # Number of constraints
         self.nCon = len(lengthLocalDVNums)
         self.lengthLocalDVNums = lengthLocalDVNums
@@ -376,12 +420,40 @@ class SparseLengthConstraint(object):
             self.ubound = np.array([ubound] * self.nCon, dtype=self.dtype)
 
     def evalCon(self, x, Xpts):
+        """
+        Evaluate the constraint values.
+
+        Parameters
+        ----------
+        x : array_like
+            Design variable values
+        Xpts : array_like
+            Node coordinates
+
+        Returns
+        -------
+        array_like
+            Constraint values (difference between DV lengths and exact lengths)
+        """
         Lexact = self._computeExactLength(Xpts)
         Ldv = self._getDVLengths(x)
         Ldiff = Ldv - Lexact
         return Ldiff
 
     def _computeExactLength(self, Xpts):
+        """
+        Compute the exact geometric length of each stiffener.
+
+        Parameters
+        ----------
+        Xpts : array_like
+            Node coordinates
+
+        Returns
+        -------
+        array_like
+            Exact lengths of each stiffener
+        """
         stiffenerEndLocations = np.zeros([self.nCon, 2, 3], dtype=self.dtype)
         for con_i in range(self.nCon):
             for end_j in range(2):
@@ -396,6 +468,19 @@ class SparseLengthConstraint(object):
         return Lexact
 
     def _getDVLengths(self, x):
+        """
+        Get the design variable length values for each stiffener.
+
+        Parameters
+        ----------
+        x : array_like
+            Design variable values
+
+        Returns
+        -------
+        array_like
+            Length values from design variables
+        """
         Ldv = np.zeros(self.nCon, dtype=self.dtype)
         for con_i in range(self.nCon):
             if self.lengthDVsOwnerProc[con_i] == self.comm.rank:
@@ -404,6 +489,22 @@ class SparseLengthConstraint(object):
         return Ldv
 
     def evalConSens(self, x, Xpts):
+        """
+        Evaluate the constraint sensitivities.
+
+        Parameters
+        ----------
+        x : array_like
+            Design variable values
+        Xpts : array_like
+            Node coordinates
+
+        Returns
+        -------
+        tuple
+            (xSens, XptSens) - sensitivities w.r.t. design variables and coordinates
+        """
+        # Initialize sparse matrix components for Jacobian
         dvJacVals = []
         dvJacRows = []
         dvJacCols = []
@@ -411,14 +512,19 @@ class SparseLengthConstraint(object):
         coordJacRows = []
         coordJacCols = []
         Lexact = self._computeExactLength(Xpts)
+        
         for con_i in range(self.nCon):
+            # Sensitivity w.r.t. design variables (derivative = 1.0)
             if self.lengthDVsOwnerProc[con_i] == self.comm.rank:
                 dvJacVals.append(1.0)
                 dvJacRows.append(con_i)
                 dvJacCols.append(self.lengthLocalDVNums[con_i])
+            
+            # Sensitivity w.r.t. node coordinates
             for end_j in range(2):
                 if self.allEndNodeOwnerProc[con_i, end_j] == self.comm.rank:
                     localNodeID = self.allEndNodeLocalIDs[con_i, end_j]
+                    # Derivative of length w.r.t. node coordinates
                     val = -Xpts[3 * localNodeID : 3 * localNodeID + 3] / Lexact[con_i]
                     if end_j == 0:
                         val *= -1
@@ -440,4 +546,12 @@ class SparseLengthConstraint(object):
         return xSens, XptSens
 
     def getBounds(self):
+        """
+        Get the constraint bounds.
+
+        Returns
+        -------
+        tuple
+            (lbound, ubound) - lower and upper bounds for constraints
+        """
         return self.lbound.copy(), self.ubound.copy()
