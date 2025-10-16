@@ -368,7 +368,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
                                                          const TacsScalar e[]) {
   // Check the cross-section for failure at the four corners
   TacsScalar e0[6], s0[6];    // 3D stress, NOT beam stresses
-  TacsScalar fail_checks[6];  // fail value a four corners
+  TacsScalar fail_checks[6];  // fail value a four corners + 2 buckling checks
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
   TacsScalar y_lim[] = {-(0.5 + t_offset) * thickness,
                         (0.5 - t_offset) * thickness};
@@ -397,6 +397,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
     }
   }
 
+  // Check the buckling failure criteria
   if (buckle_length_factor != 0.0) {
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
@@ -437,7 +438,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
 TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[], TacsScalar sens[]) {
-  // Check the cross-section for failure at the four corners
+  // Check the cross-section for failure at the four corners + 2 buckling checks
   TacsScalar e0[6], s0[6];
   TacsScalar dfde0[6], dfds0[6];
   TacsScalar fail_checks[6];
@@ -483,6 +484,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     }
   }
 
+  // Check the buckling failure criteria
   if (buckle_length_factor != 0.0) {
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
@@ -545,7 +547,8 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
   int index = 0;
   for (int dv_index = 0; dv_index < 3; dv_index++) {
     int dvNum = dvNums[dv_index];
-    // Check the cross-section for failure at the four corners
+    // Check the cross-section for failure at the four corners + 2 buckling
+    // checks
     TacsScalar e0[6], s0[6];
     TacsScalar e0d[6], s0d[6];
     TacsScalar fail_checks[6];
@@ -598,6 +601,7 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
       }
     }
 
+    // Check the buckling failure criteria
     if (buckle_length_factor != 0.0) {
       TacsScalar dL = 0.0;
       if (dvNum == buckle_length_num) {
