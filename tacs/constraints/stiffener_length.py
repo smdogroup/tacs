@@ -220,14 +220,25 @@ class StiffenerLengthConstraint(TACSConstraint):
 
     def _findChainEnds(self, connectivity):
         """
-        Takes a list of elements (each element is a list of node IDs)
-        Checks:
-          1. There is exactly one continuous topological body
-          2. The body has exactly two ends
-        Returns:
-          tuple(end_node_1, end_node_2)
-        Raises:
-          ValueError if checks fail
+        Takes a list of elements (each element is a list of node IDs) and verifies
+        that they form exactly one continuous topological body with exactly two ends.
+        Finally, it returns the two end nodes of the chain.
+
+        Parameters
+        ----------
+        connectivity : list[list[int]]
+            List of element nodal connectivities
+
+        Returns
+        -------
+        ends : tuple[int, int]
+            (endNodeID1, endNodeID2) - the two end node IDs of the chain
+
+        Raises
+        ------
+        ValueError
+            If the connectivity does not form exactly one continuous body or
+            if the body does not have exactly two ends
         """
 
         # Build adjacency map from connectivity list
