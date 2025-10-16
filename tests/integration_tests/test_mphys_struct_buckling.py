@@ -50,6 +50,9 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.rtol = 1e-3
             self.dh = 1e-6
 
+        # Seed random number generator in tacs for consistent test results
+        elements.SeedRandomGenerator(0)
+
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
             dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs
