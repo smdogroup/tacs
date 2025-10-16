@@ -391,9 +391,8 @@ class SparseLengthConstraint(object):
                         3 * localNodeID : 3 * localNodeID + 3
                     ]
         stiffenerEndLocations = self.comm.allreduce(stiffenerEndLocations)
-        Lexact = np.linalg.norm(
-            stiffenerEndLocations[:, 1, :] - stiffenerEndLocations[:, 0, :], axis=1
-        )
+        dX = stiffenerEndLocations[:, 1, :] - stiffenerEndLocations[:, 0, :]
+        Lexact = np.sqrt(np.sum(dX * dX, axis=1))
         return Lexact
 
     def _getDVLengths(self, x):
