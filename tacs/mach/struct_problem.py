@@ -34,7 +34,7 @@ def updateDVGeo(method):
 
 class StructProblem(BaseStructProblem):
     """
-    MACH StructProblem wrapper for pyTACS StaticProblem class 
+    MACH StructProblem wrapper for pyTACS StaticProblem class
     """
 
     def __init__(
