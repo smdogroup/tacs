@@ -231,12 +231,13 @@ int main( int argc, char * argv[] ){
     // For each element, average the nodal data
     float *avg_edata = new float[ num_elements * num_evariables ];
     memset(avg_edata, 0, num_elements * num_evariables*sizeof(float));
-    for ( int j = 0; j < num_evariables; j++ ){
-      for ( int i = 0; i < num_elements; i++ ){
-        int nnodes = ptr[i+1] - ptr[i];
+    for ( int i = 0; i < num_elements; i++ ){
+      int nnodes = ptr[i+1] - ptr[i];
+      for ( int j = 0; j < num_evariables; j++ ){
         for ( int k = ptr[i]; k < ptr[i+1]; k++ ){
-          avg_edata[num_evariables*i + j] += edata[num_evariables*k + j]/nnodes;
+          avg_edata[num_evariables*i + j] += edata[num_evariables*k + j];
         }
+        avg_edata[num_evariables*i + j] /= nnodes;
       }
     }
 
