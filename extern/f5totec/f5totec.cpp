@@ -91,7 +91,7 @@ zone type\n");
   INTEGER4 num_connected_boundary_faces = 0;
   INTEGER4 total_num_boundary_connections = 0;
   INTEGER4 *passive_var_list = NULL; // No passive variables
-  INTEGER4 *value_location = _value_location; // All values are nodal values
+  INTEGER4 *value_location = _value_location; // Array defining if value is nodal or element-wise
   INTEGER4 *share_var_from_zone = NULL;
   INTEGER4 share_con_from_zone = 0;
 
