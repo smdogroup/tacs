@@ -34,7 +34,7 @@ def updateDVGeo(method):
 
 class StructProblem(BaseStructProblem):
     """
-    Base class for TACS problem types. Contains methods common to all TACS problems.
+    MACH StructProblem wrapper for pyTACS StaticProblem class 
     """
 
     def __init__(
