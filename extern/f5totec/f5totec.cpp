@@ -61,7 +61,7 @@ int create_tec_file( char *data_info, char *var_names,
   zone_type    == One of LINESEG, TRIANGLE, QUAD, BRICK etc
   num_points       == The number of points
   num_elements     == The number of elements
-  value_location   == The location of the values (0 for nodal, 1 for element-wise)
+  value_location   == The location of the values (0 for element-wise, 1 for nodal)
 */
 int create_fe_tec_zone( char *zone_name, ZoneType _zone_type,
                         int _num_points, int _num_elements,
