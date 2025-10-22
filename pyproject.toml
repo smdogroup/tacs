@@ -1,0 +1,4 @@
+#pyproject.toml
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ['setuptools>=45.0,<72.0', 'wheel', 'cython>=3.0.0', 'numpy>=1.25,<3.0.0', 'mpi4py>=4.0.3']

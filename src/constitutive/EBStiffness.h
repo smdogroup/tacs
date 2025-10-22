@@ -40,38 +40,36 @@ class EBStiffness : public TACSConstitutive {
   enum EBReferenceDirection { STRONG_AXIS, WEAK_AXIS };
   static const int NUM_STRESSES = 4;
 
-  EBStiffness( TacsScalar rho, TacsScalar E, TacsScalar G,
-               TacsScalar A, TacsScalar Ix, TacsScalar Iy, TacsScalar J,
-               TacsScalar _ref_dir[3],
-               EBReferenceDirection _ref_type=WEAK_AXIS );
-  virtual ~EBStiffness(){}
+  EBStiffness(TacsScalar rho, TacsScalar E, TacsScalar G, TacsScalar A,
+              TacsScalar Ix, TacsScalar Iy, TacsScalar J,
+              TacsScalar _ref_dir[3],
+              EBReferenceDirection _ref_type = WEAK_AXIS);
+  virtual ~EBStiffness() {}
 
   // The reference direction of the beam
   // -----------------------------------
   const EBReferenceDirection ref_type;
-  const TacsScalar *getRefDir(){ return ref_dir; }
+  const TacsScalar *getRefDir() { return ref_dir; }
 
   // Retrieve the stiffness
   // ----------------------
-  virtual void getStiffness( const double pt[], TacsScalar Ct[] );
+  virtual void getStiffness(const double pt[], TacsScalar Ct[]);
 
   // Calculate the stress
   // --------------------
   int getNumStresses();
-  void calculateStress( const double pt[],
-                        const TacsScalar strain[],
-                        TacsScalar stress[] );
-  void addStressDVSens( const double pt[], const TacsScalar strain[],
-                        TacsScalar alpha, const TacsScalar psi[],
-                        TacsScalar fdvSens, int numDVs );
+  void calculateStress(const double pt[], const TacsScalar strain[],
+                       TacsScalar stress[]);
+  void addStressDVSens(const double pt[], const TacsScalar strain[],
+                       TacsScalar alpha, const TacsScalar psi[],
+                       TacsScalar fdvSens, int numDVs);
 
   // Return the mass moments
   // -----------------------
   int getNumMassMoments();
-  void getPointwiseMass( const double pt[], TacsScalar mass[] );
-  void addPointwiseMassDVSens( const double pt[],
-                               const TacsScalar alpha[],
-                               TacsScalar dvSens[], int dvLen );
+  void getPointwiseMass(const double pt[], TacsScalar mass[]);
+  void addPointwiseMassDVSens(const double pt[], const TacsScalar alpha[],
+                              TacsScalar dvSens[], int dvLen);
 
   const char *constitutiveName();
 
@@ -82,10 +80,11 @@ class EBStiffness : public TACSConstitutive {
   TacsScalar C[10];
 
   // Calculate the stress resultants
-  inline void calcStress( const TacsScalar Ct[], const TacsScalar e[],
-                          TacsScalar s[] );
+  inline void calcStress(const TacsScalar Ct[], const TacsScalar e[],
+                         TacsScalar s[]);
+
  private:
-  static const char * constName;
+  static const char *constName;
 };
 
 /*
@@ -96,13 +95,12 @@ class EBStiffness : public TACSConstitutive {
   [ Ct[2] Ct[5] Ct[7] Ct[8] ]
   [ Ct[3] Ct[6] Ct[8] Ct[9] ]
 */
-inline void EBStiffness::calcStress( const TacsScalar Ct[],
-                                     const TacsScalar e[],
-                                     TacsScalar s[] ){
-  s[0] = Ct[0]*e[0] + Ct[1]*e[1] + Ct[2]*e[2] + Ct[3]*e[3];
-  s[1] = Ct[1]*e[0] + Ct[4]*e[1] + Ct[5]*e[2] + Ct[6]*e[3];
-  s[2] = Ct[2]*e[0] + Ct[5]*e[1] + Ct[7]*e[2] + Ct[8]*e[3];
-  s[3] = Ct[3]*e[0] + Ct[6]*e[1] + Ct[8]*e[2] + Ct[9]*e[3];
+inline void EBStiffness::calcStress(const TacsScalar Ct[], const TacsScalar e[],
+                                    TacsScalar s[]) {
+  s[0] = Ct[0] * e[0] + Ct[1] * e[1] + Ct[2] * e[2] + Ct[3] * e[3];
+  s[1] = Ct[1] * e[0] + Ct[4] * e[1] + Ct[5] * e[2] + Ct[6] * e[3];
+  s[2] = Ct[2] * e[0] + Ct[5] * e[1] + Ct[7] * e[2] + Ct[8] * e[3];
+  s[3] = Ct[3] * e[0] + Ct[6] * e[1] + Ct[8] * e[2] + Ct[9] * e[3];
 }
 
 #endif

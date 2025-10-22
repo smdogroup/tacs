@@ -9,12 +9,15 @@ include ../../TACS_Common.mk
 
 CXX_OBJS = TACSFunction.o \
 	TACSStructuralMass.o \
+	TACSCenterOfMass.o \
+	TACSMomentOfInertia.o \
+	TACSEnclosedVolume.o \
+	TACSKSFailure.o \
+	TACSKSDisplacement.o \
 	TACSCompliance.o \
 	TACSAverageTemperature.o \
+	TACSKSTemperature.o \
 	TACSHeatFlux.o \
-	TACSKSFailure.o \
-        TACSKSTemperature.o \
-	TACSKSDisplacement.o \
 	TACSInducedFailure.o
 
 DIR=${TACS_DIR}/src/functions

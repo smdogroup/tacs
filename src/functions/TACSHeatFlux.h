@@ -15,8 +15,9 @@
 #ifndef TACS_HEAT_FLUX_H
 #define TACS_HEAT_FLUX_H
 
-#include "TACSFunction.h"
 #include <map>
+
+#include "TACSFunction.h"
 
 /*
   Compute the KS functional of the heat flux on a given face or edge
@@ -25,33 +26,32 @@ class TACSHeatFlux : public TACSFunction {
  public:
   static const int MAX_SURFACE_INDEX = 31;
 
-  TACSHeatFlux( TACSAssembler *_assembler, int *_elem_index,
-                int *_surface_index, int _num_elems );
+  TACSHeatFlux(TACSAssembler *_assembler, int *_elem_index, int *_surface_index,
+               int _num_elems);
   ~TACSHeatFlux();
 
   /**
     Retrieve the name of the function
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   /**
      Initialize the function for the given type of evaluation
   */
-  void initEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
 
   /**
      Perform an element-wise integration over this element.
   */
-  void elementWiseEval( EvaluationType ftype,
-                        int elemIndex, TACSElement *element,
-                        double time, TacsScalar scale,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[] );
+  void elementWiseEval(EvaluationType ftype, int elemIndex,
+                       TACSElement *element, double time, TacsScalar scale,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[]);
 
   /**
      Finalize the function evaluation for the specified eval type.
   */
-  void finalEvaluation( EvaluationType ftype );
+  void finalEvaluation(EvaluationType ftype);
 
   /**
      Get the value of the function
@@ -61,29 +61,28 @@ class TACSHeatFlux : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens( int elemIndex, TACSElement *element, double time,
-                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TacsScalar *elemSVSens );
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens( int elemIndex, TACSElement *element,
-                         double time, TacsScalar scale,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dfdx[] );
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+                        TacsScalar scale, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
 
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens( int elemIndex, TACSElement *element,
-                          double time, TacsScalar scale,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar fXptSens[] );
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+                         TacsScalar scale, const TacsScalar Xpts[],
+                         const TacsScalar vars[], const TacsScalar dvars[],
+                         const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   // The name of the function
@@ -96,4 +95,4 @@ class TACSHeatFlux : public TACSFunction {
   std::map<int, int> element_to_face_key;
 };
 
-#endif // TACS_HEAT_FLUX_H
+#endif  // TACS_HEAT_FLUX_H

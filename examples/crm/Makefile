@@ -22,8 +22,8 @@ clean:
 
 test: default
 	mpirun -np 2 ./crm
-	mpirun -np 2 python crm.py 
+	mpirun -np 2 python crm.py
 
 test_complex: complex
 	mpirun -np 2 ./crm
-#	mpirun -np 2 python crm.py 
+	mpirun -np 2 python crm.py

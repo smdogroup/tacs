@@ -15,8 +15,8 @@
 #ifndef TACS_KS_MAT_TEMPERATURE_H
 #define TACS_KS_MAT_TEMPERATURE_H
 
-#include "TACSFunction.h"
 #include "KSTemperature.h"
+#include "TACSFunction.h"
 /*
   Compute the KS functional of the displacement along a given direction
 */
@@ -25,9 +25,10 @@ class TACSKSMatTemperature : public TACSFunction {
   /* enum KSTemperatureType { DISCRETE, CONTINUOUS, */
   /*                          PNORM_DISCRETE, PNORM_CONTINUOUS }; */
 
-  TACSKSMatTemperature( TACSAssembler *_tacs, double _ksWeight,
-                        TACSKSTemperature::KSTemperatureType _ksType=TACSKSTemperature::CONTINUOUS,
-                        int _nmats=1 );
+  TACSKSMatTemperature(TACSAssembler *_tacs, double _ksWeight,
+                       TACSKSTemperature::KSTemperatureType _ksType =
+                           TACSKSTemperature::CONTINUOUS,
+                       int _nmats = 1);
   ~TACSKSMatTemperature();
 
   // Retrieve the name of the function
@@ -40,29 +41,22 @@ class TACSKSMatTemperature : public TACSFunction {
 
   // Set the type of displacement aggregate
   // --------------------------------------
-  void setKSDispType( TACSKSTemperature::KSTemperatureType _ksType );
-  void setNumMats( int _nmats ){
-    nmats = _nmats;
-  }
+  void setKSDispType(TACSKSTemperature::KSTemperatureType _ksType);
+  void setNumMats(int _nmats) { nmats = _nmats; }
 
   // Collective calls on the TACS MPI Comm
   // -------------------------------------
-  void initEvaluation( EvaluationType ftype );
-  void finalEvaluation( EvaluationType ftype );
+  void initEvaluation(EvaluationType ftype);
+  void finalEvaluation(EvaluationType ftype);
 
   // Functions for integration over the structural domain on each thread
   // -------------------------------------------------------------------
-  void initThread( double tcoef,
-                   EvaluationType ftype,
-                   TACSFunctionCtx *ctx );
-  void elementWiseEval( EvaluationType ftype,
-                        TACSElement *element, int elemNum,
-                        const TacsScalar Xpts[], const TacsScalar vars[],
-                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx );
-  void finalThread( double tcoef,
-                    EvaluationType ftype,
-                    TACSFunctionCtx *ctx );
+  void initThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
+  void elementWiseEval(EvaluationType ftype, TACSElement *element, int elemNum,
+                       const TacsScalar Xpts[], const TacsScalar vars[],
+                       const TacsScalar dvars[], const TacsScalar ddvars[],
+                       TACSFunctionCtx *ctx);
+  void finalThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
 
   // Return the value of the function
   // --------------------------------
@@ -70,28 +64,27 @@ class TACSKSMatTemperature : public TACSFunction {
 
   // State variable sensitivities
   // ----------------------------
-  void getElementSVSens( double alpha, double beta, double gamma,
-                         TacsScalar *elemSVSens,
-                         TACSElement *element, int elemNum,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+  void getElementSVSens(double alpha, double beta, double gamma,
+                        TacsScalar *elemSVSens, TACSElement *element,
+                        int elemNum, const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], TACSFunctionCtx *ctx);
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  void addElementDVSens( double tcoef, TacsScalar *fdvSens, int numDVs,
-                         TACSElement *element, int elemNum,
-                         const TacsScalar Xpts[], const TacsScalar vars[],
-                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx );
+  void addElementDVSens(double tcoef, TacsScalar *fdvSens, int numDVs,
+                        TACSElement *element, int elemNum,
+                        const TacsScalar Xpts[], const TacsScalar vars[],
+                        const TacsScalar dvars[], const TacsScalar ddvars[],
+                        TACSFunctionCtx *ctx);
 
   // Nodal sensitivities
   // -------------------
-  void getElementXptSens( double tcoef, TacsScalar fXptSens[],
-                          TACSElement *element, int elemNum,
-                          const TacsScalar Xpts[], const TacsScalar vars[],
-                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TACSFunctionCtx *ctx );
+  void getElementXptSens(double tcoef, TacsScalar fXptSens[],
+                         TACSElement *element, int elemNum,
+                         const TacsScalar Xpts[], const TacsScalar vars[],
+                         const TacsScalar dvars[], const TacsScalar ddvars[],
+                         TACSFunctionCtx *ctx);
 
  private:
   // The name of the function
@@ -116,4 +109,4 @@ class TACSKSMatTemperature : public TACSFunction {
   int nmats;
 };
 
-#endif // TACS_KS_DISPLACEMENT_H
+#endif  // TACS_KS_DISPLACEMENT_H

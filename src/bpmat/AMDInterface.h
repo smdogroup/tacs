@@ -26,10 +26,10 @@
   this call so be careful!
 */
 
-void amd_order_interface( int nvars, int *rowp, int *cols, int *perm,
-                          int *interface_nodes, int ninterface_nodes,
-                          int ndep_vars, const int *dep_vars,
-                          const int *indep_ptr, const int *indep_vars,
-                          int use_exact_degree );
+void amd_order_interface(int nvars, int *rowp, int *cols, int *perm,
+                         int *interface_nodes, int ninterface_nodes,
+                         int ndep_vars, const int *dep_vars,
+                         const int *indep_ptr, const int *indep_vars,
+                         int use_exact_degree);
 
 #endif

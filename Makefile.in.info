@@ -8,8 +8,8 @@
 TACS_DIR = ${HOME}/git/tacs
 CXX = mpicxx
 RM = rm -f
-PYTHON=python3
-PYTHON_CONFIG=python3-config
+PYTHON = python
+PIP = pip
 
 # Set up for parallel make
 MAKE = make -j 8
@@ -18,7 +18,7 @@ MAKE = make -j 8
 AR_FLAGS = rcs
 
 # Flags for debugging and regular compilation versions
-EXTRA_DEBUG_CC_FLAGS = -fPIC -g 
+EXTRA_DEBUG_CC_FLAGS = -fPIC -g
 EXTRA_CC_FLAGS = -fPIC -O3
 
 # Use this if you have problems with mpich
@@ -36,7 +36,7 @@ SO_LINK_FLAGS=-fPIC -shared
 # SO_EXT=so
 # SO_LINK_FLAGS=-fPIC -dynamiclib
 
-# This uses the default installation of LAPACK. 
+# This uses the default installation of LAPACK.
 # Use an optimized version of LAPACK if available.
 # You may also have to include -lblas as well.
 
@@ -50,10 +50,25 @@ LAPACK_LIBS = -L/usr/lib/ -llapack -lpthread -lblas
 # -DTACS_CPLUSPLUS_METIS to the TACS_DEF arguments below. If you
 # compile METIS using a C compiler, there should be no issues.
 
-METIS_INCLUDE = -I${TACS_DIR}/extern/metis/include/
-METIS_LIB = ${TACS_DIR}/extern/metis/lib/libmetis.a
+METIS_DIR = ${TACS_DIR}/extern/metis
+METIS_INCLUDE = -I${METIS_DIR}/include/
+METIS_LIB = ${METIS_DIR}/lib/libmetis.a
 
-# AMD is a set of routines for ordering matrices. It is not required by default.
+# AMD is a set of routines for ordering matrices, included in the SuiteSparse package. It is not required by default.
 
-# AMD_INCLUDE = -I${TACS_DIR}/extern/AMD/Include -I${TACS_DIR}/extern/UFconfig
-# AMD_LIBS = ${TACS_DIR}/extern/AMD/Lib/libamd.a ${TACS_DIR}/extern/UFconfig/libufconfig.a
+# SUITESPARSE_DIR = ${TACS_DIR}/extern/SuiteSparse-7.10.3
+# The variables below should not need to be altered if you are installing SuiteSparse from the standard release tarball
+
+# SUITESPARSE_CONFIG_DIR = ${SUITESPARSE_DIR}/SuiteSparse_config
+# AMD_DIR = ${SUITESPARSE_DIR}/AMD
+# AMD_INCLUDE = -I${AMD_DIR}/Include -I${SUITESPARSE_CONFIG_DIR}
+# AMD_LIBS = ${AMD_DIR}/build/libamd.a ${SUITESPARSE_CONFIG_DIR}/build/libsuitesparseconfig.a
+# TACS_DEF += -DTACS_HAS_AMD_LIBRARY
+
+# TECIO is a library for reading and writing tecplot data files, only required for building f5totec, can use either teciosrc or teciompisrc
+# TECIO_DIR = ${TACS_DIR}/extern/tecio/teciompisrc
+# TECIO_INCLUDE = -I${TECIO_DIR}
+# TECIO_LIB = ${TECIO_DIR}/libtecio*.a
+
+# This may be need to be added to build f5totec with openmpi
+# TECIO_LIB += -lopen-pal

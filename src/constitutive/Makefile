@@ -12,8 +12,24 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSConstitutiveVerification.o \
 	TACSPlaneStressConstitutive.o \
 	TACSSolidConstitutive.o \
-	TACSTimoshenkoConstitutive.o \
-	TACSShellConstitutive.o
+	TACSShellConstitutive.o \
+	TACSIsoShellConstitutive.o \
+	TACSLamParamShellConstitutive.o \
+	TACSGeneralMassConstitutive.o \
+	TACSPointMassConstitutive.o \
+	TACSGeneralSpringConstitutive.o \
+	TACSDOFSpringConstitutive.o \
+	TACSCompositeShellConstitutive.o \
+	TACSBeamConstitutive.o \
+	TACSBasicBeamConstitutive.o \
+	TACSIsoTubeBeamConstitutive.o \
+	TACSIsoRectangleBeamConstitutive.o \
+	TACSPhaseChangeMaterialConstitutive.o \
+	TACSBladeStiffenedShellConstitutive.o \
+	TACSSmearedCompositeShellConstitutive.o \
+	TACSGaussianProcessModel.o \
+	TACSPanelGPs.o \
+	TACSGPBladeStiffenedShellConstitutive.o
 
 DIR=${TACS_DIR}/src/constitutive
 

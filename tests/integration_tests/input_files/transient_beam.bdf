@@ -1,0 +1,68 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID FEMAP,FEMAP
+SOL SEDTRAN
+CEND
+  TITLE = Beam Test
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  TSTEP = 1
+  SPC = 1
+SUBCASE 1
+  SUBTITLE = ramp
+  DLOAD = 1
+SUBCASE 2
+  SUBTITLE = sinusoid
+  DLOAD = 2
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2021.1.0
+$   Translator : Simcenter Nastran
+$   From Model : 
+$   Date       : Wed Apr 20 10:23:42 2022
+$   Output To  : C:\Users\trbrooks\AppData\Local\Temp\3\
+$ ***************************************************************************
+$
+PARAM,PRGPST,YES
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.        
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.        
+$ Femap Load Set 1 : Tip Load
+FORCE          1      6       0      1.      0.     10.      0.
+$ Femap Constraint Set 1 : Case 1
+SPC1           1  123456       1
+$ Femap Property 1 : Beam
+PBAR           1       1      .1      .2      .3      .4      0.        +
++             0.      0.      0.      0.      0.      0.      0.      0.+
++                             .1
+$ Femap Material 1 : Aluminum
+MAT1           1   7.0e3              .3     27.      0.      0.        +
++          0.027
+GRID           1       0      0.      0.      0.       0
+GRID           2       0      .2      0.      0.       0
+GRID           3       0      .4      0.      0.       0
+GRID           4       0      .6      0.      0.       0
+GRID           5       0      .8      0.      0.       0
+GRID           6       0      1.      0.      0.       0
+CBAR           1       1       1       2      0.      1.      0.
+CBAR           2       1       2       3      0.      1.      0.
+CBAR           3       1       3       4      0.      1.      0.
+CBAR           4       1       4       5      0.      1.      0.
+CBAR           5       1       5       6      0.      1.      0.
+TABLED1        1
+             0.0     0.0     1.0     0.5    ENDT
+TLOAD1         1       1     1.0               1
+TLOAD2         2       1     1.0             0.0     1.0
+TSTEP          1      20      .1
+ENDDATA e0194509

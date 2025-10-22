@@ -9,21 +9,28 @@ include ../TACS_Common.mk
 
 EXAMPLE_SUBDIRS = \
 	annulus \
+	benchmark \
+	block_cyclic_mat \
+	crm \
+	cylinder \
+	grad_verify \
+	matrix_free \
 	mg \
-        tetrahedral \
+	plate \
+	profile_elements \
+	shell \
+	stiffened_panel \
+	tetrahedral \
 	triangle \
-	tutorial \
-	four_bar_mechanism \
-	block_cyclic_mat
+	tutorial
 
-#	plate \
-#	profile_elements \
-#	rigid \
-#	stiffened_panel \
-#	benchmark \
-#	crm \
-#	cylinder \
-#	grad_verify \
+# Examples that should work:
+# four_bar_mechanism
+# pyelement
+# rigid
+# rotating_beam
+# plate_dynamics
+#
 
 default:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
@@ -41,6 +48,12 @@ complex:
 	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \
 	  echo; (cd $$subdir && $(MAKE) complex); \
+	done
+
+complex_debug:
+	@for subdir in $(EXAMPLE_SUBDIRS) ; do \
+	  echo "making $@ in $$subdir"; \
+	  echo; (cd $$subdir && $(MAKE) complex_debug); \
 	done
 
 test:

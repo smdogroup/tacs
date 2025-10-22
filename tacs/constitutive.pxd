@@ -10,34 +10,18 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
 
-# For MPI capabilities
-from mpi4py.libmpi cimport *
-cimport mpi4py.MPI as MPI
+# Import from cpp headers for definitions
+from tacs.cpp_headers.TACS cimport *
+from tacs.cpp_headers.constitutive cimport *
 
-# Import numpy
-import numpy as np
-cimport numpy as np
-from libc.string cimport const_char
-
-# Import C methods for python
-from cpython cimport PyObject, Py_INCREF
-
-# Import from TACS for definitions
-from TACS cimport *
-
-cdef extern from "TACSMaterialProperties.h":
-    cdef cppclass TACSMaterialProperties(TACSObject):
-        TACSMaterialProperties(TacsScalar, TacsScalar,
-                               TacsScalar, TacsScalar,
-                               TacsScalar, TacsScalar,
-                               TacsScalar)
-        void setDensity(TacsScalar)
-        void setSpecificHeat(TacsScalar)
+# Import cython headers
+from tacs.TACS cimport *
 
 cdef class MaterialProperties:
     cdef TACSMaterialProperties *ptr
+    cdef int nastranID
 
 cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
     props = MaterialProperties()
@@ -45,43 +29,41 @@ cdef inline _init_MaterialProperties(TACSMaterialProperties *ptr):
     props.ptr.incref()
     return props
 
-cdef extern from "TACSPlaneStressConstitutive.h":
-    cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):
-        TACSPlaneStressConstitutive(TACSMaterialProperties*,
-                                    TacsScalar, int, TacsScalar, TacsScalar)
-
 cdef class PlaneStressConstitutive(Constitutive):
     cdef TACSPlaneStressConstitutive *cptr
 
-cdef extern from "TACSSolidConstitutive.h":
-    cdef cppclass TACSSolidConstitutive(TACSConstitutive):
-        TACSSolidConstitutive(TACSMaterialProperties*,
-                              TacsScalar, int, TacsScalar, TacsScalar)
-        TACSMaterialProperties* getMaterialProperties()
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    cdef TACSPhaseChangeMaterialConstitutive *cptr
 
 cdef class SolidConstitutive(Constitutive):
     cdef TACSSolidConstitutive *cptr
 
-cdef extern from "TACSShellConstitutive.h":
-    cdef cppclass TACSShellConstitutive(TACSConstitutive):
-        TACSShellConstitutive(TACSMaterialProperties*,
-                              TacsScalar, int, TacsScalar, TacsScalar)
-
 cdef class ShellConstitutive(Constitutive):
     cdef TACSShellConstitutive *cptr
 
-cdef extern from "TACSTimoshenkoConstitutive.h":
-    cdef cppclass TACSTimoshenkoConstitutive(TACSConstitutive):
-        TACSTimoshenkoConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                   TacsScalar, TacsScalar, const TacsScalar*)
+cdef class StiffenedShellConstitutive(ShellConstitutive):
+    cdef TACSBladeStiffenedShellConstitutive *base_ptr
 
-cdef class TimoshenkoConstitutive(Constitutive):
-    cdef TACSTimoshenkoConstitutive *cptr
+cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    cdef TACSBladeStiffenedShellConstitutive *blade_ptr
 
-# Special functions required for converting pointers
-cdef extern from "":
-    TACSTimoshenkoConstitutive* _dynamicTimoshenkoConstitutive"dynamic_cast<TACSTimoshenkoConstitutive*>"(TACSConstitutive*)
+cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    cdef TACSGPBladeStiffenedShellConstitutive *gp_blade_ptr
 
-cdef extern from "TACSConstitutiveVerification.h":
-    int TacsTestConstitutive(TACSConstitutive*, int, double, int, double, double)
+cdef class GaussianProcess:
+    cdef TACSGaussianProcessModel *base_gp
+
+cdef class BucklingGP(GaussianProcess):
+    cdef TACSBucklingGaussianProcessModel *buckling_gp
+
+cdef class PanelGPs:
+    cdef TACSPanelGPs *gptr
+
+cdef class BeamConstitutive(Constitutive):
+    cdef TACSBeamConstitutive *cptr
+
+cdef class GeneralMassConstitutive(Constitutive):
+    cdef TACSGeneralMassConstitutive *cptr
+
+cdef class GeneralSpringConstitutive(Constitutive):
+    cdef TACSGeneralSpringConstitutive *cptr

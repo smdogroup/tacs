@@ -25,7 +25,7 @@
 
 double tacs_local_flop_count = 0.0;
 
-double TacsGetNumFlops(){
+double TacsGetNumFlops() {
 #ifdef TACS_LOG_FLOPS
   return tacs_local_flop_count;
 #else
@@ -34,38 +34,34 @@ double TacsGetNumFlops(){
 #endif
 }
 
-void TacsZeroNumFlops(){
-  tacs_local_flop_count = 0.0;
-}
+void TacsZeroNumFlops() { tacs_local_flop_count = 0.0; }
 
 /*
   These definite the min/max operations for complex values
 */
 #ifdef TACS_USE_COMPLEX
-void TacsMPIComplexMax( void *_in, void *_out, int *count,
-                        MPI_Datatype *data ){
-  if (*data == MPI_DOUBLE_COMPLEX){
-    TacsScalar *in = (TacsScalar*) _in;
-    TacsScalar *out = (TacsScalar*) _out;
+void TacsMPIComplexMax(void *_in, void *_out, int *count, MPI_Datatype *data) {
+  if (*data == MPI_DOUBLE_COMPLEX) {
+    TacsScalar *in = (TacsScalar *)_in;
+    TacsScalar *out = (TacsScalar *)_out;
 
     // Compare the real parts of the array
-    for ( int i = 0; i < *count; i++ ){
-      if (TacsRealPart(in[i]) >= TacsRealPart(out[i])){
+    for (int i = 0; i < *count; i++) {
+      if (TacsRealPart(in[i]) >= TacsRealPart(out[i])) {
         out[i] = in[i];
       }
     }
   }
 }
 
-void TacsMPIComplexMin( void *_in, void *_out, int *count,
-                        MPI_Datatype *data ){
-  if (*data == MPI_DOUBLE_COMPLEX){
-    TacsScalar *in = (TacsScalar*) _in;
-    TacsScalar *out = (TacsScalar*) _out;
+void TacsMPIComplexMin(void *_in, void *_out, int *count, MPI_Datatype *data) {
+  if (*data == MPI_DOUBLE_COMPLEX) {
+    TacsScalar *in = (TacsScalar *)_in;
+    TacsScalar *out = (TacsScalar *)_out;
 
     // Compare the real parts of the array
-    for ( int i = 0; i < *count; i++ ){
-      if (TacsRealPart(in[i]) < TacsRealPart(out[i])){
+    for (int i = 0; i < *count; i++) {
+      if (TacsRealPart(in[i]) < TacsRealPart(out[i])) {
         out[i] = in[i];
       }
     }
@@ -79,8 +75,8 @@ static int TacsInitialized = 0;
 MPI_Op TACS_MPI_MIN = MPI_MAX;
 MPI_Op TACS_MPI_MAX = MPI_MIN;
 
-void TacsInitialize(){
-  if (!TacsInitialized){
+void TacsInitialize() {
+  if (!TacsInitialized) {
 #ifdef TACS_USE_COMPLEX
     // Try to add the MPI reduction operator for MPI_DOUBLE_COMPLEX
     int commute = 1;
@@ -94,12 +90,12 @@ void TacsInitialize(){
   TacsInitialized++;
 }
 
-int TacsIsInitialized(){ return TacsInitialized; }
+int TacsIsInitialized() { return TacsInitialized; }
 
-void TacsFinalize(){
+void TacsFinalize() {
   TacsInitialized--;
 
-  if (TacsInitialized == 0){
+  if (TacsInitialized == 0) {
 #ifdef TACS_USE_COMPLEX
     MPI_Op_free(&TACS_MPI_MAX);
     MPI_Op_free(&TACS_MPI_MIN);
@@ -107,74 +103,59 @@ void TacsFinalize(){
   }
 }
 
-TACSObject::TACSObject(){
-  ref_count = 0;
-}
+TACSObject::TACSObject() { ref_count = 0; }
 
-TACSObject::~TACSObject(){}
+TACSObject::~TACSObject() {}
 
 /*
   Increase the reference count functions
 */
-void TACSObject::incref(){
-  ref_count++;
-}
+void TACSObject::incref() { ref_count++; }
 
 /*
   Decrease the reference count
 */
-void TACSObject::decref(){
+void TACSObject::decref() {
   ref_count--;
 
-  if (ref_count == 0){
+  if (ref_count == 0) {
 #ifdef TACS_DEBUG
-    fprintf(stderr, "Deleting object %s\n",
-            this->getObjectName());
+    fprintf(stderr, "Deleting object %s\n", this->getObjectName());
 #endif
     delete this;
-  }
-  else if (ref_count < 0){
+  } else if (ref_count < 0) {
     fprintf(stderr, "Encountered a negative reference count for %s\n",
             this->getObjectName());
   }
 }
 
 //! Return the reference count
-int TACSObject::refcount(){
-  return ref_count;
-}
+int TACSObject::refcount() { return ref_count; }
 
 //! Return the name of the object
-const char *TACSObject::getObjectName(){
-  return tacsDefault;
-}
+const char *TACSObject::getObjectName() { return tacsDefault; }
 
 const char *TACSObject::tacsDefault = "TACSObject";
 
 /*
   Implementation of the TACSThreadInfo object
 */
-TACSThreadInfo::TACSThreadInfo( int _num_threads ){
-  if (_num_threads > 1){
+TACSThreadInfo::TACSThreadInfo(int _num_threads) {
+  if (_num_threads > 1) {
     num_threads = _num_threads;
-  }
-  else {
+  } else {
     num_threads = 1;
   }
 }
 
-void TACSThreadInfo::setNumThreads( int _num_threads ){
-  if (_num_threads > 1 && _num_threads <= TACS_MAX_NUM_THREADS){
+void TACSThreadInfo::setNumThreads(int _num_threads) {
+  if (_num_threads > 1 && _num_threads <= TACS_MAX_NUM_THREADS) {
     num_threads = _num_threads;
-  }
-  else if (_num_threads <= 1){
+  } else if (_num_threads <= 1) {
     num_threads = 1;
-  }
-  else if (_num_threads >= TACS_MAX_NUM_THREADS){
+  } else if (_num_threads >= TACS_MAX_NUM_THREADS) {
     num_threads = TACS_MAX_NUM_THREADS;
   }
 }
 
-int TACSThreadInfo::getNumThreads(){
-  return num_threads;
-}
+int TACSThreadInfo::getNumThreads() { return num_threads; }

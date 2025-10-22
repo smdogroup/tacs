@@ -1,0 +1,6 @@
+*.f5
+*.vtk
+caps*
+results/
+*.jrnl
+*.txt

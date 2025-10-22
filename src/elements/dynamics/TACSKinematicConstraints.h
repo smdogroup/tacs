@@ -47,15 +47,13 @@ enum TACSTranslationConType { COINCIDENT, COLINEAR, COPLANAR };
 */
 class TACSSphericalConstraint : public TACSElement {
  public:
-  TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSRigidBody *_bodyB,
-                           TACSGibbsVector *_point,
-                           TACSGibbsVector *_axis=NULL,
-                           TACSTranslationConType con_type=COINCIDENT );
-  TACSSphericalConstraint( TACSRigidBody *_bodyA,
-                           TACSGibbsVector *_point,
-                           TACSGibbsVector *_axis=NULL,
-                           TACSTranslationConType con_type=COINCIDENT );
+  TACSSphericalConstraint(TACSRigidBody *_bodyA, TACSRigidBody *_bodyB,
+                          TACSGibbsVector *_point,
+                          TACSGibbsVector *_axis = NULL,
+                          TACSTranslationConType con_type = COINCIDENT);
+  TACSSphericalConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
+                          TACSGibbsVector *_axis = NULL,
+                          TACSTranslationConType con_type = COINCIDENT);
   ~TACSSphericalConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
@@ -64,31 +62,31 @@ class TACSSphericalConstraint : public TACSElement {
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // Return the number of displacements and nodes
   // --------------------------------------------
-  int getVarsPerNode(){ return 8; }
+  int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char* getObjectName(){ return elem_name; }
+  const char *getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[],
-                    TacsScalar res[], TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
  private:
   // Keep a record of the constraint type
@@ -135,56 +133,51 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
-                          TACSRigidBody *_bodyB,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec,
-                          int _inertial_rev_axis=0 );
-  TACSRevoluteConstraint( TACSRigidBody *_bodyA,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec );
-  TACSRevoluteConstraint( int _fixed_ref_point,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_eAVec,
-                          int _inertial_rev_axis=0 );
+  TACSRevoluteConstraint(TACSRigidBody *_bodyA, TACSRigidBody *_bodyB,
+                         TACSGibbsVector *_point, TACSGibbsVector *_eAVec,
+                         int _inertial_rev_axis = 0);
+  TACSRevoluteConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
+                         TACSGibbsVector *_eAVec);
+  TACSRevoluteConstraint(int _fixed_ref_point, TACSGibbsVector *_point,
+                         TACSGibbsVector *_eAVec, int _inertial_rev_axis = 0);
   ~TACSRevoluteConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   int getMultiplierIndex();
-  void setRevoluteAxis( TACSGibbsVector *_eAVec );
+  void setRevoluteAxis(TACSGibbsVector *_eAVec);
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // Return the number of displacements and nodes
   // --------------------------------------------
-  int getVarsPerNode(){ return 8; }
+  int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char* getObjectName(){ return elem_name; }
+  const char *getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[],
-                    TacsScalar res[], TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
  private:
   // Update the local data
-  void updatePoints( int init_e=0 );
+  void updatePoints(int init_e = 0);
 
   // Is the reference axis fixed in body B's body-fixed frame
   // or is it fixed in the inertial refernece frame
@@ -208,7 +201,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // The coordinate direction in global frame
   TACSGibbsVector *eVec;
 
-  static const char *elem_name; // The name of the element
+  static const char *elem_name;  // The name of the element
 };
 
 /*
@@ -216,38 +209,36 @@ class TACSRevoluteConstraint : public TACSElement {
 */
 class TACSRigidLink : public TACSElement {
  public:
-  TACSRigidLink( TACSRigidBody *_bodyA );
+  TACSRigidLink(TACSRigidBody *_bodyA);
   ~TACSRigidLink();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  int getMultiplierIndex(){
-    return 2;
-  }
+  int getMultiplierIndex() { return 2; }
 
   // Return the number of displacements and nodes
   // --------------------------------------------
   int getVarsPerNode();
   int getNumNodes();
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[],
-                    TacsScalar res[], TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
  private:
-  TACSRigidBody *bodyA; // The rigid body
-  static const char *elem_name; // The name of the element
+  TACSRigidBody *bodyA;          // The rigid body
+  static const char *elem_name;  // The name of the element
 
   // Parameter used to avoid linearly dependent Jacobian rows
   static const TacsScalar delta;
@@ -309,37 +300,33 @@ class TACSAverageConstraint : public TACSElement {
   static const int Y_MOMENT = 2;
   static const int Z_MOMENT = 4;
 
-  TACSAverageConstraint( TACSRigidBody *_bodyA,
-                         TACSGibbsVector *_point,
-                         TACSRefFrame *_refFrame,
-                         int _moment_flag );
+  TACSAverageConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
+                        TACSRefFrame *_refFrame, int _moment_flag);
   ~TACSAverageConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  int getMultiplierIndex(){
-    return 4;
-  }
+  int getMultiplierIndex() { return 4; }
 
   // Get the number of displacements/nodes and the element name
   // ----------------------------------------------------------
   int getVarsPerNode();
   int getNumNodes();
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[],
-                    TacsScalar res[], TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
  private:
   // Flag to indicate whether to constraint the displacements or the
@@ -366,9 +353,8 @@ class TACSAverageConstraint : public TACSElement {
 */
 class TACSMotionDriver : public TACSElement {
  public:
-  TACSMotionDriver( TACSGibbsVector *_dir,
-                    TacsScalar _omega,
-                    int _fix_rotations=0 ){
+  TACSMotionDriver(TACSGibbsVector *_dir, TacsScalar _omega,
+                   int _fix_rotations = 0) {
     // Copy over the direction
     dir = _dir;
     dir->incref();
@@ -379,23 +365,19 @@ class TACSMotionDriver : public TACSElement {
     // Fix the rotations if requested
     fix_rotations = _fix_rotations;
   }
-  ~TACSMotionDriver(){
-    dir->decref();
-  }
+  ~TACSMotionDriver() { dir->decref(); }
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  int getMultiplierIndex(){
-    return 1;
-  }
+  int getMultiplierIndex() { return 1; }
 
-  int getVarsPerNode(){ return 8; }
-  int getNumNodes(){ return 2; }
-  const char* getObjectName(){ return "TACSMotionDriver"; }
+  int getVarsPerNode() { return 8; }
+  int getNumNodes() { return 2; }
+  const char *getObjectName() { return "TACSMotionDriver"; }
 
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] ){
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]) {
     // Retrieve the direction
     const TacsScalar *d;
     dir->getVector(&d);
@@ -404,37 +386,36 @@ class TACSMotionDriver : public TACSElement {
     const TacsScalar *lam = &vars[8];
 
     // Specify a sinusoidal motion
-    const TacsScalar scale = sin(omega*time);
+    const TacsScalar scale = sin(omega * time);
 
     // Equations to specify sinusoidal translatory motion
-    res[8] += vars[0] - scale*d[0];
-    res[9] += vars[1] - scale*d[1];
-    res[10] += vars[2] - scale*d[2];
+    res[8] += vars[0] - scale * d[0];
+    res[9] += vars[1] - scale * d[1];
+    res[10] += vars[2] - scale * d[2];
 
     // Add the constraint reaction forces to the body
     res[0] += lam[0];
     res[1] += lam[1];
     res[2] += lam[2];
 
-    if (fix_rotations){
+    if (fix_rotations) {
       // Equations to arrest rotational DOF
-      res[8+4] += vars[4];
-      res[8+5] += vars[5];
-      res[8+6] += vars[6];
+      res[8 + 4] += vars[4];
+      res[8 + 5] += vars[5];
+      res[8 + 6] += vars[6];
 
       // Apply reaction moments to arrest rotational dof
       res[4] += lam[4];
       res[5] += lam[5];
       res[6] += lam[6];
 
-      //Add dummy constraint eqns
-      res[8+3] += lam[3];
-      res[8+7] += lam[7];
-    }
-    else {
+      // Add dummy constraint eqns
+      res[8 + 3] += lam[3];
+      res[8 + 7] += lam[7];
+    } else {
       // Add the dummy constraints for remaining constraint equations
-      for ( int i = 3; i < 8; i++ ){
-        res[8+i] += lam[i];
+      for (int i = 3; i < 8; i++) {
+        res[8 + i] += lam[i];
       }
     }
   }
@@ -451,42 +432,35 @@ class TACSMotionDriver : public TACSElement {
 */
 class TACSRevoluteDriver : public TACSElement {
  public:
-  TACSRevoluteDriver( TACSGibbsVector *rev,
-                      TacsScalar _omega );
+  TACSRevoluteDriver(TACSGibbsVector *rev, TacsScalar _omega);
   ~TACSRevoluteDriver();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  int getMultiplierIndex(){
-    return 1;
-  }
+  int getMultiplierIndex() { return 1; }
 
   // Setters and getters for the revolute speed of element
   //------------------------------------------------------
-  void setSpeed( TacsScalar _omega ){
-    this->omega = _omega;
-  }
-  TacsScalar getSpeed(){
-    return this->omega;
-  }
+  void setSpeed(TacsScalar _omega) { this->omega = _omega; }
+  TacsScalar getSpeed() { return this->omega; }
 
   int getVarsPerNode();
   int getNumNodes();
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
   // Compute the Jacobian of the governing equations
   // -----------------------------------------------
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar Xpts[], const TacsScalar vars[],
-                    const TacsScalar dvars[], const TacsScalar ddvars[],
-                    TacsScalar res[], TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
  private:
   TacsScalar omega;
@@ -502,35 +476,32 @@ class TACSRevoluteDriver : public TACSElement {
 */
 class TACSFixedConstraint : public TACSElement {
  public:
-  TACSFixedConstraint( TACSRigidBody *_bodyA,
-                       TACSGibbsVector *_point );
+  TACSFixedConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point);
   ~TACSFixedConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
-  int getMultiplierIndex(){
-    return 1;
-  }
+  int getMultiplierIndex() { return 1; }
 
   // Set and retrieve design variable values
   // ---------------------------------------
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // Return the number of displacements and nodes
   // --------------------------------------------
-  int getVarsPerNode(){ return 8; }
+  int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char* getObjectName(){ return elem_name; }
+  const char *getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
-  void addResidual( int elemIndex, double time, const TacsScalar Xpts[],
-                    const TacsScalar vars[], const TacsScalar dvars[],
-                    const TacsScalar ddvars[], TacsScalar res[] );
+  void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[]);
 
  private:
   // Update the local data
@@ -549,4 +520,4 @@ class TACSFixedConstraint : public TACSElement {
   static const char *elem_name;
 };
 
-#endif // TACS_KINEMATIC_CONSTRAINTS_H
+#endif  // TACS_KINEMATIC_CONSTRAINTS_H

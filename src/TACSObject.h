@@ -31,11 +31,12 @@
   references are never stolen.
 */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include "mpi.h"
+
 #include "TacsComplexStep.h"
+#include "mpi.h"
 
 extern MPI_Op TACS_MPI_MIN;
 extern MPI_Op TACS_MPI_MAX;
@@ -148,10 +149,10 @@ class TACSThreadInfo : public TACSObject {
  public:
   static const int TACS_MAX_NUM_THREADS = 16;
 
-  TACSThreadInfo( int _num_threads );
-  ~TACSThreadInfo(){}
+  TACSThreadInfo(int _num_threads);
+  ~TACSThreadInfo() {}
 
-  void setNumThreads( int _num_threads );
+  void setNumThreads(int _num_threads);
   int getNumThreads();
 
  private:

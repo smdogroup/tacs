@@ -19,63 +19,50 @@
 
 class TACSTraction3D : public TACSElement {
  public:
-  TACSTraction3D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis, TacsScalar trac[],
-                  int tractionCoordinateComponent=1 );
-  TACSTraction3D( int _varsPerNode, int _faceIndex,
-                  TACSElementBasis *_basis, 
-                  void (*_getTractionComponents)(int, int, double, const TacsScalar*,
-                                                 const TacsScalar*, TacsScalar*) );
+  TACSTraction3D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
+                 const TacsScalar trac[], int tractionCoordinateComponent = 1);
+  TACSTraction3D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
+                 void (*_getTractionComponents)(int, int, double,
+                                                const TacsScalar *,
+                                                const TacsScalar *,
+                                                TacsScalar *));
   ~TACSTraction3D();
 
   // Get the layout properties of the element
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis* getElementBasis();
+  TACSElementBasis *getElementBasis();
+  int getNumQuadraturePoints();
+  double getQuadratureWeight(int n);
+  double getQuadraturePoint(int n, double pt[]);
+  int getNumElementFaces();
+  int getNumFaceQuadraturePoints(int face);
+  double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
 
   /**
     Add the residual to the provided vector
   */
-  void addResidual( int elemIndex, double time, const TacsScalar *Xpts,
-                    const TacsScalar *vars, const TacsScalar *dvars,
-                    const TacsScalar *ddvars, TacsScalar *res );
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
-  void addJacobian( int elemIndex, double time,
-                    TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
-                    const TacsScalar *Xpts, const TacsScalar *vars,
-                    const TacsScalar *dvars, const TacsScalar *ddvars,
-                    TacsScalar *res, TacsScalar *mat );
-
-  /**
-    Add the derivative of the product of the adjoint variables w.r.t.
-    the material design variables
-  */
-  void addAdjResProduct( int elemIndex, double time, TacsScalar scale,
-                         const TacsScalar psi[], const TacsScalar Xpts[],
-                         const TacsScalar vars[], const TacsScalar dvars[],
-                         const TacsScalar ddvars[],
-                         int dvLen, TacsScalar dvSens[] );
-
-  /**
-    Add the derivative of the product of the adjoint variables and the
-    residuals with respect to the node locations
-  */
-  void addAdjResXptProduct( int elemIndex, double time, TacsScalar scale,
-                            const TacsScalar psi[], const TacsScalar Xpts[],
-                            const TacsScalar vars[], const TacsScalar dvars[],
-                            const TacsScalar ddvars[], TacsScalar fXptSens[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
  private:
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;
   int tractionCoordinateComponent;
-  TacsScalar trac[3*TACSElement3D::MAX_VARS_PER_NODE];
-  void (*getTractionComponents)(int, int, double, const TacsScalar*,
-                                const TacsScalar*, TacsScalar*);
+  TacsScalar trac[3 * TACSElement3D::MAX_VARS_PER_NODE];
+  void (*getTractionComponents)(int, int, double, const TacsScalar *,
+                                const TacsScalar *, TacsScalar *);
 };
 
-#endif // TACS_TRACTION_3D_H
+#endif  // TACS_TRACTION_3D_H

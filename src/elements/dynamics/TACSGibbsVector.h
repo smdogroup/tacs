@@ -25,25 +25,25 @@
 */
 class TACSGibbsVector : public TACSObject {
  public:
-  TACSGibbsVector( const TacsScalar _x[] );
-  TACSGibbsVector( const TacsScalar _x[], const int _xDV[] );
-  TACSGibbsVector( TacsScalar x1, TacsScalar x2, TacsScalar x3,
-                   int n1=-1, int n2=-1, int n3=-1 );
-  ~TACSGibbsVector(){}
+  TACSGibbsVector(const TacsScalar _x[]);
+  TACSGibbsVector(const TacsScalar _x[], const int _xDV[]);
+  TACSGibbsVector(TacsScalar x1, TacsScalar x2, TacsScalar x3, int n1 = -1,
+                  int n2 = -1, int n3 = -1);
+  ~TACSGibbsVector() {}
 
   // Get the coponents of the vector
-  void getVector( const TacsScalar **_x );
+  void getVector(const TacsScalar **_x);
 
   // Set the design variable numbers
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
-  int getDesignVarRange( int elemIndex, int dvLen, TacsScalar lb[],
-                         TacsScalar ub[] );
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
 
   // Take the derivative of the product of the adjoint variables and the vector
-  void addPointAdjResProduct( TacsScalar scale, const TacsScalar psi[],
-                              int dvLen, TacsScalar dfdx[] );
+  void addPointAdjResProduct(TacsScalar scale, const TacsScalar psi[],
+                             int dvLen, TacsScalar dfdx[]);
 
  private:
   TacsScalar x[3];
@@ -67,7 +67,7 @@ class TACSGibbsVector : public TACSObject {
 
   Note: The design variable numbers are initialized to -1
 */
-inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[] ){
+inline TACSGibbsVector::TACSGibbsVector(const TacsScalar _x[]) {
   x[0] = _x[0];
   x[1] = _x[1];
   x[2] = _x[2];
@@ -85,10 +85,8 @@ inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[] ){
   x1, x2, x3:   the 3 coordinates
   n1, n2, n3:   the design variable numbers
 */
-inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1,
-                                         TacsScalar x2,
-                                         TacsScalar x3,
-                                         int n1, int n2, int n3 ){
+inline TACSGibbsVector::TACSGibbsVector(TacsScalar x1, TacsScalar x2,
+                                        TacsScalar x3, int n1, int n2, int n3) {
   x[0] = x1;
   x[1] = x2;
   x[2] = x3;
@@ -104,8 +102,8 @@ inline TACSGibbsVector::TACSGibbsVector( TacsScalar x1,
   x:    the coordinate of the point
   xDV:  the design variable numbers of the point
 */
-inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[],
-                                         const int _xDV[] ){
+inline TACSGibbsVector::TACSGibbsVector(const TacsScalar _x[],
+                                        const int _xDV[]) {
   x[0] = _x[0];
   x[1] = _x[1];
   x[2] = _x[2];
@@ -117,9 +115,7 @@ inline TACSGibbsVector::TACSGibbsVector( const TacsScalar _x[],
 /*
   Retrieve the coordinates of the point
 */
-inline void TACSGibbsVector::getVector( const TacsScalar **_x ){
-  *_x = x;
-}
+inline void TACSGibbsVector::getVector(const TacsScalar **_x) { *_x = x; }
 
 /*
   Get the design variable numbers associated with this object
@@ -128,19 +124,18 @@ inline void TACSGibbsVector::getVector( const TacsScalar **_x ){
   dvs:    the design variable values
   numDVs: the number of design variable values in the array
 */
-inline int TACSGibbsVector::getDesignVarNums( int elemIndex,
-                                              int dvLen,
-                                              int dvNums[] ){
+inline int TACSGibbsVector::getDesignVarNums(int elemIndex, int dvLen,
+                                             int dvNums[]) {
   int count = 0;
-  if (xDV[0] >= 0 && (dvNums && count < dvLen)){
+  if (xDV[0] >= 0 && (dvNums && count < dvLen)) {
     dvNums[count] = xDV[0];
     count++;
   }
-  if (xDV[1] >= 0 && (dvNums && count < dvLen)){
+  if (xDV[1] >= 0 && (dvNums && count < dvLen)) {
     dvNums[count] = xDV[1];
     count++;
   }
-  if (xDV[2] >= 0 && (dvNums && count < dvLen)){
+  if (xDV[2] >= 0 && (dvNums && count < dvLen)) {
     dvNums[count] = xDV[2];
     count++;
   }
@@ -154,19 +149,18 @@ inline int TACSGibbsVector::getDesignVarNums( int elemIndex,
   dvs:    the design variable values
   numDVs: the number of design variable values in the array
 */
-inline int TACSGibbsVector::setDesignVars( int elemIndex,
-                                           int dvLen,
-                                           const TacsScalar *dvs ){
+inline int TACSGibbsVector::setDesignVars(int elemIndex, int dvLen,
+                                          const TacsScalar *dvs) {
   int count = 0;
-  if (xDV[0] >= 0){
+  if (xDV[0] >= 0) {
     x[0] = dvs[count];
     count++;
   }
-  if (xDV[1] >= 0){
+  if (xDV[1] >= 0) {
     x[1] = dvs[count];
     count++;
   }
-  if (xDV[2] >= 0){
+  if (xDV[2] >= 0) {
     x[2] = dvs[count];
     count++;
   }
@@ -182,19 +176,18 @@ inline int TACSGibbsVector::setDesignVars( int elemIndex,
   output:
   dvs:     the design variable values retrieved from the object
 */
-inline int TACSGibbsVector::getDesignVars( int elemIndex,
-                                           int dvLen,
-                                           TacsScalar *dvs ){
+inline int TACSGibbsVector::getDesignVars(int elemIndex, int dvLen,
+                                          TacsScalar *dvs) {
   int count = 0;
-  if (xDV[0] >= 0){
+  if (xDV[0] >= 0) {
     dvs[count] = x[0];
     count++;
   }
-  if (xDV[1] >= 0){
+  if (xDV[1] >= 0) {
     dvs[count] = x[1];
     count++;
   }
-  if (xDV[2] >= 0){
+  if (xDV[2] >= 0) {
     dvs[count] = x[2];
     count++;
   }
@@ -204,22 +197,21 @@ inline int TACSGibbsVector::getDesignVars( int elemIndex,
 /*
   Retrieve the design variable range from the object
 */
-inline int TACSGibbsVector::getDesignVarRange( int elemIndex,
-                                               int dvLen,
-                                               TacsScalar lb[],
-                                               TacsScalar ub[] ){
+inline int TACSGibbsVector::getDesignVarRange(int elemIndex, int dvLen,
+                                              TacsScalar lb[],
+                                              TacsScalar ub[]) {
   int count = 0;
-  if (xDV[0] >= 0){
+  if (xDV[0] >= 0) {
     lb[count] = -1e30;
     ub[count] = 1e30;
     count++;
   }
-  if (xDV[1] >= 0){
+  if (xDV[1] >= 0) {
     lb[count] = -1e30;
     ub[count] = 1e30;
     count++;
   }
-  if (xDV[2] >= 0){
+  if (xDV[2] >= 0) {
     lb[count] = -1e30;
     ub[count] = 1e30;
     count++;
@@ -238,23 +230,23 @@ inline int TACSGibbsVector::getDesignVarRange( int elemIndex,
   input/output:
   dfdx: the array of derivatives
 */
-inline void TACSGibbsVector::addPointAdjResProduct( TacsScalar scale,
-                                                    const TacsScalar psi[],
-                                                    int dvLen,
-                                                    TacsScalar dfdx[] ){
+inline void TACSGibbsVector::addPointAdjResProduct(TacsScalar scale,
+                                                   const TacsScalar psi[],
+                                                   int dvLen,
+                                                   TacsScalar dfdx[]) {
   int count = 0;
-  if (xDV[0] >= 0){
-    dfdx[count] += scale*psi[0];
+  if (xDV[0] >= 0) {
+    dfdx[count] += scale * psi[0];
     count++;
   }
-  if (xDV[1] >= 0){
-    dfdx[count] += scale*psi[1];
+  if (xDV[1] >= 0) {
+    dfdx[count] += scale * psi[1];
     count++;
   }
-  if (xDV[2] >= 0){
-    dfdx[count] += scale*psi[2];
+  if (xDV[2] >= 0) {
+    dfdx[count] += scale * psi[2];
     count++;
   }
 }
 
-#endif // TACS_GIBBS_VECTOR_H
+#endif  // TACS_GIBBS_VECTOR_H

@@ -10,7 +10,10 @@
 #
 #  http://www.apache.org/licenses/LICENSE-2.0
 
-# distutils: language=c++
+#distutils: language=c++
+
+import warnings
+import difflib
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
@@ -23,15 +26,18 @@ cimport numpy as np
 # Ensure that numpy is initialized
 np.import_array()
 
+# Import pynastran
+import pyNastran.bdf.cards as nastran_cards
+
 # Import the definition required for const strings
 from libc.string cimport const_char
+from libc.stdlib cimport malloc, free
 
 # Import C methods for python
 from cpython cimport PyObject, Py_INCREF
 
 # Import the definitions
-from TACS cimport *
-from constitutive cimport *
+from tacs.TACS cimport *
 
 # Include the definitions
 include "TacsDefs.pxi"
@@ -41,45 +47,492 @@ cdef extern from "mpi-compat.h":
     pass
 
 cdef class MaterialProperties:
+    """
+    This class stores the mechanical and thermal material properties for
+    isotropic and anisotropic materials.
+
+    The goal of this class is to store a set of material properties
+    that can be queried by constitutive classes for beams, shells,
+    plane stress and solid elements. The minimum set of properties
+    consists of isotropic mechanical properties, with zero thermal
+    expansion.
+
+    There are several different ways of specifying material
+    properties. The following describes several of the possible
+    ways and the appropriate situations:
+
+        'rho' + 'specific_heat' + 'kappa':
+
+            Specifies the density, specific heat, and thermal conductivity for an isotropic material.
+            This is appropriate for 2D or 3D heat conduction analysis.
+
+        'rho' + 'specific_heat' + 'kappa1' + 'kappa2':
+
+            Specifies the density, specific heat, and thermal conductivity for an orthotropic material.
+            This is appropriate for 2D heat conduction analysis.
+
+        'rho' + 'specific_heat' + 'kappa1' + 'kappa2' + 'kappa3':
+
+            Specifies the density, specific heat, and thermal conductivity for an orthotropic material.
+            This is appropriate for 3D heat conduction analysis.
+
+        'rho' + 'E' + 'nu' + 'ys':
+
+            Specifies the density, Youngs' modulus, Poisson's ratio, and yield strength for an isotropic material.
+            This is appropriate for 2D or 3D elastic structural analysis.
+
+        'rho' + 'E1' + 'E2' + 'nu12' + 'G12' + 'T1' + 'T2' + 'C1' + 'C2' + 'S12':
+
+            Specifies the density, Youngs' moduli, Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 2D elastic structural analysis.
+
+        'rho' + 'E1' + 'E2' + 'E3' + 'nu12' + 'nu13' + 'nu23' + 'G12' + 'G13' + 'G23'
+        + 'T1' + 'T2' + 'T3' + 'C1' + 'C2' + 'C3' + 'S12' + 'S13' + 'S23':
+
+            Specifies the density, Youngs' moduli, Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 3D elastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa' + 'alpha' + 'E' + 'nu' + 'ys':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' modulus,
+            Poisson's ratio, and yield strength for an isotropic material.
+            This is appropriate for 2D or 3D thermoelastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa1' + 'kappa2' + 'alpha1' + 'alpha2'
+        + 'E1' + 'E2' + 'nu12' + 'G12' + 'T1' + 'T2' + 'C1' + 'C2' + 'S12':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' moduli,
+            Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 2D thermoelastic structural analysis.
+
+        'rho'  + 'specific_heat' + 'kappa1' + 'kappa2' + 'kappa3' + 'alpha1' + 'alpha2' + 'alpha3'
+        + 'E1' + 'E2' + 'E3' + 'nu12' + 'nu13' + 'nu23' + 'G12' + 'G13' + 'G23'
+        + 'T1' + 'T2' + 'T3' + 'C1' + 'C2' + 'C3' + 'S12' + 'S13' + 'S23':
+
+            Specifies the density, specific heat, thermal conductivity, thermal expansion, Youngs' moduli,
+            Poisson's ratios, and strength values for an orthotropic material.
+            This is appropriate for 3D thermoelastic structural analysis.
+
+    All parameters are optional and specified using a keyword arg format.
+
+    Args:
+        rho (float or complex, optional): The material density (keyword argument).
+
+        specific_heat (float or complex, optional): The material specific heat (keyword argument).
+
+        kappa (float or complex, optional): The material isotropic thermal conductivity (keyword argument).
+        kappa1 (float or complex, optional): The material orthotropic thermal conductivity
+            in the '1' direction (keyword argument).
+        kappa2 (float or complex, optional): The material orthotropic thermal conductivity
+           in the '2' direction (keyword argument).
+        kappa3 (float or complex, optional): The material orthotropic thermal conductivity
+           in the '3' direction (keyword argument).
+
+        alpha (float or complex, optional): The material isotropic thermal expansion coeeficient (keyword argument).
+        alpha1 (float or complex): The material orthotropic thermal expansion coefficient in the '1' direction
+            (keyword argument).
+        alpha2 (float or complex, optional): The material orthotropic thermal expansion coefficient in the '2' direction
+            (keyword argument).
+        alpha3 (float or complex, optional): The material orthotropic thermal expansion coefficient in the '3' direction
+            (keyword argument).
+
+        E (float or complex, optional): The material isotropic Youngs' modulus (keyword argument).
+        E1 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '1' direction (keyword argument).
+        E2 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '2' direction (keyword argument).
+        E3 (float or complex, optional): The material orthotropic Youngs' modulus
+            in the '3' direction (keyword argument).
+
+        nu (float or complex, optional): The material isotropic Poisson's ratio (keyword argument).
+        nu12 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '1-2' plane (keyword argument).
+        nu13 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '1-3' plane (keyword argument).
+        nu23 (float or complex, optional): The material orthotropic Poisson's ratio
+            in the '2-3' plane (keyword argument).
+
+        G (float or complex, optional): The material isotropic shear modulus (keyword argument).
+        G12 (float or complex, optional): The material orthotropic shear modulus in the '1-2' plane (keyword argument).
+        G13 (float or complex, optional): The material orthotropic shear modulus in the '1-3' plane (keyword argument).
+        G23 (float or complex, optional): The material orthotropic shear modulus in the '2-3' plane (keyword argument).
+
+        ys (float or complex, optional): The material isotropic yield strength (keyword argument).
+        T1 (float or complex, optional): The material orthotropic tension strength
+            in the '1' direction (keyword argument).
+        T2 (float or complex, optional): The material orthotropic tension strength
+            in the '2' direction (keyword argument).
+        T3 (float or complex, optional): The material orthotropic tension strength
+            in the '3' direction (keyword argument).
+        C1 (float or complex, optional): The material orthotropic compression strength
+            in the '1' direction (keyword argument).
+        C2 (float or complex, optional): The material orthotropic compression strength
+            in the '2' direction (keyword argument).
+        C3 (float or complex, optional): The material orthotropic compression strength
+            in the '3' direction (keyword argument).
+        S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
+        S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
+        S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
+    """
     def __cinit__(self, **kwargs):
+        # Set the density and specific heat value
         cdef TacsScalar rho = 2700.0
         cdef TacsScalar specific_heat = 921.0
+
+        # Stiffness properties
         cdef TacsScalar E = 70e9
+        cdef TacsScalar E1 = 70e9
+        cdef TacsScalar E2 = 70e9
+        cdef TacsScalar E3 = 70e9
+
         cdef TacsScalar nu = 0.3
+        cdef TacsScalar nu12 = 0.3
+        cdef TacsScalar nu13 = 0.3
+        cdef TacsScalar nu23 = 0.3
+
+        cdef TacsScalar G12 = 0.5*70e9/(1.0 + 0.3)
+        cdef TacsScalar G13 = 0.5*70e9/(1.0 + 0.3)
+        cdef TacsScalar G23 = 0.5*70e9/(1.0 + 0.3)
+
+        # Strength properties
         cdef TacsScalar ys = 270e6
+        cdef TacsScalar T1 = 0.0
+        cdef TacsScalar C1 = 0.0
+        cdef TacsScalar T2 = 0.0
+        cdef TacsScalar C2 = 0.0
+        cdef TacsScalar T3 = 0.0
+        cdef TacsScalar C3 = 0.0
+        cdef TacsScalar S12 = 0.0
+        cdef TacsScalar S13 = 0.0
+        cdef TacsScalar S23 = 0.0
+
+        # Set the thermal coefficient of expansion
         cdef TacsScalar alpha = 24e-6
+        cdef TacsScalar alpha1 = 24e-6
+        cdef TacsScalar alpha2 = 24e-6
+        cdef TacsScalar alpha3 = 24e-6
+
+        # Set the thermal conductivity
         cdef TacsScalar kappa = 230.0
+        cdef TacsScalar kappa1 = 230.0
+        cdef TacsScalar kappa2 = 230.0
+        cdef TacsScalar kappa3 = 230.0
+
+        ISOTROPIC_KEYS = ["rho", "E", "nu", "G", "ys", "alpha", "specific_heat", "kappa"]
+        ORTHOTROPIC_KEYS = ["E1", "E2", "E3",
+                            "nu12", "nu13", "nu23",
+                            "G12", "G13", "G23",
+                            "T1", "T2", "T3",
+                            "C1", "C2", "C3",
+                            "S12", "S13", "S23",
+                            "Xt", "Yt", "Xc", "Yc", "S",
+                            "alpha1", "alpha2", "alpha3",
+                            "kappa1", "kappa2", "kappa3"]
+        ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
+
+        # Check for any invalid/misspelled inputs
+        for input_key in kwargs:
+            if input_key not in ALL_KEYS:
+                guess = difflib.get_close_matches(input_key, ALL_KEYS, n=1, cutoff=0.0)[0]
+                raise ValueError(f"{input_key} is not a valid material property. Perhaps you meant {guess}? \n"
+                                 "Acceptable arguments are: \n" +
+                                 ", ".join(ALL_KEYS),)
+
+        # Check if any input provided in kwargs was orthotropic
+        if any(input_key in ORTHOTROPIC_KEYS for input_key in kwargs):
+            is_orthotropic = True
+        else:
+            is_orthotropic = False
 
         if 'rho' in kwargs:
             rho = kwargs['rho']
         if 'specific_heat' in kwargs:
             specific_heat = kwargs['specific_heat']
+
+        # Set the isotropic properties if they are defined
         if 'E' in kwargs:
             E = kwargs['E']
+            E1 = E
+            E2 = E
+            E3 = E
         if 'nu' in kwargs:
             nu = kwargs['nu']
+            nu12 = nu
+            nu23 = nu
+            nu13 = nu
         if 'ys' in kwargs:
             ys = kwargs['ys']
         if 'alpha' in kwargs:
             alpha = kwargs['alpha']
+            alpha1 = alpha
+            alpha2 = alpha
+            alpha3 = alpha
         if 'kappa' in kwargs:
             kappa = kwargs['kappa']
+            kappa1 = kappa
+            kappa2 = kappa
+            kappa3 = kappa
 
-        self.ptr = new TACSMaterialProperties(rho, specific_heat,
-                                              E, nu, ys, alpha, kappa)
+        # Stiffness properties
+        if 'E1' in kwargs:
+            E1 = kwargs['E1']
+        if 'E2' in kwargs:
+            E2 = kwargs['E2']
+        if 'E3' in kwargs:
+            E3 = kwargs['E3']
+        if 'nu12' in kwargs:
+            nu12 = kwargs['nu12']
+        if 'nu13' in kwargs:
+            nu13 = kwargs['nu13']
+        if 'nu23' in kwargs:
+            nu23 = kwargs['nu23']
+        if 'G12' in kwargs:
+            G12 = kwargs['G12']
+        if 'G13' in kwargs:
+            G13 = kwargs['G13']
+        if 'G23' in kwargs:
+            G23 = kwargs['G23']
+
+        # Strength properties
+        if 'T1' in kwargs:
+            T1 = kwargs['T1']
+        if 'Xt' in kwargs:
+            T1 = kwargs['Xt']
+        if 'C1' in kwargs:
+            C1 = kwargs['C1']
+        if 'Xc' in kwargs:
+            C1 = kwargs['Xc']
+
+        if 'T2' in kwargs:
+            T2 = kwargs['T2']
+        if 'Yt' in kwargs:
+            T2 = kwargs['Yt']
+        if 'C2' in kwargs:
+            C2 = kwargs['C2']
+        if 'Yc' in kwargs:
+            C2 = kwargs['Yc']
+
+        if 'T3' in kwargs:
+            T3 = kwargs['T3']
+        if 'C3' in kwargs:
+            C3 = kwargs['C3']
+
+        if 'S12' in kwargs:
+            S12 = kwargs['S12']
+        if 'S' in kwargs:
+            S12 = kwargs['S']
+        if 'S13' in kwargs:
+            S13 = kwargs['S13']
+        if 'S23' in kwargs:
+            S23 = kwargs['S23']
+
+        # Set the thermal coefficient of expansion
+        if 'alpha1' in kwargs:
+            alpha1 = kwargs['alpha1']
+        if 'alpha2' in kwargs:
+            alpha2 = kwargs['alpha2']
+        if 'alpha3' in kwargs:
+            alpha3 = kwargs['alpha3']
+
+        # Set the thermal conductivity
+        if 'kappa1' in kwargs:
+            kappa1 = kwargs['kappa1']
+        if 'kappa2' in kwargs:
+            kappa2 = kwargs['kappa2']
+        if 'kappa3' in kwargs:
+            kappa3 = kwargs['kappa3']
+
+        if is_orthotropic:
+            self.ptr = new TACSMaterialProperties(rho, specific_heat, E1, E2, E3,
+                                                  nu12, nu13, nu23, G12, G13, G23,
+                                                  T1, C1, T2, C2, T3, C3, S12, S13, S23,
+                                                  alpha1, alpha2, alpha3,
+                                                  kappa1, kappa2, kappa3)
+        else:
+            self.ptr = new TACSMaterialProperties(rho, specific_heat,
+                                                  E, nu, ys, alpha, kappa)
         self.ptr.incref()
+        self.nastranID = 0
 
     def __dealloc__(self):
         if self.ptr:
             self.ptr.decref()
 
+    def setNastranID(self, id):
+        """
+        Set material ID to be used in NASTRAN card for this object.
+        Should be set before `generateBDFCard` is called.
+
+        Args:
+            id (int): ID number to associate with this object's NASTRAN card
+        """
+        self.nastranID = id
+
+    def getNastranID(self):
+        """
+        Get material ID assigned in NASTRAN card for this object.
+
+        Returns:
+            id (int): ID number associated with this object's NASTRAN card
+        """
+        return self.nastranID
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.materials.MAT1 or pyNastran.bdf.cards.materials.MAT8):
+                pyNastran card holding material information
+        """
+        cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
+        cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar alpha1, alpha2, alpha3
+        cdef TacsScalar kappa1, kappa2, kappa3
+        cdef TacsScalar rho;
+
+        rho = self.ptr.getDensity()
+        self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
+                                       &S12, &S13, &S23)
+
+        if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
+            self.ptr.getIsotropicProperties(&E1, &nu12)
+            mat = nastran_cards.materials.MAT1(self.nastranID, np.real(E1), None, np.real(nu12), np.real(rho),
+                                               St=np.real(T1))
+        else:
+            self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
+            mat = nastran_cards.materials.MAT8(self.nastranID, np.real(E1), np.real(E2), np.real(nu12), np.real(G12),
+                                               np.real(G13), np.real(G23), np.real(rho),
+                                               Xt=np.real(T1), Xc=np.real(C1), Yt=np.real(T2), Yc=np.real(C2),
+                                               S=np.real(S12))
+
+        return mat
+
+    def getMaterialProperties(self):
+        """
+        Return a dictionary of the material properties
+
+        Returns:
+            mat (dict): Dictionary holding material property information
+        """
+
+        cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
+        cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar alpha1, alpha2, alpha3
+        cdef TacsScalar kappa1, kappa2, kappa3
+
+        rho = self.ptr.getDensity()
+        self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
+        self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
+                                       &S12, &S13, &S23)
+        self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
+        self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
+
+        mat = {}
+        mat['rho'] = rho
+        mat['E1'] = E1
+        mat['E2'] = E2
+        mat['E3'] = E3
+        mat['nu12'] = nu12
+        mat['nu13'] = nu13
+        mat['nu23'] = nu23
+        mat['G12'] = G12
+        mat['G13'] = G13
+        mat['G23'] = G23
+
+        mat['T1'] = T1
+        mat['C1'] = C1
+        mat['T2'] = T2
+        mat['C2'] = C2
+        mat['T3'] = T3
+        mat['C3'] = C3
+        mat['S12'] = S12
+        mat['S13'] = S13
+        mat['S23'] = S23
+
+        mat['alpha1'] = alpha1
+        mat['alpha2'] = alpha2
+        mat['alpha3'] = alpha3
+
+        mat['kappa1'] = kappa1
+        mat['kappa2'] = kappa2
+        mat['kappa3'] = kappa3
+
+        return mat
+
     def setDensity(self, TacsScalar rho):
+        """
+        Set the density property values
+
+        Args:
+            rho (float or complex): The material density
+        """
         self.ptr.setDensity(rho)
 
     def setSpecificHeat(self, TacsScalar specific_heat):
+        """
+        Set the density property values
+
+        Args:
+            rho (float or complex): The material specific heat
+        """
         self.ptr.setSpecificHeat(specific_heat)
 
+cdef class OrthotropicPly:
+    """
+      The following class holds the material stiffness and strength
+      properties for an orthotropic ply. This class is used by several
+      constitutive classes within TACS.
+
+      The interaction coefficient for the Tsai-Wu failure criterion is set
+      to zero by default. If a value of C, the failure stress under
+      combined in-plane loading, is supplied, the interaction coefficient
+      is determined. Be careful - the value can easily fall outside
+      acceptable bounds - these are tested during initialization.
+
+      Args:
+          ply_thickness (float or complex): The ply thickness.
+          props (MaterialProperties): The ply material property.
+          max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
+            Defaults to False (i.e. use max strength).
+    """
+    cdef TACSOrthotropicPly *ptr
+    cdef MaterialProperties props
+    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
+                  max_strain_criterion=False):
+        self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
+        self.ptr.incref()
+        if max_strain_criterion:
+            self.ptr.setUseMaxStrainCriterion()
+        else:
+            self.ptr.setUseTsaiWuCriterion()
+        self.props = props
+
+    def __dealloc__(self):
+        self.ptr.decref()
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties class associated with this object
+
+        Returns:
+            prop (tacs.constitutive.MaterialProperties): TACS material property class associated with object.
+        """
+        return self.props
+
 cdef class PlaneStressConstitutive(Constitutive):
+    """
+    This is the base class for the plane stress constitutive objects.
+    All objects performing plane stress analysis should utilize this class.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
@@ -107,7 +560,78 @@ cdef class PlaneStressConstitutive(Constitutive):
             self.ptr = NULL
             self.cptr = NULL
 
+cdef class PhaseChangeMaterialConstitutive(Constitutive):
+    """
+    This is the base class for the phase change material constitutive objects.
+
+    Args:
+        solid_props (MaterialProperties): The material property of the solid phase.
+        liquid_props (MaterialProperties): The material property of the liquid phase.
+        lh (float or complex): The specific latent heat of the material.
+        mt (float or complex): The melting temperature of the material.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *solid_props = NULL
+        cdef TACSMaterialProperties *liquid_props = NULL
+        cdef TacsScalar lh = 0.0
+        cdef TacsScalar Tm = 0.0
+        cdef TacsScalar dT = 10.0
+        cdef TacsScalar t = 1.0
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 2:
+            solid_props = (<MaterialProperties>args[0]).ptr
+            liquid_props = (<MaterialProperties>args[1]).ptr
+            self.props = [args[0], args[1]]
+        if 'lh' in kwargs:
+            lh = kwargs['lh']
+        if 'Tm' in kwargs:
+            Tm = kwargs['Tm']
+        if 'dT' in kwargs:
+            dT = kwargs['dT']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+
+        if solid_props is not NULL:
+            self.cptr = new TACSPhaseChangeMaterialConstitutive(solid_props,
+                                                                liquid_props,
+                                                                lh, Tm, dT, t,
+                                                                tNum, tlb, tub)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+            self.props = None
+
 cdef class SolidConstitutive(Constitutive):
+    """
+    This is the base class for the solid constitutive objects.
+    All objects performing solid elastic analysis should utilize this class.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material "thickness" (keyword argument).
+            Weighting factor used for topology optimization. 0.0 corresponds to void,
+            1.0 corresponds material fully present, values in between are intermediate. Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to "thickness" (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): "Thickness" variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): "Thickness" variable upper bound (keyword argument). Defaults to 10.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
@@ -117,6 +641,7 @@ cdef class SolidConstitutive(Constitutive):
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
         if 't' in kwargs:
             t = kwargs['t']
         if 'tNum' in kwargs:
@@ -134,22 +659,1487 @@ cdef class SolidConstitutive(Constitutive):
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
 
-    def getMaterialProperties(self):
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.solid.PSOLID): pyNastran card holding property information
+        """
         if self.cptr:
-            return _init_MaterialProperties(self.cptr.getMaterialProperties())
+            mat_id = self.props.getNastranID()
+            con = nastran_cards.properties.solid.PSOLID(self.nastranID, mat_id)
+            return con
         return None
 
 cdef class ShellConstitutive(Constitutive):
+    """
+    This is the base class for the shell constitutive objects.
+    All objects performing shell elastic analysis should utilize this class.
+    """
+
+    def setDrillingRegularization(self, double kpenalty=10.0):
+        """
+        Update regularization parameter used to stiffen shell in drilling rotation dof.
+
+        Args:
+            kpenalty (float): Drilling regularization parameter. Defaults to 10.0.
+        """
+        if self.cptr:
+            self.cptr.setDrillingRegularization(kpenalty)
+
+cdef class IsoShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    isotropic first-order shear deformation theory shell type element.
+
+    Args:
+        props (MaterialProperties): The material property.
+        t (float or complex, optional): The material thickness (keyword argument). Defaults to 1.0.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
+        tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+    """
     def __cinit__(self, *args, **kwargs):
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar tOff = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+        if 'tOffset' in kwargs:
+            tOff = kwargs['tOffset']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
+                                                     tlb, tub, tOff)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+            self.props = None
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PSHELL): pyNastran card holding property information
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int index = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, np.real(t), mid2=mat_id, mid3=mat_id)
+        return con
+
+
+cdef class CompositeShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    composite laminate first-order shear deformation theory (FSDT) shell type element.
+
+    Args:
+       ply_list (list[OrthotropicPly]): List of ply properties in layup.
+       ply_thicknesses (numpy.ndarray[float or complex]): Array of ply thicknesses in layup.
+       ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
+       kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
+       tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+    """
+    def __cinit__(self, ply_list,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_thicknesses,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
+                  TacsScalar kcorr=5.0/6.0,
+                  TacsScalar tOffset=0.0):
+
+        num_plies = len(ply_list)
+        if len(ply_thicknesses) != num_plies:
+            raise ValueError('Ply thickness array must match length of ply list')
+        if len(ply_angles) != num_plies:
+            raise ValueError('Ply angle array must match length of ply list')
+
+        # Allocate the array of TACSOrthotropicPly pointers
+        cdef TACSOrthotropicPly **plys
+        plys = <TACSOrthotropicPly**>malloc(num_plies*sizeof(TACSOrthotropicPly*))
+        if plys is NULL:
+            raise MemoryError()
+
+        for i in range(num_plies):
+            plys[i] = (<OrthotropicPly>ply_list[i]).ptr
+
+        self.cptr = new TACSCompositeShellConstitutive(num_plies, plys,
+                                                       <TacsScalar*>ply_thicknesses.data,
+                                                       <TacsScalar*>ply_angles.data, kcorr, tOffset)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+        # Free the allocated array
+        free(plys)
+
+        self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSCompositeShellConstitutive* comp_ptr = <TACSCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_thicknesses = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        comp_ptr.getPlyThicknesses(<TacsScalar*>ply_thicknesses.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        # Calculate distance from ref plane to bottom ply
+        lam_thickness = sum(ply_thicknesses)
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * lam_thickness
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    z0=np.real(z0))
+        return prop
+
+cdef class StiffenedShellConstitutive(ShellConstitutive):
+    """
+    This is a base class for both the BladeStiffenedShellConstitutive and the
+    GPBladeStiffenedShellConstitutive classes
+    """
+
+    def setFailureModes(
+        self,
+        includePanelMaterialFailure=None,
+        includeStiffenerMaterialFailure=None,
+        includeLocalBuckling=None,
+        includeGlobalBuckling=None,
+        includeStiffenerColumnBuckling=None,
+        includeStiffenerCrippling=None,
+    ):
+        """
+        Turn on or off each failure mode in the KS failure index computation.
+        If any of the entries are None, they are not modified and will be included in the failure index.
+
+        Parameters
+        ----------
+        includePanelMaterialFailure : bool or None
+            whether to include panel material / panel stress failure in the failure index
+        includeStiffenerMaterialFailure : bool or None
+            whether to include stiffener material / stiffener stress failure in the failure index
+        includeLocalBuckling : bool or None
+            whether to include local buckling (in between stiffeners) in the failure index
+        includeGlobalBuckling : bool or None
+            whether to include global buckling (modes for the full stiffened panel) in the failure index
+        includeStiffenerColumnBuckling : bool or None
+            whether to include column buckling failure in the failure index
+        includeStiffenerCrippling : bool or None
+            whether to include stiffener crippling failure in the failure index
+        """
+        if self.base_ptr:
+            if includePanelMaterialFailure is not None:
+                self.base_ptr.setIncludePanelMaterialFailure(includePanelMaterialFailure)
+            if includeStiffenerMaterialFailure is not None:
+                self.base_ptr.setIncludeStiffenerMaterialFailure(includeStiffenerMaterialFailure)
+            if includeGlobalBuckling is not None:
+                self.base_ptr.setIncludeGlobalBuckling(includeGlobalBuckling)
+            if includeLocalBuckling is not None:
+                self.base_ptr.setIncludeLocalBuckling(includeLocalBuckling)
+            if includeStiffenerColumnBuckling is not None:
+                self.base_ptr.setIncludeStiffenerColumnBuckling(includeStiffenerColumnBuckling)
+            if includeStiffenerCrippling is not None:
+                self.base_ptr.setIncludeStiffenerCrippling(includeStiffenerCrippling)
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.base_ptr:
+            self.base_ptr.setKSWeight(ksWeight)
+
+    def setStiffenerPitchBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener pitch design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+        if self.base_ptr:
+            self.base_ptr.setStiffenerPitchBounds(lowerBound, upperBound)
+
+    def setStiffenerHeightBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener height design variable
+
+        The default bounds are 1e-3 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setStiffenerHeightBounds(lowerBound, upperBound)
+
+    def setStiffenerThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the stiffener thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setStiffenerThicknessBounds(lowerBound, upperBound)
+
+    def setPanelThicknessBounds(self, TacsScalar lowerBound, TacsScalar upperBound):
+        """Set the lower and upper bounds for the panel thickness design variable
+
+        The default bounds are 1e-4 and 1e20
+
+        Parameters
+        ----------
+        lowerBound : float or complex
+            Lower bound
+        upperBound : float or complex
+            Upper bound
+        """
+
+        if self.base_ptr:
+            self.base_ptr.setPanelThicknessBounds(lowerBound, upperBound)
+
+    def setStiffenerPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the stiffener ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of stiffener plies
+        """
+
+        if self.base_ptr:
+            if len(lowerBound) != self.base_ptr.getNumStiffenerPlies():
+                raise ValueError('lowerBound must have length numStiffenerPlies')
+            if len(upperBound) != self.base_ptr.getNumStiffenerPlies():
+                raise ValueError('upperBound must have length numStiffenerPlies')
+            self.base_ptr.setStiffenerPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+    def setPanelPlyFractionBounds(
+            self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] lowerBound,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] upperBound
+        ):
+        """Set the lower and upper bounds for the panel ply fraction design variables
+
+        The default bounds are 0 and 1
+
+        Parameters
+        ----------
+        lowerBound : numpy.ndarray[float or complex]
+            Lower bound
+        upperBound : numpy.ndarray[float or complex]
+            Upper bounds
+
+        Raises
+        ------
+        ValueError
+            Raises error if the length of lowerBound or upperBound is not equal to the number of panel plies
+        """
+
+        if self.base_ptr:
+            if len(lowerBound) != self.base_ptr.getNumPanelPlies():
+                raise ValueError('lowerBound must have length numPanelPlies')
+            if len(upperBound) != self.base_ptr.getNumPanelPlies():
+                raise ValueError('upperBound must have length numPanelPlies')
+            self.base_ptr.setPanelPlyFractionBounds(<TacsScalar*>lowerBound.data, <TacsScalar*>upperBound.data)
+
+cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    """This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled.
+    Instead, their stiffness is "smeared" across the shell.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    panelLength : float or complex
+        Panel length DV value
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    panelThick : float or complex
+        Panel thickness DV value
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
+    panelLengthNum : int, optional
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPitchNum : int, optional
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelThickNum : int, optional
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelPlyFracNums : numpy.ndarray[np.intc], optional
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    stiffenerHeightNum : int, optional
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerThickNum : int, optional
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
+    """
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar panelLength,
+        TacsScalar stiffenerPitch,
+        TacsScalar panelThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        TacsScalar stiffenerHeight,
+        TacsScalar stiffenerThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
+        int panelLengthNum = -1,
+        int stiffenerPitchNum = -1,
+        int panelThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
+        int stiffenerHeightNum = -1,
+        int stiffenerThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
+        ):
+
+        numPanelPlies = len(panelPlyAngles)
+        numStiffenerPlies = len(stiffenerPlyAngles)
+
+        if panelPlyFracNums is None:
+            panelPlyFracNums = -np.ones([numPanelPlies], dtype=np.intc)
+        if stiffenerPlyFracNums is None:
+            stiffenerPlyFracNums = -np.ones([numStiffenerPlies], dtype=np.intc)
+
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have same length as panelPlyAngles')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have same length as panelPlyAngles')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have same length as stiffenerPlyAngles')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
+
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        self.base_ptr = new TACSBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            flangeFraction
+        )
+        self.ptr = self.cptr = self.blade_ptr = self.base_ptr
+        self.ptr.incref()
+
+    
+cdef class GaussianProcess:
+    """
+    Base class for constructing Gaussian Process ML models to predict buckling loads.
+    This is an abstract base class and hence has no constructor, only methods used by its subclasses.
+    """
+    # base class so no constructor here    
+    def predict_mean_test_data(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+    ):
+        """
+        This method makes buckling predictions at each point of an Xtest dataset and returns the Ytest tensor of buckling load predictions.
+        Note that the Xtest inputs and Ytest outputs are in log-space (more details below).
+
+        Parameters
+        ----------
+        Xtest - np.ndarray
+            a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
+            specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        
+        Returns:
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
+        """
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+
+    def getNparam(self):
+        """
+        Get the number of input parameters in the Gaussian Process model (4 for all of the current base classes)
+
+        Returns:
+            nparams (int) : the number of input parameters in Xtest [4 for the current implemented classes]
+        """
+        return self.base_gp.getNparam()
+
+    def getNtrain(self):
+        """
+        Get the number of input training data points used in the model training weights
+
+        Returns:
+            ntrain (int) : the number of training data points in alpha_train, the training weights
+        """
+        return self.base_gp.getNtrain()
+
+    def getTrainingData(self):
+        """
+        Get the training dataset Xtrain used for training the Gaussian Process ML model
+
+        Returns:
+            Xtrain (np.ndarray) : a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+            or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+        """
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray train_data = np.zeros((ntrain*nparam,), dtype=dtype)
+        self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
+        return train_data
+
+    def setKS(self, TacsScalar ksWeight, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
+
+        Parameters
+        ----------
+        ksWeight : float
+            the Kresselmeier-Steinhauser aggregation parameter rho_KS used for smooth relu and smooth abs value
+            in the GP kernel functions.
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
+        # print("Warning: need to retrain the weights as KS has changed\n")
+        self.base_gp.setKS(ksWeight)
+        self.recompute_alpha(Ytrain)
+        return
+
+    def setTheta(self, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+            np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
+        Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
+         and Ytrain is not stored in the GP data structure.
+
+        Parameters
+        ----------
+        theta : np.ndarray
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
+        # print("Warning: need to retrain the weights as KS has changed\n")
+        self.base_gp.setTheta(<TacsScalar*>theta.data)
+        self.recompute_alpha(Ytrain)
+        return
+
+    def test_all_gp_tests(self, TacsScalar epsilon, int printLevel):
+        """
+        run all the internal Gaussian Process ML model derivative tests
+
+        Parameters
+        ----------
+        epsilon : TacsScalar
+            the step size for each derivative test
+        printLevel : int
+            an input of 0 does not print each derivative test result, an input of 1 does print each test result to terminal.
+
+        Returns:
+            max relative error (TacsScalar) : the max relative error among all internal derivative tests of the model
+        """
+        return self.base_gp.testAllGPTests(epsilon, printLevel)
+
+    def kernel(
+        self,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+    ):
+        """
+        call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
+        this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
+        match those of the ml_buckling repo. 
+
+        Parameters
+        ----------
+        Xtest : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the test datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
+        Xtrain : np.ndarray
+            a rank-1 tensor of size (nparams,) currently size (4,) of the log non-dimensional inputs at the training datapoint.
+            the inputs are [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)].
+        """
+        return self.base_gp.kernel(<TacsScalar*>Xtest.data, <TacsScalar*>Xtrain.data)
+
+    def recompute_alpha(self, np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
+        """
+        a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
+        this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
+        for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
+            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
+
+        Parameters
+        ----------
+        Ytrain : np.ndarray
+            training dataset log(buckling load) outputs in order to retrain the ML model,
+            it's a rank-1 tensor of size (Ntrain,)
+        """
+        #return
+        cdef int ntrain = self.getNtrain()
+        cdef int nparam = self.getNparam()
+        cdef np.ndarray theta = np.zeros((14,), dtype=dtype)
+        cdef np.ndarray Xtrain = np.zeros((ntrain * nparam,), dtype=dtype)
+        self.base_gp.getTheta(<TacsScalar*>theta.data)
+        self.base_gp.getTrainingData(<TacsScalar*>theta.data)
+        cdef TacsScalar sigma_n = theta[-1]
+        
+        # make the training matrix
+        cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
+            self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
+        ] for j in range(ntrain)])
+
+        # recompute the training weights
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] alpha = np.linalg.solve(kernel_matrix, Ytrain)
+        self.base_gp.setAlpha(<TacsScalar*>alpha.data)
+        return
+
+cdef class BucklingGP(GaussianProcess):
+    """
+    Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
+    Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
+    The ML model uses non-dimensional inputs and outputs as follows:
+        log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+        log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+    The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
+
+    Parameters
+    ----------
+    Xtrain : np.ndarray
+        a rank-1 tensor (4*N_train,) of the training dataset non-dim inputs
+        namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] for each training point
+        or [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
+    alpha : np.ndarray
+        a rank-1 tensor (N_train,) containing the training weights for the ML model (computed by python training in ml_buckling repo)
+    theta : np.ndarray
+        a rank-1 tensor (13,) containing each of the model hyperparameters in the kernel function
+    """
+    n_param = 4 # [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)]
+
+    @classmethod
+    def from_axial_csv(cls, csv_file, theta_csv):
+        # affine is True
+        return cls.from_csv(csv_file, theta_csv, True)
+
+    @classmethod
+    def from_shear_csv(cls, csv_file, theta_csv):
+        # affine is False
+        return cls.from_csv(csv_file, theta_csv, False)
+
+    @classmethod
+    def from_csv(cls, csv_file, theta_csv, affine:bool=True):
+        """
+        Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
+        the training weights of the ML model and the optimal hyperparameters theta.
+            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
+        The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
+        and is the following:
+            axial_gp = BucklingGP.from_csv(
+                csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
+            )
+            shear_gp = BucklingGP.from_csv(
+                csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv
+            )
+
+        Parameters
+        ----------
+        csv_file : filepath or str
+            path to a csv_file that holds the Xtrain training data with 5 columns for each entry of Xtrain
+            namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta), alphaTrain].
+        theta_csv : filepath or str
+            path to a csv file that holds the theta hyperparameters in one column with 13 entries.
+
+        Returns:
+            BucklingGP object
+        """
+        # need csv with five columns: [Xparam1, Xparam2, Xparam3, Xparam4, alpha]
+        # optional import
+
+        full_arr = np.loadtxt(csv_file, skiprows=1, delimiter=",")
+        Xtrain_mat = full_arr[:, 1:5].astype(dtype=dtype)
+        alpha = full_arr[:, -1].astype(dtype=dtype)
+
+        n_train = Xtrain_mat.shape[0]
+        n_param = 4
+
+        Xtrain = np.zeros((n_train*n_param,), dtype=dtype)
+        # stagger the array entries
+        for iparam in range(4):
+            Xtrain[iparam::4] = Xtrain_mat[:,iparam]
+
+        theta_opt = np.loadtxt(theta_csv, skiprows=1, delimiter=",")[:,-1].astype(dtype=dtype)
+
+        return cls(n_train, affine, Xtrain, alpha, theta_opt)
+
+    def __cinit__(
+        self,
+        int n_train, 
+        bool affine,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
+    ):
+        self.buckling_gp = new TACSBucklingGaussianProcessModel(
+            n_train,
+            affine,
+            <TacsScalar*>Xtrain.data,
+            <TacsScalar*>alpha.data,
+            <TacsScalar*>theta.data,
+        )
+        self.base_gp = self.buckling_gp
+
+cdef class PanelGPs:
+    """
+    This object holds the individual GP objects for a single panel. One PanelGP object is shared among the constitutive
+    object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
+    only one call to each GP object is required per panel (speeds up computation time).
+    The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
+    (assuming each TACSComponent is associated with a different panel). 
+
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
+    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+
+    def callback_generator(tacs_component_names):
+        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+
+        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+
+            # get the panelGPs object associated with this tacs component
+            panelGPs = panelGP_dict[compDescript]
+
+            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+
+    Parameters
+    ----------
+    BucklingGP : TACSAxialGaussianProcessModel, optional
+        GP model for axial buckling data, if None uses closed-form instead
+    BucklingGP : TACSShearGaussianProcessModel, optional
+        GP model for shear buckling data, if None uses closed-form instead
+    BucklingGP : TACSCripplingGaussianProcessModel, optional
+        GP model for crippling buckling data, if None uses closed-form instead
+    saveData : bool
+        whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
+    """
+    def __cinit__(
+        self,
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
+        bool saveData = True,
+    ):   
+        # make null ptrs for GPs if not defined and store them in this class too
+        cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
+        if axialGP is not None:
+            axial_gp_ptr = (<BucklingGP>axialGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *shear_gp_ptr = NULL
+        if shearGP is not None:
+            shear_gp_ptr = (<BucklingGP>shearGP).buckling_gp
+        cdef TACSBucklingGaussianProcessModel *crippling_gp_ptr = NULL
+        if cripplingGP is not None:
+            crippling_gp_ptr = (<BucklingGP>cripplingGP).buckling_gp
+
+        self.gptr = new TACSPanelGPs(
+            axial_gp_ptr,
+            shear_gp_ptr,
+            crippling_gp_ptr,
+            saveData,
+        )
+
+    @classmethod
+    def component_dict(
+        cls, 
+        tacs_components, # list of strings of each tacs component name
+        BucklingGP axialGP = None, 
+        BucklingGP shearGP = None,
+        BucklingGP cripplingGP = None,
+        bool saveData = True,
+        ):
+        """
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
+            { tacs_component (str) : PanelGPs object }      
+
+        Parameters
+        ----------
+        BucklingGP : TACSAxialGaussianProcessModel, optional
+            GP model for axial buckling data, if None uses closed-form instead
+        BucklingGP : TACSShearGaussianProcessModel, optional
+            GP model for shear buckling data, if None uses closed-form instead
+        BucklingGP : TACSCripplingGaussianProcessModel, optional
+            GP model for crippling buckling data, if None uses closed-form instead
+        saveData : bool
+            whether to save and restore input and output buckling predictions for more efficient buckling predictions (default True)
+        """
+        _dict = {}
+        for comp_name in tacs_components:
+            _dict[comp_name] = cls(
+                axialGP,
+                shearGP,
+                cripplingGP,
+                saveData
+            )
+        return _dict
+
+cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
+    """"
+    This constitutive class models a shell stiffened with T-shaped stiffeners.
+    The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
+
+    This class is a subclass of the BladeStiffenedShellConstitutive base class
+    and includes higher-fidelity buckling constraints using Gaussian Processes for Machine Learning.
+    The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
+
+    For the methods below, consider a panel with dimensions a the panel length, b the panel width,
+        h the panel thickness, and stiffeners along the length or 1-direction.
+    The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
+        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
+    For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
+        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+        by Sean Engelstad, Brian Burke, Graeme Kennedy.
+
+    Parameters
+    ----------
+    panelPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the panel
+    stiffenerPly : tacs.constitutive.OrthotropicPly
+        Ply model to use for the stiffener
+    panelLength : float or complex
+        Panel length DV value
+    stiffenerPitch : float or complex
+        Stiffener pitch DV value
+    panelThick : float or complex
+        Panel thickness DV value
+    panelPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles in the panel
+    panelPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions in the panel
+    stiffenerHeight : float or complex
+        Stiffener height DV value
+    stiffenerThick : float or complex
+        Stiffener thickness DV value
+    stiffenerPlyAngles : numpy.ndarray[float or complex]
+        Array of ply angles for the stiffener
+    stiffenerPlyFracs : numpy.ndarray[float or complex]
+        Array of ply fractions for the stiffener
+    panelWidth : float or complex
+        Panel width DV value
+    kcorr : float or complex, optional
+        Shear correction factor, defaults to 5.0/6.0
+    flangeFraction : float, optional
+        Ratio of the stiffener base width to the stiffener height. Defaults to 1.0
+    panelLengthNum : int, optional
+        Panel lenth DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPitchNum : int, optional
+        Stiffener pitch DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelThickNum : int, optional
+        Panel thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    panelPlyFracNums : numpy.ndarray[np.intc], optional
+        Array of ply fraction DV numbers in the panel, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    stiffenerHeightNum : int, optional
+        Stiffener height DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerThickNum : int, optional
+        Stiffener thickness DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    stiffenerPlyFracNums : numpy.ndarray[numpy.intc], optional
+        Array of ply fraction DV numbers for the stiffener, passing negative values tells TACS not to treat that ply fraction as a DV. Defaults to -1's
+    panelWidthNum : int, optional
+        Panel width DV number, passing a negative value tells TACS not to treat this as a DV. Defaults to -1
+    CPTstiffenerCrippling : bool
+        whether to use CPT (classical plate theory) for stiffener crippling buckling predictions in the closed-form solution case (default False)
+    panelGPs: TACSPanelGPs
+        container for the three GP models for each panel / TACS component
+
+    Raises
+    ------
+    ValueError
+        Raises error if panelPlyAngles, panelPlyFracs, or panelPlyFracNums do not have same number of entries
+    ValueError
+        Raises error if stiffenerPlyAngles, stiffenerPlyFracs, or stiffenerPlyFracNums do not have same number of entries
+    """
+
+    def __cinit__(
+        self,
+        OrthotropicPly panelPly,
+        OrthotropicPly stiffenerPly,
+        TacsScalar panelLength,
+        TacsScalar stiffenerPitch,
+        TacsScalar panelThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] panelPlyFracs,
+        TacsScalar stiffenerHeight,
+        TacsScalar stiffenerThick,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyAngles,
+        np.ndarray[TacsScalar, ndim=1, mode='c'] stiffenerPlyFracs,
+        TacsScalar panelWidth,
+        TacsScalar kcorr = 5.0/6.0,
+        TacsScalar flangeFraction = 1.0,
+        int panelLengthNum = -1,
+        int stiffenerPitchNum = -1,
+        int panelThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] panelPlyFracNums = None,
+        int stiffenerHeightNum = -1,
+        int stiffenerThickNum = -1,
+        np.ndarray[int, ndim=1, mode='c'] stiffenerPlyFracNums = None,
+        int panelWidthNum = -1,
+        bool CPTstiffenerCrippling = False,
+        PanelGPs panelGPs = None,
+        ):
+
+        # same input checks as superclass BladeStiffenedShellConstitutive
+        numPanelPlies = len(panelPlyAngles)
+        numStiffenerPlies = len(stiffenerPlyAngles)
+
+        if panelPlyFracNums is None:
+            panelPlyFracNums = -np.ones([numPanelPlies], dtype=np.intc)
+        if stiffenerPlyFracNums is None:
+            stiffenerPlyFracNums = -np.ones([numStiffenerPlies], dtype=np.intc)
+
+        if len(panelPlyFracs) != numPanelPlies:
+            raise ValueError('panelPlyFracs must have same length as panelPlyAngles')
+        if len(panelPlyFracNums) != numPanelPlies:
+            raise ValueError('panelPlyFracNums must have same length as panelPlyAngles')
+        if len(stiffenerPlyFracs) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracs must have same length as stiffenerPlyAngles')
+        if len(stiffenerPlyFracNums) != numStiffenerPlies:
+            raise ValueError('stiffenerPlyFracNums must have same length as stiffenerPlyAngles')
+
+        cdef TACSPanelGPs *panel_gp_ptr = NULL
+        if panelGPs is not None:
+            panel_gp_ptr = (<PanelGPs>panelGPs).gptr
+
+        # Numpy's default int type is int64, but this is interpreted by Cython as a long.
+        if panelPlyFracNums.dtype != np.intc:
+            panelPlyFracNums = panelPlyFracNums.astype(np.intc)
+        if stiffenerPlyFracNums.dtype != np.intc:
+            stiffenerPlyFracNums = stiffenerPlyFracNums.astype(np.intc)
+
+        self.base_ptr = new TACSGPBladeStiffenedShellConstitutive(
+            panelPly.ptr,
+            stiffenerPly.ptr,
+            kcorr,
+            panelLength,
+            panelLengthNum,
+            stiffenerPitch,
+            stiffenerPitchNum,
+            panelThick,
+            panelThickNum,
+            numPanelPlies,
+            <TacsScalar*>panelPlyAngles.data,
+            <TacsScalar*>panelPlyFracs.data,
+            <int*>panelPlyFracNums.data,
+            stiffenerHeight,
+            stiffenerHeightNum,
+            stiffenerThick,
+            stiffenerThickNum,
+            numStiffenerPlies,
+            <TacsScalar*>stiffenerPlyAngles.data,
+            <TacsScalar*>stiffenerPlyFracs.data,
+            <int*>stiffenerPlyFracNums.data,
+            panelWidth,
+            panelWidthNum,
+            flangeFraction,
+            CPTstiffenerCrippling,
+            panel_gp_ptr,
+        )
+        # copy pointers to all superclasses
+        self.gp_blade_ptr = <TACSGPBladeStiffenedShellConstitutive *> self.base_ptr
+        self.ptr = self.cptr = self.base_ptr # copy constitutive as well
+        self.ptr.incref()
+
+    def nondimCriticalGlobalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the global axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / b^2 / (1 + delta)
+                with delta = E1s * As / (E1p * sp * h)
+        """
+        return self.gp_blade_ptr.nondimCriticalGlobalAxialLoad(rho_0, xi, gamma, zeta)
+
+    def nondimCriticalLocalAxialLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the local axial mode of a panel.
+        Uses the closed-form solution if PanelGPs.axialGP is None or the axialGP ML model if PanelGPs.axialGP is not None
+        Here D11 is for the center of the skin, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11 * D22) / s_p^2
+        """
+        return self.gp_blade_ptr.nondimCriticalLocalAxialLoad(rho_0, xi, zeta)
+
+    def nondimCriticalGlobalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar gamma, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the global shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        Here D11 is for the centroid of the panel and stiffener, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        gamma : float
+            the stiffener stiffness ratio, gamma = E_1s * A_s / (s_p * D11)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / b^2
+        """
+        return self.gp_blade_ptr.nondimCriticalGlobalShearLoad(rho_0, xi, gamma, zeta)
+
+    def nondimCriticalLocalShearLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N12,cr^* for the local shear mode of a panel.
+        Uses the closed-form solution if PanelGPs.shearGP is None or the shearGP ML model if PanelGPs.shearGP is not None.
+        D11 here is for the center of the panel, and the other Dij are for the panel at the panel center.
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the panel, rho_0 = a/s_p * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N12,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N12,cr is given by
+                N12,cr = (N12,cr^*) * pi^2 * 4thRoot(D11 * D22^3) / s_p^2
+        """
+        return self.gp_blade_ptr.nondimCriticalLocalShearLoad(rho_0, xi, zeta)
+
+    def nondimStiffenerCripplingLoad(self, TacsScalar rho_0, TacsScalar xi, TacsScalar genPoiss, TacsScalar zeta=0.0):
+        """
+        predict the non-dimensional buckling load N11,cr^* for the stiffener crippling mode of the stiffener.
+        Uses the closed-form solution if PanelGPs.cripplingGP is None or the cripplingGP ML model if PanelGPs.cripplingGP is not None
+
+
+        Parameters
+        ----------
+        rho_0 : float
+            the affine aspect ratio of the stiffener, rho_0 = a/b * 4thRoot(D22 / D11)
+        xi : float
+            the laminate isotropy, xi = (D12 + 2 * D66) / sqrt(D11 * D22)
+        genPoiss : float
+            the generalized Poisson's ratio for weak BCs such as the stiffener with its free edge, eps = D12 / (D12 + 2 * D66)
+        zeta : float
+            the transverse shear parameters, zeta = A11 / A66 * (h/b)^2
+
+        Returns:
+            N11,cr^* (float) : the non-dimensional output buckling load where the dimensional buckling load N11,cr is given by
+                N11,cr = (N11,cr^*) * pi^2 * sqrt(D11s * D22s) / h_s^2; here D11s, D22s are for the stiffener laminate
+        """
+        return self.gp_blade_ptr.nondimStiffenerCripplingLoad(rho_0, xi, genPoiss, zeta)
+
+    def setCPTstiffenerCrippling(self, bool CPTcripplingMode):
+        """
+        choose whether to use stiffener crippling by:
+        CPT solution from Sean's paper if CPTcripplingMode = True
+        DOD experimental solution from Ali's superclass if CPTcripplingMode = False
+
+        Parameters
+        ----------
+        CPTcripplingMode : bool
+            whether to use CPT crippling solution or not
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setCPTstiffenerCrippling(CPTcripplingMode)
+
+    def setWriteDVMode(self, int newMode):
+        """
+        Set mode for writing DV inputs to the .f5 files
+        0 - write DVs, 1 - write nondim params, 2 - write failure indexes
+        this is a useful tool to investigate and debug final designs.
+
+        Parameters
+        ----------
+        newMode: int
+            new mode input for the writeDVMode
+        """
+        if self.gp_blade_ptr:
+            self.gp_blade_ptr.setWriteDVMode(newMode)
+
+    def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
+        """
+        test all the internal derivative tests 
+        """
+        return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
+
+cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class defines the stiffness properties for a
+    composite laminate first-order shear deformation theory (FSDT) shell type element.
+    The stiffness of the laminate is computed by homogenizing the stiffness properties
+    of each ply through the thickness weighted by their relative ply fractions. This class
+    is a good continuous parametrization for laminates used in gradient-based optimizations where
+    stacking sequence effects can be ignored.
+
+    Args:
+       ply_list (list[OrthotropicPly]): List of ply properties in layup.
+       thicknesses (float or complex): Total laminate thickness of layup.
+       ply_angles (numpy.ndarray[float or complex]): Array of ply angles (in radians) in layup.
+       ply_fractions (numpy.ndarray[float or complex]): Fraction of layup contribution of each ply in ply_list.
+       thickness_dv_num (int, optional): Design variable number to assign to thickness (keyword argument).
+          Defaults to -1.
+       ply_fraction_dv_nums (numpy.ndarray[int], optional): Design variable numbers to assign to ply fractions (keyword argument).
+          Defaults to -1.
+       thickness_lb (float or complex, optional): Lower bound for thickness design variable (keyword argument).
+          Defaults to 0.0.
+       thickness_ub (float or complex, optional): Upper bound for thickness design variable (keyword argument).
+          Defaults to 1e20.
+       ply_fraction_lb (numpy.ndarray[float or complex], optional): Lower bound for ply fraction design variables (keyword argument).
+          Defaults to 0.0.
+       ply_fraction_ub (numpy.ndarray[float or complex], optional): Upper bound for ply fraction design variables (keyword argument).
+          Defaults to 1.0.
+       t_offset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
+            Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
+            a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+    """
+    def __cinit__(self, ply_list,
+                  TacsScalar thickness,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_angles,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fractions,
+                  int thickness_dv_num=-1,
+                  np.ndarray[int, ndim=1, mode='c'] ply_fraction_dv_nums=None,
+                  TacsScalar thickness_lb=0.0,
+                  TacsScalar thickness_ub=1e20,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_lb=None,
+                  np.ndarray[TacsScalar, ndim=1, mode='c'] ply_fraction_ub=None,
+                  TacsScalar t_offset=0.0):
+
+        num_plies = len(ply_list)
+
+        cdef np.ndarray _ply_fraction_dv_nums
+        if ply_fraction_dv_nums is None:
+            _ply_fraction_dv_nums = -np.ones(num_plies, int)
+        else:
+            _ply_fraction_dv_nums = ply_fraction_dv_nums
+
+        cdef np.ndarray _ply_fraction_lb
+        if ply_fraction_lb is None:
+            _ply_fraction_lb = np.zeros(num_plies, dtype)
+        else:
+            _ply_fraction_lb = ply_fraction_lb
+
+        cdef np.ndarray _ply_fraction_ub
+        if ply_fraction_ub is None:
+            _ply_fraction_ub = np.ones(num_plies, dtype)
+        else:
+            _ply_fraction_ub = ply_fraction_ub
+
+        # Allocate the array of TACSOrthotropicPly pointers
+        cdef TACSOrthotropicPly **plys
+        plys = <TACSOrthotropicPly**>malloc(num_plies*sizeof(TACSOrthotropicPly*))
+        if plys is NULL:
+            raise MemoryError()
+
+        for i in range(num_plies):
+            plys[i] = (<OrthotropicPly>ply_list[i]).ptr
+
+        self.cptr = new TACSSmearedCompositeShellConstitutive(num_plies, plys,
+                                                              thickness, <TacsScalar*>ply_angles.data,
+                                                              <TacsScalar*>ply_fractions.data,
+                                                              thickness_dv_num,
+                                                              <int*>_ply_fraction_dv_nums.data,
+                                                              thickness_lb, thickness_ub,
+                                                              <TacsScalar *> _ply_fraction_lb.data,
+                                                              <TacsScalar*>_ply_fraction_ub.data,
+                                                              t_offset)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+        # Free the allocated array
+        free(plys)
+
+        self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.shell.PCOMP): pyNastran card holding property information
+        """
+        num_plies = len(self.props)
+        cdef TACSSmearedCompositeShellConstitutive* comp_ptr = <TACSSmearedCompositeShellConstitutive*>self.cptr
+        cdef np.ndarray ply_fractions = np.zeros(num_plies, dtype)
+        cdef np.ndarray ply_angles = np.zeros(num_plies, dtype)
+
+        t_tot = comp_ptr.getLaminateThickness()
+        comp_ptr.getPlyFractions(<TacsScalar *> ply_fractions.data)
+        comp_ptr.getPlyAngles(<TacsScalar*>ply_angles.data)
+        ply_thicknesses = t_tot * ply_fractions
+
+        mat_ids = []
+        for i in range(num_plies):
+            ply_id = self.props[i].getNastranID()
+            mat_ids.append(ply_id)
+
+        z0 = -(comp_ptr.getThicknessOffset() + 0.5) * t_tot
+
+        prop = nastran_cards.properties.shell.PCOMP(self.nastranID, mat_ids,
+                                                    ply_thicknesses.astype(float),
+                                                    np.rad2deg(np.real(ply_angles)),
+                                                    lam="SMEAR",
+                                                    z0=np.real(z0))
+        return prop
+
+cdef class LamParamShellConstitutive(ShellConstitutive):
+    def __cinit__(self, OrthotropicPly ply, **kwargs):
+        cdef TacsScalar t = 1.0
+        cdef int t_num = -1
+        cdef TacsScalar min_t = 1.0
+        cdef TacsScalar max_t = 1.0
+        cdef TacsScalar f0 = 0.25
+        cdef TacsScalar f45 = 0.5
+        cdef TacsScalar f90 = 0.25
+        cdef int f0_num = -1
+        cdef int f45_num = -1
+        cdef int f90_num = -1
+        cdef TacsScalar min_f0 = 0.125
+        cdef TacsScalar min_f45 = 0.125
+        cdef TacsScalar min_f90 = 0.125
+        cdef TacsScalar W1 = 0.0
+        cdef TacsScalar W3 = 0.0
+        cdef int W1_num = -1
+        cdef int W3_num = -3
+        cdef TacsScalar ksWeight = 30.0
+        cdef TacsScalar epsilon = 0.0
+
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 't_num' in kwargs:
+            t_num = kwargs['t_num']
+        if 'min_t' in kwargs:
+            min_t = kwargs['min_t']
+        if 'max_t' in kwargs:
+            max_t = kwargs['max_t']
+
+        if 'f0' in kwargs:
+            f0 = kwargs['f0']
+        if 'f45' in kwargs:
+            f45 = kwargs['f45']
+        if 'f90' in kwargs:
+            f90 = kwargs['f90']
+
+        if 'f0_num' in kwargs:
+            f0_num = kwargs['f0_num']
+        if 'f45_num' in kwargs:
+            f45_num = kwargs['f45_num']
+        if 'f90_num' in kwargs:
+            f90_num = kwargs['f90_num']
+
+        if 'min_f0' in kwargs:
+            min_f0 = kwargs['min_f0']
+        if 'min_f45' in kwargs:
+            min_f45 = kwargs['min_f45']
+        if 'min_f90' in kwargs:
+            min_f90 = kwargs['min_f90']
+
+        if 'W1' in kwargs:
+            W1 = kwargs['W1']
+        if 'W3' in kwargs:
+            W3 = kwargs['W3']
+        if 'W1_num' in kwargs:
+            W1_num = kwargs['W1_num']
+        if 'W3_num' in kwargs:
+            W3_num = kwargs['W3_num']
+        if 'ksWeight' in kwargs:
+            ksWeight = kwargs['ksWeight']
+        if 'epsilon' in kwargs:
+            epsilon = kwargs['epsilon']
+
+        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+                                                      f0, f45, f90, f0_num, f45_num, f90_num,
+                                                      min_f0, min_f45, min_f90,
+                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class BasicBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for an general beam.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            Iyz = -int[y * z * dA]
+
+        The moments of area are always positive, as usual:
+            Iyy = int[(z^2 * dA]
+
+    Args:
+        props (MaterialProperties): The material property.
+        A (float or complex): Beam cross-sectional area (keyword argument). Defaults to 0.0.
+        J (float or complex): Beam polar moment of area about x-axis (keyword argument). Defaults to 0.0.
+        Iy (float or complex): Beam area moment of area about y-axis (keyword argument). Defaults to 0.0.
+        Iz (float or complex): Beam area moment of area about z-axis (keyword argument). Defaults to 0.0.
+        Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
+        ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
+        kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar A = 0.0
+        cdef TacsScalar J = 0.0
+        cdef TacsScalar Iy = 0.0
+        cdef TacsScalar Iz = 0.0
+        cdef TacsScalar Iyz = 0.0
+        cdef TacsScalar ky = 5.0/6.0
+        cdef TacsScalar kz = 5.0/6.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
+        if 'A' in kwargs:
+            A = kwargs['A']
+        if 'J' in kwargs:
+            J = kwargs['J']
+        if 'Iy' in kwargs:
+            Iy = kwargs['Iy']
+        if 'Iz' in kwargs:
+            Iz = kwargs['Iz']
+        if 'Iyz' in kwargs:
+            Iyz = kwargs['Iyz']
+        if 'ky' in kwargs:
+            ky = kwargs['ky']
+        if 'kz' in kwargs:
+            kz = kwargs['kz']
+
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.bars.PBAR): pyNastran card holding property information
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int num_stress = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        mat_id = self.props.getNastranID()
+        mat_dict = self.props.getMaterialProperties()
+        E, nu, G = mat_dict["E1"], mat_dict["nu12"], mat_dict["G12"]
+        # Pluck out stiffness constants using evalStress method
+        num_stress = self.cptr.getNumStresses()
+        cdef np.ndarray e = np.zeros(num_stress, dtype=dtype)
+        cdef np.ndarray s = np.zeros(num_stress, dtype=dtype)
+        # Have to evaluate two separate times to isolate coupling (Iyz) term
+        e[0] = 1.0 / E
+        e[1] = 1.0 / G
+        e[2] = 1.0 / E
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        A = np.real(s[0])
+        J = np.real(s[1])
+        Iz = np.real(s[2])
+        Iyz = -np.real(s[3])
+        e[:] = 0.0
+        e[3] = 1.0 / E
+        e[4:5] = 1.0 / (G * A)
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        Iy = np.real(s[3])
+        ky = np.real(s[4])
+        kz = np.real(s[5])
+        # Nastran uses negative convention for POI's
+        prop = nastran_cards.properties.bars.PBAR(self.nastranID, mat_id, A, Iz, Iy, -Iyz, J, k1=ky, k2=kz)
+        return prop
+
+cdef class IsoTubeBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a hollow circular beam.
+
+    Args:
+        props (MaterialProperties): The material property.
+        d (float or complex, optional): Tube inner diameter (keyword argument). Defaults to 1.0.
+        dNum (int, optional): Design variable number to assign to tube diameter (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        dlb (float or complex, optional): Lower bound on tube diameter (keyword argument). Defaults to 0.0.
+        dub (float or complex, optional): Upper bound on tube diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Tube wall thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to wall thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar d = 1.0
+        cdef int dNum = -1
+        cdef TacsScalar dlb = 0.0
+        cdef TacsScalar dub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
+        if 'd' in kwargs:
+            d = kwargs['d']
+        if 'dNum' in kwargs:
+            dNum = kwargs['dNum']
+        if 'dlb' in kwargs:
+            dlb = kwargs['dlb']
+        if 'dub' in kwargs:
+            dub = kwargs['dub']
         if 't' in kwargs:
             t = kwargs['t']
         if 'tNum' in kwargs:
@@ -160,26 +2150,477 @@ cdef class ShellConstitutive(Constitutive):
             tub = kwargs['tub']
 
         if props is not NULL:
-            self.cptr = new TACSShellConstitutive(props, t, tNum,
-                                                  tlb, tub)
+            self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
+                                                        dlb, dub, tlb, tub)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
             self.ptr = NULL
             self.cptr = NULL
+            self.props = None
 
-cdef class TimoshenkoConstitutive(Constitutive):
-    def __cinit__(self, rhoA, rhoIy, rhoIz, rhoIyz,
-                      EA, GJ, EIy, EIz, kGAy, kGAz,
-                      np.ndarray[TacsScalar, ndim=1, mode='c'] axis):
-        self.cptr = new TACSTimoshenkoConstitutive(rhoA, rhoIy, rhoIz, rhoIyz,
-                                                  EA, GJ, EIy, EIz, kGAy, kGAz,
-                                                  <TacsScalar*>axis.data)
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        d = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        ri = np.real(d / 2.0)
+        ro = np.real(ri + t)
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
+        return con
+
+cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko theory based constitutive object for a solid rectangular beam.
+
+    The thickness dimension is assumed to measured along the beam's local reference axis,
+    the width is perpindicular to the reference axis.
+
+    Args:
+        props (MaterialProperties): The material property.
+        width (float or complex, optional): Cross-section width (keyword argument). Defaults to 1.0.
+        wNum (int, optional): Design variable number to assign to width (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        wlb (float or complex, optional): Lower bound on width (keyword argument). Defaults to 0.0.
+        wub (float or complex, optional): Upper bound on width diameter (keyword argument). Defaults to 10.0.
+        t (float or complex, optional): Cross-section thickness (keyword argument). Defaults to 0.1.
+        tNum (int, optional): Design variable number to assign to thickness (keyword argument). Defaults to -1
+            (i.e. no design variable).
+        tlb (float or complex, optional): Lower bound on thickness (keyword argument). Defaults to 0.0.
+        tub (float or complex, optional): Upper bound on thickness (keyword argument). Defaults to 10.0.
+        wOffset (float or complex, optional): Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=/2,
+            a value of 0.0 at z=0.0, and a value of -0.5 at z=-w/2 (where z is the local beam axis). Defaults to 0.0.
+        tOffset (float or complex, optional): Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
+            Measured in fraction of cross-section thickness. A value of 0.5 places the reference axis in the plane y=t/2,
+            a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local beam axis). Defaults to 0.0.
+    """
+    def __cinit__(self, *args, **kwargs):
+        cdef TACSMaterialProperties *props = NULL
+        cdef TacsScalar w = 1.0
+        cdef int wNum = -1
+        cdef TacsScalar wlb = 0.0
+        cdef TacsScalar wub = 10.0
+        cdef TacsScalar t = 0.1
+        cdef int tNum = -1
+        cdef TacsScalar tlb = 0.0
+        cdef TacsScalar tub = 10.0
+        cdef TacsScalar wOffset = 0.0
+        cdef TacsScalar tOffset = 0.0
+
+        if len(args) >= 1:
+            props = (<MaterialProperties>args[0]).ptr
+            self.props = args[0]
+        if 'w' in kwargs:
+            w = kwargs['w']
+        if 'wNum' in kwargs:
+            wNum = kwargs['wNum']
+        if 'wlb' in kwargs:
+            wlb = kwargs['wlb']
+        if 'wub' in kwargs:
+            wub = kwargs['wub']
+        if 't' in kwargs:
+            t = kwargs['t']
+        if 'tNum' in kwargs:
+            tNum = kwargs['tNum']
+        if 'tlb' in kwargs:
+            tlb = kwargs['tlb']
+        if 'tub' in kwargs:
+            tub = kwargs['tub']
+        if 'wOffset' in kwargs:
+            wOffset = kwargs['wOffset']
+        if 'tOffset' in kwargs:
+            tOffset = kwargs['tOffset']
+
+        if props is not NULL:
+            self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, wNum, tNum,
+                                                             wlb, wub, tlb, tub, wOffset, tOffset)
+            self.ptr = self.cptr
+            self.ptr.incref()
+        else:
+            self.ptr = NULL
+            self.cptr = NULL
+            self.props = None
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        w = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
+        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        mat_id = self.props.getNastranID()
+        con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", [np.real(w), np.real(t)])
+        return con
+
+cdef class GeneralMassConstitutive(Constitutive):
+    """
+    This is the base class for the fully general point mass constitutive objects.
+    Assumes 6 dofs (3 translations + 3 rotations).
+    The mass properties of this object are specified using a symmetric 6 x 6 mass matrix, as shown below.
+
+        | M[ 0] M[ 1] M[ 2] M[ 3] M[ 4] M[ 5]
+        | M[ 1] M[ 6] M[ 7] M[ 8] M[ 9] M[10]
+        | M[ 2] M[ 7] M[11] M[12] M[13] M[14]
+        | M[ 3] M[ 8] M[12] M[15] M[16] M[17]
+        | M[ 4] M[ 9] M[13] M[16] M[18] M[19]
+        | M[ 5] M[10] M[14] M[17] M[19] M[20]
+
+    Args:
+        M (array-like[float or complex]): Flattened array containing one side of symmetric mass matrix entries.
+    """
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar M[21]
+        if 'M' in kwargs:
+            _M = kwargs['M']
+            assert isinstance(_M, list) or isinstance(_M, np.ndarray)
+            assert len(_M) == 21
+            for i in range(21):
+                M[i] = _M[i]
+        else:
+            for i in range(21):
+                M[i] = 0.0
+        self.cptr = new TACSGeneralMassConstitutive(M)
+
         self.ptr = self.cptr
         self.ptr.incref()
+
+    def evalMassMatrix(self):
+        """
+        Evaluate 6x6 symmetric mass matrix associated with this element.
+
+        Returns:
+            M (numpy.ndarray): Length 21 flattened array representing unique entries of mass matrix
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef np.ndarray M = np.zeros(21, dtype=dtype)
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        self.cptr.evalMassMatrix(elemIndex, pt, X, <TacsScalar*>M.data)
+        return M
+
+cdef class PointMassConstitutive(GeneralMassConstitutive):
+    """
+    This is the base class for the traditional point mass constitutive objects with no translation-rotation coupling.
+    Assumes 6 dofs.
+
+     .. note::
+        TACS uses a negative sign convention in the product of inertia definition, for example:
+            I12 = -int[x1 * x2 * dm]
+
+        The moments of inertia are always positive, as usual:
+            I11 = int[(x2^2 + x3^2) * dm]
+
+    Args:
+        m (float or complex, optional): Mass value (keyword argument). Defaults to 0.0.
+        I11 (float or complex, optional): Moment of inertia in '1' direction (keyword argument). Defaults to 0.0.
+        I22 (float or complex, optional): Moment of inertia in '2' direction (keyword argument). Defaults to 0.0.
+        I33 (float or complex, optional): Moment of inertia in '3' direction (keyword argument). Defaults to 0.0.
+        I12 (float or complex, optional): Moment of inertia in '1-2' plane (keyword argument). Defaults to 0.0.
+        I13 (float or complex, optional): Moment of inertia in '1-3' plane (keyword argument). Defaults to 0.0.
+        I23 (float or complex, optional): Moment of inertia in '2-3' plane (keyword argument). Defaults to 0.0.
+        mNum (int, optional): Design variable number to assign to m (keyword argument). Defaults to -1.
+        mlb (float or complex, optional): Lower bound on m (keyword argument). Defaults to 0.0.
+        mub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 1e20.
+        I11Num (int, optional): Design variable number to assign to I11 (keyword argument). Defaults to -1.
+        I11lb (float or complex, optional): Lower bound on I11 (keyword argument). Defaults to 0.0.
+        I11ub (float or complex, optional): Upper bound on I11 (keyword argument). Defaults to 1e20.
+        I22Num (int, optional): Design variable number to assign to I22 (keyword argument). Defaults to -1.
+        I22lb (float or complex, optional): Lower bound on I22 (keyword argument). Defaults to 0.0.
+        I22ub (float or complex, optional): Upper bound on I22 (keyword argument). Defaults to 1e20.
+        I33Num (int, optional): Design variable number to assign to I33 (keyword argument). Defaults to -1.
+        I33lb (float or complex, optional): Lower bound on I33 (keyword argument). Defaults to 0.0.
+        I33ub (float or complex, optional): Upper bound on I33 (keyword argument). Defaults to 1e20.
+        I12Num (int, optional): Design variable number to assign to I12 (keyword argument). Defaults to -1.
+        I12lb (float or complex, optional): Lower bound on I12 (keyword argument). Defaults to -1e20.
+        I12ub (float or complex, optional): Upper bound on I12 (keyword argument). Defaults to 1e20.
+        I13Num (int, optional): Design variable number to assign to I13 (keyword argument). Defaults to -1.
+        I13lb (float or complex, optional): Lower bound on I13 (keyword argument). Defaults to -1e20.
+        I13ub (float or complex, optional): Upper bound on I13 (keyword argument). Defaults to 1e20.
+        I23Num (int, optional): Design variable number to assign to I23 (keyword argument). Defaults to -1.
+        I23lb (float or complex, optional): Lower bound on I23 (keyword argument). Defaults to -1e20.
+        I23ub (float or complex, optional): Upper bound on I23 (keyword argument). Defaults to 1e20.
+    """
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar m = 0.0
+        cdef TacsScalar I11 = 0.0
+        cdef TacsScalar I22 = 0.0
+        cdef TacsScalar I33 = 0.0
+        cdef TacsScalar I12 = 0.0
+        cdef TacsScalar I13 = 0.0
+        cdef TacsScalar I23 = 0.0
+        cdef int mNum = -1
+        cdef int I11Num = -1
+        cdef int I22Num = -1
+        cdef int I33Num = -1
+        cdef int I12Num = -1
+        cdef int I13Num = -1
+        cdef int I23Num = -1
+        cdef TacsScalar mlb = 0.0
+        cdef TacsScalar I11lb = 0.0
+        cdef TacsScalar I22lb = 0.0
+        cdef TacsScalar I33lb = 0.0
+        cdef TacsScalar I12lb = -1e20
+        cdef TacsScalar I13lb = -1e20
+        cdef TacsScalar I23lb = -1e20
+        cdef TacsScalar mub = 1e20
+        cdef TacsScalar I11ub = 1e20
+        cdef TacsScalar I22ub = 1e20
+        cdef TacsScalar I33ub = 1e20
+        cdef TacsScalar I12ub = 1e20
+        cdef TacsScalar I13ub = 1e20
+        cdef TacsScalar I23ub = 1e20
+
+        if 'm' in kwargs:
+            m = kwargs['m']
+        if 'I11' in kwargs:
+            I11 = kwargs['I11']
+        if 'I22' in kwargs:
+            I22 = kwargs['I22']
+        if 'I33' in kwargs:
+            I33 = kwargs['I33']
+        if 'I12' in kwargs:
+            I12 = kwargs['I12']
+        if 'I13' in kwargs:
+            I13 = kwargs['I13']
+        if 'I23' in kwargs:
+            I23 = kwargs['I23']
+        if 'mNum' in kwargs:
+            mNum = kwargs['mNum']
+        if 'I11Num' in kwargs:
+            I11Num = kwargs['I11Num']
+        if 'I22Num' in kwargs:
+            I22Num = kwargs['I22Num']
+        if 'I33Num' in kwargs:
+            I33Num = kwargs['I33Num']
+        if 'I12Num' in kwargs:
+            I12Num = kwargs['I12Num']
+        if 'I13Num' in kwargs:
+            I13Num = kwargs['I13Num']
+        if 'I23Num' in kwargs:
+            I23Num = kwargs['I23Num']
+        if 'mlb' in kwargs:
+            mlb = kwargs['mlb']
+        if 'I11lb' in kwargs:
+            I11lb = kwargs['I11lb']
+        if 'I22lb' in kwargs:
+            I22lb = kwargs['I22lb']
+        if 'I33lb' in kwargs:
+            I33lb = kwargs['I33lb']
+        if 'I12lb' in kwargs:
+            I12lb = kwargs['I12lb']
+        if 'I13lb' in kwargs:
+            I13lb = kwargs['I13lb']
+        if 'I23lb' in kwargs:
+            I23lb = kwargs['I23lb']
+        if 'mub' in kwargs:
+            mub = kwargs['mub']
+        if 'I11ub' in kwargs:
+            I11ub = kwargs['I11ub']
+        if 'I22ub' in kwargs:
+            I22ub = kwargs['I22ub']
+        if 'I33ub' in kwargs:
+            I33ub = kwargs['I33ub']
+        if 'I12ub' in kwargs:
+            I12ub = kwargs['I12ub']
+        if 'I13ub' in kwargs:
+            I13ub = kwargs['I13ub']
+        if 'I23ub' in kwargs:
+            I23ub = kwargs['I23ub']
+
+        self.cptr = new TACSPointMassConstitutive(m, I11, I22, I33, I12, I13, I23, mNum, mlb, mub, I11Num, I11lb, I11ub,
+                                                  I22Num, I22lb, I22ub, I33Num, I33lb, I33ub, I12Num, I12lb, I12ub,
+                                                  I13Num, I13lb, I13ub, I23Num, I23lb, I23ub)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class GeneralSpringConstitutive(Constitutive):
+    """
+    This is the base class for the fully general spring constitutive objects.
+    Assumes 6 dofs (3 translations + 3 rotations).
+    The spring properties of this object are specified using a symmetric 6 x 6 stiffness matrix, as shown below.
+
+        | K[ 0] K[ 1] K[ 2] K[ 3] K[ 4] K[ 5]
+        | K[ 1] K[ 6] K[ 7] K[ 8] K[ 9] K[10]
+        | K[ 2] K[ 7] K[11] K[12] K[13] K[14]
+        | K[ 3] K[ 8] K[12] K[15] K[16] K[17]
+        | K[ 4] K[ 9] K[13] K[16] K[18] K[19]
+        | K[ 5] K[10] K[14] K[17] K[19] K[20]
+
+    Args:
+        K (array-like[float or complex]): Flattened array containing one side of symmetric stiffness matrix entries.
+    """
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar K[21]
+        if 'K' in kwargs:
+            _K = kwargs['K']
+            assert isinstance(_K, list) or isinstance(_K, np.ndarray)
+            assert len(_K) == 21
+            for i in range(21):
+                K[i] = _K[i]
+        else:
+            for i in range(21):
+                K[i] = 0.0
+        self.cptr = new TACSGeneralSpringConstitutive(K)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
+    """
+    This is the base class for the traditional spring constitutive objects with no dof coupling.
+    Assumes 6 dofs.
+
+    Args:
+        k (array-like[float or complex]): Stiffness values for all 6 dofs.
+    """
+    def __cinit__(self, **kwargs):
+        cdef TacsScalar k[6]
+        if 'k' in kwargs:
+            _k = kwargs['k']
+            assert isinstance(_k, list) or isinstance(_k, np.ndarray)
+            assert len(_k) == 6
+            for i in range(6):
+                k[i] = _k[i]
+        else:
+            for i in range(6):
+                k[i] = 0.0
+        self.cptr = new TACSDOFSpringConstitutive(k)
+
+        self.ptr = self.cptr
+        self.ptr.incref()
+
+    def generateBDFCard(self):
+        """
+        Generate pyNASTRAN card class based on current design variable values.
+
+        Returns:
+            card (pyNastran.bdf.cards.properties.bush.PBUSH): pyNastran card holding property information
+        """
+        cdef double pt[3]
+        cdef TacsScalar X[3]
+        cdef int elemIndex = 0
+        cdef int num_stress = 0
+        for i in range(3):
+            pt[i] = 0.0
+            X[i] = 0.0
+        # Pluck out stiffness constants using evalStress method
+        num_stress = self.cptr.getNumStresses()
+        cdef np.ndarray e = np.ones(num_stress, dtype=dtype)
+        cdef np.ndarray s = np.zeros(num_stress, dtype=dtype)
+        self.cptr.evalStress(elemIndex, pt, X, <TacsScalar*>e.data, <TacsScalar*>s.data)
+        k = list(s.astype(float))
+        damping = list(np.zeros(6, dtype=float))
+        prop = nastran_cards.properties.bush.PBUSH(self.nastranID, k, damping, damping)
+        return prop
 
 def TestConstitutive(Constitutive con, int elemIndex=0, double dh=1e-6,
                      int test_print_level=2, double atol=1e-30,
                      double rtol=1e-5):
     return TacsTestConstitutive(con.ptr, elemIndex, dh,
                                 test_print_level, atol, rtol)
+
+def TestConstitutiveDensity(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveDensity(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                       <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveSpecificHeat(Constitutive con, int elem_index,
+                                 np.ndarray[double, ndim=1, mode='c'] pt,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                 np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                 double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                 double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveSpecificHeat(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                            <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveHeatFlux(Constitutive con, int elem_index,
+                             np.ndarray[double, ndim=1, mode='c'] pt,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                             np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                             double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                             double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveHeatFlux(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                        <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveStress(Constitutive con, int elem_index,
+                           np.ndarray[double, ndim=1, mode='c'] pt,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                           np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                           double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                           double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveStress(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                      <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveThermalStrain(Constitutive con, int elem_index,
+                                  np.ndarray[double, ndim=1, mode='c'] pt,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                  np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                                  double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                  double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveThermalStrain(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailure(Constitutive con, int elem_index,
+                            np.ndarray[double, ndim=1, mode='c'] pt,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                            np.ndarray[TacsScalar, ndim=1, mode='c'] dvs,
+                            double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                            double rtol=1e-5):
+    ndvs = len(dvs)
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailure(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data, ndvs,
+                                             <TacsScalar*>dvs.data, dh, test_print_level, atol, rtol)
+
+def TestConstitutiveFailureStrainSens(Constitutive con, int elem_index,
+                                      np.ndarray[double, ndim=1, mode='c'] pt,
+                                      np.ndarray[TacsScalar, ndim=1, mode='c'] x,
+                                      double dh=1e-6, int test_print_level=2, double atol=1e-30,
+                                      double rtol=1e-5):
+    assert len(pt) == 3
+    assert len(x) == 3
+    return TacsTestConstitutiveFailureStrainSens(con.ptr, elem_index, <double*>pt.data, <TacsScalar*>x.data,
+                                                 dh, test_print_level, atol, rtol)

@@ -22,10 +22,6 @@
 #include "TACSConstitutive.h"
 #include "TACSMaterialProperties.h"
 
-enum TACSShellCoordinateTransform {
-  TACS_NATURAL_SHELL_COORDINATES,
-  TACS_REFERENCE_AXIS_COORDINATES };
-
 /**
   This constitutive class defines the stiffness properties for a
   first-order shear deformation theory type element. This class
@@ -37,119 +33,74 @@ class TACSShellConstitutive : public TACSConstitutive {
   static const int NUM_STRESSES = 9;
   static const int NUM_TANGENT_STIFFNESS_ENTRIES = 22;
 
-  TACSShellConstitutive( TACSMaterialProperties *props,
-                         TacsScalar _t=1.0, int _tNum=-1,
-                         TacsScalar _tlb=0.0, TacsScalar _tub=1.0 );
-  ~TACSShellConstitutive();
-
-  // Set the reference axis used for the transformation
-  void setRefAxis( const TacsScalar _axis[] );
-
-  // Get the type of transformation
-  enum TACSShellCoordinateTransform getTransformType(){
-    return transform_type;
-  }
-
-  // Return the reference axis itself
-  const TacsScalar *getRefAxis(){
-    return axis;
-  }
+  TACSShellConstitutive() {}
+  virtual ~TACSShellConstitutive() {}
 
   // Get the number of stresses
   int getNumStresses();
 
-  // Retrieve the global design variable numbers
-  int getDesignVarNums( int elemIndex, int dvLen, int dvNums[] );
+  /**
+    Get the integrals of the density through the thickness
 
-  // Set the element design variable from the design vector
-  int setDesignVars( int elemIndex, int dvLen, const TacsScalar dvs[] );
+    moments = int_{-t/2}^{t/2} [1, z, z^2] rho(z) dz
 
-  // Get the element design variables values
-  int getDesignVars( int elemIndex, int dvLen, TacsScalar dvs[] );
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @return The moments of the mass
+  */
+  virtual void evalMassMoments(int elemIndex, const double pt[],
+                               const TacsScalar X[], TacsScalar moments[]) = 0;
 
-  // Get the lower and upper bounds for the design variable values
-  int getDesignVarRange( int elemIndex, int dvLen,
-                         TacsScalar lb[], TacsScalar ub[] );
+  /**
+    Add the contribution of the mass moment sensitivities to the derivative of a
+    function
 
-  // Evaluate the material density
-  TacsScalar evalDensity( int elemIndex, const double pt[],
-                          const TacsScalar X[] );
+    Given the sensitivity of some function, f, with respect to the mass moments,
+    this function adds the sensitivity of the function the design variables due
+    to the dependence of the mass moments on the design variables.
 
-  // Add the derivative of the density
-  void addDensityDVSens( int elemIndex, TacsScalar scale,
-                         const double pt[], const TacsScalar X[],
-                         int dvLen, TacsScalar dfdx[] );
+    e.g dfdx[0] += scale[0]*dm0/dx1 + scale[1]*dm1/dx1 + scale[2]*dm2/dx1
+        dfdx[1] += scale[0]*dm0/dx2 + scale[1]*dm1/dx2 + scale[2]*dm2/dx2
 
-  // Evaluate the specific heat
-  TacsScalar evalSpecificHeat( int elemIndex, const double pt[],
-                               const TacsScalar X[] );
+    @param elemIndex The local element index
+    @param pt The parametric location
+    @param X The point location
+    @param scale Scale factor for the moments
+    @param dvLen the length of the sensitivity array
+    @param dfdx The sensitivity array
+  */
+  virtual void addMassMomentsDVSens(int elemIndex, const double pt[],
+                                    const TacsScalar X[],
+                                    const TacsScalar scale[], int dvLen,
+                                    TacsScalar dfdx[]) {}
 
-  // Evaluate the stresss
-  void evalStress( int elemIndex, const double pt[], const TacsScalar X[],
-                   const TacsScalar strain[], TacsScalar stress[] );
+  // Set the drilling regularization value
+  static void setDrillingRegularization(double kval);
 
-  // Evaluate the tangent stiffness
-  void evalTangentStiffness( int elemIndex, const double pt[],
-                             const TacsScalar X[], TacsScalar C[] );
+  // Extract the tangent
+  static void extractTangentStiffness(const TacsScalar *C, const TacsScalar **A,
+                                      const TacsScalar **B,
+                                      const TacsScalar **D,
+                                      const TacsScalar **As, TacsScalar *drill);
 
-  // Add the contribution
-  void addStressDVSens( int elemIndex, TacsScalar scale,
-                        const double pt[], const TacsScalar X[],
-                        const TacsScalar strain[], const TacsScalar psi[],
-                        int dvLen, TacsScalar dfdx[] );
-
-  // Evaluate the thermal strain
-  void evalThermalStrain( int elemIndex, const double pt[],
-                          const TacsScalar X[], TacsScalar theta,
-                          TacsScalar strain[] );
-
-  // Evaluate the heat flux, given the thermal gradient
-  void evalHeatFlux( int elemIndex, const double pt[],
-                     const TacsScalar X[], const TacsScalar grad[],
-                     TacsScalar flux[] );
-
-  // Evaluate the tangent of the heat flux
-  void evalTangentHeatFlux( int elemIndex, const double pt[],
-                            const TacsScalar X[], TacsScalar C[] );
+  // Once the stiffness matrices have been evaluated, use this
+  // function to compute the stress given the strain components
+  static inline void computeStress(const TacsScalar A[], const TacsScalar B[],
+                                   const TacsScalar D[], const TacsScalar As[],
+                                   const TacsScalar drill, const TacsScalar e[],
+                                   TacsScalar s[]);
 
   // The name of the constitutive object
   const char *getObjectName();
 
-  // Set the drilling regularization value
-  void setDrillingRegularization( double kval );
-
-  // Extract the tangent
-  static void extractTangenttStiffness( const TacsScalar *C,
-                                        const TacsScalar **A, const TacsScalar **B,
-                                        const TacsScalar **D, const TacsScalar **As,
-                                        TacsScalar *drill );
-
-
-  // Once the stiffness matrices have been evaluated, use this
-  // function to compute the stress given the strain components
-  inline void evalStress( const TacsScalar A[], const TacsScalar B[],
-                          const TacsScalar D[], const TacsScalar As[],
-                          const TacsScalar drill, const TacsScalar e[],
-                          TacsScalar s[] );
-
  protected:
-  // Material properties class
-  TACSMaterialProperties *properties;
-
   // The drilling regularization constant
   static double DRILLING_REGULARIZATION;
 
-  // Reference axis information
-  TACSShellCoordinateTransform transform_type;
-  TacsScalar axis[3]; // The reference axis
-
  private:
-  // Store information about the design variable
-  TacsScalar t, tlb, tub;
-  int tNum;
-
   // The object name
-  static const char * constName;
+  static const char *constName;
 };
 
 /*
@@ -171,25 +122,28 @@ class TACSShellConstitutive : public TACSConstitutive {
   [As] = [ As[0] As[1] ]
   .      [ As[1] As[2] ]
 */
-inline void TACSShellConstitutive::evalStress( const TacsScalar A[],
-                                               const TacsScalar B[],
-                                               const TacsScalar D[],
-                                               const TacsScalar As[],
-                                               const TacsScalar drill,
-                                               const TacsScalar e[],
-                                               TacsScalar s[] ){
-  s[0] = A[0]*e[0]+A[1]*e[1]+A[2]*e[2] + B[0]*e[3]+B[1]*e[4]+B[2]*e[5];
-  s[1] = A[1]*e[0]+A[3]*e[1]+A[4]*e[2] + B[1]*e[3]+B[3]*e[4]+B[4]*e[5];
-  s[2] = A[2]*e[0]+A[4]*e[1]+A[5]*e[2] + B[2]*e[3]+B[4]*e[4]+B[5]*e[5];
+inline void TACSShellConstitutive::computeStress(
+    const TacsScalar A[], const TacsScalar B[], const TacsScalar D[],
+    const TacsScalar As[], const TacsScalar drill, const TacsScalar e[],
+    TacsScalar s[]) {
+  s[0] = A[0] * e[0] + A[1] * e[1] + A[2] * e[2] + B[0] * e[3] + B[1] * e[4] +
+         B[2] * e[5];
+  s[1] = A[1] * e[0] + A[3] * e[1] + A[4] * e[2] + B[1] * e[3] + B[3] * e[4] +
+         B[4] * e[5];
+  s[2] = A[2] * e[0] + A[4] * e[1] + A[5] * e[2] + B[2] * e[3] + B[4] * e[4] +
+         B[5] * e[5];
 
-  s[3] = B[0]*e[0]+B[1]*e[1]+B[2]*e[2] + D[0]*e[3]+D[1]*e[4]+D[2]*e[5];
-  s[4] = B[1]*e[0]+B[3]*e[1]+B[4]*e[2] + D[1]*e[3]+D[3]*e[4]+D[4]*e[5];
-  s[5] = B[2]*e[0]+B[4]*e[1]+B[5]*e[2] + D[2]*e[3]+D[4]*e[4]+D[5]*e[5];
+  s[3] = B[0] * e[0] + B[1] * e[1] + B[2] * e[2] + D[0] * e[3] + D[1] * e[4] +
+         D[2] * e[5];
+  s[4] = B[1] * e[0] + B[3] * e[1] + B[4] * e[2] + D[1] * e[3] + D[3] * e[4] +
+         D[4] * e[5];
+  s[5] = B[2] * e[0] + B[4] * e[1] + B[5] * e[2] + D[2] * e[3] + D[4] * e[4] +
+         D[5] * e[5];
 
-  s[6] = As[0]*e[6]+As[1]*e[7];
-  s[7] = As[1]*e[6]+As[2]*e[7];
+  s[6] = As[0] * e[6] + As[1] * e[7];
+  s[7] = As[1] * e[6] + As[2] * e[7];
 
-  s[8] = drill*e[8];
+  s[8] = drill * e[8];
 }
 
 #endif
