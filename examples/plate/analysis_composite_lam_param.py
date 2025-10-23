@@ -109,7 +109,7 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
         if compLPModel == "LamParam":
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1
             lpNums = np.arange(0, 2, dtype=np.intc) + pfNums[-1] + 1
-            con = constitutive.LamParamShellConstitutive(
+            con = constitutive.LamParamSmearedShellConstitutive(
                 ortho_ply,
                 t=tplate,
                 t_num=dvNum,
@@ -135,7 +135,7 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
 
         elif compLPModel == "LamParamAll":
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1  # 6
-            con = constitutive.LamParamAllShellConstitutive(
+            con = constitutive.LamParamFullShellConstitutive(
                 ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
             )
             lp = 0.6 * np.ones(6)

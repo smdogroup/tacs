@@ -87,36 +87,22 @@ class ConstitutiveTest(unittest.TestCase):
         self.thickness_dv_num = 0
         self.thinkness_lb = 0.0001
         self.thinkness_ub = 1.0
-        self.pfNums = np.arange(0, 3, dtype=np.intc) + 1
-        self.lpNums = np.arange(0, 2, dtype=np.intc) + 1 + len(self.pfNums)
+        self.lpNums = np.arange(0, 6, dtype=np.intc) + 1
 
-        pfDVs = np.array([0.25, 0.5, 0.25])
-        lpDVs = 0.6 * np.ones(2)
-        self.dvs = np.concatenate(([self.thickness], pfDVs, lpDVs), dtype=self.dtype)
+        lpDVs = 0.6 * np.ones(6)
+        self.dvs = np.concatenate(([self.thickness], lpDVs), dtype=self.dtype)
 
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
     def get_con(self, ply):
-        con = constitutive.LamParamShellConstitutive(
+        con = constitutive.LamParamFullShellConstitutive(
             ply,
-            t=self.thickness,
-            t_num=self.thickness_dv_num,
-            min_t=self.thinkness_lb,
-            max_t=self.thinkness_ub,
-            f0=0.25,
-            f45=0.5,
-            f90=0.25,
-            f0_num=self.pfNums[0],
-            f45_num=self.pfNums[1],
-            f90_num=self.pfNums[2],
-            min_f0=0.1,
-            min_f45=0.1,
-            min_f90=0.1,
-            W1=0.6,
-            W3=0.6,
-            W1_num=self.lpNums[0],
-            W3_num=self.lpNums[1],
+            self.thickness,
+            self.thickness_dv_num,
+            self.thinkness_lb,
+            self.thinkness_ub,
+            self.lpNums,
         )
         return con
 

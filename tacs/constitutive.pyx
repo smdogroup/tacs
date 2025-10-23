@@ -1958,7 +1958,7 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                     z0=np.real(z0))
         return prop
 
-cdef class LamParamShellConstitutive(ShellConstitutive):
+cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     """
     This class implements a lamination parameter based parametrization of the shell stiffness and strength properties.
     The class is restricted to symmetric balanced laminates.
@@ -2072,14 +2072,14 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         if 'epsilon' in kwargs:
             epsilon = kwargs['epsilon']
 
-        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+        self.cptr = new TACSLamParamSmearedShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
                                                       f0, f45, f90, f0_num, f45_num, f90_num,
                                                       min_f0, min_f45, min_f90,
                                                       W1, W3, W1_num, W3_num, ksWeight, epsilon)
         self.ptr = self.cptr
         self.ptr.incref()
 
-cdef class LamParamAllShellConstitutive(ShellConstitutive):
+cdef class LamParamFullShellConstitutive(ShellConstitutive):
     """
     This constitutive class implements lamination parameter based parametrization of the shell stiffness and strength properties.
     There are six lamination parameters that define a symmetric balanced laminate.
@@ -2104,7 +2104,7 @@ cdef class LamParamAllShellConstitutive(ShellConstitutive):
         The KS aggregation weight for constraints (default is 30.0).
     """
 
-    cdef TACSLamParamAllShellConstitutive* lam_cptr
+    cdef TACSLamParamFullShellConstitutive* lam_cptr
     def __cinit__(
             self,
             OrthotropicPly ply,
@@ -2116,7 +2116,7 @@ cdef class LamParamAllShellConstitutive(ShellConstitutive):
             TacsScalar ksWeight = 30.0
             ):
 
-        self.lam_cptr = new TACSLamParamAllShellConstitutive(
+        self.lam_cptr = new TACSLamParamFullShellConstitutive(
             ply.ptr,
             t,
             tNum,

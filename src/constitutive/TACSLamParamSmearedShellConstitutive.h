@@ -1,64 +1,54 @@
 /*
-  This file is part of TACS: The Toolkit for the Analysis of Composite
-  Structures, a parallel finite-element code for structural and
-  multidisciplinary design optimization.
+  This file is part of the package TACS.
 
-  Copyright (C) 2010 University of Toronto
-  Copyright (C) 2012 University of Michigan
-  Copyright (C) 2014 Georgia Tech Research Corporation
-  Additional copyright (C) 2010 Graeme J. Kennedy and Joaquim
-  R.R.A. Martins All rights reserved.
+  Copyright (C) 2015 Georgia Tech Research Corporation.
+  Additional copyright (C) 2015 Graeme Kennedy.
+  All rights reserved.
 
-  TACS is licensed under the Apache License, Version 2.0 (the
-  "License"); you may not use this software except in compliance with
-  the License.  You may obtain a copy of the License at
+  TMR is licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this software except in compliance with the License.
+  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
 
-#ifndef TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
-#define TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
+#ifndef TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
+#define TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
 
-/*!
+/*
   This class implements a lamination parameter based parametrization of
   the shell stiffness and strength properties.
 
-  There are six lamination parameters that define a symmetric balanced
-  laminate. These must be combined with appropriate feasibility domain
-  for the constraint on the values of the lamination parameters.
+  The class is restricted to symmetric balanced laminates.
+  The in-plane properties are parametrized in terms of laminate fractions
+  at the angles 0, +/-45 and 90 degrees. The thickness is treated as a
+  continuous design variable. Additional lamination parameters W1 and W3
+  are used for the bending stiffness.
 
-  The failure calculations are based on the maximum failure criteria
-  taken from a set of set ply angles.
-
-  This implementation is based on the original lpFSDTStiffness class
+  The failure index calculations are based on the maximum strain failure
+  criteria imposed at 0, pm 45, 90 ply angles.
 */
-
-class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
+class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
  public:
-  static const int MAX_NUM_FAIL_ANGLES = 12;
-
-  TACSLamParamAllShellConstitutive(TACSOrthotropicPly* _orthoPly, TacsScalar _t,
-                                   int _tNum, TacsScalar _tlb, TacsScalar _tub,
-                                   int _lpNums[], TacsScalar _ksWeight);
-  ~TACSLamParamAllShellConstitutive();
-
-  // -------------------------------------
-  // Set functions for non-default values
-  // --------------------------------------------
-
-  // Set the lamination parameter values directly
-  void setLaminationParameters(TacsScalar _lp[]);
-
-  // Set the number of fail angles to test
-  // -------------------------------------
-  void setNumFailAngles(int _numFailAngles);
-
-  // -------------------------------------
-  // Functions for design variable control
-  // -------------------------------------
+  TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
+                                int _t_num, TacsScalar _min_t,
+                                TacsScalar _max_t, TacsScalar _f0,
+                                TacsScalar _f45, TacsScalar _f90, int _f0_num,
+                                int _f45_num, int _f90_num, TacsScalar _min_f0,
+                                TacsScalar _min_f45, TacsScalar _min_f90,
+                                TacsScalar _W1, TacsScalar _W3, int _W1_num,
+                                int _W3_num, TacsScalar _ksWeight,
+                                TacsScalar _epsilon);
+  ~TACSLamParamSmearedShellConstitutive();
 
   // Retrieve the global design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -73,9 +63,6 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]);
 
-  // -------------------------------------
-  // Evaluate mass properties
-  // -------------------------------------
   // Evaluate the mass per unit area
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]);
@@ -93,17 +80,11 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
                             const TacsScalar X[], const TacsScalar scale[],
                             int dvLen, TacsScalar dfdx[]);
 
-  // -------------------------------------
-  // Evaluate thermal properties
-  // -------------------------------------
-
-  // Evaluate the specific heat. Not implemented for this class.
+  // Evaluate the specific heat
   TacsScalar evalSpecificHeat(int elemIndex, const double pt[],
                               const TacsScalar X[]);
 
-  // -------------------------------------
-  // Compute stress/strain/stiffness
-  // -------------------------------------
+  // Evaluate the stress
   void evalStress(int elemIndex, const double pt[], const TacsScalar X[],
                   const TacsScalar e[], TacsScalar s[]);
 
@@ -116,9 +97,6 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   void evalTangentStiffness(int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar C[]);
 
-  // -------------------------------------
-  // Compute failure criteria
-  // -------------------------------------
   // Calculate the point-wise failure criteria
   TacsScalar evalFailure(int elemIndex, const double pt[], const TacsScalar X[],
                          const TacsScalar e[]);
@@ -133,34 +111,28 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
                         const TacsScalar X[], const TacsScalar strain[],
                         int dvLen, TacsScalar dfdx[]);
 
-  // -------------------------------------
-  // Compute output quantities
-  // -------------------------------------
   // Get the object name
-  const char* getObjectName() { return constName; }
+  const char *getObjectName() { return constName; }
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
  private:
+  static const int NUM_FAIL_ANGLES = 4;
+
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar* _max);
+                      TacsScalar *_max);
   void computeFailureStrainSens(const TacsScalar strain[],
                                 const TacsScalar weights[], TacsScalar sens[]);
-  TacsScalar computeFailureDVSens(const TacsScalar strain[],
-                                  const TacsScalar weights[]);
 
   // Check that the matrix is positive definite (used for testing)
   int checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar* drill);
-
-  // The number of angles to check for failure < MAX_NUM_FAIL_ANGLES
-  int numFailAngles;
+                    TacsScalar As[], TacsScalar *drill);
 
   // The number of design variables
   int numDesignVars;
@@ -172,19 +144,24 @@ class TACSLamParamAllShellConstitutive : public TACSShellConstitutive {
   TacsScalar U1, U2, U3, U4, U5;
   TacsScalar U6, U7;  // The invariants for shear
 
-  TACSOrthotropicPly* orthoPly;
-  TacsScalar ksWeight;
+  TACSOrthotropicPly *orthoPly;
+  TacsScalar ksWeight, epsilon;
 
   // The thickness information
   TacsScalar t;         // The thickness of the laminate
   int tNum;             // The design variable number
   TacsScalar tlb, tub;  // The lower and upper bounds
 
-  // The lamination parameter values
-  TacsScalar lp[6];  // The lamination parameters
-  int lpNums[6];  // The design variable numbers for the lamination parameters
+  // The ply fraction information
+  int n0, n45, n90;                     // The fraction dv numbers
+  TacsScalar f0, f45, f90;              // The fraction values
+  TacsScalar min_f0, min_f45, min_f90;  // The lower fraction bounds
 
-  static const char* constName;
+  // The lamination parameter values
+  int nW1, nW3;       // The design variable numbers
+  TacsScalar W1, W3;  // The lamination parameter values
+
+  static const char *constName;
 };
 
-#endif  // TACS_LAM_PARAM_ALL_SHELL_CONSTITUTIVE_H
+#endif  // TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H

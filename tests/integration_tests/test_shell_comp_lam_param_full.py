@@ -122,7 +122,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ):
             # Lamination parameter design variable numbers
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1
-            con = constitutive.LamParamAllShellConstitutive(
+            con = constitutive.LamParamFullShellConstitutive(
                 ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
             )
 

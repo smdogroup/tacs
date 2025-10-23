@@ -122,7 +122,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ):
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1
             lpNums = np.arange(0, 2, dtype=np.intc) + pfNums[-1] + 1
-            con = constitutive.LamParamShellConstitutive(
+            con = constitutive.LamParamSmearedShellConstitutive(
                 ortho_ply,
                 t=tplate,
                 t_num=dvNum,
