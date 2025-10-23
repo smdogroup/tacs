@@ -39,15 +39,13 @@
 */
 class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
-                                int _t_num, TacsScalar _min_t,
-                                TacsScalar _max_t, TacsScalar _f0,
-                                TacsScalar _f45, TacsScalar _f90, int _f0_num,
-                                int _f45_num, int _f90_num, TacsScalar _min_f0,
-                                TacsScalar _min_f45, TacsScalar _min_f90,
-                                TacsScalar _W1, TacsScalar _W3, int _W1_num,
-                                int _W3_num, TacsScalar _ksWeight,
-                                TacsScalar _epsilon);
+  TACSLamParamSmearedShellConstitutive(
+      TACSOrthotropicPly *_orthoPly, TacsScalar _t, int _t_num,
+      TacsScalar _min_t, TacsScalar _max_t, TacsScalar _f0, TacsScalar _f45,
+      TacsScalar _f90, int _f0_num, int _f45_num, int _f90_num,
+      TacsScalar _min_f0, TacsScalar _min_f45, TacsScalar _min_f90,
+      TacsScalar _W1, TacsScalar _W3, int _W1_num, int _W3_num,
+      TacsScalar _ksWeight, TacsScalar _epsilon);
   ~TACSLamParamSmearedShellConstitutive();
 
   // Retrieve the global design variable numbers

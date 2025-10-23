@@ -40,9 +40,10 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  public:
   static const int MAX_NUM_FAIL_ANGLES = 12;
 
-  TACSLamParamFullShellConstitutive(TACSOrthotropicPly* _orthoPly, TacsScalar _t,
-                                   int _tNum, TacsScalar _tlb, TacsScalar _tub,
-                                   int _lpNums[], TacsScalar _ksWeight);
+  TACSLamParamFullShellConstitutive(TACSOrthotropicPly* _orthoPly,
+                                    TacsScalar _t, int _tNum, TacsScalar _tlb,
+                                    TacsScalar _tub, int _lpNums[],
+                                    TacsScalar _ksWeight);
   ~TACSLamParamFullShellConstitutive();
 
   // -------------------------------------
