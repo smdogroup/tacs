@@ -21,7 +21,7 @@ import numpy as np
 from tacs import pyTACS, constitutive, elements, functions
 
 
-def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False):
+def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=False):
     """Setup FEASolver and static problem.
 
     Parameters
@@ -106,7 +106,7 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
             ortho_ply.setUseTsaiWuCriterion()
             ortho_ply.setUseModifiedTsaiWu(useModifiedTsaiWu)
 
-        if compLPModel == "LamParam":
+        if compLPModel == "LamParamSmeared":
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1
             lpNums = np.arange(0, 2, dtype=np.intc) + pfNums[-1] + 1
             con = constitutive.LamParamSmearedShellConstitutive(
@@ -133,7 +133,7 @@ def setup(compLPModel="LamParamAll", useVMFailure=False, useModifiedTsaiWu=False
             )
             scale = [100.0] + [1.0] * len(pfNums) + [1.0] * len(lpNums)
 
-        elif compLPModel == "LamParamAll":
+        elif compLPModel == "LamParamFull":
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1  # 6
             con = constitutive.LamParamFullShellConstitutive(
                 ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
@@ -187,10 +187,10 @@ if __name__ == "__main__":
         "--compLPModel",
         type=str,
         choices=[
-            "LamParamAll",
-            "LamParam",
+            "LamParamFull",
+            "LamParamSmeared",
         ],
-        default="LamParamAll",
+        default="LamParamFull",
         help="What type of composite lamination parameter model to use",
     )
     parser.add_argument(
