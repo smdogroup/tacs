@@ -1419,7 +1419,7 @@ cdef class BucklingGP(GaussianProcess):
 
     def __cinit__(
         self,
-        int n_train, 
+        int n_train,
         bool affine,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
@@ -1957,6 +1957,15 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                     lam="SMEAR",
                                                     z0=np.real(z0))
         return prop
+
+def LamParamShellConstitutive(*args, **kwargs):
+    warnings.warn(
+        "LamParamShellConstitutive is deprecated and will be removed in a future version. "
+        "Use LamParamSmearedShellConstitutive instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return LamParamSmearedShellConstitutive(*args, **kwargs)
 
 cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     """
