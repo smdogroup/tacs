@@ -367,6 +367,17 @@ class StructProblem(BaseStructProblem):
         coords0 = self.staticProblem.getNodes()
         self.DVGeo.addPointSet(coords0.reshape(-1, 3), self.ptSetName, **pointSetKwargs)
 
+    def getDVGeo(self):
+        """
+        Get the DVGeometry object.
+
+        Returns
+        -------
+        DVGeometry: pygeo.parameterization.BaseDVGeometry or None
+            DVGeometry object.
+        """
+        return self.DVGeo
+
     def setDesignVars(self, x):
         """
         Set the variables in the x-dict for this object.

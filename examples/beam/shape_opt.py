@@ -18,8 +18,8 @@ can be found independently using:
 An analytical solution for this problem can be shown to be:
     d(x) = sqrt(6*V*(L-x)/(t*sigma_y))
 
-The optimization is setup using TACS' MPHYS module, which acts as a wrapper
-for OpenMDAO.
+The optimization is setup using TACS' MACH module, which acts as a wrapper
+for MDOLab's MACH library.
 """
 
 import numpy as np
