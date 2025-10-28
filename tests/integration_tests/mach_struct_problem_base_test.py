@@ -1,6 +1,4 @@
-import os
 from copy import deepcopy
-import tempfile
 import unittest
 
 import numpy as np
@@ -8,7 +6,6 @@ from mpi4py import MPI
 
 from tacs import elements
 from tacs import TACS
-from tacs.mach import StructProblem
 
 
 """
