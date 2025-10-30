@@ -6,7 +6,7 @@ syntax: glob
 !*.*
 !*/
 
-extern/
+extern/*
 !extern/Makefile*
 !extern/f5to*/
 *~
