@@ -228,7 +228,7 @@ int main( int argc, char * argv[] ){
     tec_init = 1;
     delete [] all_vars;
 
-    // For each element, average the nodal data
+    // For each element, average the values at the nodes to get a single element value
     float *avg_edata = new float[ num_elements * num_evariables ];
     memset(avg_edata, 0, num_elements * num_evariables*sizeof(float));
     for ( int i = 0; i < num_elements; i++ ){
