@@ -59,11 +59,13 @@ int create_tec_file( char *data_info, char *var_names,
 
   zone_name    == The name of the zone to use
   zone_type    == One of LINESEG, TRIANGLE, QUAD, BRICK etc
-  num_points   == The number of points
-  num_elements == The number of elements
+  num_points       == The number of points
+  num_elements     == The number of elements
+  value_location   == The location of the values (0 for element-wise, 1 for nodal)
 */
 int create_fe_tec_zone( char *zone_name, ZoneType _zone_type,
                         int _num_points, int _num_elements,
+                        int *_value_location=NULL,
                         int use_strands=0,
                         double solution_time=0.0 ){
   if (_zone_type == ORDERED ||
@@ -89,7 +91,7 @@ zone type\n");
   INTEGER4 num_connected_boundary_faces = 0;
   INTEGER4 total_num_boundary_connections = 0;
   INTEGER4 *passive_var_list = NULL; // No passive variables
-  INTEGER4 *value_location = NULL; // All values are nodal values
+  INTEGER4 *value_location = _value_location; // Array defining if value is nodal or element-wise
   INTEGER4 *share_var_from_zone = NULL;
   INTEGER4 share_con_from_zone = 0;
 
@@ -226,30 +228,18 @@ int main( int argc, char * argv[] ){
     tec_init = 1;
     delete [] all_vars;
 
-    // Count up the number of times each node is referred to
-    // in the discontinuous element-wise data
-    float *counts = new float[ num_points ];
-    memset(counts, 0, num_points*sizeof(float));
-    for ( int j = 0; j < ptr[num_elements]; j++ ){
-      counts[conn[j]] += 1.0;
-    }
-    for ( int i = 0; i < num_points; i++ ){
-      if (counts[i] != 0.0){
-        counts[i] = 1.0/counts[i];
+    // For each element, average the values at the nodes to get a single element value
+    float *avg_edata = new float[ num_elements * num_evariables ];
+    memset(avg_edata, 0, num_elements * num_evariables*sizeof(float));
+    for ( int i = 0; i < num_elements; i++ ){
+      int nnodes = ptr[i+1] - ptr[i];
+      for ( int j = 0; j < num_evariables; j++ ){
+        for ( int k = ptr[i]; k < ptr[i+1]; k++ ){
+          avg_edata[num_evariables*i + j] += edata[num_evariables*k + j];
+        }
+        avg_edata[num_evariables*i + j] /= nnodes;
       }
     }
-
-    // For each component, average the nodal data
-    float *avg_edata = new float[ num_points * num_evariables ];
-    // Nodally average the data
-    memset(avg_edata, 0, num_points * num_evariables*sizeof(float));
-    for ( int j = 0; j < num_evariables; j++ ){
-      for ( int k = 0; k < ptr[num_elements]; k++ ){
-        avg_edata[num_evariables*conn[k] + j] += counts[conn[k]]*edata[num_evariables*k + j];
-      }
-    }
-
-    delete [] counts;
 
     if (!(element_comp_num && conn && cdata)){
       fprintf(stderr, "Error, data, connectivity or \
@@ -284,10 +274,12 @@ int main( int argc, char * argv[] ){
     int *basic_ltypes = new int[ num_basic_elements ];
     int *basic_element_comp_num = new int[ num_basic_elements ];
     int *basic_conn = new int[ basic_conn_size ];
+    int *basic_element_global_ptr = new int[ num_basic_elements ];
 
     int *btypes = basic_ltypes;
     int *belem_comp_num = basic_element_comp_num;
     int *bconn = basic_conn;
+    int *belem_global_ptr = basic_element_global_ptr;
     for ( int k = 0; k < num_elements; k++ ){
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
@@ -330,14 +322,23 @@ int main( int argc, char * argv[] ){
       btypes += ntypes;
       belem_comp_num += ntypes;
       bconn += nconn;
+      for ( int ii = 0; ii < ntypes; ii++ ){
+        belem_global_ptr[ii] = k;
+      }
+      belem_global_ptr += ntypes;
     }
 
     int num_comp = loader->getNumComponents();
 
     int *reduced_points = new int[ num_points ];
     int *reduced_conn = new int[ basic_conn_size ];
-    float *reduced_float_data = NULL;
-    reduced_float_data = new float[ num_points ];
+    int* value_location = new int[ num_variables + num_evariables ];
+    for ( int j = 0; j < num_variables; j++ ){
+      value_location[j] = 1; // 1 = nodal
+    }
+    for ( int j = 0; j < num_evariables; j++ ){
+      value_location[num_variables + j] = 0; // 0 = cell-centered
+    }
 
     for ( int k = 0; k < num_comp; k++ ){
       // Count up the number of elements that use the connectivity
@@ -420,10 +421,16 @@ int main( int argc, char * argv[] ){
         return (1);
       }
 
+      float *reduced_float_data = NULL;
+      reduced_float_data = new float[ npts ];
+
+      float *element_float_data = NULL;
+      element_float_data = new float[ nelems ];
+
       if (nelems > 0 && npts > 0){
         // Create the zone with the solution time
         create_fe_tec_zone(comp_name, zone_type, npts, nelems,
-                           use_strands, solution_time);
+                           value_location, use_strands, solution_time);
 
         // Retrieve the continuous data
         for ( int j = 0; j < num_variables; j++ ){
@@ -436,20 +443,26 @@ int main( int argc, char * argv[] ){
           write_tec_float_data(npts, reduced_float_data);
         }
 
-        // Retrieve the element data
+        // Retrieve the element data as cell-centered values
+        int count = 0;
         for ( int j = 0; j < num_evariables; j++ ){
-          for ( int i = 0; i < num_points; i++ ){
-            if (reduced_points[i] > 0){
-              reduced_float_data[reduced_points[i]-1] =
-                avg_edata[num_evariables*i + j];
+          for ( int i = 0; i < num_basic_elements; i++ ){
+            if (basic_element_comp_num[i] == k){
+              int elem_idx = basic_element_global_ptr[i];
+              element_float_data[count] = avg_edata[num_evariables*elem_idx + j];
+              count++;
             }
           }
-          write_tec_float_data(npts, reduced_float_data);
+          write_tec_float_data(nelems, element_float_data);
+          count = 0;
         }
 
         // Now, write the connectivity
         write_con_data(reduced_conn);
       }
+      // Clean up memory
+      delete [] reduced_float_data;
+      delete [] element_float_data;
     }
 
     if (tec_init){
@@ -461,12 +474,13 @@ int main( int argc, char * argv[] ){
     // Clean up memory
     delete [] reduced_points;
     delete [] reduced_conn;
-    delete [] reduced_float_data;
     delete [] avg_edata;
+    delete [] value_location;
 
     delete [] basic_ltypes;
     delete [] basic_conn;
     delete [] basic_element_comp_num;
+    delete [] basic_element_global_ptr;
 
     delete [] infile;
     delete [] outfile;
