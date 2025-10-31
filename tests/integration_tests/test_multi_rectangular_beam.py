@@ -17,7 +17,7 @@ The cross-section is a solid rectangle with the following properties:
     t0 = 0.05
     deltat = 0.005
 A distributed gravity load case is applied.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
 We also apply an adjacency constraint on the difference between the thickness dvs of each cross-section.
 """
@@ -197,3 +197,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
     def test_total_xpt_sensitivities(self):
         super().test_total_xpt_sensitivities()
+
+    def test_adjacency(self):
+        adjCon = self.tacs_probs[-1]
+        expectedAdjacency = [(0, 1), (1, 2)]
+        self.assertEqual(sorted(expectedAdjacency), sorted(adjCon.adjacentComps))
+
+
+if __name__ == "__main__":
+    unittest.main()
