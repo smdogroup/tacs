@@ -332,8 +332,7 @@ int main( int argc, char * argv[] ){
 
     int *reduced_points = new int[ num_points ];
     int *reduced_conn = new int[ basic_conn_size ];
-    int* value_location = NULL;
-    value_location = new int[ num_variables + num_evariables ];
+    int* value_location = new int[ num_variables + num_evariables ];
     for ( int j = 0; j < num_variables; j++ ){
       value_location[j] = 1; // 1 = nodal
     }
