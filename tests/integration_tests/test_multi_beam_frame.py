@@ -149,7 +149,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     def test_adjacency(self):
         adjCon = self.tacs_probs[-1]
         expectedAdjacency = [(0, 1), (0, 3), (1, 2), (1, 3)]
-        self.assertEqual(sorted(expectedAdjacency), sorted(adjCon.adjacentComps))
+        adjacencyAsExpected = None
+        if adjCon.comm.rank == 0:
+            adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
+                adjCon.adjacentComps
+            )
+        adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
+        self.assertTrue(adjacencyAsExpected)
 
 
 if __name__ == "__main__":
