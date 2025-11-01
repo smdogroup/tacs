@@ -76,6 +76,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     }
 
     def setup_tacs_problems(self, comm):
+
+        # Overwrite default check values
+        if self.dtype == complex:
+            self.rtol = 1e-10
+            self.atol = 1e-14
+            self.dh = 1e-200
+
         FEAssembler = pytacs.pyTACS(bdf_file, comm)
 
         # Callback function used to setup TACS element objects and DVs
