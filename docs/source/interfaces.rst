@@ -2,7 +2,7 @@ Interfaces
 **********
 TACS is implemented in C++, so the interface through C++ contains all publicly accessible class member functions.
 A Python-level interface is created by wrapping the most important classes and functions into Python using Cython.
-There are currently several supported approaches for interfacing with this functionality in Python: direct, pyTACS, MPhys, and caps2tacs.
+There are currently several supported approaches for interfacing with this functionality in Python: direct, pyTACS, MPhys, MACH, and caps2tacs.
 These methods are documented below.
 
 .. toctree::
@@ -10,5 +10,6 @@ These methods are documented below.
 
   core/TACS
   pytacs/pytacs
-  mphys/mphys
+  mphys/mphy
+  mach/mach
   caps2tacs/caps2tacs
