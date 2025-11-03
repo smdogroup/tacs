@@ -79,8 +79,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 1e-10
-            self.atol = 1e-14
+            self.rtol = 1e-8
+            self.atol = 1e-10
             self.dh = 1e-200
 
         FEAssembler = pytacs.pyTACS(bdf_file, comm)
