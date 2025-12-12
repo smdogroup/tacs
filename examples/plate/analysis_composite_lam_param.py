@@ -173,7 +173,13 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
     nodeID = 481  # Center of plate
     staticProb.addLoadToNodes(nodeID, F, nastranOrdering=True)
 
-    return FEAAssembler, staticProb
+    # Create lamination parameter constraints
+    constraint = FEAAssembler.createLamParamFullConstraint("lam_param_con_full")
+    allCompIDs = FEAAssembler.selectCompIDs()
+    constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7), dvWeights=np.ones(6))
+
+
+    return FEAAssembler, staticProb, constraint
 
 
 if __name__ == "__main__":
@@ -208,7 +214,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    FEAAssembler, staticProb = setup(
+    FEAAssembler, staticProb, constraint = setup(
         compLPModel=args.compLPModel,
         useVMFailure=args.useVMFailure,
         useModifiedTsaiWu=args.useModifiedTsaiWu,
@@ -219,6 +225,10 @@ if __name__ == "__main__":
     # Evaluate functions
     funcs = {}
     staticProb.evalFunctions(funcs)
+    constraint.evalConstraints(funcs)
+
+    print(funcs)
+
     if comm.rank == 0:
         for funcType in ["mass", "failure"]:
             print("\n%s FUNCTIONS:" % funcType.upper())

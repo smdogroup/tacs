@@ -2261,6 +2261,41 @@ class pyTACS(BaseUI):
         constr.setNodes(self.Xpts0)
         return constr
 
+    @postinitialize_method
+    def createLamParamFullConstraint(self, name, options=None):
+        """
+        Create a new LamParamFullConstraint for constraining the full set of
+        laminate parameters across a component.
+        This constraint is used to ensure that the laminate parameters stay within a feasible region.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to VolumeConstraint instance (case-insensitive).
+            Defaults to None.
+
+        Returns
+        -------
+        constraint : tacs.constraints.createLamParamFullConstraint
+            LamParamFullConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.LamParamFullConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+
+
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
