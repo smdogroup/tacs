@@ -1,11 +1,44 @@
 """
-The purpose of this module is to define a class to handle design variable constraints related to laminate parameters in composite structures.
+Lamination parameter constraints for composite design variables.
 
-Constraints considered are placed on membrane and bending lamination parameters.
+This module provides a TACS constraint implementation that enforces
+non-linear relationships between lamination parameters for composite
+components. For each selected component, three scalar constraints are
+evaluated to enforce in-plane and bending feasibility limits.
 
-TODO: Add definitions
+Lamination parameter ordering
+-----------------------------
+Internally, lamination parameters are stored per-component in a fixed
+6-entry ordering (indexed 1..6 for user-facing DV indices):
 
+    1 -> V1
+    2 -> V3
+    3 -> W1
+    4 -> W2
+    5 -> W3
+    6 -> W4
 
+Constraint definitions (per component)
+-------------------------------------
+- Constraint 1 (in-plane relation):
+    f1 = 2 * V1^2 - V3
+
+- Constraint 2 (bending magnitude):
+    f2 = W1^2 + W2^2
+
+- Constraint 3 (bending feasibility):
+    There are two cases depending on which W-parameters are present
+    for a given component:
+
+    * If W1 and W3 exist but W2 and W4 do not:
+        f3 = 2 * W1^2 - W3
+
+    * Otherwise (general case, missing W values treated as zero):
+        f3 = 2*W1^2*(1 - W3) + 2*W2^2*(1 + W3) + W3^2 + W4^2 - 4*W1*W2*W4
+
+Usage
+-----
+Create the constraint via :meth:`pyTACS.createLamParamFullConstraint`.
 
 .. note:: This class should be created using the
     :meth:`pyTACS.createLamParamFullConstraint <tacs.pytacs.pyTACS.createLamParamFullConstraint>` method.
@@ -282,9 +315,55 @@ class LamParamFullConstraint(TACSConstraint):
 
 
 class SparseLamParamFullConstraint(object):
+    """
+    Sparse constraint object for lamination-parameter-based constraints.
+
+    This object holds a sparse mapping matrix `A_lp` from local design
+    variables to per-component lamination parameters, evaluates the
+    three nonlinear constraints per component, and returns analytic
+    sparse sensitivities.
+
+    Attributes
+    ----------
+    A_lp : scipy.sparse.csr_matrix
+        Sparse mapping of shape (nComps * nLP, nLocalDVs) mapping local
+        DVs -> lamination parameters.
+    nLP : int
+        Number of lamination-parameter slots per component (6).
+    nComps : int
+        Number of components selected for the constraint.
+    nCon : int
+        Number of scalar constraints (3 * nComps).
+    present : ndarray of bool
+        Boolean mask of shape (nComps, nLP) indicating which LP rows
+        are present (non-zero) for each component.
+    """
+
     dtype = TACSConstraint.dtype
 
     def __init__(self, comm, rows, cols, vals, nComps, nLP, ncols, lb=-1e20, ub=1e20):
+        """
+        Initialize the sparse lamination-parameter constraint object.
+
+        Parameters
+        ----------
+        comm : MPI.Intracomm
+            MPI communicator used for allreduce operations.
+        rows, cols, vals : sequence
+            Row indices, column indices and values for constructing the
+            CSR mapping matrix `A_lp` of shape (nComps*nLP, ncols).
+        nComps : int
+            Number of components selected.
+        nLP : int
+            Number of lamination-parameter slots per component.
+        ncols : int
+            Number of local design variables (columns of `A_lp`).
+        lb, ub : float or array-like
+            Lower and upper bounds for each scalar constraint. Can be a
+            scalar (applies to all constraints), an array of length
+            `nComps` (applies to each component), or an array of length
+            `3*nComps` (one bound per scalar constraint).
+        """
         # Sparse mapping from design vars to lamination parameters
         self.A_lp = sp.sparse.csr_matrix(
             (vals, (rows, cols)), shape=(nComps * nLP, ncols), dtype=self.dtype
@@ -302,11 +381,7 @@ class SparseLamParamFullConstraint(object):
         # row_nnz is length nComps * nLP
         rowNnz = np.diff(self.A_lp.indptr)
         # Get a boolean array of shape (nComps, nLP) indicating presence
-        try:
-            self.present = rowNnz.reshape(self.nComps, self.nLP) > 0
-        except Exception:
-            # If reshape fails, fall back to all-false presence
-            self.present = np.zeros((self.nComps, self.nLP), dtype=bool)
+        self.present = rowNnz.reshape(self.nComps, self.nLP) > 0
 
         # Save bound information (apply to each constraint)
         if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
@@ -333,7 +408,23 @@ class SparseLamParamFullConstraint(object):
                 self.ub = np.array([ub] * self.nCon, dtype=self.dtype)
 
     def evalCon(self, x):
-        # Compute lamination parameters globally
+        """
+        Evaluate the nonlinear constraints for the provided local design
+        variable vector `x`.
+
+        Parameters
+        ----------
+        x : ndarray
+            Local design variable vector.
+
+        Returns
+        -------
+        ndarray
+            An array of length `3 * nComps` containing the three scalar
+            constraint values per component.
+        """
+        # Compute lamination parameters globally. 
+        # Compute the local contribution and then sum across MPI ranks.
         lpGlobal = self.comm.allreduce(self.A_lp.dot(x))
         # lpGlobal is length (nComps * nLP) so reshape to (nComps, nLP) for easier access
         lpMat = lpGlobal.reshape(self.nComps, self.nLP)
@@ -390,6 +481,20 @@ class SparseLamParamFullConstraint(object):
         return np.asarray(conList, dtype=self.dtype)
 
     def evalConSens(self, x=None):
+        """
+        Compute analytic sparse sensitivities of the constraints w.r.t
+        the local design variables `x`.
+
+        Parameters
+        ----------
+        x : ndarray
+            Local design variable vector.
+
+        Returns
+        -------
+        scipy.sparse.csr_matrix
+            Sparse Jacobian of shape `(nCon, nLocalDVs)`.
+        """
         # Compute lamination parameters globally
         lpGlobal = self.comm.allreduce(self.A_lp.dot(x))
         lpMat = lpGlobal.reshape(self.nComps, self.nLP)
@@ -481,4 +586,12 @@ class SparseLamParamFullConstraint(object):
         return J_x
 
     def getBounds(self):
+        """
+        Return lower and upper bounds for the assembled constraints.
+
+        Returns
+        -------
+        (ndarray, ndarray)
+            Tuple of (lb, ub) arrays of length `nCon`.
+        """
         return self.lb.copy(), self.ub.copy()
