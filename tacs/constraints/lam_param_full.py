@@ -162,15 +162,15 @@ class LamParamFullConstraint(TACSConstraint):
 
         # Build weight lookup for provided dvIndices
         # dvIndices are element-local indices (e.g. 1..6). Map to weights
-        weight_by_dv = {}
+        weightByDv = {}
         for dv, w in zip(dvIndices, dvWeights):
-            weight_by_dv[int(dv)] = w
+            weightByDv[int(dv)] = w
 
-        # Rows are indexed as (comp_index*TOTAL_LP + lp_index)
+        # Rows are indexed as (compIndex * TOTAL_LP + lpIndex)
         rows = []
         cols = []
         vals = []
-        for comp_i, comp in enumerate(compIDs):
+        for compIndex, comp in enumerate(compIDs):
             # Get the TACS element object associated with this compID
             elemObj = self.meshLoader.getElementObject(comp, 0)
             elemIndex = 0
@@ -179,16 +179,19 @@ class LamParamFullConstraint(TACSConstraint):
 
             # For each of the 6 lamination parameter slots, check if the
             # corresponding element DV index (1..6) was requested and owned
-            for lp_pos in range(TOTAL_LP):
-                dv_index = lp_pos + 1
-                if dv_index in weight_by_dv:
+            for lpIndex in range(TOTAL_LP):
+                dvIndex = lpIndex + 1
+                if dvIndex in weightByDv:
                     # Ensure the element actually has this DV slot
-                    if dv_index < len(globalDvNums) and globalDvNums[dv_index] in self.globalToLocalDVNums:
-                        globalDVNum = globalDvNums[dv_index]
+                    if (
+                        dvIndex < len(globalDvNums)
+                        and globalDvNums[dvIndex] in self.globalToLocalDVNums
+                    ):
+                        globalDVNum = globalDvNums[dvIndex]
                         localDVNum = self.globalToLocalDVNums[globalDVNum]
-                        rows.append(comp_i * TOTAL_LP + lp_pos)
+                        rows.append(compIndex * TOTAL_LP + lpIndex)
                         cols.append(localDVNum)
-                        vals.append(weight_by_dv[dv_index])
+                        vals.append(weightByDv[dvIndex])
 
         nLocalDVs = self.getNumDesignVars()
 
@@ -217,7 +220,7 @@ class LamParamFullConstraint(TACSConstraint):
         evalCons : iterable object containing strings.
             If not none, use these constraints to evaluate.
         ignoreMissing : bool
-            Flag to supress checking for a valid constraint. Please use
+            Flag to suppress checking for a valid constraint. Please use
             this option with caution.
 
         Examples
@@ -243,7 +246,7 @@ class LamParamFullConstraint(TACSConstraint):
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
         corresponding to the strings in evalCons are evaluated and
-        updated into the provided dictionary. The derivitives with
+        updated into the provided dictionary. The derivatives with
         respect to all design variables and node locations are computed.
 
         Parameters
@@ -277,6 +280,7 @@ class LamParamFullConstraint(TACSConstraint):
                 self.x.getArray()
             )
 
+
 class SparseLamParamFullConstraint(object):
     dtype = TACSConstraint.dtype
 
@@ -296,9 +300,10 @@ class SparseLamParamFullConstraint(object):
 
         # Determine which lamination-parameter rows are present (nonzero)
         # row_nnz is length nComps * nLP
-        row_nnz = np.diff(self.A_lp.indptr)
+        rowNnz = np.diff(self.A_lp.indptr)
+        # Get a boolean array of shape (nComps, nLP) indicating presence
         try:
-            self.present = (row_nnz.reshape(self.nComps, self.nLP) > 0)
+            self.present = rowNnz.reshape(self.nComps, self.nLP) > 0
         except Exception:
             # If reshape fails, fall back to all-false presence
             self.present = np.zeros((self.nComps, self.nLP), dtype=bool)
@@ -310,9 +315,9 @@ class SparseLamParamFullConstraint(object):
             self.lb = np.array([lb] * self.nCon, dtype=self.dtype)
         else:
             # If an array of length nComps provided, expand to 3 per comp
-            lb_arr = np.asarray(lb)
-            if lb_arr.ndim == 1 and len(lb_arr) == nComps:
-                self.lb = np.repeat(lb_arr.astype(self.dtype), 3)
+            lbArr = np.asarray(lb)
+            if lbArr.ndim == 1 and len(lbArr) == nComps:
+                self.lb = np.repeat(lbArr.astype(self.dtype), 3)
             else:
                 self.lb = np.array([lb] * self.nCon, dtype=self.dtype)
 
@@ -321,23 +326,21 @@ class SparseLamParamFullConstraint(object):
         elif isinstance(ub, float) or isinstance(ub, complex):
             self.ub = np.array([ub] * self.nCon, dtype=self.dtype)
         else:
-            ub_arr = np.asarray(ub)
-            if ub_arr.ndim == 1 and len(ub_arr) == nComps:
-                self.ub = np.repeat(ub_arr.astype(self.dtype), 3)
+            ubArr = np.asarray(ub)
+            if ubArr.ndim == 1 and len(ubArr) == nComps:
+                self.ub = np.repeat(ubArr.astype(self.dtype), 3)
             else:
                 self.ub = np.array([ub] * self.nCon, dtype=self.dtype)
 
     def evalCon(self, x):
         # Compute lamination parameters globally
-        lp_global = self.comm.allreduce(self.A_lp.dot(x))
-        # lp_global is length (nComps * nLP)
-        lp_mat = lp_global.reshape(self.nComps, self.nLP)
+        lpGlobal = self.comm.allreduce(self.A_lp.dot(x))
+        # lpGlobal is length (nComps * nLP) so reshape to (nComps, nLP) for easier access
+        lpMat = lpGlobal.reshape(self.nComps, self.nLP)
 
-        print(lp_mat)
-
-        con_list = []
-        for i in range(self.nComps):
-            lp = lp_mat[i]
+        conList = []
+        for compIndex in range(self.nComps):
+            lp = lpMat[compIndex]
 
             # Map indices (values default to 0.0 if not present)
             V1 = lp[0]
@@ -347,12 +350,12 @@ class SparseLamParamFullConstraint(object):
             W3 = lp[4]
             W4 = lp[5]
 
-            hasV1 = bool(self.present[i, 0])
-            hasV3 = bool(self.present[i, 1])
-            hasW1 = bool(self.present[i, 2])
-            hasW2 = bool(self.present[i, 3])
-            hasW3 = bool(self.present[i, 4])
-            hasW4 = bool(self.present[i, 5])
+            hasV1 = bool(self.present[compIndex, 0])
+            hasV3 = bool(self.present[compIndex, 1])
+            hasW1 = bool(self.present[compIndex, 2])
+            hasW2 = bool(self.present[compIndex, 3])
+            hasW3 = bool(self.present[compIndex, 4])
+            hasW4 = bool(self.present[compIndex, 5])
 
             # Constraint 1: in-plane relation (only if V1 or V3 present)
             if hasV1 or hasV3:
@@ -382,27 +385,26 @@ class SparseLamParamFullConstraint(object):
             else:
                 con3 = 0.0
 
-            con_list.extend([con1, con2, con3])
+            conList.extend([con1, con2, con3])
 
-        print("final con_list")
-        print(con_list)
-        return np.asarray(con_list, dtype=self.dtype)
+        return np.asarray(conList, dtype=self.dtype)
 
     def evalConSens(self, x=None):
         # Compute lamination parameters globally
-        lp_global = self.comm.allreduce(self.A_lp.dot(x))
-        lp_mat = lp_global.reshape(self.nComps, self.nLP)
+        lpGlobal = self.comm.allreduce(self.A_lp.dot(x))
+        lpMat = lpGlobal.reshape(self.nComps, self.nLP)
 
         # Build Jacobian of constraints w.r.t lamination parameters (sparse)
         # J_lp has shape (nCon, nComps*nLP)
         data = []
-        row_idx = []
-        col_idx = []
+        rowIdx = []
+        colIdx = []
 
-        for comp_i in range(self.nComps):
-            lp = lp_mat[comp_i]
-            base_row = comp_i * 3
-            base_lp = comp_i * self.nLP
+        for compIndex in range(self.nComps):
+            lp = lpMat[compIndex]
+            baseRow = compIndex * 3
+            baseLp = compIndex * self.nLP
+
             # Values
             V1 = lp[0]
             V3 = lp[1]
@@ -411,62 +413,67 @@ class SparseLamParamFullConstraint(object):
             W3 = lp[4]
             W4 = lp[5]
 
-            hasV1 = bool(self.present[comp_i, 0])
-            hasV3 = bool(self.present[comp_i, 1])
-            hasW1 = bool(self.present[comp_i, 2])
-            hasW2 = bool(self.present[comp_i, 3])
-            hasW3 = bool(self.present[comp_i, 4])
-            hasW4 = bool(self.present[comp_i, 5])
+            hasV1 = bool(self.present[compIndex, 0])
+            hasV3 = bool(self.present[compIndex, 1])
+            hasW1 = bool(self.present[compIndex, 2])
+            hasW2 = bool(self.present[compIndex, 3])
+            hasW3 = bool(self.present[compIndex, 4])
+            hasW4 = bool(self.present[compIndex, 5])
 
             # d(con1)/d(lp): con1 = 2 V1^2 - V3 --> dV1 = 4 V1, dV3 = -1
             if hasV1:
-                row_idx.append(base_row)
-                col_idx.append(base_lp + 0)
+                rowIdx.append(baseRow)
+                colIdx.append(baseLp + 0)
                 data.append(4.0 * V1)
             if hasV3:
-                row_idx.append(base_row)
-                col_idx.append(base_lp + 1)
+                rowIdx.append(baseRow)
+                colIdx.append(baseLp + 1)
                 data.append(-1.0)
 
             # d(con2)/d(lp): con2 = W1^2 + W2^2 --> dW1 = 2 W1, dW2 = 2 W2
             if hasW1:
-                row_idx.append(base_row + 1)
-                col_idx.append(base_lp + 2)
+                rowIdx.append(baseRow + 1)
+                colIdx.append(baseLp + 2)
                 data.append(2.0 * W1)
             if hasW2:
-                row_idx.append(base_row + 1)
-                col_idx.append(base_lp + 3)
+                rowIdx.append(baseRow + 1)
+                colIdx.append(baseLp + 3)
                 data.append(2.0 * W2)
 
             # d(con3)/d(lp): handle special and general expression
             if hasW1 and hasW3 and not (hasW2 or hasW4):
                 # special case: con3 = 2 W1^2 - W3
-                row_idx.append(base_row + 2)
-                col_idx.append(base_lp + 2)
+                rowIdx.append(baseRow + 2)
+                colIdx.append(baseLp + 2)
                 data.append(4.0 * W1)
-                row_idx.append(base_row + 2)
-                col_idx.append(base_lp + 4)
+                rowIdx.append(baseRow + 2)
+                colIdx.append(baseLp + 4)
                 data.append(-1.0)
             elif hasW1 or hasW2 or hasW3 or hasW4:
                 # general derivatives (only add entries for present LPs)
                 if hasW1:
-                    row_idx.append(base_row + 2)
-                    col_idx.append(base_lp + 2)
+                    rowIdx.append(baseRow + 2)
+                    colIdx.append(baseLp + 2)
                     data.append(4.0 * W1 * (1.0 - W3) - 4.0 * W2 * W4)
                 if hasW2:
-                    row_idx.append(base_row + 2)
-                    col_idx.append(base_lp + 3)
+                    rowIdx.append(baseRow + 2)
+                    colIdx.append(baseLp + 3)
                     data.append(4.0 * W2 * (1.0 + W3) - 4.0 * W1 * W4)
                 if hasW3:
-                    row_idx.append(base_row + 2)
-                    col_idx.append(base_lp + 4)
+                    rowIdx.append(baseRow + 2)
+                    colIdx.append(baseLp + 4)
                     data.append(2.0 * (W2 * W2 - W1 * W1) + 2.0 * W3)
                 if hasW4:
-                    row_idx.append(base_row + 2)
-                    col_idx.append(base_lp + 5)
+                    rowIdx.append(baseRow + 2)
+                    colIdx.append(baseLp + 5)
                     data.append(2.0 * W4 - 4.0 * W1 * W2)
 
-        J_lp = sp.sparse.csr_matrix((data, (row_idx, col_idx)), shape=(self.nCon, self.nComps * self.nLP), dtype=self.dtype)
+        # Construct sparse Jacobian matrix
+        J_lp = sp.sparse.csr_matrix(
+            (data, (rowIdx, colIdx)),
+            shape=(self.nCon, self.nComps * self.nLP),
+            dtype=self.dtype,
+        )
 
         # Chain rule: J_x = J_lp * A_lp
         J_x = J_lp.dot(self.A_lp)
