@@ -119,10 +119,12 @@ class LamParamFullConstraint(TACSConstraint):
             If None, all compIDs will be selected. Defaults to None.
 
         lower: float or complex
-            Lower bound for constraints. Defaults to -1e20 for all lamination parameter constraints.
+            Lower bound for constraints. Defaults to -1e20 and is multiplied
+            by lpConScale internally.
 
         upper: float or complex
-            Upper bound for constraints. Defaults to 1.0 for all lamination parameter constraints.
+            Upper bound for constraints. Defaults to 1.0 and is multiplied by
+            lpConScale internally.
 
         dvIndices : int or array-like[int] or None
             Index numbers of lamination parameter DVs to be used in constraint.
@@ -151,7 +153,11 @@ class LamParamFullConstraint(TACSConstraint):
         elif isinstance(dvIndices, int):
             dvIndices = [dvIndices]
 
-        constrObj = self._createConstraint(dvIndices, compIDs, lower, upper, lpConScale)
+        # Set bounds (scaled by lpConScale)
+        ubound = lpConScale * upper
+        lbound = lpConScale * lower
+
+        constrObj = self._createConstraint(dvIndices, compIDs, lbound, ubound, lpConScale)
         if constrObj.nCon > 0:
             self.constraintList[conName] = constrObj
             success = True
@@ -176,10 +182,10 @@ class LamParamFullConstraint(TACSConstraint):
             List of compIDs to select.
 
         lbound: float or complex
-            Lower bound for scaled constraints. Defaults to -1e20.
+            Lower bound for scaled constraints.
 
         ubound: float or complex
-            Upper bound for scaled constraints. Defaults to 1.0.
+            Upper bound for scaled constraints.
 
         lpConScale: float or complex
             Scaling factor applied to constraint values.
