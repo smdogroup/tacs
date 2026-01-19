@@ -21,20 +21,26 @@ Internally, lamination parameters are stored per-component in a fixed
 Constraint definitions (per component)
 -------------------------------------
 - Constraint 1 (in-plane relation):
-    f1 = 2 * V1^2 - V3
+    f1 = lpConScale * (2 * V1^2 - V3)
 
 - Constraint 2 (bending magnitude):
-    f2 = W1^2 + W2^2
+    f2 = lpConScale * (W1^2 + W2^2)
 
 - Constraint 3 (bending feasibility):
     There are two cases depending on which W-parameters are present
     for a given component:
 
     * If W1 and W3 exist but W2 and W4 do not:
-        f3 = 2 * W1^2 - W3
+        f3 = lpConScale * (2 * W1^2 - W3)
 
     * Otherwise (general case, missing W values treated as zero):
-        f3 = 2*W1^2*(1 - W3) + 2*W2^2*(1 + W3) + W3^2 + W4^2 - 4*W1*W2*W4
+        f3 = lpConScale * (2*W1^2*(1 - W3) + 2*W2^2*(1 + W3) + W3^2 + W4^2 - 4*W1*W2*W4)
+
+Constraint scaling
+------------------
+The `lpConScale` parameter applies a uniform multiplicative scaling to all
+constraint values and their sensitivities. The upper/lower bounds apply
+to the scaled constraint values.
 
 Usage
 -----
@@ -97,7 +103,7 @@ class LamParamFullConstraint(TACSConstraint):
         )
 
     def addConstraint(
-        self, conName, compIDs=None, lower=-1e20, upper=1.0, dvIndices=0, dvWeights=1.0
+        self, conName, compIDs=None, lower=-1e20, upper=1.0, dvIndices=None, lpConScale=1.0
     ):
         """
         Generic method to adding a new constraint set for TACS.
@@ -118,15 +124,16 @@ class LamParamFullConstraint(TACSConstraint):
         upper: float or complex
             Upper bound for constraints. Defaults to 1.0 for all lamination parameter constraints.
 
-        dvIndices : int or array-like[int]
+        dvIndices : int or array-like[int] or None
             Index numbers of lamination parameter DVs to be used in constraint.
             Indices permitted correspond to the internal object DV numbers
             of the lamination parameters, that is [1,2,3,4,5,6] = [V1, V3, W1, W2, W3, W4]
-            Defaults to 0.
+            If None, all available DVs are used. Defaults to None.
 
-        dvWeights : float or complex or array-like[float] or array-like[complex]
-            Linear scaling factors for each DV used in constraint definition.
-            If list, should match length of dvIndices. Defaults to 1's.
+        lpConScale : float or complex
+            Scaling factor applied uniformly to all constraint values.
+            The constraint upper/lower bounds apply to the scaled constraint values.
+            Defaults to 1.0.
 
         """
         if compIDs is not None:
@@ -136,17 +143,15 @@ class LamParamFullConstraint(TACSConstraint):
             nComps = self.meshLoader.getNumComponents()
             compIDs = list(range(nComps))
 
-        if hasattr(dvIndices, "__iter__"):
+        # If dvIndices not specified, use all available DVs
+        if dvIndices is None:
+            dvIndices = [1, 2, 3, 4, 5, 6]
+        elif hasattr(dvIndices, "__iter__"):
             dvIndices = list(dvIndices)
         elif isinstance(dvIndices, int):
             dvIndices = [dvIndices]
 
-        if hasattr(dvWeights, "__iter__"):
-            dvWeights = list(dvWeights)
-        elif isinstance(dvWeights, float) or isinstance(dvWeights, complex):
-            dvWeights = [dvWeights]
-
-        constrObj = self._createConstraint(dvIndices, dvWeights, compIDs, lower, upper)
+        constrObj = self._createConstraint(dvIndices, compIDs, lower, upper, lpConScale)
         if constrObj.nCon > 0:
             self.constraintList[conName] = constrObj
             success = True
@@ -156,7 +161,7 @@ class LamParamFullConstraint(TACSConstraint):
 
         return success
 
-    def _createConstraint(self, dvIndices, dvWeights, compIDs, lbound, ubound):
+    def _createConstraint(self, dvIndices, compIDs, lbound, ubound, lpConScale):
         """
         Create a new constraint object for TACS.
 
@@ -165,25 +170,23 @@ class LamParamFullConstraint(TACSConstraint):
         dvIndices : list[int]
             Index numbers of lamination parameter DVs to be used in constraint.
             Indices permitted correspond to the internal object DV numbers
-            of the lamination parameters, that is [1,2,3,4,5,6] = [V1, V3, W1, W2, W3, W4]
-            Defaults to 0.
-
-        dvWeights : list[float or complex]
-            Linear scaling factors for each DV used in constraint definition.
-            If list, should match length of dvIndices. Defaults to 1's.
+            of the lamination parameters, that is [1,2,3,4,5,6] = [V1, V3, W1, W2, W3, W4].
 
         compIDs: list[int]
             List of compIDs to select.
 
         lbound: float or complex
-            Lower bound for constraints. Defaults to -1e20.
+            Lower bound for scaled constraints. Defaults to -1e20.
 
         ubound: float or complex
-            Upper bound for constraints. Defaults to 1.
+            Upper bound for scaled constraints. Defaults to 1.0.
+
+        lpConScale: float or complex
+            Scaling factor applied to constraint values.
 
         Returns
         -------
-        constraint : tacs.constraints.base.SparseLinearConstraint or None
+        constraint : SparseLamParamFullConstraint or None
             Constraint object if successful, None otherwise.
 
         """
@@ -192,12 +195,6 @@ class LamParamFullConstraint(TACSConstraint):
         # indices: [1..6] -> [V1, V3, W1, W2, W3, W4]
         TOTAL_LP = 6
         nComps = len(compIDs)
-
-        # Build weight lookup for provided dvIndices
-        # dvIndices are element-local indices (e.g. 1..6). Map to weights
-        weightByDv = {}
-        for dv, w in zip(dvIndices, dvWeights):
-            weightByDv[int(dv)] = w
 
         # Rows are indexed as (compIndex * TOTAL_LP + lpIndex)
         rows = []
@@ -214,7 +211,7 @@ class LamParamFullConstraint(TACSConstraint):
             # corresponding element DV index (1..6) was requested and owned
             for lpIndex in range(TOTAL_LP):
                 dvIndex = lpIndex + 1
-                if dvIndex in weightByDv:
+                if dvIndex in dvIndices:
                     # Ensure the element actually has this DV slot
                     if (
                         dvIndex < len(globalDvNums)
@@ -224,7 +221,7 @@ class LamParamFullConstraint(TACSConstraint):
                         localDVNum = self.globalToLocalDVNums[globalDVNum]
                         rows.append(compIndex * TOTAL_LP + lpIndex)
                         cols.append(localDVNum)
-                        vals.append(weightByDv[dvIndex])
+                        vals.append(1.0)
 
         nLocalDVs = self.getNumDesignVars()
 
@@ -238,13 +235,13 @@ class LamParamFullConstraint(TACSConstraint):
             nLocalDVs,
             lbound,
             ubound,
+            lpConScale,
         )
 
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
         Evaluate values for constraints. The constraints corresponding to the strings in
-        evalCons are evaluated and updated into the provided
-        dictionary.
+        evalCons are evaluated and updated into the provided dictionary.
 
         Parameters
         ----------
@@ -259,10 +256,10 @@ class LamParamFullConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> dvConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> lamParamFullConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
-        >>> # Result will look like (if DVConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR': array([12354.10])}
+        >>> # Result will look like (if LamParamFullConstraint has name of 'c1'):
+        >>> # {'c1_LE_SPAR': array([12.3, 4.56, 7.89])}
         """
         # Check if user specified which constraints to output
         # Otherwise, output them all
@@ -292,10 +289,10 @@ class LamParamFullConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> dvConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> lamParamFullConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
         >>> funcsSens
-        >>> # Result will look like (if DVConstraint has name of 'c1'):
-        >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
+        >>> # Result will look like (if LamParamFullConstraint has name of 'c1'):
+        >>> # {'c1_LE_SPAR': {'struct': <Compressed Sparse Row sparse matrix of dtype 'float64' with 8 stored elements and shape (3, 7)>}}
         """
         # Check if user specified which constraints to output
         # Otherwise, output them all
@@ -341,7 +338,7 @@ class SparseLamParamFullConstraint(object):
 
     dtype = TACSConstraint.dtype
 
-    def __init__(self, comm, rows, cols, vals, nComps, nLP, ncols, lb=-1e20, ub=1e20):
+    def __init__(self, comm, rows, cols, vals, nComps, nLP, ncols, lb=-1e20, ub=1e20, lpConScale=1.0):
         """
         Initialize the sparse lamination-parameter constraint object.
 
@@ -363,6 +360,9 @@ class SparseLamParamFullConstraint(object):
             scalar (applies to all constraints), an array of length
             `nComps` (applies to each component), or an array of length
             `3*nComps` (one bound per scalar constraint).
+        lpConScale : float or complex
+            Scaling factor applied uniformly to all constraint values.
+            Defaults to 1.0.
         """
         # Sparse mapping from design vars to lamination parameters
         self.A_lp = sp.sparse.csr_matrix(
@@ -376,6 +376,8 @@ class SparseLamParamFullConstraint(object):
         self.nCon = 3 * nComps
         # MPI comm
         self.comm = comm
+        # Constraint scaling factor
+        self.lpConScale = lpConScale
 
         # Determine which lamination-parameter rows are present (nonzero)
         # row_nnz is length nComps * nLP
@@ -423,7 +425,7 @@ class SparseLamParamFullConstraint(object):
             An array of length `3 * nComps` containing the three scalar
             constraint values per component.
         """
-        # Compute lamination parameters globally. 
+        # Compute lamination parameters globally.
         # Compute the local contribution and then sum across MPI ranks.
         lpGlobal = self.comm.allreduce(self.A_lp.dot(x))
         # lpGlobal is length (nComps * nLP) so reshape to (nComps, nLP) for easier access
@@ -450,23 +452,23 @@ class SparseLamParamFullConstraint(object):
 
             # Constraint 1: in-plane relation (only if V1 or V3 present)
             if hasV1 or hasV3:
-                con1 = 2.0 * V1 * V1 - V3
+                con1 = self.lpConScale * (2.0 * V1 * V1 - V3)
             else:
                 con1 = 0.0
 
             # Constraint 2: bending magnitude (requires W1 and W2)
             if hasW1 and hasW2:
-                con2 = W1 * W1 + W2 * W2
+                con2 = self.lpConScale * (W1 * W1 + W2 * W2)
             else:
                 con2 = 0.0
 
             # Constraint 3: bending feasibility
             if hasW1 and hasW3 and not (hasW2 or hasW4):
                 # Case where W1 and W3 exist but W2 and W4 do not
-                con3 = 2.0 * W1 * W1 - W3
+                con3 = self.lpConScale * (2.0 * W1 * W1 - W3)
             elif hasW1 or hasW2 or hasW3 or hasW4:
                 # General case (missing values are zero)
-                con3 = (
+                con3 = self.lpConScale * (
                     2.0 * W1 * W1 * (1.0 - W3)
                     + 2.0 * W2 * W2 * (1.0 + W3)
                     + W3 * W3
@@ -525,53 +527,53 @@ class SparseLamParamFullConstraint(object):
             hasW3 = bool(self.present[compIndex, 4])
             hasW4 = bool(self.present[compIndex, 5])
 
-            # d(con1)/d(lp): con1 = 2 V1^2 - V3 --> dV1 = 4 V1, dV3 = -1
+            # d(con1)/d(lp): con1 = lpConScale * (2 V1^2 - V3) --> dV1 = lpConScale * 4 V1, dV3 = -lpConScale
             if hasV1:
                 rowIdx.append(baseRow)
                 colIdx.append(baseLp + 0)
-                data.append(4.0 * V1)
+                data.append(self.lpConScale * 4.0 * V1)
             if hasV3:
                 rowIdx.append(baseRow)
                 colIdx.append(baseLp + 1)
-                data.append(-1.0)
+                data.append(-self.lpConScale)
 
-            # d(con2)/d(lp): con2 = W1^2 + W2^2 --> dW1 = 2 W1, dW2 = 2 W2
+            # d(con2)/d(lp): con2 = lpConScale * (W1^2 + W2^2) --> dW1 = lpConScale * 2 W1, dW2 = lpConScale * 2 W2
             if hasW1:
                 rowIdx.append(baseRow + 1)
                 colIdx.append(baseLp + 2)
-                data.append(2.0 * W1)
+                data.append(self.lpConScale * 2.0 * W1)
             if hasW2:
                 rowIdx.append(baseRow + 1)
                 colIdx.append(baseLp + 3)
-                data.append(2.0 * W2)
+                data.append(self.lpConScale * 2.0 * W2)
 
             # d(con3)/d(lp): handle special and general expression
             if hasW1 and hasW3 and not (hasW2 or hasW4):
-                # special case: con3 = 2 W1^2 - W3
+                # special case: con3 = lpConScale * (2 W1^2 - W3)
                 rowIdx.append(baseRow + 2)
                 colIdx.append(baseLp + 2)
-                data.append(4.0 * W1)
+                data.append(self.lpConScale * 4.0 * W1)
                 rowIdx.append(baseRow + 2)
                 colIdx.append(baseLp + 4)
-                data.append(-1.0)
+                data.append(-self.lpConScale)
             elif hasW1 or hasW2 or hasW3 or hasW4:
-                # general derivatives (only add entries for present LPs)
+                # general derivatives (only add entries for present LPs), all scaled by lpConScale
                 if hasW1:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 2)
-                    data.append(4.0 * W1 * (1.0 - W3) - 4.0 * W2 * W4)
+                    data.append(self.lpConScale * (4.0 * W1 * (1.0 - W3) - 4.0 * W2 * W4))
                 if hasW2:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 3)
-                    data.append(4.0 * W2 * (1.0 + W3) - 4.0 * W1 * W4)
+                    data.append(self.lpConScale * (4.0 * W2 * (1.0 + W3) - 4.0 * W1 * W4))
                 if hasW3:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 4)
-                    data.append(2.0 * (W2 * W2 - W1 * W1) + 2.0 * W3)
+                    data.append(self.lpConScale * (2.0 * (W2 * W2 - W1 * W1) + 2.0 * W3))
                 if hasW4:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 5)
-                    data.append(2.0 * W4 - 4.0 * W1 * W2)
+                    data.append(self.lpConScale * (2.0 * W4 - 4.0 * W1 * W2))
 
         # Construct sparse Jacobian matrix
         J_lp = sp.sparse.csr_matrix(

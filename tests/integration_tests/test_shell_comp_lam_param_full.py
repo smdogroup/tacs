@@ -237,7 +237,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create lamination parameter constraints
         constraint = fea_assembler.createLamParamFullConstraint("lam_param_con_full")
         allCompIDs = fea_assembler.selectCompIDs()
-        constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7), dvWeights=np.ones(6))
+        constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7), lpConScale=1.0)
         tacs_probs.append(constraint)
 
         return tacs_probs, fea_assembler
