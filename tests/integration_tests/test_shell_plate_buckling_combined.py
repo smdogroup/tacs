@@ -73,6 +73,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         buckle_prob.setOption("L2ConvergenceRel", 1e-20)
         # no loads just displacement control
 
+        # Seed random number generator in tacs for consistent test results
+        elements.seedRandomGenerator(0)
+
         return [buckle_prob], fea_assembler
 
 
