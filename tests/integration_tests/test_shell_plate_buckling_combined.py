@@ -74,7 +74,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # no loads just displacement control
 
         # Seed random number generator in tacs for consistent test results
-        elements.seedRandomGenerator(0)
+        elements.SeedRandomGenerator(0)
 
         return [buckle_prob], fea_assembler
 
