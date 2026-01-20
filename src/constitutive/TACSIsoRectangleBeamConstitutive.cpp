@@ -26,6 +26,11 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   w_offset = _w_offset;
   buckle_length_factor = _buckle_length_factor;
 
+  props->getIsotropicProperties(&E, &nu);
+
+  G = 0.5 * E / (1.0 + nu);
+  kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
+
   ks_weight = 100.0;
 }
 
@@ -121,14 +126,12 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
                                                        const TacsScalar X[],
                                                        TacsScalar moments[]) {
   TacsScalar rho = props->getDensity();
-  TacsScalar A = thickness * width;
+  TacsScalar A = evalArea();
+  TacsScalar I[3];
+  evalMomentsOfInertia(I);
+  TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
-  TacsScalar t3 = thickness * thickness * thickness;
-  TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
-  TacsScalar Iyz = -delta_y * delta_z * A;
 
   moments[0] = rho * A;
   moments[1] = rho * delta_y * A;  // centroid offset y?
@@ -142,37 +145,35 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   TacsScalar rho = props->getDensity();
-  TacsScalar A = thickness * width;
+  TacsScalar A = evalArea();
+  TacsScalar I[3];
+  evalMomentsOfInertia(I);
+  TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
   TacsScalar t3 = thickness * thickness * thickness;
   TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
-  TacsScalar Iyz = -delta_y * delta_z * A;
 
   int index = 0;
   if (width_num >= 0) {
-    TacsScalar dA = A / width;
+    TacsScalar dA = evalAreaSens(width_num);
     TacsScalar dAz = delta_z * dA + w_offset * A;
     TacsScalar dAy = delta_y * dA;
-    TacsScalar dIy = 0.25 * thickness * width * width +
-                     2.0 * w_offset * delta_z * A + delta_z * delta_z * dA;
-    TacsScalar dIz = 1.0 / 12.0 * t3 + delta_y * delta_y * dA;
-    TacsScalar dIyz = -delta_y * w_offset * A - delta_y * delta_z * dA;
+    TacsScalar sI[3];
+    evalMomentsOfInertiaSens(width_num, sI);
+    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
     dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
     index++;
   }
   if (thickness_num >= 0) {
-    TacsScalar dA = A / thickness;
+    TacsScalar dA = evalAreaSens(thickness_num);
     TacsScalar dAy = delta_y * dA + t_offset * A;
     TacsScalar dAz = delta_z * dA;
-    TacsScalar dIy = 1.0 / 12.0 * w3 + delta_z * delta_z * dA;
-    TacsScalar dIz = 0.25 * thickness * thickness * width +
-                     2.0 * t_offset * delta_y * A + delta_y * delta_y * dA;
-    TacsScalar dIyz = -delta_z * t_offset * A - delta_y * delta_z * dA;
+    TacsScalar sI[3];
+    evalMomentsOfInertiaSens(thickness_num, sI);
+    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
     dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
@@ -192,7 +193,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalDensity(int elemIndex,
                                                          const double pt[],
                                                          const TacsScalar X[]) {
   TacsScalar rho = props->getDensity();
-  TacsScalar A = thickness * width;
+  TacsScalar A = evalArea();
 
   return rho * A;
 }
@@ -204,12 +205,12 @@ void TACSIsoRectangleBeamConstitutive::addDensityDVSens(
   TacsScalar rho = props->getDensity();
 
   if (width_num >= 0) {
-    TacsScalar dA = thickness;
+    TacsScalar dA = evalAreaSens(width_num);
     dfdx[index] += scale * rho * dA;
     index++;
   }
   if (thickness_num >= 0) {
-    TacsScalar dA = width;
+    TacsScalar dA = evalAreaSens(thickness_num);
     dfdx[index] += scale * rho * dA;
     index++;
   }
@@ -220,26 +221,13 @@ void TACSIsoRectangleBeamConstitutive::evalStress(int elemIndex,
                                                   const TacsScalar X[],
                                                   const TacsScalar e[],
                                                   TacsScalar s[]) {
-  TacsScalar E, nu;
-  props->getIsotropicProperties(&E, &nu);
-
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
-  TacsScalar A = thickness * width;
-  TacsScalar t3 = thickness * thickness * thickness;
-  TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
-  TacsScalar Iyz = -delta_y * delta_z * A;
-  // Torsion constant for rectangle
-  TacsScalar a = width / 2.0;
-  TacsScalar b = thickness / 2.0;
-  TacsScalar b3 = b * b * b;
-  TacsScalar b4 = b * b3;
-  TacsScalar a4 = a * a * a * a;
-  TacsScalar J = a * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0));
+  TacsScalar A = evalArea();
+  TacsScalar I[3];
+  evalMomentsOfInertia(I);
+  TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
+  TacsScalar J = evalTorsionalConstant();
 
   s[0] = E * A * (e[0] - delta_y * e[2] - delta_z * e[3]);
   s[1] = G * J * e[1];
@@ -251,26 +239,13 @@ void TACSIsoRectangleBeamConstitutive::evalStress(int elemIndex,
 
 void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[]) {
-  TacsScalar E, nu;
-  props->getIsotropicProperties(&E, &nu);
-
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
-  TacsScalar A = thickness * width;
-  TacsScalar t3 = thickness * thickness * thickness;
-  TacsScalar w3 = width * width * width;
-  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
-  TacsScalar Iyz = -delta_y * delta_z * A;
-  // Torsion constant for rectangle
-  TacsScalar a = width / 2.0;
-  TacsScalar b = thickness / 2.0;
-  TacsScalar b3 = b * b * b;
-  TacsScalar b4 = b * b3;
-  TacsScalar a4 = a * a * a * a;
-  TacsScalar J = a * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0));
+  TacsScalar A = evalArea();
+  TacsScalar I[3];
+  evalMomentsOfInertia(I);
+  TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
+  TacsScalar J = evalTorsionalConstant();
 
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
@@ -289,35 +264,18 @@ void TACSIsoRectangleBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar E, nu;
-  props->getIsotropicProperties(&E, &nu);
-
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
-  TacsScalar A = thickness * width;
+  TacsScalar A = evalArea();
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
-  TacsScalar a = width / 2.0;
-  TacsScalar b = thickness / 2.0;
-  TacsScalar b3 = b * b * b;
-  TacsScalar b4 = b * b3;
-  TacsScalar a4 = a * a * a * a;
 
   int index = 0;
   if (width_num >= 0) {
     TacsScalar ddelta_z = w_offset;
-    TacsScalar dA = thickness;
-    TacsScalar dIz =
-        1.0 / 12.0 * thickness * thickness * thickness + delta_y * delta_y * dA;
-    TacsScalar dIy = width * width * thickness / 4.0 +
-                     2.0 * ddelta_z * delta_z * A + delta_z * delta_z * dA;
-    TacsScalar dIyz = -delta_y * ddelta_z * A + -delta_y * delta_z * dA;
-    TacsScalar da = 0.5;
-    TacsScalar da4 = 4.0 * a * a * a * da;
-    TacsScalar dJ =
-        da * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
-        a * b3 * (3.36 * b / a * da / a * (1.0 - b4 / a4 / 12.0)) +
-        a * b3 * (3.36 * b / a * (-b4 / a4 / 12.0 * da4 / a4));
+    TacsScalar dA = evalAreaSens(width_num);
+    TacsScalar sI[3];
+    evalMomentsOfInertiaSens(width_num, sI);
+    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    TacsScalar dJ = evalTorsionalConstantSens(width_num);
 
     dfdx[index] +=
         scale *
@@ -334,18 +292,11 @@ void TACSIsoRectangleBeamConstitutive::addStressDVSens(
   }
   if (thickness_num >= 0) {
     TacsScalar ddelta_y = t_offset;
-    TacsScalar dA = width;
-    TacsScalar dIz = width * thickness * thickness / 4.0 +
-                     2.0 * ddelta_y * delta_y * A + delta_y * delta_y * dA;
-    TacsScalar dIy = width * width * width / 12.0 + delta_z * delta_z * dA;
-    TacsScalar dIyz = -ddelta_y * delta_z * A + -delta_y * delta_z * dA;
-    TacsScalar db = 0.5;
-    TacsScalar db3 = 3.0 * b * b * db;
-    TacsScalar db4 = 4.0 * b3 * db;
-    TacsScalar dJ =
-        a * db3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
-        a * b3 * (-3.36 * db / a * (1.0 - b4 / a4 / 12.0)) +
-        a * b3 * (-3.36 * b / a * (-db4 / a4 / 12.0));
+    TacsScalar dA = evalAreaSens(thickness_num);
+    TacsScalar sI[3];
+    evalMomentsOfInertiaSens(thickness_num, sI);
+    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    TacsScalar dJ = evalTorsionalConstantSens(thickness_num);
 
     dfdx[index] +=
         scale *
@@ -401,11 +352,10 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
   if (buckle_length_factor != 0.0) {
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
-    TacsScalar A = thickness * width;
-    TacsScalar t3 = thickness * thickness * thickness;
-    TacsScalar w3 = width * width * width;
-    TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-    TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+    TacsScalar A = evalArea();
+    TacsScalar I[3];
+    evalMomentsOfInertia(I);
+    TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
     TacsScalar Leff = buckle_length_factor * buckle_length;
     // We don't include young modulus here since it cancels out in the ratio
     // later
@@ -485,14 +435,13 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
   }
 
   // Check the buckling failure criteria
-  if (buckle_length_factor != 0.0) {
+  if (TacsRealPart(buckle_length_factor) != 0.0) {
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
-    TacsScalar A = thickness * width;
-    TacsScalar t3 = thickness * thickness * thickness;
-    TacsScalar w3 = width * width * width;
-    TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-    TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+    TacsScalar A = evalArea();
+    TacsScalar I[3];
+    evalMomentsOfInertia(I);
+    TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
     TacsScalar Leff = buckle_length_factor * buckle_length;
     TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
 
@@ -547,6 +496,12 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
   int index = 0;
   for (int dv_index = 0; dv_index < 3; dv_index++) {
     int dvNum = dvNums[dv_index];
+
+    // If the design variable is not being optimized, skip it
+    if (dvNum < 0) {
+      continue;
+    }
+
     // Check the cross-section for failure at the four corners + 2 buckling
     // checks
     TacsScalar e0[6], s0[6];
@@ -602,7 +557,7 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
     }
 
     // Check the buckling failure criteria
-    if (buckle_length_factor != 0.0) {
+    if (TacsRealPart(buckle_length_factor) != 0.0) {
       TacsScalar dL = 0.0;
       if (dvNum == buckle_length_num) {
         dL = 1.0;
@@ -611,18 +566,14 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
       TacsScalar ddelta_y = t_offset * dthickness;
       TacsScalar delta_z = w_offset * width;
       TacsScalar ddelta_z = w_offset * dwidth;
-      TacsScalar A = thickness * width;
-      TacsScalar dA = dthickness * width + thickness * dwidth;
-      TacsScalar t3 = thickness * thickness * thickness;
-      TacsScalar dt3 = 3.0 * thickness * thickness * dthickness;
-      TacsScalar w3 = width * width * width;
-      TacsScalar dw3 = 3.0 * width * width * dwidth;
-      TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
-      TacsScalar dIy = 1.0 / 12.0 * (dthickness * w3 + thickness * dw3) +
-                       2.0 * delta_z * ddelta_z * A + delta_z * delta_z * dA;
-      TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
-      TacsScalar dIz = 1.0 / 12.0 * (dwidth * t3 + width * dt3) +
-                       2.0 * delta_y * ddelta_y * A + delta_y * delta_y * dA;
+      TacsScalar A = evalArea();
+      TacsScalar dA = evalAreaSens(dvNum);
+      TacsScalar I[3];
+      evalMomentsOfInertia(I);
+      TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
+      TacsScalar sI[3];
+      evalMomentsOfInertiaSens(dvNum, sI);
+      TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
       TacsScalar Leff = buckle_length_factor * buckle_length;
       TacsScalar dLeff = buckle_length_factor * dL;
       TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
@@ -666,6 +617,92 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
       index++;
     }
   }
+}
+
+TacsScalar TACSIsoRectangleBeamConstitutive::evalAreaSens(int dvNum) {
+  TacsScalar dA = 0.0;
+  if (dvNum == width_num) {
+    dA = thickness;
+  }
+  if (dvNum == thickness_num) {
+    dA = width;
+  }
+  return dA;
+}
+
+void TACSIsoRectangleBeamConstitutive::evalMomentsOfInertia(
+    TacsScalar moments[]) {
+  TacsScalar delta_y = t_offset * thickness;
+  TacsScalar delta_z = w_offset * width;
+  TacsScalar t3 = thickness * thickness * thickness;
+  TacsScalar w3 = width * width * width;
+  TacsScalar A = evalArea();
+  TacsScalar Iy = 1.0 / 12.0 * thickness * w3 + delta_z * delta_z * A;
+  TacsScalar Iz = 1.0 / 12.0 * width * t3 + delta_y * delta_y * A;
+  TacsScalar Iyz = -delta_y * delta_z * thickness * width;
+  moments[0] = Iy;
+  moments[1] = Iz;
+  moments[2] = Iyz;
+}
+
+void TACSIsoRectangleBeamConstitutive::evalMomentsOfInertiaSens(
+    int dvNum, TacsScalar momentsSens[]) {
+  TacsScalar delta_y = t_offset * thickness;
+  TacsScalar delta_z = w_offset * width;
+  TacsScalar A = evalArea();
+  TacsScalar t3 = thickness * thickness * thickness;
+  TacsScalar w3 = width * width * width;
+  TacsScalar dA = evalAreaSens(dvNum);
+  momentsSens[0] = 0.0;
+  momentsSens[1] = 0.0;
+  momentsSens[2] = 0.0;
+  if (dvNum == width_num) {
+    momentsSens[0] = 0.25 * thickness * width * width +
+                     2.0 * w_offset * delta_z * A + delta_z * delta_z * dA;
+    momentsSens[1] = 1.0 / 12.0 * t3 + delta_y * delta_y * dA;
+    momentsSens[2] = -delta_y * w_offset * A - delta_y * delta_z * dA;
+  } else if (dvNum == thickness_num) {
+    momentsSens[0] = 1.0 / 12.0 * w3 + delta_z * delta_z * dA;
+    momentsSens[1] = 0.25 * thickness * thickness * width +
+                     2.0 * t_offset * delta_y * A + delta_y * delta_y * dA;
+    momentsSens[2] = -delta_z * t_offset * A - delta_y * delta_z * dA;
+  }
+}
+
+TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstant() {
+  // Torsion constant for rectangle
+  TacsScalar a = width / 2.0;
+  TacsScalar b = thickness / 2.0;
+  TacsScalar b3 = b * b * b;
+  TacsScalar b4 = b * b3;
+  TacsScalar a4 = a * a * a * a;
+  TacsScalar J = a * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0));
+  return J;
+}
+
+TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstantSens(
+    int dvNum) {
+  TacsScalar dJ = 0.0;
+  TacsScalar a = width / 2.0;
+  TacsScalar b = thickness / 2.0;
+  TacsScalar b3 = b * b * b;
+  TacsScalar b4 = b * b3;
+  TacsScalar a4 = a * a * a * a;
+  if (dvNum == width_num) {
+    TacsScalar da = 0.5;
+    TacsScalar da4 = 4.0 * a * a * a * da;
+    dJ = da * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
+         a * b3 * (3.36 * b / a * da / a * (1.0 - b4 / a4 / 12.0)) +
+         a * b3 * (3.36 * b / a * (-b4 / a4 / 12.0 * da4 / a4));
+  } else if (dvNum == thickness_num) {
+    TacsScalar db = 0.5;
+    TacsScalar db3 = 3.0 * b * b * db;
+    TacsScalar db4 = 4.0 * b3 * db;
+    dJ = a * db3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
+         a * b3 * (-3.36 * db / a * (1.0 - b4 / a4 / 12.0)) +
+         a * b3 * (-3.36 * b / a * (-db4 / a4 / 12.0));
+  }
+  return dJ;
 }
 
 TacsScalar TACSIsoRectangleBeamConstitutive::evalDesignFieldValue(

@@ -112,6 +112,18 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
+  // Evaluate the cross-section area
+  TacsScalar evalArea() { return width * thickness; };
+  TacsScalar evalAreaSens(int dvNum);
+
+  // Evaluate the cross-section moments of inertia
+  void evalMomentsOfInertia(TacsScalar moments[]);
+  void evalMomentsOfInertiaSens(int dvNum, TacsScalar momentsSens[]);
+
+  // Evaluate the torsional constant
+  TacsScalar evalTorsionalConstant();
+  TacsScalar evalTorsionalConstantSens(int dvNum);
+
  private:
   TACSMaterialProperties *props;
   TacsScalar width, thickness, buckle_length, buckle_length_factor;
@@ -121,6 +133,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar lb_buckle_length, ub_buckle_length;
   TacsScalar ks_weight;
   TacsScalar w_offset, t_offset;
+  TacsScalar E, nu, G, kcorr;
   // The object name
   static const char *constName;
 };
