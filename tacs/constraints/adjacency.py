@@ -21,6 +21,8 @@ import os
 
 import numpy as np
 import scipy as sp
+from pyNastran.bdf.cards.elements.shell import ShellElement
+from pyNastran.bdf.bdf import CROD, CONROD, CBEND, CBAR, CBEAM, CGAP, CTUBE
 
 from tacs.constraints.base import TACSConstraint, SparseLinearConstraint
 
@@ -98,7 +100,7 @@ class AdjacencyConstraint(TACSConstraint):
                 compID = self.meshLoader.nastranToTACSCompIDDict[elemInfo.pid]
                 nnodes = len(elemConn)
                 # This checks specifically for adjacency between 2D elements
-                if nnodes > 2:
+                if isinstance(elemInfo, ShellElement):
                     for j in range(nnodes):
                         nodeID1 = elemConn[j]
                         nodeID2 = elemConn[(j + 1) % nnodes]
@@ -114,10 +116,12 @@ class AdjacencyConstraint(TACSConstraint):
                             edgeToFace[key].append(compID)
 
                 # This checks specifically for adjacency between 1D elements
-                elif nnodes == 2:
+                elif isinstance(
+                    elemInfo, (CROD, CONROD, CBEND, CBAR, CBEAM, CGAP, CTUBE)
+                ):
                     # In this case our "edge" is 0D (just a node)
                     nodeID1 = elemConn[0]
-                    nodeID2 = elemConn[1]
+                    nodeID2 = elemConn[-1]
                     if nodeID1 not in edgeToFace:
                         edgeToFace[nodeID1] = [compID]
                     elif compID not in edgeToFace[nodeID1]:
