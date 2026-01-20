@@ -46,11 +46,11 @@ class TACSConstraint(TACSSystem):
         self.constraintList = OrderedDict()
 
         # Setup global to local dv num map for each proc
-        self._initilaizeGlobalToLocalDVDict()
+        self._initializeGlobalToLocalDVDict()
 
         return
 
-    def _initilaizeGlobalToLocalDVDict(self):
+    def _initializeGlobalToLocalDVDict(self):
         size = self.comm.size
         rank = self.comm.rank
         nLocalDVs = self.getNumDesignVars()

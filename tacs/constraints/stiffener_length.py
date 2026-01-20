@@ -69,30 +69,7 @@ class StiffenerLengthConstraint(TACSConstraint):
             self, assembler, comm, options, outputViewer, meshLoader
         )
 
-        # Setup global to local dv num map for each proc
-        self._initializeGlobalToLocalDVDict()
-
         return
-
-    def _initializeGlobalToLocalDVDict(self):
-        """
-        Initialize mapping from global design variable numbers to local design variable numbers.
-
-        This method creates a dictionary that maps global design variable indices to local
-        design variable indices for the current processor. This is needed for parallel
-        constraint evaluation where different processors own different design variables.
-        """
-        size = self.comm.size
-        rank = self.comm.rank
-        nLocalDVs = self.getNumDesignVars()
-        nLocalDVsOnProc = self.comm.allgather(nLocalDVs)
-        # Figure out which DVNums belong to each processor
-        ownerRange = np.zeros(size + 1, dtype=int)
-        # Sum local dv ranges over each proc to get global dv ranges
-        ownerRange[1:] = np.cumsum(nLocalDVsOnProc)
-        self.globalToLocalDVNums = dict(
-            zip(range(ownerRange[rank], ownerRange[rank + 1]), range(nLocalDVs))
-        )
 
     def addConstraint(self, conName, compIDs=None, lower=None, upper=None, dvIndex=0):
         """
