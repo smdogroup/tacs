@@ -32,6 +32,7 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
 
   ks_weight = 100.0;
+  eps = 1e-12;
 }
 
 TACSIsoRectangleBeamConstitutive::~TACSIsoRectangleBeamConstitutive() {
@@ -671,8 +672,13 @@ void TACSIsoRectangleBeamConstitutive::evalMomentsOfInertiaSens(
 
 TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstant() {
   // Torsion constant for rectangle
-  TacsScalar a = width / 2.0;
-  TacsScalar b = thickness / 2.0;
+  // continuous approx of max(thickness, width), min(thickness, width)
+  TacsScalar tpw = thickness + width;
+  TacsScalar tmw = thickness - width;
+  TacsScalar max_dim = (tpw + std::sqrt(tmw * tmw + eps)) / 2.0;
+  TacsScalar min_dim = (tpw - std::sqrt(tmw * tmw + eps)) / 2.0;
+  TacsScalar a = max_dim / 2.0;
+  TacsScalar b = min_dim / 2.0;
   TacsScalar b3 = b * b * b;
   TacsScalar b4 = b * b3;
   TacsScalar a4 = a * a * a * a;
@@ -682,26 +688,36 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstant() {
 
 TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstantSens(
     int dvNum) {
-  TacsScalar dJ = 0.0;
-  TacsScalar a = width / 2.0;
-  TacsScalar b = thickness / 2.0;
+  TacsScalar tpw = thickness + width;
+  TacsScalar tmw = thickness - width;
+  TacsScalar max_dim = (tpw + std::sqrt(tmw * tmw + eps)) / 2.0;
+  TacsScalar min_dim = (tpw - std::sqrt(tmw * tmw + eps)) / 2.0;
+  TacsScalar a = max_dim / 2.0;
+  TacsScalar b = min_dim / 2.0;
   TacsScalar b3 = b * b * b;
   TacsScalar b4 = b * b3;
   TacsScalar a4 = a * a * a * a;
+  TacsScalar dmax_dim = 0.0;
+  TacsScalar dmin_dim = 0.0;
   if (dvNum == width_num) {
-    TacsScalar da = 0.5;
-    TacsScalar da4 = 4.0 * a * a * a * da;
-    dJ = da * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
-         a * b3 * (3.36 * b / a * da / a * (1.0 - b4 / a4 / 12.0)) +
-         a * b3 * (3.36 * b / a * (-b4 / a4 / 12.0 * da4 / a4));
+    dmax_dim = (1.0 - tmw / std::sqrt(tmw * tmw + eps)) / 2.0;
+    dmin_dim = (1.0 + tmw / std::sqrt(tmw * tmw + eps)) / 2.0;
   } else if (dvNum == thickness_num) {
-    TacsScalar db = 0.5;
-    TacsScalar db3 = 3.0 * b * b * db;
-    TacsScalar db4 = 4.0 * b3 * db;
-    dJ = a * db3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
-         a * b3 * (-3.36 * db / a * (1.0 - b4 / a4 / 12.0)) +
-         a * b3 * (-3.36 * b / a * (-db4 / a4 / 12.0));
+    dmax_dim = (1.0 + tmw / std::sqrt(tmw * tmw + eps)) / 2.0;
+    dmin_dim = (1.0 - tmw / std::sqrt(tmw * tmw + eps)) / 2.0;
   }
+  TacsScalar da = dmax_dim / 2.0;
+  TacsScalar db = dmin_dim / 2.0;
+  TacsScalar da4 = 4.0 * a * a * a * da;
+  TacsScalar db3 = 3.0 * b * b * db;
+  TacsScalar db4 = 4.0 * b3 * db;
+  TacsScalar dJ =
+      da * b3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
+      a * b3 * (3.36 * b / a * da / a * (1.0 - b4 / a4 / 12.0)) +
+      a * b3 * (3.36 * b / a * (-b4 / a4 / 12.0 * da4 / a4)) +
+      a * db3 * (16.0 / 3.0 - 3.36 * b / a * (1.0 - b4 / a4 / 12.0)) +
+      a * b3 * (-3.36 * db / a * (1.0 - b4 / a4 / 12.0)) +
+      a * b3 * (-3.36 * b / a * (-db4 / a4 / 12.0));
   return dJ;
 }
 

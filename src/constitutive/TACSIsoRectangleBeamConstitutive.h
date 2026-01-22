@@ -131,9 +131,13 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar lb_thickness, ub_thickness;
   TacsScalar lb_width, ub_width;
   TacsScalar lb_buckle_length, ub_buckle_length;
+  // ks weight for failure check
   TacsScalar ks_weight;
+  // epsilon for min/max approx used in torsion constant
+  TacsScalar eps;
   TacsScalar w_offset, t_offset;
   TacsScalar E, nu, G, kcorr;
+
   // The object name
   static const char *constName;
 };
