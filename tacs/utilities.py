@@ -7,6 +7,7 @@ import pickle
 import warnings
 
 from mpi4py import MPI
+import numpy as np
 import tacs.TACS
 
 
@@ -176,6 +177,39 @@ class BaseUI:
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------
+
+    @staticmethod
+    def copyToTACSVec(src, dest):
+        """Copy values into a TACS Vec from either a TACS Vec or numpy array or float
+
+        Parameters
+        ----------
+        src : tacs.TACS.Vec or numpy.ndarray or float
+            Vector/array to copy values from
+        dest : tacs.TACS.Vec
+            Vector to copy into
+        """
+        if isinstance(src, tacs.TACS.Vec):
+            dest.copyValues(src)
+        elif isinstance(src, np.ndarray):
+            dest.getArray()[:] = src
+
+    @staticmethod
+    def copyFromTACSVec(src, dest):
+        """Copy values from a TACS Vec into either a TACS Vec or numpy array
+
+        Parameters
+        ----------
+        src : tacs.TACS.Vec
+            Vector to copy values from
+        dest : tacs.TACS.Vec or numpy.ndarray
+            Vector/array to copy values into
+        """
+        if isinstance(dest, tacs.TACS.Vec):
+            dest.copyValues(src)
+        elif isinstance(dest, np.ndarray):
+            dest[:] = src.getArray()
+
     def _pp(self, printStr):
         """Simple parallel print"""
         if self.comm.rank == 0:
