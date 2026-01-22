@@ -36,7 +36,7 @@ Kennedy, G. J., "Strategies for adaptive optimization with aggregation constrain
 The easiest way to get started with TACS is through a conda install in an [Anaconda](https://www.anaconda.com/) environment. [Conda packages](https://anaconda.org/smdogroup/tacs) are
 available for MacOS and Linux platforms. To get started, run the following in a conda terminal:
 
-    conda create -n TACS -c conda-forge python=3.9 mamba
+    conda create -n TACS -c conda-forge python=3.10 mamba
     conda activate TACS
     mamba install -c conda-forge -c smdogroup tacs
     
@@ -129,11 +129,11 @@ Testflo can be run by calling the following command from TACS' root directory:
    testflo ./tests
    ```
 3. Add unit/integration tests that include coverage for any features that have been added to TACS' test [library](https://github.com/smdogroup/tacs/tree/master/tests).
-4. Run formatting checks on any modified C++ source/header code using [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
+4. Run formatting checks on any modified C++ source/header code using [clang-format](https://clang.llvm.org/docs/ClangFormat.html). We use version 20 with a Google format style.
    ```
    clang-format --style=Google -i filename.cpp
    ```
-5. Run formatting checks on any modified Python code using [Black](https://black.readthedocs.io/en/stable/).
+5. Run formatting checks on any modified Python code using [Black](https://black.readthedocs.io/en/stable/). We use version 24.
    ```
    python -m black filename.py
    ```

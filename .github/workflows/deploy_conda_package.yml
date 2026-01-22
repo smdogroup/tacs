@@ -68,7 +68,7 @@ jobs:
           echo "Initiated by: ${GITHUB_ACTOR}";
           echo "=============================================================";
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup miniconda
         if: ${{ matrix.TARGET != 'osx-arm64' }}
         uses: conda-incubator/setup-miniconda@v3
