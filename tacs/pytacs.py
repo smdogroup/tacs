@@ -838,6 +838,9 @@ class pyTACS(BaseUI):
 
         self._isNonlinear = self._checkNonlinearity()
 
+        # Vector used to store temporarily store state variables
+        self.tempVec = self.assembler.createVec()
+
     @postinitialize_method
     def _checkNonlinearity(self) -> bool:
         """Check if the finite element model is nonlinear
@@ -1491,9 +1494,8 @@ class pyTACS(BaseUI):
             self.assembler.applyBCs(vec)
         elif isinstance(vec, np.ndarray):
             array = vec
-            # Create temporary BVec
-            vec = self.assembler.createVec()
             # Copy array values to BVec
+            vec = self.tempVec()
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.applyBCs(vec)
@@ -1515,9 +1517,8 @@ class pyTACS(BaseUI):
             self.assembler.setBCs(vec)
         elif isinstance(vec, np.ndarray):
             array = vec
-            # Create temporary BVec
-            vec = self.assembler.createVec()
             # Copy array values to BVec
+            vec = self.tempVec()
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.setBCs(vec)
