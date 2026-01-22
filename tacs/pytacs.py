@@ -32,12 +32,12 @@ from functools import wraps
 import numpy as np
 import pyNastran.bdf as pn
 
-import tacs.TACS
 import tacs.constitutive
 import tacs.constraints
 import tacs.elements
 import tacs.functions
 import tacs.problems
+import tacs.TACS
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI
 
@@ -1161,6 +1161,33 @@ class pyTACS(BaseUI):
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
                 )
 
+            elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
+                if propInfo.Type == "BAR":
+                    w = propInfo.dim[0]
+                    t = propInfo.dim[1]
+                    con = tacs.constitutive.IsoRectangleBeamConstitutive(mat, w=w, t=t)
+
+                elif propInfo.Type == "TUBE":
+                    r1 = propInfo.dim[0]
+                    r0 = propInfo.dim[1]
+                    d_inner = 2 * r0
+                    t_wall = r1 - r0
+                    con = tacs.constitutive.IsoTubeBeamConstitutive(
+                        mat, d=d_inner, t=t_wall
+                    )
+
+                else:
+                    # We use the pynastran API to get the area, moments of inertia, and torsional constant
+                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
+                    # this more general method
+                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
+                        "PBARL", propInfo.Type, propInfo.dim, propInfo
+                    )
+                    J = propInfo.J()
+                    con = tacs.constitutive.BasicBeamConstitutive(
+                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
+                    )
+
             elif propInfo.type == "PROD":  # Nastran rod
                 area = propInfo.A
                 J = propInfo.j
@@ -1189,7 +1216,7 @@ class pyTACS(BaseUI):
                             "Unsupported material coordinate system type "
                             f"'{mcid.type}' for property number {propertyID}."
                         )
-            elif propInfo.type in ["PBAR"]:
+            elif propInfo.type in ["PBAR", "PBARL"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
