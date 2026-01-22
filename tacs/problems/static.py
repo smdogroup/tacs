@@ -1644,7 +1644,7 @@ class StaticProblem(TACSProblem):
         # Return copy of scipy mat
         return copy.deepcopy(self.K.getMat())
 
-    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+    def addJacVecProduct(self, phi, prod, scale=1.0, transpose=False):
         """
         Adds product of transpose Jacobian and input vector into output vector as shown below:
         prod += scale * J^T . phi
@@ -1666,16 +1666,18 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        # Tacs doesn't actually transpose the matrix here so keep track of
-        # RHS entries that TACS zeros out for BCs.
-        bcTerms = self.update
-        bcTerms.copyValues(self.phi)
-        self.assembler.applyBCs(self.phi)
-        bcTerms.axpy(-1.0, self.phi)
-
         # Set problem vars to assembler
         self._updateAssemblerVars()
         self.res.zeroEntries()
+
+        if transpose:
+            # TACS cannot apply BCs correctly to the transposed Jacobian (i.e zeroing columns instead of rows),
+            # so we need to manually adjust the input and output vectors to get the right answer.
+            bcTerms = self.update
+            bcTerms.copyValues(self.phi)
+            self.assembler.applyBCs(self.phi)
+            bcTerms.axpy(-1.0, self.phi)
+
         self.assembler.addJacobianVecProduct(
             1.0,
             1.0,
@@ -1683,14 +1685,16 @@ class StaticProblem(TACSProblem):
             0.0,
             self.phi,
             self.res,
-            tacs.TACS.TRANSPOSE,
+            tacs.TACS.TRANSPOSE if transpose else tacs.TACS.NORMAL,
             self._loadScale,
-            applyBCs=False,
+            applyBCs=False if transpose else True,
         )
-        # Add bc terms back in
-        self.res.axpy(1.0, bcTerms)
 
-        # Output residual
+        if transpose:
+            # Add bc terms back in
+            self.res.axpy(1.0, bcTerms)
+
+        # Scale and add product to output
         if isinstance(prod, tacs.TACS.Vec):
             prod.axpy(scale, self.res)
         else:
