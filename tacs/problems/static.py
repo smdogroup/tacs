@@ -1643,10 +1643,10 @@ class StaticProblem(TACSProblem):
         # Return copy of scipy mat
         return copy.deepcopy(self.K.getMat())
 
-    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+    def addJacVecProduct(self, phi, prod, scale=1.0, transpose=False):
         """
-        Adds product of transpose Jacobian and input vector into output vector as shown below:
-        prod += scale * J^T . phi
+        Adds product of Jacobian (or it's transpose) and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
 
         Parameters
         ----------
@@ -1658,6 +1658,9 @@ class StaticProblem(TACSProblem):
 
         scale : float
             Scalar used to scale Jacobian product by.
+
+        transpose : bool
+            Flag to indicate whether to use the transpose Jacobian.
         """
         # Create a tacs bvec copy of the adjoint vector
         if isinstance(phi, tacs.TACS.Vec):
@@ -1665,19 +1668,22 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        # Tacs doesn't actually transpose the matrix here so keep track of
-        # RHS entries that TACS zeros out for BCs.
-        bcTerms = self.update
-        bcTerms.copyValues(self.phi)
-        self.assembler.applyBCs(self.phi)
-        bcTerms.axpy(-1.0, self.phi)
-
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
+        if transpose:
+            # Tacs doesn't actually transpose the matrix here so keep track of
+            # RHS entries that TACS zeros out for BCs.
+            bcTerms = self.update
+            bcTerms.copyValues(self.phi)
+            self.assembler.applyBCs(self.phi)
+            bcTerms.axpy(-1.0, self.phi)
+
         self.K.mult(self.phi, self.res)
-        # Add bc terms back in
-        self.res.axpy(1.0, bcTerms)
+
+        if transpose:
+            # Add bc terms back in
+            self.res.axpy(1.0, bcTerms)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
