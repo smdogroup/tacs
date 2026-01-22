@@ -1707,6 +1707,31 @@ class StaticProblem(TACSProblem):
         self.F.zeroEntries()
         self.auxElems = tacs.TACS.AuxElements()
 
+    def solveForward(self, rhs, psi):
+        """Solve a linear system using the structural Jacobian.
+
+        Computes psi by solveing J * psi = rhs
+
+        Parameters
+        ----------
+        rhs : tacs.TACS.Vec or numpy.ndarray
+            right hand side vector for solve
+        psi : tacs.TACS.Vec or numpy.ndarray
+            BVec or numpy array into which the solution is saved
+        """
+        if isinstance(rhs, tacs.TACS.Vec):
+            self.rhs.copyValues(rhs)
+        elif isinstance(rhs, np.ndarray):
+            self.rhs.getArray()[:] = rhs
+
+        self.linearSolver.solve(self.rhs, self.update)
+
+        # Copy output values back to user vectors
+        if isinstance(psi, tacs.TACS.Vec):
+            psi.copyValues(self.update)
+        elif isinstance(psi, np.ndarray):
+            psi[:] = self.update.getArray()
+
     def solveAdjoint(self, rhs, phi):
         """
         Solve the structural adjoint.

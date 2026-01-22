@@ -150,12 +150,13 @@ class TacsSolver(om.ImplicitComponent):
 
     def solve_linear(self, d_outputs, d_residuals, mode):
         if mode == "fwd":
-            if self.under_check_partials:
-                print("solver fwd")
-            else:
-                raise ValueError("forward mode requested but not implemented")
+            # Solve J * d_outputs = d_residuals
+            self.sp.solveForward(
+                d_residuals[self.states_name], d_outputs[self.states_name]
+            )
 
         if mode == "rev":
+            # Solve J^T * d_residuals = d_outputs
             self.sp.solveAdjoint(
                 d_outputs[self.states_name], d_residuals[self.states_name]
             )
