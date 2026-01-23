@@ -1,5 +1,7 @@
 #include "TACSIsoRectangleBeamConstitutive.h"
 
+constexpr TacsScalar TACSIsoRectangleBeamConstitutive::eps;
+
 TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
     TACSMaterialProperties* properties, TacsScalar _width,
     TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
