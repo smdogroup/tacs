@@ -32,7 +32,6 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
 
   ks_weight = 100.0;
-  eps = 1e-12;
 }
 
 TACSIsoRectangleBeamConstitutive::~TACSIsoRectangleBeamConstitutive() {
