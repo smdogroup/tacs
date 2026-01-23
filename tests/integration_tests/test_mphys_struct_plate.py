@@ -56,7 +56,8 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-50
         else:
             self.rtol = 1e-2
-            self.dh = 1e-8
+            self.dh = 1e-6
+            self.fd_form = "central"
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -167,18 +168,14 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
                 self.add_constraint("analysis.ks_vmfailure", upper=1.0)
                 self.add_objective("analysis.mass")
-                # We will solve the TACS implicit component with a Newton solver, using OM's PETSc linear solver, but
-                # preconditioned with the TACS linear solver through solve_linear. Using the PETSc solver is necessary
-                # to test apply_linear since it will be used to compute the linear residual.
-                # This effectively tests the capabilities required for using TACS within coupled models solved using a
-                # monolithic Newton solver.
+                # We will solve the TACS implicit component with a Newton solver, using solve_linear in fwd mode to
+                # solve the linear system. Since this is a linear TACS model, we will just do one Newton iteration. but
+                # set a tight tolerance so that one Newton iteration is always run, even during FD perturbations that
+                # barely change the residual
                 self.analysis.coupling.solver.nonlinear_solver = om.NewtonSolver(
-                    solve_subsystems=False, err_on_non_converge=False, iprint=2
+                    solve_subsystems=False, err_on_non_converge=False, iprint=2, maxiter=1, atol=1e-10
                 )
-                self.analysis.coupling.solver.linear_solver = om.PETScKrylov(iprint=2)
-                self.analysis.coupling.solver.linear_solver.precon = (
-                    om.LinearUserDefined()
-                )  # Tells OpenMDAO to use the TACS solve_linear method as a preconditioner
+                self.analysis.coupling.solver.linear_solver = om.LinearUserDefined()
 
         prob = om.Problem()
         prob.model = Top()
