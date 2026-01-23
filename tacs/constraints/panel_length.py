@@ -536,7 +536,7 @@ class PanelLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> adjConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> plConstraint.evalConstraints(funcs, 'LE_SPAR')
         >>> funcs
         >>> # Result will look like (if PanelLengthConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([1.325, 2.1983645, 3.1415926, ...])}
