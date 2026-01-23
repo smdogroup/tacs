@@ -893,27 +893,33 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
     xvec->getArray(&x);
     yvec->getArray(&y);
 
+    // Make some aliases so code matches the explanation above
+    TacsScalar* const x_b = xlocal;
+    TacsScalar* const x_c = &xlocal[local_offset];
+    TacsScalar* const y_b = ylocal;
+    TacsScalar* const y_c = &ylocal[local_offset];
+
     // First begin the communication of x to the local values
-    b_map->beginForward(b_ctx, x, xlocal);
-    c_map->beginForward(c_ctx, x, &xlocal[local_offset]);
-    b_map->endForward(b_ctx, x, xlocal);
+    b_map->beginForward(b_ctx, x, x_b);
+    c_map->beginForward(c_ctx, x, x_c);
 
-    // Perform the matrix-vector multiplication
-    B->mult(xlocal, ylocal);
-    F->mult(xlocal, &ylocal[local_offset]);
-    c_map->endForward(c_ctx, x, &xlocal[local_offset]);
+    // Perform the matrix-vector multiplications that use x_b
+    b_map->endForward(b_ctx, x, x_b);
+    B->mult(x_b, y_b);
+    F->mult(x_b, y_c);
 
-    C->multAdd(&xlocal[local_offset], &ylocal[local_offset],
-               &ylocal[local_offset]);
+    // Recieve x_c, finish computing y_c, then begin sending it back to y
+    c_map->endForward(c_ctx, x, x_c);
+    C->multAdd(x_c, y_c, y_c);
+    c_map->beginReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
 
-    // Start sending the values back to y
-    c_map->beginReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
-    E->multAdd(&xlocal[local_offset], ylocal, ylocal);
+    // finish computing y_b then send it back to y
+    E->multAdd(x_c, y_b, y_b);
+    b_map->beginReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
 
     // Finish transmitting the values back to y
-    b_map->beginReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
-    c_map->endReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
-    b_map->endReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
+    c_map->endReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
+    b_map->endReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
   } else {
     fprintf(stderr, "TACSSchurMat type error: Input/output must be TACSBVec\n");
   }
