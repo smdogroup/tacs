@@ -2173,7 +2173,7 @@ class pyTACS(BaseUI):
         name : str
             Name to assign constraint.
         options : dict
-            Class-specific options to pass to DVConstraint instance (case-insensitive).
+            Class-specific options to pass to PanelLengthConstraint instance (case-insensitive).
 
         Returns
         ----------
@@ -2203,7 +2203,7 @@ class pyTACS(BaseUI):
         name : str
             Name to assign constraint.
         options : dict
-            Class-specific options to pass to DVConstraint instance (case-insensitive).
+            Class-specific options to pass to PanelWidthConstraint instance (case-insensitive).
 
         Returns
         ----------
@@ -2211,6 +2211,36 @@ class pyTACS(BaseUI):
             PanelWidthConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.PanelWidthConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createStiffenerLengthConstraint(self, name, options=None):
+        """Create a new StiffenerLengthConstraint for enforcing that the stiffener
+        length DV values passed to components match the actual stiffener lengths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to StiffenerLengthConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.StiffenerLengthConstraint
+            StiffenerLengthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.StiffenerLengthConstraint(
             name,
             self.assembler,
             self.comm,
