@@ -171,7 +171,7 @@ class TacsSolver(om.ImplicitComponent):
                 )
             if self.rhs_name in d_inputs:
                 # Perturbation in residual due to perturbation in rhs
-                array_w_bcs = d_residuals[self.states_name].copy()
+                array_w_bcs = d_inputs[self.rhs_name].copy()
                 self.fea_assembler.applyBCsToVec(array_w_bcs)
                 d_residuals[self.states_name] -= array_w_bcs
             if self.coords_name in d_inputs:
