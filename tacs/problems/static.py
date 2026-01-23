@@ -1718,6 +1718,9 @@ class StaticProblem(TACSProblem):
         """
         self.copyToTACSVec(rhs, self.rhs)
 
+        # Check if we need to initialize
+        self._initializeSolve()
+
         self.linearSolver.solve(self.rhs, self.update)
 
         # Copy output values back to user vectors
