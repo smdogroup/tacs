@@ -850,6 +850,11 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
   [ B, E ]
   [ F, C ]
 
+  The multiplication can therefore be written as
+
+  [B, E] [x_b] = [y_b] = [B*x_b + E*x_c]
+  [F, C] [x_c]   [y_c] = [F*x_b + C*x_c]
+
   All inter-process communication contributions are contained
   in the sub-block C.
 
@@ -862,6 +867,18 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
   mat-vec product. Initiate reverse communication and compute the
   local product with E. Perform the on-process reverse ordering and
   complete the reverse c_map communication.
+
+  In other words:
+  1) Send requests to retrieve x_b and x_c from the global x vector
+  2) Wait to recieve x_b
+  3) Compute y_b = B*x_b
+  4) Compute y_c = F*x_b
+  5) Wait to recieve x_c
+  6) Compute y_c += C*x_c
+  7) Begin adding y_c to global y vector
+  8) Compute y_b += E*x_c
+  9) Begin setting y_b in global y vector
+  10) Wait for communication with global y vector to finish
 */
 void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
   tyvec->zeroEntries();
