@@ -178,7 +178,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 self.analysis.coupling.solver.linear_solver = om.PETScKrylov(iprint=2)
                 self.analysis.coupling.solver.linear_solver.precon = (
                     om.LinearUserDefined()
-                ) # Tells OpenMDAO to use the TACS solve_linear method as a preconditioner
+                )  # Tells OpenMDAO to use the TACS solve_linear method as a preconditioner
 
         prob = om.Problem()
         prob.model = Top()
