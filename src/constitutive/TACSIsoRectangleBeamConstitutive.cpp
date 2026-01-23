@@ -355,9 +355,11 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailure(int elemIndex,
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
     TacsScalar A = evalArea();
-    TacsScalar I[3];
-    evalMomentsOfInertia(I);
-    TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
+    TacsScalar t3 = thickness * thickness * thickness;
+    TacsScalar w3 = width * width * width;
+    // NOTE: Iy and Iz are taken about centroid, not offset
+    TacsScalar Iy = 1.0 / 12.0 * thickness * w3;
+    TacsScalar Iz = 1.0 / 12.0 * width * t3;
     TacsScalar Leff = buckle_length_factor * buckle_length;
     // We don't include young modulus here since it cancels out in the ratio
     // later
@@ -441,9 +443,10 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
     TacsScalar delta_y = t_offset * thickness;
     TacsScalar delta_z = w_offset * width;
     TacsScalar A = evalArea();
-    TacsScalar I[3];
-    evalMomentsOfInertia(I);
-    TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
+    TacsScalar t3 = thickness * thickness * thickness;
+    TacsScalar w3 = width * width * width;
+    TacsScalar Iy = 1.0 / 12.0 * thickness * w3;
+    TacsScalar Iz = 1.0 / 12.0 * width * t3;
     TacsScalar Leff = buckle_length_factor * buckle_length;
     TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
 
@@ -570,12 +573,18 @@ void TACSIsoRectangleBeamConstitutive::addFailureDVSens(
       TacsScalar ddelta_z = w_offset * dwidth;
       TacsScalar A = evalArea();
       TacsScalar dA = evalAreaSens(dvNum);
-      TacsScalar I[3];
-      evalMomentsOfInertia(I);
-      TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
-      TacsScalar sI[3];
-      evalMomentsOfInertiaSens(dvNum, sI);
-      TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+      TacsScalar t3 = thickness * thickness * thickness;
+      TacsScalar w3 = width * width * width;
+      TacsScalar Iy = 1.0 / 12.0 * thickness * w3;
+      TacsScalar Iz = 1.0 / 12.0 * width * t3;
+      TacsScalar dIy = 0.0, dIz = 0.0;
+      if (dvNum == width_num) {
+        dIy = 0.25 * thickness * width * width;
+        dIz = 1.0 / 12.0 * t3;
+      } else if (dvNum == thickness_num) {
+        dIy = 1.0 / 12.0 * w3;
+        dIz = 0.25 * thickness * thickness * width;
+      }
       TacsScalar Leff = buckle_length_factor * buckle_length;
       TacsScalar dLeff = buckle_length_factor * dL;
       TacsScalar Nx = -A * (e[0] - delta_y * e[2] - delta_z * e[3]);
