@@ -167,8 +167,8 @@ class TacsSolver(om.ImplicitComponent):
             if self.states_name in d_outputs:
                 # Perturbation in residual due to perturbation in states
                 self.sp.addJacVecProduct(
-                        d_outputs[self.states_name], d_residuals[self.states_name]
-                    )
+                    d_outputs[self.states_name], d_residuals[self.states_name]
+                )
             if self.rhs_name in d_inputs:
                 # Perturbation in residual due to perturbation in rhs
                 array_w_bcs = d_residuals[self.states_name].copy()
@@ -177,17 +177,23 @@ class TacsSolver(om.ImplicitComponent):
             if self.coords_name in d_inputs:
                 # Perturbation in residual due to perturbation in node coordinates
                 if not self.under_check_partials:
-                    raise ValueError("TACS forward mode node coordinate sensitivities requested but not implemented")
+                    raise ValueError(
+                        "TACS forward mode node coordinate sensitivities requested but not implemented"
+                    )
             if "tacs_dvs" in d_inputs:
                 # Perturbation in residual due to perturbation in design variables
                 if not self.under_check_partials:
-                    raise ValueError("TACS forward mode DV sensitivities requested but not implemented")
+                    raise ValueError(
+                        "TACS forward mode DV sensitivities requested but not implemented"
+                    )
 
         if mode == "rev":
             if self.states_name in d_residuals:
                 if self.states_name in d_outputs:
                     self.sp.addTransposeJacVecProduct(
-                        d_residuals[self.states_name], d_outputs[self.states_name], transpose=True
+                        d_residuals[self.states_name],
+                        d_outputs[self.states_name],
+                        transpose=True,
                     )
 
                 if self.rhs_name in d_inputs:
