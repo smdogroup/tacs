@@ -173,7 +173,11 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 # set a tight tolerance so that one Newton iteration is always run, even during FD perturbations that
                 # barely change the residual
                 self.analysis.coupling.solver.nonlinear_solver = om.NewtonSolver(
-                    solve_subsystems=False, err_on_non_converge=False, iprint=2, maxiter=1, atol=1e-10
+                    solve_subsystems=False,
+                    err_on_non_converge=False,
+                    iprint=2,
+                    maxiter=1,
+                    atol=1e-10,
                 )
                 self.analysis.coupling.solver.linear_solver = om.LinearUserDefined()
 
