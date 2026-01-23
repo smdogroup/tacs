@@ -1707,7 +1707,7 @@ class StaticProblem(TACSProblem):
     def solveForward(self, rhs, psi):
         """Solve a linear system using the structural Jacobian.
 
-        Computes psi by solveing J * psi = rhs
+        Computes psi by solving J * psi = rhs
 
         Parameters
         ----------
