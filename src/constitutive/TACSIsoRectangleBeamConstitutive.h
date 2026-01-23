@@ -134,7 +134,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   // ks weight for failure check
   TacsScalar ks_weight;
   // epsilon for min/max approx used in torsion constant
-  static constexpr TacsScalar eps = 1e-12;
+  inline static constexpr TacsScalar eps = 1e-12;
   TacsScalar w_offset, t_offset;
   TacsScalar E, nu, G, kcorr;
 
