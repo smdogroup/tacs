@@ -941,7 +941,7 @@ the width is perpindicular to the reference axis.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The material property.</p></li>
-<li><p><strong>width</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Cross-section width (keyword argument). Defaults to 1.0.</p></li>
+<li><p><strong>w</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Cross-section width (keyword argument). Defaults to 1.0.</p></li>
 <li><p><strong>wNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to width (keyword argument). Defaults to -1
 (i.e. no design variable).</p></li>
 <li><p><strong>wlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Lower bound on width (keyword argument). Defaults to 0.0.</p></li>
@@ -951,12 +951,20 @@ the width is perpindicular to the reference axis.</p>
 (i.e. no design variable).</p></li>
 <li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Lower bound on thickness (keyword argument). Defaults to 0.0.</p></li>
 <li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Upper bound on thickness (keyword argument). Defaults to 10.0.</p></li>
+<li><p><strong>Lb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Beam length used to compute buckling.
+This should be the total geometric length of the beam from end to end, not just the length of a single element.
+Defaults to 1.0.</p></li>
+<li><p><strong>LbNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number to assign to buckling length (keyword argument). Defaults to -1
+(i.e. no design variable).</p></li>
 <li><p><strong>wOffset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Offset distance along width axis of reference axis (where nodes are located) relative to elastic axis.
-Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=/2,
+Measured in fraction of cross-section width. A value of 0.5 places the reference axis in the plane z=w/2,
 a value of 0.0 at z=0.0, and a value of -0.5 at z=-w/2 (where z is the local beam axis). Defaults to 0.0.</p></li>
 <li><p><strong>tOffset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Offset distance along thickness axis of reference axis (where nodes are located) relative to elastic axis.
 Measured in fraction of cross-section thickness. A value of 0.5 places the reference axis in the plane y=t/2,
 a value of 0.0 at y=0.0, and a value of -0.5 at y=-t/2 (where y is the local beam axis). Defaults to 0.0.</p></li>
+<li><p><strong>Kb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- Effective buckling length factor used to compute the critical axial buckling load in the following equation: pi^2*E*I/(Kb * Lb)^2.
+The value depends on the boundary conditions of the beams attached end: pinned-pinned (1.0), fixed-fixed (0.5), fixed-free (2.0).
+If set to None buckling calculations will be skipped in failure check. Defaults to None.</p></li>
 </ul>
 </dd>
 </dl>

@@ -2319,7 +2319,7 @@
 <span class="sd">        name : str</span>
 <span class="sd">            Name to assign constraint.</span>
 <span class="sd">        options : dict</span>
-<span class="sd">            Class-specific options to pass to DVConstraint instance (case-insensitive).</span>
+<span class="sd">            Class-specific options to pass to PanelLengthConstraint instance (case-insensitive).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
@@ -2352,7 +2352,7 @@
 <span class="sd">        name : str</span>
 <span class="sd">            Name to assign constraint.</span>
 <span class="sd">        options : dict</span>
-<span class="sd">            Class-specific options to pass to DVConstraint instance (case-insensitive).</span>
+<span class="sd">            Class-specific options to pass to PanelWidthConstraint instance (case-insensitive).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        ----------</span>
@@ -2360,6 +2360,39 @@
 <span class="sd">            PanelWidthConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">constr</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">PanelWidthConstraint</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="p">,</span>
+            <span class="n">options</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Set with original design vars and coordinates, in case they have changed</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">)</span>
+        <span class="n">constr</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constr</span></div>
+
+
+<div class="viewcode-block" id="pyTACS.createStiffenerLengthConstraint">
+<a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStiffenerLengthConstraint">[docs]</a>
+    <span class="nd">@postinitialize_method</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">createStiffenerLengthConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new StiffenerLengthConstraint for enforcing that the stiffener</span>
+<span class="sd">        length DV values passed to components match the actual stiffener lengths.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name to assign constraint.</span>
+<span class="sd">        options : dict</span>
+<span class="sd">            Class-specific options to pass to StiffenerLengthConstraint instance (case-insensitive).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ----------</span>
+<span class="sd">        constraint : tacs.constraints.StiffenerLengthConstraint</span>
+<span class="sd">            StiffenerLengthConstraint object used for calculating constraints.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">constr</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">StiffenerLengthConstraint</span><span class="p">(</span>
             <span class="n">name</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>

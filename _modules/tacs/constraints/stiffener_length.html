@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tacs.constraints.stiffener_length &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+    <script src="../../../_static/documentation_options.js?v=d048f138"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.stiffener_length</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for tacs.constraints.stiffener_length</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This class implements a constraint which enforces the stiffener</span>
+<span class="sd">length design variable values passed to elements using the IsoRectangularBeamStiffness</span>
+<span class="sd">constitutive model to be consistent with the true length of the stiffener they are</span>
+<span class="sd">a part of.</span>
+
+<span class="sd">.. note:: This class should be created using the</span>
+<span class="sd">    :meth:`pyTACS.createStiffenerLengthConstraint &lt;tacs.pytacs.pyTACS.createStiffenerLengthConstraint&gt;` method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Standard Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># External Python modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># Extension modules</span>
+<span class="c1"># ==============================================================================</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.constraints.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSConstraint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">constitutive</span>
+
+
+<div class="viewcode-block" id="StiffenerLengthConstraint">
+<a class="viewcode-back" href="../../../pytacs/stiffener_length.html#tacs.constraints.StiffenerLengthConstraint">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StiffenerLengthConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">,</span>
+        <span class="n">assembler</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">outputViewer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
+<span class="sd">        Use pyTACS.createStiffenerLengthConstraint instead.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Name of this tacs problem</span>
+
+<span class="sd">        assembler : TACS.Assembler</span>
+<span class="sd">            Cython object responsible for creating and setting tacs objects used to solve problem</span>
+
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            The comm object on which to create the pyTACS object.</span>
+
+<span class="sd">        outputViewer : TACS.TACSToFH5</span>
+<span class="sd">            Cython object used to write out f5 files that can be converted and used for postprocessing.</span>
+
+<span class="sd">        meshLoader : pymeshloader.pyMeshLoader</span>
+<span class="sd">            pyMeshLoader object used to create the assembler.</span>
+
+<span class="sd">        options : dict</span>
+<span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Problem name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Default setup for common constraint class objects, sets up comm and options</span>
+        <span class="n">TACSConstraint</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span>
+
+<div class="viewcode-block" id="StiffenerLengthConstraint.addConstraint">
+<a class="viewcode-back" href="../../../pytacs/stiffener_length.html#tacs.constraints.StiffenerLengthConstraint.addConstraint">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generic method to adding a new constraint set for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        conName : str</span>
+<span class="sd">            The user-supplied name for the constraint set. This will</span>
+<span class="sd">            typically be a string that is meaningful to the user</span>
+
+<span class="sd">        compIDs: list[int] or None</span>
+<span class="sd">            List of compIDs to apply constraints to. If None, all compIDs will be used. Defaults to None.</span>
+
+<span class="sd">        lower: float or complex</span>
+<span class="sd">            lower bound for constraint. Not used.</span>
+
+<span class="sd">        upper: float or complex</span>
+<span class="sd">            upper bound for constraint. Not used.</span>
+
+<span class="sd">        dvIndex : int</span>
+<span class="sd">            Index number of the panel length DV&#39;s. Defaults to 0.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">nComps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getNumComponents</span><span class="p">()</span>
+            <span class="n">compIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nComps</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">lower</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lower</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">if</span> <span class="n">upper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">upper</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="n">constrObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_createConstraint</span><span class="p">(</span><span class="n">dvIndex</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">nCon</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span> <span class="o">=</span> <span class="n">constrObj</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No valid `compIDs` provided. Skipping </span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="n">success</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dvIndex</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new constraint object for TACS.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dvIndex : int</span>
+<span class="sd">            Index number of element DV to be used in constraint.</span>
+<span class="sd">            Defaults to 0.</span>
+
+<span class="sd">        compIDs: list[int]</span>
+<span class="sd">            List of compIDs to select.</span>
+
+<span class="sd">        lbound: float or complex</span>
+<span class="sd">            lower bound for constraint. Defaults to 0.0.</span>
+
+<span class="sd">        ubound: float or complex</span>
+<span class="sd">            upper bound for constraint. Defaults to 1e20.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        constraint : SparseLengthConstraint or None</span>
+<span class="sd">            Constraint object if successful, None otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Assemble constraint info for each component</span>
+        <span class="n">lengthDVs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">lengthDVsOwnerProc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">allEndNodeLocalIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">allEndNodeOwnerProc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">compIDs</span><span class="p">),</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">conCount</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compIDs</span><span class="p">):</span>
+            <span class="c1"># Get the TACS element object associated with this compID</span>
+            <span class="n">elemObj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getElementObject</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">conObj</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getConstitutive</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">conObj</span><span class="p">,</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">IsoRectangleBeamConstitutive</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only Beams!&quot;</span><span class="p">)</span>
+            <span class="n">elemIndex</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Get the design variables owned by this element</span>
+            <span class="n">globalDvNums</span> <span class="o">=</span> <span class="n">elemObj</span><span class="o">.</span><span class="n">getDesignVarNums</span><span class="p">(</span><span class="n">elemIndex</span><span class="p">)</span>
+            <span class="n">globalDVNum</span> <span class="o">=</span> <span class="n">globalDvNums</span><span class="p">[</span><span class="n">dvIndex</span><span class="p">]</span>
+            <span class="c1"># Map global DV number to local DV number if owned by this processor</span>
+            <span class="k">if</span> <span class="n">globalDVNum</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNums</span><span class="p">:</span>
+                <span class="n">localDVNum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalToLocalDVNums</span><span class="p">[</span><span class="n">globalDVNum</span><span class="p">]</span>
+                <span class="n">lengthDVs</span><span class="p">[</span><span class="n">conCount</span><span class="p">]</span> <span class="o">=</span> <span class="n">localDVNum</span>
+                <span class="n">lengthDVsOwnerProc</span><span class="p">[</span><span class="n">conCount</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
+
+            <span class="c1"># Get connectivity and find end nodes of the stiffener chain</span>
+            <span class="n">compConn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getConnectivityForComp</span><span class="p">(</span>
+                <span class="n">comp</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">endNodeGlobalIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_findChainEnds</span><span class="p">(</span><span class="n">compConn</span><span class="p">)</span>
+            <span class="n">endNodeLocalIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getLocalNodeIDsFromGlobal</span><span class="p">(</span>
+                <span class="n">endNodeGlobalIDs</span><span class="p">,</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="c1"># Store end node information for constraint evaluation</span>
+            <span class="k">for</span> <span class="n">end_i</span><span class="p">,</span> <span class="n">nodeID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">endNodeLocalIDs</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">nodeID</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Valid local node ID</span>
+                    <span class="n">allEndNodeLocalIDs</span><span class="p">[</span><span class="n">conCount</span><span class="p">,</span> <span class="n">end_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nodeID</span>
+                    <span class="n">allEndNodeOwnerProc</span><span class="p">[</span><span class="n">conCount</span><span class="p">,</span> <span class="n">end_i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
+
+        <span class="c1"># Gather information from all processors</span>
+        <span class="n">lengthDVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">lengthDVs</span><span class="p">)</span>
+        <span class="n">allEndNodeLocalIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">allEndNodeLocalIDs</span><span class="p">)</span>
+        <span class="n">allEndNodeOwnerProc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">allEndNodeOwnerProc</span><span class="p">)</span>
+
+        <span class="n">nLocalDVs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNumDesignVars</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">SparseLengthConstraint</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="n">lengthDVs</span><span class="p">,</span>
+            <span class="n">lengthDVsOwnerProc</span><span class="p">,</span>
+            <span class="n">allEndNodeLocalIDs</span><span class="p">,</span>
+            <span class="n">allEndNodeOwnerProc</span><span class="p">,</span>
+            <span class="n">nLocalDVs</span><span class="p">,</span>
+            <span class="n">lbound</span><span class="p">,</span>
+            <span class="n">ubound</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_findChainEnds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connectivity</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Takes a list of elements (each element is a list of node IDs) and verifies</span>
+<span class="sd">        that they form exactly one continuous topological body with exactly two ends.</span>
+<span class="sd">        Finally, it returns the two end nodes of the chain.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        connectivity : list[list[int]]</span>
+<span class="sd">            List of element nodal connectivities</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ends : tuple[int, int]</span>
+<span class="sd">            (endNodeID1, endNodeID2) - the two end node IDs of the chain</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the connectivity does not form exactly one continuous body or</span>
+<span class="sd">            if the body does not have exactly two ends</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Build adjacency map from connectivity list</span>
+        <span class="n">adj</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">connectivity</span><span class="p">:</span>
+            <span class="c1"># Connect consecutive nodes in each element</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">element</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span> <span class="o">=</span> <span class="n">element</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">element</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">adj</span><span class="p">[</span><span class="n">n1</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">n2</span><span class="p">)</span>
+                <span class="n">adj</span><span class="p">[</span><span class="n">n2</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">n1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">adj</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No nodes found in connectivity list.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- 1. Check there is exactly one continuous body ---</span>
+        <span class="n">visited</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">startNode</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">adj</span><span class="p">))</span>  <span class="c1"># pick any node</span>
+
+        <span class="n">queue</span> <span class="o">=</span> <span class="n">deque</span><span class="p">([</span><span class="n">startNode</span><span class="p">])</span>
+        <span class="k">while</span> <span class="n">queue</span><span class="p">:</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">visited</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">visited</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+            <span class="n">queue</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">adj</span><span class="p">[</span><span class="n">node</span><span class="p">]</span> <span class="o">-</span> <span class="n">visited</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">visited</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">adj</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Connectivity list describes more than one body.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># --- 2. Find degree (number of connected neighbors) of each node ---</span>
+        <span class="n">degrees</span> <span class="o">=</span> <span class="p">{</span><span class="n">node</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">neighbors</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">neighbors</span> <span class="ow">in</span> <span class="n">adj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="c1"># Ends should have degree == 1 (only one neighbor)</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="p">[</span><span class="n">node</span> <span class="k">for</span> <span class="n">node</span><span class="p">,</span> <span class="n">deg</span> <span class="ow">in</span> <span class="n">degrees</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">deg</span> <span class="o">==</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Body does not have exactly two ends (found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">)</span><span class="si">}</span><span class="s2"> ends).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ends</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StiffenerLengthConstraint.evalConstraints">
+<a class="viewcode-back" href="../../../pytacs/stiffener_length.html#tacs.constraints.StiffenerLengthConstraint.evalConstraints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
+<span class="sd">        evalCons are evaluated and updated into the provided dictionary.</span>
+
+<span class="sd">        The same constraint arrays are returned on every proc</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary into which the constraints are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings.</span>
+<span class="sd">            If not none, use these constraints to evaluate.</span>
+<span class="sd">        ignoreMissing : bool</span>
+<span class="sd">            Flag to supress checking for a valid constraint. Please use</span>
+<span class="sd">            this option with caution.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcs = {}</span>
+<span class="sd">        &gt;&gt;&gt; plConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcs</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalCon</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StiffenerLengthConstraint.evalConstraintsSens">
+<a class="viewcode-back" href="../../../pytacs/stiffener_length.html#tacs.constraints.StiffenerLengthConstraint.evalConstraintsSens">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraintsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This is the main routine for returning useful (sensitivity)</span>
+<span class="sd">        information from constraint. The derivatives of the constraints</span>
+<span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
+<span class="sd">        updated into the provided dictionary. The derivitives with</span>
+<span class="sd">        respect to all design variables and node locations are computed.</span>
+
+<span class="sd">        The sensitivities returned on each proc are a sparse m x n matrix</span>
+<span class="sd">        where m is the number of constraints and n is the number of design</span>
+<span class="sd">        variables or 3x the number of nodes on this proc. The matrix contains</span>
+<span class="sd">        the sensitivities of all constraints w.r.t only the design</span>
+<span class="sd">        variables/node coordinates on this proc.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcsSens : dict</span>
+<span class="sd">            Dictionary into which the derivatives are saved.</span>
+<span class="sd">        evalCons : iterable object containing strings</span>
+<span class="sd">            The constraints the user wants returned</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; funcsSens</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
+<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check if user specified which constraints to output</span>
+        <span class="c1"># Otherwise, output them all</span>
+        <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
+
+        <span class="c1"># Loop through each requested constraint set</span>
+        <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">xSens</span><span class="p">,</span> <span class="n">XptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalConSens</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="c1"># Get sparse Jacobian for dv sensitivity</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">:</span> <span class="n">xSens</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">:</span> <span class="n">XptSens</span><span class="p">}</span></div>
+</div>
+
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SparseLengthConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for handling sparse length constraints in parallel.</span>
+
+<span class="sd">    This class manages the evaluation of constraints that enforce the consistency</span>
+<span class="sd">    between design variable length values and the actual geometric length of</span>
+<span class="sd">    stiffener elements. It handles parallel computation across multiple processors</span>
+<span class="sd">    where different processors may own different design variables and nodes.</span>
+
+<span class="sd">    The constraint ensures that the design variable representing the length of</span>
+<span class="sd">    a stiffener matches the actual geometric distance between the end nodes</span>
+<span class="sd">    of the stiffener chain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">TACSConstraint</span><span class="o">.</span><span class="n">dtype</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">,</span>
+        <span class="n">lengthLocalDVNums</span><span class="p">,</span>
+        <span class="n">lengthDVsOwnerProc</span><span class="p">,</span>
+        <span class="n">allEndNodeLocalIDs</span><span class="p">,</span>
+        <span class="n">allEndNodeOwnerProc</span><span class="p">,</span>
+        <span class="n">nLocalDVs</span><span class="p">,</span>
+        <span class="n">lbound</span><span class="p">,</span>
+        <span class="n">ubound</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the SparseLengthConstraint object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        comm : mpi4py.MPI.Intracomm</span>
+<span class="sd">            MPI communicator for parallel operations</span>
+<span class="sd">        lengthLocalDVNums : array_like</span>
+<span class="sd">            Local design variable numbers for length DVs</span>
+<span class="sd">        lengthDVsOwnerProc : array_like</span>
+<span class="sd">            Processor ranks that own each length DV</span>
+<span class="sd">        allEndNodeLocalIDs : array_like</span>
+<span class="sd">            Local node IDs for end nodes of each stiffener (nCon x 2)</span>
+<span class="sd">        allEndNodeOwnerProc : array_like</span>
+<span class="sd">            Processor ranks that own each end node (nCon x 2)</span>
+<span class="sd">        nLocalDVs : int</span>
+<span class="sd">            Number of local design variables on this processor</span>
+<span class="sd">        lbound : float or array_like</span>
+<span class="sd">            Lower bounds for constraints</span>
+<span class="sd">        ubound : float or array_like</span>
+<span class="sd">            Upper bounds for constraints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Number of constraints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengthLocalDVNums</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lengthLocalDVNums</span> <span class="o">=</span> <span class="n">lengthLocalDVNums</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lengthDVsOwnerProc</span> <span class="o">=</span> <span class="n">lengthDVsOwnerProc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeLocalIDs</span> <span class="o">=</span> <span class="n">allEndNodeLocalIDs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeOwnerProc</span> <span class="o">=</span> <span class="n">allEndNodeOwnerProc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nLocalDVs</span> <span class="o">=</span> <span class="n">nLocalDVs</span>
+
+        <span class="c1"># Save bound information</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lbound</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">lbound</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lbound</span> <span class="o">=</span> <span class="n">lbound</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lbound</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lbound</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lbound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lbound</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ubound</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ubound</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ubound</span> <span class="o">=</span> <span class="n">ubound</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ubound</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ubound</span><span class="p">,</span> <span class="nb">complex</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ubound</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ubound</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the constraint values.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : array_like</span>
+<span class="sd">            Design variable values</span>
+<span class="sd">        Xpts : array_like</span>
+<span class="sd">            Node coordinates</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array_like</span>
+<span class="sd">            Constraint values (difference between DV lengths and exact lengths)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Lexact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeExactLength</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="n">Ldv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getDVLengths</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">Ldiff</span> <span class="o">=</span> <span class="n">Ldv</span> <span class="o">-</span> <span class="n">Lexact</span>
+        <span class="k">return</span> <span class="n">Ldiff</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeExactLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the exact geometric length of each stiffener.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Xpts : array_like</span>
+<span class="sd">            Node coordinates</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array_like</span>
+<span class="sd">            Exact lengths of each stiffener</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stiffenerEndLocations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">con_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">end_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeOwnerProc</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
+                    <span class="n">localNodeID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeLocalIDs</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span>
+                    <span class="n">stiffenerEndLocations</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">Xpts</span><span class="p">[</span>
+                        <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="o">+</span> <span class="mi">3</span>
+                    <span class="p">]</span>
+        <span class="n">stiffenerEndLocations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">stiffenerEndLocations</span><span class="p">)</span>
+        <span class="n">dX</span> <span class="o">=</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">Lexact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dX</span> <span class="o">*</span> <span class="n">dX</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">Lexact</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getDVLengths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the design variable length values for each stiffener.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : array_like</span>
+<span class="sd">            Design variable values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        array_like</span>
+<span class="sd">            Length values from design variables</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Ldv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">con_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthDVsOwnerProc</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
+                <span class="n">Ldv</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">lengthLocalDVNums</span><span class="p">[</span><span class="n">con_i</span><span class="p">]]</span>
+        <span class="n">Ldv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">Ldv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Ldv</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalConSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the constraint sensitivities.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : array_like</span>
+<span class="sd">            Design variable values</span>
+<span class="sd">        Xpts : array_like</span>
+<span class="sd">            Node coordinates</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (xSens, XptSens) - sensitivities w.r.t. design variables and coordinates</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize sparse matrix components for Jacobian</span>
+        <span class="n">dvJacVals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvJacRows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">dvJacCols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coordJacVals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coordJacRows</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">coordJacCols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">Lexact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeExactLength</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">con_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">):</span>
+            <span class="c1"># Sensitivity w.r.t. design variables (derivative = 1.0)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthDVsOwnerProc</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
+                <span class="n">dvJacVals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">dvJacRows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">con_i</span><span class="p">)</span>
+                <span class="n">dvJacCols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lengthLocalDVNums</span><span class="p">[</span><span class="n">con_i</span><span class="p">])</span>
+
+            <span class="c1"># Sensitivity w.r.t. node coordinates</span>
+            <span class="k">for</span> <span class="n">end_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeOwnerProc</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
+                    <span class="n">localNodeID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeLocalIDs</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span>
+                    <span class="c1"># Derivative of length w.r.t. node coordinates</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="o">-</span><span class="n">Xpts</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="n">Lexact</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">end_j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">val</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="n">coordJacVals</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="n">coordJacRows</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">con_i</span><span class="p">,</span> <span class="n">con_i</span><span class="p">,</span> <span class="n">con_i</span><span class="p">])</span>
+                    <span class="n">coordJacCols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="o">+</span> <span class="mi">3</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+                    <span class="p">)</span>
+        <span class="n">xSens</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">dvJacVals</span><span class="p">,</span> <span class="p">(</span><span class="n">dvJacRows</span><span class="p">,</span> <span class="n">dvJacCols</span><span class="p">)),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nLocalDVs</span><span class="p">),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">XptSens</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">coordJacVals</span><span class="p">,</span> <span class="p">(</span><span class="n">coordJacRows</span><span class="p">,</span> <span class="n">coordJacCols</span><span class="p">)),</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">,</span> <span class="n">Xpts</span><span class="o">.</span><span class="n">size</span><span class="p">),</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">xSens</span><span class="p">,</span> <span class="n">XptSens</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">getBounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the constraint bounds.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (lbound, ubound) - lower and upper bounds for constraints</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lbound</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ubound</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">tacs.constraints.stiffener_length</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
