@@ -1645,7 +1645,7 @@ class StaticProblem(TACSProblem):
 
     def addJacVecProduct(self, phi, prod, scale=1.0, transpose=False):
         """
-        Adds product of Jacobian (or it's transpose) and input vector into output vector as shown below:
+        Adds product of Jacobian (or its transpose) and input vector into output vector as shown below:
         prod += scale * J(^T) . phi
 
         Parameters
