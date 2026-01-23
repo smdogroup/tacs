@@ -180,18 +180,18 @@ class BaseUI:
 
     @staticmethod
     def copyToTACSVec(src, dest):
-        """Copy values into a TACS Vec from either a TACS Vec or numpy array or float
+        """Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar
 
         Parameters
         ----------
-        src : tacs.TACS.Vec or numpy.ndarray or float
+        src : tacs.TACS.Vec or numpy.ndarray or scalar
             Vector/array to copy values from
         dest : tacs.TACS.Vec
             Vector to copy into
         """
         if isinstance(src, tacs.TACS.Vec):
             dest.copyValues(src)
-        elif isinstance(src, np.ndarray):
+        else:
             dest.getArray()[:] = src
 
     @staticmethod

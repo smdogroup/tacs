@@ -1495,7 +1495,7 @@ class pyTACS(BaseUI):
         elif isinstance(vec, np.ndarray):
             array = vec
             # Copy array values to BVec
-            vec = self.tempVec()
+            vec = self.tempVec
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.applyBCs(vec)
@@ -1518,7 +1518,7 @@ class pyTACS(BaseUI):
         elif isinstance(vec, np.ndarray):
             array = vec
             # Copy array values to BVec
-            vec = self.tempVec()
+            vec = self.tempVec
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.setBCs(vec)

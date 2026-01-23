@@ -104,10 +104,10 @@ class TACSSystem(BaseUI):
             # Check if the design variables are being handed in a dict
             if isinstance(x, dict):
                 if self.varName in x:
-                    self.copyToTACSVec(self.x, x[self.varName])
+                    self.copyToTACSVec(x[self.varName], self.x)
             # or array or TACSBVec
             else:
-                self.copyToTACSVec(self.x, x)
+                self.copyToTACSVec(x, self.x)
         except Exception:
             raise ValueError(
                 "setDesignVars must be called with either a numpy array, dict, or TACS Vec as input."
@@ -196,10 +196,10 @@ class TACSSystem(BaseUI):
             # Check if the design variables are being handed in a dict
             if isinstance(Xpts, dict):
                 if self.varName in Xpts:
-                    self.copyToTACSVec(self.Xpts, Xpts[self.varName])
+                    self.copyToTACSVec(Xpts[self.varName], self.Xpts)
             # or array or TACSBVec
             else:
-                self.copyToTACSVec(self.Xpts, Xpts)
+                self.copyToTACSVec(Xpts, self.Xpts)
         except Exception:
             raise ValueError(
                 "setNodes must be called with either a numpy array, dict, or TACS Vec as input."
