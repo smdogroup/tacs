@@ -58,6 +58,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyNastran.bdf.cards.elements.shell</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShellElement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyNastran.bdf.bdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">CROD</span><span class="p">,</span> <span class="n">CONROD</span><span class="p">,</span> <span class="n">CBEND</span><span class="p">,</span> <span class="n">CBAR</span><span class="p">,</span> <span class="n">CBEAM</span><span class="p">,</span> <span class="n">CGAP</span><span class="p">,</span> <span class="n">CTUBE</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">tacs.constraints.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">TACSConstraint</span><span class="p">,</span> <span class="n">SparseLinearConstraint</span>
 
@@ -136,7 +138,8 @@
                 <span class="n">elemConn</span> <span class="o">=</span> <span class="n">elemInfo</span><span class="o">.</span><span class="n">nodes</span>
                 <span class="n">compID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">nastranToTACSCompIDDict</span><span class="p">[</span><span class="n">elemInfo</span><span class="o">.</span><span class="n">pid</span><span class="p">]</span>
                 <span class="n">nnodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elemConn</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">nnodes</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># This checks specifically for adjacency between 2D elements</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elemInfo</span><span class="p">,</span> <span class="n">ShellElement</span><span class="p">):</span>
                     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nnodes</span><span class="p">):</span>
                         <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                         <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">nnodes</span><span class="p">]</span>
@@ -150,6 +153,22 @@
                             <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">compID</span><span class="p">]</span>
                         <span class="k">elif</span> <span class="n">compID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
                             <span class="n">edgeToFace</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compID</span><span class="p">)</span>
+
+                <span class="c1"># This checks specifically for adjacency between 1D elements</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
+                    <span class="n">elemInfo</span><span class="p">,</span> <span class="p">(</span><span class="n">CROD</span><span class="p">,</span> <span class="n">CONROD</span><span class="p">,</span> <span class="n">CBEND</span><span class="p">,</span> <span class="n">CBAR</span><span class="p">,</span> <span class="n">CBEAM</span><span class="p">,</span> <span class="n">CGAP</span><span class="p">,</span> <span class="n">CTUBE</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="c1"># In this case our &quot;edge&quot; is 0D (just a node)</span>
+                    <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">nodeID1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                        <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">compID</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">compID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID1</span><span class="p">]:</span>
+                        <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compID</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nodeID2</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
+                        <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">compID</span><span class="p">]</span>
+                    <span class="k">elif</span> <span class="n">compID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID2</span><span class="p">]:</span>
+                        <span class="n">edgeToFace</span><span class="p">[</span><span class="n">nodeID2</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">compID</span><span class="p">)</span>
 
             <span class="c1"># Now we loop back over each element and each edge. By</span>
             <span class="c1"># using the edgeToFace dictionary, we can now determine</span>
