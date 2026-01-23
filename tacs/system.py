@@ -193,10 +193,10 @@ class TACSSystem(BaseUI):
             the number of structural nodes on this processor.
         """
         try:
-            # Check if the design variables are being handed in a dict
+            # Check if the coordinates are being handed in a dict
             if isinstance(Xpts, dict):
-                if self.varName in Xpts:
-                    self.copyToTACSVec(Xpts[self.varName], self.Xpts)
+                if self.coordName in Xpts:
+                    self.copyToTACSVec(Xpts[self.coordName], self.Xpts)
             # or array or TACSBVec
             else:
                 self.copyToTACSVec(Xpts, self.Xpts)
