@@ -167,6 +167,18 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
                 self.add_constraint("analysis.ks_vmfailure", upper=1.0)
                 self.add_objective("analysis.mass")
+                # We will solve the TACS implicit component with a Newton solver, using OM's PETSc linear solver, but
+                # preconditioned with the TACS linear solver through solve_linear. Using the PETSc solver is necessary
+                # to test apply_linear since it will be used to compute the linear residual.
+                # This effectively tests the capabilities required for using TACS within coupled models solved using a
+                # monolithic Newton solver.
+                self.analysis.coupling.solver.nonlinear_solver = om.NewtonSolver(
+                    solve_subsystems=False, err_on_non_converge=False, iprint=2
+                )
+                self.analysis.coupling.solver.linear_solver = om.PETScKrylov(iprint=2)
+                self.analysis.coupling.solver.linear_solver.precon = (
+                    om.LinearUserDefined()
+                ) # Tells OpenMDAO to use the TACS solve_linear method as a preconditioner
 
         prob = om.Problem()
         prob.model = Top()
