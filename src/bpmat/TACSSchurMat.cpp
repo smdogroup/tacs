@@ -908,7 +908,7 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
     B->mult(x_b, y_b);
     F->mult(x_b, y_c);
 
-    // Recieve x_c, finish computing y_c, then begin sending it back to y
+    // Receive x_c, finish computing y_c, then begin sending it back to y
     c_map->endForward(c_ctx, x, x_c);
     C->multAdd(x_c, y_c, y_c);
     c_map->beginReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
