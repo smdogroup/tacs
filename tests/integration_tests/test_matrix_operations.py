@@ -75,7 +75,7 @@ def localToGlobalArray(localArray, assembler):
     globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
     globalArray[globalIDs, :] = localArray[localIDs, :]
 
-    # Sum the arrays across all procs ao that every proc has the full global array
+    # Sum the arrays across all procs so that every proc has the full global array
     assembler.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
 
     return globalArray.flatten()
