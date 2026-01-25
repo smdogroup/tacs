@@ -107,6 +107,8 @@ void BCSRMatVecMult(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
 void BCSRMatVecMultAdd(BCSRMatData *A, TacsScalar *x, TacsScalar *y,
                        TacsScalar *z);
 void BCSRMatVecMultTranspose(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
+void BCSRMatVecMultTransposeAdd(BCSRMatData *A, TacsScalar *inVec,
+                                TacsScalar *addVec, TacsScalar *outVec);
 void BCSRMatFactor(BCSRMatData *A);
 void BCSRMatApplyLower(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
 void BCSRMatApplyUpper(BCSRMatData *A, TacsScalar *x, TacsScalar *y);

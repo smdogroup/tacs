@@ -1001,6 +1001,7 @@ void BCSRMat::initGenericImpl() {
   bmult = BCSRMatVecMult;
   bmultadd = BCSRMatVecMultAdd;
   bmulttrans = BCSRMatVecMultTranspose;
+  bmulttransadd = BCSRMatVecMultTransposeAdd;
   bmatmult = BCSRMatMatMultAdd;
   bfactorlower = BCSRMatFactorLower;
   bfactorupper = BCSRMatFactorUpper;
@@ -1292,6 +1293,14 @@ void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
 void BCSRMat::multTranspose(TacsScalar *xvec, TacsScalar *yvec) {
   memset(yvec, 0, data->bsize * data->ncols * sizeof(TacsScalar));
   bmulttrans(data, xvec, yvec);
+}
+
+/*!
+  Compute outVec = A^{T}*inVec + addVec
+*/
+void BCSRMat::multTransposeAdd(TacsScalar *inVec, TacsScalar *addVec,
+                               TacsScalar *outVec) {
+  bmulttransadd(data, inVec, addVec, outVec);
 }
 
 /*!
