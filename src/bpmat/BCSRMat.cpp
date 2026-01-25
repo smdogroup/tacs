@@ -1038,7 +1038,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper1;
       bmult = BCSRMatVecMult1;
       bmultadd = BCSRMatVecMultAdd1;
-      bmulttrans = BCSRMatVecMultTranspose1;
+      bmulttrans = BCSRBlockMatVecMultTranspose<1>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<1>;
       bmatmult = BCSRMatMatMultAdd1;
       bfactorlower = BCSRMatFactorLower1;
       bfactorupper = BCSRMatFactorUpper1;
@@ -1054,6 +1055,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper2;
       bmult = BCSRMatVecMult2;
       bmultadd = BCSRMatVecMultAdd2;
+      bmulttrans = BCSRBlockMatVecMultTranspose<2>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<2>;
       bmatmult = BCSRMatMatMultAdd2;
       bfactorlower = BCSRMatFactorLower2;
       bfactorupper = BCSRMatFactorUpper2;
@@ -1068,6 +1071,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper3;
       bmult = BCSRMatVecMult3;
       bmultadd = BCSRMatVecMultAdd3;
+      bmulttrans = BCSRBlockMatVecMultTranspose<3>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<3>;
       bmatmult = BCSRMatMatMultAdd3;
       bfactorlower = BCSRMatFactorLower3;
       bfactorupper = BCSRMatFactorUpper3;
@@ -1082,6 +1087,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper4;
       bmult = BCSRMatVecMult4;
       bmultadd = BCSRMatVecMultAdd4;
+      bmulttrans = BCSRBlockMatVecMultTranspose<4>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<4>;
       bmatmult = BCSRMatMatMultAdd4;
       bfactorlower = BCSRMatFactorLower4;
       bfactorupper = BCSRMatFactorUpper4;
@@ -1096,6 +1103,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper5;
       bmult = BCSRMatVecMult5;
       bmultadd = BCSRMatVecMultAdd5;
+      bmulttrans = BCSRBlockMatVecMultTranspose<5>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<5>;
       bmatmult = BCSRMatMatMultAdd5;
       bfactorlower = BCSRMatFactorLower5;
       bfactorupper = BCSRMatFactorUpper5;
@@ -1115,6 +1124,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper6;
       bmult = BCSRMatVecMult6;
       bmultadd = BCSRMatVecMultAdd6;
+      bmulttrans = BCSRBlockMatVecMultTranspose<6>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<6>;
       bmatmult = BCSRMatMatMultAdd6;
       bfactorlower = BCSRMatFactorLower6;
       bfactorupper = BCSRMatFactorUpper6;
@@ -1143,6 +1154,8 @@ void BCSRMat::initBlockImpl() {
       applyupper = BCSRMatApplyUpper8;
       bmult = BCSRMatVecMult8;
       bmultadd = BCSRMatVecMultAdd8;
+      bmulttrans = BCSRBlockMatVecMultTranspose<8>;
+      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<8>;
       bmatmult = BCSRMatMatMultAdd8;
       bfactorlower = BCSRMatFactorLower8;
       bfactorupper = BCSRMatFactorUpper8;

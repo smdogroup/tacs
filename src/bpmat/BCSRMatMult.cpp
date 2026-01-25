@@ -458,7 +458,7 @@ void BCSRMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
 }
 
 /*!
-  Compute the matrix-vector product: y = A^{T} * x
+  Compute the matrix-vector product: y += A^{T} * x
 */
 void BCSRMatVecMultTranspose(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   const int nrows = data->nrows;

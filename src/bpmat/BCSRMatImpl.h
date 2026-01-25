@@ -128,6 +128,79 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
                      const TacsScalar *b, const TacsScalar *xext,
                      TacsScalar *x);
 
+// ==============================================================================
+// Block size templated implementations
+// ==============================================================================
+/**
+ * @brief Simple transpose matrix-vector multiplication for small square matrices
+ *
+ * Computes y += A^T * x, where A is a square matrix of size N x N.
+ *
+ * @tparam N square matrix size
+ * @param A Matrix entries in row-major order
+ * @param x Vector to multiply
+ * @param y Vector to store result
+ */
+template <int N>
+void addTransposeMatVec(const TacsScalar *const A, const TacsScalar *const x, TacsScalar *const y) {
+  for (int ii = 0; ii < N; ++ii) {
+    for (int jj = 0; jj < N; ++jj) {
+      y[ii] += A[jj * N + ii] * x[jj];
+    }
+  }
+}
+
+/**
+ * @brief Compute the matrix-vector product: outVec += A^{T} * inVec
+ *
+ * @tparam blockSize Size of the blocks in the BCSR matrix
+ * @param data BCSR matrix data
+ * @param inVec Input vector
+ * @param outVec Output vector
+ */
+template <int blockSize>
+void BCSRBlockMatVecMultTranspose(BCSRMatData *data, TacsScalar *inVec, TacsScalar *outVec) {
+  const int nrows = data->nrows;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int b2 = blockSize * blockSize;
+
+  const TacsScalar *a = data->A;
+  for (int rowInd = 0; rowInd < nrows; rowInd++) {
+    const int rowDataStart = rowp[rowInd];
+    const int rowDataEnd = rowp[rowInd + 1];
+    for (int k = rowDataStart; k < rowDataEnd; k++) {
+      const int outRowInd = blockSize * cols[k];
+
+      addTransposeMatVec<blockSize>(a, inVec, &outVec[outRowInd]);
+      a += b2;
+    }
+
+    inVec += blockSize;
+  }
+}
+
+/**
+ * @brief Compute the matrix-vector product plus addition: outVec = A^{T} * inVec + addVec
+ *
+ * @tparam blockSize Size of the blocks in the BCSR matrix
+ * @param data BCSR matrix data
+ * @param inVec Input vector
+ * @param addVec Addition vector
+ * @param outVec Output vector
+ */
+template <int blockSize>
+void BCSRBlockMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec, TacsScalar *addVec,
+                            TacsScalar *outVec) {
+  // Copy addVec to outVec if they are different vectors
+  const int ncols = data->ncols;
+  if (outVec != addVec) {
+    memcpy(outVec, addVec, blockSize * ncols * sizeof(TacsScalar));
+  }
+  BCSRBlockMatVecMultTranspose<blockSize>(data, inVec, outVec);
+
+}
+
 /*
   These are the definitions for the block-specific code.
   These should provide better performance.
