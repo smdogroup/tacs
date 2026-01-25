@@ -965,7 +965,7 @@ void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
     B->multTranspose(x_b, y_b);
     E->multTranspose(x_b, y_c);
 
-    // Recieve x_c, finish computing y_c, then begin sending it back to y
+    // Receive x_c, finish computing y_c, then begin sending it back to y
     c_map->endForward(c_ctx, x, x_c);
     C->multTransposeAdd(x_c, y_c, y_c);
     c_map->beginReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
