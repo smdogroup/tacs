@@ -870,10 +870,10 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
 
   In other words:
   1) Send requests to retrieve x_b and x_c from the global x vector
-  2) Wait to recieve x_b
+  2) Wait to receive x_b
   3) Compute y_b = B*x_b
   4) Compute y_c = F*x_b
-  5) Wait to recieve x_c
+  5) Wait to receive x_c
   6) Compute y_c += C*x_c
   7) Begin adding y_c to global y vector
   8) Compute y_b += E*x_c
