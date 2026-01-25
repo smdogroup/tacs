@@ -44,8 +44,8 @@ def globalToLocalArray(globalArray, assembler):
     globalToLocalMap = assembler.meshLoader.getGlobalToLocalNodeIDDict()
     globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
     localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
-    numLocalnodes = len(localIDs)
-    localArray = np.zeros((numLocalnodes, varsPerNode), dtype=globalArray.dtype)
+    numLocalNodes = len(localIDs)
+    localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
     localArray[localIDs, :] = globalArray[globalIDs, :]
     return localArray.flatten()
 
@@ -66,8 +66,8 @@ def localToGlobalArray(localArray, assembler):
         Array containing values for all nodes in the original order.
     """
     numNodes = assembler.meshLoader.getNumBDFNodes()
-    numLocalnodes = assembler.getNumOwnedNodes()
-    localArray = localArray.reshape((numLocalnodes, -1))
+    numLocalNodes = assembler.getNumOwnedNodes()
+    localArray = localArray.reshape((numLocalNodes, -1))
     varsPerNode = localArray.shape[1]
     globalToLocalMap = assembler.meshLoader.getGlobalToLocalNodeIDDict()
     globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
@@ -225,6 +225,6 @@ if __name__ == "__main__":
         KTxRef = localToGlobalArray(KTxRef, assembler)
         # Save the reference results
         numFormat = "%.16e"
-        np.savetxt("input_files/I_beam_x_ref.txt", x, fmt=numFormat)
-        np.savetxt("input_files/I_beam_Kx_ref.txt", KxRef, fmt=numFormat)
-        np.savetxt("input_files/I_beam_KTx_ref.txt", KTxRef, fmt=numFormat)
+        np.savetxt(VEC_FILE, x, fmt=numFormat)
+        np.savetxt(PROD_FILE, KxRef, fmt=numFormat)
+        np.savetxt(TRANSPOSE_PROD_FILE, KTxRef, fmt=numFormat)
