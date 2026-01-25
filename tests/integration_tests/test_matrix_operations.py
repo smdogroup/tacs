@@ -22,6 +22,7 @@ VEC_FILE = os.path.join(BASE_DIR, "./input_files/I_beam_x_ref.txt")
 PROD_FILE = os.path.join(BASE_DIR, "./input_files/I_beam_Kx_ref.txt")
 TRANSPOSE_PROD_FILE = os.path.join(BASE_DIR, "./input_files/I_beam_KTx_ref.txt")
 
+
 def globalToLocalArray(globalArray, assembler):
     """Given an array containing values for all nodes in the original order, get an array containing the values for the nodes on this proc, in the reordered order.
 
@@ -47,6 +48,7 @@ def globalToLocalArray(globalArray, assembler):
     localArray = np.zeros((numLocalnodes, varsPerNode), dtype=globalArray.dtype)
     localArray[localIDs, :] = globalArray[globalIDs, :]
     return localArray.flatten()
+
 
 def localToGlobalArray(localArray, assembler):
     """Given an array containing values for the nodes on this proc, in the reordered order, get an array containing values for all nodes in the original order.
@@ -77,6 +79,7 @@ def localToGlobalArray(localArray, assembler):
     assembler.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
 
     return globalArray.flatten()
+
 
 def setupMatrices(bdfFile, comm):
     """Set up TACS matrices from BDF file.
@@ -119,11 +122,13 @@ def setupMatrices(bdfFile, comm):
 
     return FEAAssembler, schur_mat, parallel_mat
 
+
 def getXVec(size):
     """Generate a deterministic random vector of given size."""
     np.random.seed(42)
     x = np.random.rand(size).astype(TACS.dtype)
     return x
+
 
 class MatrixOperationsTest(unittest.TestCase):
     """
@@ -147,7 +152,9 @@ class MatrixOperationsTest(unittest.TestCase):
         self.atol = 1e-10
 
         # Set up TACS matrices
-        self.assembler, self.schur_mat, self.parallel_mat = setupMatrices(BDF_FILE, self.comm)
+        self.assembler, self.schur_mat, self.parallel_mat = setupMatrices(
+            BDF_FILE, self.comm
+        )
 
         # Read the reference results
         xRef = np.loadtxt(VEC_FILE).astype(self.dtype)
@@ -177,7 +184,9 @@ class MatrixOperationsTest(unittest.TestCase):
         else:
             mat.mult(self.xVec, y)
 
-        self.compareResults(y.getArray(), globalToLocalArray(yRef, self.assembler), testName)
+        self.compareResults(
+            y.getArray(), globalToLocalArray(yRef, self.assembler), testName
+        )
 
     def test_schur_mat_mult(self):
         """Test TACSSchurMat.mult against scipy matrix-vector product."""
@@ -193,7 +202,9 @@ class MatrixOperationsTest(unittest.TestCase):
 
     def test_parallel_mat_mult_transpose(self):
         """Test TACSParallelMat.multTranspose against scipy transpose product."""
-        self.templateTest(self.parallel_mat, "ParallelMat.multTranspose", transpose=True)
+        self.templateTest(
+            self.parallel_mat, "ParallelMat.multTranspose", transpose=True
+        )
 
 
 if __name__ == "__main__":
