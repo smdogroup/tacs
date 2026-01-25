@@ -894,10 +894,10 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
     yvec->getArray(&y);
 
     // Make some aliases so code matches the explanation above
-    TacsScalar* const x_b = xlocal;
-    TacsScalar* const x_c = &xlocal[local_offset];
-    TacsScalar* const y_b = ylocal;
-    TacsScalar* const y_c = &ylocal[local_offset];
+    TacsScalar *const x_b = xlocal;
+    TacsScalar *const x_c = &xlocal[local_offset];
+    TacsScalar *const y_b = ylocal;
+    TacsScalar *const y_c = &ylocal[local_offset];
 
     // First begin the communication of x to the local values
     b_map->beginForward(b_ctx, x, x_b);
@@ -937,13 +937,13 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
  * @param txvec Vector to multiply with
  * @param tyvec Vector to store result in
  */
-void TACSSchurMat::multTranspose(TACSVec* txvec, TACSVec* tyvec) {
+void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
   tyvec->zeroEntries();
 
   // Safely down-cast the TACSVec vectors to TACSBVecs
   TACSBVec *xvec, *yvec;
-  xvec = dynamic_cast<TACSBVec*>(txvec);
-  yvec = dynamic_cast<TACSBVec*>(tyvec);
+  xvec = dynamic_cast<TACSBVec *>(txvec);
+  yvec = dynamic_cast<TACSBVec *>(tyvec);
 
   if (xvec && yvec) {
     TacsScalar *x, *y;
@@ -951,10 +951,10 @@ void TACSSchurMat::multTranspose(TACSVec* txvec, TACSVec* tyvec) {
     yvec->getArray(&y);
 
     // Make some aliases so code matches the explanation above
-    TacsScalar* const x_b = xlocal;
-    TacsScalar* const x_c = &xlocal[local_offset];
-    TacsScalar* const y_b = ylocal;
-    TacsScalar* const y_c = &ylocal[local_offset];
+    TacsScalar *const x_b = xlocal;
+    TacsScalar *const x_c = &xlocal[local_offset];
+    TacsScalar *const y_b = ylocal;
+    TacsScalar *const y_c = &ylocal[local_offset];
 
     // First begin the communication of x to the local values
     b_map->beginForward(b_ctx, x, x_b);

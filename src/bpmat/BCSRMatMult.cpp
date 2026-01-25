@@ -487,7 +487,8 @@ void BCSRMatVecMultTranspose(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 }
 
 /*!
-  Compute the matrix-vector product plus addition: outVec = A^{T} * inVec + addVec
+  Compute the matrix-vector product plus addition: outVec = A^{T} * inVec +
+  addVec
 */
 void BCSRMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec,
                                 TacsScalar *addVec, TacsScalar *outVec) {

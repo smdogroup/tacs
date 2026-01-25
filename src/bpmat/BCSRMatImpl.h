@@ -132,7 +132,8 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
 // Block size templated implementations
 // ==============================================================================
 /**
- * @brief Simple transpose matrix-vector multiplication for small square matrices
+ * @brief Simple transpose matrix-vector multiplication for small square
+ * matrices
  *
  * Computes y += A^T * x, where A is a square matrix of size N x N.
  *
@@ -142,7 +143,8 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
  * @param y Vector to store result
  */
 template <int N>
-void addTransposeMatVec(const TacsScalar *const A, const TacsScalar *const x, TacsScalar *const y) {
+void addTransposeMatVec(const TacsScalar *const A, const TacsScalar *const x,
+                        TacsScalar *const y) {
   for (int ii = 0; ii < N; ++ii) {
     for (int jj = 0; jj < N; ++jj) {
       y[ii] += A[jj * N + ii] * x[jj];
@@ -159,7 +161,8 @@ void addTransposeMatVec(const TacsScalar *const A, const TacsScalar *const x, Ta
  * @param outVec Output vector
  */
 template <int blockSize>
-void BCSRBlockMatVecMultTranspose(BCSRMatData *data, TacsScalar *inVec, TacsScalar *outVec) {
+void BCSRBlockMatVecMultTranspose(BCSRMatData *data, TacsScalar *inVec,
+                                  TacsScalar *outVec) {
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
@@ -181,7 +184,8 @@ void BCSRBlockMatVecMultTranspose(BCSRMatData *data, TacsScalar *inVec, TacsScal
 }
 
 /**
- * @brief Compute the matrix-vector product plus addition: outVec = A^{T} * inVec + addVec
+ * @brief Compute the matrix-vector product plus addition: outVec = A^{T} *
+ * inVec + addVec
  *
  * @tparam blockSize Size of the blocks in the BCSR matrix
  * @param data BCSR matrix data
@@ -190,15 +194,14 @@ void BCSRBlockMatVecMultTranspose(BCSRMatData *data, TacsScalar *inVec, TacsScal
  * @param outVec Output vector
  */
 template <int blockSize>
-void BCSRBlockMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec, TacsScalar *addVec,
-                            TacsScalar *outVec) {
+void BCSRBlockMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec,
+                                     TacsScalar *addVec, TacsScalar *outVec) {
   // Copy addVec to outVec if they are different vectors
   const int ncols = data->ncols;
   if (outVec != addVec) {
     memcpy(outVec, addVec, blockSize * ncols * sizeof(TacsScalar));
   }
   BCSRBlockMatVecMultTranspose<blockSize>(data, inVec, outVec);
-
 }
 
 /*
