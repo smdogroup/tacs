@@ -176,7 +176,7 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
     # Create lamination parameter constraints
     constraint = FEAAssembler.createLamParamFullConstraint("lam_param_con_full")
     allCompIDs = FEAAssembler.selectCompIDs()
-    constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7), dvWeights=np.ones(6))
+    constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7))
 
 
     return FEAAssembler, staticProb, constraint
