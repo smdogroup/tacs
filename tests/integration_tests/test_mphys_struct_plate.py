@@ -168,18 +168,27 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
                 self.add_constraint("analysis.ks_vmfailure", upper=1.0)
                 self.add_objective("analysis.mass")
-                # We will solve the TACS implicit component with a Newton solver, using solve_linear in fwd mode to
-                # solve the linear system. Since this is a linear TACS model, we will just do one Newton iteration. but
-                # set a tight tolerance so that one Newton iteration is always run, even during FD perturbations that
-                # barely change the residual
-                self.analysis.coupling.solver.nonlinear_solver = om.NewtonSolver(
+                # We will solve the TACS implicit component with a Newton solver, using OM's PETSc linear solver, but
+                # preconditioned with the TACS linear solver through solve_linear. Using the PETSc solver is necessary
+                # to test apply_linear since it will be used to compute the linear residual.
+                # This effectively tests the capabilities required for using TACS within coupled models solved using a
+                # monolithic Newton solver.
+                solverComp = self.analysis.coupling.solver
+                solverComp.nonlinear_solver = om.NewtonSolver(
                     solve_subsystems=False,
                     err_on_non_converge=False,
                     iprint=2,
-                    maxiter=1,
-                    atol=1e-10,
+                    maxiter=3,
+                    atol=1e-6,
                 )
-                self.analysis.coupling.solver.linear_solver = om.LinearUserDefined()
+                petscSolver = om.PETScKrylov(iprint=2, maxiter=3)
+                solveLinear = om.LinearUserDefined()
+                # Can't use PETScKrylov solver in complex mode
+                if tacs.TACS.dtype == complex:
+                    solverComp.linear_solver = solveLinear
+                else:
+                    solverComp.linear_solver = petscSolver
+                    solverComp.linear_solver.precon = solveLinear
 
         prob = om.Problem()
         prob.model = Top()

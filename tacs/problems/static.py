@@ -1709,6 +1709,9 @@ class StaticProblem(TACSProblem):
         """
         self.copyToTACSVec(rhs, self.rhs)
 
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
         # Check if we need to initialize
         self._initializeSolve()
 
