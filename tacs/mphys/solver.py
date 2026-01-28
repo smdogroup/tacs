@@ -150,12 +150,13 @@ class TacsSolver(om.ImplicitComponent):
 
     def solve_linear(self, d_outputs, d_residuals, mode):
         if mode == "fwd":
-            if self.under_check_partials:
-                print("solver fwd")
-            else:
-                raise ValueError("forward mode requested but not implemented")
+            # Solve J * d_outputs = d_residuals
+            self.sp.solveForward(
+                d_residuals[self.states_name], d_outputs[self.states_name]
+            )
 
         if mode == "rev":
+            # Solve J^T * d_residuals = d_outputs
             self.sp.solveAdjoint(
                 d_outputs[self.states_name], d_residuals[self.states_name]
             )
@@ -163,14 +164,36 @@ class TacsSolver(om.ImplicitComponent):
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         self._update_internal(inputs, outputs)
         if mode == "fwd":
-            if not self.under_check_partials:
-                raise ValueError("TACS forward mode requested but not implemented")
+            if self.states_name in d_outputs:
+                # Perturbation in residual due to perturbation in states
+                self.sp.addJacVecProduct(
+                    d_outputs[self.states_name], d_residuals[self.states_name]
+                )
+            if self.rhs_name in d_inputs:
+                # Perturbation in residual due to perturbation in rhs
+                array_w_bcs = d_inputs[self.rhs_name].copy()
+                self.fea_assembler.applyBCsToVec(array_w_bcs)
+                d_residuals[self.states_name] -= array_w_bcs
+            if self.coords_name in d_inputs:
+                # Perturbation in residual due to perturbation in node coordinates
+                if not self.under_check_partials:
+                    raise ValueError(
+                        "TACS forward mode node coordinate sensitivities requested but not implemented"
+                    )
+            if "tacs_dvs" in d_inputs:
+                # Perturbation in residual due to perturbation in design variables
+                if not self.under_check_partials:
+                    raise ValueError(
+                        "TACS forward mode DV sensitivities requested but not implemented"
+                    )
 
         if mode == "rev":
             if self.states_name in d_residuals:
                 if self.states_name in d_outputs:
-                    self.sp.addTransposeJacVecProduct(
-                        d_residuals[self.states_name], d_outputs[self.states_name]
+                    self.sp.addJacVecProduct(
+                        d_residuals[self.states_name],
+                        d_outputs[self.states_name],
+                        transpose=True,
                     )
 
                 if self.rhs_name in d_inputs:
