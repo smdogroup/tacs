@@ -181,7 +181,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                     maxiter=3,
                     atol=1e-6,
                 )
-                petscSolver = om.PETScKrylov(iprint=2, maxiter=3)
+                petscSolver = om.PETScKrylov(iprint=2, maxiter=3, divtol=1e20)
                 solveLinear = om.LinearUserDefined()
                 # Can't use PETScKrylov solver in complex mode
                 if tacs.TACS.dtype == complex:
