@@ -890,22 +890,32 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
                F66 * s[2] * s[2];
 
     if (useModifiedTsaiWu) {
-      fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
+      if (TacsRealPart(s[0]) == 0.0 && TacsRealPart(s[1]) == 0.0 &&
+          TacsRealPart(s[2]) == 0.0) {
+        // If the stress is zero, set the sensitivity to its limit value
+        // to avoid division by zero
+        sens[0] = F1 / 2.0;
+        sens[1] = F2 / 2.0;
+        sens[2] = sqrt(F66);
+      } else {
+        // Otherwise, calculate the sensitivity of the failure criteria w.r.t
+        // the 3 stresses
+        fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
 
-      TacsScalar tmp = (F1 * s[0] + F2 * s[1]) * (F1 * s[0] + F2 * s[1]);
-      TacsScalar tmp2 = sqrt(4.0 * F11 * s2[0] + 8.0 * F12 * s[0] * s[1] +
-                             4.0 * F22 * s2[1] + 4.0 * F66 * s2[2] + tmp);
+        TacsScalar tmp = (F1 * s[0] + F2 * s[1]) * (F1 * s[0] + F2 * s[1]);
+        TacsScalar tmp2 = sqrt(4.0 * F11 * s2[0] + 8.0 * F12 * s[0] * s[1] +
+                               4.0 * F22 * s2[1] + 4.0 * F66 * s2[2] + tmp);
 
-      // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
-      sens[0] = (F1 * (F1 * s[0] + F2 * s[1]) + F1 * tmp2 + 4.0 * F11 * s[0] +
-                 4.0 * F12 * s[1]) /
-                (2.0 * tmp2);
+        sens[0] = (F1 * (F1 * s[0] + F2 * s[1]) + F1 * tmp2 + 4.0 * F11 * s[0] +
+                   4.0 * F12 * s[1]) /
+                  (2.0 * tmp2);
 
-      sens[1] = (4.0 * F12 * s[0] + F2 * (F1 * s[0] + F2 * s[1]) + F2 * tmp2 +
-                 4.0 * F22 * s[1]) /
-                (2.0 * tmp2);
+        sens[1] = (4.0 * F12 * s[0] + F2 * (F1 * s[0] + F2 * s[1]) + F2 * tmp2 +
+                   4.0 * F22 * s[1]) /
+                  (2.0 * tmp2);
 
-      sens[2] = 2.0 * F66 * s[2] / tmp2;
+        sens[2] = 2.0 * F66 * s[2] / tmp2;
+      }
     }
 
     else {
