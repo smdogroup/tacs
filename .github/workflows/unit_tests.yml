@@ -130,7 +130,9 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
-            wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
+            # ESP122Lin.tgz certificate has expired, so we need to bypass the certificate check
+            # TODO: Come up with a more secure solution.
+            wget --no-check-certificate https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
             tar -xvf ESP122Lin.tgz
             export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
             export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
