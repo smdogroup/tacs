@@ -151,9 +151,10 @@ jobs:
       - name: Run unit tests
         run: |
           # Reload ESP/CAPS environment variables if in real mode
-          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
-            source ${TACS_DIR}/extern/ESP122/ESPenv.sh
-          fi
+          # Skip until website certificate is updated
+          # if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
+          #   source ${TACS_DIR}/extern/ESP122/ESPenv.sh
+          # fi
           testflo --timeout 360 .;
       - name: Build docs
         run: |
