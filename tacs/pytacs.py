@@ -1058,6 +1058,16 @@ class pyTACS(BaseUI):
                     minThickness = 0.0
                     maxThickness = 1e20
 
+                if (
+                    (propInfo.mid2 is not None)
+                    or (propInfo.mid3 is not None)
+                    or (propInfo.mid4 is not None)
+                ):
+                    self._TACSWarning(
+                        f"PCOMP shell property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
+                        "Only the first material (MID1) will be used."
+                    )
+
                 con = tacs.constitutive.IsoShellConstitutive(
                     mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
                 )
