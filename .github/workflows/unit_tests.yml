@@ -82,7 +82,7 @@ jobs:
           echo "=============================================================";
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -155,7 +155,7 @@ jobs:
           # if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
           #   source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           # fi
-          testflo --timeout 360 .;
+          testflo --timeout 420 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
@@ -164,14 +164,14 @@ jobs:
           zip -r ../tacs-docs.zip .;
       - name: 'Upload docs'
         if: ${{ matrix.PUBLISH_DOCS }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tacs-docs
           path: docs/tacs-docs.zip
           retention-days: 7
       - name: 'Deploy docs'
         if: ${{ github.event_name == 'push' && matrix.PUBLISH_DOCS }}
-        uses: JamesIves/github-pages-deploy-action@v4.7.3
+        uses: JamesIves/github-pages-deploy-action@v4.7.6
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.

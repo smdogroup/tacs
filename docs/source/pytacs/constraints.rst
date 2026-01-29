@@ -8,4 +8,5 @@ Constraint classes
   dvcon
   panel_length
   panel_width
+  stiffener_length
   volume
