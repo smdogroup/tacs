@@ -130,7 +130,7 @@ setup(
         "numpy<3.0.0",
         "mpi4py>=4.0.3,<5.0.0",
         "scipy>=1.2.1",
-        "pynastran>=1.4.0",
+        "pynastran @ git+https://github.com/smdogroup/pyNastran.git",
         "numba",
     ],
     extras_require=optional_dependencies,
