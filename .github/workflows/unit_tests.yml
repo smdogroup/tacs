@@ -114,7 +114,8 @@ jobs:
           make ${{ matrix.OPTIONAL }} TACS_DIR=$TACS_DIR METIS_INCLUDE=-I${CONDA_PREFIX}/include/ METIS_LIB="-L${CONDA_PREFIX}/lib/ -lmetis";
       - name: Install f5totec/f5tovtk
         run: |
-          mamba install -c smdogroup -c conda-forge tecio -q -y;
+          # Sometimes needed for macos runner to prevent it from pulling numpy 2 when installing tecio later
+          mamba install -c smdogroup -c conda-forge tecio "numpy>=2" -q -y;
           # Compile f5totec/f5tovtk
           cd $TACS_DIR/extern/f5totec;
           make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
@@ -125,7 +126,7 @@ jobs:
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
-          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py -q -y;
+          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy>=2" -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
