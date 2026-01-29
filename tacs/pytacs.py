@@ -1058,6 +1058,16 @@ class pyTACS(BaseUI):
                     minThickness = 0.0
                     maxThickness = 1e20
 
+                if (
+                    (propInfo.mid2 is not None)
+                    or (propInfo.mid3 is not None)
+                    or (propInfo.mid4 is not None)
+                ):
+                    self._TACSWarning(
+                        f"PCOMP shell property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
+                        "Only the first material (MID1) will be used."
+                    )
+
                 con = tacs.constitutive.IsoShellConstitutive(
                     mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
                 )
@@ -1165,7 +1175,17 @@ class pyTACS(BaseUI):
                 if propInfo.Type == "BAR":
                     w = propInfo.dim[0]
                     t = propInfo.dim[1]
-                    con = tacs.constitutive.IsoRectangleBeamConstitutive(mat, w=w, t=t)
+                    elem0 = elemDict[propertyID]["elements"][0]
+                    # Get element axes and offset vectors
+                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
+                    # Take the average of the offset vectors at either end of bar
+                    offset_vector = (wa + wb) / 2.0
+                    # Project the offset vector onto the width and thickness axes
+                    wOffset = -np.dot(khat, offset_vector) / w
+                    tOffset = -np.dot(jhat, offset_vector) / t
+                    con = tacs.constitutive.IsoRectangleBeamConstitutive(
+                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset
+                    )
 
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[0]
@@ -1206,16 +1226,10 @@ class pyTACS(BaseUI):
             # Set up transform object which may be required for certain elements
             transform = None
             if propInfo.type in ["PSHELL", "PCOMP"]:
-                mcid = elemDict[propertyID]["elements"][0].theta_mcid_ref
-                if mcid:
-                    if mcid.type == "CORD2R":
-                        refAxis = mcid.i
-                        transform = tacs.elements.ShellRefAxisTransform(refAxis)
-                    else:  # Don't support spherical/cylindrical yet
-                        raise self._TACSError(
-                            "Unsupported material coordinate system type "
-                            f"'{mcid.type}' for property number {propertyID}."
-                        )
+                elem0 = elemDict[propertyID]["elements"][0]
+                if elem0.theta_mcid is not None:
+                    _, _, refAxis, _, _ = elem0.material_coordinate_system()
+                    transform = tacs.elements.ShellRefAxisTransform(refAxis)
             elif propInfo.type in ["PBAR", "PBARL"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
