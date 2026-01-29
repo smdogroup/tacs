@@ -1705,15 +1705,24 @@ class StaticProblem(TACSProblem):
         rhs : tacs.TACS.Vec or numpy.ndarray
             right hand side vector for solve
         psi : tacs.TACS.Vec or numpy.ndarray
-            BVec or numpy array into which the solution is saved
+            BVec or numpy array into which the solution is saved, also treated as the initial guess for the solution
         """
         self.copyToTACSVec(rhs, self.rhs)
+        self.copyToTACSVec(psi, self.update)
 
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
         # Check if we need to initialize
         self._initializeSolve()
+
+        # Check if the supplied initial guess is actually a good guess (i.e if norm(Ax-b) < norm(b))
+        # Store Ax-b in self.adjRHS
+        self.K.mult(self.update, self.adjRHS)
+        self.adjRHS.axpy(-1.0, rhs)
+
+        if self.adjRHS.norm() > rhs.norm():
+            self.update.zeroEntries()
 
         self.linearSolver.solve(self.rhs, self.update)
 
