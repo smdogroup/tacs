@@ -127,7 +127,7 @@ setup(
     author_email="graeme.kennedy@ae.gatech.edu",
     python_requires=">=3.10.0",
     install_requires=[
-        "numpy<3.0.0",
+        "numpy>=2.0.0,<3.0.0",
         "mpi4py>=4.0.3,<5.0.0",
         "scipy>=1.2.1",
         # pin pynastran against last commit that supports python 3.10
