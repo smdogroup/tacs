@@ -1719,9 +1719,9 @@ class StaticProblem(TACSProblem):
         # Check if the supplied initial guess is actually a good guess (i.e if norm(Ax-b) < norm(b))
         # Store Ax-b in self.adjRHS
         self.K.mult(self.update, self.adjRHS)
-        self.adjRHS.axpy(-1.0, rhs)
+        self.adjRHS.axpy(-1.0, self.rhs)
 
-        if self.adjRHS.norm() > rhs.norm():
+        if self.adjRHS.norm() > self.rhs.norm():
             self.update.zeroEntries()
 
         self.linearSolver.solve(self.rhs, self.update)
