@@ -123,6 +123,7 @@ cdef extern from "KSM.h":
         TACSVec *createVec()
         void zeroEntries()
         void mult(TACSVec *x, TACSVec *y)
+        void multTranspose(TACSVec *x, TACSVec *y)
         void copyValues(TACSMat *mat)
         void scale(TacsScalar alpha)
         void axpy(TacsScalar alpha, TACSMat *mat)
