@@ -1721,7 +1721,7 @@ class StaticProblem(TACSProblem):
         self.K.mult(self.update, self.adjRHS)
         self.adjRHS.axpy(-1.0, self.rhs)
 
-        if self.adjRHS.norm() > self.rhs.norm():
+        if np.real(self.adjRHS.norm()) > np.real(self.rhs.norm()):
             self.update.zeroEntries()
 
         self.linearSolver.solve(self.rhs, self.update)
