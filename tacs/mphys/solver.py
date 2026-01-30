@@ -164,6 +164,7 @@ class TacsSolver(om.ImplicitComponent):
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         self._update_internal(inputs, outputs)
         if mode == "fwd":
+            d_residuals[self.states_name][:] = 0.0
             if self.states_name in d_outputs:
                 # Perturbation in residual due to perturbation in states
                 self.sp.addJacVecProduct(
@@ -190,6 +191,7 @@ class TacsSolver(om.ImplicitComponent):
         if mode == "rev":
             if self.states_name in d_residuals:
                 if self.states_name in d_outputs:
+                    d_outputs[self.states_name][:] = 0.0
                     self.sp.addJacVecProduct(
                         d_residuals[self.states_name],
                         d_outputs[self.states_name],
@@ -199,9 +201,10 @@ class TacsSolver(om.ImplicitComponent):
                 if self.rhs_name in d_inputs:
                     array_w_bcs = d_residuals[self.states_name].copy()
                     self.fea_assembler.applyBCsToVec(array_w_bcs)
-                    d_inputs[self.rhs_name] -= array_w_bcs
+                    d_inputs[self.rhs_name][:] = -array_w_bcs
 
                 if self.coords_name in d_inputs:
+                    d_inputs[self.coords_name][:] = 0.0
                     self.sp.addAdjointResXptSensProducts(
                         [d_residuals[self.states_name]],
                         [d_inputs[self.coords_name]],
@@ -209,6 +212,7 @@ class TacsSolver(om.ImplicitComponent):
                     )
 
                 if "tacs_dvs" in d_inputs:
+                    d_inputs["tacs_dvs"][:] = 0.0
                     self.sp.addAdjointResProducts(
                         [d_residuals[self.states_name]],
                         [d_inputs["tacs_dvs"]],
