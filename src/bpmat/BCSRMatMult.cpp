@@ -458,7 +458,7 @@ void BCSRMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
 }
 
 /*!
-  Compute the matrix-vector product: y = A^{T} * x
+  Compute the matrix-vector product: y += A^{T} * x
 */
 void BCSRMatVecMultTranspose(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   const int nrows = data->nrows;
@@ -483,6 +483,44 @@ void BCSRMatVecMultTranspose(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
     }
 
     x += bsize;
+  }
+}
+
+/*!
+  Compute the matrix-vector product plus addition: outVec = A^{T} * inVec +
+  addVec
+*/
+void BCSRMatVecMultTransposeAdd(BCSRMatData *data, TacsScalar *inVec,
+                                TacsScalar *addVec, TacsScalar *outVec) {
+  const int nrows = data->nrows;
+  const int ncols = data->ncols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  int bsize = data->bsize;
+  const int b2 = bsize * bsize;
+
+  // Copy addVec to outVec if they are different vectors
+  if (outVec != addVec) {
+    memcpy(outVec, addVec, bsize * ncols * sizeof(TacsScalar));
+  }
+
+  int one = 1;
+  TacsScalar alpha = 1.0;
+  TacsScalar beta = 1.0;
+
+  TacsScalar *a = data->A;
+  for (int rowInd = 0; rowInd < nrows; rowInd++) {
+    const int rowDataStart = rowp[rowInd];
+    const int rowDataEnd = rowp[rowInd + 1];
+    for (int k = rowDataStart; k < rowDataEnd; k++) {
+      int bj = bsize * cols[k];
+
+      BLASgemv("N", &bsize, &bsize, &alpha, a, &bsize, inVec, &one, &beta,
+               &outVec[bj], &one);
+      a += b2;
+    }
+
+    inVec += bsize;
   }
 }
 

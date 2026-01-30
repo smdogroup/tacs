@@ -1665,19 +1665,10 @@ class StaticProblem(TACSProblem):
         elif isinstance(phi, np.ndarray):
             self.phi.getArray()[:] = phi
 
-        # Tacs doesn't actually transpose the matrix here so keep track of
-        # RHS entries that TACS zeros out for BCs.
-        bcTerms = self.update
-        bcTerms.copyValues(self.phi)
-        self.assembler.applyBCs(self.phi)
-        bcTerms.axpy(-1.0, self.phi)
-
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        self.K.mult(self.phi, self.res)
-        # Add bc terms back in
-        self.res.axpy(1.0, bcTerms)
+        self.K.multTranspose(self.phi, self.res)
 
         # Output residual
         if isinstance(prod, tacs.TACS.Vec):
