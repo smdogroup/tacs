@@ -621,7 +621,7 @@ TacsScalar TACSLamParamFullShellConstitutive::evalDesignFieldValue(
     return t;
   } else if (index <= 6) {
     // Return the bending parameters
-    return lp[index + 1];
+    return lp[index - 1];
   }
 
   return 0.0;
