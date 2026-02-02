@@ -135,7 +135,7 @@ class OpenMDAOTestCase:
                                 of=var_of,
                                 wrt=var_wrt,
                                 compact_print=True,
-                                out_stream=None,
+                                #out_stream=None,
                                 method=self.fd_method,
                                 form=self.fd_form,
                                 step=self.dh,
