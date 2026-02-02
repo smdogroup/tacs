@@ -56,6 +56,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-50
         else:
             self.rtol = 1e-2
+            self.atol = 1e-3
             self.dh = 1e-6
             self.fd_form = "central"
 

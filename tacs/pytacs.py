@@ -1067,7 +1067,7 @@ class pyTACS(BaseUI):
                     or (propInfo.mid4 is not None)
                 ):
                     self._TACSWarning(
-                        f"PCOMP shell property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
+                        f"PSHELL property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
                         "Only the first material (MID1) will be used."
                     )
 
