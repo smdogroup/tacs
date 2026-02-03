@@ -150,6 +150,34 @@ variables/node coordinates on this proc.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.StiffenerLengthConstraint.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.StiffenerLengthConstraint.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.StiffenerLengthConstraint.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.StiffenerLengthConstraint.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.constraints.StiffenerLengthConstraint.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.StiffenerLengthConstraint.dtype" title="Link to this definition">¶</a></dt>
@@ -449,6 +477,8 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.addConstraint"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.addConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.evalConstraints"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.evalConstraints()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.evalConstraintsSens"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.evalConstraintsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.dtype"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.getConstraintBounds()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.StiffenerLengthConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">StiffenerLengthConstraint.getConstraintKeys()</span></code></a></li>

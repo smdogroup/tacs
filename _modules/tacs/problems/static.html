@@ -1769,12 +1769,12 @@
         <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">getMat</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="StaticProblem.addTransposeJacVecProduct">
-<a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTransposeJacVecProduct">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">addTransposeJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<div class="viewcode-block" id="StaticProblem.addJacVecProduct">
+<a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addJacVecProduct">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transpose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds product of transpose Jacobian and input vector into output vector as shown below:</span>
-<span class="sd">        prod += scale * J^T . phi</span>
+<span class="sd">        Adds product of Jacobian (or its transpose) and input vector into output vector as shown below:</span>
+<span class="sd">        prod += scale * J(^T) . phi</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1786,17 +1786,20 @@
 
 <span class="sd">        scale : float</span>
 <span class="sd">            Scalar used to scale Jacobian product by.</span>
+
+<span class="sd">        transpose : bool</span>
+<span class="sd">            Flag to indicate whether to use the transpose Jacobian.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Create a tacs bvec copy of the adjoint vector</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">phi</span>
+        <span class="c1"># Create a tacs bvec copy of the input vector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
 
         <span class="c1"># Set problem vars to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">multTranspose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transpose</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">multTranspose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
 
         <span class="c1"># Output residual</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prod</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
@@ -1827,6 +1830,43 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">auxElems</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">AuxElements</span><span class="p">()</span></div>
 
 
+<div class="viewcode-block" id="StaticProblem.solveForward">
+<a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.solveForward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solveForward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">psi</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a linear system using the structural Jacobian.</span>
+
+<span class="sd">        Computes psi by solving J * psi = rhs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        rhs : tacs.TACS.Vec or numpy.ndarray</span>
+<span class="sd">            right hand side vector for solve</span>
+<span class="sd">        psi : tacs.TACS.Vec or numpy.ndarray</span>
+<span class="sd">            BVec or numpy array into which the solution is saved, also treated as the initial guess for the solution</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">psi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+
+        <span class="c1"># Set problem vars to assembler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
+
+        <span class="c1"># Check if we need to initialize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initializeSolve</span><span class="p">()</span>
+
+        <span class="c1"># Check if the supplied initial guess is actually a good guess (i.e if norm(Ax-b) &lt; norm(b))</span>
+        <span class="c1"># Store Ax-b in self.adjRHS</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="o">.</span><span class="n">norm</span><span class="p">())</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="o">.</span><span class="n">norm</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rhs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
+
+        <span class="c1"># Copy output values back to user vectors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">,</span> <span class="n">psi</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="StaticProblem.solveAdjoint">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.solveAdjoint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">solveAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rhs</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
@@ -1848,15 +1888,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeSolve</span><span class="p">()</span>
 
         <span class="c1"># Create a copy of the adjoint/rhs guess</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">phi</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">rhs</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">rhs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
 
         <span class="c1"># Tacs doesn&#39;t actually transpose the matrix here so keep track of</span>
         <span class="c1"># RHS entries that TACS zeros out for BCs.</span>
@@ -1872,10 +1905,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">bcTerms</span><span class="p">)</span>
 
         <span class="c1"># Copy output values back to user vectors</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">phi</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">phi</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StaticProblem.getVariables">
@@ -1895,11 +1925,9 @@
 <span class="sd">        states : numpy.ndarray</span>
 <span class="sd">            current state vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span><span class="p">[:]</span>
+        <span class="c1"># Copy to user vector</span>
+        <span class="k">if</span> <span class="n">states</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">,</span> <span class="n">states</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
@@ -1916,10 +1944,7 @@
 <span class="sd">            Values to set. Must be the size of getNumVariables()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Copy array values</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">u_array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">states</span><span class="p">[:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="c1"># Set states to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>

@@ -193,6 +193,34 @@ f_int = r(u, 0)
 f_ext = r(u, 1) - f_int</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.dtype" title="Link to this definition">¶</a></dt>
@@ -323,6 +351,8 @@ Where:
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.initializeSolve"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.initializeSolve()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.solve"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.solve()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.computeForceVectors"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.computeForceVectors()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.dtype"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.fatalFailure"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.fatalFailure</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.getOption"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.getOption()</span></code></a></li>

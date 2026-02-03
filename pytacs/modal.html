@@ -267,6 +267,34 @@ Defaults to None.</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.ModalProblem.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.ModalProblem.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.ModalProblem.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.problems.ModalProblem.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.problems.ModalProblem.dtype" title="Link to this definition">¶</a></dt>
@@ -533,6 +561,8 @@ Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/</
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.solve"><code class="docutils literal notranslate"><span class="pre">ModalProblem.solve()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">ModalProblem.writeSolution()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">ModalProblem.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.ModalProblem.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">ModalProblem.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.dtype"><code class="docutils literal notranslate"><span class="pre">ModalProblem.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.ModalProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">ModalProblem.getDesignVars()</span></code></a></li>

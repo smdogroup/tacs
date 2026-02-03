@@ -186,6 +186,34 @@ typically used from an external solver</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.dtype" title="Link to this definition">¶</a></dt>
@@ -487,6 +515,8 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.evalConstraints"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.evalConstraints()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.evalConstraintsSens"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.evalConstraintsSens()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.writeVisualization"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.writeVisualization()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.dtype"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getConstraintBounds()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getConstraintKeys()</span></code></a></li>

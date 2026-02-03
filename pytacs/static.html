@@ -701,16 +701,17 @@ scipy.sparse.bsr_matrices (A, B, C, D) if Jacobian is a TACSSchurMat</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tacs.problems.StaticProblem.addTransposeJacVecProduct">
-<span class="sig-name descname"><span class="pre">addTransposeJacVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTransposeJacVecProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct" title="Link to this definition">¶</a></dt>
-<dd><p>Adds product of transpose Jacobian and input vector into output vector as shown below:
-prod += scale * J^T . phi</p>
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.addJacVecProduct">
+<span class="sig-name descname"><span class="pre">addJacVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addJacVecProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addJacVecProduct" title="Link to this definition">¶</a></dt>
+<dd><p>Adds product of Jacobian (or its transpose) and input vector into output vector as shown below:
+prod += scale * J(^T) . phi</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>phi</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector to product with the transpose Jacobian.</p></li>
 <li><p><strong>prod</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Output vector to add Jacobian product to.</p></li>
 <li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Scalar used to scale Jacobian product by.</p></li>
+<li><p><strong>transpose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to indicate whether to use the transpose Jacobian.</p></li>
 </ul>
 </dd>
 </dl>
@@ -726,6 +727,21 @@ prod += scale * J^T . phi</p>
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.zeroLoads">
 <span class="sig-name descname"><span class="pre">zeroLoads</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroLoads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroLoads" title="Link to this definition">¶</a></dt>
 <dd><p>Zero all applied loads</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.solveForward">
+<span class="sig-name descname"><span class="pre">solveForward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rhs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.solveForward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.solveForward" title="Link to this definition">¶</a></dt>
+<dd><p>Solve a linear system using the structural Jacobian.</p>
+<p>Computes psi by solving J * psi = rhs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rhs</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- right hand side vector for solve</p></li>
+<li><p><strong>psi</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- BVec or numpy array into which the solution is saved, also treated as the initial guess for the solution</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -809,6 +825,34 @@ determine the desired writing procedure</p>
 only used from an external solver.</p></li>
 <li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
 typically used from an external solver</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
 </ul>
 </dd>
 </dl>
@@ -1111,14 +1155,17 @@ can be None otherwise.</p></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getResidual"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getResidual()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getForces"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getForces()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getJacobian"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getJacobian()</span></code></a></li>
-<li><a class="reference internal" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTransposeJacVecProduct()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addJacVecProduct()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroLoads()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.solveForward"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveForward()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.solveAdjoint"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveAdjoint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getOutputFileName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getOutputFileName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSolution()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">StaticProblem.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">StaticProblem.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.dtype"><code class="docutils literal notranslate"><span class="pre">StaticProblem.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVars()</span></code></a></li>

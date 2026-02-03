@@ -913,7 +913,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">xlb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xlb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xub</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_isNonlinear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkNonlinearity</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_isNonlinear</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_checkNonlinearity</span><span class="p">()</span>
+
+        <span class="c1"># Vector used to store temporarily store state variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tempVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span></div>
 
 
     <span class="nd">@postinitialize_method</span>
@@ -1142,7 +1145,7 @@
                     <span class="ow">or</span> <span class="p">(</span><span class="n">propInfo</span><span class="o">.</span><span class="n">mid4</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
                 <span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;PCOMP shell property </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2"> has defined multiple material IDs (MID2, MID3, or MID4). &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;PSHELL property </span><span class="si">{</span><span class="n">propertyID</span><span class="si">}</span><span class="s2"> has defined multiple material IDs (MID2, MID3, or MID4). &quot;</span>
                         <span class="s2">&quot;Only the first material (MID1) will be used.&quot;</span>
                     <span class="p">)</span>
 
@@ -1621,9 +1624,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">array</span> <span class="o">=</span> <span class="n">vec</span>
-            <span class="c1"># Create temporary BVec</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
             <span class="c1"># Copy array values to BVec</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempVec</span>
             <span class="n">vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">array</span>
             <span class="c1"># Apply BCs</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
@@ -1648,9 +1650,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="n">array</span> <span class="o">=</span> <span class="n">vec</span>
-            <span class="c1"># Create temporary BVec</span>
-            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
             <span class="c1"># Copy array values to BVec</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tempVec</span>
             <span class="n">vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">array</span>
             <span class="c1"># Apply BCs</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>

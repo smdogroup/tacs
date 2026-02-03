@@ -917,34 +917,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">vars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">vars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                <span class="n">vars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">vars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">[:]</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">vars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="nb">vars</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
-                <span class="n">vars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">vars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="nb">vars</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="nb">vars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vars0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dvars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                <span class="n">dvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">dvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvars</span><span class="p">[:]</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">dvars</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
-                <span class="n">dvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">dvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvars</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">dvars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">ddvars</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddvars</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                <span class="n">ddvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">ddvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">ddvars</span><span class="p">[:]</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddvars</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">ddvars</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># assume type=float</span>
-                <span class="n">ddvars0Array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
-                <span class="n">ddvars0Array</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">ddvars</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">ddvars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ddvars0</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1396,20 +1375,14 @@
         <span class="n">qddotArray</span> <span class="o">=</span> <span class="n">qddot</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
         <span class="c1"># Inplace assignment if vectors were provided</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qArray</span>
+        <span class="k">if</span> <span class="n">states</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">states</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dstates</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">dstates</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">qdot</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dstates</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">dstates</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qdotArray</span>
+        <span class="k">if</span> <span class="n">dstates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="n">qdot</span><span class="p">,</span> <span class="n">dstates</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddstates</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">ddstates</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">qddot</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ddstates</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">ddstates</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">qddotArray</span>
+        <span class="k">if</span> <span class="n">ddstates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="n">qddot</span><span class="p">,</span> <span class="n">ddstates</span><span class="p">)</span>
 
         <span class="c1"># Return arrays</span>
         <span class="k">return</span> <span class="n">time</span><span class="p">,</span> <span class="n">qArray</span><span class="p">,</span> <span class="n">qdotArray</span><span class="p">,</span> <span class="n">qddotArray</span></div>

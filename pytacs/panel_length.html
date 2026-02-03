@@ -257,6 +257,34 @@ variables/node coordinates on this proc.</p>
 </div>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.copyFromTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyFromTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.copyFromTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values from a TACS Vec into either a TACS Vec or numpy array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector/array to copy values into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.copyToTACSVec">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">copyToTACSVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.copyToTACSVec" title="Link to this definition">¶</a></dt>
+<dd><p>Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em> or </em><em>scalar</em>) -- Vector/array to copy values from</p></li>
+<li><p><strong>dest</strong> (<em>tacs.TACS.Vec</em>) -- Vector to copy into</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.dtype">
 <span class="sig-name descname"><span class="pre">dtype</span></span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.dtype" title="Link to this definition">¶</a></dt>
@@ -489,6 +517,8 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getConstraintSizes"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getConstraintSizes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.evalConstraints"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.evalConstraints()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.evalConstraintsSens"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.evalConstraintsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.copyFromTACSVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.dtype"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getConstraintKeys()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getDesignVarRange()</span></code></a></li>

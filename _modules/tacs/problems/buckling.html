@@ -897,10 +897,8 @@
         <span class="n">eigVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buckleSolver</span><span class="o">.</span><span class="n">extractEigenvector</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">eigVector</span><span class="p">)</span>
         <span class="c1"># Inplace assignment if vectors were provided</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
-            <span class="n">states</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">eigVector</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="n">states</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">states</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="n">eigVector</span><span class="p">,</span> <span class="n">states</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">eigVal</span><span class="p">,</span> <span class="n">eigVector</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
 
