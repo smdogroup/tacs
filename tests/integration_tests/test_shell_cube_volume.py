@@ -39,3 +39,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         constr.addConstraint("con", compIDs=allIDs)
 
         return [constr], fea_assembler
+
+    def test_is_linear(self):
+        """
+        Test that the volume constraint is linear wrt nodes/dvs.
+        """
+        constr = self.tacs_probs[0]
+        self.assertFalse(
+            constr.isLinear, "Volume constraint should not be linear wrt dvs"
+        )
