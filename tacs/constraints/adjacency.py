@@ -37,6 +37,8 @@ class AdjacencyConstraint(TACSConstraint):
             "Flag for attaching solution counter index to f5 files.",
         ],
     }
+    # Flag determining whether constraint is linear wrt dvs or nodes
+    isLinear = True
 
     def __init__(
         self,
