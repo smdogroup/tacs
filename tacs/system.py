@@ -112,19 +112,17 @@ class TACSSystem(BaseUI):
             looks for variable in the ``self.varName`` attribute if in dict.
 
         """
-        # Check if the design variables are being handed in a dict
-        if isinstance(x, dict):
-            if self.varName in x:
-                self.x.getArray()[:] = x[self.varName]
-        # or array
-        elif isinstance(x, np.ndarray):
-            self.x.getArray()[:] = x
-        # Or TACS BVec
-        elif isinstance(x, tacs.TACS.Vec):
-            self.x.copyValues(x)
-        else:
+        try:
+            # Check if the design variables are being handed in a dict
+            if isinstance(x, dict):
+                if self.varName in x:
+                    self.copyToTACSVec(x[self.varName], self.x)
+            # or array or TACSBVec
+            else:
+                self.copyToTACSVec(x, self.x)
+        except ValueError:
             raise ValueError(
-                "setDesignVars must be called with either a numpy array, dict, or TACS Vec as input."
+                "setDesignVars must be called with either a numpy array, TACS Vec, or dict containing one of the two, as input."
             )
 
         # Set the variables in tacs
@@ -228,19 +226,17 @@ class TACSSystem(BaseUI):
             Structural coordinate in array of size (N * 3) where N is
             the number of structural nodes on this processor.
         """
-        # Check if the design variables are being handed in a dict
-        if isinstance(Xpts, dict):
-            if self.coordName in Xpts:
-                self.Xpts.getArray()[:] = Xpts[self.coordName]
-        # or array
-        elif isinstance(Xpts, np.ndarray):
-            self.Xpts.getArray()[:] = Xpts
-        # Or TACS BVec
-        elif isinstance(Xpts, tacs.TACS.Vec):
-            self.Xpts.copyValues(Xpts)
-        else:
+        try:
+            # Check if the coordinates are being handed in a dict
+            if isinstance(Xpts, dict):
+                if self.coordName in Xpts:
+                    self.copyToTACSVec(Xpts[self.coordName], self.Xpts)
+            # or array or TACSBVec
+            else:
+                self.copyToTACSVec(Xpts, self.Xpts)
+        except ValueError:
             raise ValueError(
-                "setNodes must be called with either a numpy array, dict, or TACS Vec as input."
+                "setNodes must be called with either a numpy array, TACS Vec, or dict containing one of the two, as input."
             )
         self.assembler.setNodes(self.Xpts)
 
