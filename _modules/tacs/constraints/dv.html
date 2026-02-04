@@ -69,6 +69,9 @@
 <div class="viewcode-block" id="DVConstraint">
 <a class="viewcode-back" href="../../../pytacs/dvcon.html#tacs.constraints.DVConstraint">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DVConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
+    <span class="c1"># Flag determining whether constraint is linear wrt dvs or nodes. Defaults to True.</span>
+    <span class="n">isLinear</span> <span class="o">=</span> <span class="kc">True</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">,</span>
