@@ -147,3 +147,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
     def test_total_xpt_sensitivities(self):
         super().test_total_xpt_sensitivities()
+
+    def test_dv_con_is_linear(self):
+        """
+        Test that the dv constraint is linear wrt dvs.
+        """
+        constraint = self.tacs_probs[-1]
+        self.assertTrue(constraint.isLinear, "DV constraint should be linear wrt dvs")

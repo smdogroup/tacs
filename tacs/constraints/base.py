@@ -18,6 +18,9 @@ class TACSConstraint(TACSSystem):
     Base class for TACS constraint types. Contains methods common to all TACS constraints.
     """
 
+    # Flag determining whether constraint is linear wrt dvs or nodes. Defaults to False.
+    isLinear = False
+
     def __init__(
         self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
     ):
