@@ -30,6 +30,9 @@ from tacs.constraints.base import TACSConstraint, SparseLinearConstraint
 
 
 class DVConstraint(TACSConstraint):
+    # Flag determining whether constraint is linear wrt dvs or nodes. Defaults to True.
+    isLinear = True
+
     def __init__(
         self,
         name,
