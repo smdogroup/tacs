@@ -297,7 +297,7 @@ cdef class KSFailure(Function):
             The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.
         ftype (str, optional): The type of KS aggregation to be used (keyword argument).
             Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous', 
-            'discrete-continuous'. Case-insensitive, defaults to 'continuous'.
+            'discrete-average'. Case-insensitive, defaults to 'continuous'.
     """
     cdef TACSKSFailure *ksptr
     def __cinit__(self, Assembler assembler, **kwargs):
