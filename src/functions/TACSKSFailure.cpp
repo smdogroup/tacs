@@ -126,7 +126,9 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
                                     const TacsScalar vars[],
                                     const TacsScalar dvars[],
                                     const TacsScalar ddvars[]) {
-  for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
+  int numQuadPoints = element->getNumQuadraturePoints();
+  TacsScalar avgFail = 0.0;
+  for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
     double weight = element->getQuadraturePoint(i, pt);
 
@@ -140,9 +142,12 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
     // Scale failure value by safety factor
     fail *= safetyFactor;
 
+    // Average the failure value over each quadrature points
+    avgFail += fail / numQuadPoints;
+
     // Check whether the quantity requested is defined or not
     if (count >= 1) {
-      if (ftype == TACSFunction::INITIALIZE) {
+      if (ftype == TACSFunction::INITIALIZE && ksType != DISCRETE_AVERAGE) {
         // Set the maximum failure load
         if (TacsRealPart(fail) > TacsRealPart(maxFail)) {
           maxFail = fail;
@@ -165,6 +170,46 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
       }
     }
   }
+
+  if (ksType == DISCRETE_AVERAGE) {
+    if (ftype == TACSFunction::INITIALIZE) {
+      if (TacsRealPart(avgFail) > TacsRealPart(maxFail)) {
+        maxFail = avgFail;
+      }
+    } else if (ftype == TACSFunction::INTEGRATE) {
+      TacsScalar fexp = exp(ksWeight * (avgFail - maxFail));
+      ksFailSum += scale * fexp;
+    }
+  }
+}
+
+/*
+  Compute the average failure value over all quadrature points
+*/
+TacsScalar TACSKSFailure::computeAverageFailure(
+    int elemIndex, TACSElement *element, double time, const TacsScalar Xpts[],
+    const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[]) {
+  int numQuadPoints = element->getNumQuadraturePoints();
+  TacsScalar avgFail = 0.0;
+
+  for (int i = 0; i < numQuadPoints; i++) {
+    double pt[3];
+    double weight = element->getQuadraturePoint(i, pt);
+
+    TacsScalar fail = 0.0, detXd = 0.0;
+    int count =
+        element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX, time, i, pt,
+                                   Xpts, vars, dvars, ddvars, &detXd, &fail);
+
+    // Scale failure value by safety factor
+    fail *= safetyFactor;
+
+    // Average the failure value over each quadrature points
+    avgFail += fail / numQuadPoints;
+  }
+
+  return avgFail;
 }
 
 /*
@@ -176,12 +221,20 @@ void TACSKSFailure::getElementSVSens(
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
+  int numQuadPoints = element->getNumQuadraturePoints();
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->getNumVariables();
   memset(dfdu, 0, numVars * sizeof(TacsScalar));
 
-  for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
+  TacsScalar avgFail = 0.0;
+
+  if (ksType == DISCRETE_AVERAGE) {
+    avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
+                                    ddvars);
+  }
+
+  for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
     double weight = element->getQuadraturePoint(i, pt);
 
@@ -212,6 +265,9 @@ void TACSKSFailure::getElementSVSens(
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm;
         dfdq *= weight * detXd;
+      } else if (ksType == DISCRETE_AVERAGE) {
+        dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
+        dfdq /= numQuadPoints;
       }
 
       // Scale failure sens by safety factor
@@ -232,12 +288,20 @@ void TACSKSFailure::getElementXptSens(
     int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
+  int numQuadPoints = element->getNumQuadraturePoints();
   // Zero the derivative of the function w.r.t. the element node
   // locations
   int numNodes = element->getNumNodes();
   memset(dfdXpts, 0, 3 * numNodes * sizeof(TacsScalar));
 
-  for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
+  TacsScalar avgFail = 0.0;
+
+  if (ksType == DISCRETE_AVERAGE) {
+    avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
+                                    ddvars);
+  }
+
+  for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
     double weight = element->getQuadraturePoint(i, pt);
 
@@ -270,6 +334,9 @@ void TACSKSFailure::getElementXptSens(
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm * weight * detXd;
         dfddetXd = fail * fpow * invPnorm * weight;
+      } else if (ksType == DISCRETE_AVERAGE) {
+        dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
+        dfdq /= numQuadPoints;
       }
 
       // Scale failure sens by safety factor
@@ -291,7 +358,15 @@ void TACSKSFailure::addElementDVSens(
     int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
-  for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
+  int numQuadPoints = element->getNumQuadraturePoints();
+  TacsScalar avgFail = 0.0;
+
+  if (ksType == DISCRETE_AVERAGE) {
+    avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
+                                    ddvars);
+  }
+
+  for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
     double weight = element->getQuadraturePoint(i, pt);
 
@@ -321,6 +396,9 @@ void TACSKSFailure::addElementDVSens(
         TacsScalar fpow =
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm * weight * detXd;
+      } else if (ksType == DISCRETE_AVERAGE) {
+        dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
+        dfdq /= numQuadPoints;
       }
 
       // Scale failure sens by safety factor
