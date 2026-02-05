@@ -719,6 +719,22 @@ prod += scale * J(^T) . phi</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.addTransposeJacVecProduct">
+<span class="sig-name descname"><span class="pre">addTransposeJacVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prod</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.addTransposeJacVecProduct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct" title="Link to this definition">¶</a></dt>
+<dd><p>Adds product of Jacobian transpose and input vector into output vector as shown below:
+prod += scale * J(^T) . phi</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>phi</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector to product with the transpose Jacobian.</p></li>
+<li><p><strong>prod</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Output vector to add Jacobian product to.</p></li>
+<li><p><strong>scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Scalar used to scale Jacobian product by.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.zeroVariables">
 <span class="sig-name descname"><span class="pre">zeroVariables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.zeroVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.zeroVariables" title="Link to this definition">¶</a></dt>
 <dd><p>Zero all the tacs solution b-vecs</p>
@@ -1157,6 +1173,7 @@ can be None otherwise.</p></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getForces"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getForces()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getJacobian"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getJacobian()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.addJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addJacVecProduct()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.addTransposeJacVecProduct"><code class="docutils literal notranslate"><span class="pre">StaticProblem.addTransposeJacVecProduct()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.zeroLoads"><code class="docutils literal notranslate"><span class="pre">StaticProblem.zeroLoads()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.solveForward"><code class="docutils literal notranslate"><span class="pre">StaticProblem.solveForward()</span></code></a></li>
