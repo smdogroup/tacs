@@ -469,7 +469,13 @@ class StructProblem(BaseStructProblem):
                 # Just evaluate the constraint to get the jacobian structure
                 wrt = list(fconSens[conName].keys())
                 optProb.addConGroup(
-                    conName, nCon, wrt=wrt, jac=fconSens[conName], lower=lb, upper=ub, linear=conIsLinear[conName]
+                    conName,
+                    nCon,
+                    wrt=wrt,
+                    jac=fconSens[conName],
+                    lower=lb,
+                    upper=ub,
+                    linear=conIsLinear[conName],
                 )
 
     @updateDVGeo
@@ -569,7 +575,9 @@ class StructProblem(BaseStructProblem):
         return self.staticProblem.evalFunctions(funcs, evalFuncs, ignoreMissing)
 
     @updateDVGeo
-    def evalConstraints(self, fcon, evalCons=None, ignoreMissing=False, nonLinear=True, linear=False):
+    def evalConstraints(
+        self, fcon, evalCons=None, ignoreMissing=False, nonLinear=True, linear=False
+    ):
         """
         Evaluate values for constraints. The constraints corresponding to the strings in
         evalCons are evaluated and updated into the provided
@@ -590,7 +598,7 @@ class StructProblem(BaseStructProblem):
             Flag to include linear constraints.
         """
         for constr in self.constraints:
-            if (evalCons is None or constr.name in evalCons):
+            if evalCons is None or constr.name in evalCons:
                 if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
                     constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
@@ -641,7 +649,14 @@ class StructProblem(BaseStructProblem):
                     funcsSens[funcKey].pop(coordName).reshape(-1, 3)
 
     @updateDVGeo
-    def evalConstraintsSens(self, fconSens, evalCons=None, nonLinear=True, linear=False, includeXptSens=False):
+    def evalConstraintsSens(
+        self,
+        fconSens,
+        evalCons=None,
+        nonLinear=True,
+        linear=False,
+        includeXptSens=False,
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -664,7 +679,7 @@ class StructProblem(BaseStructProblem):
         """
         sens = {}
         for constr in self.constraints:
-            if (evalCons is None or constr.name in evalCons):
+            if evalCons is None or constr.name in evalCons:
                 if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
                     constr.evalConstraintsSens(sens, evalCons)
 
