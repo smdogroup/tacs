@@ -1034,7 +1034,7 @@ class StructProblem(BaseStructProblem):
         """
         self.phi[:] = inVec
         self.temp0.zeroEntries()
-        self.staticProblem.addTransposeJacVecProduct(self._phi, self.temp0, scale=1.0)
+        self.staticProblem.addJacVecProduct(self._phi, self.temp0, scale=1.0, transpose=True)
         self.FEAAssembler.applyBCsToVec(self.temp0)
         outVec = self.temp0.getArray().copy()
         self.temp0.zeroEntries()
@@ -1281,7 +1281,7 @@ class StructProblem(BaseStructProblem):
         self.FEAAssembler.applyBCsToVec(self._adjRHS)
 
         # First compute the residual
-        self.staticProblem.addTransposeJacVecProduct(self._phi, res)
+        self.staticProblem.addJacVecProduct(self._phi, res, transpose=True)
         res.axpy(-1.0, self._adjRHS)  # Add the -RHS
 
         # Starting Norm for this computation
@@ -1298,7 +1298,7 @@ class StructProblem(BaseStructProblem):
 
         # Compute actual final FEA Norm
         res.zeroEntries()
-        self.staticProblem.addTransposeJacVecProduct(self._phi, res)
+        self.staticProblem.addJacVecProduct(self._phi, res, transpose=True)
         res.axpy(-1.0, self._adjRHS)  # Add the RHS
         self.staticProblem.finalNorm = np.real(res.norm())
 
