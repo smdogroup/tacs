@@ -1646,8 +1646,44 @@ class StaticProblem(TACSProblem):
 
     def addJacVecProduct(self, phi, prod, scale=1.0, transpose=False):
         """
-        Adds product of transpose Jacobian and input vector into output vector as shown below:
-        prod += scale * J^T . phi
+        Adds product of Jacobian (or its transpose) and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
+
+        Parameters
+        ----------
+        phi : tacs.TACS.Vec or numpy.ndarray
+            Input vector to product with the transpose Jacobian.
+
+        prod : tacs.TACS.Vec or numpy.ndarray
+            Output vector to add Jacobian product to.
+
+        scale : float
+            Scalar used to scale Jacobian product by.
+
+        transpose : bool
+            Flag to indicate whether to use the transpose Jacobian.
+        """
+        # Create a tacs bvec copy of the input vector
+        self.copyToTACSVec(phi, self.phi)
+
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        if transpose:
+            self.K.multTranspose(self.phi, self.res)
+        else:
+            self.K.mult(self.phi, self.res)
+
+        # Output residual
+        if isinstance(prod, tacs.TACS.Vec):
+            prod.axpy(scale, self.res)
+        else:
+            prod[:] = prod + scale * self.res.getArray()
+
+    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+        """
+        Adds product of Jacobian transpose and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
 
         Parameters
         ----------
@@ -1660,45 +1696,12 @@ class StaticProblem(TACSProblem):
         scale : float
             Scalar used to scale Jacobian product by.
         """
-        # Create a tacs bvec copy of the adjoint vector
-        if isinstance(phi, tacs.TACS.Vec):
-            self.phi.copyValues(phi)
-        elif isinstance(phi, np.ndarray):
-            self.phi.getArray()[:] = phi
-
-        # Set problem vars to assembler
-        self._updateAssemblerVars()
-        self.res.zeroEntries()
-
-        if transpose:
-            # TACS cannot apply BCs correctly to the transposed Jacobian (i.e zeroing columns instead of rows),
-            # so we need to manually adjust the input and output vectors to get the right answer.
-            bcTerms = self.update
-            bcTerms.copyValues(self.phi)
-            self.assembler.applyBCs(self.phi)
-            bcTerms.axpy(-1.0, self.phi)
-
-        self.assembler.addJacobianVecProduct(
-            1.0,
-            1.0,
-            0.0,
-            0.0,
-            self.phi,
-            self.res,
-            tacs.TACS.TRANSPOSE if transpose else tacs.TACS.NORMAL,
-            self._loadScale,
-            applyBCs=False if transpose else True,
+        warnings.warn(
+            "addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. "
+            "Use addJacVecProduct(phi, prod, scale, transpose=True) instead.",
+            DeprecationWarning,
         )
-
-        if transpose:
-            # Add bc terms back in
-            self.res.axpy(1.0, bcTerms)
-
-        # Scale and add product to output
-        if isinstance(prod, tacs.TACS.Vec):
-            prod.axpy(scale, self.res)
-        else:
-            prod[:] = prod + scale * self.res.getArray()
+        self.addJacVecProduct(phi, prod, scale, transpose=True)
 
     def zeroVariables(self):
         """
@@ -1715,6 +1718,40 @@ class StaticProblem(TACSProblem):
         """
         self.F.zeroEntries()
         self.auxElems = tacs.TACS.AuxElements()
+
+    def solveForward(self, rhs, psi):
+        """Solve a linear system using the structural Jacobian.
+
+        Computes psi by solving J * psi = rhs
+
+        Parameters
+        ----------
+        rhs : tacs.TACS.Vec or numpy.ndarray
+            right hand side vector for solve
+        psi : tacs.TACS.Vec or numpy.ndarray
+            BVec or numpy array into which the solution is saved, also treated as the initial guess for the solution
+        """
+        self.copyToTACSVec(rhs, self.rhs)
+        self.copyToTACSVec(psi, self.update)
+
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        # Check if we need to initialize
+        self._initializeSolve()
+
+        # Check if the supplied initial guess is actually a good guess (i.e if norm(Ax-b) < norm(b))
+        # Store Ax-b in self.adjRHS
+        self.K.mult(self.update, self.adjRHS)
+        self.adjRHS.axpy(-1.0, self.rhs)
+
+        if np.real(self.adjRHS.norm()) > np.real(self.rhs.norm()):
+            self.update.zeroEntries()
+
+        self.linearSolver.solve(self.rhs, self.update)
+
+        # Copy output values back to user vectors
+        self.copyFromTACSVec(self.update, psi)
 
     def solveAdjoint(self, rhs, phi):
         """
@@ -1735,15 +1772,8 @@ class StaticProblem(TACSProblem):
         self._initializeSolve()
 
         # Create a copy of the adjoint/rhs guess
-        if isinstance(phi, tacs.TACS.Vec):
-            self.phi.copyValues(phi)
-        elif isinstance(phi, np.ndarray):
-            self.phi.getArray()[:] = phi
-
-        if isinstance(rhs, tacs.TACS.Vec):
-            self.adjRHS.copyValues(rhs)
-        elif isinstance(rhs, np.ndarray):
-            self.adjRHS.getArray()[:] = rhs
+        self.copyToTACSVec(phi, self.phi)
+        self.copyToTACSVec(rhs, self.adjRHS)
 
         # Tacs doesn't actually transpose the matrix here so keep track of
         # RHS entries that TACS zeros out for BCs.
@@ -1758,10 +1788,7 @@ class StaticProblem(TACSProblem):
         self.phi.axpy(1.0, bcTerms)
 
         # Copy output values back to user vectors
-        if isinstance(phi, tacs.TACS.Vec):
-            phi.copyValues(self.phi)
-        elif isinstance(phi, np.ndarray):
-            phi[:] = self.phi.getArray()
+        self.copyFromTACSVec(self.phi, phi)
 
     def getVariables(self, states=None):
         """
@@ -1778,11 +1805,9 @@ class StaticProblem(TACSProblem):
         states : numpy.ndarray
             current state vector
         """
-
-        if isinstance(states, tacs.TACS.Vec):
-            states.copyValues(self.u)
-        elif isinstance(states, np.ndarray):
-            states[:] = self.u_array[:]
+        # Copy to user vector
+        if states is not None:
+            self.copyFromTACSVec(self.u, states)
 
         return self.u_array.copy()
 
@@ -1796,10 +1821,7 @@ class StaticProblem(TACSProblem):
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
-        if isinstance(states, tacs.TACS.Vec):
-            self.u.copyValues(states)
-        elif isinstance(states, np.ndarray):
-            self.u_array[:] = states[:]
+        self.copyToTACSVec(states, self.u)
         # Set states to assembler
         self.assembler.setVariables(self.u)
 

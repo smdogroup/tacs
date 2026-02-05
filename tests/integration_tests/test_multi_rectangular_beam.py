@@ -7,20 +7,25 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions, TACS
 
 """
-6 noded beam model 1 meter long in x direction.
+|---------o---------o---------      | g    ---------o---------o---------|
+  CompID 0| CompID 1| CompID 2      \/      CompID 2| CompID 1| CompID 0
+
+2 3 noded beam models, each 1 meter long in x direction (shown above).
+The beams are discretized into 3 separate cross sections that grow linearly in thickness
 The cross-section is a solid rectangle with the following properties:
     w = 0.1
-    t = 0.05
-We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+    t0 = 0.05
+    deltat = 0.005
+A distributed gravity load case is applied.
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
-We also apply a constraint on the difference between the width and thickness dvs of the cross-section.
+We also apply an adjacency constraint on the difference between the thickness dvs of each cross-section.
 """
 
 TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/two_beam.bdf")
 
 ksweight = 10.0
 
@@ -29,31 +34,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "gravity_compliance": 1941.637970569529,
-        "gravity_ks_vmfailure": 215.18186143357514,
-        "gravity_mass": 13.500000000000004,
-        "gravity_x_disp": -0.3750404568908798,
-        "gravity_y_disp": 656.1378755065329,
-        "gravity_z_disp": 275.45079293281793,
         "gravity_I_xx": 0.0,
         "gravity_I_xy": 0.0,
         "gravity_I_xz": 0.0,
-        "gravity_I_yy": 1.13625,
+        "gravity_I_yy": 30.99975033000031,
         "gravity_I_yz": 0.0,
-        "gravity_I_zz": 1.1278125,
-        "traction_compliance": 4.325878285719202,
-        "traction_ks_vmfailure": 9.71446798485217,
-        "traction_mass": 13.500000000000004,
-        "traction_x_disp": 0.009518432861763253,
-        "traction_y_disp": -0.7122094288145717,
-        "traction_z_disp": 12.02223266609341,
-        "traction_I_xx": 0.0,
-        "traction_I_xy": 0.0,
-        "traction_I_xz": 0.0,
-        "traction_I_yy": 1.13625,
-        "traction_I_yz": 0.0,
-        "traction_I_zz": 1.1278125,
-        "dvcon_width_minus_thickness": 0.05,
+        "gravity_I_zz": 30.982610954932227,
+        "gravity_compliance": 5073.790903996116,
+        "gravity_ks_vmfailure": 218.95861025129074,
+        "gravity_mass": 29.700000000000003,
+        "gravity_x_disp": -0.3633512018122108,
+        "gravity_y_disp": 692.9103268396991,
+        "gravity_z_disp": 300.4311098863023,
+        "adjcon_beam": np.array([-0.005, -0.005]),
     }
 
     def setup_tacs_problems(self, comm):
@@ -78,7 +71,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ys = 2.7e3  # yield stress
 
         # Beam dimensions
-        t = 0.05  # m
+        t0 = 0.05  # m
+        delta_t = 0.005
         w = 0.1  # m
 
         # Callback function used to setup TACS element objects and DVs
@@ -86,6 +80,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
         ):
             # Setup (isotropic) property and constitutive objects
+            t = t0 + delta_t * comp_id
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
             con = constitutive.IsoRectangleBeamConstitutive(
                 prop, t=t, tNum=dv_num, w=w, wNum=dv_num + 1
@@ -107,10 +102,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         grav_prob = fea_assembler.createStaticProblem("gravity")
         grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
 
-        trac_prob = fea_assembler.createStaticProblem("traction")
-        trac_prob.addTractionToComponents([0], [1.0, -2.0, 3.0])
-
-        tacs_probs = [grav_prob, trac_prob]
+        tacs_probs = [grav_prob]
 
         # Set convergence to be tight for test
         for problem in tacs_probs:
@@ -183,10 +175,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 aboutCM=True,
             )
 
-        # Add constraint on difference between width and thickness dvs (i.e. con = w - t)
-        constr = fea_assembler.createDVConstraint("dvcon")
+        # Add constraint on difference between thickness dvsof each cross-section
+        constr = fea_assembler.createAdjacencyConstraint("adjcon")
+        allComps = fea_assembler.selectCompIDs()
         constr.addConstraint(
-            "width_minus_thickness", dvIndices=[0, 1], dvWeights=[1.0, -1.0]
+            "beam",
+            dvIndex=1,
+            compIDs=allComps,
         )
         tacs_probs.append(constr)
 
@@ -203,9 +198,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     def test_total_xpt_sensitivities(self):
         super().test_total_xpt_sensitivities()
 
-    def test_dv_con_is_linear(self):
-        """
-        Test that the dv constraint is linear wrt dvs.
-        """
-        constraint = self.tacs_probs[-1]
-        self.assertTrue(constraint.isLinear, "DV constraint should be linear wrt dvs")
+    def test_adjacency(self):
+        adjCon = self.tacs_probs[-1]
+
+        expectedAdjacency = [(0, 1), (1, 2)]
+        adjacencyAsExpected = None
+        if adjCon.comm.rank == 0:
+            adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
+                adjCon.adjacentComps
+            )
+        adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
+        self.assertTrue(adjacencyAsExpected)
+
+
+if __name__ == "__main__":
+    unittest.main()

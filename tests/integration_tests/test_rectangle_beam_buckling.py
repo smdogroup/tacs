@@ -1,23 +1,20 @@
 import os
-import unittest
 
 import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, functions, TACS
+from tacs import pytacs, elements, constitutive, functions
 
 """
-6 noded beam model 1 meter long in x direction.
+Beam model 1 meter long in x direction using Beam2 elements.
 The cross-section is a solid rectangle with the following properties:
     w = 0.1
     t = 0.05
-We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
-and Compliance functions and sensitivities.
-We also apply a constraint on the difference between the width and thickness dvs of the cross-section.
+We apply a compression load case and test various functions including:
+KSDisplacement, StructuralMass, MomentOfInertia, Compliance, and KSFailure 
+functions and their sensitivities.
+We also apply a constraint on the beam length using the stiffener length constraint.
 """
-
-TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
@@ -29,31 +26,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "gravity_compliance": 1941.637970569529,
-        "gravity_ks_vmfailure": 215.18186143357514,
-        "gravity_mass": 13.500000000000004,
-        "gravity_x_disp": -0.3750404568908798,
-        "gravity_y_disp": 656.1378755065329,
-        "gravity_z_disp": 275.45079293281793,
-        "gravity_I_xx": 0.0,
-        "gravity_I_xy": 0.0,
-        "gravity_I_xz": 0.0,
-        "gravity_I_yy": 1.13625,
-        "gravity_I_yz": 0.0,
-        "gravity_I_zz": 1.1278125,
-        "traction_compliance": 4.325878285719202,
-        "traction_ks_vmfailure": 9.71446798485217,
-        "traction_mass": 13.500000000000004,
-        "traction_x_disp": 0.009518432861763253,
-        "traction_y_disp": -0.7122094288145717,
-        "traction_z_disp": 12.02223266609341,
-        "traction_I_xx": 0.0,
-        "traction_I_xy": 0.0,
-        "traction_I_xz": 0.0,
-        "traction_I_yy": 1.13625,
-        "traction_I_yz": 0.0,
-        "traction_I_zz": 1.1278125,
-        "dvcon_width_minus_thickness": 0.05,
+        "compression_I_xx": 0.0,
+        "compression_I_xy": 0.0,
+        "compression_I_xz": 0.0,
+        "compression_I_yy": 1.1362500000000004,
+        "compression_I_yz": 0.0,
+        "compression_I_zz": 1.127812500000001,
+        "compression_compliance": 1.1428571428571437,
+        "compression_ks_vmfailure": 1.1534640832123386,
+        "compression_mass": 13.500000000000004,
+        "compression_x_disp": 0.39676333067674274,
+        "compression_y_disp": 0.0,
+        "compression_z_disp": 0.0,
+        "length_con_beam": np.array([0.0]),
     }
 
     def setup_tacs_problems(self, comm):
@@ -88,7 +73,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             # Setup (isotropic) property and constitutive objects
             prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
             con = constitutive.IsoRectangleBeamConstitutive(
-                prop, t=t, tNum=dv_num, w=w, wNum=dv_num + 1
+                prop,
+                t=t,
+                tNum=dv_num,
+                w=w,
+                wNum=dv_num + 1,
+                Lb=1.0,
+                LbNum=dv_num + 2,
+                Kb=1.0,
             )
             refAxis = np.array([0.0, 1.0, 0.0])
             transform = elements.BeamRefAxisTransform(refAxis)
@@ -104,13 +96,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
-        grav_prob = fea_assembler.createStaticProblem("gravity")
-        grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
-
-        trac_prob = fea_assembler.createStaticProblem("traction")
-        trac_prob.addTractionToComponents([0], [1.0, -2.0, 3.0])
-
-        tacs_probs = [grav_prob, trac_prob]
+        comp_prob = fea_assembler.createStaticProblem("compression")
+        comp_prob.addLoadFromBDF(3, scale=20.0)
+        tacs_probs = [comp_prob]
 
         # Set convergence to be tight for test
         for problem in tacs_probs:
@@ -184,28 +172,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             )
 
         # Add constraint on difference between width and thickness dvs (i.e. con = w - t)
-        constr = fea_assembler.createDVConstraint("dvcon")
-        constr.addConstraint(
-            "width_minus_thickness", dvIndices=[0, 1], dvWeights=[1.0, -1.0]
-        )
+        constr = fea_assembler.createStiffenerLengthConstraint("length_con")
+        constr.addConstraint("beam", compIDs=[0], dvIndex=2)
         tacs_probs.append(constr)
 
         return tacs_probs, fea_assembler
-
-    # We have to skip these tests in complex mode because the beam
-    # element uses complex step to approximate the Jacobian and this
-    # leads to issues with complex stepping the sensitivities.
-    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_dv_sensitivities")
-    def test_total_dv_sensitivities(self):
-        super().test_total_dv_sensitivities()
-
-    @unittest.skipIf(TACS_IS_COMPLEX, "Skipping test_total_xpt_sensitivities")
-    def test_total_xpt_sensitivities(self):
-        super().test_total_xpt_sensitivities()
-
-    def test_dv_con_is_linear(self):
-        """
-        Test that the dv constraint is linear wrt dvs.
-        """
-        constraint = self.tacs_probs[-1]
-        self.assertTrue(constraint.isLinear, "DV constraint should be linear wrt dvs")

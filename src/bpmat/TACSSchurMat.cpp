@@ -850,6 +850,11 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
   [ B, E ]
   [ F, C ]
 
+  The multiplication can therefore be written as
+
+  [B, E] [x_b] = [y_b] = [B*x_b + E*x_c]
+  [F, C] [x_c]   [y_c] = [F*x_b + C*x_c]
+
   All inter-process communication contributions are contained
   in the sub-block C.
 
@@ -862,6 +867,18 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
   mat-vec product. Initiate reverse communication and compute the
   local product with E. Perform the on-process reverse ordering and
   complete the reverse c_map communication.
+
+  In other words:
+  1) Send requests to retrieve x_b and x_c from the global x vector
+  2) Wait to receive x_b
+  3) Compute y_b = B*x_b
+  4) Compute y_c = F*x_b
+  5) Wait to receive x_c
+  6) Compute y_c += C*x_c
+  7) Begin adding y_c to global y vector
+  8) Compute y_b += E*x_c
+  9) Begin setting y_b in global y vector
+  10) Wait for communication with global y vector to finish
 */
 void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
   tyvec->zeroEntries();
@@ -876,27 +893,90 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
     xvec->getArray(&x);
     yvec->getArray(&y);
 
+    // Make some aliases so code matches the explanation above
+    TacsScalar *const x_b = xlocal;
+    TacsScalar *const x_c = &xlocal[local_offset];
+    TacsScalar *const y_b = ylocal;
+    TacsScalar *const y_c = &ylocal[local_offset];
+
     // First begin the communication of x to the local values
-    b_map->beginForward(b_ctx, x, xlocal);
-    c_map->beginForward(c_ctx, x, &xlocal[local_offset]);
-    b_map->endForward(b_ctx, x, xlocal);
+    b_map->beginForward(b_ctx, x, x_b);
+    c_map->beginForward(c_ctx, x, x_c);
 
-    // Perform the matrix-vector multiplication
-    B->mult(xlocal, ylocal);
-    F->mult(xlocal, &ylocal[local_offset]);
-    c_map->endForward(c_ctx, x, &xlocal[local_offset]);
+    // Perform the matrix-vector multiplications that use x_b
+    b_map->endForward(b_ctx, x, x_b);
+    B->mult(x_b, y_b);
+    F->mult(x_b, y_c);
 
-    C->multAdd(&xlocal[local_offset], &ylocal[local_offset],
-               &ylocal[local_offset]);
+    // Receive x_c, finish computing y_c, then begin sending it back to y
+    c_map->endForward(c_ctx, x, x_c);
+    C->multAdd(x_c, y_c, y_c);
+    c_map->beginReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
 
-    // Start sending the values back to y
-    c_map->beginReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
-    E->multAdd(&xlocal[local_offset], ylocal, ylocal);
+    // finish computing y_b then send it back to y
+    E->multAdd(x_c, y_b, y_b);
+    b_map->beginReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
 
     // Finish transmitting the values back to y
-    b_map->beginReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
-    c_map->endReverse(c_ctx, &ylocal[local_offset], y, TACS_ADD_VALUES);
-    b_map->endReverse(b_ctx, ylocal, y, TACS_INSERT_VALUES);
+    c_map->endReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
+    b_map->endReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
+  } else {
+    fprintf(stderr, "TACSSchurMat type error: Input/output must be TACSBVec\n");
+  }
+}
+
+/**
+ * @brief Transpose matrix vector product
+ *
+ * y = A^T * x
+ *
+ * Which, in block form is
+ * [B, E]^T [x_b] = [y_b] = [B^T*x_b + F^T*x_c]
+ * [F, C]   [x_c]   [y_c] = [E^T*x_b + C^T*x_c]
+ *
+ * @param txvec Vector to multiply with
+ * @param tyvec Vector to store result in
+ */
+void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
+  tyvec->zeroEntries();
+
+  // Safely down-cast the TACSVec vectors to TACSBVecs
+  TACSBVec *xvec, *yvec;
+  xvec = dynamic_cast<TACSBVec *>(txvec);
+  yvec = dynamic_cast<TACSBVec *>(tyvec);
+
+  if (xvec && yvec) {
+    TacsScalar *x, *y;
+    xvec->getArray(&x);
+    yvec->getArray(&y);
+
+    // Make some aliases so code matches the explanation above
+    TacsScalar *const x_b = xlocal;
+    TacsScalar *const x_c = &xlocal[local_offset];
+    TacsScalar *const y_b = ylocal;
+    TacsScalar *const y_c = &ylocal[local_offset];
+
+    // First begin the communication of x to the local values
+    b_map->beginForward(b_ctx, x, x_b);
+    c_map->beginForward(c_ctx, x, x_c);
+
+    // Perform the matrix-vector multiplications that use x_b
+    b_map->endForward(b_ctx, x, x_b);
+    B->multTranspose(x_b, y_b);
+    E->multTranspose(x_b, y_c);
+
+    // Receive x_c, finish computing y_c, then begin sending it back to y
+    c_map->endForward(c_ctx, x, x_c);
+    C->multTransposeAdd(x_c, y_c, y_c);
+    c_map->beginReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
+
+    // finish computing y_b then send it back to y
+    F->multTransposeAdd(x_c, y_b, y_b);
+    b_map->beginReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
+
+    // Finish transmitting the values back to y
+    c_map->endReverse(c_ctx, y_c, y, TACS_ADD_VALUES);
+    b_map->endReverse(b_ctx, y_b, y, TACS_INSERT_VALUES);
   } else {
     fprintf(stderr, "TACSSchurMat type error: Input/output must be TACSBVec\n");
   }

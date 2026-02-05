@@ -115,7 +115,7 @@ jobs:
       - name: Install f5totec/f5tovtk
         run: |
           # Sometimes needed for macos runner to prevent it from pulling numpy 2 when installing tecio later
-          mamba install -c smdogroup -c conda-forge tecio "numpy<2" -q -y;
+          mamba install -c smdogroup -c conda-forge tecio "numpy>=2" -q -y;
           # Compile f5totec/f5tovtk
           cd $TACS_DIR/extern/f5totec;
           make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
@@ -126,34 +126,34 @@ jobs:
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
-          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy<2" -q -y;
+          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy>=2" -q -y;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
-          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
+           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
-            wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
-            tar -xvf ESP122Lin.tgz
-            export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
-            export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
-            export CASARCH=
-            export PATH=$PATH:$CASROOT/bin
-            export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
-            cd $ESP_ROOT
-            ./config/makeEnv ${CASROOT}
-            source $ESP_ROOT/../ESPenv.sh
-            cd ./src/CAPS/aim
-            make
-            cd $TACS_DIR/extern/ESP122/
-            # remove all ESP/CAPS unit test files with recursive delete
-            find . -name "test*" -type f -delete
-            cd $TACS_DIR
-          fi
+             wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
+             tar -xvf ESP122Lin.tgz
+             export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
+             export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
+             export CASARCH=
+             export PATH=$PATH:$CASROOT/bin
+             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
+             cd $ESP_ROOT
+             ./config/makeEnv ${CASROOT}
+             source $ESP_ROOT/../ESPenv.sh
+             cd ./src/CAPS/aim
+             make
+             cd $TACS_DIR/extern/ESP122/
+             # remove all ESP/CAPS unit test files with recursive delete
+             find . -name "test*" -type f -delete
+             cd $TACS_DIR
+           fi
       - name: Run unit tests
         run: |
           # Reload ESP/CAPS environment variables if in real mode
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           fi
-          testflo -v --timeout 360 .;
+          testflo -v --timeout 420 .;
       - name: Build docs
         run: |
           cd $TACS_DIR/docs;
@@ -169,7 +169,7 @@ jobs:
           retention-days: 7
       - name: 'Deploy docs'
         if: ${{ github.event_name == 'push' && matrix.PUBLISH_DOCS }}
-        uses: JamesIves/github-pages-deploy-action@v4.7.6
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: docs/html/ # The folder the action should deploy.

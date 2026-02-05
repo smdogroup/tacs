@@ -18,6 +18,9 @@ class TACSConstraint(TACSSystem):
     Base class for TACS constraint types. Contains methods common to all TACS constraints.
     """
 
+    # Flag determining whether constraint is linear wrt dvs or nodes. Defaults to False.
+    isLinear = False
+
     def __init__(
         self, assembler, comm=None, options=None, outputViewer=None, meshLoader=None
     ):
@@ -46,11 +49,11 @@ class TACSConstraint(TACSSystem):
         self.constraintList = OrderedDict()
 
         # Setup global to local dv num map for each proc
-        self._initilaizeGlobalToLocalDVDict()
+        self._initializeGlobalToLocalDVDict()
 
         return
 
-    def _initilaizeGlobalToLocalDVDict(self):
+    def _initializeGlobalToLocalDVDict(self):
         size = self.comm.size
         rank = self.comm.rank
         nLocalDVs = self.getNumDesignVars()
@@ -200,7 +203,7 @@ class TACSConstraint(TACSSystem):
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
         corresponding to the strings in evalCons are evaluated and
-        updated into the provided dictionary. The derivitives with
+        updated into the provided dictionary. The derivatives with
         respect to all design variables and node locations are computed.
 
         Parameters
