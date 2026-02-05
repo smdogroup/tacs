@@ -432,7 +432,7 @@ class StructProblem(BaseStructProblem):
                 dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale
             )
 
-    def addConstraintsPyOpt(self, optProb):
+    def addConstraintsPyOpt(self, optProb, nonLinear=True, linear=True):
         """
         Add any linear constraints that were generated during setup to
         the specified pyOpt problem.
@@ -441,16 +441,24 @@ class StructProblem(BaseStructProblem):
         ----------
         optProb : :class:`Optimization <pyoptsparse.pyOpt_optimization.Optimization>` instance
             Optimization problem object to add constraints to
+        nonLinear : bool
+            Flag to include non-linear constraints.
+        linear : bool
+            Flag to include linear constraints.
         """
         fcon = {}
         fconSens = {}
         conSizes = {}
         conBounds = {}
-        self.evalConstraints(fcon)
-        self.evalConstraintsSens(fconSens)
+        conIsLinear = {}
+        self.evalConstraints(fcon, nonLinear=nonLinear, linear=linear)
+        self.evalConstraintsSens(fconSens, nonLinear=nonLinear, linear=linear)
         for constr in self.constraints:
             constr.getConstraintSizes(conSizes)
             constr.getConstraintBounds(conBounds)
+            keys = constr.getConstraintKeys()
+            for key in keys:
+                conIsLinear[f"{constr.name}_{key}"] = constr.isLinear
 
         for conName in fcon:
             nCon = conSizes[conName]
@@ -461,7 +469,7 @@ class StructProblem(BaseStructProblem):
                 # Just evaluate the constraint to get the jacobian structure
                 wrt = list(fconSens[conName].keys())
                 optProb.addConGroup(
-                    conName, nCon, wrt=wrt, jac=fconSens[conName], lower=lb, upper=ub
+                    conName, nCon, wrt=wrt, jac=fconSens[conName], lower=lb, upper=ub, linear=conIsLinear[conName]
                 )
 
     @updateDVGeo
@@ -561,7 +569,7 @@ class StructProblem(BaseStructProblem):
         return self.staticProblem.evalFunctions(funcs, evalFuncs, ignoreMissing)
 
     @updateDVGeo
-    def evalConstraints(self, fcon, evalCons=None, ignoreMissing=False):
+    def evalConstraints(self, fcon, evalCons=None, ignoreMissing=False, nonLinear=True, linear=False):
         """
         Evaluate values for constraints. The constraints corresponding to the strings in
         evalCons are evaluated and updated into the provided
@@ -576,10 +584,15 @@ class StructProblem(BaseStructProblem):
         ignoreMissing : bool
             Flag to supress checking for a valid constraint. Please use
             this option with caution.
+        nonLinear : bool
+            Flag to include non-linear constraints.
+        linear : bool
+            Flag to include linear constraints.
         """
         for constr in self.constraints:
-            if evalCons is None or constr.name in evalCons:
-                constr.evalConstraints(fcon, evalCons, ignoreMissing)
+            if (evalCons is None or constr.name in evalCons):
+                if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
+                    constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
     @updateDVGeo
     def evalFunctionsSens(self, funcsSens, evalFuncs=None, includeXptSens=False):
@@ -628,7 +641,7 @@ class StructProblem(BaseStructProblem):
                     funcsSens[funcKey].pop(coordName).reshape(-1, 3)
 
     @updateDVGeo
-    def evalConstraintsSens(self, fconSens, evalCons=None, includeXptSens=False):
+    def evalConstraintsSens(self, fconSens, evalCons=None, nonLinear=True, linear=False, includeXptSens=False):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -642,13 +655,18 @@ class StructProblem(BaseStructProblem):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        nonLinear : bool
+            Flag to include non-linear constraints.
+        linear : bool
+            Flag to include linear constraints.
         includeXptSens : bool
             Flag to include sensitivities with respect to the node locations.
         """
         sens = {}
         for constr in self.constraints:
-            if evalCons is None or constr.name in evalCons:
-                constr.evalConstraintsSens(sens, evalCons)
+            if (evalCons is None or constr.name in evalCons):
+                if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
+                    constr.evalConstraintsSens(sens, evalCons)
 
         for conKey in sens:
             dvKey = self.staticProblem.getVarName()
