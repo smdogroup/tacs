@@ -1034,7 +1034,9 @@ class StructProblem(BaseStructProblem):
         """
         self.phi[:] = inVec
         self.temp0.zeroEntries()
-        self.staticProblem.addJacVecProduct(self._phi, self.temp0, scale=1.0, transpose=True)
+        self.staticProblem.addJacVecProduct(
+            self._phi, self.temp0, scale=1.0, transpose=True
+        )
         self.FEAAssembler.applyBCsToVec(self.temp0)
         outVec = self.temp0.getArray().copy()
         self.temp0.zeroEntries()
