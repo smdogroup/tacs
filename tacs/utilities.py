@@ -110,13 +110,24 @@ class BaseUI:
         """
 
         # Redefine the getOption def from the base class so we can
-        # mane sure the name is lowercase
-
+        # make sure the name is lowercase
         def_options = self.options["defaults"]
         if name.lower() in def_options:
             return self.options[name.lower()][1]
         else:
             raise AttributeError(repr(name) + " is not a valid option name")
+
+    def getOptions(self):
+        """
+        Returns a dictionary of all current options in use.
+        """
+        # Get the options name from the defaults
+        defKeys = self.defaultOptions.keys()
+        # Create a dictionary with the current options and their values
+        options = {}
+        for name in defKeys:
+            options[name] = self.getOption(name)
+        return options
 
     def printOptions(self):
         """
