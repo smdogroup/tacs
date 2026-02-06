@@ -184,7 +184,7 @@ class TACSAssembler : public TACSObject {
   void applyTransposeBCs(TACSMat* mat);
 
   // Set the Dirichlet boundary conditions to the state vector
-  void setBCs(TACSVec *vec, const TacsScalar lambda = 1.0);
+  void setBCs(TACSVec* vec, const TacsScalar lambda = 1.0);
 
   // Methods for manipulating internal variable values
   // -------------------------------------------------
@@ -218,14 +218,14 @@ class TACSAssembler : public TACSObject {
 
   // Residual and Jacobian assembly
   // ------------------------------
-  void assembleRes(TACSBVec *residual, const TacsScalar lambda = 1.0,
+  void assembleRes(TACSBVec* residual, const TacsScalar lambda = 1.0,
                    const bool applyBCs = true);
   void assembleJacobian(TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         TACSBVec* residual, TACSMat* A,
                         MatrixOrientation matOr = TACS_MAT_NORMAL,
                         const TacsScalar lambda = 1.0,
                         const bool applyBCs = true);
-  void assembleMatType(ElementMatrixType matType, TACSMat *A,
+  void assembleMatType(ElementMatrixType matType, TACSMat* A,
                        MatrixOrientation matOr = TACS_MAT_NORMAL,
                        const TacsScalar lambda = 1.0,
                        const bool applyBCs = true);
@@ -291,10 +291,10 @@ class TACSAssembler : public TACSObject {
   void addMatDVSensInnerProduct(TacsScalar scale, ElementMatrixType matType,
                                 TACSBVec* psi, TACSBVec* phi, TACSBVec* dfdx);
   void addMatXptSensInnerProduct(TacsScalar scale, ElementMatrixType matType,
-                                 TACSBVec *psi, TACSBVec *phi,
-                                 TACSBVec *dfdXpts);
-  void evalMatSVSensInnerProduct(ElementMatrixType matType, TACSBVec *psi,
-                                 TACSBVec *phi, TACSBVec *res,
+                                 TACSBVec* psi, TACSBVec* phi,
+                                 TACSBVec* dfdXpts);
+  void evalMatSVSensInnerProduct(ElementMatrixType matType, TACSBVec* psi,
+                                 TACSBVec* phi, TACSBVec* res,
                                  const bool applyBCs = true);
 
   // Return elements and node numbers
