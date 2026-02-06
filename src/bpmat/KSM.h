@@ -109,8 +109,9 @@ class TACSVec : public TACSObject {
   // ----------------------------------
   virtual void setRand(double lower = -1.0, double upper = 1.0) {}
   virtual void initRand() {}
-  virtual void applyBCs(TACSBcMap *map, TACSVec *vec = NULL) {}
-  virtual void setBCs(TACSBcMap *map) {}
+  virtual void applyBCs(TACSBcMap *map, TACSVec *vec = NULL,
+                        const TacsScalar lambda = 1.0) {}
+  virtual void setBCs(TACSBcMap *map, const TacsScalar lambda = 1.0) {}
 };
 
 /*!
