@@ -520,6 +520,29 @@ cdef class OrthotropicPly:
         """
         return self.props
 
+    def setUseMaxStrainCriterion(self):
+        """
+        Set to use the maximum strain failure criterion.
+        """
+        self.ptr.setUseMaxStrainCriterion()
+
+    def setUseTsaiWuCriterion(self):
+        """
+        Set to use the Tsai-Wu failure criterion.
+        """
+        self.ptr.setUseTsaiWuCriterion()
+
+    def setUseModifiedTsaiWu(self, bool useModifiedTsaiWu):
+        """
+        Set to use the modified Tsai-Wu failure criterion.
+
+        Parameters
+        ----------
+        useModifiedTsaiWu : bool
+            If true, use the modified Tsai-Wu criterion. Otherwise, use the standard Tsai-Wu criterion.
+        """
+        self.ptr.setUseModifiedTsaiWu(useModifiedTsaiWu)
+
 cdef class PlaneStressConstitutive(Constitutive):
     """
     This is the base class for the plane stress constitutive objects.
@@ -1145,13 +1168,13 @@ cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
         self.ptr = self.cptr = self.blade_ptr = self.base_ptr
         self.ptr.incref()
 
-    
+
 cdef class GaussianProcess:
     """
     Base class for constructing Gaussian Process ML models to predict buckling loads.
     This is an abstract base class and hence has no constructor, only methods used by its subclasses.
     """
-    # base class so no constructor here    
+    # base class so no constructor here
     def predict_mean_test_data(
         self,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
@@ -1166,12 +1189,12 @@ cdef class GaussianProcess:
             a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
             namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
             specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
-        
+
         Returns:
-            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load
             outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
         """
-        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data)
 
     def getNparam(self):
         """
@@ -1206,7 +1229,7 @@ cdef class GaussianProcess:
         self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
         return train_data
 
-    def setKS(self, TacsScalar ksWeight, 
+    def setKS(self, TacsScalar ksWeight,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
@@ -1227,8 +1250,8 @@ cdef class GaussianProcess:
         self.recompute_alpha(Ytrain)
         return
 
-    def setTheta(self, 
-            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+    def setTheta(self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
@@ -1238,7 +1261,7 @@ cdef class GaussianProcess:
         Parameters
         ----------
         theta : np.ndarray
-            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor).
         Ytrain : np.ndarray
             training dataset log(buckling load) outputs in order to retrain the ML model,
             it's a rank-1 tensor of size (Ntrain,)
@@ -1272,7 +1295,7 @@ cdef class GaussianProcess:
         """
         call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
         this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
-        match those of the ml_buckling repo. 
+        match those of the ml_buckling repo.
 
         Parameters
         ----------
@@ -1306,7 +1329,7 @@ cdef class GaussianProcess:
         self.base_gp.getTheta(<TacsScalar*>theta.data)
         self.base_gp.getTrainingData(<TacsScalar*>theta.data)
         cdef TacsScalar sigma_n = theta[-1]
-        
+
         # make the training matrix
         cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
             self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
@@ -1396,7 +1419,7 @@ cdef class BucklingGP(GaussianProcess):
 
     def __cinit__(
         self,
-        int n_train, 
+        int n_train,
         bool affine,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
@@ -1417,7 +1440,7 @@ cdef class PanelGPs:
     object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
     only one call to each GP object is required per panel (speeds up computation time).
     The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
-    (assuming each TACSComponent is associated with a different panel). 
+    (assuming each TACSComponent is associated with a different panel).
 
     The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
     # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
@@ -1447,11 +1470,11 @@ cdef class PanelGPs:
     """
     def __cinit__(
         self,
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
-    ):   
+    ):
         # make null ptrs for GPs if not defined and store them in this class too
         cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
         if axialGP is not None:
@@ -1472,16 +1495,16 @@ cdef class PanelGPs:
 
     @classmethod
     def component_dict(
-        cls, 
+        cls,
         tacs_components, # list of strings of each tacs component name
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
         ):
         """
         constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
-            { tacs_component (str) : PanelGPs object }      
+            { tacs_component (str) : PanelGPs object }
 
         Parameters
         ----------
@@ -1812,7 +1835,7 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
 
     def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
         """
-        test all the internal derivative tests 
+        test all the internal derivative tests
         """
         return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
 
@@ -1935,7 +1958,65 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                     z0=np.real(z0))
         return prop
 
-cdef class LamParamShellConstitutive(ShellConstitutive):
+def LamParamShellConstitutive(*args, **kwargs):
+    warnings.warn(
+        "LamParamShellConstitutive is deprecated and will be removed in a future version. "
+        "Use LamParamSmearedShellConstitutive instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return LamParamSmearedShellConstitutive(*args, **kwargs)
+
+cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
+    """
+    This class implements a lamination parameter based parametrization of the shell stiffness and strength properties.
+    The class is restricted to symmetric balanced laminates.
+    The in-plane properties are parametrized in terms of laminate fractions at the angles 0, +/-45 and 90 degrees. The thickness is treated as a continuous design variable.
+    Additional lamination parameters W1 and W3 are used for the bending stiffness.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object defining the material properties.
+    t : float, optional
+        Shell thickness. Default is 1.0.
+    t_num : int, optional
+        Design variable number for thickness. Default is -1 (inactive).
+    min_t : float, optional
+        Minimum allowable thickness. Default is 1.0.
+    max_t : float, optional
+        Maximum allowable thickness. Default is 1.0.
+    f0 : float, optional
+        Fraction of 0-degree plies. Default is 0.25.
+    f45 : float, optional
+        Fraction of 45-degree plies. Default is 0.5.
+    f90 : float, optional
+        Fraction of 90-degree plies. Default is 0.25.
+    f0_num : int, optional
+        Design variable number for f0. Default is -1 (inactive).
+    f45_num : int, optional
+        Design variable number for f45. Default is -1 (inactive).
+    f90_num : int, optional
+        Design variable number for f90. Default is -1 (inactive).
+    min_f0 : float, optional
+        Minimum allowable fraction for f0. Default is 0.125.
+    min_f45 : float, optional
+        Minimum allowable fraction for f45. Default is 0.125.
+    min_f90 : float, optional
+        Minimum allowable fraction for f90. Default is 0.125.
+    W1 : float, optional
+        First lamination parameter. Default is 0.0.
+    W3 : float, optional
+        Third lamination parameter. Default is 0.0.
+    W1_num : int, optional
+        Design variable number for W1. Default is -1 (inactive).
+    W3_num : int, optional
+        Design variable number for W3. Default is -3 (inactive).
+    ksWeight : float, optional
+        Weight for the KS aggregation function. Default is 30.0.
+    epsilon : float, optional
+        Regularization parameter. Default is 0.0.
+    """
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         cdef TacsScalar t = 1.0
         cdef int t_num = -1
@@ -2000,12 +2081,83 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         if 'epsilon' in kwargs:
             epsilon = kwargs['epsilon']
 
-        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+        self.cptr = new TACSLamParamSmearedShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
                                                       f0, f45, f90, f0_num, f45_num, f90_num,
                                                       min_f0, min_f45, min_f90,
                                                       W1, W3, W1_num, W3_num, ksWeight, epsilon)
         self.ptr = self.cptr
         self.ptr.incref()
+
+cdef class LamParamFullShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class implements lamination parameter based parametrization of the shell stiffness and strength properties.
+    There are six lamination parameters that define a symmetric balanced laminate.
+    These must be combined with appropriate feasibility domain for the constraint on the values of the lamination parameters.
+    The failure calculations are based on the maximum failure criteria taken from a set of set ply angles.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object containing material properties.
+    t : float or complex
+        The thickness of the ply.
+    tNum : int
+        The thickness design variable number.
+    tlb : float or complex
+        The lower bound for the thickness.
+    tub : float or complex
+        The upper bound for the thickness.
+    lpNums : np.ndarray[int]
+        Array of laminate parameter design variable numbers.
+    ksWeight : float or complex, optional
+        The KS aggregation weight for constraints (default is 30.0).
+    """
+
+    cdef TACSLamParamFullShellConstitutive* lam_cptr
+    def __cinit__(
+            self,
+            OrthotropicPly ply,
+            TacsScalar t,
+            int tNum,
+            TacsScalar tlb,
+            TacsScalar tub,
+            np.ndarray[int, ndim=1, mode="c"] lpNums,
+            TacsScalar ksWeight = 30.0
+            ):
+
+        self.lam_cptr = new TACSLamParamFullShellConstitutive(
+            ply.ptr,
+            t,
+            tNum,
+            tlb,
+            tub,
+            <int*>lpNums.data,
+            ksWeight
+        )
+        self.ptr = self.cptr = self.lam_cptr
+        self.ptr.incref()
+
+    def setLaminationParameters(self, np.ndarray[TacsScalar, ndim=1, mode="c"] lp):
+        """
+        Set the lamination parameters for the constitutive object.
+
+        Parameters
+        ----------
+        lp : np.ndarray[float or complex]
+            A 1-dimensional numpy array containing the lamination parameters.
+        """
+        self.lam_cptr.setLaminationParameters(<TacsScalar*>lp.data)
+
+    def setNumFailAngles(self, int numFailAngles):
+        """
+        Set the number of failure angles for the constitutive model.
+
+        Parameters
+        ----------
+        numFailAngles : int
+            The number of failure angles to be used in the failure analysis.
+        """
+        self.lam_cptr.setNumFailAngles(numFailAngles)
 
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
