@@ -111,8 +111,8 @@ class OpenMDAOTestCase:
                 method=self.fd_method,
                 form=self.fd_form,
                 step=self.dh,
-                # TODO: For now we have to skip the solver partials until we implement a proper Jacobian transpose routine
-                excludes=["*.coupling.solver"],
+                # Can't accurately compute partials of residuals with finite difference so only check them with complex step
+                excludes=["*.coupling.solver"] if self.fd_method == "fd" else None,
             )
             # Remove forward checks from data, TACS only works in rev anyways
             clean_data = self.cleanup_fwd_data(data)
