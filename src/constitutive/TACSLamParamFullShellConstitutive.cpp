@@ -553,14 +553,10 @@ TacsScalar TACSLamParamFullShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[]) {
   TacsScalar fvals[2 * MAX_NUM_FAIL_ANGLES];
-  TacsScalar max, ks_sum = 0.0;
+  TacsScalar max = 0.0;
 
   computeFailure(strain, fvals, &max);
-  for (int k = 0; k < 2 * numFailAngles; k++) {
-    ks_sum += exp(ksWeight * (fvals[k] - max));
-  }
-
-  return max + log(ks_sum) / ksWeight;
+  return ksAggregation(fvals, max, 2 * numFailAngles, ksWeight);
 }
 
 /*!
@@ -574,17 +570,13 @@ TacsScalar TACSLamParamFullShellConstitutive::evalFailureStrainSens(
   TacsScalar max, ks_sum = 0.0;
 
   computeFailure(strain, fvals, &max);
-  for (int k = 0; k < 2 * numFailAngles; k++) {
-    ks_sum += exp(ksWeight * (fvals[k] - max));
-  }
 
-  for (int k = 0; k < 2 * numFailAngles; k++) {
-    weights[k] = exp(ksWeight * (fvals[k] - max)) / ks_sum;
-  }
+  const TacsScalar ksFail =
+      ksAggregationSens(fvals, max, 2 * numFailAngles, ksWeight, weights);
 
   computeFailureStrainSens(strain, weights, sens);
 
-  return max + log(ks_sum) / ksWeight;
+  return ksFail;
 }
 
 /*!
