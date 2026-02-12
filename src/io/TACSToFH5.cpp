@@ -48,7 +48,8 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
   // which are handled separately from the remaining variables
   element_write_flag =
       write_flag & (~(TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
-                      TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_LOADS));
+                      TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_LOADS |
+                      TACS_OUTPUT_REACTIONS));
 
   // Count up the number of values that will be output for each point
   // in the mesh
@@ -150,7 +151,7 @@ int TACSToFH5::writeToFile(const char *filename) {
   // Write out the nodes and solution vector to a file (continuous)
   if (write_flag & TACS_OUTPUT_NODES ||
       write_flag & TACS_OUTPUT_DISPLACEMENTS ||
-      write_flag & TACS_OUTPUT_LOADS) {
+      write_flag & TACS_OUTPUT_LOADS || write_flag & TACS_OUTPUT_REACTIONS) {
     int vars_per_node = assembler->getVarsPerNode();
 
     // Find the maximum string length
@@ -177,6 +178,18 @@ int TACSToFH5::writeToFile(const char *filename) {
     for (; k < vars_per_node; k++) {
       char stemp[64];
       snprintf(stemp, sizeof(stemp), "f%d", k);
+      str_len += strlen(stemp) + 1;
+    }
+    int nr = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_REACTIONS);
+    k = 0;
+    for (; (k < nr && k < vars_per_node); k++) {
+      const char *stemp =
+          TacsGetOutputComponentName(elem_type, TACS_OUTPUT_REACTIONS, k);
+      str_len += strlen(stemp) + 1;
+    }
+    for (; k < vars_per_node; k++) {
+      char stemp[64];
+      snprintf(stemp, sizeof(stemp), "rf%d", k);
       str_len += strlen(stemp) + 1;
     }
 
@@ -222,14 +235,34 @@ int TACSToFH5::writeToFile(const char *filename) {
         snprintf(&(var_names[len]), str_len - len, ",f%d", k);
       }
     }
+    if (write_flag & TACS_OUTPUT_REACTIONS) {
+      nr = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_REACTIONS);
+      k = 0;
+      for (; (k < nr && k < vars_per_node); k++) {
+        const char *stemp =
+            TacsGetOutputComponentName(elem_type, TACS_OUTPUT_REACTIONS, k);
+        size_t len = strlen(var_names);
+        if (k == 0 && !(write_flag & TACS_OUTPUT_NODES ||
+                        write_flag & TACS_OUTPUT_DISPLACEMENTS ||
+                        write_flag & TACS_OUTPUT_LOADS)) {
+          snprintf(&(var_names[len]), str_len - len, "%s", stemp);
+        } else {
+          snprintf(&(var_names[len]), str_len - len, ",%s", stemp);
+        }
+      }
+      for (; k < vars_per_node; k++) {
+        size_t len = strlen(var_names);
+        snprintf(&(var_names[len]), str_len - len, ",rf%d", k);
+      }
+    }
 
     // Get the data from tacs
-    TACSBVec *q, *X, *F = NULL;
+    TACSBVec *q, *X, *F = NULL, *R = NULL;
     assembler->getVariables(&q);
     assembler->getNodes(&X);
 
     // Get the arrays
-    TacsScalar *ans_array, *Xarray, *F_array;
+    TacsScalar *ans_array, *Xarray, *F_array, *R_array;
     q->getArray(&ans_array);
     X->getArray(&Xarray);
 
@@ -241,13 +274,32 @@ int TACSToFH5::writeToFile(const char *filename) {
       F->getArray(&F_array);
     }
 
+    if (write_flag & TACS_OUTPUT_REACTIONS) {
+      // Compute reaction forces:
+      // r1 = residual without BCs applied
+      // r2 = residual with BCs applied, then constrained DOFs zeroed
+      // reactions = r2 - r1 (non-zero only at constrained DOFs)
+      TACSBVec *r1 = assembler->createVec();
+      r1->incref();
+      R = assembler->createVec();
+      R->incref();
+
+      assembler->assembleRes(r1, 1.0, false);
+      assembler->assembleRes(R, 1.0, true);
+      assembler->applyBCs(R);
+      R->axpy(-1.0, r1);
+
+      r1->decref();
+      R->getArray(&R_array);
+    }
+
     // Compute the first length of the array
     int nnodes = assembler->getNumOwnedNodes();
     int ndep = assembler->getNumDependentNodes();
     int dim1 = nnodes + ndep;
 
     // Check the dimension of the data
-    int dim2 = 0, disp_offset = 0, load_offset = 0;
+    int dim2 = 0, disp_offset = 0, load_offset = 0, reaction_offset = 0;
     if (write_flag & TACS_OUTPUT_NODES) {
       dim2 = 3;
       disp_offset = 3;
@@ -257,7 +309,12 @@ int TACSToFH5::writeToFile(const char *filename) {
       dim2 += assembler->getVarsPerNode();
       load_offset += assembler->getVarsPerNode();
     }
+    reaction_offset = load_offset;
     if (write_flag & TACS_OUTPUT_LOADS) {
+      dim2 += assembler->getVarsPerNode();
+      reaction_offset += assembler->getVarsPerNode();
+    }
+    if (write_flag & TACS_OUTPUT_REACTIONS) {
       dim2 += assembler->getVarsPerNode();
     }
 
@@ -285,6 +342,14 @@ int TACSToFH5::writeToFile(const char *filename) {
         for (int j = 0; j < vars_per_node; j++) {
           float_data[dim2 * i + load_offset + j] =
               TacsRealPart(F_array[vars_per_node * i + j]);
+        }
+      }
+    }
+    if (write_flag & TACS_OUTPUT_REACTIONS) {
+      for (int i = 0; i < nnodes; i++) {
+        for (int j = 0; j < vars_per_node; j++) {
+          float_data[dim2 * i + reaction_offset + j] =
+              TacsRealPart(R_array[vars_per_node * i + j]);
         }
       }
     }
@@ -318,6 +383,15 @@ int TACSToFH5::writeToFile(const char *filename) {
         }
       }
     }
+    if (write_flag & TACS_OUTPUT_REACTIONS) {
+      R->getDepArray(&R_array);
+      for (int i = 0; i < ndep; i++) {
+        for (int j = 0; j < vars_per_node; j++) {
+          float_data[dim2 * (i + nnodes) + reaction_offset + j] =
+              TacsRealPart(R_array[vars_per_node * i + j]);
+        }
+      }
+    }
 
     // Write the data with a time stamp from the simulation in TACS
     char data_name[128];
@@ -329,6 +403,9 @@ int TACSToFH5::writeToFile(const char *filename) {
     delete[] var_names;
     if (F) {
       F->decref();
+    }
+    if (R) {
+      R->decref();
     }
   }
 

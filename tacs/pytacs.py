@@ -136,6 +136,11 @@ class pyTACS(BaseUI):
             True,
             "Flag for whether to include external nodal loads in f5 file.",
         ],
+        "writeReactions": [
+            bool,
+            True,
+            "Flag for whether to include reaction forces in f5 file.",
+        ],
         "writeCoordinateFrame": [
             bool,
             False,
@@ -2357,6 +2362,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
         if self.getOption("writeLoads"):
             write_flag |= tacs.TACS.OUTPUT_LOADS
+        if self.getOption("writeReactions"):
+            write_flag |= tacs.TACS.OUTPUT_REACTIONS
         if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATE_FRAME
 

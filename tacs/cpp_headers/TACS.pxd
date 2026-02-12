@@ -33,6 +33,7 @@ cdef extern from "TACSElementTypes.h":
         TACS_OUTPUT_EXTRAS
         TACS_OUTPUT_LOADS
         TACS_OUTPUT_COORDINATE_FRAME
+        TACS_OUTPUT_REACTIONS
 
     enum ElementType:
         TACS_ELEMENT_NONE
