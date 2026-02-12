@@ -126,6 +126,56 @@ class PyTACSTestCase:
                                     atol=self.atol,
                                 )
 
+        def test_equilibrium(self):
+            """
+            Test that the applied and reaction forces and moments are in equilibrium for the solved state.
+            """
+
+            for prob in self.tacs_probs:
+                with self.subTest(problem=prob.name):
+                    if isinstance(prob, problems.StaticProblem):
+                        prob.solve()
+
+                        # Get the node coordinates
+                        nodes = self.fea_assembler.localToGlobalArray(
+                            prob.getNodes()
+                        ).reshape(-1, 3)
+
+                        # Get reaction forces and moments
+                        reactionsVec = self.fea_assembler.createVec(asBVec=True)
+                        self.fea_assembler.assembler.computeReactions(
+                            prob.res, reactionsVec
+                        )
+                        reactions = self.fea_assembler.localToGlobalArray(
+                            reactionsVec.getArray()
+                        ).reshape(-1, self.fea_assembler.varsPerNode)
+
+                        # Get applied forces and moments
+                        prob.setLoadScale(0.0)
+                        prob.getResidual(prob.res)
+                        applied = self.fea_assembler.localToGlobalArray(
+                            prob.res.getArray()
+                        ).reshape(-1, self.fea_assembler.varsPerNode)
+
+                        # Sum applied and reaction forces and moments
+                        totalReaction = np.sum(reactions, axis=0)
+                        totalApplied = np.sum(applied, axis=0)
+                        if reactions.shape[1] == 6:
+                            totalReaction[3:] += np.sum(
+                                np.cross(nodes, reactions[:, :3]), axis=0
+                            )
+                            totalApplied[3:] += np.sum(
+                                np.cross(nodes, applied[:, :3]), axis=0
+                            )
+
+                        np.testing.assert_allclose(
+                            totalReaction,
+                            -totalApplied,
+                            rtol=self.rtol,
+                            atol=self.atol,
+                            err_msg=f"Equilibrium check failed for problem {prob.name}, total reaction {totalReaction}, total applied {totalApplied}",
+                        )
+
         def test_total_dv_sensitivities(self):
             """
             Test total dv sensitivity through adjoint against fd/cs

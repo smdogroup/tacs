@@ -23,64 +23,6 @@ PROD_FILE = os.path.join(BASE_DIR, "./input_files/I_beam_Kx_ref.txt")
 TRANSPOSE_PROD_FILE = os.path.join(BASE_DIR, "./input_files/I_beam_KTx_ref.txt")
 
 
-def globalToLocalArray(globalArray, assembler):
-    """Given an array containing values for all nodes in the original order, get an array containing the values for the nodes on this proc, in the reordered order.
-
-    Parameters
-    ----------
-    globalArray : numpy array (either 1D with length numNodes*N or 2D with shape (numNodes, N))
-        Array containing values for all nodes in the original order.
-    assembler : tacs.pyTACS
-        pyTACS assembler object.
-
-    Returns
-    -------
-    numpy array (1D with length numLocalNodes*N)
-        Array containing values for the nodes on this proc, in the reordered order.
-    """
-    numNodes = assembler.meshLoader.getNumBDFNodes()
-    globalArray = globalArray.reshape((numNodes, -1))
-    varsPerNode = globalArray.shape[1]
-    globalToLocalMap = assembler.meshLoader.getGlobalToLocalNodeIDDict()
-    globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
-    localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
-    numLocalNodes = len(localIDs)
-    localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
-    localArray[localIDs, :] = globalArray[globalIDs, :]
-    return localArray.flatten()
-
-
-def localToGlobalArray(localArray, assembler):
-    """Given an array containing values for the nodes on this proc, in the reordered order, get an array containing values for all nodes in the original order.
-
-    Parameters
-    ----------
-    localArray : numpy array (either 1D with length numLocalNodes*N or 2D with shape (numLocalNodes, N))
-        Array containing values for the nodes on this proc, in the reordered order.
-    assembler : tacs.pyTACS
-        pyTACS assembler object.
-
-    Returns
-    -------
-    numpy array (1D with length numNodes*N)
-        Array containing values for all nodes in the original order.
-    """
-    numNodes = assembler.meshLoader.getNumBDFNodes()
-    numLocalNodes = assembler.getNumOwnedNodes()
-    localArray = localArray.reshape((numLocalNodes, -1))
-    varsPerNode = localArray.shape[1]
-    globalToLocalMap = assembler.meshLoader.getGlobalToLocalNodeIDDict()
-    globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
-    localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
-    globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
-    globalArray[globalIDs, :] = localArray[localIDs, :]
-
-    # Sum the arrays across all procs so that every proc has the full global array
-    assembler.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
-
-    return globalArray.flatten()
-
-
 def setupMatrices(bdfFile, comm):
     """Set up TACS matrices from BDF file.
 
@@ -163,7 +105,7 @@ class MatrixOperationsTest(unittest.TestCase):
 
         # Set the reference input values into a TACS vector
         self.xVec = self.assembler.createVec(asBVec=True)
-        self.xVec.getArray()[:] = globalToLocalArray(xRef, self.assembler)
+        self.xVec.getArray()[:] = self.assembler.globalToLocalArray(xRef)
 
     def compareResults(self, y, yRef, name):
         np.testing.assert_allclose(
@@ -185,7 +127,7 @@ class MatrixOperationsTest(unittest.TestCase):
             mat.mult(self.xVec, y)
 
         self.compareResults(
-            y.getArray(), globalToLocalArray(yRef, self.assembler), testName
+            y.getArray(), self.assembler.globalToLocalArray(yRef), testName
         )
 
     def test_schur_mat_mult(self):
@@ -217,12 +159,12 @@ if __name__ == "__main__":
         scipyParMat = sp.sparse.coo_array(parallel_mat.getMat()[0])
         scipyParMat.eliminate_zeros()
         x = getXVec(scipyParMat.shape[0])
-        xReordered = globalToLocalArray(x, assembler)
+        xReordered = assembler.globalToLocalArray(x)
         KxRef = scipyParMat @ xReordered
         KTxRef = scipyParMat.T @ xReordered
         # Undo the TACS reordering of the products
-        KxRef = localToGlobalArray(KxRef, assembler)
-        KTxRef = localToGlobalArray(KTxRef, assembler)
+        KxRef = assembler.localToGlobalArray(KxRef)
+        KTxRef = assembler.localToGlobalArray(KTxRef)
         # Save the reference results
         numFormat = "%.16e"
         np.savetxt(VEC_FILE, x, fmt=numFormat)
