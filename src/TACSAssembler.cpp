@@ -3863,7 +3863,7 @@ void TACSAssembler::getInitConditions(TACSBVec *vars, TACSBVec *dvars,
     }
   }
 
-  // If the the initial conditions of vars is requested and the vars0 vector has
+  // If the initial conditions of vars is requested and the vars0 vector has
   // not been declared, then set the values of the tacs vector
   if (vars && !vars0) {
     vars->beginSetValues(TACS_INSERT_NONZERO_VALUES);
@@ -4241,26 +4241,6 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
 }
 
 /**
-  Assemble the Jacobian matrix
-
-  This function assembles the global Jacobian matrix and
-  residual. This Jacobian includes the contributions from all
-  elements. The Dirichlet boundary conditions are applied to the
-  matrix by zeroing the rows of the matrix associated with a boundary
-  condition, and setting the diagonal to unity. The matrix assembly
-  also performs any communication required so that the matrix can be
-  used immediately after assembly.
-
-  @param alpha Coefficient for the variables
-  @param beta Coefficient for the time-derivative terms
-  @param gamma Coefficientfor the second time derivative term
-  @param residual The residual of the governing equations
-  @param A The Jacobian matrix
-  @param matOr the matrix orientation NORMAL or TRANSPOSE
-  @param lambda Scaling factor for the aux element contributions, by default 1
-*/
-
-/**
   Compute the reactions at constrained degrees of freedom.
 
   This computes the difference between the residual with boundary
@@ -4283,11 +4263,30 @@ void TACSAssembler::computeReactions(TACSBVec *tmp, TACSBVec *reactions) {
   reactions->copyValues(tmp);
   applyBCs(reactions);
 
-  // Subtract the the vectors to leave only the BC terms
+  // Subtract the vectors to leave only the BC terms
   reactions->axpy(-1.0, tmp);
   reactions->scale(-1.0);
 }
 
+/**
+  Assemble the Jacobian matrix
+
+  This function assembles the global Jacobian matrix and
+  residual. This Jacobian includes the contributions from all
+  elements. The Dirichlet boundary conditions are applied to the
+  matrix by zeroing the rows of the matrix associated with a boundary
+  condition, and setting the diagonal to unity. The matrix assembly
+  also performs any communication required so that the matrix can be
+  used immediately after assembly.
+
+  @param alpha Coefficient for the variables
+  @param beta Coefficient for the time-derivative terms
+  @param gamma Coefficientfor the second time derivative term
+  @param residual The residual of the governing equations
+  @param A The Jacobian matrix
+  @param matOr the matrix orientation NORMAL or TRANSPOSE
+  @param lambda Scaling factor for the aux element contributions, by default 1
+*/
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
                                      TacsScalar gamma, TACSBVec *residual,
                                      TACSMat *A, MatrixOrientation matOr,
