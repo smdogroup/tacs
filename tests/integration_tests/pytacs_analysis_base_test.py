@@ -50,6 +50,8 @@ class PyTACSTestCase:
 
             self.absolute_compare = False
 
+            self.skip_equilibrium_check = False
+
             # Setup tacs problems to be tested
             self.tacs_probs, self.fea_assembler = self.setup_tacs_problems(self.comm)
 
@@ -131,11 +133,13 @@ class PyTACSTestCase:
             Test that the applied and reaction forces and moments are in equilibrium for the solved state.
             """
 
+            if self.skip_equilibrium_check:
+                self.skipTest("Skipping equilibrium check as requested.")
+
             for prob in self.tacs_probs:
                 with self.subTest(problem=prob.name):
                     if isinstance(prob, problems.StaticProblem):
                         prob.solve()
-                        prob.writeSolution()
 
                         # Get the node coordinates
                         nodes = self.fea_assembler.localToGlobalArray(
@@ -153,10 +157,11 @@ class PyTACSTestCase:
                             reactionsVec.getArray()
                         ).reshape(-1, self.fea_assembler.varsPerNode)
 
-                        # Get applied forces and moments
+                        # Get applied forces and moments on non-constrained DOFs
                         appliedVec = self.fea_assembler.createVec(asBVec=True)
                         prob.setLoadScale(0.0)
                         prob.getResidual(appliedVec)
+                        self.fea_assembler.assembler.applyBCs(appliedVec)
 
                         applied = self.fea_assembler.localToGlobalArray(
                             appliedVec.getArray()

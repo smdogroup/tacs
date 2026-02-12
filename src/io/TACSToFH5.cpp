@@ -271,6 +271,9 @@ int TACSToFH5::writeToFile(const char *filename) {
       F = assembler->createVec();
       F->incref();
       assembler->assembleRes(F, 0.0);
+      // Zero the BC terms to get only the applied loads, not non-zero dirichlet
+      // terms
+      assembler->applyBCs(F);
       F->getArray(&F_array);
     }
 
