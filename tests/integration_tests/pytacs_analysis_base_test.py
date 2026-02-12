@@ -135,6 +135,7 @@ class PyTACSTestCase:
                 with self.subTest(problem=prob.name):
                     if isinstance(prob, problems.StaticProblem):
                         prob.solve()
+                        prob.writeSolution()
 
                         # Get the node coordinates
                         nodes = self.fea_assembler.localToGlobalArray(
@@ -143,18 +144,22 @@ class PyTACSTestCase:
 
                         # Get reaction forces and moments
                         reactionsVec = self.fea_assembler.createVec(asBVec=True)
+
                         self.fea_assembler.assembler.computeReactions(
                             prob.res, reactionsVec
                         )
+
                         reactions = self.fea_assembler.localToGlobalArray(
                             reactionsVec.getArray()
                         ).reshape(-1, self.fea_assembler.varsPerNode)
 
                         # Get applied forces and moments
+                        appliedVec = self.fea_assembler.createVec(asBVec=True)
                         prob.setLoadScale(0.0)
-                        prob.getResidual(prob.res)
+                        prob.getResidual(appliedVec)
+
                         applied = self.fea_assembler.localToGlobalArray(
-                            prob.res.getArray()
+                            appliedVec.getArray()
                         ).reshape(-1, self.fea_assembler.varsPerNode)
 
                         # Sum applied and reaction forces and moments
