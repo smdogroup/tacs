@@ -4285,6 +4285,7 @@ void TACSAssembler::computeReactions(TACSBVec *tmp, TACSBVec *reactions) {
   // reactions = reactions - residual
   // This is non-zero only at constrained DOFs
   reactions->axpy(-1.0, tmp);
+  reactions->scale(-1.0);
 }
 
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
