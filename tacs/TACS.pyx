@@ -2165,6 +2165,22 @@ cdef class Assembler:
         self.ptr.assembleRes(residual.getBVecPtr(), loadScale, applyBCs)
         return
 
+    def computeReactions(self, Vec tmp, Vec reactions):
+        """
+        Compute the reactions at constrained degrees of freedom.
+
+        This computes the difference between the residual with boundary
+        conditions applied and the residual without. The result is non-zero
+        only at constrained DOFs and represents the reactions (e.g. forces,
+        heat fluxes, etc. depending on the physics).
+
+        Args:
+            tmp (Vec): Workspace vector (overwritten during computation)
+            reactions (Vec): Output vector containing the reactions
+        """
+        self.ptr.computeReactions(tmp.getBVecPtr(), reactions.getBVecPtr())
+        return
+
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
                          MatrixOrientation matOr=TACS_MAT_NORMAL,

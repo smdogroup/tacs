@@ -275,19 +275,13 @@ int TACSToFH5::writeToFile(const char *filename) {
     }
 
     if (write_flag & TACS_OUTPUT_REACTIONS) {
-      // Compute reaction forces:
-      // r1 = residual without BCs applied
-      // r2 = residual with BCs applied, then constrained DOFs zeroed
-      // reactions = r2 - r1 (non-zero only at constrained DOFs)
+      // Compute reactions
       TACSBVec *r1 = assembler->createVec();
       r1->incref();
       R = assembler->createVec();
       R->incref();
 
-      assembler->assembleRes(r1, 1.0, false);
-      assembler->assembleRes(R, 1.0, true);
-      assembler->applyBCs(R);
-      R->axpy(-1.0, r1);
+      assembler->computeReactions(r1, R);
 
       r1->decref();
       R->getArray(&R_array);

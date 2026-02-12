@@ -4259,6 +4259,34 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
   @param matOr the matrix orientation NORMAL or TRANSPOSE
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
+
+/**
+  Compute the reactions at constrained degrees of freedom.
+
+  This computes the difference between the residual with boundary
+  conditions applied and the residual without. The result is non-zero
+  only at constrained DOFs and represents the reactions (e.g. forces,
+  heat fluxes, etc. depending on the physics).
+
+  The residual vector is used as temporary workspace and will contain
+  the residual without BCs applied on return.
+
+  @param tmp Workspace vector (overwritten with residual without BCs)
+  @param reactions Output vector containing the reaction forces
+*/
+void TACSAssembler::computeReactions(TACSBVec *tmp, TACSBVec *reactions) {
+  // Compute the residual without applying BCs
+  assembleRes(tmp, 1.0, false);
+
+  // Compute the residual with BCs applied
+  assembleRes(reactions, 1.0, true);
+  applyBCs(reactions);
+
+  // reactions = reactions - residual
+  // This is non-zero only at constrained DOFs
+  reactions->axpy(-1.0, tmp);
+}
+
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
                                      TacsScalar gamma, TACSBVec *residual,
                                      TACSMat *A, MatrixOrientation matOr,
