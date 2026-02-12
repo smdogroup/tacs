@@ -15,16 +15,16 @@ ErrorTuple = namedtuple("ErrorTuple", ["forward", "reverse", "forward_reverse"])
 
 """
 This is a base class for running openmdao unit test cases.
-This base class will test function evaluations, partial, and total 
+This base class will test function evaluations, partial, and total
 sensitivities for the user-specified openmdao problems implemented by
-the child test case. When the user creates a new test based 
-on this class two methods are required to be defined in the child class. 
+the child test case. When the user creates a new test based
+on this class two methods are required to be defined in the child class.
     1. setup_problem
     2. setup_funcs
 
-See the virtual method implementations for each method 
+See the virtual method implementations for each method
 below for more details.
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 
@@ -37,12 +37,12 @@ class OpenMDAOTestCase:
             # Default fd/cs step size and tolerances
             # Can be overridden in child class
             if self.dtype == complex:
-                self.rtol = 1e-8
+                self.rtol = 1e-10
                 self.dh = 1e-50
                 self.fd_method = "cs"
                 self.fd_form = None
             else:
-                self.rtol = 1e-2
+                self.rtol = 1e-4
                 self.dh = 1e-6
                 self.fd_method = "fd"
                 self.fd_form = "central"
@@ -111,8 +111,8 @@ class OpenMDAOTestCase:
                 method=self.fd_method,
                 form=self.fd_form,
                 step=self.dh,
-                # TODO: For now we have to skip the solver partials until we implement a proper Jacobian transpose routine
-                excludes=["*.coupling.solver"],
+                # Can't accurately compute partials of residuals with finite difference so only check them with complex step
+                excludes=["*.coupling.solver"] if self.fd_method == "fd" else None,
             )
             # Remove forward checks from data, TACS only works in rev anyways
             clean_data = self.cleanup_fwd_data(data)

@@ -31,6 +31,7 @@ from functools import wraps
 
 import numpy as np
 import pyNastran.bdf as pn
+from mpi4py import MPI
 
 import tacs.constitutive
 import tacs.constraints
@@ -135,6 +136,11 @@ class pyTACS(BaseUI):
             bool,
             True,
             "Flag for whether to include external nodal loads in f5 file.",
+        ],
+        "writeReactions": [
+            bool,
+            True,
+            "Flag for whether to include reaction forces in f5 file.",
         ],
         "writeCoordinateFrame": [
             bool,
@@ -768,6 +774,73 @@ class pyTACS(BaseUI):
         """
 
         return self.meshLoader.getLocalNodeIDsFromGlobal(globalIDs, nastranOrdering)
+
+    def globalToLocalArray(self, globalArray):
+        """
+        Given an array containing values for all nodes in the original
+        (global) ordering, return an array containing the values for the
+        nodes on this processor in the reordered (local) ordering.
+
+        Parameters
+        ----------
+        globalArray : numpy.ndarray
+            Array containing values for all nodes in the original ordering.
+            Can be 1-D with length ``numNodes * N`` or 2-D with shape
+            ``(numNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numLocalNodes * N``)
+            Array containing values for the nodes on this processor in the
+            reordered ordering.
+        """
+        numNodes = self.meshLoader.getNumBDFNodes()
+        globalArray = np.asarray(globalArray).reshape((numNodes, -1))
+        varsPerNode = globalArray.shape[1]
+        globalToLocalMap = self.meshLoader.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        numLocalNodes = len(localIDs)
+        localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
+        localArray[localIDs, :] = globalArray[globalIDs, :]
+        return localArray.flatten()
+
+    @postinitialize_method
+    def localToGlobalArray(self, localArray):
+        """
+        Given an array containing values for the nodes on this processor
+        in the reordered (local) ordering, return an array containing
+        values for all nodes in the original (global) ordering.
+
+        The results are summed across all processors via ``Allreduce`` so
+        that every rank holds the complete global array on return.
+
+        Parameters
+        ----------
+        localArray : numpy.ndarray
+            Array containing values for the nodes on this processor in the
+            reordered ordering.  Can be 1-D with length
+            ``numLocalNodes * N`` or 2-D with shape ``(numLocalNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numNodes * N``)
+            Array containing values for all nodes in the original ordering.
+        """
+        numNodes = self.meshLoader.getNumBDFNodes()
+        numLocalNodes = self.assembler.getNumOwnedNodes()
+        localArray = np.asarray(localArray).reshape((numLocalNodes, -1))
+        varsPerNode = localArray.shape[1]
+        globalToLocalMap = self.meshLoader.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
+        globalArray[globalIDs, :] = localArray[localIDs, :]
+
+        # Sum the arrays across all procs so that every proc has the full global array
+        self.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
+
+        return globalArray.flatten()
 
     def initialize(self, elemCallBack=None):
         """
@@ -2357,6 +2430,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
         if self.getOption("writeLoads"):
             write_flag |= tacs.TACS.OUTPUT_LOADS
+        if self.getOption("writeReactions"):
+            write_flag |= tacs.TACS.OUTPUT_REACTIONS
         if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATE_FRAME
 

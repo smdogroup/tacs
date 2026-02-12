@@ -183,6 +183,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.atol = 1e-4
             self.dh = 1e-8
 
+        # Equilibrium test doesn't account for geometric nonlinearity
+        self.skip_equilibrium_check = True
+
         # ==============================================================================
         # Create pyTACS Assembler and problems
         # ==============================================================================
