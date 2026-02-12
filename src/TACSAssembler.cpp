@@ -4275,15 +4275,15 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
   @param reactions Output vector containing the reaction forces
 */
 void TACSAssembler::computeReactions(TACSBVec *tmp, TACSBVec *reactions) {
-  // Compute the residual without applying BCs
-  assembleRes(tmp, 1.0, false);
+  // Compute the residual without external forces and without applying BCs, this
+  // gives us the internal forces
+  assembleRes(tmp, 0.0, false);
 
-  // Compute the residual with BCs applied
-  assembleRes(reactions, 1.0, true);
+  // Make a copy and zero the BC terms
+  reactions->copyValues(tmp);
   applyBCs(reactions);
 
-  // reactions = reactions - residual
-  // This is non-zero only at constrained DOFs
+  // Subtract the the vectors to leave only the BC terms
   reactions->axpy(-1.0, tmp);
   reactions->scale(-1.0);
 }
