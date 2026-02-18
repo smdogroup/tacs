@@ -60,13 +60,13 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
   }
 
   // Original and perturbed residual vectors
-  TacsScalar *Rtmp1 = new TacsScalar[nvars];
-  TacsScalar *Rtmp2 = new TacsScalar[nvars];
+  TacsScalar* Rtmp1 = new TacsScalar[nvars];
+  TacsScalar* Rtmp2 = new TacsScalar[nvars];
 
   // Perturbed state vectors
-  TacsScalar *qTmp = new TacsScalar[nvars];
-  TacsScalar *qdotTmp = new TacsScalar[nvars];
-  TacsScalar *qddotTmp = new TacsScalar[nvars];
+  TacsScalar* qTmp = new TacsScalar[nvars];
+  TacsScalar* qdotTmp = new TacsScalar[nvars];
+  TacsScalar* qddotTmp = new TacsScalar[nvars];
 
   // Copy the state variables into pstate
   memcpy(qTmp, vars, nvars * sizeof(TacsScalar));
@@ -208,12 +208,12 @@ void TACSElement::addAdjResProduct(
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
 
-  TacsScalar *x = new TacsScalar[dvLen];
+  TacsScalar* x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
   int nvars = getNumVariables();
-  TacsScalar *res = new TacsScalar[nvars];
-  TacsScalar *tmp = new TacsScalar[nvars];
+  TacsScalar* res = new TacsScalar[nvars];
+  TacsScalar* tmp = new TacsScalar[nvars];
 
   memset(res, 0, nvars * sizeof(TacsScalar));
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
@@ -279,12 +279,12 @@ void TACSElement::addAdjResXptProduct(
 #endif  // TACS_USE_COMPLEX
 
   int nnodes = getNumNodes();
-  TacsScalar *X = new TacsScalar[3 * nnodes];
+  TacsScalar* X = new TacsScalar[3 * nnodes];
   memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
 
   int nvars = getNumVariables();
-  TacsScalar *res = new TacsScalar[nvars];
-  TacsScalar *tmp = new TacsScalar[nvars];
+  TacsScalar* res = new TacsScalar[nvars];
+  TacsScalar* tmp = new TacsScalar[nvars];
 
   memset(res, 0, nvars * sizeof(TacsScalar));
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
@@ -363,11 +363,11 @@ void TACSElement::addMatDVSensInnerProduct(
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
 
-  TacsScalar *x = new TacsScalar[dvLen];
+  TacsScalar* x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
   int nvars = getNumVariables();
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
 
   memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
   TacsScalar p1 = 0.0;
@@ -443,11 +443,11 @@ void TACSElement::addMatXptSensInnerProduct(
 #endif  // TACS_USE_COMPLEX
 
   int nnodes = getNumNodes();
-  TacsScalar *X = new TacsScalar[3 * nnodes];
+  TacsScalar* X = new TacsScalar[3 * nnodes];
   memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
 
   int nvars = getNumVariables();
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
 
   memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
   TacsScalar p1 = 0.0;
@@ -519,8 +519,8 @@ void TACSElement::getMatSVSensInnerProduct(
 
   int nvars = getNumVariables();
   memset(dfdu, 0, nvars * sizeof(TacsScalar));
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
-  TacsScalar *vars1 = new TacsScalar[nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
+  TacsScalar* vars1 = new TacsScalar[nvars];
 
   memcpy(vars1, vars, nvars * sizeof(TacsScalar));
   memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
@@ -592,16 +592,16 @@ void TACSElement::addPointQuantityDVSens(
   const double dh = 1e-7;
 #endif  // TACS_USE_COMPLEX
 
-  TacsScalar *x = new TacsScalar[dvLen];
+  TacsScalar* x = new TacsScalar[dvLen];
   getDesignVars(elemIndex, dvLen, x);
 
   TacsScalar detXd = 0.0;
   int nvals = evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts,
                                 vars, dvars, ddvars, &detXd, NULL);
   if (nvals >= 1) {
-    TacsScalar *q0 = new TacsScalar[nvals];
-    TacsScalar *q1 = new TacsScalar[nvals];
-    TacsScalar *fd = new TacsScalar[nvals];
+    TacsScalar* q0 = new TacsScalar[nvals];
+    TacsScalar* q1 = new TacsScalar[nvals];
+    TacsScalar* fd = new TacsScalar[nvals];
     evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts, vars, dvars,
                       ddvars, &detXd, q0);
 
@@ -674,16 +674,16 @@ void TACSElement::addPointQuantitySVSens(
                                 vars, dvars, ddvars, &detXd, NULL);
   if (nvals >= 1) {
     int nvars = getNumVariables();
-    TacsScalar *v = new TacsScalar[nvars];
-    TacsScalar *dv = new TacsScalar[nvars];
-    TacsScalar *ddv = new TacsScalar[nvars];
+    TacsScalar* v = new TacsScalar[nvars];
+    TacsScalar* dv = new TacsScalar[nvars];
+    TacsScalar* ddv = new TacsScalar[nvars];
     memcpy(v, vars, nvars * sizeof(TacsScalar));
     memcpy(dv, dvars, nvars * sizeof(TacsScalar));
     memcpy(ddv, ddvars, nvars * sizeof(TacsScalar));
 
-    TacsScalar *q0 = new TacsScalar[nvals];
-    TacsScalar *q1 = new TacsScalar[nvals];
-    TacsScalar *fd = new TacsScalar[nvals];
+    TacsScalar* q0 = new TacsScalar[nvals];
+    TacsScalar* q1 = new TacsScalar[nvals];
+    TacsScalar* fd = new TacsScalar[nvals];
     evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts, vars, dvars,
                       ddvars, &detXd, q0);
 
@@ -760,13 +760,13 @@ void TACSElement::addPointQuantityXptSens(
                                 vars, dvars, ddvars, &detXd, NULL);
   if (nvals >= 1) {
     int nnodes = getNumNodes();
-    TacsScalar *X = new TacsScalar[3 * nnodes];
+    TacsScalar* X = new TacsScalar[3 * nnodes];
     memcpy(X, Xpts, 3 * nnodes * sizeof(TacsScalar));
 
     TacsScalar detXd0 = 0.0;
-    TacsScalar *q0 = new TacsScalar[nvals];
-    TacsScalar *q1 = new TacsScalar[nvals];
-    TacsScalar *fd = new TacsScalar[nvals];
+    TacsScalar* q0 = new TacsScalar[nvals];
+    TacsScalar* q1 = new TacsScalar[nvals];
+    TacsScalar* fd = new TacsScalar[nvals];
     evalPointQuantity(elemIndex, quantityType, time, n, pt, Xpts, vars, dvars,
                       ddvars, &detXd0, q0);
 

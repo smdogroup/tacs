@@ -15,7 +15,7 @@
 #include "TACSPCMHeatConduction.h"
 
 TACSPCMHeatConduction2D::TACSPCMHeatConduction2D(
-    TACSPhaseChangeMaterialConstitutive *_stiff) {
+    TACSPhaseChangeMaterialConstitutive* _stiff) {
   stiff = _stiff;
   stiff->incref();
 }
@@ -94,8 +94,8 @@ void TACSPCMHeatConduction2D::evalWeakIntegrand(
 }
 
 void TACSPCMHeatConduction2D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                                    int elemIndex, int *Jac_nnz,
-                                                    const int *Jac_pairs[]) {
+                                                    int elemIndex, int* Jac_nnz,
+                                                    const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 8;
     *Jac_pairs = linear_Jac_pairs;
@@ -168,7 +168,7 @@ void TACSPCMHeatConduction2D::addWeakAdjProduct(
     int elemIndex, const double time, TacsScalar scale, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
     const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar Psi[],
-    const TacsScalar Psix[], int dvLen, TacsScalar *dfdx) {
+    const TacsScalar Psix[], int dvLen, TacsScalar* dfdx) {
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X, Ut);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X, Ut);
@@ -186,7 +186,7 @@ void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
@@ -208,7 +208,7 @@ void TACSPCMHeatConduction2D::evalWeakAdjXptSensProduct(
 int TACSPCMHeatConduction2D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_HEAT_FLUX) {
     if (quantity) {
       stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity, Ut);
@@ -324,7 +324,7 @@ void TACSPCMHeatConduction2D::evalPointQuantitySens(
 void TACSPCMHeatConduction2D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
   if (etype == TACS_PCM_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];

@@ -20,16 +20,16 @@
 
 class TACSInertialForce3D : public TACSElement {
  public:
-  TACSInertialForce3D(int _varsPerNode, TACSConstitutive *_con,
-                      TACSElementBasis *_basis, const TacsScalar _inertiaVec[]);
+  TACSInertialForce3D(int _varsPerNode, TACSConstitutive* _con,
+                      TACSElementBasis* _basis, const TacsScalar _inertiaVec[]);
   ~TACSInertialForce3D();
 
   // Get the layout properties of the element
-  const char *getObjectName();
+  const char* getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis *getElementBasis();
+  TACSElementBasis* getElementBasis();
   int getNumQuadraturePoints();
   double getQuadratureWeight(int n);
   double getQuadraturePoint(int n, double pt[]);
@@ -61,22 +61,22 @@ class TACSInertialForce3D : public TACSElement {
   /**
     Add the residual to the provided vector
   */
-  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
-                   const TacsScalar *vars, const TacsScalar *dvars,
-                   const TacsScalar *ddvars, TacsScalar *res);
+  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
+                   const TacsScalar* vars, const TacsScalar* dvars,
+                   const TacsScalar* ddvars, TacsScalar* res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
-                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
-                   const TacsScalar *vars, const TacsScalar *dvars,
-                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar* Xpts,
+                   const TacsScalar* vars, const TacsScalar* dvars,
+                   const TacsScalar* ddvars, TacsScalar* res, TacsScalar* mat);
 
  private:
   int varsPerNode;
-  TACSConstitutive *con;
-  TACSElementBasis *basis;
+  TACSConstitutive* con;
+  TACSElementBasis* basis;
   TacsScalar inertiaVec[3];
 };
 

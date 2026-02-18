@@ -48,10 +48,10 @@
   num_eigvals:  Number of converged eigenvalues required
   eig_tol:      Tolerance of the eigenvalues
 */
-TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
-                                       TacsScalar _sigma, TACSMat *_gmat,
-                                       TACSMat *_kmat, TACSMat *_aux_mat,
-                                       TACSKsm *_solver, int _max_lanczos_vecs,
+TACSLinearBuckling::TACSLinearBuckling(TACSAssembler* _assembler,
+                                       TacsScalar _sigma, TACSMat* _gmat,
+                                       TACSMat* _kmat, TACSMat* _aux_mat,
+                                       TACSKsm* _solver, int _max_lanczos_vecs,
                                        int _num_eigvals, double _eig_tol) {
   // Copy pointer to the TACS assembler object
   assembler = _assembler;
@@ -70,7 +70,7 @@ TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
   solver->incref();
 
   // Get the operators
-  TACSMat *mat;
+  TACSMat* mat;
   solver->getOperators(&mat, &pc);
 
   // Check that the matrix associated with the solver object is the auxiliary
@@ -102,7 +102,7 @@ TACSLinearBuckling::TACSLinearBuckling(TACSAssembler *_assembler,
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg *>(pc);
+  mg = dynamic_cast<TACSMg*>(pc);
 
   // Store the spectral shift info
   sigma = _sigma;
@@ -193,7 +193,7 @@ void TACSLinearBuckling::setSigma(TacsScalar _sigma) {
 
   (K + sigma G)^{-1} K x = lambda/(lambda - sigma) x
 */
-void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
+void TACSLinearBuckling::solve(TACSVec* rhs, TACSVec* u0, KSMPrint* ksm_print) {
   // Zero the variables
   assembler->zeroVariables();
 
@@ -279,15 +279,15 @@ void TACSLinearBuckling::solve(TACSVec *rhs, TACSVec *u0, KSMPrint *ksm_print) {
 /*!
   Extract the eigenvalue from the analysis.
 */
-TacsScalar TACSLinearBuckling::extractEigenvalue(int n, TacsScalar *error) {
+TacsScalar TACSLinearBuckling::extractEigenvalue(int n, TacsScalar* error) {
   return sep->extractEigenvalue(n, error);
 }
 
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSLinearBuckling::extractEigenvector(int n, TACSBVec *ans,
-                                                  TacsScalar *error) {
+TacsScalar TACSLinearBuckling::extractEigenvector(int n, TACSBVec* ans,
+                                                  TacsScalar* error) {
   return sep->extractEigenvector(n, ans, error);
 }
 
@@ -308,8 +308,8 @@ void TACSLinearBuckling::printOrthogonality() { sep->printOrthogonality(); }
 */
 void TACSLinearBuckling::checkEigenvector(int n) {
   // Test the eignevalue
-  TACSBVec *t1 = assembler->createVec();
-  TACSBVec *t2 = assembler->createVec();
+  TACSBVec* t1 = assembler->createVec();
+  TACSBVec* t2 = assembler->createVec();
   t1->incref();
   t2->incref();
 
@@ -379,7 +379,7 @@ void TACSLinearBuckling::checkEigenvector(int n) {
 
   K*psi = d(u^{T}*G*u)/d(path)
 */
-void TACSLinearBuckling::evalEigenDVSens(int n, TACSBVec *dfdx) {
+void TACSLinearBuckling::evalEigenDVSens(int n, TACSBVec* dfdx) {
   // Zero the derivative
   dfdx->zeroEntries();
 
@@ -453,7 +453,7 @@ void TACSLinearBuckling::evalEigenDVSens(int n, TACSBVec *dfdx) {
 
   K*psi = d(u^{T}*G*u)/d(path)
 */
-void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
+void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec* dfdX) {
   // Zero the derivative
   dfdX->zeroEntries();
 
@@ -505,7 +505,7 @@ void TACSLinearBuckling::evalEigenXptSens(int n, TACSBVec *dfdX) {
   cannot be modified from the previous call to solve.
 */
 void TACSLinearBuckling::addEigenDVSens(TacsScalar coef, int n,
-                                        TACSBVec *dfdx) {
+                                        TACSBVec* dfdx) {
   // Get the eigenvalue and eigenvector
   TacsScalar error;
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
@@ -533,7 +533,7 @@ void TACSLinearBuckling::addEigenDVSens(TacsScalar coef, int n,
   cannot be modified from the previous call to solve.
 */
 void TACSLinearBuckling::addEigenXptSens(TacsScalar coef, int n,
-                                         TACSBVec *dfdX) {
+                                         TACSBVec* dfdX) {
   // Get the eigenvalue and eigenvector
   TacsScalar error;
   TacsScalar eig = extractEigenvector(n, eigvec, &error);
@@ -568,7 +568,7 @@ void TACSLinearBuckling::addEigenXptSens(TacsScalar coef, int n,
 
   d(lambda)/du = -lambda*(u^{T}*dG/du*u)/(u^{T}*G*u)
 */
-void TACSLinearBuckling::evalEigenSVSens(int n, TACSBVec *dfdu) {
+void TACSLinearBuckling::evalEigenSVSens(int n, TACSBVec* dfdu) {
   dfdu->zeroEntries();
 
   // Get the eigenvalue and eigenvector
@@ -610,9 +610,9 @@ void TACSLinearBuckling::evalEigenSVSens(int n, TACSBVec *dfdu) {
   num_eigvals: the number of eigenvalues to use
   eig_tol:     the eigenproblem tolerance
 */
-TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler *_assembler,
-                                             TacsScalar _sigma, TACSMat *_mmat,
-                                             TACSMat *_kmat, TACSKsm *_solver,
+TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler* _assembler,
+                                             TacsScalar _sigma, TACSMat* _mmat,
+                                             TACSMat* _kmat, TACSKsm* _solver,
                                              int max_lanczos, int num_eigvals,
                                              double eig_tol) {
   // Store the TACSAssembler pointer
@@ -632,7 +632,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler *_assembler,
 
   // Store the pointer to the KSM solver and ensure that the solver
   // is associated with the stiffness matrix object
-  TACSMat *mat;
+  TACSMat* mat;
   solver = _solver;
   solver->incref();
   solver->getOperators(&mat, &pc);
@@ -646,7 +646,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler *_assembler,
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg *>(pc);
+  mg = dynamic_cast<TACSMg*>(pc);
 
   // Allocate vectors that are required for the eigenproblem
   eigvec = assembler->createVec();
@@ -700,8 +700,8 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis(TACSAssembler *_assembler,
   eig_tol:     the eigenproblem tolerance
 */
 TACSFrequencyAnalysis::TACSFrequencyAnalysis(
-    TACSAssembler *_assembler, TacsScalar _init_eig, TACSMat *_mmat,
-    TACSMat *_kmat, TACSMat *_pcmat, TACSPc *_pc, int max_jd_size,
+    TACSAssembler* _assembler, TacsScalar _init_eig, TACSMat* _mmat,
+    TACSMat* _kmat, TACSMat* _pcmat, TACSPc* _pc, int max_jd_size,
     int fgmres_size, int num_eigvals, double eigtol, double eig_rtol,
     double eig_atol, int num_recycle, JDRecycleType recycle_type) {
   // Store the TACSAssembler pointer
@@ -729,7 +729,7 @@ TACSFrequencyAnalysis::TACSFrequencyAnalysis(
   // Check if the preconditioner is actually a multigrid object. If
   // so, then we have to allocate extra data to store things for each
   // multigrid level.
-  mg = dynamic_cast<TACSMg *>(pc);
+  mg = dynamic_cast<TACSMg*>(pc);
 
   // Allocate vectors that are required for the eigenproblem
   eigvec = assembler->createVec();
@@ -804,7 +804,7 @@ void TACSFrequencyAnalysis::setSigma(TacsScalar _sigma) {
 /*
   Solve the eigenvalue problem
 */
-void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
+void TACSFrequencyAnalysis::solve(KSMPrint* ksm_print, int print_level) {
   // Zero the variables
   assembler->zeroVariables();
   if (jd) {
@@ -889,7 +889,7 @@ void TACSFrequencyAnalysis::solve(KSMPrint *ksm_print, int print_level) {
 /*!
   Extract the eigenvalue from the analysis
 */
-TacsScalar TACSFrequencyAnalysis::extractEigenvalue(int n, TacsScalar *error) {
+TacsScalar TACSFrequencyAnalysis::extractEigenvalue(int n, TacsScalar* error) {
   if (sep) {
     return sep->extractEigenvalue(n, error);
   } else {
@@ -901,8 +901,8 @@ TacsScalar TACSFrequencyAnalysis::extractEigenvalue(int n, TacsScalar *error) {
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSFrequencyAnalysis::extractEigenvector(int n, TACSBVec *ans,
-                                                     TacsScalar *error) {
+TacsScalar TACSFrequencyAnalysis::extractEigenvector(int n, TACSBVec* ans,
+                                                     TacsScalar* error) {
   if (sep) {
     return sep->extractEigenvector(n, ans, error);
   } else {
@@ -944,7 +944,7 @@ TacsScalar TACSFrequencyAnalysis::checkOrthogonality() {
 
   (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
 */
-void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
+void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec* dfdx) {
   // Zero the derivative
   dfdx->zeroEntries();
 
@@ -991,7 +991,7 @@ void TACSFrequencyAnalysis::evalEigenDVSens(int n, TACSBVec *dfdx) {
 
   (u^{T}*M*u)*d(lambda)/dx = u^{T}*(dK/dx - lambda*dM/dx)*u
 */
-void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec *dfdXpt) {
+void TACSFrequencyAnalysis::evalEigenXptSens(int n, TACSBVec* dfdXpt) {
   // Zero the derivative
   dfdXpt->zeroEntries();
 
@@ -1030,8 +1030,8 @@ void TACSFrequencyAnalysis::checkEigenvector(int n) {
   }
 
   // Create temporary arrays required
-  TACSBVec *t1 = assembler->createVec();
-  TACSBVec *t2 = assembler->createVec();
+  TACSBVec* t1 = assembler->createVec();
+  TACSBVec* t2 = assembler->createVec();
   t1->incref();
   t2->incref();
 

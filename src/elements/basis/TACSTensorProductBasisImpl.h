@@ -20,9 +20,9 @@
 /*
   Inline functions for tensor-product basis computations
 */
-inline void TacsInterpTensor3DInterp2(const int m, const double *n1,
-                                      const double *n2, const double *n3,
-                                      const TacsScalar *v, TacsScalar *u) {
+inline void TacsInterpTensor3DInterp2(const int m, const double* n1,
+                                      const double* n2, const double* n3,
+                                      const TacsScalar* v, TacsScalar* u) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m]);
   TacsScalar t2 = (n1[0] * v[2 * m] + n1[1] * v[3 * m]);
   TacsScalar t3 = (n1[0] * v[4 * m] + n1[1] * v[5 * m]);
@@ -31,9 +31,9 @@ inline void TacsInterpTensor3DInterp2(const int m, const double *n1,
   u[0] = n3[0] * (n2[0] * t1 + n2[1] * t2) + n3[1] * (n2[0] * t3 + n2[1] * t4);
 }
 
-inline void TacsAddTransTensor3DInterp2(const int m, const double *n1,
-                                        const double *n2, const double *n3,
-                                        const TacsScalar *u, TacsScalar *v) {
+inline void TacsAddTransTensor3DInterp2(const int m, const double* n1,
+                                        const double* n2, const double* n3,
+                                        const TacsScalar* u, TacsScalar* v) {
   TacsScalar a1 = n2[0] * u[0];
   TacsScalar a2 = n2[1] * u[0];
 
@@ -55,11 +55,11 @@ inline void TacsAddTransTensor3DInterp2(const int m, const double *n1,
   v[7 * m] += n1[1] * t4;
 }
 
-inline void TacsGradTensor3DInterp2(const int m, const double *n1,
-                                    const double *n2, const double *n3,
-                                    const double *n1x, const double *n2x,
-                                    const double *n3x, const TacsScalar *v,
-                                    TacsScalar *g) {
+inline void TacsGradTensor3DInterp2(const int m, const double* n1,
+                                    const double* n2, const double* n3,
+                                    const double* n1x, const double* n2x,
+                                    const double* n3x, const TacsScalar* v,
+                                    TacsScalar* g) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m]);
   TacsScalar t2 = (n1[0] * v[2 * m] + n1[1] * v[3 * m]);
   TacsScalar t3 = (n1[0] * v[4 * m] + n1[1] * v[5 * m]);
@@ -79,9 +79,9 @@ inline void TacsGradTensor3DInterp2(const int m, const double *n1,
 }
 
 inline void TacsAddGradTransTensor3DInterp2(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1];
   TacsScalar b2 = n2x[1] * g[1];
   TacsScalar c1 = n2[0] * g[2];
@@ -110,12 +110,12 @@ inline void TacsAddGradTransTensor3DInterp2(
   v[7 * m] += n1[1] * t4 + n1x[1] * t4x;
 }
 
-inline void TacsInterpGradTensor3DInterp2(const int m, const double *n1,
-                                          const double *n2, const double *n3,
-                                          const double *n1x, const double *n2x,
-                                          const double *n3x,
-                                          const TacsScalar *v, TacsScalar *u,
-                                          TacsScalar *g) {
+inline void TacsInterpGradTensor3DInterp2(const int m, const double* n1,
+                                          const double* n2, const double* n3,
+                                          const double* n1x, const double* n2x,
+                                          const double* n3x,
+                                          const TacsScalar* v, TacsScalar* u,
+                                          TacsScalar* g) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m]);
   TacsScalar t2 = (n1[0] * v[2 * m] + n1[1] * v[3 * m]);
   TacsScalar t3 = (n1[0] * v[4 * m] + n1[1] * v[5 * m]);
@@ -138,9 +138,9 @@ inline void TacsInterpGradTensor3DInterp2(const int m, const double *n1,
 }
 
 inline void TacsAddInterpGradTransTensor3DInterp2(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *u, const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* u, const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1] + n2[0] * u[0];
   TacsScalar b2 = n2x[1] * g[1] + n2[1] * u[0];
   TacsScalar c1 = n2[0] * g[2];
@@ -228,9 +228,9 @@ inline void TacsAddAllTransTensor3DInterp2(const int m, const int i,
 /*
   3D Tensor product functions for p = 2
 */
-inline void TacsInterpTensor3DInterp3(const int m, const double *n1,
-                                      const double *n2, const double *n3,
-                                      const TacsScalar *v, TacsScalar *u) {
+inline void TacsInterpTensor3DInterp3(const int m, const double* n1,
+                                      const double* n2, const double* n3,
+                                      const TacsScalar* v, TacsScalar* u) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m]);
   TacsScalar t2 = (n1[0] * v[3 * m] + n1[1] * v[4 * m] + n1[2] * v[5 * m]);
   TacsScalar t3 = (n1[0] * v[6 * m] + n1[1] * v[7 * m] + n1[2] * v[8 * m]);
@@ -246,9 +246,9 @@ inline void TacsInterpTensor3DInterp3(const int m, const double *n1,
          n3[2] * (n2[0] * t7 + n2[1] * t8 + n2[2] * t9);
 }
 
-inline void TacsAddTransTensor3DInterp3(const int m, const double *n1,
-                                        const double *n2, const double *n3,
-                                        const TacsScalar *u, TacsScalar *v) {
+inline void TacsAddTransTensor3DInterp3(const int m, const double* n1,
+                                        const double* n2, const double* n3,
+                                        const TacsScalar* u, TacsScalar* v) {
   TacsScalar a1 = n2[0] * u[0];
   TacsScalar a2 = n2[1] * u[0];
   TacsScalar a3 = n2[2] * u[0];
@@ -291,11 +291,11 @@ inline void TacsAddTransTensor3DInterp3(const int m, const double *n1,
   v[26 * m] += n1[2] * t9;
 }
 
-inline void TacsGradTensor3DInterp3(const int m, const double *n1,
-                                    const double *n2, const double *n3,
-                                    const double *n1x, const double *n2x,
-                                    const double *n3x, const TacsScalar *v,
-                                    TacsScalar *g) {
+inline void TacsGradTensor3DInterp3(const int m, const double* n1,
+                                    const double* n2, const double* n3,
+                                    const double* n1x, const double* n2x,
+                                    const double* n3x, const TacsScalar* v,
+                                    TacsScalar* g) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m]);
   TacsScalar t2 = (n1[0] * v[3 * m] + n1[1] * v[4 * m] + n1[2] * v[5 * m]);
   TacsScalar t3 = (n1[0] * v[6 * m] + n1[1] * v[7 * m] + n1[2] * v[8 * m]);
@@ -336,9 +336,9 @@ inline void TacsGradTensor3DInterp3(const int m, const double *n1,
 }
 
 inline void TacsAddGradTransTensor3DInterp3(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1];
   TacsScalar b2 = n2x[1] * g[1];
   TacsScalar b3 = n2x[2] * g[1];
@@ -400,12 +400,12 @@ inline void TacsAddGradTransTensor3DInterp3(
   v[26 * m] += n1[2] * t9 + n1x[2] * t9x;
 }
 
-inline void TacsInterpGradTensor3DInterp3(const int m, const double *n1,
-                                          const double *n2, const double *n3,
-                                          const double *n1x, const double *n2x,
-                                          const double *n3x,
-                                          const TacsScalar *v, TacsScalar *u,
-                                          TacsScalar *g) {
+inline void TacsInterpGradTensor3DInterp3(const int m, const double* n1,
+                                          const double* n2, const double* n3,
+                                          const double* n1x, const double* n2x,
+                                          const double* n3x,
+                                          const TacsScalar* v, TacsScalar* u,
+                                          TacsScalar* g) {
   TacsScalar t1 = (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m]);
   TacsScalar t2 = (n1[0] * v[3 * m] + n1[1] * v[4 * m] + n1[2] * v[5 * m]);
   TacsScalar t3 = (n1[0] * v[6 * m] + n1[1] * v[7 * m] + n1[2] * v[8 * m]);
@@ -450,9 +450,9 @@ inline void TacsInterpGradTensor3DInterp3(const int m, const double *n1,
 }
 
 inline void TacsAddInterpGradTransTensor3DInterp3(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *u, const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* u, const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1] + n2[0] * u[0];
   TacsScalar b2 = n2x[1] * g[1] + n2[1] * u[0];
   TacsScalar b3 = n2x[2] * g[1] + n2[2] * u[0];
@@ -669,9 +669,9 @@ inline void TacsAddAllTransTensor3DInterp3(const int m, const int i,
 /*
   3D Tensor product functions for p = 3
 */
-inline void TacsInterpTensor3DInterp4(const int m, const double *n1,
-                                      const double *n2, const double *n3,
-                                      const TacsScalar *v, TacsScalar *u) {
+inline void TacsInterpTensor3DInterp4(const int m, const double* n1,
+                                      const double* n2, const double* n3,
+                                      const TacsScalar* v, TacsScalar* u) {
   TacsScalar t1 =
       (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m] + n1[3] * v[3 * m]);
   TacsScalar t2 = (n1[0] * v[4 * m] + n1[1] * v[5 * m] + n1[2] * v[6 * m] +
@@ -711,9 +711,9 @@ inline void TacsInterpTensor3DInterp4(const int m, const double *n1,
          n3[3] * (n2[0] * t13 + n2[1] * t14 + n2[2] * t15 + n2[3] * t16);
 }
 
-inline void TacsAddTransTensor3DInterp4(const int m, const double *n1,
-                                        const double *n2, const double *n3,
-                                        const TacsScalar *u, TacsScalar *v) {
+inline void TacsAddTransTensor3DInterp4(const int m, const double* n1,
+                                        const double* n2, const double* n3,
+                                        const TacsScalar* u, TacsScalar* v) {
   TacsScalar a1 = n2[0] * u[0];
   TacsScalar a2 = n2[1] * u[0];
   TacsScalar a3 = n2[2] * u[0];
@@ -802,11 +802,11 @@ inline void TacsAddTransTensor3DInterp4(const int m, const double *n1,
   v[63 * m] += n1[3] * t16;
 }
 
-inline void TacsGradTensor3DInterp4(const int m, const double *n1,
-                                    const double *n2, const double *n3,
-                                    const double *n1x, const double *n2x,
-                                    const double *n3x, const TacsScalar *v,
-                                    TacsScalar *g) {
+inline void TacsGradTensor3DInterp4(const int m, const double* n1,
+                                    const double* n2, const double* n3,
+                                    const double* n1x, const double* n2x,
+                                    const double* n3x, const TacsScalar* v,
+                                    TacsScalar* g) {
   TacsScalar t1 =
       (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m] + n1[3] * v[3 * m]);
   TacsScalar t2 = (n1[0] * v[4 * m] + n1[1] * v[5 * m] + n1[2] * v[6 * m] +
@@ -890,9 +890,9 @@ inline void TacsGradTensor3DInterp4(const int m, const double *n1,
 }
 
 inline void TacsAddGradTransTensor3DInterp4(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1];
   TacsScalar b2 = n2x[1] * g[1];
   TacsScalar b3 = n2x[2] * g[1];
@@ -1008,12 +1008,12 @@ inline void TacsAddGradTransTensor3DInterp4(
   v[63 * m] += n1[3] * t16x + n1x[3] * t16;
 }
 
-inline void TacsInterpGradTensor3DInterp4(const int m, const double *n1,
-                                          const double *n2, const double *n3,
-                                          const double *n1x, const double *n2x,
-                                          const double *n3x,
-                                          const TacsScalar *v, TacsScalar *u,
-                                          TacsScalar *g) {
+inline void TacsInterpGradTensor3DInterp4(const int m, const double* n1,
+                                          const double* n2, const double* n3,
+                                          const double* n1x, const double* n2x,
+                                          const double* n3x,
+                                          const TacsScalar* v, TacsScalar* u,
+                                          TacsScalar* g) {
   TacsScalar t1 =
       (n1[0] * v[0] + n1[1] * v[m] + n1[2] * v[2 * m] + n1[3] * v[3 * m]);
   TacsScalar t2 = (n1[0] * v[4 * m] + n1[1] * v[5 * m] + n1[2] * v[6 * m] +
@@ -1101,9 +1101,9 @@ inline void TacsInterpGradTensor3DInterp4(const int m, const double *n1,
 }
 
 inline void TacsAddInterpGradTransTensor3DInterp4(
-    const int m, const double *n1, const double *n2, const double *n3,
-    const double *n1x, const double *n2x, const double *n3x,
-    const TacsScalar *u, const TacsScalar *g, TacsScalar *v) {
+    const int m, const double* n1, const double* n2, const double* n3,
+    const double* n1x, const double* n2x, const double* n3x,
+    const TacsScalar* u, const TacsScalar* g, TacsScalar* v) {
   TacsScalar b1 = n2x[0] * g[1] + n2[0] * u[0];
   TacsScalar b2 = n2x[1] * g[1] + n2[1] * u[0];
   TacsScalar b3 = n2x[2] * g[1] + n2[2] * u[0];
@@ -1224,8 +1224,8 @@ inline void TACSInterpAllTensor3DInterp4(const int m, const int i,
                                          const TacsScalar v[],
                                          TacsScalar out[]) {
   const int j = 3 * i + m;
-  const double *Nz = N;
-  const double *Nzx = Nx;
+  const double* Nz = N;
+  const double* Nzx = Nx;
   for (int n = 0; n < 4; n++) {
     TacsInterpGradTensor3DInterp4(m, &N[0], &N[0], Nz, &Nx[0], &Nx[0], Nzx, v,
                                   &out[i], &out[j]);
@@ -1271,8 +1271,8 @@ inline void TacsAddAllTransTensor3DInterp4(const int m, const int i,
                                            const TacsScalar in[],
                                            TacsScalar v[]) {
   const int j = 3 * i + m;
-  const double *Nz = N;
-  const double *Nzx = Nx;
+  const double* Nz = N;
+  const double* Nzx = Nx;
   for (int n = 0; n < 4; n++) {
     TacsAddInterpGradTransTensor3DInterp4(m, &N[0], &N[0], Nz, &Nx[0], &Nx[0],
                                           Nzx, &in[i], &in[j], v);

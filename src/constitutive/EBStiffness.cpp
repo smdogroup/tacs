@@ -48,12 +48,12 @@ EBStiffness::EBStiffness(TacsScalar rho, TacsScalar E, TacsScalar G,
 /*
   Return the constitutive name
 */
-const char *EBStiffness::constName = "EBStiffness";
+const char* EBStiffness::constName = "EBStiffness";
 
 /*
   Get the constitutive name
 */
-const char *EBStiffness::constitutiveName() { return constName; }
+const char* EBStiffness::constitutiveName() { return constName; }
 
 /*
   Get the stiffness matrix

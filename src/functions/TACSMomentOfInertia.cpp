@@ -24,7 +24,7 @@
 /*
   Allocate the structural mass function
 */
-TACSMomentOfInertia::TACSMomentOfInertia(TACSAssembler *_assembler,
+TACSMomentOfInertia::TACSMomentOfInertia(TACSAssembler* _assembler,
                                          const double _dir1[],
                                          const double _dir2[], int _cmFlag)
     : TACSFunction(_assembler) {
@@ -48,12 +48,12 @@ TACSMomentOfInertia::TACSMomentOfInertia(TACSAssembler *_assembler,
 */
 TACSMomentOfInertia::~TACSMomentOfInertia() {}
 
-const char *TACSMomentOfInertia::funcName = "MomentOfInertia";
+const char* TACSMomentOfInertia::funcName = "MomentOfInertia";
 
 /*
   The structural mass function name
 */
-const char *TACSMomentOfInertia::getObjectName() { return funcName; }
+const char* TACSMomentOfInertia::getObjectName() { return funcName; }
 
 /*
   Get the function name
@@ -98,7 +98,7 @@ void TACSMomentOfInertia::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSMomentOfInertia function.
 */
 void TACSMomentOfInertia::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -147,7 +147,7 @@ void TACSMomentOfInertia::elementWiseEval(
   design variables
 */
 void TACSMomentOfInertia::addElementDVSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -217,7 +217,7 @@ void TACSMomentOfInertia::addElementDVSens(
   locations.
 */
 void TACSMomentOfInertia::getElementXptSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the node locations

@@ -54,7 +54,7 @@ static inline void evalPlateStrain(const TacsScalar Ut[], const TacsScalar Ux[],
   e[8] = 0.0;
 }
 
-TACSPlateModel::TACSPlateModel(TACSShellConstitutive *_con) {
+TACSPlateModel::TACSPlateModel(TACSShellConstitutive* _con) {
   con = _con;
   con->incref();
 }
@@ -129,9 +129,9 @@ void TACSPlateModel::evalWeakIntegrand(int elemIndex, const double time, int n,
   con->evalStress(elemIndex, pt, X, e, s);
 
   // Set pointers to the in-plane, bending and shear resultants
-  const TacsScalar *N = &s[0];
-  const TacsScalar *M = &s[3];
-  const TacsScalar *Q = &s[6];
+  const TacsScalar* N = &s[0];
+  const TacsScalar* M = &s[3];
+  const TacsScalar* Q = &s[6];
 
   // Set the coefficients
   memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
@@ -158,8 +158,8 @@ void TACSPlateModel::evalWeakIntegrand(int elemIndex, const double time, int n,
 }
 
 void TACSPlateModel::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                           int elemIndex, int *Jac_nnz,
-                                           const int *Jac_pairs[]) {
+                                           int elemIndex, int* Jac_nnz,
+                                           const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 83;
     *Jac_pairs = linear_Jac_pairs;
@@ -197,9 +197,9 @@ void TACSPlateModel::evalWeakMatrix(ElementMatrixType matType, int elemIndex,
   con->computeStress(A, B, D, As, drill, e, s);
 
   // Set pointers to the in-plane, bending and shear resultants
-  const TacsScalar *N = &s[0];
-  const TacsScalar *M = &s[3];
-  const TacsScalar *Q = &s[6];
+  const TacsScalar* N = &s[0];
+  const TacsScalar* M = &s[3];
+  const TacsScalar* Q = &s[6];
 
   // Set the coefficients
   memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
@@ -317,7 +317,7 @@ void TACSPlateModel::evalWeakMatrix(ElementMatrixType matType, int elemIndex,
 int TACSPlateModel::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     TacsScalar e[9];
     evalPlateStrain(Ut, Ux, e);
@@ -374,7 +374,7 @@ void TACSPlateModel::getOutputData(int elemIndex, const double time,
                                    ElementType etype, int write_flag,
                                    const double pt[], const TacsScalar X[],
                                    const TacsScalar Ut[], const TacsScalar Ux[],
-                                   int ld_data, TacsScalar *data) {
+                                   int ld_data, TacsScalar* data) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];

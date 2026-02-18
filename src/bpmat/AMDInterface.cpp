@@ -25,15 +25,15 @@
 /*
   Compare two integers. This is used when sorting an array.
 */
-static int compare_ints(const void *a, const void *b) {
-  return (*(int *)a - *(int *)b);
+static int compare_ints(const void* a, const void* b) {
+  return (*(int*)a - *(int*)b);
 }
 
 /*
   Sort an array of length len, then remove duplicate entries and
   entries with values -1.
 */
-static int amd_remove_duplicates(int *array, int len) {
+static int amd_remove_duplicates(int* array, int len) {
   qsort(array, len, sizeof(int), compare_ints);
 
   // Remove any negative numbers
@@ -60,8 +60,8 @@ static int amd_remove_duplicates(int *array, int len) {
   If there is a problem with one of the rows of the data structure,
   return row+1, otherwise, return 0;
 */
-static int amd_check_format(int nvars, int *rowp, int *cols, int *elen,
-                            int *alen) {
+static int amd_check_format(int nvars, int* rowp, int* cols, int* elen,
+                            int* alen) {
   int flag = 0;
   for (int i = 0; i < nvars; i++) {
     for (int j = rowp[i]; j < rowp[i] + elen[i] - 1; j++) {
@@ -105,7 +105,7 @@ static int amd_check_format(int nvars, int *rowp, int *cols, int *elen,
   Compress the required number of rows to free up the required amount
   of space.
 */
-static void amd_add_space(int nvars, int *rowp, int *cols, const int *alen,
+static void amd_add_space(int nvars, int* rowp, int* cols, const int* alen,
                           const int r, int required_space) {
   // First, try and collect the space required from the rows preceeding r
   int new_space = 0;
@@ -174,9 +174,9 @@ static void amd_add_space(int nvars, int *rowp, int *cols, const int *alen,
 
   rowp, cols: The quotient graph data structure.
 */
-static int amd_compare_variables(const int i, const int j, const int *elen,
-                                 const int *alen, const int *rowp,
-                                 const int *cols) {
+static int amd_compare_variables(const int i, const int j, const int* elen,
+                                 const int* alen, const int* rowp,
+                                 const int* cols) {
   // First, check if they are the same length
   if (i == j) {
     return 0;  // The same node, this should be avoided
@@ -211,7 +211,7 @@ static int amd_compare_variables(const int i, const int j, const int *elen,
 
   This is used when removing an indistinguishable variable.
 */
-void amd_remove_variable(int var, int *elen, int *alen, int *rowp, int *cols,
+void amd_remove_variable(int var, int* elen, int* alen, int* rowp, int* cols,
                          int nvars) {
   int i = rowp[var];
 
@@ -325,24 +325,24 @@ void amd_remove_variable(int var, int *elen, int *alen, int *rowp, int *cols,
 
   On initialization elen[:] = 0, alen[i] = rowp[i+1] - rowp[i]
 */
-void amd_order_interface(int nvars, int *rowp, int *cols, int *perm,
-                         int *interface_nodes, int ninterface_nodes,
-                         int ndep_vars, const int *dep_vars,
-                         const int *indep_ptr, const int *indep_vars,
+void amd_order_interface(int nvars, int* rowp, int* cols, int* perm,
+                         int* interface_nodes, int ninterface_nodes,
+                         int ndep_vars, const int* dep_vars,
+                         const int* indep_ptr, const int* indep_vars,
                          int use_exact_degree) {
-  int *alen = new int[nvars];  // Number of entries in a row
-  int *elen = new int[nvars];  // Number of elements in a row
-  int *slen = new int[nvars];  // The length of each supernode
+  int* alen = new int[nvars];  // Number of entries in a row
+  int* elen = new int[nvars];  // Number of elements in a row
+  int* slen = new int[nvars];  // The length of each supernode
 
-  int *degree = new int[nvars];       // Degree (exact or estimate) of the node
-  int *elem_degree = new int[nvars];  // The degree of the element
-  int *Lp = new int[nvars];           // A set of variables
-  int *state = new int[nvars];        // Are we a variable, or element?
+  int* degree = new int[nvars];       // Degree (exact or estimate) of the node
+  int* elem_degree = new int[nvars];  // The degree of the element
+  int* Lp = new int[nvars];           // A set of variables
+  int* state = new int[nvars];        // Are we a variable, or element?
 
   // Allocate more space for the dependent vars - if any
-  int *dep_count = NULL;
-  int *vars_to_dep_ptr = NULL;
-  int *vars_to_dep = NULL;
+  int* dep_count = NULL;
+  int* vars_to_dep_ptr = NULL;
+  int* vars_to_dep = NULL;
 
   // Build the information required for the dependent-nodes.
   // All independent nodes associated with a dependent node must

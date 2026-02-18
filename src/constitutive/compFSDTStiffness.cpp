@@ -25,11 +25,11 @@
   Note that this constitutive class does not define any design
   variables.
 */
-compFSDTStiffness::compFSDTStiffness(OrthoPly **_ortho_ply, TacsScalar _kcorr,
-                                     TacsScalar *_thickness,
-                                     TacsScalar *_ply_angles, int _num_plies) {
+compFSDTStiffness::compFSDTStiffness(OrthoPly** _ortho_ply, TacsScalar _kcorr,
+                                     TacsScalar* _thickness,
+                                     TacsScalar* _ply_angles, int _num_plies) {
   num_plies = _num_plies;
-  ortho_ply = new OrthoPly *[num_plies];
+  ortho_ply = new OrthoPly*[num_plies];
   for (int i = 0; i < num_plies; i++) {
     ortho_ply[i] = _ortho_ply[i];
   }
@@ -62,9 +62,9 @@ compFSDTStiffness::~compFSDTStiffness() {
 /*
   Set/get the name of the material property
 */
-const char *compFSDTStiffness::constName = "compFSDTStiffness";
+const char* compFSDTStiffness::constName = "compFSDTStiffness";
 
-const char *compFSDTStiffness::constitutiveName() { return constName; }
+const char* compFSDTStiffness::constitutiveName() { return constName; }
 
 /*
   Compute the laminate stiffness matricies given the specified
@@ -144,7 +144,7 @@ void compFSDTStiffness::getPointwiseMass(const double gpt[],
   Compute the most critical failure criteria for the laminate
 */
 void compFSDTStiffness::failure(const double pt[], const TacsScalar strain[],
-                                TacsScalar *fail) {
+                                TacsScalar* fail) {
   // Compute the total thickness of the laminate
   TacsScalar t = 0.0;
   for (int i = 0; i < num_plies; i++) {

@@ -36,8 +36,8 @@ class TACSShellElement : public TACSElement {
   // this constant is used in many locations within the element.
   static const int num_nodes = basis::NUM_NODES;
 
-  TACSShellElement(TACSShellTransform *_transform,
-                   TACSShellConstitutive *_con) {
+  TACSShellElement(TACSShellTransform* _transform,
+                   TACSShellConstitutive* _con) {
     transform = _transform;
     transform->incref();
 
@@ -55,7 +55,7 @@ class TACSShellElement : public TACSElement {
     }
   }
 
-  const char *getObjectName() { return "TACSShellElement"; }
+  const char* getObjectName() { return "TACSShellElement"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return num_nodes; }
@@ -119,20 +119,20 @@ class TACSShellElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]) {
+  TACSElement* createElementTraction(int faceIndex, const TacsScalar t[]) {
     return new TACSShellTraction<vars_per_node, quadrature, basis>(t);
   }
 
-  TACSElement *createElementPressure(int faceIndex, TacsScalar p) {
+  TACSElement* createElementPressure(int faceIndex, TacsScalar p) {
     return new TACSShellPressure<vars_per_node, quadrature, basis>(p);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]) {
+  TACSElement* createElementInertialForce(const TacsScalar inertiaVec[]) {
     return new TACSShellInertialForce<vars_per_node, quadrature, basis>(
         con, inertiaVec);
   }
 
-  TACSElement *createElementCentrifugalForce(const TacsScalar omega[],
+  TACSElement* createElementCentrifugalForce(const TacsScalar omega[],
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false) {
     return new TACSShellCentrifugalForce<vars_per_node, quadrature, basis>(
@@ -141,11 +141,11 @@ class TACSShellElement : public TACSElement {
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar *Te, TacsScalar *Pe);
+                       TacsScalar* Te, TacsScalar* Pe);
 
-  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
-                   const TacsScalar *vars, const TacsScalar *dvars,
-                   const TacsScalar *ddvars, TacsScalar *res);
+  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
+                   const TacsScalar* vars, const TacsScalar* dvars,
+                   const TacsScalar* ddvars, TacsScalar* res);
 
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
                    TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
@@ -166,8 +166,8 @@ class TACSShellElement : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar *detXd,
-                        TacsScalar *quantity);
+                        const TacsScalar ddvars[], TacsScalar* detXd,
+                        TacsScalar* quantity);
 
   void addPointQuantityDVSens(int elemIndex, int quantityType, double time,
                               TacsScalar scale, int n, double pt[],
@@ -188,12 +188,12 @@ class TACSShellElement : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar *data);
+                     int ld_data, TacsScalar* data);
 
   void getAverageStresses(int elemIndex, ElementType etype,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          TacsScalar *avgStresses);
+                          TacsScalar* avgStresses);
 
  private:
   // Set sizes for the different components
@@ -201,8 +201,8 @@ class TACSShellElement : public TACSElement {
   static const int dsize = 3 * num_nodes;
   static const int csize = 9 * num_nodes;
 
-  TACSShellTransform *transform;
-  TACSShellConstitutive *con;
+  TACSShellTransform* transform;
+  TACSShellConstitutive* con;
 };
 
 /*
@@ -210,8 +210,8 @@ class TACSShellElement : public TACSElement {
 */
 template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::computeEnergies(
-    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
-    const TacsScalar *dvars, TacsScalar *Te, TacsScalar *Ue) {
+    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
+    const TacsScalar* dvars, TacsScalar* Te, TacsScalar* Ue) {
   // Zero the kinetic and potential energies
   TacsScalar Telem = 0.0;
   TacsScalar Uelem = 0.0;
@@ -681,7 +681,7 @@ void TACSShellElement<quadrature, basis, director, model>::getMatType(
     alpha = 1.0;
 
     // deriv direction
-    const TacsScalar *path = vars;
+    const TacsScalar* path = vars;
 
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
@@ -1032,7 +1032,7 @@ template <class quadrature, class basis, class director, class model>
 int TACSShellElement<quadrature, basis, director, model>::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar *detXd, TacsScalar *quantity) {
+    const TacsScalar ddvars[], TacsScalar* detXd, TacsScalar* quantity) {
   // Compute the node normal directions
   TacsScalar fn[3 * num_nodes];
   TacsShellComputeNodeNormals<basis>(Xpts, fn);
@@ -1472,7 +1472,7 @@ template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::getAverageStresses(
     int elemIndex, ElementType etype, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar *avgStresses) {
+    const TacsScalar ddvars[], TacsScalar* avgStresses) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     // Get the number of nodes associated with the visualization
     int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
@@ -1563,7 +1563,7 @@ template <class quadrature, class basis, class director, class model>
 void TACSShellElement<quadrature, basis, director, model>::getOutputData(
     int elemIndex, ElementType etype, int write_flag, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], int ld_data, TacsScalar *data) {
+    const TacsScalar ddvars[], int ld_data, TacsScalar* data) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     // Get the number of nodes associated with the visualization
     int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());

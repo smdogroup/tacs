@@ -60,7 +60,7 @@ inline void TacsLagrangeShapeFuncDerivative(const double u,
 }
 
 template <int order>
-inline void TacsLagrangeLobattoShapeFunction(const double u, double *N) {
+inline void TacsLagrangeLobattoShapeFunction(const double u, double* N) {
   if (order == 1) {
     N[0] = 1.0;
   } else if (order == 2) {
@@ -71,7 +71,7 @@ inline void TacsLagrangeLobattoShapeFunction(const double u, double *N) {
     N[1] = (1.0 - u) * (1.0 + u);
     N[2] = 0.5 * (1.0 + u) * u;
   } else {
-    const double *knots = TacsGaussLobattoPoints4;
+    const double* knots = TacsGaussLobattoPoints4;
     if (order == 5) {
       knots = TacsGaussLobattoPoints5;
     } else if (order == 6) {
@@ -83,8 +83,8 @@ inline void TacsLagrangeLobattoShapeFunction(const double u, double *N) {
 }
 
 template <int order>
-inline void TacsLagrangeLobattoShapeFuncDerivative(const double u, double *N,
-                                                   double *Nd) {
+inline void TacsLagrangeLobattoShapeFuncDerivative(const double u, double* N,
+                                                   double* Nd) {
   if (order == 1) {
     N[0] = 1.0;
   } else if (order == 2) {
@@ -102,7 +102,7 @@ inline void TacsLagrangeLobattoShapeFuncDerivative(const double u, double *N,
     Nd[1] = -2.0 * u;
     Nd[2] = 0.5 + u;
   } else {
-    const double *knots = TacsGaussLobattoPoints4;
+    const double* knots = TacsGaussLobattoPoints4;
     if (order == 5) {
       knots = TacsGaussLobattoPoints5;
     } else if (order == 6) {
@@ -270,7 +270,7 @@ class TACSShellQuadBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpFieldsOuterProduct(const double pt[],
                                           const TacsScalar jac[],
-                                          TacsScalar *mat) {
+                                          TacsScalar* mat) {
     double na[order], nb[order];
     TacsLagrangeLobattoShapeFunction<order>(pt[0], na);
     TacsLagrangeLobattoShapeFunction<order>(pt[1], nb);
@@ -281,7 +281,7 @@ class TACSShellQuadBasis {
       for (int jx = 0; jx < order; jx++) {
         double Nj = na[jx] * nb[jy];
 
-        const TacsScalar *jac1 = jac;
+        const TacsScalar* jac1 = jac;
         for (int jm = 0; jm < njrows; jm++, jac1 += njcols) {
           for (int iy = 0; iy < order; iy++) {
             for (int ix = 0; ix < order; ix++) {
@@ -321,7 +321,7 @@ class TACSShellQuadBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpGradOuterProduct(const double pt[],
                                         const TacsScalar jac[],
-                                        TacsScalar *mat) {
+                                        TacsScalar* mat) {
     double na[order], dna[order];
     double nb[order], dnb[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
@@ -334,8 +334,8 @@ class TACSShellQuadBasis {
         double Naj = dna[jx] * nb[jy];
         double Nbj = na[jx] * dnb[jy];
 
-        const TacsScalar *jac1 = jac;
-        const TacsScalar *jac2 = &jac[2 * njcols];
+        const TacsScalar* jac1 = jac;
+        const TacsScalar* jac2 = &jac[2 * njcols];
         for (int jm = 0; jm < njrows;
              jm++, jac1 += 4 * njcols, jac2 += 4 * njcols) {
           for (int iy = 0; iy < order; iy++) {
@@ -380,7 +380,7 @@ class TACSShellQuadBasis {
   static void addInterpGradMixedOuterProduct(const double pt[],
                                              const TacsScalar jac[],
                                              const TacsScalar jacT[],
-                                             TacsScalar *mat) {
+                                             TacsScalar* mat) {
     double na[order], dna[order];
     double nb[order], dnb[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
@@ -395,7 +395,7 @@ class TACSShellQuadBasis {
           double Naj = dna[jx] * nb[jy];
           double Nbj = na[jx] * dnb[jy];
 
-          const TacsScalar *jac1 = jac;
+          const TacsScalar* jac1 = jac;
           for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
             for (int iy = 0; iy < order; iy++) {
               for (int ix = 0; ix < order; ix++) {
@@ -408,7 +408,7 @@ class TACSShellQuadBasis {
                 double Na2 = Ni * Naj;
                 double Nb2 = Ni * Nbj;
 
-                const TacsScalar *jac2 = &jacT[2 * jm];
+                const TacsScalar* jac2 = &jacT[2 * jm];
                 for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
                   mat[im] += Na1 * jac1[2 * im] + Nb1 * jac1[2 * im + 1] +
                              Na2 * jac2[0] + Nb2 * jac2[1];
@@ -427,7 +427,7 @@ class TACSShellQuadBasis {
         for (int jx = 0; jx < order; jx++) {
           double Nj = na[jx] * nb[jy];
 
-          const TacsScalar *jac1 = jac;
+          const TacsScalar* jac1 = jac;
           for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
             for (int iy = 0; iy < order; iy++) {
               for (int ix = 0; ix < order; ix++) {
@@ -462,7 +462,7 @@ class TACSShellQuadBasis {
                 double Na2 = Ni * Naj;
                 double Nb2 = Ni * Nbj;
 
-                const TacsScalar *jac2 = &jacT[2 * jm];
+                const TacsScalar* jac2 = &jacT[2 * jm];
                 for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
                   mat[im] += Na2 * jac2[0] + Nb2 * jac2[1];
                 }
@@ -501,8 +501,8 @@ class TACSShellQuadBasis {
   /*
     Get the knots associated with the tying points
   */
-  static inline void getTyingKnots(const double **ty_knots_order,
-                                   const double **ty_knots_reduced) {
+  static inline void getTyingKnots(const double** ty_knots_order,
+                                   const double** ty_knots_reduced) {
     if (order == 2) {
       *ty_knots_order = TacsShellLinearTyingPoints;
       *ty_knots_reduced = TacsGaussQuadPts1;
@@ -657,7 +657,7 @@ class TACSShellQuadBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double *N0 = N;
+    const double* N0 = N;
     for (int field = 0; field < num_tying_fields; field++) {
       const int npts = getNumTyingPoints(field);
 
@@ -687,7 +687,7 @@ class TACSShellQuadBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double *N0 = N;
+    const double* N0 = N;
     for (int field = 0; field < num_tying_fields; field++) {
       const int npts = getNumTyingPoints(field);
 
@@ -715,11 +715,11 @@ class TACSShellQuadBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double *N1 = N;
+    const double* N1 = N;
     for (int field1 = 0; field1 < num_tying_fields; field1++) {
       const int npts1 = getNumTyingPoints(field1);
       for (int k1 = 0; k1 < npts1; k1++, N1++) {
-        const double *N2 = N;
+        const double* N2 = N;
         for (int field2 = 0; field2 < num_tying_fields; field2++) {
           const int npts2 = getNumTyingPoints(field2);
           const TacsScalar value =

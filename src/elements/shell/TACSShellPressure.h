@@ -22,7 +22,7 @@ class TACSShellPressure : public TACSElement {
     }
   }
 
-  const char *getObjectName() { return "TACSShellPressure"; }
+  const char* getObjectName() { return "TACSShellPressure"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -48,9 +48,9 @@ class TACSShellPressure : public TACSElement {
     return quadrature::getFaceQuadraturePoint(face, n, pt, tangent);
   }
 
-  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
-                   const TacsScalar *vars, const TacsScalar *dvars,
-                   const TacsScalar *ddvars, TacsScalar *res) {
+  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
+                   const TacsScalar* vars, const TacsScalar* dvars,
+                   const TacsScalar* ddvars, TacsScalar* res) {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 

@@ -25,8 +25,8 @@
 
   Note that this class steals the ownership of the data.
 */
-TACSBVecDepNodes::TACSBVecDepNodes(int _ndep_nodes, int **_dep_ptr,
-                                   int **_dep_conn, double **_dep_weights) {
+TACSBVecDepNodes::TACSBVecDepNodes(int _ndep_nodes, int** _dep_ptr,
+                                   int** _dep_conn, double** _dep_weights) {
   ndep_nodes = _ndep_nodes;
   dep_ptr = *_dep_ptr;
   *_dep_ptr = NULL;
@@ -45,8 +45,8 @@ TACSBVecDepNodes::~TACSBVecDepNodes() {
 /*
   Get the dependent connectivity and weights
 */
-int TACSBVecDepNodes::getDepNodes(const int **_dep_ptr, const int **_dep_conn,
-                                  const double **_dep_weights) {
+int TACSBVecDepNodes::getDepNodes(const int** _dep_ptr, const int** _dep_conn,
+                                  const double** _dep_weights) {
   if (_dep_ptr) {
     *_dep_ptr = dep_ptr;
   }
@@ -62,7 +62,7 @@ int TACSBVecDepNodes::getDepNodes(const int **_dep_ptr, const int **_dep_conn,
 /*
   Get the dependent node connectivity for reordering
 */
-int TACSBVecDepNodes::getDepNodeReorder(const int **_dep_ptr, int **_dep_conn) {
+int TACSBVecDepNodes::getDepNodeReorder(const int** _dep_ptr, int** _dep_conn) {
   if (_dep_ptr) {
     *_dep_ptr = dep_ptr;
   }
@@ -79,8 +79,8 @@ int TACSBVecDepNodes::getDepNodeReorder(const int **_dep_ptr, int **_dep_conn) {
   rmap:   the variable->processor map for the unknowns
   bcs:    the boundary conditions associated with this vector
 */
-TACSBVec::TACSBVec(TACSNodeMap *map, int _bsize, TACSBVecDistribute *_ext_dist,
-                   TACSBVecDepNodes *_dep_nodes) {
+TACSBVec::TACSBVec(TACSNodeMap* map, int _bsize, TACSBVecDistribute* _ext_dist,
+                   TACSBVecDepNodes* _dep_nodes) {
   node_map = map;
   node_map->incref();
 
@@ -188,7 +188,7 @@ TACSBVec::~TACSBVec() {
 /*
   Get the local size of the vector on this processor
 */
-void TACSBVec::getSize(int *_size) { *_size = size; }
+void TACSBVec::getSize(int* _size) { *_size = size; }
 
 /*
   Compute the norm of the vector
@@ -200,7 +200,7 @@ TacsScalar TACSBVec::norm() {
   res = 0.0;
   int i = 0;
   int rem = size % 4;
-  TacsScalar *y = x;
+  TacsScalar* y = x;
   for (; i < rem; i++) {
     res += y[0] * y[0];
     y++;
@@ -234,9 +234,9 @@ void TACSBVec::scale(TacsScalar alpha) {
 /*
   Compute the dot product of two vectors
 */
-TacsScalar TACSBVec::dot(TACSVec *tvec) {
+TacsScalar TACSBVec::dot(TACSVec* tvec) {
   TacsScalar sum = 0.0;
-  TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
+  TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec) {
     if (vec->size != size) {
       fprintf(stderr, "TACSBVec::dot Error, the sizes must be the same\n");
@@ -248,8 +248,8 @@ TacsScalar TACSBVec::dot(TACSVec *tvec) {
     res = 0.0;
     int i = 0;
     int rem = size % 4;
-    TacsScalar *y = x;
-    TacsScalar *z = vec->x;
+    TacsScalar* y = x;
+    TacsScalar* z = vec->x;
     for (; i < rem; i++) {
       res += y[0] * z[0];
       y++;
@@ -280,11 +280,11 @@ TacsScalar TACSBVec::dot(TACSVec *tvec) {
   computations since there are fewer gather operations for the same
   number of dot products.
 */
-void TACSBVec::mdot(TACSVec **tvec, TacsScalar *ans, int nvecs) {
+void TACSBVec::mdot(TACSVec** tvec, TacsScalar* ans, int nvecs) {
   for (int k = 0; k < nvecs; k++) {
     ans[k] = 0.0;
 
-    TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec[k]);
+    TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec[k]);
     if (vec) {
       if (vec->size != size) {
         fprintf(stderr, "TACSBVec::dot Error, the sizes must be the same\n");
@@ -295,8 +295,8 @@ void TACSBVec::mdot(TACSVec **tvec, TacsScalar *ans, int nvecs) {
       TacsScalar res = 0.0;
       int i = 0;
       int rem = size % 4;
-      TacsScalar *y = x;
-      TacsScalar *z = vec->x;
+      TacsScalar* y = x;
+      TacsScalar* z = vec->x;
       for (; i < rem; i++) {
         res += y[0] * z[0];
         y++;
@@ -327,8 +327,8 @@ void TACSBVec::mdot(TACSVec **tvec, TacsScalar *ans, int nvecs) {
 /*
   Compute y = alpha*x + y
 */
-void TACSBVec::axpy(TacsScalar alpha, TACSVec *tvec) {
-  TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
+void TACSBVec::axpy(TacsScalar alpha, TACSVec* tvec) {
+  TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec) {
     if (vec->size != size) {
@@ -348,8 +348,8 @@ void TACSBVec::axpy(TacsScalar alpha, TACSVec *tvec) {
 /*
   Compute x <- alpha *vec + beta *x
 */
-void TACSBVec::axpby(TacsScalar alpha, TacsScalar beta, TACSVec *tvec) {
-  TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
+void TACSBVec::axpby(TacsScalar alpha, TacsScalar beta, TACSVec* tvec) {
+  TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec);
 
   if (vec) {
     if (vec->size != size) {
@@ -359,8 +359,8 @@ void TACSBVec::axpby(TacsScalar alpha, TacsScalar beta, TACSVec *tvec) {
 
     int i = 0;
     int rem = size % 4;
-    TacsScalar *y = x;
-    TacsScalar *z = vec->x;
+    TacsScalar* y = x;
+    TacsScalar* z = vec->x;
 
     for (; i < rem; i++) {
       y[0] = beta * y[0] + alpha * z[0];
@@ -386,8 +386,8 @@ void TACSBVec::axpby(TacsScalar alpha, TacsScalar beta, TACSVec *tvec) {
 /*
   Copy the values x <- vec->x
 */
-void TACSBVec::copyValues(TACSVec *tvec) {
-  TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
+void TACSBVec::copyValues(TACSVec* tvec) {
+  TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec);
   if (vec) {
     if (vec->size != size) {
       fprintf(stderr,
@@ -433,7 +433,7 @@ void TACSBVec::zeroEntries() {
 void TACSBVec::set(TacsScalar val) {
   int i = 0;
   int rem = size % 4;
-  TacsScalar *y = x;
+  TacsScalar* y = x;
 
   for (; i < rem; i++) {
     y[0] = val;
@@ -469,7 +469,7 @@ void TACSBVec::setRand(double lower, double upper) {
     MPI_Comm_size(comm, &mpi_size);
     MPI_Comm_rank(comm, &mpi_rank);
 
-    const int *owner_range;
+    const int* owner_range;
     node_map->getOwnerRange(&owner_range);
 
     // Generate random values for each processor sequentially.
@@ -493,7 +493,7 @@ void TACSBVec::setRand(double lower, double upper) {
 /*
   Retrieve the locally stored values from the array
 */
-int TACSBVec::getArray(TacsScalar **array) {
+int TACSBVec::getArray(TacsScalar** array) {
   if (array) {
     *array = x;
   }
@@ -503,7 +503,7 @@ int TACSBVec::getArray(TacsScalar **array) {
 /*
   Retrieve the array of dependent node values
 */
-int TACSBVec::getDepArray(TacsScalar **array) {
+int TACSBVec::getDepArray(TacsScalar** array) {
   if (array) {
     *array = x_dep;
   }
@@ -513,7 +513,7 @@ int TACSBVec::getDepArray(TacsScalar **array) {
 /*
   Retrieve the external values stored on this processor
 */
-int TACSBVec::getExtArray(TacsScalar **array) {
+int TACSBVec::getExtArray(TacsScalar** array) {
   if (array) {
     *array = x_ext;
   }
@@ -523,30 +523,30 @@ int TACSBVec::getExtArray(TacsScalar **array) {
 /*
   Access the var map
 */
-TACSNodeMap *TACSBVec::getNodeMap() { return node_map; }
+TACSNodeMap* TACSBVec::getNodeMap() { return node_map; }
 
 /*
   Retrieve the external index values
 */
-TACSBVecIndices *TACSBVec::getBVecIndices() { return ext_indices; }
+TACSBVecIndices* TACSBVec::getBVecIndices() { return ext_indices; }
 
 /*
   Retrieve the external value distribution object
 */
-TACSBVecDistribute *TACSBVec::getBVecDistribute() { return ext_dist; }
+TACSBVecDistribute* TACSBVec::getBVecDistribute() { return ext_dist; }
 
 /*
   Retrieve the dependent node data
 */
-TACSBVecDepNodes *TACSBVec::getBVecDepNodes() { return dep_nodes; }
+TACSBVecDepNodes* TACSBVec::getBVecDepNodes() { return dep_nodes; }
 
 /*
   Apply the Dirichlet boundary conditions to the vector
 */
-void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
-  TacsScalar *uvals = NULL;
+void TACSBVec::applyBCs(TACSBcMap* bcmap, TACSVec* tvec) {
+  TacsScalar* uvals = NULL;
   if (tvec) {
-    TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
+    TACSBVec* vec = dynamic_cast<TACSBVec*>(tvec);
     vec->getArray(&uvals);
   }
 
@@ -556,12 +556,12 @@ void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
     MPI_Comm_rank(comm, &mpi_rank);
 
     // Get ownership range
-    const int *owner_range;
+    const int* owner_range;
     node_map->getOwnerRange(&owner_range);
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
-    TacsScalar *values;
+    TacsScalar* values;
     int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     if (uvals) {
@@ -597,19 +597,19 @@ void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
 /*
   Set the boundary conditions values (both zero and non-zero values)
 */
-void TACSBVec::setBCs(TACSBcMap *bcmap) {
+void TACSBVec::setBCs(TACSBcMap* bcmap) {
   // apply the boundary conditions
   if (x) {
     int mpi_rank;
     MPI_Comm_rank(comm, &mpi_rank);
 
     // Get ownership range
-    const int *owner_range;
+    const int* owner_range;
     node_map->getOwnerRange(&owner_range);
 
     // Get the values from the boundary condition arrays
     const int *nodes, *vars;
-    TacsScalar *values;
+    TacsScalar* values;
     int nbcs = bcmap->getBCs(&nodes, &vars, &values);
 
     for (int i = 0; i < nbcs; i++) {
@@ -630,7 +630,7 @@ void TACSBVec::setBCs(TACSBcMap *bcmap) {
 /*
   Return the object name
 */
-const char *TACSBVec::getObjectName() { return vecName; }
+const char* TACSBVec::getObjectName() { return vecName; }
 
 /*!
   Write the values to a file.
@@ -642,17 +642,17 @@ const char *TACSBVec::getObjectName() { return vecName; }
   int                      The length of the vector
   len *sizeof(TacsScalar)  The vector entries
 */
-int TACSBVec::writeToFile(const char *filename) {
+int TACSBVec::writeToFile(const char* filename) {
   int mpi_rank, mpi_size;
   MPI_Comm_rank(comm, &mpi_rank);
   MPI_Comm_size(comm, &mpi_size);
 
   // Copy the filename
-  char *fname = new char[strlen(filename) + 1];
+  char* fname = new char[strlen(filename) + 1];
   strcpy(fname, filename);
 
   // Get the range of variable numbers
-  int *range = new int[mpi_size + 1];
+  int* range = new int[mpi_size + 1];
   range[0] = 0;
   MPI_Allgather(&size, 1, MPI_INT, &range[1], 1, MPI_INT, comm);
   for (int i = 0; i < mpi_size; i++) {
@@ -696,17 +696,17 @@ int TACSBVec::writeToFile(const char *filename) {
   int                      The length of the vector
   len *sizeof(TacsScalar)  The vector entries
 */
-int TACSBVec::readFromFile(const char *filename) {
+int TACSBVec::readFromFile(const char* filename) {
   int mpi_rank, mpi_size;
   MPI_Comm_rank(comm, &mpi_rank);
   MPI_Comm_size(comm, &mpi_size);
 
   // Copy the filename
-  char *fname = new char[strlen(filename) + 1];
+  char* fname = new char[strlen(filename) + 1];
   strcpy(fname, filename);
 
   // Get the range of variable numbers
-  int *range = new int[mpi_size + 1];
+  int* range = new int[mpi_size + 1];
   range[0] = 0;
   MPI_Allgather(&size, 1, MPI_INT, &range[1], 1, MPI_INT, comm);
   for (int i = 0; i < mpi_size; i++) {
@@ -753,14 +753,14 @@ int TACSBVec::readFromFile(const char *filename) {
 /*
   Add values to the local entries of the array
 */
-void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
+void TACSBVec::setValues(int n, const int* index, const TacsScalar* vals,
                          TACSBVecOperation op) {
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   node_map->getOwnerRange(&owner_range);
 
   // Loop over the values
@@ -771,7 +771,7 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
     if (index[i] >= owner_range[rank] && index[i] < owner_range[rank + 1]) {
       // Find the offset into the local array
       int x_index = bsize * (index[i] - owner_range[rank]);
-      TacsScalar *y = &x[x_index];
+      TacsScalar* y = &x[x_index];
 
       if (op == TACS_INSERT_VALUES) {
         // Set the values into the array
@@ -794,7 +794,7 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
     } else if (index[i] < 0) {
       // Compute the dependent node
       int dep_index = -bsize * (index[i] + 1);
-      TacsScalar *y = &x_dep[dep_index];
+      TacsScalar* y = &x_dep[dep_index];
 
       if (op == TACS_INSERT_VALUES) {
         // Insert the values
@@ -816,7 +816,7 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
       }
     } else {
       int ext_index = bsize * ext_indices->findIndex(index[i]);
-      TacsScalar *y = &x_ext[ext_index];
+      TacsScalar* y = &x_ext[ext_index];
 
       if (op == TACS_INSERT_VALUES) {
         // Insert the values into the array
@@ -849,15 +849,15 @@ void TACSBVec::beginSetValues(TACSBVecOperation op) {
   MPI_Comm_rank(comm, &rank);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   node_map->getOwnerRange(&owner_range);
 
   if (dep_nodes && (op == TACS_ADD_VALUES)) {
     const int *dep_ptr, *dep_conn;
-    const double *dep_weights;
+    const double* dep_weights;
     int ndep = dep_nodes->getDepNodes(&dep_ptr, &dep_conn, &dep_weights);
 
-    const TacsScalar *z = x_dep;
+    const TacsScalar* z = x_dep;
     for (int i = 0; i < ndep; i++, z += bsize) {
       for (int jp = dep_ptr[i]; jp < dep_ptr[i + 1]; jp++) {
         // Check if the dependent node is locally owned
@@ -865,7 +865,7 @@ void TACSBVec::beginSetValues(TACSBVecOperation op) {
             dep_conn[jp] < owner_range[rank + 1]) {
           // Find the offset into the local array
           int x_index = bsize * (dep_conn[jp] - owner_range[rank]);
-          TacsScalar *y = &x[x_index];
+          TacsScalar* y = &x[x_index];
 
           // Add the values to the array
           for (int k = 0; k < bsize; k++, y++) {
@@ -874,7 +874,7 @@ void TACSBVec::beginSetValues(TACSBVecOperation op) {
         } else {
           // Add the dependent values to external array
           int ext_index = bsize * ext_indices->findIndex(dep_conn[jp]);
-          TacsScalar *y = &x_ext[ext_index];
+          TacsScalar* y = &x_ext[ext_index];
 
           // Add the values to the array
           for (int k = 0; k < bsize; k++, y++) {
@@ -933,16 +933,16 @@ void TACSBVec::endDistributeValues() {
     MPI_Comm_rank(comm, &rank);
 
     // Get the ownership range
-    const int *owner_range;
+    const int* owner_range;
     node_map->getOwnerRange(&owner_range);
 
     // Get the dependent node information
     const int *dep_ptr, *dep_conn;
-    const double *dep_weights;
+    const double* dep_weights;
     int ndep = dep_nodes->getDepNodes(&dep_ptr, &dep_conn, &dep_weights);
 
     // Set a pointer into the dependent variables
-    TacsScalar *z = x_dep;
+    TacsScalar* z = x_dep;
     for (int i = 0; i < ndep; i++, z += bsize) {
       // Zero the variables
       for (int k = 0; k < bsize; k++) {
@@ -956,7 +956,7 @@ void TACSBVec::endDistributeValues() {
             dep_conn[jp] < owner_range[rank + 1]) {
           // Find the offset into the local array
           int x_index = bsize * (dep_conn[jp] - owner_range[rank]);
-          TacsScalar *y = &x[x_index];
+          TacsScalar* y = &x[x_index];
 
           // Add the values to the array
           for (int k = 0; k < bsize; k++, y++) {
@@ -964,7 +964,7 @@ void TACSBVec::endDistributeValues() {
           }
         } else {
           int ext_index = bsize * ext_indices->findIndex(dep_conn[jp]);
-          TacsScalar *y = &x_ext[ext_index];
+          TacsScalar* y = &x_ext[ext_index];
 
           // Add the values to the array
           for (int k = 0; k < bsize; k++, y++) {
@@ -979,13 +979,13 @@ void TACSBVec::endDistributeValues() {
 /*
   Get the values from the vector
 */
-int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
+int TACSBVec::getValues(int n, const int* index, TacsScalar* vals) {
   // Get the MPI rank
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   node_map->getOwnerRange(&owner_range);
 
   // Fail flag
@@ -999,7 +999,7 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
     if (index[i] >= owner_range[rank] && index[i] < owner_range[rank + 1]) {
       // Find the offset into the local array
       int x_index = bsize * (index[i] - owner_range[rank]);
-      TacsScalar *y = &x[x_index];
+      TacsScalar* y = &x[x_index];
 
       // Add the values to the array
       for (int k = 0; k < bsize; k++, vals++, y++) {
@@ -1008,7 +1008,7 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
     } else if (index[i] < 0) {
       // Compute the dependent node
       int dep_index = -bsize * (index[i] + 1);
-      TacsScalar *y = &x_dep[dep_index];
+      TacsScalar* y = &x_dep[dep_index];
 
       // Add the values to the array
       if (dep_index < dep_size) {
@@ -1020,7 +1020,7 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
       }
     } else {
       int ext_index = bsize * ext_indices->findIndex(index[i]);
-      TacsScalar *y = &x_ext[ext_index];
+      TacsScalar* y = &x_ext[ext_index];
 
       if (ext_index >= 0) {
         // Add the values to the array
@@ -1036,4 +1036,4 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
   return fail;
 }
 
-const char *TACSBVec::vecName = "TACSBVec";
+const char* TACSBVec::vecName = "TACSBVec";

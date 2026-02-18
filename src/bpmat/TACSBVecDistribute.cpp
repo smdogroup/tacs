@@ -35,11 +35,11 @@
   functions may use it as well.
 */
 
-static const int *arg_sort_list = NULL;
+static const int* arg_sort_list = NULL;
 
-static int compare_arg_sort(const void *a, const void *b) {
+static int compare_arg_sort(const void* a, const void* b) {
   // return (*(int*)a - *(int*)b)
-  return arg_sort_list[*(int *)a] - arg_sort_list[*(int *)b];
+  return arg_sort_list[*(int*)a] - arg_sort_list[*(int*)b];
 }
 
 /*
@@ -50,7 +50,7 @@ static int compare_arg_sort(const void *a, const void *b) {
   for freeing the memory. The pointer is set to NULL, but can be
   accessed with the getIndices function.
 */
-TACSBVecIndices::TACSBVecIndices(int **_indices, int _nindices) {
+TACSBVecIndices::TACSBVecIndices(int** _indices, int _nindices) {
   indices = *_indices;
   *_indices = NULL;
   index_args = NULL;
@@ -76,9 +76,9 @@ TACSBVecIndices::TACSBVecIndices(int **_indices, int _nindices) {
 /*
   Merge two arrays of indices together
 */
-TACSBVecIndices::TACSBVecIndices(TACSBVecIndices *idx1, TACSBVecIndices *idx2) {
+TACSBVecIndices::TACSBVecIndices(TACSBVecIndices* idx1, TACSBVecIndices* idx2) {
   nindices = idx1->nindices + idx2->nindices;
-  int *temp = new int[nindices];
+  int* temp = new int[nindices];
   memcpy(temp, idx1->indices, idx1->nindices * sizeof(int));
   memcpy(&temp[idx1->nindices], idx2->indices, idx2->nindices * sizeof(int));
 
@@ -109,7 +109,7 @@ TACSBVecIndices::~TACSBVecIndices() {
 */
 int TACSBVecIndices::getNumIndices() { return nindices; }
 
-int TACSBVecIndices::getIndices(const int **_indices) {
+int TACSBVecIndices::getIndices(const int** _indices) {
   *_indices = indices;
   return nindices;
 }
@@ -221,38 +221,38 @@ int TACSBVecIndices::findIndex(int var) {
   The following are block-specific implementations of
   code required to copy over values from one array to another
 */
-void VecDistGetVars(int bsize, int nvars, const int *vars, int lower,
-                    TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars(int bsize, int nvars, const int *vars, int lower,
-                    TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+void VecDistGetVars(int bsize, int nvars, const int* vars, int lower,
+                    TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars(int bsize, int nvars, const int* vars, int lower,
+                    TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
 
-void VecDistGetVars1(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars1(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+void VecDistGetVars1(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars1(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
 
-void VecDistGetVars2(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars2(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+void VecDistGetVars2(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars2(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
 
-void VecDistGetVars3(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars3(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistGetVars4(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars4(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistGetVars5(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars5(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+void VecDistGetVars3(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars3(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistGetVars4(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars4(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistGetVars5(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars5(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
 
-void VecDistGetVars6(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
-void VecDistSetVars6(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+void VecDistGetVars6(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+void VecDistSetVars6(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
 
 /*!
   Distribute vector components to other processors.
@@ -296,8 +296,8 @@ void VecDistSetVars6(int bsize, int nvars, const int *vars, int lower,
   (The buffer on the local/requesting process will be an offset into
   index into the local array supplied by the user).
 */
-TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap *_rmap,
-                                       TACSBVecIndices *_bindex) {
+TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap* _rmap,
+                                       TACSBVecIndices* _bindex) {
   rmap = _rmap;
   rmap->incref();
 
@@ -312,7 +312,7 @@ TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap *_rmap,
   bindex = _bindex;
   bindex->incref();
   bindex->setUpInverse();
-  const int *vars;
+  const int* vars;
   int nvars = bindex->getIndices(&vars);
 
   // Check whether the indices are sorted
@@ -341,7 +341,7 @@ TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap *_rmap,
 
     // For each value, go through and find the matching index
     for (int i = 0; i < nvars_unsorted; i++) {
-      int *item = TacsSearchArray(ext_unsorted_index[i], next_vars, ext_sorted);
+      int* item = TacsSearchArray(ext_unsorted_index[i], next_vars, ext_sorted);
 
       // ext_unsorted_index[i] points from variable ext_unsorted[i] to the
       // index of the array in ext_sorted
@@ -358,17 +358,17 @@ TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap *_rmap,
 
   // Count up the number of processors that variables will be accquired from
   // Number of variables required by mpiRank from processor i
-  int *full_ext_count = new int[mpi_size];
-  int *full_ext_ptr = new int[mpi_size + 1];
+  int* full_ext_count = new int[mpi_size];
+  int* full_ext_ptr = new int[mpi_size + 1];
   full_ext_ptr[0] = 0;
 
   // Number of variables requested from mpiRank by processor i
-  int *full_req_count = new int[mpi_size];
-  int *full_req_ptr = new int[mpi_size + 1];
+  int* full_req_count = new int[mpi_size];
+  int* full_req_ptr = new int[mpi_size + 1];
   full_req_ptr[0] = 0;
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   rmap->getOwnerRange(&owner_range);
 
   // Match the intervals for the owner range into the extneral variables
@@ -396,7 +396,7 @@ TACSBVecDistribute::TACSBVecDistribute(TACSNodeMap *_rmap,
   req_vars = new int[full_req_ptr[mpi_size]];
 
   // Transmit the external variables to the owners
-  MPI_Alltoallv((void *)ext_vars, full_ext_count, full_ext_ptr, MPI_INT,
+  MPI_Alltoallv((void*)ext_vars, full_ext_count, full_ext_ptr, MPI_INT,
                 req_vars, full_req_count, full_req_ptr, MPI_INT, comm);
 
   // Delete the requesting processors
@@ -490,8 +490,8 @@ TACSBVecDistribute::~TACSBVecDistribute() {
 /*
   Create a context
 */
-TACSBVecDistCtx *TACSBVecDistribute::createCtx(int bsize) {
-  TACSBVecDistCtx *ctx = new TACSBVecDistCtx(this, bsize);
+TACSBVecDistCtx* TACSBVecDistribute::createCtx(int bsize) {
+  TACSBVecDistCtx* ctx = new TACSBVecDistCtx(this, bsize);
   if (!sorted_flag) {
     ctx->ext_sorted_vals = new TacsScalar[bsize * next_vars];
   }
@@ -521,7 +521,7 @@ MPI_Comm TACSBVecDistribute::getMPIComm() { return comm; }
 /*
   Get the index list
 */
-TACSBVecIndices *TACSBVecDistribute::getIndices() { return bindex; }
+TACSBVecIndices* TACSBVecDistribute::getIndices() { return bindex; }
 
 /*!
   Initiate the distribution of values from vec to the local array.
@@ -540,8 +540,8 @@ TACSBVecIndices *TACSBVecDistribute::getIndices() { return bindex; }
   Note that for unsorted input the output is:
   local[i] = vec[ext_unsorted[i]]
 */
-void TACSBVecDistribute::beginForward(TACSBVecDistCtx *ctx, TacsScalar *global,
-                                      TacsScalar *local,
+void TACSBVecDistribute::beginForward(TACSBVecDistCtx* ctx, TacsScalar* global,
+                                      TacsScalar* local,
                                       const int node_offset) {
   if (this != ctx->me) {
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
@@ -550,10 +550,10 @@ void TACSBVecDistribute::beginForward(TACSBVecDistCtx *ctx, TacsScalar *global,
 
   // Set pointers to the context data
   int bsize = ctx->bsize;
-  TacsScalar *reqvals = ctx->reqvals;
-  TacsScalar *ext_sorted_vals = ctx->ext_sorted_vals;
-  MPI_Request *sends = ctx->sends;
-  MPI_Request *recvs = ctx->recvs;
+  TacsScalar* reqvals = ctx->reqvals;
+  TacsScalar* ext_sorted_vals = ctx->ext_sorted_vals;
+  MPI_Request* sends = ctx->sends;
+  MPI_Request* recvs = ctx->recvs;
 
   // Get the rank/size
   int mpi_rank;
@@ -563,7 +563,7 @@ void TACSBVecDistribute::beginForward(TACSBVecDistCtx *ctx, TacsScalar *global,
   initImpl(bsize);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   rmap->getOwnerRange(&owner_range);
 
   // Set the lower offset
@@ -618,8 +618,8 @@ void TACSBVecDistribute::beginForward(TACSBVecDistCtx *ctx, TacsScalar *global,
 /*
   Finish the forward transfer of the data to the local vector
 */
-void TACSBVecDistribute::endForward(TACSBVecDistCtx *ctx, TacsScalar *global,
-                                    TacsScalar *local, const int node_offset) {
+void TACSBVecDistribute::endForward(TACSBVecDistCtx* ctx, TacsScalar* global,
+                                    TacsScalar* local, const int node_offset) {
   if (this != ctx->me) {
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -648,8 +648,8 @@ void TACSBVecDistribute::endForward(TACSBVecDistCtx *ctx, TacsScalar *global,
   for i in nvars:
   Vec[vars[i]] += local[i]
 */
-void TACSBVecDistribute::beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
-                                      TacsScalar *global,
+void TACSBVecDistribute::beginReverse(TACSBVecDistCtx* ctx, TacsScalar* local,
+                                      TacsScalar* global,
                                       TACSBVecOperation op) {
   if (this != ctx->me) {
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
@@ -658,10 +658,10 @@ void TACSBVecDistribute::beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
 
   // Set pointers to the context data
   int bsize = ctx->bsize;
-  TacsScalar *reqvals = ctx->reqvals;
-  TacsScalar *ext_sorted_vals = ctx->ext_sorted_vals;
-  MPI_Request *sends = ctx->sends;
-  MPI_Request *recvs = ctx->recvs;
+  TacsScalar* reqvals = ctx->reqvals;
+  TacsScalar* ext_sorted_vals = ctx->ext_sorted_vals;
+  MPI_Request* sends = ctx->sends;
+  MPI_Request* recvs = ctx->recvs;
 
   // Get the rank/size
   int mpi_rank;
@@ -671,7 +671,7 @@ void TACSBVecDistribute::beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
   initImpl(bsize);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   rmap->getOwnerRange(&owner_range);
   int lower = bsize * owner_range[mpi_rank];
 
@@ -714,8 +714,8 @@ void TACSBVecDistribute::beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
   End the reverse transfer of information from the local array to the
   vector using the supplied operation.
 */
-void TACSBVecDistribute::endReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
-                                    TacsScalar *global, TACSBVecOperation op) {
+void TACSBVecDistribute::endReverse(TACSBVecDistCtx* ctx, TacsScalar* local,
+                                    TacsScalar* global, TACSBVecOperation op) {
   if (this != ctx->me) {
     fprintf(stderr, "TACSBVecDistribute: Inconsistent context\n");
     return;
@@ -728,7 +728,7 @@ void TACSBVecDistribute::endReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
   MPI_Comm_rank(comm, &mpi_rank);
 
   // Get the ownership range
-  const int *owner_range;
+  const int* owner_range;
   rmap->getOwnerRange(&owner_range);
 
   // Set the lower offset
@@ -742,9 +742,9 @@ void TACSBVecDistribute::endReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
            global, op);
 }
 
-const char *TACSBVecDistribute::getObjectName() { return name; }
+const char* TACSBVecDistribute::getObjectName() { return name; }
 
-const char *TACSBVecDistribute::name = "TACSBVecDistribute";
+const char* TACSBVecDistribute::name = "TACSBVecDistribute";
 
 void TACSBVecDistribute::initImpl(int bsize) {
   bgetvars = VecDistGetVars;
@@ -790,8 +790,8 @@ void TACSBVecDistribute::initImpl(int bsize) {
 
   y[i] op x[var[i]]
 */
-void VecDistGetVars(int bsize, int nvars, const int *vars, int lower,
-                    TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars(int bsize, int nvars, const int* vars, int lower,
+                    TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = bsize * vars[i] - lower;
@@ -827,8 +827,8 @@ void VecDistGetVars(int bsize, int nvars, const int *vars, int lower,
 
   y[var[i]] op x[i]
 */
-void VecDistSetVars(int bsize, int nvars, const int *vars, int lower,
-                    TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars(int bsize, int nvars, const int* vars, int lower,
+                    TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = bsize * vars[i] - lower;
@@ -861,8 +861,8 @@ void VecDistSetVars(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 1
 // ---------------
-void VecDistGetVars1(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars1(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = vars[i] - lower;
@@ -886,8 +886,8 @@ void VecDistGetVars1(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars1(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars1(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = vars[i] - lower;
@@ -914,8 +914,8 @@ void VecDistSetVars1(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 2
 // ---------------
-void VecDistGetVars2(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars2(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 2 * vars[i] - lower;
@@ -944,8 +944,8 @@ void VecDistGetVars2(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars2(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars2(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 2 * vars[i] - lower;
@@ -977,8 +977,8 @@ void VecDistSetVars2(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 3
 // ---------------
-void VecDistGetVars3(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars3(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 3 * vars[i] - lower;
@@ -1012,8 +1012,8 @@ void VecDistGetVars3(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars3(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars3(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 3 * vars[i] - lower;
@@ -1049,8 +1049,8 @@ void VecDistSetVars3(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 4
 // --------------
-void VecDistGetVars4(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars4(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 4 * vars[i] - lower;
@@ -1089,8 +1089,8 @@ void VecDistGetVars4(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars4(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars4(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 4 * vars[i] - lower;
@@ -1132,8 +1132,8 @@ void VecDistSetVars4(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 5
 // ---------------
-void VecDistGetVars5(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars5(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 5 * vars[i] - lower;
@@ -1177,8 +1177,8 @@ void VecDistGetVars5(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars5(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars5(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 5 * vars[i] - lower;
@@ -1225,8 +1225,8 @@ void VecDistSetVars5(int bsize, int nvars, const int *vars, int lower,
 // ---------------
 // Block size == 6
 // ---------------
-void VecDistGetVars6(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistGetVars6(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 6 * vars[i] - lower;
@@ -1275,8 +1275,8 @@ void VecDistGetVars6(int bsize, int nvars, const int *vars, int lower,
   }
 }
 
-void VecDistSetVars6(int bsize, int nvars, const int *vars, int lower,
-                     TacsScalar *x, TacsScalar *y, TACSBVecOperation op) {
+void VecDistSetVars6(int bsize, int nvars, const int* vars, int lower,
+                     TacsScalar* x, TacsScalar* y, TACSBVecOperation op) {
   if (op == TACS_INSERT_VALUES) {
     for (int i = 0; i < nvars; i++) {
       int v = 6 * vars[i] - lower;
@@ -1340,7 +1340,7 @@ TACSBVecDistCtx::~TACSBVecDistCtx() {
   }
 }
 
-TACSBVecDistCtx::TACSBVecDistCtx(TACSBVecDistribute *_me, int _bsize) {
+TACSBVecDistCtx::TACSBVecDistCtx(TACSBVecDistribute* _me, int _bsize) {
   bsize = _bsize;
   me = _me;
   ext_sorted_vals = NULL;

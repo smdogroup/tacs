@@ -190,7 +190,7 @@ void TACSElementBasis::addJacobianTransformXptSens(
     det3x3Sens(Xd, t);
 
     // Multiply the derivative by df/d(detXd)
-    TacsScalar *T = t;
+    TacsScalar* T = t;
     for (int i = 0; i < 9; i++, T++) {
       T[0] *= dfddetXd;
     }
@@ -220,7 +220,7 @@ void TACSElementBasis::addJacobianTransformXptSens(
     det2x2Sens(Xd, t);
 
     // Multiply the derivative by df/d(detXd)
-    TacsScalar *T = t;
+    TacsScalar* T = t;
     for (int i = 0; i < 4; i++, T++) {
       T[0] *= dfddetXd;
     }
@@ -294,7 +294,7 @@ TacsScalar TACSElementBasis::getFieldGradient(
     TacsScalar detXd = inv3x3(Xd, J);
 
     // U,x = U,xi * J
-    TacsScalar *ux = Ux;
+    TacsScalar* ux = Ux;
     for (int j = 0; j < vars_per_node; j++) {
       mat3x3MultTrans(J, &Ud[3 * j], ux);
       ux += 3;
@@ -306,7 +306,7 @@ TacsScalar TACSElementBasis::getFieldGradient(
     TacsScalar detXd = inv2x2(Xd, J);
 
     // U,x = U,xi * J
-    TacsScalar *ux = Ux;
+    TacsScalar* ux = Ux;
     for (int j = 0; j < vars_per_node; j++) {
       mat2x2MultTrans(J, &Ud[2 * j], ux);
       ux += 2;
@@ -361,13 +361,13 @@ TacsScalar TACSElementBasis::getFieldGradient(
     TacsScalar detXd = inv3x3(Xd, J);
 
     // U,x = U,xi * J
-    TacsScalar *ux = Ux;
+    TacsScalar* ux = Ux;
     for (int j = 0; j < vars_per_node; j++) {
       mat3x3MultTrans(J, &Ud[3 * j], ux);
       ux += 3;
     }
 
-    TacsScalar *px = Psix;
+    TacsScalar* px = Psix;
     for (int j = 0; j < vars_per_node; j++) {
       mat3x3MultTrans(J, &Psid[3 * j], px);
       px += 3;
@@ -379,13 +379,13 @@ TacsScalar TACSElementBasis::getFieldGradient(
     TacsScalar detXd = inv2x2(Xd, J);
 
     // U,x = U,xi * J
-    TacsScalar *ux = Ux;
+    TacsScalar* ux = Ux;
     for (int j = 0; j < vars_per_node; j++) {
       mat2x2MultTrans(J, &Ud[2 * j], ux);
       ux += 2;
     }
 
-    TacsScalar *px = Psix;
+    TacsScalar* px = Psix;
     for (int j = 0; j < vars_per_node; j++) {
       mat2x2MultTrans(J, &Psid[2 * j], px);
       px += 2;
@@ -530,7 +530,7 @@ void TACSElementBasis::addFieldGradientXptSens(
     det2x2Sens(Xd, t);
 
     // Multiply the derivative by df/d(detXd)
-    TacsScalar *T = t;
+    TacsScalar* T = t;
     for (int i = 0; i < 4; i++, T++) {
       T[0] *= dfddetXd;
     }
@@ -715,7 +715,7 @@ void TACSElementBasis::addFieldGradientXptSens(
     det2x2Sens(Xd, t);
 
     // Multiply the derivative by df/d(detXd)
-    TacsScalar *T = t;
+    TacsScalar* T = t;
     for (int i = 0; i < 4; i++, T++) {
       T[0] *= dfddetXd;
     }
@@ -841,8 +841,8 @@ void TACSElementBasis::scaleWeakMatrix(const TacsScalar weight,
                                        const TacsScalar alpha,
                                        const TacsScalar beta,
                                        const TacsScalar gamma,
-                                       const int Jac_nnz, const int *Jac_pairs,
-                                       TacsScalar *Jac) {
+                                       const int Jac_nnz, const int* Jac_pairs,
+                                       TacsScalar* Jac) {
   const int num_params = getNumParameters();
 
   for (int ii = 0; ii < Jac_nnz; ii++) {
@@ -868,8 +868,8 @@ void TACSElementBasis::scaleWeakMatrix(const TacsScalar weight,
 void TACSElementBasis::addWeakMatrix(int n, const double pt[],
                                      const TacsScalar J[],
                                      const int vars_per_node, const int Jac_nnz,
-                                     const int *Jac_pairs,
-                                     const TacsScalar *Jac, TacsScalar *mat) {
+                                     const int* Jac_pairs,
+                                     const TacsScalar* Jac, TacsScalar* mat) {
   const int num_nodes = getNumNodes();
   const int num_params = getNumParameters();
   const int num_vars = num_nodes * vars_per_node;
@@ -909,7 +909,7 @@ void TACSElementBasis::addWeakMatrix(int n, const double pt[],
       // Compute the offset point in the matrix
       const int init_index =
           (num_vars * (ix / (num_params + 3)) + (jx / (num_params + 3)));
-      TacsScalar *M = &mat[init_index];
+      TacsScalar* M = &mat[init_index];
 
       if ((ix % (num_params + 3) < 3) && (jx % (num_params + 3) < 3)) {
         addInterpOuterProduct(n, pt, Jac[ii], row_incr, col_incr, M);
@@ -938,9 +938,9 @@ void TACSElementBasis::addWeakMatrix(int n, const double pt[],
   Add the weak form of the governing equations to the residual
 */
 void TACSElementBasis::addMatVecProduct(const int vars_per_node,
-                                        const int Jac_nnz, const int *Jac_pairs,
-                                        const TacsScalar *data,
-                                        TacsScalar *temp, const TacsScalar px[],
+                                        const int Jac_nnz, const int* Jac_pairs,
+                                        const TacsScalar* data,
+                                        TacsScalar* temp, const TacsScalar px[],
                                         TacsScalar py[]) {
   // Fill in the values for each entry
   interpAllFieldsGrad(vars_per_node, px, temp);
@@ -954,12 +954,12 @@ void TACSElementBasis::addMatVecProduct(const int vars_per_node,
 
   for (int n = nquad - 1; n >= 0; n--) {
     // Set the locations for the data pointers
-    const TacsScalar *J = &data[n * (np2 + Jac_nnz)];
-    const TacsScalar *Jac = &data[n * (np2 + Jac_nnz) + np2];
+    const TacsScalar* J = &data[n * (np2 + Jac_nnz)];
+    const TacsScalar* Jac = &data[n * (np2 + Jac_nnz) + np2];
 
     // Set pointers into the temporary array
-    TacsScalar *U = &temp[n * vars_per_node * (1 + num_params)];
-    TacsScalar *Ud =
+    TacsScalar* U = &temp[n * vars_per_node * (1 + num_params)];
+    TacsScalar* Ud =
         &temp[n * vars_per_node * (1 + num_params) + vars_per_node];
 
     if (num_params == 3) {
@@ -984,11 +984,11 @@ void TACSElementBasis::addMatVecProduct(const int vars_per_node,
     }
 
     // For clarity, switch the names here. This is now storing U,x
-    const TacsScalar *Ux = Ud;
+    const TacsScalar* Ux = Ud;
 
     // Set pointers to next entry in the temporary array
-    TacsScalar *DU = &temp[(n + 1) * vars_per_node * (1 + num_params)];
-    TacsScalar *DUx =
+    TacsScalar* DU = &temp[(n + 1) * vars_per_node * (1 + num_params)];
+    TacsScalar* DUx =
         &temp[(n + 1) * vars_per_node * (1 + num_params) + vars_per_node];
 
     memset(DU, 0, vars_per_node * sizeof(TacsScalar));
@@ -1045,7 +1045,7 @@ void TACSElementBasis::addMatVecProduct(const int vars_per_node,
     }
   }
 
-  const TacsScalar *out = &temp[vars_per_node * (1 + num_params)];
+  const TacsScalar* out = &temp[vars_per_node * (1 + num_params)];
 
   addInterpAllFieldsGradTranspose(vars_per_node, out, py);
 }
@@ -1164,7 +1164,7 @@ void TACSElementBasis::addInterpOuterProduct(const int n, const double pt[],
                                              const TacsScalar weight,
                                              const int row_incr,
                                              const int col_incr,
-                                             TacsScalar *mat) {
+                                             TacsScalar* mat) {
   const int num_nodes = getNumNodes();
   double N[MAX_NUM_NODES];
   computeBasis(pt, N);
@@ -1178,7 +1178,7 @@ void TACSElementBasis::addInterpOuterProduct(const int n, const double pt[],
 void TACSElementBasis::addInterpGradOuterProduct(
     const int n, const double pt[], const int transpose,
     const TacsScalar weight, const TacsScalar scale[], const int row_incr,
-    const int col_incr, TacsScalar *mat) {
+    const int col_incr, TacsScalar* mat) {
   const int num_nodes = getNumNodes();
   const int num_params = getNumParameters();
   double N[MAX_NUM_NODES], Nxi[3 * MAX_NUM_NODES];
@@ -1236,7 +1236,7 @@ void TACSElementBasis::addInterpGradOuterProduct(
 void TACSElementBasis::addInterpGradGradOuterProduct(
     const int n, const double pt[], const TacsScalar weight,
     const TacsScalar iscale[], const TacsScalar jscale[], const int row_incr,
-    const int col_incr, TacsScalar *mat) {
+    const int col_incr, TacsScalar* mat) {
   const int num_nodes = getNumNodes();
   const int num_params = getNumParameters();
   double N[MAX_NUM_NODES], Nxi[3 * MAX_NUM_NODES];
@@ -1276,8 +1276,8 @@ void TACSElementBasis::interpAllFieldsGrad(const int vars_per_node,
   const int num_params = getNumParameters();
 
   for (int n = 0; n < nquad; n++) {
-    TacsScalar *U = &out[n * vars_per_node * (1 + num_params)];
-    TacsScalar *Ud = &out[n * vars_per_node * (1 + num_params) + vars_per_node];
+    TacsScalar* U = &out[n * vars_per_node * (1 + num_params)];
+    TacsScalar* Ud = &out[n * vars_per_node * (1 + num_params) + vars_per_node];
 
     double pt[3];
     getQuadraturePoint(n, pt);
@@ -1294,8 +1294,8 @@ void TACSElementBasis::addInterpAllFieldsGradTranspose(const int vars_per_node,
   const int num_params = getNumParameters();
 
   for (int n = 0; n < nquad; n++) {
-    const TacsScalar *U = &in[n * vars_per_node * (1 + num_params)];
-    const TacsScalar *Ud =
+    const TacsScalar* U = &in[n * vars_per_node * (1 + num_params)];
+    const TacsScalar* Ud =
         &in[n * vars_per_node * (1 + num_params) + vars_per_node];
 
     double pt[3];

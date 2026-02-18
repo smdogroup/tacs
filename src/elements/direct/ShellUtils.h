@@ -141,7 +141,7 @@ TacsScalar compute_transform_refaxis_sens(
   n_xi: the derivative of the normal along the xi direction
   n_eta: the derivative of the normal along the eta direction
 */
-void linear_strain(TacsScalar strain[], TacsScalar *rotz, const TacsScalar Ux[],
+void linear_strain(TacsScalar strain[], TacsScalar* rotz, const TacsScalar Ux[],
                    const TacsScalar Uxd[], const TacsScalar t[],
                    const TacsScalar tx[], const TacsScalar ztx[],
                    const TacsScalar n[], const TacsScalar n_xi[],
@@ -199,7 +199,7 @@ void linear_bmat(TacsScalar B[], TacsScalar rotz[], int num_points,
   num_components: the number of gradient components to compute
 */
 void linear_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                        TacsScalar *rotz, TacsScalar *drotz,
+                        TacsScalar* rotz, TacsScalar* drotz,
                         const TacsScalar Ux[], const TacsScalar Uxd[],
                         const TacsScalar t[], const TacsScalar dt[],
                         const TacsScalar tx[], const TacsScalar dtx[],
@@ -298,7 +298,7 @@ void linear_bmat_sens(TacsScalar B[], TacsScalar dB[], TacsScalar rotz[],
   This includes all nonlinear contributions in the membrane, bending and
   shear terms.
 */
-void nonlinear_strain(TacsScalar strain[], TacsScalar *rotz,
+void nonlinear_strain(TacsScalar strain[], TacsScalar* rotz,
                       const TacsScalar Ux[], const TacsScalar Uxd[],
                       const TacsScalar t[], const TacsScalar tx[],
                       const TacsScalar ztx[], const TacsScalar n[],
@@ -339,7 +339,7 @@ void nonlinear_stress_bmat(TacsScalar matrix[], int num_points,
   - stacked on top of one another.
 */
 void nonlinear_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                           TacsScalar *rotz, TacsScalar *drotz,
+                           TacsScalar* rotz, TacsScalar* drotz,
                            const TacsScalar Ux[], const TacsScalar Uxd[],
                            const TacsScalar t[], const TacsScalar dt[],
                            const TacsScalar tx[], const TacsScalar dtx[],
@@ -393,7 +393,7 @@ void nonlinear_stress_bmat_sens(
 /*
   Compute the linear strain associated with a shell element
 */
-void linear_bend_strain(TacsScalar strain[], TacsScalar *rotz,
+void linear_bend_strain(TacsScalar strain[], TacsScalar* rotz,
                         const TacsScalar Ux[], const TacsScalar Uxd[],
                         const TacsScalar t[], const TacsScalar tx[],
                         const TacsScalar ztx[], const TacsScalar n[],
@@ -412,7 +412,7 @@ void linear_bend_bmat(TacsScalar B[], TacsScalar rotz[], int num_points,
   Compute the linear strain associated with a shell element
 */
 void linear_bend_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                             TacsScalar *rotz, TacsScalar *drotz,
+                             TacsScalar* rotz, TacsScalar* drotz,
                              const TacsScalar Ux[], const TacsScalar Uxd[],
                              const TacsScalar t[], const TacsScalar dt[],
                              const TacsScalar tx[], const TacsScalar dtx[],
@@ -441,7 +441,7 @@ void add_linear_bend_bmat_sens(
 /*
   Compute the linear strain associated with a shell element
 */
-void nonlinear_bend_strain(TacsScalar strain[], TacsScalar *rotz,
+void nonlinear_bend_strain(TacsScalar strain[], TacsScalar* rotz,
                            const TacsScalar Ux[], const TacsScalar Uxd[],
                            const TacsScalar t[], const TacsScalar tx[],
                            const TacsScalar ztx[], const TacsScalar n[],
@@ -488,8 +488,8 @@ void inner_nonlinear_bend_bmat(TacsScalar bstrain[], const TacsScalar Uxpsi[],
   Compute the sensitivity of the strain
 */
 void nonlinear_bend_strain_sens(
-    TacsScalar strain[], TacsScalar dstrain[], TacsScalar *rotz,
-    TacsScalar *drotz, const TacsScalar Ux[], const TacsScalar Uxd[],
+    TacsScalar strain[], TacsScalar dstrain[], TacsScalar* rotz,
+    TacsScalar* drotz, const TacsScalar Ux[], const TacsScalar Uxd[],
     const TacsScalar t[], const TacsScalar dt[], const TacsScalar tx[],
     const TacsScalar dtx[], const TacsScalar ztx[], const TacsScalar dztx[],
     const TacsScalar n[], const TacsScalar dn[], const TacsScalar n_xi[],
@@ -1347,10 +1347,10 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
       TacsScalar inv_norm = Tensor::normalize3D(normal);
       inv_norm = 1.0 / inv_norm;
 
-      TacsScalar *b22 = B22;
-      TacsScalar *b23 = B23;
-      TacsScalar *db22 = DB22;
-      TacsScalar *db23 = DB23;
+      TacsScalar* b22 = B22;
+      TacsScalar* b23 = B23;
+      TacsScalar* db22 = DB22;
+      TacsScalar* db23 = DB23;
 
       for (int i = 0; i < order * order; i++) {
         double Ni = N22[0] * N[i];
@@ -1449,8 +1449,8 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
       compute_tensorial_components(order, Urot, Ud, Xd, N, Na, Nb, pt, Xpts,
                                    vars);
 
-      TacsScalar *b12 = B12;
-      TacsScalar *db12 = DB12;
+      TacsScalar* b12 = B12;
+      TacsScalar* db12 = DB12;
       for (int i = 0; i < order * order; i++) {
         double Nai = N12[0] * Na[i];
         double Nbi = N12[0] * Nb[i];
@@ -1502,10 +1502,10 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
       TacsScalar r[3];
       Tensor::crossProduct3D(r, Urot, normal);
 
-      TacsScalar *b11 = B11;
-      TacsScalar *b13 = B13;
-      TacsScalar *db11 = DB11;
-      TacsScalar *db13 = DB13;
+      TacsScalar* b11 = B11;
+      TacsScalar* b13 = B13;
+      TacsScalar* db11 = DB11;
+      TacsScalar* db13 = DB13;
 
       for (int i = 0; i < order * order; i++) {
         double Ni = N11[0] * N[i];
@@ -1640,7 +1640,7 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
         as[5] = tx[3] * g[4] + tx[4] * g[3] + tx[5] * g[2];
         as[8] = tx[6] * g[4] + tx[7] * g[3] + tx[8] * g[2];
 
-        const TacsScalar *dtx = _dtx;
+        const TacsScalar* dtx = _dtx;
         for (int k = 0; k < nc; k++) {
           // Retrieve the derivative of the B-matrix
           TacsScalar dg[6];
@@ -1719,7 +1719,7 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
         as[8] = tx[6] * g[4] + tx[7] * g[3];
 
         // Point dtx at the beginning of the derivatives of tx
-        const TacsScalar *dtx = _dtx;
+        const TacsScalar* dtx = _dtx;
         for (int k = 0; k < nc; k++) {
           // Retrieve the derivative of the B-matrix
           TacsScalar dg[6];
@@ -1799,7 +1799,7 @@ void nonlinear_tying_nmat(TacsScalar n11[], TacsScalar n22[], TacsScalar n12[],
 
       FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
 
-      TacsScalar *_n22 = n22;
+      TacsScalar* _n22 = n22;
       for (int i = 0; i < order * order; i++) {
         for (int j = 0; j <= i; j++) {
           _n22[0] += Nb[i] * Nb[j] * N22[0];
@@ -1819,7 +1819,7 @@ void nonlinear_tying_nmat(TacsScalar n11[], TacsScalar n22[], TacsScalar n12[],
 
       FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
 
-      TacsScalar *_n12 = n12;
+      TacsScalar* _n12 = n12;
       for (int i = 0; i < order * order; i++) {
         for (int j = 0; j <= i; j++) {
           _n12[0] += 0.5 * (Na[i] * Nb[j] + Nb[i] * Na[j]) * N12[0];
@@ -1839,7 +1839,7 @@ void nonlinear_tying_nmat(TacsScalar n11[], TacsScalar n22[], TacsScalar n12[],
 
       FElibrary::biLagrangeSF(N, Na, Nb, pt, order);
 
-      TacsScalar *_n11 = n11;
+      TacsScalar* _n11 = n11;
       for (int i = 0; i < order * order; i++) {
         for (int j = 0; j <= i; j++) {
           _n11[0] += Na[i] * Na[j] * N11[0];
@@ -1875,9 +1875,9 @@ void add_nonlinear_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
   nonlinear_tying_nmat<order, tying_order>(n11, n22, n12, N11, N22, N12, knots,
                                            pknots);
 
-  TacsScalar *_n11 = n11;
-  TacsScalar *_n12 = n12;
-  TacsScalar *_n22 = n22;
+  TacsScalar* _n11 = n11;
+  TacsScalar* _n12 = n12;
+  TacsScalar* _n22 = n22;
 
   // Compute the second derivative contributions
   for (int i = 0; i < order * order; i++) {
@@ -2215,7 +2215,7 @@ void add_tying_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
   strain[6] = 2.0 * (as[3] * tx[6] + as[4] * tx[7] + as[5] * tx[8]);
   strain[7] = 2.0 * (as[0] * tx[6] + as[1] * tx[7] + as[2] * tx[8]);
 
-  TacsScalar *dg = _dg;
+  TacsScalar* dg = _dg;
 
   // Now that the derivative dg has been computed, perform the
   // transformation for all components simultaneously.

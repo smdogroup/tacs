@@ -26,7 +26,7 @@
   write_solution: write solution to f5 frequency
   print_level: 0, 1, 2
 */
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
 
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
   }
 
   int vars_per_node = 8;
-  TACSCreator *creator = new TACSCreator(comm, vars_per_node);
+  TACSCreator* creator = new TACSCreator(comm, vars_per_node);
   creator->incref();
 
   if (rank == 0) {
@@ -143,18 +143,18 @@ int main(int argc, char **argv) {
     int num_nodes = (2 * nl_elems + 1) * (8 * nw_elems) + nrigid;
 
     // Set the node locations
-    TacsScalar *Xpts = new TacsScalar[3 * num_nodes];
+    TacsScalar* Xpts = new TacsScalar[3 * num_nodes];
 
     // Allocate the connectivity
     int conn_size = 9 * num_elements;
-    int *elem_ptr = new int[num_elements + 1];
-    int *elem_conn = new int[conn_size];
-    int *elem_id_nums = new int[num_elements];
+    int* elem_ptr = new int[num_elements + 1];
+    int* elem_conn = new int[conn_size];
+    int* elem_id_nums = new int[num_elements];
     memset(elem_id_nums, 0, num_elements * sizeof(int));
 
     // Set up the connectivity
-    int *ptr = elem_ptr;
-    int *conn = elem_conn;
+    int* ptr = elem_ptr;
+    int* conn = elem_conn;
     for (int j = 0; j < 4 * nw_elems; j++) {
       for (int i = 0; i < nl_elems; i++) {
         ptr[0] = conn - elem_conn;
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
     // Set the node locations
     int nw = 2 * nw_elems;
     int nlen = 2 * nl_elems + 1;
-    TacsScalar *x = Xpts;
+    TacsScalar* x = Xpts;
     for (int j = 0; j < 4 * nw; j++) {
       for (int i = 0; i < nlen; i++) {
         x[0] = (L * i) / (nlen - 1);
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
   // Create the objects associated with the rigid-bodies
   // ---------------------------------------------------
   // The acceleration due to gravity in global frame of reference
-  TACSGibbsVector *gravVec = new TACSGibbsVector(0.0, 0.0, -9.81);
+  TACSGibbsVector* gravVec = new TACSGibbsVector(0.0, 0.0, -9.81);
 
   // Create the constitutive objects
   TacsScalar rho = 2500.0;
@@ -236,11 +236,11 @@ int main(int argc, char **argv) {
   TacsScalar thickness = 0.01;
 
   // Create the stiffness object
-  isoFSDTStiffness *stiff =
+  isoFSDTStiffness* stiff =
       new isoFSDTStiffness(rho, E, nu, kcorr, yield_stress, thickness, 0);
 
   // Create the element class
-  TACSElement *elem = new MITC9(stiff, gravVec);
+  TACSElement* elem = new MITC9(stiff, gravVec);
 
   // This call must occur on all processor
   creator->setElements(&elem, 1);
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
                              TACSAssembler::DIRECT_SCHUR);
 
   // Create the TACS object
-  TACSAssembler *tacs = creator->createTACS();
+  TACSAssembler* tacs = creator->createTACS();
   tacs->incref();
 
   // Create an TACSToFH5 object for writing output to files
@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
        TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
        TACSElement::OUTPUT_EXTRAS);
 
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  TACSToFH5* f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   /*-----------------------------------------------------------------*/
@@ -269,14 +269,14 @@ int main(int argc, char **argv) {
   int num_dvs = 1;
 
   // Create functions of interest
-  TACSFunction *func[num_funcs];
+  TACSFunction* func[num_funcs];
   if (num_funcs == 1) {
     func[0] = new TACSCompliance(tacs);
   } else if (num_funcs == 2) {
     func[0] = new TACSKSFailure(tacs, 100.0);
 
     // Set the induced norm failure types
-    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
+    TACSInducedFailure* ifunc = new TACSInducedFailure(tacs, 20.0);
     // ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[1] = ifunc;
 
@@ -291,7 +291,7 @@ int main(int argc, char **argv) {
     func[1] = new TACSCompliance(tacs);
 
     // Set the discrete and continuous KS functions
-    TACSKSFailure *ksfunc = new TACSKSFailure(tacs, 20.0);
+    TACSKSFailure* ksfunc = new TACSKSFailure(tacs, 20.0);
     ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
     func[2] = ksfunc;
 
@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
     func[3] = ksfunc;
 
     // Set the induced norm failure types
-    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
+    TACSInducedFailure* ifunc = new TACSInducedFailure(tacs, 20.0);
     ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[4] = ifunc;
 
@@ -337,16 +337,16 @@ int main(int argc, char **argv) {
     func[i]->incref();
   }
 
-  TacsScalar *funcVals = new TacsScalar[num_funcs];     // adjoint
-  TacsScalar *funcValsTmp = new TacsScalar[num_funcs];  // CSD
-  TacsScalar *funcVals1 = new TacsScalar[num_funcs];    // forward/reverse
+  TacsScalar* funcVals = new TacsScalar[num_funcs];     // adjoint
+  TacsScalar* funcValsTmp = new TacsScalar[num_funcs];  // CSD
+  TacsScalar* funcVals1 = new TacsScalar[num_funcs];    // forward/reverse
 
-  TacsScalar *dfdx = new TacsScalar[num_funcs * num_dvs];     // adjoint
-  TacsScalar *dfdx1 = new TacsScalar[num_funcs * num_dvs];    // CSD
-  TacsScalar *dfdxTmp = new TacsScalar[num_funcs * num_dvs];  // forward/reverse
+  TacsScalar* dfdx = new TacsScalar[num_funcs * num_dvs];     // adjoint
+  TacsScalar* dfdx1 = new TacsScalar[num_funcs * num_dvs];    // CSD
+  TacsScalar* dfdxTmp = new TacsScalar[num_funcs * num_dvs];  // forward/reverse
 
   // Create an array of design variables
-  TacsScalar *x = new TacsScalar[num_dvs];
+  TacsScalar* x = new TacsScalar[num_dvs];
   x[0] = 0.01;
 
   // Set paramters for time marching
@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
   }
   int num_steps_per_sec = 10000;
 
-  TACSIntegrator *obj =
+  TACSIntegrator* obj =
       TACSIntegrator::getInstance(tacs, tinit, tfinal, num_steps_per_sec, type);
   obj->incref();
 

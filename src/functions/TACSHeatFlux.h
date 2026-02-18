@@ -26,14 +26,14 @@ class TACSHeatFlux : public TACSFunction {
  public:
   static const int MAX_SURFACE_INDEX = 31;
 
-  TACSHeatFlux(TACSAssembler *_assembler, int *_elem_index, int *_surface_index,
+  TACSHeatFlux(TACSAssembler* _assembler, int* _elem_index, int* _surface_index,
                int _num_elems);
   ~TACSHeatFlux();
 
   /**
     Retrieve the name of the function
   */
-  const char *getObjectName();
+  const char* getObjectName();
 
   /**
      Initialize the function for the given type of evaluation
@@ -44,7 +44,7 @@ class TACSHeatFlux : public TACSFunction {
      Perform an element-wise integration over this element.
   */
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement *element, double time, TacsScalar scale,
+                       TACSElement* element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
@@ -61,16 +61,16 @@ class TACSHeatFlux : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens(int elemIndex, TACSElement *element, double time,
+  void getElementSVSens(int elemIndex, TACSElement* element, double time,
                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TacsScalar *elemSVSens);
+                        TacsScalar* elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+  void addElementDVSens(int elemIndex, TACSElement* element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -79,14 +79,14 @@ class TACSHeatFlux : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+  void getElementXptSens(int elemIndex, TACSElement* element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   // The name of the function
-  static const char *funcName;
+  static const char* funcName;
 
   // The value of the KS weight
   TacsScalar value;

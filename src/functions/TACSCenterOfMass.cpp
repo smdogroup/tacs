@@ -23,7 +23,7 @@
 /*
   Allocate the structural mass function
 */
-TACSCenterOfMass::TACSCenterOfMass(TACSAssembler *_assembler,
+TACSCenterOfMass::TACSCenterOfMass(TACSAssembler* _assembler,
                                    const double _dir[])
     : TACSFunction(_assembler) {
   totalMass = 0.0;
@@ -39,12 +39,12 @@ TACSCenterOfMass::TACSCenterOfMass(TACSAssembler *_assembler,
 */
 TACSCenterOfMass::~TACSCenterOfMass() {}
 
-const char *TACSCenterOfMass::funcName = "CenterOfMass";
+const char* TACSCenterOfMass::funcName = "CenterOfMass";
 
 /*
   The structural mass function name
 */
-const char *TACSCenterOfMass::getObjectName() { return funcName; }
+const char* TACSCenterOfMass::getObjectName() { return funcName; }
 
 /*
   Get the function name
@@ -77,7 +77,7 @@ void TACSCenterOfMass::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSKSFailure function.
 */
 void TACSCenterOfMass::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -110,7 +110,7 @@ void TACSCenterOfMass::elementWiseEval(
   design variables
 */
 void TACSCenterOfMass::addElementDVSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -153,7 +153,7 @@ void TACSCenterOfMass::addElementDVSens(
   locations.
 */
 void TACSCenterOfMass::getElementXptSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the node locations

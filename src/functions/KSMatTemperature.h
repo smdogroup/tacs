@@ -25,7 +25,7 @@ class TACSKSMatTemperature : public TACSFunction {
   /* enum KSTemperatureType { DISCRETE, CONTINUOUS, */
   /*                          PNORM_DISCRETE, PNORM_CONTINUOUS }; */
 
-  TACSKSMatTemperature(TACSAssembler *_tacs, double _ksWeight,
+  TACSKSMatTemperature(TACSAssembler* _tacs, double _ksWeight,
                        TACSKSTemperature::KSTemperatureType _ksType =
                            TACSKSTemperature::CONTINUOUS,
                        int _nmats = 1);
@@ -33,11 +33,11 @@ class TACSKSMatTemperature : public TACSFunction {
 
   // Retrieve the name of the function
   // ---------------------------------
-  const char *functionName();
+  const char* functionName();
 
   // Create the function context for evaluation
   // ------------------------------------------
-  TACSFunctionCtx *createFunctionCtx();
+  TACSFunctionCtx* createFunctionCtx();
 
   // Set the type of displacement aggregate
   // --------------------------------------
@@ -51,12 +51,12 @@ class TACSKSMatTemperature : public TACSFunction {
 
   // Functions for integration over the structural domain on each thread
   // -------------------------------------------------------------------
-  void initThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
-  void elementWiseEval(EvaluationType ftype, TACSElement *element, int elemNum,
+  void initThread(double tcoef, EvaluationType ftype, TACSFunctionCtx* ctx);
+  void elementWiseEval(EvaluationType ftype, TACSElement* element, int elemNum,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[],
-                       TACSFunctionCtx *ctx);
-  void finalThread(double tcoef, EvaluationType ftype, TACSFunctionCtx *ctx);
+                       TACSFunctionCtx* ctx);
+  void finalThread(double tcoef, EvaluationType ftype, TACSFunctionCtx* ctx);
 
   // Return the value of the function
   // --------------------------------
@@ -65,37 +65,37 @@ class TACSKSMatTemperature : public TACSFunction {
   // State variable sensitivities
   // ----------------------------
   void getElementSVSens(double alpha, double beta, double gamma,
-                        TacsScalar *elemSVSens, TACSElement *element,
+                        TacsScalar* elemSVSens, TACSElement* element,
                         int elemNum, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TACSFunctionCtx *ctx);
+                        const TacsScalar ddvars[], TACSFunctionCtx* ctx);
 
   // Design variable sensitivity evaluation
   // --------------------------------------
-  void addElementDVSens(double tcoef, TacsScalar *fdvSens, int numDVs,
-                        TACSElement *element, int elemNum,
+  void addElementDVSens(double tcoef, TacsScalar* fdvSens, int numDVs,
+                        TACSElement* element, int elemNum,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TACSFunctionCtx *ctx);
+                        TACSFunctionCtx* ctx);
 
   // Nodal sensitivities
   // -------------------
   void getElementXptSens(double tcoef, TacsScalar fXptSens[],
-                         TACSElement *element, int elemNum,
+                         TACSElement* element, int elemNum,
                          const TacsScalar Xpts[], const TacsScalar vars[],
                          const TacsScalar dvars[], const TacsScalar ddvars[],
-                         TACSFunctionCtx *ctx);
+                         TACSFunctionCtx* ctx);
 
  private:
   // The name of the function
-  static const char *funcName;
+  static const char* funcName;
 
   // The value of the KS weight
   double ksWeight;
 
   // Intermediate values in the functional evaluation
   TacsScalar ksSum;
-  TacsScalar *maxValue;
+  TacsScalar* maxValue;
   TacsScalar invPnorm;
 
   // Set the type of constraint aggregate

@@ -30,18 +30,18 @@
 */
 class TACSMomentOfInertia : public TACSFunction {
  public:
-  TACSMomentOfInertia(TACSAssembler *_assembler, const double _dir1[],
+  TACSMomentOfInertia(TACSAssembler* _assembler, const double _dir1[],
                       const double _dir2[], int _cmFlag = 0);
   ~TACSMomentOfInertia();
 
-  const char *getObjectName();
+  const char* getObjectName();
 
   /**
     Member functions to integrate the function value
   */
   void initEvaluation(EvaluationType ftype);
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement *element, double time, TacsScalar scale,
+                       TACSElement* element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
   void finalEvaluation(EvaluationType ftype);
@@ -54,7 +54,7 @@ class TACSMomentOfInertia : public TACSFunction {
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement *element, double time,
+  void addElementDVSens(int elemIndex, TACSElement* element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -63,7 +63,7 @@ class TACSMomentOfInertia : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement *element, double time,
+  void getElementXptSens(int elemIndex, TACSElement* element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
@@ -77,7 +77,7 @@ class TACSMomentOfInertia : public TACSFunction {
   TacsScalar dir1[3], dir2[3];
   bool cmFlag;
 
-  static const char *funcName;
+  static const char* funcName;
 };
 
 #endif  // TACS_MOMENT_OF_INERTIA_H

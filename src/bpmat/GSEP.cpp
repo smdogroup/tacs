@@ -53,16 +53,16 @@
   - the ones that are "uninteresting". This can, however, be used
   to determine the condition number of a system of equations.
 */
-EPRegular::EPRegular(TACSMat *_mat) {
+EPRegular::EPRegular(TACSMat* _mat) {
   mat = _mat;
   mat->incref();
 }
 
 EPRegular::~EPRegular() { mat->decref(); }
 
-TACSVec *EPRegular::createVec() { return mat->createVec(); }
+TACSVec* EPRegular::createVec() { return mat->createVec(); }
 
-void EPRegular::mult(TACSVec *x, TACSVec *y) { return mat->mult(x, y); }
+void EPRegular::mult(TACSVec* x, TACSVec* y) { return mat->mult(x, y); }
 
 /*
   Shift and invert operator. This requires that the matrix be shifted
@@ -83,7 +83,7 @@ void EPRegular::mult(TACSVec *x, TACSVec *y) { return mat->mult(x, y); }
   modified problem are the same as the eigenvectors of the original
   problem.
 */
-EPShiftInvert::EPShiftInvert(TacsScalar _sigma, TACSKsm *_ksm) {
+EPShiftInvert::EPShiftInvert(TacsScalar _sigma, TACSKsm* _ksm) {
   sigma = _sigma;
   ksm = _ksm;
   ksm->incref();
@@ -91,9 +91,9 @@ EPShiftInvert::EPShiftInvert(TacsScalar _sigma, TACSKsm *_ksm) {
 
 EPShiftInvert::~EPShiftInvert() { ksm->decref(); }
 
-TACSVec *EPShiftInvert::createVec() { return ksm->createVec(); }
+TACSVec* EPShiftInvert::createVec() { return ksm->createVec(); }
 
-void EPShiftInvert::mult(TACSVec *x, TACSVec *y) {
+void EPShiftInvert::mult(TACSVec* x, TACSVec* y) {
   ksm->solve(x, y);
   return;
 }
@@ -124,8 +124,8 @@ TacsScalar EPShiftInvert::convertEigenvalue(TacsScalar value) {
   in the literature.
 */
 EPGeneralizedShiftInvert::EPGeneralizedShiftInvert(TacsScalar _sigma,
-                                                   TACSKsm *_ksm,
-                                                   TACSMat *_inner) {
+                                                   TACSKsm* _ksm,
+                                                   TACSMat* _inner) {
   sigma = _sigma;
   ksm = _ksm;
   ksm->incref();
@@ -149,12 +149,12 @@ void EPGeneralizedShiftInvert::setSigma(TacsScalar _sigma) { sigma = _sigma; }
 /*
   Create a vector associated with the generalized eigenvalue problem
 */
-TACSVec *EPGeneralizedShiftInvert::createVec() { return ksm->createVec(); }
+TACSVec* EPGeneralizedShiftInvert::createVec() { return ksm->createVec(); }
 
 /*
   Compute y = ( A - sigma B )^{-1}*inner x
 */
-void EPGeneralizedShiftInvert::mult(TACSVec *x, TACSVec *y) {
+void EPGeneralizedShiftInvert::mult(TACSVec* x, TACSVec* y) {
   inner->mult(x, temp);
   ksm->solve(temp, y);
   return;
@@ -163,7 +163,7 @@ void EPGeneralizedShiftInvert::mult(TACSVec *x, TACSVec *y) {
 /*
   Compute <x,y> = x^{T} inner y
 */
-TacsScalar EPGeneralizedShiftInvert::dot(TACSVec *x, TACSVec *y) {
+TacsScalar EPGeneralizedShiftInvert::dot(TACSVec* x, TACSVec* y) {
   inner->mult(y, temp);
   return temp->dot(x);
 }
@@ -171,7 +171,7 @@ TacsScalar EPGeneralizedShiftInvert::dot(TACSVec *x, TACSVec *y) {
 /*
   Compute ||B*x|| - this is used to compute the eigenvalue error
 */
-TacsScalar EPGeneralizedShiftInvert::errorNorm(TACSVec *x) {
+TacsScalar EPGeneralizedShiftInvert::errorNorm(TACSVec* x) {
   inner->mult(x, temp);
   return temp->norm();
 }
@@ -199,8 +199,8 @@ TacsScalar EPGeneralizedShiftInvert::convertEigenvalue(TacsScalar value) {
 
   lambda = - mu * sigma/(1 - mu)
 */
-EPBucklingShiftInvert::EPBucklingShiftInvert(TacsScalar _sigma, TACSKsm *_ksm,
-                                             TACSMat *_inner) {
+EPBucklingShiftInvert::EPBucklingShiftInvert(TacsScalar _sigma, TACSKsm* _ksm,
+                                             TACSMat* _inner) {
   sigma = _sigma;
   ksm = _ksm;
   ksm->incref();
@@ -218,23 +218,23 @@ EPBucklingShiftInvert::~EPBucklingShiftInvert() {
 
 void EPBucklingShiftInvert::setSigma(TacsScalar _sigma) { sigma = _sigma; }
 
-TACSVec *EPBucklingShiftInvert::createVec() { return ksm->createVec(); }
+TACSVec* EPBucklingShiftInvert::createVec() { return ksm->createVec(); }
 
 // Compute y = ( A - sigma B )^{-1} *  x
-void EPBucklingShiftInvert::mult(TACSVec *x, TACSVec *y) {
+void EPBucklingShiftInvert::mult(TACSVec* x, TACSVec* y) {
   inner->mult(x, temp);
   ksm->solve(temp, y);
   return;
 }
 
 // Compute <x,y> = x^{T} inner y
-TacsScalar EPBucklingShiftInvert::dot(TACSVec *x, TACSVec *y) {
+TacsScalar EPBucklingShiftInvert::dot(TACSVec* x, TACSVec* y) {
   inner->mult(y, temp);
   return temp->dot(x);
 }
 
 // Compute || B * x || - this is used to compute the eigenvalue error
-TacsScalar EPBucklingShiftInvert::errorNorm(TACSVec *x) {
+TacsScalar EPBucklingShiftInvert::errorNorm(TACSVec* x) {
   inner->mult(x, temp);
   return temp->norm();
 }
@@ -256,11 +256,11 @@ TacsScalar EPBucklingShiftInvert::convertEigenvalue(TacsScalar value) {
   eigs:     the eigenvalues computed using LAPACK
   eigvecs:  the eigenvectors computed using LAPACK
 */
-static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
-                               TacsScalar *_eigs, TacsScalar *_eigvecs) {
+static void ComputeEigsTriDiag(int n, TacsScalar* _diag, TacsScalar* _upper,
+                               TacsScalar* _eigs, TacsScalar* _eigvecs) {
   // The input arguments required for LAPACK
-  const char *jobz = "V";
-  const char *range = "A";
+  const char* jobz = "V";
+  const char* range = "A";
 
   // Specify the range of eigenvalues to use - not used in this
   // case. We compute all the eigenvalues in the spectrum
@@ -273,8 +273,8 @@ static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
 
   // Convert the data to real data in the case of complex arithmetic.
   // Duplicate the data because LAPACK over-writes the matrix on exit.
-  double *diag = new double[n];
-  double *upper = new double[n - 1];
+  double* diag = new double[n];
+  double* upper = new double[n - 1];
   for (int i = 0; i < n - 1; i++) {
     diag[i] = TacsRealPart(_diag[i]);
     upper[i] = TacsRealPart(_upper[i]);
@@ -285,11 +285,11 @@ static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
   int m = 0;
 
   // Output and work arrays required by dstevr
-  int *isuppz = new int[2 * n];
+  int* isuppz = new int[2 * n];
   int lwork = 20 * n;
-  double *work = new double[lwork];
+  double* work = new double[lwork];
   int liwork = 10 * n;
-  int *iwork = new int[liwork];
+  int* iwork = new int[liwork];
   int ldz = n;
   int info = -1;
 
@@ -300,8 +300,8 @@ static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
     this perturbation. This only makes sense in the context of the
     complex step method. It should only be used in this context!
   */
-  double *eigs = new double[n];
-  double *eigvecs = new double[n * n];
+  double* eigs = new double[n];
+  double* eigvecs = new double[n * n];
 
   LAPACKstevr(jobz, range, &n, diag, upper, &vl, &vu, &il, &iu, &abstol, &m,
               eigs, eigvecs, &ldz, isuppz, work, &lwork, iwork, &liwork, &info);
@@ -351,8 +351,8 @@ static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
 #else
   // This is the real part of the code that computes the eigenvalues and
   // eigenvectors of the symmetric tridiagonal system
-  double *eigs = _eigs;
-  double *eigvecs = _eigvecs;
+  double* eigs = _eigs;
+  double* eigvecs = _eigvecs;
 
   LAPACKstevr(jobz, range, &n, diag, upper, &vl, &vu, &il, &iu, &abstol, &m,
               eigs, eigvecs, &ldz, isuppz, work, &lwork, iwork, &liwork, &info);
@@ -385,8 +385,8 @@ static void ComputeEigsTriDiag(int n, TacsScalar *_diag, TacsScalar *_upper,
   max_iters:   the maximum number of iterations before giving up
   ortho_type:  the type of orthogonalization to use FULL or LOCAL
 */
-SEP::SEP(EPOperator *_Op, int _max_iters, OrthoType _ortho_type,
-         TACSBcMap *_bcs) {
+SEP::SEP(EPOperator* _Op, int _max_iters, OrthoType _ortho_type,
+         TACSBcMap* _bcs) {
   // Store the pointer to the eigenproblem operator
   Op = _Op;
   Op->incref();
@@ -400,7 +400,7 @@ SEP::SEP(EPOperator *_Op, int _max_iters, OrthoType _ortho_type,
   // Store the information about the subspace vectors
   max_iters = _max_iters;
   ortho_type = _ortho_type;
-  Q = new TACSVec *[max_iters + 1];
+  Q = new TACSVec*[max_iters + 1];
 
   // The coefficients of the Lanczos tridiagonal system
   Alpha = new TacsScalar[max_iters];
@@ -466,7 +466,7 @@ void SEP::setTolerances(double _tol, enum EigenSpectrum _spectrum,
 /*
   Reset the underlying operator
 */
-void SEP::setOperator(EPOperator *_Op) {
+void SEP::setOperator(EPOperator* _Op) {
   _Op->incref();
   if (Op) {
     Op->decref();
@@ -482,7 +482,7 @@ void SEP::setOperator(EPOperator *_Op) {
   eigenvalue problem with a Lanczos method. The method generates a
   series or orthonormal vectors with respect to a given inner product.
 */
-void SEP::solve(KSMPrint *ksm_print, KSMPrint *ksm_file) {
+void SEP::solve(KSMPrint* ksm_print, KSMPrint* ksm_file) {
   // Select the initial vector randomly
   Q[0]->setRand();
   if (bcs) {
@@ -598,7 +598,7 @@ void SEP::solve(KSMPrint *ksm_print, KSMPrint *ksm_file) {
 /*!
   Extract the n-th eigenvalue from the probelm.
 */
-TacsScalar SEP::extractEigenvalue(int n, TacsScalar *error) {
+TacsScalar SEP::extractEigenvalue(int n, TacsScalar* error) {
   if (n < 0 || n >= niters) {
     fprintf(stderr, "Eigenvalue out of range\n");
     *error = -1.0;
@@ -621,7 +621,7 @@ TacsScalar SEP::extractEigenvalue(int n, TacsScalar *error) {
   and the error computed as error = || A x_n - lambda_n x_n ||_2 via a
   pointer.
 */
-TacsScalar SEP::extractEigenvector(int n, TACSVec *ans, TacsScalar *error) {
+TacsScalar SEP::extractEigenvector(int n, TACSVec* ans, TacsScalar* error) {
   if (n < 0 || n >= niters) {
     fprintf(stderr, "Eigenvector out of range\n");
     *error = -1.0;
@@ -690,7 +690,7 @@ void SEP::printOrthogonality() {
   match. The permutation array is altered so that the array indexed by
   p[i] => eigs[ p[i] ] is sorted in ascending order.
 */
-void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
+void SEP::sortEigenvalues(TacsScalar* values, int neigs, int* p) {
   // The default ordering
   for (int i = 0; i < neigs; i++) {
     p[i] = i;
@@ -751,7 +751,7 @@ void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
   Check whether the eigenvalues at the appropriate end of the spectrum
   have converged based on either a relative or absolute tolerance.xx
 */
-int SEP::checkConverged(TacsScalar *A, TacsScalar *B, int n) {
+int SEP::checkConverged(TacsScalar* A, TacsScalar* B, int n) {
   // If we haven't iterated n-times, we can quit immediately
   if (n < neigvals) {
     return 0;

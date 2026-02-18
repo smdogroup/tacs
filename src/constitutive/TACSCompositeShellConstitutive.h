@@ -25,9 +25,9 @@
 class TACSCompositeShellConstitutive : public TACSShellConstitutive {
  public:
   TACSCompositeShellConstitutive(int _num_plies,
-                                 TACSOrthotropicPly **_ply_props,
-                                 const TacsScalar *_ply_thickness,
-                                 const TacsScalar *_ply_angles,
+                                 TACSOrthotropicPly** _ply_props,
+                                 const TacsScalar* _ply_thickness,
+                                 const TacsScalar* _ply_angles,
                                  TacsScalar _kcorr = 5.0 / 6.0,
                                  TacsScalar _tOffset = 0.0);
   ~TACSCompositeShellConstitutive();
@@ -74,22 +74,22 @@ class TACSCompositeShellConstitutive : public TACSShellConstitutive {
                            const TacsScalar X[], TacsScalar C[]);
 
   // The name of the constitutive object
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Get ply angles and thicknesses
-  void getPlyThicknesses(TacsScalar *_ply_thickness);
-  void getPlyAngles(TacsScalar *_ply_angles);
+  void getPlyThicknesses(TacsScalar* _ply_thickness);
+  void getPlyAngles(TacsScalar* _ply_angles);
   TacsScalar getThicknessOffset();
 
  private:
   // Store information about the design variable
   int num_plies;
-  TACSOrthotropicPly **ply_props;
+  TACSOrthotropicPly** ply_props;
   TacsScalar *ply_thickness, *ply_angles;
   TacsScalar kcorr, tOffset;
 
   // The object name
-  static const char *constName;
+  static const char* constName;
 
   void getLaminaStrain(TacsScalar strain[], const TacsScalar rmStrain[],
                        TacsScalar tp);

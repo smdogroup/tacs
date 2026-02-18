@@ -798,7 +798,7 @@ TacsScalar compute_transform_refaxis(TacsScalar t[], TacsScalar tx[],
   frame (e1,e2,e3).
 */
 TacsScalar compute_transform_refaxis_sens(
-    TacsScalar *dh, TacsScalar t[], TacsScalar dt[], TacsScalar tx[],
+    TacsScalar* dh, TacsScalar t[], TacsScalar dt[], TacsScalar tx[],
     TacsScalar dtx[], TacsScalar ztx[], TacsScalar dztx[], TacsScalar n[],
     TacsScalar dn[], TacsScalar n_xi[], TacsScalar dn_xi[], TacsScalar n_eta[],
     TacsScalar dn_eta[], const TacsScalar axis[], TacsScalar Xd[],
@@ -1224,7 +1224,7 @@ static inline void normal_rot_bmat(TacsScalar r[], TacsScalar r_xi[],
   strain: the value of the strain at the current point
   rotz: the difference between the drilling rotation and actual rotation
 */
-void linear_strain(TacsScalar strain[], TacsScalar *rotz, const TacsScalar Ux[],
+void linear_strain(TacsScalar strain[], TacsScalar* rotz, const TacsScalar Ux[],
                    const TacsScalar Uxd[], const TacsScalar t[],
                    const TacsScalar tx[], const TacsScalar ztx[],
                    const TacsScalar n[], const TacsScalar n_xi[],
@@ -1385,7 +1385,7 @@ void linear_bmat(TacsScalar B[], TacsScalar rotz[], int num_points,
   drotz: the sensitivity of rotz
 */
 void linear_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                        TacsScalar *rotz, TacsScalar *drotz,
+                        TacsScalar* rotz, TacsScalar* drotz,
                         const TacsScalar Ux[], const TacsScalar Uxd[],
                         const TacsScalar t[], const TacsScalar dt[],
                         const TacsScalar tx[], const TacsScalar dtx[],
@@ -1666,7 +1666,7 @@ void add_linear_bmat_sens(
   strain: the value of the strain at the current point
   rotz: the difference between the drilling rotation and actual rotation
 */
-void nonlinear_strain(TacsScalar strain[], TacsScalar *rotz,
+void nonlinear_strain(TacsScalar strain[], TacsScalar* rotz,
                       const TacsScalar Ux[], const TacsScalar Uxd[],
                       const TacsScalar t[], const TacsScalar tx[],
                       const TacsScalar ztx[], const TacsScalar n[],
@@ -1910,8 +1910,8 @@ void nonlinear_stress_bmat(TacsScalar matrix[], int num_points,
   TacsScalar dU0[9 * 6 * MAX_NUM_NODES];
   TacsScalar dU1[6 * 6 * MAX_NUM_NODES];
 
-  TacsScalar *du0 = dU0;
-  TacsScalar *du1 = dU1;
+  TacsScalar* du0 = dU0;
+  TacsScalar* du1 = dU1;
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
@@ -1965,15 +1965,15 @@ void nonlinear_stress_bmat(TacsScalar matrix[], int num_points,
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
-      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Set the i-counter from the beginning of the row
-      TacsScalar *di0 = &dU0[9 * (6 * i + ii)];
-      TacsScalar *di1 = &dU1[6 * (6 * i + ii)];
+      TacsScalar* di0 = &dU0[9 * (6 * i + ii)];
+      TacsScalar* di1 = &dU1[6 * (6 * i + ii)];
 
       // Start the j-counter from the i-counter
-      TacsScalar *dj0 = dU0;
-      TacsScalar *dj1 = dU1;
+      TacsScalar* dj0 = dU0;
+      TacsScalar* dj1 = dU1;
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -2045,7 +2045,7 @@ void nonlinear_stress_bmat(TacsScalar matrix[], int num_points,
   drotz: the sensitivity of rotz
 */
 void nonlinear_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                           TacsScalar *rotz, TacsScalar *drotz,
+                           TacsScalar* rotz, TacsScalar* drotz,
                            const TacsScalar Ux[], const TacsScalar Uxd[],
                            const TacsScalar t[], const TacsScalar dt[],
                            const TacsScalar tx[], const TacsScalar dtx[],
@@ -2640,7 +2640,7 @@ void nonlinear_stress_bmat_sens(
                          r_xi[2] * dtx[3] + r_eta[2] * dtx[4] +
                          Ud[4] * dztx[3] + Ud[5] * dztx[4] + r[2] * dztx[5]);
 
-      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -2840,7 +2840,7 @@ void nonlinear_stress_bmat_sens(
 /*
   Compute the linear strain without the in plane components
 */
-void linear_bend_strain(TacsScalar strain[], TacsScalar *rotz,
+void linear_bend_strain(TacsScalar strain[], TacsScalar* rotz,
                         const TacsScalar Ux[], const TacsScalar Uxd[],
                         const TacsScalar t[], const TacsScalar tx[],
                         const TacsScalar ztx[], const TacsScalar n[],
@@ -2934,7 +2934,7 @@ void linear_bend_bmat(TacsScalar B[], TacsScalar rotz[], int num_points,
 */
 
 void linear_bend_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
-                             TacsScalar *rotz, TacsScalar *drotz,
+                             TacsScalar* rotz, TacsScalar* drotz,
                              const TacsScalar Ux[], const TacsScalar Uxd[],
                              const TacsScalar t[], const TacsScalar dt[],
                              const TacsScalar tx[], const TacsScalar dtx[],
@@ -3143,7 +3143,7 @@ void add_linear_bend_bmat_sens(
   rotz: the difference between the drilling rotation and the normal
   rotation
 */
-void nonlinear_bend_strain(TacsScalar strain[], TacsScalar *rotz,
+void nonlinear_bend_strain(TacsScalar strain[], TacsScalar* rotz,
                            const TacsScalar Ux[], const TacsScalar Uxd[],
                            const TacsScalar t[], const TacsScalar tx[],
                            const TacsScalar ztx[], const TacsScalar n[],
@@ -3340,8 +3340,8 @@ void nonlinear_bend_stress_bmat(TacsScalar matrix[], int num_points,
   TacsScalar dU0[6 * 6 * MAX_NUM_NODES];
   TacsScalar dU1[6 * 6 * MAX_NUM_NODES];
 
-  TacsScalar *du0 = dU0;
-  TacsScalar *du1 = dU1;
+  TacsScalar* du0 = dU0;
+  TacsScalar* du1 = dU1;
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
@@ -3394,15 +3394,15 @@ void nonlinear_bend_stress_bmat(TacsScalar matrix[], int num_points,
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
-      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Set the i-counter from the beginning of the row
-      TacsScalar *di0 = &dU0[6 * (6 * i + ii)];
-      TacsScalar *di1 = &dU1[6 * (6 * i + ii)];
+      TacsScalar* di0 = &dU0[6 * (6 * i + ii)];
+      TacsScalar* di1 = &dU1[6 * (6 * i + ii)];
 
       // Start the j-counter from the i-counter
-      TacsScalar *dj0 = dU0;
-      TacsScalar *dj1 = dU1;
+      TacsScalar* dj0 = dU0;
+      TacsScalar* dj1 = dU1;
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -3607,8 +3607,8 @@ void inner_nonlinear_bend_bmat(TacsScalar bstrain[], const TacsScalar Uxpsi[],
   drotz: the sensitivity of rotz
 */
 void nonlinear_bend_strain_sens(
-    TacsScalar strain[], TacsScalar dstrain[], TacsScalar *rotz,
-    TacsScalar *drotz, const TacsScalar Ux[], const TacsScalar Uxd[],
+    TacsScalar strain[], TacsScalar dstrain[], TacsScalar* rotz,
+    TacsScalar* drotz, const TacsScalar Ux[], const TacsScalar Uxd[],
     const TacsScalar t[], const TacsScalar dt[], const TacsScalar tx[],
     const TacsScalar dtx[], const TacsScalar ztx[], const TacsScalar dztx[],
     const TacsScalar n[], const TacsScalar dn[], const TacsScalar n_xi[],
@@ -4322,7 +4322,7 @@ void compute_shell_U(const int num_nodes, TacsScalar U[],
   } else {
     U[0] = U[1] = U[2] = U[3] = U[4] = U[5] = 0.0;
 
-    const TacsScalar *v = vars;
+    const TacsScalar* v = vars;
     for (int i = 0; i < num_nodes; i++) {
       U[0] += v[0] * N[0];
       U[1] += v[1] * N[0];
@@ -4562,7 +4562,7 @@ void compute_shell_Ud(const int num_nodes, TacsScalar U[], TacsScalar Ud[],
     Ud[0] = Ud[1] = Ud[2] = Ud[3] = Ud[4] = Ud[5] = 0.0;
     Ud[6] = Ud[7] = Ud[8] = Ud[9] = Ud[10] = Ud[11] = 0.0;
 
-    const TacsScalar *v = vars;
+    const TacsScalar* v = vars;
     for (int i = 0; i < num_nodes; i++) {
       U[0] += v[0] * N[0];
       U[1] += v[1] * N[0];
@@ -5022,9 +5022,9 @@ void shell_jacobian(const int order, TacsScalar X[], TacsScalar Xd[],
       FElibrary::lagrangeSF(na, dna, gpt[0], order);
       FElibrary::lagrangeSF(nb, dnb, gpt[1], order);
 
-      double *Np = N;
-      double *Nap = Na;
-      double *Nbp = Nb;
+      double* Np = N;
+      double* Nap = Na;
+      double* Nbp = Nb;
 
       for (int j = 0; j < order; j++) {
         for (int i = 0; i < order; i++) {
@@ -5303,12 +5303,12 @@ void shell_hessian(const int order, TacsScalar X[], TacsScalar Xd[],
       FElibrary::lagrangeSF(na, dna, ddna, gpt[0], order);
       FElibrary::lagrangeSF(nb, dnb, ddnb, gpt[1], order);
 
-      double *Np = N;
-      double *Nap = Na;
-      double *Nbp = Nb;
-      double *Naap = Naa;
-      double *Nabp = Nab;
-      double *Nbbp = Nbb;
+      double* Np = N;
+      double* Nap = Na;
+      double* Nbp = Nb;
+      double* Naap = Naa;
+      double* Nabp = Nab;
+      double* Nbbp = Nbb;
 
       for (int j = 0; j < order; j++) {
         for (int i = 0; i < order; i++) {

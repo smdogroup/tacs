@@ -69,20 +69,20 @@ class TACSMaterialProperties : public TACSObject {
   void setSpecificHeat(TacsScalar _specific_heat);
 
   // Extract the coefficients
-  void getIsotropicProperties(TacsScalar *_E, TacsScalar *_nu);
-  void getOrthotropicProperties(TacsScalar *_E1, TacsScalar *_E2,
-                                TacsScalar *_E3, TacsScalar *_nu12,
-                                TacsScalar *_nu13, TacsScalar *_nu23,
-                                TacsScalar *_G12, TacsScalar *_G13,
-                                TacsScalar *_G23);
-  void getStrengthProperties(TacsScalar *_T1, TacsScalar *_C1, TacsScalar *_T2,
-                             TacsScalar *_C2, TacsScalar *_T3, TacsScalar *_C3,
-                             TacsScalar *_S12, TacsScalar *_S13,
-                             TacsScalar *_S23);
-  void getCoefThermalExpansion(TacsScalar *_a1, TacsScalar *_a2,
-                               TacsScalar *_a3);
-  void getThermalConductivity(TacsScalar *_k1, TacsScalar *_k2,
-                              TacsScalar *_k3);
+  void getIsotropicProperties(TacsScalar* _E, TacsScalar* _nu);
+  void getOrthotropicProperties(TacsScalar* _E1, TacsScalar* _E2,
+                                TacsScalar* _E3, TacsScalar* _nu12,
+                                TacsScalar* _nu13, TacsScalar* _nu23,
+                                TacsScalar* _G12, TacsScalar* _G13,
+                                TacsScalar* _G23);
+  void getStrengthProperties(TacsScalar* _T1, TacsScalar* _C1, TacsScalar* _T2,
+                             TacsScalar* _C2, TacsScalar* _T3, TacsScalar* _C3,
+                             TacsScalar* _S12, TacsScalar* _S13,
+                             TacsScalar* _S23);
+  void getCoefThermalExpansion(TacsScalar* _a1, TacsScalar* _a2,
+                               TacsScalar* _a3);
+  void getThermalConductivity(TacsScalar* _k1, TacsScalar* _k2,
+                              TacsScalar* _k3);
 
   // Evaluate the constitutive relationships
   void evalTangentStiffness3D(TacsScalar C[]);
@@ -167,7 +167,7 @@ class TACSOrthotropicPly : public TACSObject {
   // Create OrthoPly with a full set of orthotropic material relationships
   // ---------------------------------------------------------------------
   TACSOrthotropicPly(TacsScalar _plyThickness,
-                     TACSMaterialProperties *_properties);
+                     TACSMaterialProperties* _properties);
 
   void setKSWeight(TacsScalar _ksWeight);
   void setUseMaxStrainCriterion();
@@ -180,19 +180,19 @@ class TACSOrthotropicPly : public TACSObject {
   // --------------------------------
   TacsScalar getDensity();
   TacsScalar getPlyThickness();
-  void getStiffness(TacsScalar *_E1, TacsScalar *_E2, TacsScalar *_nu12,
-                    TacsScalar *_G12, TacsScalar *_G23, TacsScalar *_G13);
-  void getLaminateStiffness(TacsScalar *_Q11, TacsScalar *_Q12,
-                            TacsScalar *_Q22, TacsScalar *_Q44,
-                            TacsScalar *_Q55, TacsScalar *_Q66);
-  void getStrength(TacsScalar *_Xt, TacsScalar *_Xc, TacsScalar *_Yt,
-                   TacsScalar *_Yc, TacsScalar *_S12, TacsScalar *_C);
-  void getStrainStrength(TacsScalar *_eXt, TacsScalar *_eXc, TacsScalar *_eYt,
-                         TacsScalar *_eYc, TacsScalar *_eS12);
-  void getTsaiWu(TacsScalar *_F1, TacsScalar *_F2, TacsScalar *_F11,
-                 TacsScalar *_F12, TacsScalar *_F22, TacsScalar *_F66);
-  void getLaminateInvariants(TacsScalar *U1, TacsScalar *U2, TacsScalar *U3,
-                             TacsScalar *U4, TacsScalar *U5, TacsScalar *U6);
+  void getStiffness(TacsScalar* _E1, TacsScalar* _E2, TacsScalar* _nu12,
+                    TacsScalar* _G12, TacsScalar* _G23, TacsScalar* _G13);
+  void getLaminateStiffness(TacsScalar* _Q11, TacsScalar* _Q12,
+                            TacsScalar* _Q22, TacsScalar* _Q44,
+                            TacsScalar* _Q55, TacsScalar* _Q66);
+  void getStrength(TacsScalar* _Xt, TacsScalar* _Xc, TacsScalar* _Yt,
+                   TacsScalar* _Yc, TacsScalar* _S12, TacsScalar* _C);
+  void getStrainStrength(TacsScalar* _eXt, TacsScalar* _eXc, TacsScalar* _eYt,
+                         TacsScalar* _eYc, TacsScalar* _eS12);
+  void getTsaiWu(TacsScalar* _F1, TacsScalar* _F2, TacsScalar* _F11,
+                 TacsScalar* _F12, TacsScalar* _F22, TacsScalar* _F66);
+  void getLaminateInvariants(TacsScalar* U1, TacsScalar* U2, TacsScalar* U3,
+                             TacsScalar* U4, TacsScalar* U5, TacsScalar* U6);
 
   // Calculate the Abar and Qbar matrices and their derivatives
   // Taken from Jones, Mechanics of composite materials pg. 51
@@ -214,7 +214,7 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar failureStrainSens(TacsScalar angle, const TacsScalar strain[],
                                TacsScalar sens[]);
   TacsScalar failureAngleSens(TacsScalar angle, const TacsScalar strain[],
-                              TacsScalar *failSens);
+                              TacsScalar* failSens);
 
   // Calculate the failure load fraction for given
   // constant and linear strain components
@@ -229,7 +229,7 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar calculateFailLoadAngleSens(TacsScalar angle,
                                         const TacsScalar cstrain[],
                                         const TacsScalar lstrain[],
-                                        TacsScalar *posSens);
+                                        TacsScalar* posSens);
 
   // Transform the stress and strain between global/local frames
   // -----------------------------------------------------------
@@ -260,12 +260,12 @@ class TACSOrthotropicPly : public TACSObject {
   void testFailSens(double dh, TacsScalar angle);
   void printProperties();
 
-  const char *getObjectName();
+  const char* getObjectName();
 
  private:
-  static const char *name;
+  static const char* name;
 
-  TACSMaterialProperties *properties;
+  TACSMaterialProperties* properties;
 
   // The stiffness properties
   TacsScalar Q11, Q12, Q22, Q44, Q55, Q66;

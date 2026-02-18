@@ -56,8 +56,8 @@ class TACSShellTraction : public TACSElement {
       tz[i] = _tz;
     }
   }
-  TACSShellTraction(void *_self,
-                    void (*_evalf)(void *, const TacsScalar *, TacsScalar *)) {
+  TACSShellTraction(void* _self,
+                    void (*_evalf)(void*, const TacsScalar*, TacsScalar*)) {
     self = _self;
     evalf = _evalf;
   }
@@ -70,7 +70,7 @@ class TACSShellTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -131,7 +131,7 @@ class TACSShellTraction : public TACSElement {
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
-        TacsScalar *r = res;
+        TacsScalar* r = res;
         for (int i = 0; i < NUM_NODES; i++) {
           r[0] -= h * Tx * N[i];
           r[1] -= h * Ty * N[i];
@@ -235,8 +235,8 @@ class TACSShellTraction : public TACSElement {
   TacsScalar tx[NUM_NODES], ty[NUM_NODES], tz[NUM_NODES];
 
   // The data/function for the right-hand-side
-  void *self;
-  void (*evalf)(void *, const TacsScalar *, TacsScalar *);
+  void* self;
+  void (*evalf)(void*, const TacsScalar*, TacsScalar*);
 };
 
 /*
@@ -270,7 +270,7 @@ class TACSShellPressure : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -315,7 +315,7 @@ class TACSShellPressure : public TACSElement {
 
         // Add the contribution to the residual - the minus sign
         // is due to the fact that this is a work term
-        TacsScalar *r = res;
+        TacsScalar* r = res;
         for (int i = 0; i < NUM_NODES; i++) {
           r[0] -= h * P * Xd[6] * N[i];
           r[1] -= h * P * Xd[7] * N[i];

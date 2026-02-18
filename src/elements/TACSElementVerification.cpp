@@ -49,14 +49,14 @@ void TacsSeedRandomGenerator(int seed) { srand(seed); }
   Assign variables randomly to an array. This is useful for
   testing various things.
 */
-void TacsGenerateRandomArray(TacsReal *array, int size, TacsReal lower,
+void TacsGenerateRandomArray(TacsReal* array, int size, TacsReal lower,
                              TacsReal upper) {
   for (int i = 0; i < size; i++) {
     array[i] = (upper - lower) * (rand() / ((double)RAND_MAX + 1)) + lower;
   }
 }
 
-void TacsGenerateRandomArray(TacsComplex *array, int size, TacsComplex lower,
+void TacsGenerateRandomArray(TacsComplex* array, int size, TacsComplex lower,
                              TacsComplex upper) {
   for (int i = 0; i < size; i++) {
     array[i] = (upper - lower) * (rand() / ((double)RAND_MAX + 1)) + lower;
@@ -67,7 +67,7 @@ void TacsGenerateRandomArray(TacsComplex *array, int size, TacsComplex lower,
   Find the largest absolute value of the difference between an array of test
   values and an array of reference values
 */
-double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
+double TacsGetMaxError(TacsScalar* a, TacsScalar* b, int size, int* max_index) {
   double max_error = 0.0;
   *max_index = -1;
 
@@ -85,8 +85,8 @@ double TacsGetMaxError(TacsScalar *a, TacsScalar *b, int size, int *max_index) {
   Find the maximum relative error between an array of test
   values and an array of reference values
 */
-double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
-                          int *max_index) {
+double TacsGetMaxRelError(TacsScalar* testVals, TacsScalar* refVals, int size,
+                          int* max_index) {
   double max_error = 0.0;
   *max_index = -1;
 
@@ -106,8 +106,8 @@ double TacsGetMaxRelError(TacsScalar *testVals, TacsScalar *refVals, int size,
 /*
   Print out the values and the relative errors
 */
-void TacsPrintErrorComponents(FILE *fp, const char *descript,
-                              TacsScalar *testVals, TacsScalar *refVals,
+void TacsPrintErrorComponents(FILE* fp, const char* descript,
+                              TacsScalar* testVals, TacsScalar* refVals,
                               int size) {
   fprintf(fp, "%*s[   ] %25s %25s %25s %25s\n", (int)strlen(descript), "Val",
           "Analytic", "Approximate", "Rel. Error", "Abs. Error");
@@ -128,7 +128,7 @@ void TacsPrintErrorComponents(FILE *fp, const char *descript,
 /*
   Assert that the values in testVals are close to the values in refVals.
 */
-bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
+bool TacsAssertAllClose(TacsScalar* testVals, TacsScalar* refVals, int size,
                         double atol, double rtol) {
   bool all_close = true;
   for (int i = 0; i < size; i++) {
@@ -145,8 +145,8 @@ bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
 /*
   Perturb the input variables in the forward sense
 */
-void TacsForwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
-                            const TacsScalar *pert, double dh) {
+void TacsForwardDiffPerturb(TacsScalar* out, int size, const TacsScalar* orig,
+                            const TacsScalar* pert, double dh) {
 #ifdef TACS_USE_COMPLEX
   for (int k = 0; k < size; k++) {
     out[k] = orig[k] + TacsScalar(0.0, dh) * pert[k];
@@ -161,8 +161,8 @@ void TacsForwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
 /*
   Perturb the variables in the backward sense
 */
-void TacsBackwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
-                             const TacsScalar *pert, double dh) {
+void TacsBackwardDiffPerturb(TacsScalar* out, int size, const TacsScalar* orig,
+                             const TacsScalar* pert, double dh) {
 #ifdef TACS_USE_COMPLEX
   for (int k = 0; k < size; k++) {
     out[k] = orig[k];
@@ -177,7 +177,7 @@ void TacsBackwardDiffPerturb(TacsScalar *out, int size, const TacsScalar *orig,
 /*
   Form the forward approximation
 */
-void TacsFormDiffApproximate(TacsScalar *forward, const TacsScalar *backward,
+void TacsFormDiffApproximate(TacsScalar* forward, const TacsScalar* backward,
                              int size, TacsScalar dh) {
 #ifdef TACS_USE_COMPLEX
   for (int k = 0; k < size; k++) {
@@ -214,7 +214,7 @@ void TacsFormDiffApproximate(TacsScalar *forward, const TacsScalar *backward,
   d(f(q, dq))/dt .=
   (f(q + dt*dq, dq + dt*ddq) - f(q - dt*dq, dq - dt*ddq))/dt
 */
-int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
+int TacsTestElementResidual(TACSElement* element, int elemIndex, double time,
                             const TacsScalar Xpts[], const TacsScalar vars[],
                             const TacsScalar dvars[], const TacsScalar ddvars[],
                             double dh, int test_print_level,
@@ -223,13 +223,13 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   int nvars = element->getNumVariables();
 
   // Allocate temporary arrays for the computation
-  TacsScalar *q = new TacsScalar[nvars];
-  TacsScalar *dq = new TacsScalar[nvars];
+  TacsScalar* q = new TacsScalar[nvars];
+  TacsScalar* dq = new TacsScalar[nvars];
 
   // Temporary storage for the residuals
-  TacsScalar *res1 = new TacsScalar[nvars];
-  TacsScalar *res2 = new TacsScalar[nvars];
-  TacsScalar *fd = new TacsScalar[nvars];
+  TacsScalar* res1 = new TacsScalar[nvars];
+  TacsScalar* res2 = new TacsScalar[nvars];
+  TacsScalar* fd = new TacsScalar[nvars];
 
   // Compute the values of the variables at (t + dt)
   for (int i = 0; i < nvars; i++) {
@@ -372,7 +372,7 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   input:
   col:   test only the specified column of the matrix
 */
-int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
+int TacsTestElementJacobian(TACSElement* element, int elemIndex, double time,
                             const TacsScalar Xpts[], const TacsScalar vars[],
                             const TacsScalar dvars[], const TacsScalar ddvars[],
                             int col, double dh, int test_print_level,
@@ -383,15 +383,15 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar *result = new TacsScalar[nvars];
-  TacsScalar *temp = new TacsScalar[nvars];
-  TacsScalar *pert = new TacsScalar[nvars];
+  TacsScalar* result = new TacsScalar[nvars];
+  TacsScalar* temp = new TacsScalar[nvars];
+  TacsScalar* pert = new TacsScalar[nvars];
 
-  TacsScalar *q = new TacsScalar[nvars];
-  TacsScalar *dq = new TacsScalar[nvars];
-  TacsScalar *ddq = new TacsScalar[nvars];
-  TacsScalar *res = new TacsScalar[nvars];
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar* q = new TacsScalar[nvars];
+  TacsScalar* dq = new TacsScalar[nvars];
+  TacsScalar* ddq = new TacsScalar[nvars];
+  TacsScalar* res = new TacsScalar[nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
 
   if (col >= 0 && col < nvars) {
     memset(pert, 0, nvars * sizeof(TacsScalar));
@@ -526,17 +526,17 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   col:   test only the specified column of the matrix
 */
 int TacsTestElementMatFreeJacobian(
-    TACSElement *element, int elemIndex, double time, const TacsScalar Xpts[],
+    TACSElement* element, int elemIndex, double time, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int col, double dh, int test_print_level,
     double test_fail_atol, double test_fail_rtol) {
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar *result = new TacsScalar[nvars];
-  TacsScalar *pert = new TacsScalar[nvars];
-  TacsScalar *res = new TacsScalar[nvars];
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
+  TacsScalar* result = new TacsScalar[nvars];
+  TacsScalar* pert = new TacsScalar[nvars];
+  TacsScalar* res = new TacsScalar[nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
 
   if (col >= 0 && col < nvars) {
     memset(pert, 0, nvars * sizeof(TacsScalar));
@@ -564,8 +564,8 @@ int TacsTestElementMatFreeJacobian(
   element->getMatVecDataSizes(TACS_JACOBIAN_MATRIX, elemIndex, &dsize, &tsize);
 
   // Allocate the matrix
-  TacsScalar *tarray = new TacsScalar[tsize];
-  TacsScalar *data = new TacsScalar[dsize];
+  TacsScalar* tarray = new TacsScalar[tsize];
+  TacsScalar* data = new TacsScalar[dsize];
   element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time, alpha,
                                 beta, gamma, Xpts, vars, dvars, ddvars, data);
 
@@ -611,10 +611,10 @@ int TacsTestElementMatFreeJacobian(
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
+int TacsTestAdjResProduct(TACSElement* element, int elemIndex, double time,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          int dvLen, const TacsScalar *x, double dh,
+                          int dvLen, const TacsScalar* x, double dh,
                           int test_print_level, double test_fail_atol,
                           double test_fail_rtol) {
   // Retrieve the number of variables
@@ -624,11 +624,11 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *result = new TacsScalar[num_dvs];
+  TacsScalar* result = new TacsScalar[num_dvs];
   memset(result, 0, num_dvs * sizeof(TacsScalar));
 
   // Generate a random array of values
-  TacsScalar *adjoint = new TacsScalar[nvars];
+  TacsScalar* adjoint = new TacsScalar[nvars];
   TacsGenerateRandomArray(adjoint, nvars);
 
   // Evaluate the derivative of the adjoint-residual product
@@ -647,11 +647,11 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
 
   // Allocate an array to store the perturbed design variable
   // values
-  TacsScalar *xpert = new TacsScalar[num_dvs];
+  TacsScalar* xpert = new TacsScalar[num_dvs];
   TacsScalar fd_dpdx = 0.0;
 
   // Zero the residual
-  TacsScalar *res = new TacsScalar[nvars];
+  TacsScalar* res = new TacsScalar[nvars];
 
 #ifdef TACS_USE_COMPLEX
   // Perturb the design variables: xpert = x + dh*sign(result[k])
@@ -753,7 +753,7 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
+int TacsTestAdjResXptProduct(TACSElement* element, int elemIndex, double time,
                              const TacsScalar Xpts[], const TacsScalar vars[],
                              const TacsScalar dvars[],
                              const TacsScalar ddvars[], double dh,
@@ -764,11 +764,11 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *result = new TacsScalar[3 * nnodes];
+  TacsScalar* result = new TacsScalar[3 * nnodes];
   memset(result, 0, 3 * nnodes * sizeof(TacsScalar));
 
   // Generate a random array of values
-  TacsScalar *adjoint = new TacsScalar[nvars];
+  TacsScalar* adjoint = new TacsScalar[nvars];
   TacsGenerateRandomArray(adjoint, nvars);
 
   // Evaluate the derivative of the adjoint-residual product
@@ -777,9 +777,9 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
                                dvars, ddvars, result);
 
   // Allocate space to store the results
-  TacsScalar *fd = new TacsScalar[3 * nnodes];
-  TacsScalar *X = new TacsScalar[3 * nnodes];
-  TacsScalar *res = new TacsScalar[nvars];
+  TacsScalar* fd = new TacsScalar[3 * nnodes];
+  TacsScalar* X = new TacsScalar[3 * nnodes];
+  TacsScalar* res = new TacsScalar[nvars];
 
   for (int k = 0; k < 3 * nnodes; k++) {
     // Copy the points
@@ -847,10 +847,10 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
   return !allClose;
 }
 
-int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
+int TacsTestElementMatDVSens(TACSElement* element, ElementMatrixType matType,
                              int elemIndex, double time,
                              const TacsScalar Xpts[], const TacsScalar vars[],
-                             int dvLen, const TacsScalar *x, double dh,
+                             int dvLen, const TacsScalar* x, double dh,
                              int test_print_level, double test_fail_atol,
                              double test_fail_rtol) {
   // Retrieve the number of variables
@@ -860,15 +860,15 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *xcopy = new TacsScalar[num_dvs];
-  TacsScalar *result = new TacsScalar[num_dvs];
-  TacsScalar *fd = new TacsScalar[num_dvs];
+  TacsScalar* xcopy = new TacsScalar[num_dvs];
+  TacsScalar* result = new TacsScalar[num_dvs];
+  TacsScalar* fd = new TacsScalar[num_dvs];
   memset(result, 0, num_dvs * sizeof(TacsScalar));
 
   // Generate a random array of values
-  TacsScalar *mat = new TacsScalar[nvars * nvars];
-  TacsScalar *psi = new TacsScalar[nvars];
-  TacsScalar *phi = new TacsScalar[nvars];
+  TacsScalar* mat = new TacsScalar[nvars * nvars];
+  TacsScalar* psi = new TacsScalar[nvars];
+  TacsScalar* phi = new TacsScalar[nvars];
   TacsGenerateRandomArray(psi, nvars);
   TacsGenerateRandomArray(phi, nvars);
 
@@ -962,7 +962,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   return !allClose;
 }
 
-int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
+int TacsTestElementMatXptSens(TACSElement* element, ElementMatrixType matType,
                               int elemIndex, double time,
                               const TacsScalar Xpts[], const TacsScalar vars[],
                               double dh, int test_print_level,
@@ -1061,7 +1061,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   return !allClose;
 }
 
-int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
+int TacsTestElementMatSVSens(TACSElement* element, ElementMatrixType matType,
                              int elemIndex, double time,
                              const TacsScalar Xpts[], const TacsScalar vars[],
                              double dh, int test_print_level,
@@ -1149,7 +1149,7 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
   return !allClose;
 }
 
-int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
+int TacsTestElementBasisFunctions(TACSElementBasis* basis, double dh,
                                   int test_print_level, double test_fail_atol,
                                   double test_fail_rtol) {
   // Set the failure parameter
@@ -1161,17 +1161,17 @@ int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
 
   // Create an array to store the values of the adjoint-residual
   // product
-  double *result = new double[nparams * nnodes];
+  double* result = new double[nparams * nnodes];
   memset(result, 0, nparams * nnodes * sizeof(double));
 
   // Generate a random array of values
-  double *fd = new double[nparams * nnodes];
+  double* fd = new double[nparams * nnodes];
 
   double pt0[3];
   TacsGenerateRandomArray(pt0, 3);
 
-  double *N0 = new double[nnodes];
-  double *N = new double[nnodes];
+  double* N0 = new double[nnodes];
+  double* N = new double[nnodes];
   basis->computeBasisGradient(pt0, N0, result);
 
   // Compute the finite-difference
@@ -1222,7 +1222,7 @@ int TacsTestElementBasisFunctions(TACSElementBasis *basis, double dh,
   return fail;
 }
 
-int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
+int TacsTestElementBasisFaceNormals(TACSElementBasis* basis, double dh,
                                     int test_print_level, double test_fail_atol,
                                     double test_fail_rtol) {
   int fail = 0;
@@ -1241,13 +1241,13 @@ int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
   TacsGenerateRandomArray(dfdn, 3);
 
   // Other vectors
-  TacsScalar *Xpts = new TacsScalar[3 * nnodes];
-  TacsScalar *pert = new TacsScalar[3 * nnodes];
+  TacsScalar* Xpts = new TacsScalar[3 * nnodes];
+  TacsScalar* pert = new TacsScalar[3 * nnodes];
   TacsGenerateRandomArray(pert, 3 * nnodes);
   TacsGenerateRandomArray(Xpts, 3 * nnodes);
 
-  TacsScalar *Xpts_pert = new TacsScalar[3 * nnodes];
-  TacsScalar *dfdXpts = new TacsScalar[3 * nnodes];
+  TacsScalar* Xpts_pert = new TacsScalar[3 * nnodes];
+  TacsScalar* dfdXpts = new TacsScalar[3 * nnodes];
 
   for (int face = 0; face < nfaces; face++) {
     for (int n = 0; n < basis->getNumFaceQuadraturePoints(face); n++) {
@@ -1334,7 +1334,7 @@ int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
   return fail;
 }
 
-int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
+int TacsTestElementBasisJacobianTransform(TACSElementBasis* basis, double dh,
                                           int test_print_level,
                                           double test_fail_atol,
                                           double test_fail_rtol) {
@@ -1353,13 +1353,13 @@ int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
   TacsGenerateRandomArray(dfdJ, 9);
 
   // Other vectors
-  TacsScalar *Xpts = new TacsScalar[3 * nnodes];
-  TacsScalar *pert = new TacsScalar[3 * nnodes];
+  TacsScalar* Xpts = new TacsScalar[3 * nnodes];
+  TacsScalar* pert = new TacsScalar[3 * nnodes];
   TacsGenerateRandomArray(pert, 3 * nnodes);
   TacsGenerateRandomArray(Xpts, 3 * nnodes);
 
-  TacsScalar *Xpts_pert = new TacsScalar[3 * nnodes];
-  TacsScalar *dfdXpts = new TacsScalar[3 * nnodes];
+  TacsScalar* Xpts_pert = new TacsScalar[3 * nnodes];
+  TacsScalar* dfdXpts = new TacsScalar[3 * nnodes];
 
   for (int n = 0; n < nquad; n++) {
     double pt[3];
@@ -1444,7 +1444,7 @@ int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
   Test the quantity output design variable sensitivities
 */
 int TacsTestElementQuantityDVSens(
-    TACSElement *element, int elemIndex, int quantityType, double time,
+    TACSElement* element, int elemIndex, int quantityType, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], double dh, int test_print_level,
     double test_fail_atol, double test_fail_rtol) {
@@ -1453,13 +1453,13 @@ int TacsTestElementQuantityDVSens(
   int ndvs = element->getDesignVarNums(elemIndex, 0, NULL);
   int num_dvs = dvs_per_node * ndvs;
 
-  TacsScalar *x = new TacsScalar[num_dvs];
+  TacsScalar* x = new TacsScalar[num_dvs];
   element->getDesignVars(elemIndex, num_dvs, x);
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *result = new TacsScalar[num_dvs];
-  TacsScalar *fd = new TacsScalar[num_dvs];
+  TacsScalar* result = new TacsScalar[num_dvs];
+  TacsScalar* fd = new TacsScalar[num_dvs];
   memset(result, 0, num_dvs * sizeof(TacsScalar));
   memset(fd, 0, num_dvs * sizeof(TacsScalar));
 
@@ -1543,7 +1543,7 @@ int TacsTestElementQuantityDVSens(
   Test the quantity output state variable sensitivities
 */
 int TacsTestElementQuantitySVSens(
-    TACSElement *element, int elemIndex, int quantityType, double time,
+    TACSElement* element, int elemIndex, int quantityType, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], double dh, int test_print_level,
     double test_fail_atol, double test_fail_rtol) {
@@ -1552,11 +1552,11 @@ int TacsTestElementQuantitySVSens(
 
   // Create an array to store the values of the adjoint-residual
   // product
-  TacsScalar *result = new TacsScalar[nvars];
-  TacsScalar *fd = new TacsScalar[nvars];
-  TacsScalar *q = new TacsScalar[nvars];
-  TacsScalar *qdot = new TacsScalar[nvars];
-  TacsScalar *qddot = new TacsScalar[nvars];
+  TacsScalar* result = new TacsScalar[nvars];
+  TacsScalar* fd = new TacsScalar[nvars];
+  TacsScalar* q = new TacsScalar[nvars];
+  TacsScalar* qdot = new TacsScalar[nvars];
+  TacsScalar* qddot = new TacsScalar[nvars];
   memset(result, 0, nvars * sizeof(TacsScalar));
 
   // Generate a random array
@@ -1645,19 +1645,19 @@ int TacsTestElementQuantitySVSens(
   Test the quantity output element node sensitivities
 */
 int TacsTestElementQuantityXptSens(
-    TACSElement *element, int elemIndex, int quantityType, double time,
+    TACSElement* element, int elemIndex, int quantityType, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], double dh, int test_print_level,
     double test_fail_atol, double test_fail_rtol) {
   int nnodes = element->getNumNodes();
 
   // Create an array to store the result
-  TacsScalar *result = new TacsScalar[3 * nnodes];
-  TacsScalar *fd = new TacsScalar[3 * nnodes];
+  TacsScalar* result = new TacsScalar[3 * nnodes];
+  TacsScalar* fd = new TacsScalar[3 * nnodes];
   memset(result, 0, 3 * nnodes * sizeof(TacsScalar));
   memset(fd, 0, 3 * nnodes * sizeof(TacsScalar));
 
-  TacsScalar *Xt = new TacsScalar[3 * nnodes];
+  TacsScalar* Xt = new TacsScalar[3 * nnodes];
 
   // Generate a random array
   TacsScalar f0[9], dfdq[9];
@@ -1744,7 +1744,7 @@ int TacsTestElementQuantityXptSens(
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TacsTestElementBasis(TACSElementBasis *basis, double dh,
+int TacsTestElementBasis(TACSElementBasis* basis, double dh,
                          int test_print_level, double test_fail_atol,
                          double test_fail_rtol) {
   int fail = 0;
@@ -1766,7 +1766,7 @@ int TacsTestElementBasis(TACSElementBasis *basis, double dh,
 // Set the maximum number of variables at a given node
 static const int MAX_VARS_PER_NODE = 10;
 
-int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
+int TacsTestElementModelJacobian(TACSElementModel* model, int elemIndex,
                                  const double time, double dh,
                                  int test_print_level, double test_fail_atol,
                                  double test_fail_rtol) {
@@ -1780,7 +1780,7 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
   const double pt[3] = {-0.125, 0.383, -0.233};
 
   int Jac_nnz;
-  const int *Jac_pairs;
+  const int* Jac_pairs;
   model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex, &Jac_nnz,
                                &Jac_pairs);
 
@@ -1931,7 +1931,7 @@ int TacsTestElementModelJacobian(TACSElementModel *model, int elemIndex,
   return fail;
 }
 
-int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
+int TacsTestElementModelAdjXptSensProduct(TACSElementModel* model,
                                           int elemIndex, const double time,
                                           double dh, int test_print_level,
                                           double test_fail_atol,
@@ -2226,7 +2226,7 @@ int TacsTestElementModelAdjXptSensProduct(TACSElementModel *model,
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TacsTestElementModel(TACSElementModel *model, int elemIndex,
+int TacsTestElementModel(TACSElementModel* model, int elemIndex,
                          const double time, double dh, int test_print_level,
                          double test_fail_atol, double test_fail_rtol) {
   int fail = 0;

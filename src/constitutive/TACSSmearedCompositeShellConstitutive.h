@@ -25,12 +25,12 @@
 class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
  public:
   TACSSmearedCompositeShellConstitutive(
-      int _num_plies, TACSOrthotropicPly **_ply_props, TacsScalar _thickness,
-      const TacsScalar *_ply_angles, const TacsScalar *_ply_fractions,
-      int _thickness_dv_num = -1, const int *_ply_fraction_dv_nums = NULL,
+      int _num_plies, TACSOrthotropicPly** _ply_props, TacsScalar _thickness,
+      const TacsScalar* _ply_angles, const TacsScalar* _ply_fractions,
+      int _thickness_dv_num = -1, const int* _ply_fraction_dv_nums = NULL,
       TacsScalar _thickness_lb = 0.0, TacsScalar _thickness_ub = 1e20,
-      const TacsScalar *_ply_fraction_lb = NULL,
-      const TacsScalar *_ply_fraction_ub = NULL, TacsScalar _t_offset = 0.0);
+      const TacsScalar* _ply_fraction_lb = NULL,
+      const TacsScalar* _ply_fraction_ub = NULL, TacsScalar _t_offset = 0.0);
   ~TACSSmearedCompositeShellConstitutive();
 
   // Retrieve the global design variable numbers
@@ -111,33 +111,33 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
                            const TacsScalar X[], TacsScalar C[]);
 
   // The name of the constitutive object
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Get ply angles, thicknesses, and fractions
   TacsScalar getLaminateThickness();
-  void getPlyAngles(TacsScalar *_ply_angles);
-  void getPlyFractions(TacsScalar *_ply_fractions);
+  void getPlyAngles(TacsScalar* _ply_angles);
+  void getPlyFractions(TacsScalar* _ply_fractions);
   TacsScalar getThicknessOffset();
 
  private:
   // Store information about the design variable
   int num_plies;
-  TACSOrthotropicPly **ply_props;
+  TACSOrthotropicPly** ply_props;
   TacsScalar thickness;
   TacsScalar *ply_fractions, *ply_angles;
   int thickness_dv_num;
-  int *ply_fraction_dv_nums;
+  int* ply_fraction_dv_nums;
   TacsScalar thickness_lb, thickness_ub;
   TacsScalar *ply_fraction_lb, *ply_fraction_ub;
   TacsScalar kcorr;
   double ks_weight;
   int nfvals;
   TacsScalar *fvals, *dks_vals;
-  TacsScalar **dfvals;
+  TacsScalar** dfvals;
   TacsScalar t_offset;
 
   // The object name
-  static const char *constName;
+  static const char* constName;
 
   TacsScalar evalFSDTStiffness(int elemIndex, const double pt[],
                                const TacsScalar X[], TacsScalar A[],

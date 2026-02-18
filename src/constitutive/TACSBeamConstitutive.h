@@ -61,7 +61,7 @@ class TACSBeamConstitutive : public TACSConstitutive {
   int getNumStresses() { return NUM_STRESSES; }
 
   // Return the class name
-  const char *getObjectName();
+  const char* getObjectName();
 
   /**
     Compute a matrix-vector product using the tangent stiffness matrix
@@ -88,7 +88,7 @@ class TACSBeamConstitutive : public TACSConstitutive {
 
  private:
   // Set the constitutive name
-  static const char *constName;
+  static const char* constName;
 };
 
 #endif  // TACS_BEAM_CONSTITUTIVE_H

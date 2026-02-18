@@ -87,14 +87,14 @@ class TACSGeneralMassConstitutive : public TACSConstitutive {
   }
 
   // Extra info about the constitutive class
-  const char *getObjectName();
+  const char* getObjectName();
 
  protected:
   // Mass matrix
   TacsScalar M[21];
 
  private:
-  static const char *name;
+  static const char* name;
 };
 
 #endif  // TACS_GENERAL_MASS_CONSTITUTIVE_H

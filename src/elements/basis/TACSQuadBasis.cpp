@@ -606,8 +606,8 @@ void TACSQuarticQuadBasis::interpFields(const int n, const double pt[],
                                         const int m, const TacsScalar v[],
                                         const int incr, TacsScalar u[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[5 * (n % 5)];
-    const double *n2 = &Nf[5 * (n / 5)];
+    const double* n1 = &Nf[5 * (n % 5)];
+    const double* n2 = &Nf[5 * (n / 5)];
 
     for (int i = 0; i < m; i++, u += incr, v++) {
       u[0] = TACS_BASIS_EVAL_TENSOR2D_ORDER5(n1, n2, m, v);
@@ -627,8 +627,8 @@ void TACSQuarticQuadBasis::addInterpFieldsTranspose(
     const int n, const double pt[], const int incr, const TacsScalar u[],
     const int m, TacsScalar v[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[5 * (n % 5)];
-    const double *n2 = &Nf[5 * (n / 5)];
+    const double* n1 = &Nf[5 * (n % 5)];
+    const double* n2 = &Nf[5 * (n / 5)];
 
     for (int i = 0; i < m; i++, u += incr, v++) {
       TacsScalar temp;
@@ -650,10 +650,10 @@ void TACSQuarticQuadBasis::interpFieldsGrad(const int n, const double pt[],
                                             const int m, const TacsScalar v[],
                                             TacsScalar g[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[5 * (n % 5)];
-    const double *n2 = &Nf[5 * (n / 5)];
-    const double *n1xi = &Nfxi[5 * (n % 5)];
-    const double *n2xi = &Nfxi[5 * (n / 5)];
+    const double* n1 = &Nf[5 * (n % 5)];
+    const double* n2 = &Nf[5 * (n / 5)];
+    const double* n1xi = &Nfxi[5 * (n % 5)];
+    const double* n2xi = &Nfxi[5 * (n / 5)];
 
     for (int i = 0; i < m; i++, g += 2, v++) {
       g[0] = TACS_BASIS_EVAL_TENSOR2D_ORDER5(n1xi, n2, m, v);
@@ -677,10 +677,10 @@ void TACSQuarticQuadBasis::addInterpFieldsGradTranspose(int n,
                                                         const TacsScalar g[],
                                                         TacsScalar v[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[5 * (n % 5)];
-    const double *n2 = &Nf[5 * (n / 5)];
-    const double *n1xi = &Nfxi[5 * (n % 5)];
-    const double *n2xi = &Nfxi[5 * (n / 5)];
+    const double* n1 = &Nf[5 * (n % 5)];
+    const double* n2 = &Nf[5 * (n / 5)];
+    const double* n1xi = &Nfxi[5 * (n % 5)];
+    const double* n2xi = &Nfxi[5 * (n / 5)];
 
     for (int i = 0; i < m; i++, g += 2, v++) {
       TacsScalar temp;
@@ -794,8 +794,8 @@ void TACSQuinticQuadBasis::interpFields(const int n, const double pt[],
                                         const int m, const TacsScalar v[],
                                         const int incr, TacsScalar u[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[6 * (n % 6)];
-    const double *n2 = &Nf[6 * (n / 6)];
+    const double* n1 = &Nf[6 * (n % 6)];
+    const double* n2 = &Nf[6 * (n / 6)];
 
     for (int i = 0; i < m; i++, u += incr, v++) {
       u[0] = TACS_BASIS_EVAL_TENSOR2D_ORDER6(n1, n2, m, v);
@@ -815,8 +815,8 @@ void TACSQuinticQuadBasis::addInterpFieldsTranspose(
     const int n, const double pt[], const int incr, const TacsScalar u[],
     const int m, TacsScalar v[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[6 * (n % 6)];
-    const double *n2 = &Nf[6 * (n / 6)];
+    const double* n1 = &Nf[6 * (n % 6)];
+    const double* n2 = &Nf[6 * (n / 6)];
 
     for (int i = 0; i < m; i++, u += incr, v++) {
       TacsScalar temp;
@@ -838,10 +838,10 @@ void TACSQuinticQuadBasis::interpFieldsGrad(const int n, const double pt[],
                                             const int m, const TacsScalar v[],
                                             TacsScalar g[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[6 * (n % 6)];
-    const double *n2 = &Nf[6 * (n / 6)];
-    const double *n1xi = &Nfxi[6 * (n % 6)];
-    const double *n2xi = &Nfxi[6 * (n / 6)];
+    const double* n1 = &Nf[6 * (n % 6)];
+    const double* n2 = &Nf[6 * (n / 6)];
+    const double* n1xi = &Nfxi[6 * (n % 6)];
+    const double* n2xi = &Nfxi[6 * (n / 6)];
 
     for (int i = 0; i < m; i++, g += 2, v++) {
       g[0] = TACS_BASIS_EVAL_TENSOR2D_ORDER6(n1xi, n2, m, v);
@@ -865,10 +865,10 @@ void TACSQuinticQuadBasis::addInterpFieldsGradTranspose(int n,
                                                         const TacsScalar g[],
                                                         TacsScalar v[]) {
   if (n >= 0) {
-    const double *n1 = &Nf[6 * (n % 6)];
-    const double *n2 = &Nf[6 * (n / 6)];
-    const double *n1xi = &Nfxi[6 * (n % 6)];
-    const double *n2xi = &Nfxi[6 * (n / 6)];
+    const double* n1 = &Nf[6 * (n % 6)];
+    const double* n2 = &Nf[6 * (n / 6)];
+    const double* n1xi = &Nfxi[6 * (n % 6)];
+    const double* n2xi = &Nfxi[6 * (n / 6)];
 
     for (int i = 0; i < m; i++, g += 2, v++) {
       TacsScalar temp;

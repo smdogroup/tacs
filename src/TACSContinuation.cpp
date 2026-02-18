@@ -52,8 +52,8 @@
   [x] = Q[x']
   [y]
 */
-TACSContinuationPathMat::TACSContinuationPathMat(TACSMat *_A, TACSVec *_r,
-                                                 TACSVec *_t, TacsScalar s) {
+TACSContinuationPathMat::TACSContinuationPathMat(TACSMat* _A, TACSVec* _r,
+                                                 TACSVec* _t, TacsScalar s) {
   A = _A;
   A->incref();
   r = _r;
@@ -72,7 +72,7 @@ TACSContinuationPathMat::~TACSContinuationPathMat() {
   xtmp->decref();
 }
 
-void TACSContinuationPathMat::getVectors(TACSVec **_r, TACSVec **_t) {
+void TACSContinuationPathMat::getVectors(TACSVec** _r, TACSVec** _t) {
   if (_r) {
     *_r = r;
   }
@@ -90,17 +90,17 @@ void TACSContinuationPathMat::resetConstraint(TacsScalar s) {
 }
 
 // Multiply x <-- Qx, return the value of the n+1-th row
-TacsScalar TACSContinuationPathMat::extract(TACSVec *x) {
+TacsScalar TACSContinuationPathMat::extract(TACSVec* x) {
   TacsScalar tTx = t->dot(x);
   x->axpy(-(2.0 * tTx) / (tn * tn), t);
   return -(2.0 * wn * tTx) / (tn * tn);
 }
 
-void TACSContinuationPathMat::getSize(int *_nr, int *_nc) {
+void TACSContinuationPathMat::getSize(int* _nr, int* _nc) {
   A->getSize(_nr, _nc);
 }
 
-void TACSContinuationPathMat::mult(TACSVec *x, TACSVec *y) {
+void TACSContinuationPathMat::mult(TACSVec* x, TACSVec* y) {
   xtmp->copyValues(x);
 
   TacsScalar tTx = t->dot(x);
@@ -110,13 +110,13 @@ void TACSContinuationPathMat::mult(TACSVec *x, TACSVec *y) {
   y->axpy(-(2.0 * wn * tTx) / (tn * tn), r);
 }
 
-TACSVec *TACSContinuationPathMat::createVec() { return A->createVec(); }
+TACSVec* TACSContinuationPathMat::createVec() { return A->createVec(); }
 
 /**
   Callback class for monitoring the continuation algorithm
 */
 TACSContinuationCallback::TACSContinuationCallback(MPI_Comm _comm,
-                                                   const char *filename) {
+                                                   const char* filename) {
   comm = _comm;
 
   int rank;
@@ -138,10 +138,10 @@ TACSContinuationCallback::~TACSContinuationCallback() {
   }
 }
 
-void TACSContinuationCallback::iteration(int iter, TACSBVec *vars,
+void TACSContinuationCallback::iteration(int iter, TACSBVec* vars,
                                          TacsScalar lambda,
                                          TacsScalar dlambda_ds,
-                                         TACSAssembler *assembler) {
+                                         TACSAssembler* assembler) {
   if (fp) {
     fprintf(fp, "%2d %15.6e %15.6e\n", iter + 1, TacsRealPart(lambda),
             TacsRealPart(dlambda_ds));
@@ -152,7 +152,7 @@ void TACSContinuationCallback::iteration(int iter, TACSBVec *vars,
 /**
   Initialize the arc-length continuation class
 */
-TACSContinuation::TACSContinuation(TACSAssembler *_assembler,
+TACSContinuation::TACSContinuation(TACSAssembler* _assembler,
                                    int _max_continuation_iters,
                                    int _max_correction_iters,
                                    int _max_correction_restarts,
@@ -208,7 +208,7 @@ TACSContinuation::~TACSContinuation() {
 /**
   Set the termination conditions
 */
-void TACSContinuation::setTermFunction(TACSFunction *func,
+void TACSContinuation::setTermFunction(TACSFunction* func,
                                        TacsScalar term_value) {
   func->incref();
   if (term_function) {
@@ -227,8 +227,8 @@ void TACSContinuation::setTermLambdaRate(TacsScalar term_dlambda_ds) {
 */
 int TACSContinuation::getNumIterations() { return iteration_count; }
 
-void TACSContinuation::getSolution(int iter, TacsScalar *lambda,
-                                   TacsScalar *dlambda_ds) {
+void TACSContinuation::getSolution(int iter, TacsScalar* lambda,
+                                   TacsScalar* dlambda_ds) {
   if (iter >= 0 && iter < iteration_count) {
     *lambda = lambda_history[iter];
     *dlambda_ds = dlambda_ds_history[iter];
@@ -275,17 +275,17 @@ void TACSContinuation::getSolution(int iter, TacsScalar *lambda,
   equilibrium path. These corrector iterations employ a Newton method
   to bring the point back onto the equilibrium path.
 */
-void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
-                                     TACSBVec *load, TacsScalar lambda_init,
+void TACSContinuation::solve_tangent(TACSMat* mat, TACSPc* pc, TACSKsm* ksm,
+                                     TACSBVec* load, TacsScalar lambda_init,
                                      TacsScalar target_delta_lambda,
-                                     KSMPrint *ksm_print,
-                                     TACSContinuationCallback *callback) {
-  TACSBVec *vars = assembler->createVec();
-  TACSBVec *old_vars = assembler->createVec();
-  TACSBVec *temp = assembler->createVec();
-  TACSBVec *tangent = assembler->createVec();
-  TACSBVec *update = assembler->createVec();
-  TACSBVec *res = assembler->createVec();
+                                     KSMPrint* ksm_print,
+                                     TACSContinuationCallback* callback) {
+  TACSBVec* vars = assembler->createVec();
+  TACSBVec* old_vars = assembler->createVec();
+  TACSBVec* temp = assembler->createVec();
+  TACSBVec* tangent = assembler->createVec();
+  TACSBVec* update = assembler->createVec();
+  TACSBVec* res = assembler->createVec();
 
   vars->incref();
   old_vars->incref();
@@ -294,7 +294,7 @@ void TACSContinuation::solve_tangent(TACSMat *mat, TACSPc *pc, TACSKsm *ksm,
   update->incref();
   res->incref();
 
-  TACSContinuationPathMat *path_mat =
+  TACSContinuationPathMat* path_mat =
       new TACSContinuationPathMat(mat, load, tangent, 0.0);
   path_mat->incref();
 

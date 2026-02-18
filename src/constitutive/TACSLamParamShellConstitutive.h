@@ -39,7 +39,7 @@
 */
 class TACSLamParamShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSLamParamShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
+  TACSLamParamShellConstitutive(TACSOrthotropicPly* _orthoPly, TacsScalar _t,
                                 int _t_num, TacsScalar _min_t,
                                 TacsScalar _max_t, TacsScalar _f0,
                                 TacsScalar _f45, TacsScalar _f90, int _f0_num,
@@ -112,7 +112,7 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
                         int dvLen, TacsScalar dfdx[]);
 
   // Get the object name
-  const char *getObjectName() { return constName; }
+  const char* getObjectName() { return constName; }
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -123,7 +123,7 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
 
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar *_max);
+                      TacsScalar* _max);
   void computeFailureStrainSens(const TacsScalar strain[],
                                 const TacsScalar weights[], TacsScalar sens[]);
 
@@ -132,7 +132,7 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar *drill);
+                    TacsScalar As[], TacsScalar* drill);
 
   // The number of design variables
   int numDesignVars;
@@ -144,7 +144,7 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
   TacsScalar U1, U2, U3, U4, U5;
   TacsScalar U6, U7;  // The invariants for shear
 
-  TACSOrthotropicPly *orthoPly;
+  TACSOrthotropicPly* orthoPly;
   TacsScalar ksWeight, epsilon;
 
   // The thickness information
@@ -161,7 +161,7 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
   int nW1, nW3;       // The design variable numbers
   TacsScalar W1, W3;  // The lamination parameter values
 
-  static const char *constName;
+  static const char* constName;
 };
 
 #endif  // TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H

@@ -24,7 +24,7 @@
 */
 static pthread_mutex_t sched_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void TACSAssembler::schedPthreadJob(TACSAssembler *assembler, int *index,
+void TACSAssembler::schedPthreadJob(TACSAssembler* assembler, int* index,
                                     int total_size) {
   pthread_mutex_lock(&sched_mutex);
 
@@ -46,36 +46,36 @@ void TACSAssembler::schedPthreadJob(TACSAssembler *assembler, int *index,
 
   tacs:     the pointer to the TACSAssembler object
 */
-void *TACSAssembler::assembleRes_thread(void *t) {
-  TACSAssemblerPthreadInfo *pinfo = static_cast<TACSAssemblerPthreadInfo *>(t);
+void* TACSAssembler::assembleRes_thread(void* t) {
+  TACSAssemblerPthreadInfo* pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *assembler = pinfo->assembler;
-  TACSBVec *res = pinfo->res;
+  TACSAssembler* assembler = pinfo->assembler;
+  TACSBVec* res = pinfo->res;
   TacsScalar lambda = pinfo->lambda;
 
   // Allocate a temporary array large enough to store everything required
   int s = assembler->maxElementSize;
   int sx = 3 * assembler->maxElementNodes;
   int dataSize = 4 * s + sx;
-  TacsScalar *data = new TacsScalar[dataSize];
+  TacsScalar* data = new TacsScalar[dataSize];
 
   // Set pointers to the allocate memory
-  TacsScalar *vars = &data[0];
-  TacsScalar *dvars = &data[s];
-  TacsScalar *ddvars = &data[2 * s];
-  TacsScalar *elemRes = &data[3 * s];
-  TacsScalar *elemXpts = &data[4 * s];
+  TacsScalar* vars = &data[0];
+  TacsScalar* dvars = &data[s];
+  TacsScalar* ddvars = &data[2 * s];
+  TacsScalar* elemRes = &data[3 * s];
+  TacsScalar* elemXpts = &data[4 * s];
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
   // To avoid allocating memory inside the element loop, make the aux element
   // contribution array big enough for the largest element
-  TacsScalar *auxElemRes;
+  TacsScalar* auxElemRes;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemRes = new TacsScalar[s];
@@ -88,12 +88,12 @@ void *TACSAssembler::assembleRes_thread(void *t) {
 
     if (elemIndex >= 0) {
       // Get the element object
-      TACSElement *element = assembler->elements[elemIndex];
+      TACSElement* element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
       int ptr = assembler->elementNodeIndex[elemIndex];
       int len = assembler->elementNodeIndex[elemIndex + 1] - ptr;
-      const int *nodes = &assembler->elementTacsNodes[ptr];
+      const int* nodes = &assembler->elementTacsNodes[ptr];
       assembler->xptVec->getValues(len, nodes, elemXpts);
       assembler->varsVec->getValues(len, nodes, vars);
       assembler->dvarsVec->getValues(len, nodes, dvars);
@@ -153,13 +153,13 @@ void *TACSAssembler::assembleRes_thread(void *t) {
   tacs:     the pointer to the TACSAssembler object
   A:        the generic TACSMat base class
 */
-void *TACSAssembler::assembleJacobian_thread(void *t) {
-  TACSAssemblerPthreadInfo *pinfo = static_cast<TACSAssemblerPthreadInfo *>(t);
+void* TACSAssembler::assembleJacobian_thread(void* t) {
+  TACSAssemblerPthreadInfo* pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *assembler = pinfo->assembler;
-  TACSBVec *res = pinfo->res;
-  TACSMat *A = pinfo->mat;
+  TACSAssembler* assembler = pinfo->assembler;
+  TACSBVec* res = pinfo->res;
+  TACSMat* A = pinfo->mat;
   TacsScalar alpha = pinfo->alpha;
   TacsScalar beta = pinfo->beta;
   TacsScalar gamma = pinfo->gamma;
@@ -172,21 +172,21 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
   int sx = 3 * assembler->maxElementNodes;
   int sw = assembler->maxElementIndepNodes;
   int dataSize = 4 * s + sx + s * s + sw;
-  TacsScalar *data = new TacsScalar[dataSize];
-  int *idata = new int[sw + assembler->maxElementNodes + 1];
+  TacsScalar* data = new TacsScalar[dataSize];
+  int* idata = new int[sw + assembler->maxElementNodes + 1];
 
   // Set pointers to the allocate memory
-  TacsScalar *vars = &data[0];
-  TacsScalar *dvars = &data[s];
-  TacsScalar *ddvars = &data[2 * s];
-  TacsScalar *elemRes = &data[3 * s];
-  TacsScalar *elemXpts = &data[4 * s];
-  TacsScalar *elemWeights = &data[4 * s + sx];
-  TacsScalar *elemMat = &data[4 * s + sx + sw];
+  TacsScalar* vars = &data[0];
+  TacsScalar* dvars = &data[s];
+  TacsScalar* ddvars = &data[2 * s];
+  TacsScalar* elemRes = &data[3 * s];
+  TacsScalar* elemXpts = &data[4 * s];
+  TacsScalar* elemWeights = &data[4 * s + sx];
+  TacsScalar* elemMat = &data[4 * s + sx + sw];
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
@@ -198,12 +198,12 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
 
     if (elemIndex >= 0) {
       // Get the element object
-      TACSElement *element = assembler->elements[elemIndex];
+      TACSElement* element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
       int ptr = assembler->elementNodeIndex[elemIndex];
       int len = assembler->elementNodeIndex[elemIndex + 1] - ptr;
-      const int *nodes = &assembler->elementTacsNodes[ptr];
+      const int* nodes = &assembler->elementTacsNodes[ptr];
       assembler->xptVec->getValues(len, nodes, elemXpts);
       assembler->varsVec->getValues(len, nodes, vars);
       assembler->dvarsVec->getValues(len, nodes, dvars);
@@ -261,12 +261,12 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
   matType:      the matrix type defined in Element.h
   matOr:        the matrix orientation: NORMAL or TRANSPOSE
 */
-void *TACSAssembler::assembleMatType_thread(void *t) {
-  TACSAssemblerPthreadInfo *pinfo = static_cast<TACSAssemblerPthreadInfo *>(t);
+void* TACSAssembler::assembleMatType_thread(void* t) {
+  TACSAssemblerPthreadInfo* pinfo = static_cast<TACSAssemblerPthreadInfo*>(t);
 
   // Un-pack information for this computation
-  TACSAssembler *assembler = pinfo->assembler;
-  TACSMat *A = pinfo->mat;
+  TACSAssembler* assembler = pinfo->assembler;
+  TACSMat* A = pinfo->mat;
   ElementMatrixType matType = pinfo->matType;
   MatrixOrientation matOr = pinfo->matOr;
   TacsScalar lambda = pinfo->lambda;
@@ -276,21 +276,21 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
   int sx = 3 * assembler->maxElementNodes;
   int sw = assembler->maxElementIndepNodes;
   int dataSize = s + sx + s * s + sw;
-  TacsScalar *data = new TacsScalar[dataSize];
-  int *idata = new int[sw + assembler->maxElementNodes + 1];
+  TacsScalar* data = new TacsScalar[dataSize];
+  int* idata = new int[sw + assembler->maxElementNodes + 1];
 
-  TacsScalar *vars = &data[0];
-  TacsScalar *elemXpts = &data[s];
-  TacsScalar *elemWeights = &data[s + sx];
-  TacsScalar *elemMat = &data[s + sx + sw];
+  TacsScalar* vars = &data[0];
+  TacsScalar* elemXpts = &data[s];
+  TacsScalar* elemWeights = &data[s + sx];
+  TacsScalar* elemMat = &data[s + sx + sw];
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
-  TacsScalar *auxElemMat;
+  TacsScalar* auxElemMat;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemMat = new TacsScalar[s * s];
@@ -303,13 +303,13 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
 
     if (elemIndex >= 0) {
       // Get the element
-      TACSElement *element = assembler->elements[elemIndex];
+      TACSElement* element = assembler->elements[elemIndex];
 
       // Retrieve the variable values
       // Retrieve the variable values
       int ptr = assembler->elementNodeIndex[elemIndex];
       int len = assembler->elementNodeIndex[elemIndex + 1] - ptr;
-      const int *nodes = &assembler->elementTacsNodes[ptr];
+      const int* nodes = &assembler->elementTacsNodes[ptr];
       assembler->xptVec->getValues(len, nodes, elemXpts);
       assembler->varsVec->getValues(len, nodes, vars);
 

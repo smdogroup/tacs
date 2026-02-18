@@ -86,7 +86,7 @@
 
 #endif  // TACS_USE_COMPLEX
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
   // Flag to indicate
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   // The stiffness object
-  FSDTStiffness *stiff = NULL;
+  FSDTStiffness* stiff = NULL;
 
   // Equivalent values of the density, thickness, modulus and Poisson
   // ratio
@@ -164,12 +164,12 @@ int main(int argc, char *argv[]) {
     E = E1;           // MPa
     nu = nu12;        // dimensionless
 
-    OrthoPly *ortho_ply =
+    OrthoPly* ortho_ply =
         new OrthoPly(tply, rho, E1, E2, nu12, G12, G23, G13, Xt, Xc, Yt, Yc, S);
 
     TacsScalar kcorr = 5.0 / 6.0;
     int num_plies = 4;
-    OrthoPly *ortho_plies[4];
+    OrthoPly* ortho_plies[4];
     ortho_plies[0] = ortho_plies[1] = ortho_plies[2] = ortho_plies[3] =
         ortho_ply;
 
@@ -224,15 +224,15 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
-  TACSElement *skin = new MITCShell<4>(stiff, LINEAR, 0);
+  TACSElement* skin = new MITCShell<4>(stiff, LINEAR, 0);
 
-  const char *file_name = "skewed_plate.bdf";
-  TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
+  const char* file_name = "skewed_plate.bdf";
+  TACSMeshLoader* mesh = new TACSMeshLoader(MPI_COMM_WORLD);
   mesh->incref();
   mesh->scanBDFFile(file_name);
   mesh->setElement(0, skin);
 
-  TACSAssembler *tacs = mesh->createTACS(6);
+  TACSAssembler* tacs = mesh->createTACS(6);
   tacs->incref();
 
   // Output for visualization
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
        TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
        TACSElement::OUTPUT_EXTRAS);
 
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  TACSToFH5* f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   int lev_fill = 5000;  // ILU(k) fill in
@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
 
   // These calls compute the symbolic factorization and allocate
   // the space required for the preconditioners
-  FEMat *aux_mat = tacs->createFEMat();
-  PcScMat *pc = new PcScMat(aux_mat, lev_fill, fill, 1);
+  FEMat* aux_mat = tacs->createFEMat();
+  PcScMat* pc = new PcScMat(aux_mat, lev_fill, fill, 1);
   aux_mat->incref();
   pc->incref();
 
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
   int nrestart = 0;     // Number of allowed restarts
   int is_flexible = 0;  // Is a flexible preconditioner?
 
-  GMRES *ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
+  GMRES* ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
   ksm->setTolerances(1e-12, 1e-30);
   ksm->incref();
 
@@ -269,19 +269,19 @@ int main(int argc, char *argv[]) {
   double eig_tol = 1e-8;
   TacsScalar sigma = -120.0;
 
-  FEMat *gmat = tacs->createFEMat();
-  FEMat *kmat = tacs->createFEMat();
+  FEMat* gmat = tacs->createFEMat();
+  FEMat* kmat = tacs->createFEMat();
 
   int output_freq = 1;
-  KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+  KSMPrint* ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
 
-  TACSLinearBuckling *linear_buckling = new TACSLinearBuckling(
+  TACSLinearBuckling* linear_buckling = new TACSLinearBuckling(
       tacs, sigma, gmat, kmat, aux_mat, ksm, max_lanczos, num_eigvals, eig_tol);
   linear_buckling->incref();
   linear_buckling->solve(NULL, NULL, ksm_print);
   f5->writeToFile("results/load_path.f5");
 
-  TACSBVec *vec = tacs->createVec();
+  TACSBVec* vec = tacs->createVec();
   vec->incref();
 
   for (int k = 0; k < num_eigvals; k++) {
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
 
   sigma = 10.0;
 
-  TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
+  TACSFrequencyAnalysis* freq_analysis = new TACSFrequencyAnalysis(
       tacs, sigma, kmat, aux_mat, ksm, max_lanczos, num_eigvals, eig_tol);
   freq_analysis->incref();
   freq_analysis->solve(ksm_print);

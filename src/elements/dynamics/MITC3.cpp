@@ -34,8 +34,8 @@
   size:       the number of values
   rel_err:    relative error tolerance
 */
-static void writeErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
-                                 TacsScalar *fd, int size,
+static void writeErrorComponents(FILE* fp, const char* descript, TacsScalar* a,
+                                 TacsScalar* fd, int size,
                                  double rel_err = 0.0) {
   int print_flag = 1;
   for (int i = 0; i < size; i++) {
@@ -329,8 +329,8 @@ static inline void computeInertiaRateProduct(const TacsScalar Jr[],
   vInit:      the initial velocity
   omegaInit:  the initial angular velocity
 */
-MITC3::MITC3(TACSBeamConstitutive *_stiff, TACSGibbsVector *_gravity,
-             TACSGibbsVector *_vInit, TACSGibbsVector *_omegaInit) {
+MITC3::MITC3(TACSBeamConstitutive* _stiff, TACSGibbsVector* _gravity,
+             TACSGibbsVector* _vInit, TACSGibbsVector* _omegaInit) {
   // Set the stiffness
   stiff = _stiff;
   stiff->incref();
@@ -389,12 +389,12 @@ ElementLayout MITC3::getLayoutType() { return TACS_LINE_QUADRATIC_ELEMENT; }
    Set up the internal static data for the names of the element,
    displacements, stresses, strains and extra variables, respectively.
 */
-const char *MITC3::elemName = "MITC3";
+const char* MITC3::elemName = "MITC3";
 
 /*
   Returns the elementName
 */
-const char *MITC3::getObjectName() { return elemName; }
+const char* MITC3::getObjectName() { return elemName; }
 
 /*
   Get the design variable numbers
@@ -442,7 +442,7 @@ void MITC3::getInitConditions(int elemIndex, const TacsScalar X[],
 
   // If the initial velocity is defined
   if (vInit) {
-    const TacsScalar *v0;
+    const TacsScalar* v0;
     vInit->getVector(&v0);
     for (int i = 0; i < NUM_NODES; i++) {
       dvars[8 * i] = v0[0];
@@ -453,7 +453,7 @@ void MITC3::getInitConditions(int elemIndex, const TacsScalar X[],
 
   // If the initial angular velocity is defined
   if (omegaInit) {
-    const TacsScalar *omega;
+    const TacsScalar* omega;
     omegaInit->getVector(&omega);
 
     for (int i = 0; i < NUM_NODES; i++) {
@@ -542,11 +542,11 @@ void MITC3::computeInertiaTensor(const TacsScalar rho[], const TacsScalar n1[],
 */
 void MITC3::computeEnergies(int elemIndex, double time, const TacsScalar X[],
                             const TacsScalar vars[], const TacsScalar dvars[],
-                            TacsScalar *_Te, TacsScalar *_Pe) {
+                            TacsScalar* _Te, TacsScalar* _Pe) {
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity) {
-    const TacsScalar *_g;
+    const TacsScalar* _g;
     gravity->getVector(&_g);
     g[0] = _g[0];
     g[1] = _g[1];
@@ -707,7 +707,7 @@ void MITC3::addResidual(int elemIndex, double time, const TacsScalar X[],
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity) {
-    const TacsScalar *_g;
+    const TacsScalar* _g;
     gravity->getVector(&_g);
     g[0] = _g[0];
     g[1] = _g[1];
@@ -782,7 +782,7 @@ void MITC3::addResidual(int elemIndex, double time, const TacsScalar X[],
     mat3x3SymmMult(Jr, domeg, dw);
 
     // Add the contribution to the residual
-    TacsScalar *r = res;
+    TacsScalar* r = res;
     const TacsScalar *q = vars, *dq = dvars;
     for (int ii = 0; ii < NUM_NODES; ii++) {
       // Add the contributions from the rectilinear velocity
@@ -793,9 +793,9 @@ void MITC3::addResidual(int elemIndex, double time, const TacsScalar X[],
       // Add the contributions from the angular velocity
       // S^{T}*dw + 2*dot{S}^{T}*w
       TacsScalar eta = q[3];
-      const TacsScalar *eps = &q[4];
+      const TacsScalar* eps = &q[4];
       TacsScalar deta = dq[3];
-      const TacsScalar *deps = &dq[4];
+      const TacsScalar* deps = &dq[4];
 
       // Add S^{T}*dw
       addSRateTransProduct(det * N[ii], eta, eps, dw, &r[3], &r[4]);
@@ -848,7 +848,7 @@ void MITC3::addResidual(int elemIndex, double time, const TacsScalar X[],
 
     // Add the contribution to the residual
     r = res;
-    const TacsScalar *b = B;
+    const TacsScalar* b = B;
     for (int ii = 0; ii < NUM_NODES; ii++) {
       r[0] += det * (strainProduct(s, &b[0]) - rho[0] * N[ii] * g[0]);
       r[1] += det * (strainProduct(s, &b[6]) - rho[0] * N[ii] * g[1]);
@@ -868,7 +868,7 @@ void MITC3::addResidual(int elemIndex, double time, const TacsScalar X[],
 
   // Add the constraints from the quaternion parametrization
   for (int i = 0; i < NUM_NODES; i++) {
-    const TacsScalar *q = &vars[8 * i + 3];
+    const TacsScalar* q = &vars[8 * i + 3];
     TacsScalar lamb = vars[8 * i + 7];
 
     // Add the result to the governing equations
@@ -1001,7 +1001,7 @@ void MITC3::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                 JdSii);
 
       // Set the pointer to the Jacobian entries that will be added
-      TacsScalar *Jp = &J[(8 * NUM_NODES + 1) * (8 * ii + 3)];
+      TacsScalar* Jp = &J[(8 * NUM_NODES + 1) * (8 * ii + 3)];
       const int ldj = 8 * NUM_NODES;
 
       // Add the diagonal terms
@@ -1017,7 +1017,7 @@ void MITC3::addJacobian(int elemIndex, double time, TacsScalar alpha,
 
         // Set the pointer to the Jacobian entries that will
         // be added
-        TacsScalar *Jp = &J[8 * NUM_NODES * (8 * ii + 3) + 8 * jj + 3];
+        TacsScalar* Jp = &J[8 * NUM_NODES * (8 * ii + 3) + 8 * jj + 3];
 
         // Compute S = S(q)
         TacsScalar Sjj[12];
@@ -1117,8 +1117,8 @@ void MITC3::addJacobian(int elemIndex, double time, TacsScalar alpha,
           TacsScalar sbii[8];
           stiff->computeStress(C, &B[6 * (8 * ii + ik)], sbii);
 
-          const TacsScalar *b = B;
-          TacsScalar *Jp = &J[8 * NUM_NODES * (8 * ii + ik)];
+          const TacsScalar* b = B;
+          TacsScalar* Jp = &J[8 * NUM_NODES * (8 * ii + ik)];
           for (int jj = 0; jj < NUM_NODES; jj++) {
             Jp[0] += det * strainProduct(sbii, &b[0]);
             Jp[1] += det * strainProduct(sbii, &b[6]);
@@ -1144,10 +1144,10 @@ void MITC3::addJacobian(int elemIndex, double time, TacsScalar alpha,
 
   // Add the constraints from the quaternions
   for (int i = 0; i < NUM_NODES; i++) {
-    const TacsScalar *q = &vars[8 * i + 3];
+    const TacsScalar* q = &vars[8 * i + 3];
     const int ldj = 8 * NUM_NODES;
 
-    TacsScalar *Jp = &J[(8 * NUM_NODES + 1) * (8 * i + 3)];
+    TacsScalar* Jp = &J[(8 * NUM_NODES + 1) * (8 * i + 3)];
     TacsScalar lamb = vars[8 * i + 7];
 
     // Add the constraint terms
@@ -1178,7 +1178,7 @@ void MITC3::addAdjResProduct(int elemIndex, double time, TacsScalar scale,
   // Set the gravity vector - if one exists
   TacsScalar g[3] = {0.0, 0.0, 0.0};
   if (gravity) {
-    const TacsScalar *_g;
+    const TacsScalar* _g;
     gravity->getVector(&_g);
     g[0] = _g[0];
     g[1] = _g[1];
@@ -1256,7 +1256,7 @@ void MITC3::addAdjResProduct(int elemIndex, double time, TacsScalar scale,
     mat3x3SymmMult(Jr, domeg, dw);
 
     // Add the contribution to the residual
-    const TacsScalar *r = psi;
+    const TacsScalar* r = psi;
     const TacsScalar *q = vars, *dq = dvars;
     for (int ii = 0; ii < NUM_NODES; ii++) {
       // Add the contributions from the rectilinear velocity
@@ -1323,7 +1323,7 @@ void MITC3::addAdjResProduct(int elemIndex, double time, TacsScalar scale,
 
     // Add the contribution to the residual
     r = psi;
-    const TacsScalar *b = B;
+    const TacsScalar* b = B;
     for (int ii = 0; ii < NUM_NODES; ii++) {
       drho[0] -= det * N[ii] * (g[0] * r[0] + g[1] * r[1] + g[2] * r[2]);
 
@@ -1349,9 +1349,9 @@ void MITC3::computeAngularVelocity(TacsScalar omega[], const TacsScalar vars[],
                                    const TacsScalar dvars[]) {
   for (int i = 0; i < NUM_NODES; i++) {
     TacsScalar eta = vars[3];
-    const TacsScalar *eps = &vars[4];
+    const TacsScalar* eps = &vars[4];
     TacsScalar deta = dvars[3];
-    const TacsScalar *deps = &dvars[4];
+    const TacsScalar* deps = &dvars[4];
 
     // omega = -2*eps^{x}*deps + 2*eta*deps - eps*deta
     crossProduct(-2.0, eps, deps, omega);
@@ -1374,9 +1374,9 @@ void MITC3::computeAngularAccel(TacsScalar domega[], const TacsScalar vars[],
   for (int i = 0; i < NUM_NODES; i++) {
     // Set pointers to the values
     TacsScalar eta = vars[3];
-    const TacsScalar *eps = &vars[4];
+    const TacsScalar* eps = &vars[4];
     TacsScalar ddeta = ddvars[3];
-    const TacsScalar *ddeps = &ddvars[4];
+    const TacsScalar* ddeps = &ddvars[4];
 
     // domega = S(q)*ddot{q}
     crossProduct(-2.0, eps, ddeps, domega);
@@ -1497,7 +1497,7 @@ void MITC3::computeDirectors(TacsScalar d1[], TacsScalar d2[],
                              const TacsScalar vars[], const TacsScalar Xr[]) {
   for (int i = 0; i < NUM_NODES; i++) {
     // Set the pointer to the
-    const TacsScalar *q = &vars[3];
+    const TacsScalar* q = &vars[3];
 
     // Compute C = rot - I
     TacsScalar C[9];
@@ -1537,7 +1537,7 @@ void MITC3::addDirectorsSens(TacsScalar Xrd[], const TacsScalar d1d[],
                              const TacsScalar d2d[], const TacsScalar vars[]) {
   for (int i = 0; i < NUM_NODES; i++) {
     // Set the pointer to the
-    const TacsScalar *q = &vars[3];
+    const TacsScalar* q = &vars[3];
 
     // Compute C = rot - I
     TacsScalar C[9];
@@ -1588,7 +1588,7 @@ void MITC3::computeDirectorDeriv(TacsScalar d1dq[], TacsScalar d2dq[],
                                  const TacsScalar Xr[]) {
   for (int i = 0; i < NUM_NODES; i++) {
     // Set the pointer to the
-    const TacsScalar *q = &vars[3];
+    const TacsScalar* q = &vars[3];
 
     // Compute the derivative of the rotation matrix w.r.t.
     // the quaternions
@@ -1838,7 +1838,7 @@ void MITC3::evalBmat(TacsScalar e[], TacsScalar B[], const double N[],
   e[3] = Td2a[0] + (U0[0] * Td2a[0] + U0[3] * Td2a[1] + U0[6] * Td2a[2]);
 
   for (int i = 0; i < NUM_NODES; i++) {
-    TacsScalar *b = &B[NUM_STRESSES * (8 * i)];
+    TacsScalar* b = &B[NUM_STRESSES * (8 * i)];
 
     // Compute the derivatives w.r.t. displacement variables
     for (int k = 0; k < 3; k++) {
@@ -2014,9 +2014,9 @@ void MITC3::addGmat(TacsScalar J[], const TacsScalar scale,
   TacsScalar DT1[3 * 7 * NUM_NODES], DT2[3 * 7 * NUM_NODES];
 
   // Set the pointers
-  TacsScalar *dU0 = DU;
-  TacsScalar *dTd1a = DT1;
-  TacsScalar *dTd2a = DT2;
+  TacsScalar* dU0 = DU;
+  TacsScalar* dTd1a = DT1;
+  TacsScalar* dTd2a = DT2;
   for (int i = 0; i < NUM_NODES; i++) {
     for (int k = 0; k < 3; k++) {
       // Compute the derivative w.r.t. u
@@ -2088,14 +2088,14 @@ void MITC3::addGmat(TacsScalar J[], const TacsScalar scale,
   // variables. This code takes advantage of the sparsity of the
   // derivatives to simplify the computations
   for (int i = 0; i < 7 * NUM_NODES; i++) {
-    const TacsScalar *dUi = &DU[9 * i];
-    const TacsScalar *dT1i = &DT1[3 * i];
-    const TacsScalar *dT2i = &DT2[3 * i];
+    const TacsScalar* dUi = &DU[9 * i];
+    const TacsScalar* dT1i = &DT1[3 * i];
+    const TacsScalar* dT2i = &DT2[3 * i];
 
     for (int j = i; j < 7 * NUM_NODES; j++) {
-      const TacsScalar *dUj = &DU[9 * j];
-      const TacsScalar *dT1j = &DT1[3 * j];
-      const TacsScalar *dT2j = &DT2[3 * j];
+      const TacsScalar* dUj = &DU[9 * j];
+      const TacsScalar* dT1j = &DT1[3 * j];
+      const TacsScalar* dT2j = &DT2[3 * j];
 
       // Compute the real indices
       int ii = 8 * (i / 7) + (i % 7);
@@ -2360,10 +2360,10 @@ void MITC3::computeTyingBmat(TacsScalar g12[], TacsScalar g13[],
     g12[pt] = U0[1] + U0[3] + U0[0] * U0[1] + U0[3] * U0[4] + U0[6] * U0[7];
     g13[pt] = U0[2] + U0[6] + U0[0] * U0[2] + U0[3] * U0[5] + U0[6] * U0[8];
 
-    TacsScalar *b12 = &B12[8 * NUM_NODES * pt];
-    TacsScalar *b13 = &B13[8 * NUM_NODES * pt];
-    const TacsScalar *d1dq = dir1dq;
-    const TacsScalar *d2dq = dir2dq;
+    TacsScalar* b12 = &B12[8 * NUM_NODES * pt];
+    TacsScalar* b13 = &B13[8 * NUM_NODES * pt];
+    const TacsScalar* d1dq = dir1dq;
+    const TacsScalar* d2dq = dir2dq;
     for (int i = 0; i < NUM_NODES; i++) {
       for (int k = 0; k < 3; k++) {
         TacsScalar dU[9];
@@ -2513,9 +2513,9 @@ void MITC3::addTyingGmat(TacsScalar J[], const TacsScalar w12[],
     TacsScalar DU[9 * 7 * NUM_NODES];
 
     // Set the pointers
-    TacsScalar *dU0 = DU;
-    const TacsScalar *d1dq = _d1dq;
-    const TacsScalar *d2dq = _d2dq;
+    TacsScalar* dU0 = DU;
+    const TacsScalar* d1dq = _d1dq;
+    const TacsScalar* d2dq = _d2dq;
     for (int i = 0; i < NUM_NODES; i++) {
       for (int k = 0; k < 3; k++) {
         // Compute the derivative w.r.t. u
@@ -2555,10 +2555,10 @@ void MITC3::addTyingGmat(TacsScalar J[], const TacsScalar w12[],
     // variables. This code takes advantage of the sparsity of the
     // derivatives to simplify the computations
     for (int i = 0; i < 7 * NUM_NODES; i++) {
-      const TacsScalar *dUi = &DU[9 * i];
+      const TacsScalar* dUi = &DU[9 * i];
 
       for (int j = i; j < 7 * NUM_NODES; j++) {
-        const TacsScalar *dUj = &DU[9 * j];
+        const TacsScalar* dUj = &DU[9 * j];
 
         // Compute the real indices
         int ii = 8 * (i / 7) + (i % 7);
@@ -2581,7 +2581,7 @@ void MITC3::addTyingGmat(TacsScalar J[], const TacsScalar w12[],
     }
 
     // Add the contribution from the derivative of the quaternions
-    const TacsScalar *xr = Xr;
+    const TacsScalar* xr = Xr;
     for (int i = 0; i < NUM_NODES; i++) {
       // Extract the normals from the frame
       TacsScalar n1[3];
@@ -2643,7 +2643,7 @@ void MITC3::addTyingGmat(TacsScalar J[], const TacsScalar w12[],
 int MITC3::evalPointQuantity(int elemIndex, int quantityType, double time,
                              int n, double pt[], const TacsScalar Xpts[],
                              const TacsScalar vars[], const TacsScalar dvars[],
-                             const TacsScalar ddvars[], TacsScalar *quantity) {
+                             const TacsScalar ddvars[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       TacsScalar X[3] = {0.0, 0.0, 0.0};
@@ -2714,7 +2714,7 @@ void MITC3::addPointQuantityXptSens(
 /*
   Get the constitutive object
 */
-TACSConstitutive *MITC3::getConstitutive() { return stiff; }
+TACSConstitutive* MITC3::getConstitutive() { return stiff; }
 
 /*
   Return the number of quadrature points
@@ -2880,7 +2880,7 @@ void MITC3::addStrainSVSens(const double pt[], const TacsScalar scale,
   computeTyingFunc(u, N12);
   addTyingBmat(B, N12, B12, B13);
 
-  const TacsScalar *b = B;
+  const TacsScalar* b = B;
   for (int i = 0; i < 8 * NUM_NODES; i++) {
     sens[i] += scale * strainProduct(b, esens);
     b += 6;
@@ -2911,7 +2911,7 @@ void MITC3::addStrainSVSens(const double pt[], const TacsScalar scale,
 void MITC3::getOutputData(int elemIndex, ElementType etype, int write_flag,
                           const TacsScalar Xpts[], const TacsScalar vars[],
                           const TacsScalar dvars[], const TacsScalar ddvars[],
-                          int ld_data, TacsScalar *data) {
+                          int ld_data, TacsScalar* data) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     for (int n = 0; n < 3; n++) {
       double pt[2];

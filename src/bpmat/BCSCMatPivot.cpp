@@ -44,20 +44,20 @@
   output:
   X:     the values are added to this array
 */
-static inline void addScatterColumn(TacsScalar *X, const int xdim,
-                                    const TacsScalar *Y, const int ydim,
-                                    const int *index, const int n,
+static inline void addScatterColumn(TacsScalar* X, const int xdim,
+                                    const TacsScalar* Y, const int ydim,
+                                    const int* index, const int n,
                                     const int m) {
   if (m == 1) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       Y += ydim;
       index++;
     }
   } else if (m == 2) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       Y += ydim;
@@ -65,7 +65,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 3) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -74,7 +74,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 4) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -84,7 +84,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 5) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -95,7 +95,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 6) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -107,7 +107,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 7) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -120,7 +120,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 8) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -134,7 +134,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 9) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -149,7 +149,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 10) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -165,7 +165,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 11) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -182,7 +182,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 12) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -200,7 +200,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 13) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -219,7 +219,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 14) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -239,7 +239,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 15) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -260,7 +260,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 16) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] += Y[0];
       x[1] += Y[1];
       x[2] += Y[2];
@@ -282,7 +282,7 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
     }
   } else {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       for (int j = 0; j < m; j++) {
         x[j] += Y[j];
       }
@@ -314,20 +314,20 @@ static inline void addScatterColumn(TacsScalar *X, const int xdim,
   output:
   X:     the values are added to this array
 */
-static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
-                                         const TacsScalar *Y, const int ydim,
-                                         const int *index, const int n,
+static inline void subtractScatterColumn(TacsScalar* X, const int xdim,
+                                         const TacsScalar* Y, const int ydim,
+                                         const int* index, const int n,
                                          const int m) {
   if (m == 1) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       Y += ydim;
       index++;
     }
   } else if (m == 2) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       Y += ydim;
@@ -335,7 +335,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 3) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -344,7 +344,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 4) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -354,7 +354,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 5) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -365,7 +365,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 6) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -377,7 +377,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 7) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -390,7 +390,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 8) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -404,7 +404,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 9) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -419,7 +419,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 10) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -435,7 +435,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 11) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -452,7 +452,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 12) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -470,7 +470,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 13) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -489,7 +489,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 14) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -509,7 +509,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 15) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -530,7 +530,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else if (m == 16) {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       x[0] -= Y[0];
       x[1] -= Y[1];
       x[2] -= Y[2];
@@ -552,7 +552,7 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
     }
   } else {
     for (int i = 0; i < n; i++) {
-      TacsScalar *x = &X[xdim * index[0]];
+      TacsScalar* x = &X[xdim * index[0]];
       for (int j = 0; j < m; j++) {
         x[j] -= Y[j];
       }
@@ -578,8 +578,8 @@ static inline void subtractScatterColumn(TacsScalar *X, const int xdim,
   rows:   the block row index for each block matrix
   A:      the (optional) values of the entries in the matrix
 */
-BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int _nrows, int _ncols, int **_colp,
-                 int **_rows, TacsScalar **_A) {
+BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int _nrows, int _ncols, int** _colp,
+                 int** _rows, TacsScalar** _A) {
   comm = _comm;
   rows_sorted = 0;
 
@@ -640,8 +640,8 @@ BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int _nrows, int _ncols, int **_colp,
   block_cols:      the index of each block column in the matrix
 */
 BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int num_block_rows,
-                 int num_block_cols, const int *block_rowp,
-                 const int *block_cols) {
+                 int num_block_cols, const int* block_rowp,
+                 const int* block_cols) {
   comm = _comm;
   rows_sorted = 1;  // Yes, the row indices will be sorted
   nrows = bsize * num_block_rows;
@@ -694,8 +694,8 @@ BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int num_block_rows,
   block_cols:      the index of each block column in the matrix
 */
 BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
-                 int num_block_cols, const int *block_rowp,
-                 const int *block_cols) {
+                 int num_block_cols, const int* block_rowp,
+                 const int* block_cols) {
   comm = _comm;
   rows_sorted = 1;  // The row indices will be sorted
 
@@ -760,8 +760,8 @@ BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
   rows_sorted:     flag to indicate whether the row indices are sorted
 */
 BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
-                 int num_block_cols, const int *block_colp,
-                 const int *block_rows, int _rows_sorted) {
+                 int num_block_cols, const int* block_colp,
+                 const int* block_rows, int _rows_sorted) {
   comm = _comm;
   rows_sorted = _rows_sorted;
 
@@ -851,9 +851,9 @@ BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
   comm:      the communicator
   filename:  the binary file
 */
-BCSCMat::BCSCMat(MPI_Comm _comm, const char *filename) {
+BCSCMat::BCSCMat(MPI_Comm _comm, const char* filename) {
   comm = _comm;
-  FILE *fp = fopen(filename, "rb");
+  FILE* fp = fopen(filename, "rb");
 
   // NULL out everything before we start to read things in
   bptr = NULL;
@@ -919,7 +919,7 @@ BCSCMat::BCSCMat(MPI_Comm _comm, const char *filename) {
   input:
   mat: the matrix to be copied into *this matrix
 */
-BCSCMat::BCSCMat(BCSCMat *mat) {
+BCSCMat::BCSCMat(BCSCMat* mat) {
   comm = mat->comm;
   rows_sorted = mat->rows_sorted;
   max_block_size = mat->max_block_size;
@@ -976,8 +976,8 @@ BCSCMat::~BCSCMat() {
   input:
   filename:  the name of the file to be created
 */
-void BCSCMat::writeToFile(const char *filename) {
-  FILE *fp = fopen(filename, "wb");
+void BCSCMat::writeToFile(const char* filename) {
+  FILE* fp = fopen(filename, "wb");
 
   // Write out all that data that is needed to reconstruct the matrix
   fwrite(&rows_sorted, sizeof(int), 1, fp);
@@ -1010,7 +1010,7 @@ void BCSCMat::writeToFile(const char *filename) {
   block_cols:      the block column indicies
 */
 void BCSCMat::initCSCfromCSR(int num_block_rows, int num_block_cols,
-                             const int *block_rowp, const int *block_cols) {
+                             const int* block_rowp, const int* block_cols) {
   // Set the number of blocked columns in the matrix
   nblock_cols = num_block_cols;
 
@@ -1093,7 +1093,7 @@ void BCSCMat::zeroEntries() {
   is_tranpose:  are we adding the transpose of the block?
 */
 void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
-                                const int bcols[], const TacsScalar *mat,
+                                const int bcols[], const TacsScalar* mat,
                                 int ldmat, int is_transpose) {
   // There is probably a more inteligent way to do this, but this
   // code just breaks everything down by case: If adding the transpose
@@ -1107,7 +1107,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         if (col < 0) {
           continue;
         }
-        TacsScalar *column = &A[aptr[col]];
+        TacsScalar* column = &A[aptr[col]];
 
         // Determine the number of columns in the block
         int cdim = bptr[col + 1] - bptr[col];
@@ -1115,7 +1115,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         // Determine the number of non-zero block column entries in the
         // matrix to search them
         int col_size = colp[col + 1] - colp[col];
-        const int *col_rows = &rows[colp[col]];
+        const int* col_rows = &rows[colp[col]];
 
         // Loop over all the block rows in this column
         for (int j = 0, joffset = 0; j < num_cols; j++) {
@@ -1132,10 +1132,10 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
             int r = bptr[row] + ii;
 
             // Search the column to obtain the row index
-            int *row_pos = TacsSearchArray(r, col_size, col_rows);
+            int* row_pos = TacsSearchArray(r, col_size, col_rows);
             if (row_pos) {
               int loc = row_pos - col_rows;
-              TacsScalar *a = &column[cdim * loc];
+              TacsScalar* a = &column[cdim * loc];
 
               // Add the values into the matrix
               for (int jj = 0; jj < cdim; jj++) {
@@ -1163,7 +1163,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         if (col < 0) {
           continue;
         }
-        TacsScalar *column = &A[aptr[col]];
+        TacsScalar* column = &A[aptr[col]];
 
         // Determine the number of columns in the block
         int cdim = bptr[col + 1] - bptr[col];
@@ -1171,7 +1171,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         // Determine the number of non-zero block column entries in the
         // matrix to search them
         int col_size = colp[col + 1] - colp[col];
-        const int *col_rows = &rows[colp[col]];
+        const int* col_rows = &rows[colp[col]];
 
         // Loop over all the block rows in this column
         for (int j = 0, joffset = 0; j < num_cols; j++) {
@@ -1188,7 +1188,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
             int r = bptr[row] + ii;
 
             // Perform a (slow) linear search in the column
-            const int *row_pos = col_rows;
+            const int* row_pos = col_rows;
             for (int k = 0; k < col_size; k++) {
               if (row_pos[0] == r) {
                 break;
@@ -1198,7 +1198,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
 
             if (row_pos[0] == r) {
               int loc = row_pos - col_rows;
-              TacsScalar *a = &column[cdim * loc];
+              TacsScalar* a = &column[cdim * loc];
 
               // Add the values into the matrix
               for (int jj = 0; jj < cdim; jj++) {
@@ -1228,7 +1228,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         if (col < 0) {
           continue;
         }
-        TacsScalar *column = &A[aptr[col]];
+        TacsScalar* column = &A[aptr[col]];
 
         // Determine the number of columns in the block
         int cdim = bptr[col + 1] - bptr[col];
@@ -1236,7 +1236,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         // Determine the number of non-zero block column entries in the
         // matrix to search them
         int col_size = colp[col + 1] - colp[col];
-        const int *col_rows = &rows[colp[col]];
+        const int* col_rows = &rows[colp[col]];
 
         // Loop over all the block rows in this column
         for (int i = 0, ioffset = 0; i < num_rows; i++) {
@@ -1253,10 +1253,10 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
             int r = bptr[row] + ii;
 
             // Search the column to obtain the row index
-            int *row_pos = TacsSearchArray(r, col_size, col_rows);
+            int* row_pos = TacsSearchArray(r, col_size, col_rows);
             if (row_pos) {
               int loc = row_pos - col_rows;
-              TacsScalar *a = &column[cdim * loc];
+              TacsScalar* a = &column[cdim * loc];
 
               // Add the values into the matrix
               for (int jj = 0; jj < cdim; jj++) {
@@ -1284,11 +1284,11 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
         if (col < 0) {
           continue;
         }
-        TacsScalar *column = &A[aptr[col]];
+        TacsScalar* column = &A[aptr[col]];
 
         // Determine the size of the column and the column row indices
         int col_size = colp[col + 1] - colp[col];
-        const int *col_rows = &rows[colp[col]];
+        const int* col_rows = &rows[colp[col]];
 
         // Compute the column dimension
         int cdim = bptr[col + 1] - bptr[col];
@@ -1308,7 +1308,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
             int r = bptr[row] + ii;
 
             // Perform a (slow) linear search in the column
-            const int *row_pos = col_rows;
+            const int* row_pos = col_rows;
             for (int k = 0; k < col_size; k++) {
               if (row_pos[0] == r) {
                 break;
@@ -1319,7 +1319,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
             // If the row position exists, add the values into the matrix
             if (row_pos[0] == r) {
               int loc = row_pos - col_rows;
-              TacsScalar *a = &column[cdim * loc];
+              TacsScalar* a = &column[cdim * loc];
 
               // Add the values into the matrix
               for (int jj = 0; jj < cdim; jj++) {
@@ -1358,7 +1358,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
   output:
   Y:           the dense output data of size (nrows, bsize)
 */
-void BCSCMat::mult(TacsScalar *X, TacsScalar *Y, int vec_bsize) {
+void BCSCMat::mult(TacsScalar* X, TacsScalar* Y, int vec_bsize) {
   memset(Y, 0, nrows * vec_bsize * sizeof(TacsScalar));
   multAdd(X, Y, Y, vec_bsize);
 }
@@ -1381,7 +1381,7 @@ void BCSCMat::mult(TacsScalar *X, TacsScalar *Y, int vec_bsize) {
   output:
   Y:         the dense output data of size (nrows, vec_bsize)
 */
-void BCSCMat::multAdd(TacsScalar *X, TacsScalar *Z, TacsScalar *Y,
+void BCSCMat::multAdd(TacsScalar* X, TacsScalar* Z, TacsScalar* Y,
                       int vec_bsize) {
   if (Y != Z) {
     memcpy(Y, Z, nrows * vec_bsize * sizeof(TacsScalar));
@@ -1401,7 +1401,7 @@ void BCSCMat::multAdd(TacsScalar *X, TacsScalar *Z, TacsScalar *Y,
     int cdim = bptr[j + 1] - bptr[j];
 
     // Determine the starting location of the storage in this row
-    TacsScalar *col = &A[aptr[j]];
+    TacsScalar* col = &A[aptr[j]];
 
     // Scan through the entire column
     int ip_end = colp[j + 1];
@@ -1448,9 +1448,9 @@ void BCSCMat::multAdd(TacsScalar *X, TacsScalar *Z, TacsScalar *Y,
   rows:        the row indices of the entries
   A:           the matrix values
 */
-void BCSCMat::getArrays(int *_nrows, int *_ncols, int *_nblock_cols,
-                        const int **_bptr, const int **_aptr, const int **_colp,
-                        const int **_rows, TacsScalar **_A) {
+void BCSCMat::getArrays(int* _nrows, int* _ncols, int* _nblock_cols,
+                        const int** _bptr, const int** _aptr, const int** _colp,
+                        const int** _rows, TacsScalar** _A) {
   if (_nrows) {
     *_nrows = nrows;
   }
@@ -1492,7 +1492,7 @@ int BCSCMat::getMaxBlockSize() { return max_block_size; }
   columns, but is not blocked by row - enabling easier implementation
   of pivoting but sacrificing additional performance, perhaps.
 */
-BCSCMatPivot::BCSCMatPivot(BCSCMat *_mat) {
+BCSCMatPivot::BCSCMatPivot(BCSCMat* _mat) {
   mat = _mat;
   mat->incref();
 
@@ -1615,10 +1615,10 @@ BCSCMatPivot::~BCSCMatPivot() {
   node_stack:      the stack of nodes
   node_labels:     the labels for the nodes
 */
-void BCSCMatPivot::computeTopologicalOrder(int iteration, const int *rhs_rows,
+void BCSCMatPivot::computeTopologicalOrder(int iteration, const int* rhs_rows,
                                            const int num_rhs_rows,
-                                           int *topo_order, int *_num_nodes,
-                                           int *node_stack, int *node_labels) {
+                                           int* topo_order, int* _num_nodes,
+                                           int* node_stack, int* node_labels) {
   // Prepare for the depth first search to determine the
   // non-zero structure of the next column vector
   // Set the vertex labels - no reset necessary
@@ -1709,11 +1709,11 @@ void BCSCMatPivot::computeTopologicalOrder(int iteration, const int *rhs_rows,
   rhs_vars:       the non-zero variables
   num_vars:       the number of non-zero variables
 */
-void BCSCMatPivot::computeColNzPattern(int iteration, const int *rhs_rows,
+void BCSCMatPivot::computeColNzPattern(int iteration, const int* rhs_rows,
                                        const int num_rhs_rows,
-                                       const int *update_nodes,
-                                       const int num_nodes, int *var_labels,
-                                       int *rhs_vars, int *_num_vars) {
+                                       const int* update_nodes,
+                                       const int num_nodes, int* var_labels,
+                                       int* rhs_vars, int* _num_vars) {
   // Set the vertex label
   int vertex_label_done = 2 * (iteration + 1);
 
@@ -1787,14 +1787,14 @@ void BCSCMatPivot::computeColNzPattern(int iteration, const int *rhs_rows,
   temp_cols:       temporary storage for columns
   temp_cols_size   size of the temporary storage
 */
-void BCSCMatPivot::applyNodeUpdate(int node, int node_dim, TacsScalar *spa,
-                                   int spa_dim, TacsScalar *temp_block,
-                                   int temp_block_size, TacsScalar *temp_cols,
+void BCSCMatPivot::applyNodeUpdate(int node, int node_dim, TacsScalar* spa,
+                                   int spa_dim, TacsScalar* temp_block,
+                                   int temp_block_size, TacsScalar* temp_cols,
                                    int temp_cols_size) {
   // Determine the location of the diagonal of the L matrix
   int loffset =
       lu_aptr[node] + node_dim * (lu_diag_ptr[node] - lu_col_ptr[node]);
-  TacsScalar *L = &LU[loffset];
+  TacsScalar* L = &LU[loffset];
 
   // Compute the column size
   int max_col_size = temp_cols_size / spa_dim;
@@ -1803,12 +1803,12 @@ void BCSCMatPivot::applyNodeUpdate(int node, int node_dim, TacsScalar *spa,
   int node_ptr = node_to_vars_ptr[node];
 
   // Fill in the block array with the right hand side
-  const int *var = &node_to_vars[node_ptr];
-  TacsScalar *tblock = &temp_block[0];
+  const int* var = &node_to_vars[node_ptr];
+  TacsScalar* tblock = &temp_block[0];
 
   for (int i = 0; i < node_dim; i++) {
     // Retrieve the data from the sparse accumulator
-    TacsScalar *tspa = &spa[spa_dim * var[0]];
+    TacsScalar* tspa = &spa[spa_dim * var[0]];
     for (int j = 0; j < spa_dim; j++) {
       tblock[0] = tspa[0];
       tblock++;
@@ -1833,7 +1833,7 @@ void BCSCMatPivot::applyNodeUpdate(int node, int node_dim, TacsScalar *spa,
 
   for (int i = 0; i < node_dim; i++) {
     // Retrieve the data from the sparse accumulator
-    TacsScalar *tspa = &spa[spa_dim * var[0]];
+    TacsScalar* tspa = &spa[spa_dim * var[0]];
     for (int j = 0; j < spa_dim; j++) {
       tspa[0] = tblock[0];
       tblock++;
@@ -1899,16 +1899,16 @@ void BCSCMatPivot::applyNodeUpdate(int node, int node_dim, TacsScalar *spa,
   temp_cols:       temporary storage for columns
   temp_cols_size   size of the temporary storage
 */
-void BCSCMatPivot::applyNodeUpperUpdate(int node, int node_dim, TacsScalar *spa,
-                                        int spa_dim, TacsScalar *temp_block,
+void BCSCMatPivot::applyNodeUpperUpdate(int node, int node_dim, TacsScalar* spa,
+                                        int spa_dim, TacsScalar* temp_block,
                                         int temp_block_size,
-                                        TacsScalar *temp_cols,
+                                        TacsScalar* temp_cols,
                                         int temp_cols_size) {
   // Determine the location after the last entry of the U matrix -
   // this is the diagonal block
   int loffset =
       lu_aptr[node] + node_dim * (lu_diag_ptr[node] - lu_col_ptr[node]);
-  TacsScalar *U = &LU[loffset];
+  TacsScalar* U = &LU[loffset];
 
   // Compute the column size
   int max_col_size = temp_cols_size / spa_dim;
@@ -1917,12 +1917,12 @@ void BCSCMatPivot::applyNodeUpperUpdate(int node, int node_dim, TacsScalar *spa,
   int node_ptr = node_to_vars_ptr[node];
 
   // Fill in the block array with the right hand side
-  const int *var = &node_to_vars[node_ptr];
-  TacsScalar *tblock = temp_block;
+  const int* var = &node_to_vars[node_ptr];
+  TacsScalar* tblock = temp_block;
 
   for (int i = 0; i < node_dim; i++) {
     // Retrieve the data from the sparse accumulator
-    TacsScalar *tspa = &spa[spa_dim * var[0]];
+    TacsScalar* tspa = &spa[spa_dim * var[0]];
     for (int j = 0; j < spa_dim; j++) {
       tblock[0] = tspa[0];
       tblock++;
@@ -1947,7 +1947,7 @@ void BCSCMatPivot::applyNodeUpperUpdate(int node, int node_dim, TacsScalar *spa,
 
   for (int i = 0; i < node_dim; i++) {
     // Retrieve the data from the sparse accumulator
-    TacsScalar *tspa = &spa[spa_dim * var[0]];
+    TacsScalar* tspa = &spa[spa_dim * var[0]];
     for (int j = 0; j < spa_dim; j++) {
       tspa[0] = tblock[0];
       tblock++;
@@ -2010,8 +2010,8 @@ void BCSCMatPivot::applyNodeUpperUpdate(int node, int node_dim, TacsScalar *spa,
   num_rows:     number of rows in the panel
   diag_index:   index of the first diagonal entry of the left-most column
 */
-void BCSCMatPivot::factorNode(int node, TacsScalar *col, int node_dim,
-                              int *rows, int num_rows, int diag_index) {
+void BCSCMatPivot::factorNode(int node, TacsScalar* col, int node_dim,
+                              int* rows, int num_rows, int diag_index) {
   int init_diag_index = diag_index;
 
   // Update the data structure for this newly constructed node
@@ -2022,8 +2022,8 @@ void BCSCMatPivot::factorNode(int node, TacsScalar *col, int node_dim,
     if (j > 0) {
       // Set pointers to the portion of the column corresponding to
       // the lower diagonal matrix
-      TacsScalar *L = &col[node_dim * init_diag_index];
-      TacsScalar *U = &col[node_dim * init_diag_index + j];
+      TacsScalar* L = &col[node_dim * init_diag_index];
+      TacsScalar* U = &col[node_dim * init_diag_index + j];
 
       // Solve the problem L[init_diag:diag, init_diag:diag]^{-1}*U
       BLAStrsv("U", "T", "U", &j, L, &node_dim, U, &node_dim);
@@ -2038,7 +2038,7 @@ void BCSCMatPivot::factorNode(int node, TacsScalar *col, int node_dim,
 
     // Determine the maximum value in the current column
     int max_row_index = diag_index;
-    TacsScalar *c = &col[node_dim * diag_index + j];
+    TacsScalar* c = &col[node_dim * diag_index + j];
     TacsScalar diag_entry = c[0];
     TacsScalar max_entry = c[0];
     c += node_dim;
@@ -2147,7 +2147,7 @@ double BCSCMatPivot::factor(double _fill) {
   int mat_nrows, mat_ncols, mat_nblock_cols;
   const int *mat_bptr, *mat_aptr;
   const int *mat_colp, *mat_rows;
-  TacsScalar *A;
+  TacsScalar* A;
   mat->getArrays(&mat_nrows, &mat_ncols, &mat_nblock_cols, &mat_bptr, &mat_aptr,
                  &mat_colp, &mat_rows, &A);
 
@@ -2186,18 +2186,18 @@ double BCSCMatPivot::factor(double _fill) {
   }
 
   // Initialize the temporary storage
-  TacsScalar *temp_block = &temp_array[0];
-  TacsScalar *temp_cols = &temp_array[max_block_size * max_block_size];
+  TacsScalar* temp_block = &temp_array[0];
+  TacsScalar* temp_cols = &temp_array[max_block_size * max_block_size];
 
   // Initialize the sparse accumulator object
-  TacsScalar *column = temp_column;
+  TacsScalar* column = temp_column;
   memset(column, 0, nrows * max_block_size * sizeof(TacsScalar));
 
   // Allocate temporary arrays for data used during the factorization
-  int *node_stack = &temp_iarray[0];
-  int *topo_order = &temp_iarray[2 * nblock_cols];
-  int *node_labels = &temp_iarray[2 * nblock_cols + nrows];
-  int *var_labels = &temp_iarray[3 * nblock_cols + nrows];
+  int* node_stack = &temp_iarray[0];
+  int* topo_order = &temp_iarray[2 * nblock_cols];
+  int* node_labels = &temp_iarray[2 * nblock_cols + nrows];
+  int* var_labels = &temp_iarray[3 * nblock_cols + nrows];
 
   // Set the labels
   memset(node_labels, 0, nblock_cols * sizeof(int));
@@ -2244,7 +2244,7 @@ double BCSCMatPivot::factor(double _fill) {
       max_lu_size = node_dim * nnz_rows + 2 * max_lu_size;
 
       // Allocate a new LU array and free the old one
-      TacsScalar *old_LU = LU;
+      TacsScalar* old_LU = LU;
       LU = new (std::nothrow) TacsScalar[max_lu_size];
       if (LU) {
         memcpy(LU, old_LU, lu_aptr[node] * sizeof(TacsScalar));
@@ -2263,7 +2263,7 @@ double BCSCMatPivot::factor(double _fill) {
       max_lu_rows_size = nnz_rows + 2 * max_lu_rows_size;
 
       // Allocate a new lu_rows array and free the old one
-      int *old_rows = lu_rows;
+      int* old_rows = lu_rows;
       lu_rows = new (std::nothrow) int[max_lu_rows_size];
       if (lu_rows) {
         memcpy(lu_rows, old_rows, lu_col_ptr[node] * sizeof(int));
@@ -2294,8 +2294,8 @@ double BCSCMatPivot::factor(double _fill) {
     lu_aptr[node + 1] = lu_aptr[node] + node_dim * nnz_rows;
 
     // Set the pointer into the LU vector
-    TacsScalar *lu = &LU[lu_aptr[node]];
-    int *lu_row = &lu_rows[lu_col_ptr[node]];
+    TacsScalar* lu = &LU[lu_aptr[node]];
+    int* lu_row = &lu_rows[lu_col_ptr[node]];
 
     // Scan through all the new data in topological order
     for (int i = num_nodes - 1; i >= 0; i--) {
@@ -2359,7 +2359,7 @@ double BCSCMatPivot::factor(double _fill) {
   output:
   X:        the dense matrix of size (nrows, bsize)
 */
-void BCSCMatPivot::applyFactor(TacsScalar *X, int vec_bsize) {
+void BCSCMatPivot::applyFactor(TacsScalar* X, int vec_bsize) {
   if (vec_bsize == 1) {
     memcpy(temp_column, X, nrows * sizeof(TacsScalar));
 
@@ -2383,7 +2383,7 @@ void BCSCMatPivot::applyFactor(TacsScalar *X, int vec_bsize) {
 
       // Keep a pointer to where were currently copying
       // out the values
-      TacsScalar *xcopy = X;
+      TacsScalar* xcopy = X;
 
       // Copy the tranpose values to temp_array
       for (int j = 0; j < num_cols; j++) {
@@ -2398,7 +2398,7 @@ void BCSCMatPivot::applyFactor(TacsScalar *X, int vec_bsize) {
       applyUpper(temp_column, num_cols, temp_array, temp_array_size);
 
       // Transpose the answer and copy the result back into the array
-      TacsScalar *c = temp_column;
+      TacsScalar* c = temp_column;
       for (int i = 0; i < nrows; i++) {
         for (int j = 0; j < vec_bsize; j++) {
           X[nrows * j + perm[i]] = c[0];
@@ -2423,10 +2423,10 @@ void BCSCMatPivot::applyFactor(TacsScalar *X, int vec_bsize) {
   output:
   B = L^{-1}*B
 */
-void BCSCMatPivot::applyLower(TacsScalar *B, int vec_bsize, TacsScalar *temp,
+void BCSCMatPivot::applyLower(TacsScalar* B, int vec_bsize, TacsScalar* temp,
                               int temp_size) {
-  TacsScalar *temp_block = &temp[0];
-  TacsScalar *temp_cols = &temp[vec_bsize * max_block_size];
+  TacsScalar* temp_block = &temp[0];
+  TacsScalar* temp_cols = &temp[vec_bsize * max_block_size];
 
   int temp_block_size = vec_bsize * max_block_size;
   int temp_cols_size = temp_size - temp_block_size;
@@ -2450,10 +2450,10 @@ void BCSCMatPivot::applyLower(TacsScalar *B, int vec_bsize, TacsScalar *temp,
   output:
   B = U^{-1}*B
 */
-void BCSCMatPivot::applyUpper(TacsScalar *B, int vec_bsize, TacsScalar *temp,
+void BCSCMatPivot::applyUpper(TacsScalar* B, int vec_bsize, TacsScalar* temp,
                               int temp_size) {
-  TacsScalar *temp_block = &temp[0];
-  TacsScalar *temp_cols = &temp[vec_bsize * max_block_size];
+  TacsScalar* temp_block = &temp[0];
+  TacsScalar* temp_cols = &temp[vec_bsize * max_block_size];
 
   int temp_block_size = vec_bsize * max_block_size;
   int temp_cols_size = temp_size - temp_block_size;

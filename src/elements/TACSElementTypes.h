@@ -134,7 +134,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp);
   @param index The index of the component
   @return The name of the component
 */
-const char *TacsGetOutputComponentName(ElementType etype, int comp, int index);
+const char* TacsGetOutputComponentName(ElementType etype, int comp, int index);
 
 /**
    Get the number of visualization nodes for the given element layout
@@ -164,8 +164,8 @@ int TacsGetNumVisNodes(ElementLayout ltype);
   @param ltype The element layout type
   @param ntypes The number of basic element types.
 */
-void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int *ntypes,
-                                      int *nconn);
+void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int* ntypes,
+                                      int* nconn);
 
 /**
   Retrieve the new element types and new element connectivity for the

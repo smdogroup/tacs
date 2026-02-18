@@ -20,7 +20,7 @@
 
 class TACSThermoelasticPlateModel : public TACSElementModel {
  public:
-  TACSThermoelasticPlateModel(TACSShellConstitutive *_con);
+  TACSThermoelasticPlateModel(TACSShellConstitutive* _con);
   ~TACSThermoelasticPlateModel();
 
   // Get the problem dimensions
@@ -62,7 +62,7 @@ class TACSThermoelasticPlateModel : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                             int *Jac_nnz, const int *Jac_pairs[]);
+                             int* Jac_nnz, const int* Jac_pairs[]);
 
   /**
     Evaluate weak form coefficients for the specific type of matrix
@@ -80,7 +80,7 @@ class TACSThermoelasticPlateModel : public TACSElementModel {
                         const double time, int n, const double pt[],
                         const TacsScalar X[], const TacsScalar Xd[],
                         const TacsScalar Ut[], const TacsScalar Ux[],
-                        TacsScalar *quantity);
+                        TacsScalar* quantity);
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -110,10 +110,10 @@ class TACSThermoelasticPlateModel : public TACSElementModel {
   void getOutputData(int elemIndex, const double time, ElementType etype,
                      int write_flag, const double pt[], const TacsScalar X[],
                      const TacsScalar Ut[], const TacsScalar Ux[], int ld_data,
-                     TacsScalar *data);
+                     TacsScalar* data);
 
  private:
-  TACSShellConstitutive *con;
+  TACSShellConstitutive* con;
 
   // Constant member data
   static const int linear_Jac_pairs[2 * 100];

@@ -61,8 +61,8 @@
 */
 class TACSBVecInterp : public TACSObject {
  public:
-  TACSBVecInterp(TACSNodeMap *_inMap, TACSNodeMap *_outMap, int _bsize);
-  TACSBVecInterp(TACSAssembler *_inAssembler, TACSAssembler *_outAssembler);
+  TACSBVecInterp(TACSNodeMap* _inMap, TACSNodeMap* _outMap, int _bsize);
+  TACSBVecInterp(TACSAssembler* _inAssembler, TACSAssembler* _outAssembler);
   ~TACSBVecInterp();
 
   // Add components of the interpolation
@@ -72,68 +72,68 @@ class TACSBVecInterp : public TACSObject {
 
   // Perform the foward interpolation
   // --------------------------------
-  void mult(TACSBVec *in, TACSBVec *out);
-  void multAdd(TACSBVec *in, TACSBVec *add, TACSBVec *out);
+  void mult(TACSBVec* in, TACSBVec* out);
+  void multAdd(TACSBVec* in, TACSBVec* add, TACSBVec* out);
 
   // Perform the transpose interpolation
   // -----------------------------------
-  void multTranspose(TACSBVec *in, TACSBVec *out);
-  void multTransposeAdd(TACSBVec *in, TACSBVec *add, TACSBVec *out);
+  void multTranspose(TACSBVec* in, TACSBVec* out);
+  void multTransposeAdd(TACSBVec* in, TACSBVec* add, TACSBVec* out);
 
   // Perform the weighted transpose interpolation
   // --------------------------------------------
-  void multWeightTranspose(TACSBVec *in, TACSBVec *out);
+  void multWeightTranspose(TACSBVec* in, TACSBVec* out);
 
   // Print the interpolation
   // -----------------------
-  void printInterp(const char *filename);
+  void printInterp(const char* filename);
 
   // Initialize the non-zero pattern
-  void computeGalerkinNonZeroPattern(TACSParallelMat *Afine,
-                                     TACSParallelMat **_Acoarse);
-  void computeGalerkin(TACSParallelMat *Afine, TACSParallelMat *Acoarse);
+  void computeGalerkinNonZeroPattern(TACSParallelMat* Afine,
+                                     TACSParallelMat** _Acoarse);
+  void computeGalerkin(TACSParallelMat* Afine, TACSParallelMat* Acoarse);
 
  private:
   // The MPI communicator
   MPI_Comm comm;
 
   // Initialize the distribution object
-  void init(TACSNodeMap *_inMap, TACSNodeMap *_outMap, int _bsize);
+  void init(TACSNodeMap* _inMap, TACSNodeMap* _outMap, int _bsize);
 
-  void (*multadd)(int bsize, int nrows, const int *rowp, const int *cols,
-                  const TacsScalar *weights, const TacsScalar *x,
-                  TacsScalar *y);
-  void (*multtransadd)(int bsize, int nrows, const int *rowp, const int *cols,
-                       const TacsScalar *weights, const TacsScalar *x,
-                       TacsScalar *y);
+  void (*multadd)(int bsize, int nrows, const int* rowp, const int* cols,
+                  const TacsScalar* weights, const TacsScalar* x,
+                  TacsScalar* y);
+  void (*multtransadd)(int bsize, int nrows, const int* rowp, const int* cols,
+                       const TacsScalar* weights, const TacsScalar* x,
+                       TacsScalar* y);
 
   // Initialize data from off-processor rows
-  void initExtInterpRows(int _num_ext_interp_rows, const int *_ext_interp_rows);
+  void initExtInterpRows(int _num_ext_interp_rows, const int* _ext_interp_rows);
 
   // Get information about the local/non-local rows after initialization
   int getMaxRowSize();
-  int getRow(int row, int *columns, TacsScalar *values);
+  int getRow(int row, int* columns, TacsScalar* values);
 
   // The on and off-processor parts of the interpolation
   // These are dynamically expanded if they are not large enough
   int max_on_size, max_on_weights;
   int on_size, *on_nums, *on_rowp, *on_vars;
-  TacsScalar *on_weights;
+  TacsScalar* on_weights;
 
   int max_off_size, max_off_weights;
   int off_size, *off_nums, *off_rowp, *off_vars;
-  TacsScalar *off_weights;
+  TacsScalar* off_weights;
 
   // The local weight contributions
   int *rowp, *cols;
-  TacsScalar *weights;
+  TacsScalar* weights;
 
   // The external weight contributions
   int *ext_rowp, *ext_cols;
-  TacsScalar *ext_weights;
+  TacsScalar* ext_weights;
 
   int num_ext_vars;   // The number of external variables
-  TacsScalar *x_ext;  // Variable values from other processors
+  TacsScalar* x_ext;  // Variable values from other processors
 
   // The number of local rows from outMap
   int N, M, bsize;
@@ -143,17 +143,17 @@ class TACSBVecInterp : public TACSObject {
   TACSAssembler *inAssembler, *outAssembler;
 
   // Store the transpose weights
-  TacsScalar *transpose_weights;
+  TacsScalar* transpose_weights;
 
   // Interpolation weights stored in the
   int num_ext_interp_rows;
   int *ext_interp_rows, *ext_interp_rowp, *ext_interp_cols;
-  TacsScalar *ext_interp_weights;
+  TacsScalar* ext_interp_weights;
 
   // The object responsible for fetching/distributing the
   // external variables
-  TACSBVecDistribute *vecDist;
-  TACSBVecDistCtx *ctx;
+  TACSBVecDistribute* vecDist;
+  TACSBVecDistCtx* ctx;
 };
 
 #endif  // TACS_BVEC_INTERP_H

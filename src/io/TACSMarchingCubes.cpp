@@ -332,7 +332,7 @@ TACSMarchingCubesPoint interpVertex(float isolevel, TACSMarchingCubesPoint p1,
   totally below the isolevel.
 */
 int TacsPolygonizeCube(TACSMarchingCubesCell grid, float isolevel,
-                       TACSMarchingCubesTriangle *triangles) {
+                       TACSMarchingCubesTriangle* triangles) {
   int cubeindex;
   TACSMarchingCubesPoint vertlist[12];
 

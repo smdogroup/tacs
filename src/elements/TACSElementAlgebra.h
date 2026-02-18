@@ -459,7 +459,7 @@ static inline TacsScalar vec3Normalize(TacsScalar A[]) {
   Anrm: norm of input vector
   sAnrm: sensitivity of the norm of input vector
 */
-static inline TacsScalar vec3NormalizeSens(TacsScalar A[], TacsScalar *sAnrm,
+static inline TacsScalar vec3NormalizeSens(TacsScalar A[], TacsScalar* sAnrm,
                                            TacsScalar sA[]) {
   TacsScalar Anrm = sqrt(A[0] * A[0] + A[1] * A[1] + A[2] * A[2]);
   TacsScalar invAnrm = 1.0 / Anrm;
@@ -1221,8 +1221,8 @@ static inline void mat3x3SymmTransformTransHessian(const TacsScalar T[],
                                                    const TacsScalar d2A[],
                                                    TacsScalar d2S[]) {
   TacsScalar tmp[36];
-  const TacsScalar *dA = d2A;
-  TacsScalar *dS = tmp;
+  const TacsScalar* dA = d2A;
+  TacsScalar* dS = tmp;
   for (int i = 0; i < 6; i++) {
     TacsScalar dW[9];
     dW[0] = T[0] * dA[0];
@@ -2047,7 +2047,7 @@ static inline void inv3x3Sens(const TacsScalar Ainv[], const TacsScalar Ainvd[],
 */
 static inline TacsScalar inv3x3Sens(const TacsScalar A[], const TacsScalar sA[],
                                     TacsScalar Ainv[], TacsScalar sAinv[],
-                                    TacsScalar *_sh) {
+                                    TacsScalar* _sh) {
   TacsScalar h =
       (A[8] * (A[0] * A[4] - A[3] * A[1]) - A[7] * (A[0] * A[5] - A[3] * A[2]) +
        A[6] * (A[1] * A[5] - A[2] * A[4]));

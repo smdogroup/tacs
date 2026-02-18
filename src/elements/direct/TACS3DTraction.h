@@ -89,7 +89,7 @@ class TACS3DTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -304,7 +304,7 @@ class TACS3DPressureTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -540,7 +540,7 @@ class TACS3DBoundingTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
+  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;

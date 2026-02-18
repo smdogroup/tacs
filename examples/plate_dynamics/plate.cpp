@@ -22,7 +22,7 @@
   write_solution: write solution to f5 frequency
   print_level: 0, 1, 2
 */
-const char *help_string[] = {
+const char* help_string[] = {
     "TACS time-dependent analysis of a plate located in plate.bdf",
     "num_funcs=1,2,3 and 12  : Number of functions for adjoint problem",
     "num_threads=1,2,3...    : Number of threads to use",
@@ -30,7 +30,7 @@ const char *help_string[] = {
     "write_solution=0,1,2... : Controls the frequency of f5 file output",
     "convert_mesh=0,1        : Converts the mesh to coordinate ordering"};
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
 
@@ -126,10 +126,10 @@ int main(int argc, char **argv) {
   }
 
   // Write name of BDF file to be load to char array
-  const char *filename = "plate.bdf";
+  const char* filename = "plate.bdf";
 
   // Create the mesh loader object and load file
-  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
+  TACSMeshLoader* mesh = new TACSMeshLoader(comm);
   mesh->incref();
   mesh->setConvertToCoordinate(convert_mesh);
   mesh->scanBDFFile(filename);
@@ -152,11 +152,11 @@ int main(int argc, char **argv) {
   /* TacsScalar v_init[] = {0.1, 0.1, 0.1};  */
   /* TacsScalar omega_init[] = {0.3, 0.1, 0.2}; */
 
-  TACSGibbsVector *gravity = new TACSGibbsVector(g);
+  TACSGibbsVector* gravity = new TACSGibbsVector(g);
   gravity->incref();
-  TACSGibbsVector *v0 = new TACSGibbsVector(v_init);
+  TACSGibbsVector* v0 = new TACSGibbsVector(v_init);
   v0->incref();
-  TACSGibbsVector *omega0 = new TACSGibbsVector(omega_init);
+  TACSGibbsVector* omega0 = new TACSGibbsVector(omega_init);
   omega0->incref();
 
   // Variables per node
@@ -164,11 +164,11 @@ int main(int argc, char **argv) {
 
   // Loop over components, creating constituitive object for each
   for (int i = 0; i < num_components; i++) {
-    const char *descriptor = mesh->getElementDescript(i);
+    const char* descriptor = mesh->getElementDescript(i);
     double min_thickness = 5.0e-3;
     double max_thickness = 2.0e-2;
     double thickness = 5.0e-3;
-    isoFSDTStiffness *stiff = new isoFSDTStiffness(
+    isoFSDTStiffness* stiff = new isoFSDTStiffness(
         rho, E, nu, kcorr, ys, thickness, i, min_thickness, max_thickness);
     stiff->incref();
 
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
     stiff->setRefAxis(axis);
 
     // Initialize element object
-    TACSElement *element = NULL;
+    TACSElement* element = NULL;
 
     // Create element object using constituitive information and type
     // defined in the descriptor
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
   }
 
   // Create tacs assembler from mesh loader object
-  TACSAssembler *tacs = mesh->createTACS(vars_per_node);
+  TACSAssembler* tacs = mesh->createTACS(vars_per_node);
   tacs->incref();
 
   // Create an TACSToFH5 object for writing output to files
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
        TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
        TACSElement::OUTPUT_EXTRAS);
 
-  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
+  TACSToFH5* f5 = new TACSToFH5(tacs, TACS_SHELL, write_flag);
   f5->incref();
 
   /*-----------------------------------------------------------------*/
@@ -216,14 +216,14 @@ int main(int argc, char **argv) {
   int num_dvs = num_components;
 
   // Create functions of interest
-  TACSFunction *func[num_funcs];
+  TACSFunction* func[num_funcs];
   if (num_funcs == 1) {
     func[0] = new TACSCompliance(tacs);
   } else if (num_funcs == 2) {
     func[0] = new TACSKSFailure(tacs, 100.0);
 
     // Set the induced norm failure types
-    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
+    TACSInducedFailure* ifunc = new TACSInducedFailure(tacs, 20.0);
     ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[1] = ifunc;
   } else if (num_funcs == 3) {
@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
     func[1] = new TACSCompliance(tacs);
 
     // Set the discrete and continuous KS functions
-    TACSKSFailure *ksfunc = new TACSKSFailure(tacs, 20.0);
+    TACSKSFailure* ksfunc = new TACSKSFailure(tacs, 20.0);
     ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
     func[2] = ksfunc;
 
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
     func[3] = ksfunc;
 
     // Set the induced norm failure types
-    TACSInducedFailure *ifunc = new TACSInducedFailure(tacs, 20.0);
+    TACSInducedFailure* ifunc = new TACSInducedFailure(tacs, 20.0);
     ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
     func[4] = ifunc;
 
@@ -282,16 +282,16 @@ int main(int argc, char **argv) {
     func[i]->incref();
   }
 
-  TacsScalar *funcVals = new TacsScalar[num_funcs];     // adjoint
-  TacsScalar *funcValsTmp = new TacsScalar[num_funcs];  // CSD
-  TacsScalar *funcVals1 = new TacsScalar[num_funcs];    // forward/reverse
+  TacsScalar* funcVals = new TacsScalar[num_funcs];     // adjoint
+  TacsScalar* funcValsTmp = new TacsScalar[num_funcs];  // CSD
+  TacsScalar* funcVals1 = new TacsScalar[num_funcs];    // forward/reverse
 
-  TacsScalar *dfdx = new TacsScalar[num_funcs * num_dvs];     // adjoint
-  TacsScalar *dfdx1 = new TacsScalar[num_funcs * num_dvs];    // CSD
-  TacsScalar *dfdxTmp = new TacsScalar[num_funcs * num_dvs];  // forward/reverse
+  TacsScalar* dfdx = new TacsScalar[num_funcs * num_dvs];     // adjoint
+  TacsScalar* dfdx1 = new TacsScalar[num_funcs * num_dvs];    // CSD
+  TacsScalar* dfdxTmp = new TacsScalar[num_funcs * num_dvs];  // forward/reverse
 
   // Create an array of design variables
-  TacsScalar *x = new TacsScalar[num_dvs];
+  TacsScalar* x = new TacsScalar[num_dvs];
   x[0] = 0.02;
 
   // Set paramters for time marching
@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
 
   // Check the BDF integrator
   int bdf_order = 3;
-  TACSIntegrator *bdf =
+  TACSIntegrator* bdf =
       new TACSBDFIntegrator(tacs, tinit, tfinal, num_steps_per_sec, bdf_order);
   bdf->incref();
 
@@ -323,7 +323,7 @@ int main(int argc, char **argv) {
 
   // Check the DIRK integrator
   int num_stages = 2;
-  TACSIntegrator *dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal,
+  TACSIntegrator* dirk = new TACSDIRKIntegrator(tacs, tinit, tfinal,
                                                 num_steps_per_sec, num_stages);
   dirk->incref();
 

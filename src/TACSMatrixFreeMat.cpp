@@ -14,7 +14,7 @@
 
 #include "TACSMatrixFreeMat.h"
 
-TACSMatrixFreeMat::TACSMatrixFreeMat(TACSAssembler *_assembler) {
+TACSMatrixFreeMat::TACSMatrixFreeMat(TACSAssembler* _assembler) {
   assembler = _assembler;
   assembler->incref();
   data_size = 0;
@@ -50,11 +50,11 @@ void TACSMatrixFreeMat::assembleMatrixFreeData(ElementMatrixType _matType,
   assembler->assembleMatrixFreeData(matType, alpha, beta, gamma, data);
 }
 
-TACSVec *TACSMatrixFreeMat::createVec() { return assembler->createVec(); }
+TACSVec* TACSMatrixFreeMat::createVec() { return assembler->createVec(); }
 
-void TACSMatrixFreeMat::mult(TACSVec *tx, TACSVec *ty) {
-  TACSBVec *x = dynamic_cast<TACSBVec *>(tx);
-  TACSBVec *y = dynamic_cast<TACSBVec *>(ty);
+void TACSMatrixFreeMat::mult(TACSVec* tx, TACSVec* ty) {
+  TACSBVec* x = dynamic_cast<TACSBVec*>(tx);
+  TACSBVec* y = dynamic_cast<TACSBVec*>(ty);
   if (x && y) {
     y->zeroEntries();
     assembler->addMatrixFreeVecProduct(matType, data, temp, x, y,
@@ -62,9 +62,9 @@ void TACSMatrixFreeMat::mult(TACSVec *tx, TACSVec *ty) {
   }
 }
 
-void TACSMatrixFreeMat::multTranspose(TACSVec *tx, TACSVec *ty) {
-  TACSBVec *x = dynamic_cast<TACSBVec *>(tx);
-  TACSBVec *y = dynamic_cast<TACSBVec *>(ty);
+void TACSMatrixFreeMat::multTranspose(TACSVec* tx, TACSVec* ty) {
+  TACSBVec* x = dynamic_cast<TACSBVec*>(tx);
+  TACSBVec* y = dynamic_cast<TACSBVec*>(ty);
   if (x && y) {
     y->zeroEntries();
     assembler->addMatrixFreeVecProduct(matType, data, temp, x, y,
@@ -72,4 +72,4 @@ void TACSMatrixFreeMat::multTranspose(TACSVec *tx, TACSVec *ty) {
   }
 }
 
-const char *TACSMatrixFreeMat::getObjectName() { return "TACSMatrixFreeMat"; }
+const char* TACSMatrixFreeMat::getObjectName() { return "TACSMatrixFreeMat"; }

@@ -24,32 +24,32 @@
 
 class TACSSerialPivotMat : public TACSMat {
  public:
-  TACSSerialPivotMat(TACSNodeMap *_rmap, int bsize, int num_block_rows,
-                     int num_block_cols, const int *block_rowp,
-                     const int *block_cols);
+  TACSSerialPivotMat(TACSNodeMap* _rmap, int bsize, int num_block_rows,
+                     int num_block_cols, const int* block_rowp,
+                     const int* block_cols);
   ~TACSSerialPivotMat();
 
   // Set entries into the matrix
   void zeroEntries();
-  void addValues(int nrow, const int *row, int ncol, const int *col, int nv,
-                 int mv, const TacsScalar *values);
-  void addWeightValues(int nvars, const int *varp, const int *vars,
-                       const TacsScalar *weights, int nv, int mv,
-                       const TacsScalar *values,
+  void addValues(int nrow, const int* row, int ncol, const int* col, int nv,
+                 int mv, const TacsScalar* values);
+  void addWeightValues(int nvars, const int* varp, const int* vars,
+                       const TacsScalar* weights, int nv, int mv,
+                       const TacsScalar* values,
                        MatrixOrientation matOr = TACS_MAT_NORMAL);
-  void applyBCs(TACSBcMap *bcmap);
+  void applyBCs(TACSBcMap* bcmap);
 
   // Create vectors
   // --------------
-  TACSVec *createVec();
+  TACSVec* createVec();
 
   // Operations required for solving problems
   // ----------------------------------------
-  void mult(TACSVec *tx, TACSVec *ty);
+  void mult(TACSVec* tx, TACSVec* ty);
 
   // Retrieve the pointer to the underlying matrix
   // ---------------------------------------------
-  BCSCMat *getBCSCMat();
+  BCSCMat* getBCSCMat();
 
  private:
   // The non-zero information associated with the CSR data
@@ -57,27 +57,27 @@ class TACSSerialPivotMat : public TACSMat {
   int *rowp, *cols;
 
   // The variable
-  TACSNodeMap *rmap;
+  TACSNodeMap* rmap;
 
   // The serial CSC matrix itself
-  BCSCMat *mat;
+  BCSCMat* mat;
 };
 
 class TACSSerialPivotPc : public TACSPc {
  public:
-  TACSSerialPivotPc(TACSSerialPivotMat *_mat);
+  TACSSerialPivotPc(TACSSerialPivotMat* _mat);
   ~TACSSerialPivotPc();
 
   // Factor the matrix and apply the factorization
   // ---------------------------------------------
   void factor();
-  void applyFactor(TACSVec *txvec, TACSVec *tyvec);
-  void getMat(TACSMat **_mat);
+  void applyFactor(TACSVec* txvec, TACSVec* tyvec);
+  void getMat(TACSMat** _mat);
 
  private:
-  TACSSerialPivotMat *mat;
+  TACSSerialPivotMat* mat;
   double fill;
-  BCSCMatPivot *pivot;
+  BCSCMatPivot* pivot;
 };
 
 #endif  // TACS_SERIAL_PIVOT_MATRIX_H

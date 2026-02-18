@@ -102,7 +102,7 @@ class TACSElementModel : public TACSObject {
 
     @return The TACSConstitutive object used by this model
   */
-  virtual TACSConstitutive *getConstitutive() { return NULL; }
+  virtual TACSConstitutive* getConstitutive() { return NULL; }
 
   /**
     Evaluate the point-wise integrand for the weak form of the governing
@@ -183,7 +183,7 @@ class TACSElementModel : public TACSObject {
                                  const TacsScalar Ut[], const TacsScalar Ux[],
                                  const TacsScalar Psi[],
                                  const TacsScalar Psix[], int dvLen,
-                                 TacsScalar *fdvSens) {}
+                                 TacsScalar* fdvSens) {}
 
   /**
     Compute the spatial derivatives of the point-wise product of the adjoint
@@ -208,7 +208,7 @@ class TACSElementModel : public TACSObject {
       int elemIndex, const double time, int n, const double pt[],
       const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
       const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-      TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+      TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
       TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
     *product = 0.0;
     dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
@@ -235,7 +235,7 @@ class TACSElementModel : public TACSObject {
     matrix
   */
   virtual void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                                     int *Jac_nnz, const int *Jac_pairs[]) = 0;
+                                     int* Jac_nnz, const int* Jac_pairs[]) = 0;
 
   /**
     Evaluate the Jacobian of the point-wise integrand for the weak form of
@@ -380,7 +380,7 @@ class TACSElementModel : public TACSObject {
                                 const double time, int n, const double pt[],
                                 const TacsScalar X[], const TacsScalar Xd[],
                                 const TacsScalar Ut[], const TacsScalar Ux[],
-                                TacsScalar *quantity) {
+                                TacsScalar* quantity) {
     return 0;
   }
 
@@ -449,7 +449,7 @@ class TACSElementModel : public TACSObject {
                              ElementType etype, int write_flag,
                              const double pt[], const TacsScalar X[],
                              const TacsScalar Ut[], const TacsScalar Ux[],
-                             int ld_data, TacsScalar *data) {}
+                             int ld_data, TacsScalar* data) {}
 };
 
 #endif  // TACS_ELEMENT_MODEL_H

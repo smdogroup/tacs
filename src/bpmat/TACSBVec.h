@@ -33,22 +33,22 @@
 */
 class TACSBVecDepNodes : public TACSObject {
  public:
-  TACSBVecDepNodes(int _ndep_nodes, int **_dep_ptr, int **_dep_conn,
-                   double **_dep_weights);
+  TACSBVecDepNodes(int _ndep_nodes, int** _dep_ptr, int** _dep_conn,
+                   double** _dep_weights);
   ~TACSBVecDepNodes();
 
   // Get the dependent connectivity and weights
-  int getDepNodes(const int **_dep_ptr, const int **_dep_conn,
-                  const double **_dep_weights);
+  int getDepNodes(const int** _dep_ptr, const int** _dep_conn,
+                  const double** _dep_weights);
 
   // Get the dependent node connectivity for reordering
   // --------------------------------------------------
-  int getDepNodeReorder(const int **_dep_ptr, int **_dep_conn);
+  int getDepNodeReorder(const int** _dep_ptr, int** _dep_conn);
 
  private:
   int ndep_nodes;
   int *dep_ptr, *dep_conn;
-  double *dep_weights;
+  double* dep_weights;
 };
 
 /*
@@ -66,52 +66,52 @@ class TACSBVecDepNodes : public TACSObject {
 */
 class TACSBVec : public TACSVec {
  public:
-  TACSBVec(TACSNodeMap *map, int bsize, TACSBVecDistribute *ext_dist = NULL,
-           TACSBVecDepNodes *dep_nodes = NULL);
+  TACSBVec(TACSNodeMap* map, int bsize, TACSBVecDistribute* ext_dist = NULL,
+           TACSBVecDepNodes* dep_nodes = NULL);
   TACSBVec(MPI_Comm _comm, int size, int bsize);
   ~TACSBVec();
 
   // The basic vector operations
   // ---------------------------
   MPI_Comm getMPIComm() { return comm; }
-  void getSize(int *_size);             // Number of local entries
+  void getSize(int* _size);             // Number of local entries
   int getBlockSize() { return bsize; }  // Get the block size
   TacsScalar norm();                    // Compute the Cartesian 2 norm
   void scale(TacsScalar alpha);         // Scale the vector by a value
-  TacsScalar dot(TACSVec *x);           // Compute x^{T}*y
-  void mdot(TACSVec **x, TacsScalar *ans, int m);  // Multiple dot product
-  void axpy(TacsScalar alpha, TACSVec *x);         // y <- y + alpha*x
-  void copyValues(TACSVec *x);                     // Copy values from x to this
+  TacsScalar dot(TACSVec* x);           // Compute x^{T}*y
+  void mdot(TACSVec** x, TacsScalar* ans, int m);  // Multiple dot product
+  void axpy(TacsScalar alpha, TACSVec* x);         // y <- y + alpha*x
+  void copyValues(TACSVec* x);                     // Copy values from x to this
   void axpby(TacsScalar alpha, TacsScalar beta,
-             TACSVec *x);  // y <- alpha*x + beta*y
-  void applyBCs(TACSBcMap *map, TACSVec *vec = NULL);
-  void setBCs(TACSBcMap *map);
+             TACSVec* x);  // y <- alpha*x + beta*y
+  void applyBCs(TACSBcMap* map, TACSVec* vec = NULL);
+  void setBCs(TACSBcMap* map);
 
   // Get/set the vector elements
   // ---------------------------
   void set(TacsScalar val);                  // Set all values of the vector
   void zeroEntries();                        // Zero all the entries
-  int getArray(TacsScalar **vals);           // Get the local values
-  int getDepArray(TacsScalar **vals);        // Get the dependent values
-  int getExtArray(TacsScalar **vals);        // Get the external values
+  int getArray(TacsScalar** vals);           // Get the local values
+  int getDepArray(TacsScalar** vals);        // Get the dependent values
+  int getExtArray(TacsScalar** vals);        // Get the external values
   void initRand();                           // Init random number generator
   void setRand(double lower, double upper);  // Set random values
 
   // Read/write the vector to a binary file -- the same on all procs
   // ---------------------------------------------------------------
-  int writeToFile(const char *filename);
-  int readFromFile(const char *filename);
+  int writeToFile(const char* filename);
+  int readFromFile(const char* filename);
 
   // Retrieve objects stored within the vector class
   // -----------------------------------------------
-  TACSNodeMap *getNodeMap();
-  TACSBVecIndices *getBVecIndices();
-  TACSBVecDistribute *getBVecDistribute();
-  TACSBVecDepNodes *getBVecDepNodes();
+  TACSNodeMap* getNodeMap();
+  TACSBVecIndices* getBVecIndices();
+  TACSBVecDistribute* getBVecDistribute();
+  TACSBVecDepNodes* getBVecDepNodes();
 
   // Add/set the values from the array
   // ---------------------------------
-  void setValues(int n, const int *index, const TacsScalar *vals,
+  void setValues(int n, const int* index, const TacsScalar* vals,
                  TACSBVecOperation op);
   void beginSetValues(TACSBVecOperation op);
   void endSetValues(TACSBVecOperation op);
@@ -120,45 +120,45 @@ class TACSBVec : public TACSVec {
   // --------------------------------------
   void beginDistributeValues();
   void endDistributeValues();
-  int getValues(int n, const int *index, TacsScalar *vals);
+  int getValues(int n, const int* index, TacsScalar* vals);
 
   // Get the name of this object
   // ---------------------------
-  const char *getObjectName();
+  const char* getObjectName();
 
  private:
   // The MPI communicator
   MPI_Comm comm;
 
   // The variable map that defines the global distribution of nodes
-  TACSNodeMap *node_map;
+  TACSNodeMap* node_map;
 
   // The vector block size
   int bsize;
 
   // On-processor owned part of the array
   int size;       // The size of the array
-  TacsScalar *x;  // The entries allocated for the array
+  TacsScalar* x;  // The entries allocated for the array
 
   // External off-processor part (not always allocated)
   int ext_size;
-  TacsScalar *x_ext;
+  TacsScalar* x_ext;
 
   // The data used to communicate with the external part of the
   // vector. This is not always allocated so be careful.
-  TACSBVecDistribute *ext_dist;
-  TACSBVecIndices *ext_indices;
-  TACSBVecDistCtx *ext_ctx;
+  TACSBVecDistribute* ext_dist;
+  TACSBVecIndices* ext_indices;
+  TACSBVecDistCtx* ext_ctx;
 
   // Dependent node information
   int dep_size;
-  TacsScalar *x_dep;
+  TacsScalar* x_dep;
 
   // Pointer to the dependent node data
-  TACSBVecDepNodes *dep_nodes;
+  TACSBVecDepNodes* dep_nodes;
 
   // Name for the vector
-  static const char *vecName;
+  static const char* vecName;
 };
 
 #endif  // TACS_BVEC_H

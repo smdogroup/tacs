@@ -68,8 +68,8 @@ TACSFH5File::~TACSFH5File() {
    @param num_components the total number of zones
    @return 0 on successs, 1 if there is an error creating the file
 */
-int TACSFH5File::createFile(const char *file_name, int num_components,
-                            char **component_names) {
+int TACSFH5File::createFile(const char* file_name, int num_components,
+                            char** component_names) {
   if (fp) {
     int rank;
     MPI_Comm_rank(comm, &rank);
@@ -79,7 +79,7 @@ int TACSFH5File::createFile(const char *file_name, int num_components,
     // Open the file and make sure it opened properly
     fp = NULL;
     int slen = strlen(file_name) + 1;
-    char *fname = new char[slen];
+    char* fname = new char[slen];
     strcpy(fname, file_name);
 
     // Open the file for writing
@@ -112,7 +112,7 @@ int TACSFH5File::createFile(const char *file_name, int num_components,
       }
 
       if (rank == 0) {
-        char *header = new char[header_len];
+        char* header = new char[header_len];
         // Record the number of components
         memcpy(header, &num_components, sizeof(int));
         header_len = sizeof(int);
@@ -180,18 +180,18 @@ int TACSFH5File::createFile(const char *file_name, int num_components,
 
    dim1*dim2*sizeof(double)/sizeof(int)
 */
-int TACSFH5File::writeZoneData(char *zone_name, char *var_names,
+int TACSFH5File::writeZoneData(char* zone_name, char* var_names,
                                FH5DataType data_name, int dim1, int dim2,
-                               void *data, int *dim1_range) {
+                               void* data, int* dim1_range) {
   // Check the file status to ensure that it's open
   if (fp && file_for_writing) {
     int rank, size;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
-    int *dim_count = NULL;
+    int* dim_count = NULL;
     if (!dim1_range) {
-      int *dim_count = new int[size + 1];
+      int* dim_count = new int[size + 1];
       dim_count[0] = 0;
       MPI_Allgather(&dim1, 1, MPI_INT, &dim_count[1], 1, MPI_INT, comm);
 
@@ -214,7 +214,7 @@ int TACSFH5File::writeZoneData(char *zone_name, char *var_names,
     // Write the header for this zone just on the root processor
     if (rank == 0) {
       // Allocate the pre-header to use
-      char *pre_header = new char[header_len];
+      char* pre_header = new char[header_len];
       int pre_int[5];
       pre_int[0] = data_name;
       pre_int[1] = total_dim;
@@ -285,7 +285,7 @@ void TACSFH5File::close() {
 
    @param file_name The file name to open
 */
-int TACSFH5File::openFile(const char *file_name) {
+int TACSFH5File::openFile(const char* file_name) {
   int rank, size = 0;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &rank);
@@ -323,7 +323,7 @@ int TACSFH5File::getNumComponents() { return num_comp; }
    @param comp The component number
    @return The component name
 */
-char *TACSFH5File::getComponentName(int comp) {
+char* TACSFH5File::getComponentName(int comp) {
   if (comp >= 0 && comp < num_comp) {
     return comp_names[comp];
   }
@@ -369,7 +369,7 @@ int TACSFH5File::scanFH5File() {
     return 1;
   }
 
-  comp_names = new char *[num_comp];
+  comp_names = new char*[num_comp];
   for (int k = 0; (k < num_comp) && !feof(rfp); k++) {
     size_t slen = 0;
     if (fread(&slen, sizeof(int), 1, rfp) != 1) {
@@ -481,8 +481,8 @@ int TACSFH5File::nextZone() {
 /**
    Get the zone header information without the data
 */
-int TACSFH5File::getZoneInfo(const char **zone_name, const char **var_names,
-                             FH5DataType *dtype, int *dim1, int *dim2) {
+int TACSFH5File::getZoneInfo(const char** zone_name, const char** var_names,
+                             FH5DataType* dtype, int* dim1, int* dim2) {
   if (!current) {
     return 0;
   }
@@ -515,9 +515,9 @@ int TACSFH5File::getZoneInfo(const char **zone_name, const char **var_names,
 /**
    Read the current zone of data - both header info and actual data
 */
-int TACSFH5File::getZoneData(const char **zone_name, const char **var_names,
-                             FH5DataType *_dtype, int *dim1, int *dim2,
-                             void **data) {
+int TACSFH5File::getZoneData(const char** zone_name, const char** var_names,
+                             FH5DataType* _dtype, int* dim1, int* dim2,
+                             void** data) {
   // No pointer or no file
   if (!current || !rfp) {
     fprintf(stderr, "FH5: Error, no file opened yet\n");

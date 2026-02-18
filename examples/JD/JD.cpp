@@ -8,8 +8,8 @@
 
 #include "JD.h"
 
-OctCreator::OctCreator(TMRBoundaryConditions *_bcs, TMROctForest *_forest,
-                       TMRStiffnessProperties *_stiff_props)
+OctCreator::OctCreator(TMRBoundaryConditions* _bcs, TMROctForest* _forest,
+                       TMRStiffnessProperties* _stiff_props)
     : TMROctConformTACSTopoCreator(_bcs, 1, _forest, -1,
                                    TMR_GAUSS_LOBATTO_POINTS) {
   bcs = _bcs;
@@ -17,33 +17,33 @@ OctCreator::OctCreator(TMRBoundaryConditions *_bcs, TMROctForest *_forest,
   stiff_props = _stiff_props;
 }
 
-TACSElement *OctCreator::createElement(int order, TMROctant *oct, int nweights,
-                                       const int *index, TMROctForest *filter) {
-  TMROctConstitutive *con = new TMROctConstitutive(stiff_props, forest);
+TACSElement* OctCreator::createElement(int order, TMROctant* oct, int nweights,
+                                       const int* index, TMROctForest* filter) {
+  TMROctConstitutive* con = new TMROctConstitutive(stiff_props, forest);
   con->incref();
-  TACSLinearElasticity3D *model =
+  TACSLinearElasticity3D* model =
       new TACSLinearElasticity3D(con, TACS_LINEAR_STRAIN);
   model->incref();
-  TACSLinearHexaBasis *basis = new TACSLinearHexaBasis();
+  TACSLinearHexaBasis* basis = new TACSLinearHexaBasis();
   basis->incref();
-  TACSElement *elem = new TACSElement3D(model, basis);
+  TACSElement* elem = new TACSElement3D(model, basis);
   elem->incref();
   return elem;
 }
 
-CreatorCallback::CreatorCallback(TMRBoundaryConditions *_bcs,
-                                 TMRStiffnessProperties *_stiff_props) {
+CreatorCallback::CreatorCallback(TMRBoundaryConditions* _bcs,
+                                 TMRStiffnessProperties* _stiff_props) {
   bcs = _bcs;
   stiff_props = _stiff_props;
 }
 
-OctCreator *CreatorCallback::creator_callback(TMROctForest *forest) {
-  OctCreator *creator = new OctCreator(bcs, forest, stiff_props);
+OctCreator* CreatorCallback::creator_callback(TMROctForest* forest) {
+  OctCreator* creator = new OctCreator(bcs, forest, stiff_props);
   return creator;
 }
 
-Mfilter::Mfilter(int _N, int _nlevels, TACSAssembler *_assembler[],
-                 TMROctForest *_filter[], double _r)
+Mfilter::Mfilter(int _N, int _nlevels, TACSAssembler* _assembler[],
+                 TMROctForest* _filter[], double _r)
     : TMRHelmholtzPUFilter(_N, _nlevels, _assembler, _filter) {
   // Get rank
   MPI_Comm_rank(_assembler[0]->getMPIComm(), &mpi_rank);
@@ -258,18 +258,18 @@ MFilterCreator::MFilterCreator(double _r0_frac, int _N, double _a) {
 //   return mfilter;
 // }
 
-Mfilter *MFilterCreator::create_filter(int nlevels, TACSAssembler *assemblers[],
-                                       TMROctForest *filters[]) {
+Mfilter* MFilterCreator::create_filter(int nlevels, TACSAssembler* assemblers[],
+                                       TMROctForest* filters[]) {
   double r = a * r0_frac;
-  Mfilter *mfilter = new Mfilter(N, nlevels, assemblers, filters, r);
+  Mfilter* mfilter = new Mfilter(N, nlevels, assemblers, filters, r);
   mfilter->incref();
   mfilter->initialize();
   return mfilter;
 }
 
-TopoProblemCreator::TopoProblemCreator(TMROctForest *_forest,
-                                       CreatorCallback *_creator_callback_obj,
-                                       MFilterCreator *_filter_creator,
+TopoProblemCreator::TopoProblemCreator(TMROctForest* _forest,
+                                       CreatorCallback* _creator_callback_obj,
+                                       MFilterCreator* _filter_creator,
                                        int _nlevels, int _use_galerkin) {
   forest = _forest;
   creator_callback_obj = _creator_callback_obj;
@@ -295,15 +295,15 @@ TopoProblemCreator::~TopoProblemCreator() {
   }
 }
 
-TMRTopoProblem *TopoProblemCreator::createTopoProblem() {
+TMRTopoProblem* TopoProblemCreator::createTopoProblem() {
   int repartition = 1;
   int lowest_order = 2;
   TACSAssembler::OrderingType ordering = TACSAssembler::MULTICOLOR_ORDER;
 
   // Store hierarchy data
-  TMROctForest *forests[nlevels];
-  TMROctForest *filters[nlevels];
-  TACSAssembler *assemblers[nlevels];
+  TMROctForest* forests[nlevels];
+  TMROctForest* filters[nlevels];
+  TACSAssembler* assemblers[nlevels];
 
   // Balance the forest and repartition across processors
   forest->balance(1);
@@ -312,7 +312,7 @@ TMRTopoProblem *TopoProblemCreator::createTopoProblem() {
   }
 
   // Create the forest object
-  OctCreator *creator = creator_callback_obj->creator_callback(forest);
+  OctCreator* creator = creator_callback_obj->creator_callback(forest);
   creator->incref();
   forests[0] = forest;
   filters[0] = forest;
@@ -323,7 +323,7 @@ TMRTopoProblem *TopoProblemCreator::createTopoProblem() {
     int order = forests[i]->getMeshOrder();
     TMRInterpolationType interp = forests[i]->getInterpType();
 
-    TMROctForest *_forest = NULL;
+    TMROctForest* _forest = NULL;
     if (order > lowest_order) {
       _forest = forests[i]->duplicate();
       _forest->incref();
@@ -357,13 +357,13 @@ TMRTopoProblem *TopoProblemCreator::createTopoProblem() {
   mg->incref();
 
   // Create the TMRTopoFilter object
-  Mfilter *filter_obj =
+  Mfilter* filter_obj =
       filter_creator->create_filter(nlevels, assemblers, filters);
 
   // Create problem
   int gmres_subspace = 50;
   double rtol = 1e-9;
-  TMRTopoProblem *problem =
+  TMRTopoProblem* problem =
       new TMRTopoProblem(filter_obj, mg, gmres_subspace, rtol);
   return problem;
 }
@@ -380,7 +380,7 @@ MassObj::~MassObj() {
   }
 }
 
-void MassObj::evalObj(TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val) {
+void MassObj::evalObj(TMRTopoFilter* _filter, TACSMg* dummy, TacsScalar* val) {
   if (!filter) {
     allocated = 1;
 
@@ -397,13 +397,13 @@ void MassObj::evalObj(TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val) {
   return;
 }
 
-void MassObj::evalGrad(TMRTopoFilter *dummy1, TACSMg *dummy2, TACSBVec *dfdx) {
+void MassObj::evalGrad(TMRTopoFilter* dummy1, TACSMg* dummy2, TACSBVec* dfdx) {
   dfdx->zeroEntries();
   assembler->addDVSens(1 / m_fixed, 1, &mass_func, &dfdx);
   return;
 }
 
-FrequencyConstr::FrequencyConstr(TMROctForest *_forest, double _len0,
+FrequencyConstr::FrequencyConstr(TMROctForest* _forest, double _len0,
                                  double _lambda0, int _max_jd_size,
                                  int _max_gmres_size, double _ksrho,
                                  double _non_design_mass) {
@@ -452,8 +452,8 @@ FrequencyConstr::~FrequencyConstr() {
   }
 }
 
-void FrequencyConstr::evalConstr(TMRTopoFilter *_filter, TACSMg *_mg,
-                                 int nconstr, TacsScalar *vals) {
+void FrequencyConstr::evalConstr(TMRTopoFilter* _filter, TACSMg* _mg,
+                                 int nconstr, TacsScalar* vals) {
   if (!allocated) {
     allocated = 1;
 
@@ -486,8 +486,8 @@ void FrequencyConstr::evalConstr(TMRTopoFilter *_filter, TACSMg *_mg,
 
     eig = new TacsScalar[num_eigenvalues];
     eta = new TacsScalar[num_eigenvalues];
-    eigv = new TACSBVec *[num_eigenvalues];
-    deig = new TACSBVec *[num_eigenvalues];
+    eigv = new TACSBVec*[num_eigenvalues];
+    deig = new TACSBVec*[num_eigenvalues];
 
     for (int i = 0; i < num_eigenvalues; i++) {
       eigv[i] = assembler->createVec();
@@ -620,10 +620,10 @@ void FrequencyConstr::evalConstr(TMRTopoFilter *_filter, TACSMg *_mg,
   vals[0] = ks;
 }
 
-void FrequencyConstr::evalConstrGrad(TMRTopoFilter *dummy1, TACSMg *dummy2,
-                                     int nconstr, TACSBVec **vecs) {
+void FrequencyConstr::evalConstrGrad(TMRTopoFilter* dummy1, TACSMg* dummy2,
+                                     int nconstr, TACSBVec** vecs) {
   // We only have one constraint
-  TACSBVec *dcdrho = vecs[0];
+  TACSBVec* dcdrho = vecs[0];
 
   dcdrho->zeroEntries();
 
@@ -640,12 +640,12 @@ void FrequencyConstr::evalConstrGrad(TMRTopoFilter *dummy1, TACSMg *dummy2,
   }
 }
 
-void FrequencyConstr::qn_correction(ParOptVec *x, ParOptScalar z[],
-                                    ParOptVec *dummy, ParOptVec *s,
-                                    ParOptVec *y) {
-  s_wrap = dynamic_cast<ParOptBVecWrap *>(s);
+void FrequencyConstr::qn_correction(ParOptVec* x, ParOptScalar z[],
+                                    ParOptVec* dummy, ParOptVec* s,
+                                    ParOptVec* y) {
+  s_wrap = dynamic_cast<ParOptBVecWrap*>(s);
   s_tacs = s_wrap->vec;
-  y_wrap = dynamic_cast<ParOptBVecWrap *>(y);
+  y_wrap = dynamic_cast<ParOptBVecWrap*>(y);
   y_tacs = y_wrap->vec;
 
   TacsScalar h = 1e-8;
@@ -693,7 +693,7 @@ void FrequencyConstr::qn_correction(ParOptVec *x, ParOptScalar z[],
   }
 }
 
-OutputCallback::OutputCallback(TACSAssembler *_assembler, int _iter_offset) {
+OutputCallback::OutputCallback(TACSAssembler* _assembler, int _iter_offset) {
   assembler = _assembler;
   xt = assembler->createDesignVec();
   xt->incref();
@@ -715,8 +715,8 @@ OutputCallback::~OutputCallback() {
   Create the TMRTopoProblem object and set up the topology optimization
   problem
 */
-ProblemCreator::ProblemCreator(TMROctForest *forest, TMRBoundaryConditions *bcs,
-                               TMRStiffnessProperties *stiff_props, int nlevels,
+ProblemCreator::ProblemCreator(TMROctForest* forest, TMRBoundaryConditions* bcs,
+                               TMRStiffnessProperties* stiff_props, int nlevels,
                                double lambda0, double ksrho, double vol_frac,
                                double r0_frac, double len0, double density,
                                int qn_correction, double non_design_mass,
@@ -771,7 +771,7 @@ ProblemCreator::~ProblemCreator() {
   tpc->decref();
 }
 
-TMRTopoProblem *ProblemCreator::get_problem() { return problem; }
+TMRTopoProblem* ProblemCreator::get_problem() { return problem; }
 
 OptFilterWeights::OptFilterWeights(int _diagonal_index, int _npts, int _dim,
                                    const TacsScalar _Xpts[], double _H[],
@@ -912,7 +912,7 @@ OptFilterWeights::~OptFilterWeights() {
   delete[] b;
 }
 
-void OptFilterWeights::set_alphas(double *w, double *alpha) {
+void OptFilterWeights::set_alphas(double* w, double* alpha) {
   for (int i = 0; i < npts; i++) {
     alpha[i] = 0.0;
   }
@@ -928,9 +928,9 @@ void OptFilterWeights::set_alphas(double *w, double *alpha) {
   alpha[diagonal_index] += 1.0;
 }
 
-double objective(unsigned n, const double *w, double *grad, void *data) {
+double objective(unsigned n, const double* w, double* grad, void* data) {
   // Cast data to be type of OptFilterWeights class
-  OptFilterWeights *opt_data = static_cast<OptFilterWeights *>(data);
+  OptFilterWeights* opt_data = static_cast<OptFilterWeights*>(data);
 
   // Compute objective value and gradient
   double obj_val = 0.0;
@@ -947,15 +947,15 @@ double objective(unsigned n, const double *w, double *grad, void *data) {
   return obj_val;
 }
 
-void constraint(unsigned ncon, double *cons, unsigned n, const double *w,
-                double *grad, void *data) {
+void constraint(unsigned ncon, double* cons, unsigned n, const double* w,
+                double* grad, void* data) {
   // Cast data to be type of OptFilterWeights class
-  OptFilterWeights *opt_data = static_cast<OptFilterWeights *>(data);
+  OptFilterWeights* opt_data = static_cast<OptFilterWeights*>(data);
 
   // Compute constraint value:
   // c = dot(A, w) - b
-  double *A = opt_data->get_A();
-  double *b = opt_data->get_b();
+  double* A = opt_data->get_A();
+  double* b = opt_data->get_b();
   for (int m = 0; m < ncon; m++) {
     cons[m] = -b[m];
     for (int i = 0; i < n; i++) {
@@ -975,7 +975,7 @@ void constraint(unsigned ncon, double *cons, unsigned n, const double *w,
   opt_data->con_counter_inc();
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   /* Parameters */
 
   int check_gradient = 0;
@@ -1006,9 +1006,9 @@ int main(int argc, char *argv[]) {
 
   /* Material and stiffness properties */
 
-  TACSMaterialProperties *mat_props =
+  TACSMaterialProperties* mat_props =
       new TACSMaterialProperties(2600.0, 921.0, 70e3, 0.3, 100.0, 24e-6, 230.0);
-  TMRStiffnessProperties *stiff_props = new TMRStiffnessProperties(
+  TMRStiffnessProperties* stiff_props = new TMRStiffnessProperties(
       1, &mat_props, qval, 0.2, 1e-3, TMR_RAMP_PENALTY, qval);
   mat_props->incref();
   stiff_props->incref();
@@ -1017,12 +1017,12 @@ int main(int argc, char *argv[]) {
 
   // Read egads file
   const char egads_name[] = "cantilever_1.0_1.0_1.0.egads";
-  TMRModel *geo = TMR_EgadsInterface::TMR_LoadModelFromEGADSFile(egads_name, 0);
+  TMRModel* geo = TMR_EgadsInterface::TMR_LoadModelFromEGADSFile(egads_name, 0);
   geo->incref();
 
   // Retrieve faces and volume
-  TMRFace **faces;
-  TMRVolume **volumes;
+  TMRFace** faces;
+  TMRVolume** volumes;
   geo->getFaces(NULL, &faces);
   geo->getVolumes(NULL, &volumes);
 
@@ -1031,24 +1031,24 @@ int main(int argc, char *argv[]) {
   faces[0]->setSource(volumes[0], faces[1]);
 
   // Create the mesh object
-  TMRMesh *mesh = new TMRMesh(comm, geo);
+  TMRMesh* mesh = new TMRMesh(comm, geo);
   mesh->incref();
 
   // Create TMR options
-  TMRMeshOptions *options = new TMRMeshOptions();
+  TMRMeshOptions* options = new TMRMeshOptions();
 
   // Mesh the mesh
   double htarget = 1.0;
   mesh->mesh(*options, htarget);
 
   // Create a topology object with underlying mesh geometry
-  TMRModel *model = mesh->createModelFromMesh();
+  TMRModel* model = mesh->createModelFromMesh();
   model->incref();
-  TMRTopology *topo = new TMRTopology(comm, model);
+  TMRTopology* topo = new TMRTopology(comm, model);
   topo->incref();
 
   // Create the oct forest
-  TMROctForest *forest = new TMROctForest(comm);
+  TMROctForest* forest = new TMROctForest(comm);
   forest->incref();
 
   // Set topology for forest
@@ -1056,24 +1056,24 @@ int main(int argc, char *argv[]) {
   forest->createTrees(mg_levels - 1);
 
   // Export mesh to vtk
-  const char *vtk = "test.vtk";
+  const char* vtk = "test.vtk";
   forest->writeForestToVTK(vtk);
 
   /* Set boundary conditions */
 
-  TMRBoundaryConditions *bcs = new TMRBoundaryConditions();
+  TMRBoundaryConditions* bcs = new TMRBoundaryConditions();
   bcs->incref();
   const int bcs_nums[3] = {0, 1, 2};
   const double bcs_vals[3] = {0.0, 0.0, 0.0};
   bcs->addBoundaryCondition("fixed", 3, bcs_nums, bcs_vals);
 
   /* Create topology problem instance */
-  ProblemCreator *pcr =
+  ProblemCreator* pcr =
       new ProblemCreator(forest, bcs, stiff_props, mg_levels, lambda0, ksrho,
                          vol_frac, r0_frac, len0, density, qn_correction,
                          non_design_mass, max_jd_size, max_gmres_size);
   pcr->incref();
-  TMRTopoProblem *problem = pcr->get_problem();
+  TMRTopoProblem* problem = pcr->get_problem();
   problem->incref();
 
   // Set the prefix
@@ -1092,7 +1092,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Set up options
-  ParOptOptions *paropt_options = new ParOptOptions(comm);
+  ParOptOptions* paropt_options = new ParOptOptions(comm);
   paropt_options->incref();
   ParOptOptimizer::addDefaultOptions(paropt_options);
 
@@ -1127,7 +1127,7 @@ int main(int argc, char *argv[]) {
   paropt_options->setOption("max_major_iters", 200);
 
   // Set up optimizer
-  ParOptOptimizer *optimizer = new ParOptOptimizer(problem, paropt_options);
+  ParOptOptimizer* optimizer = new ParOptOptimizer(problem, paropt_options);
   optimizer->incref();
 
   // Optimize

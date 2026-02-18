@@ -18,20 +18,20 @@
 
 #include "TACSCompositeShellConstitutive.h"
 
-const char *TACSCompositeShellConstitutive::constName =
+const char* TACSCompositeShellConstitutive::constName =
     "TACSCompositeShellConstitutive";
 
 /*
   Create the shell constitutive
 */
 TACSCompositeShellConstitutive::TACSCompositeShellConstitutive(
-    int _num_plies, TACSOrthotropicPly **_ply_props,
-    const TacsScalar *_ply_thickness, const TacsScalar *_ply_angles,
+    int _num_plies, TACSOrthotropicPly** _ply_props,
+    const TacsScalar* _ply_thickness, const TacsScalar* _ply_angles,
     TacsScalar _kcorr, TacsScalar _tOffset) {
   num_plies = _num_plies;
   ply_thickness = new TacsScalar[num_plies];
   ply_angles = new TacsScalar[num_plies];
-  ply_props = new TACSOrthotropicPly *[num_plies];
+  ply_props = new TACSOrthotropicPly*[num_plies];
 
   for (int i = 0; i < num_plies; i++) {
     ply_props[i] = _ply_props[i];
@@ -250,10 +250,10 @@ void TACSCompositeShellConstitutive::evalTangentStiffness(int elemIndex,
                                                           const double pt[],
                                                           const TacsScalar X[],
                                                           TacsScalar C[]) {
-  TacsScalar *A = &C[0];
-  TacsScalar *B = &C[6];
-  TacsScalar *D = &C[12];
-  TacsScalar *As = &C[18];
+  TacsScalar* A = &C[0];
+  TacsScalar* B = &C[6];
+  TacsScalar* D = &C[12];
+  TacsScalar* As = &C[18];
 
   // Zero the stiffness matrices
   for (int k = 0; k < 6; k++) {
@@ -332,7 +332,7 @@ void TACSCompositeShellConstitutive::evalTangentHeatFlux(int elemIndex,
 /*
   Return the constitutive name
 */
-const char *TACSCompositeShellConstitutive::getObjectName() {
+const char* TACSCompositeShellConstitutive::getObjectName() {
   return constName;
 }
 
@@ -340,7 +340,7 @@ const char *TACSCompositeShellConstitutive::getObjectName() {
   Get ply thicknesses
 */
 void TACSCompositeShellConstitutive::getPlyThicknesses(
-    TacsScalar *_ply_thickness) {
+    TacsScalar* _ply_thickness) {
   for (int i = 0; i < num_plies; i++) {
     _ply_thickness[i] = ply_thickness[i];
   }
@@ -349,7 +349,7 @@ void TACSCompositeShellConstitutive::getPlyThicknesses(
 /*
   Get ply angles
 */
-void TACSCompositeShellConstitutive::getPlyAngles(TacsScalar *_ply_angles) {
+void TACSCompositeShellConstitutive::getPlyAngles(TacsScalar* _ply_angles) {
   for (int i = 0; i < num_plies; i++) {
     _ply_angles[i] = ply_angles[i];
   }

@@ -20,13 +20,13 @@
 
 class PlaneStressTri6 : public TACS2DElement<6> {
  public:
-  PlaneStressTri6(PlaneStressStiffness *_stiff,
+  PlaneStressTri6(PlaneStressStiffness* _stiff,
                   ElementBehaviorType type = LINEAR, int _componentNum = 0);
   ~PlaneStressTri6();
 
   // Return the name of this element
   // -------------------------------
-  const char *elementName() { return elemName; }
+  const char* elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -41,14 +41,14 @@ class PlaneStressTri6 : public TACS2DElement<6> {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
-  void getOutputData(unsigned int out_type, double *data, int ld_data,
+  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
+  void getOutputData(unsigned int out_type, double* data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int *con, int node);
+  void getOutputConnectivity(int* con, int node);
 
  private:
   static const int NUM_NODES = 6;
-  static const char *elemName;
+  static const char* elemName;
 };
 
 #endif  // TACS_PLANE_STRESS_TRI6_H

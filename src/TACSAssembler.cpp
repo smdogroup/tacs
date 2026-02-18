@@ -297,7 +297,7 @@ TACSAssembler::~TACSAssembler() {
   thread_info->decref();
 }
 
-const char *TACSAssembler::tacsName = "TACSAssembler";
+const char* TACSAssembler::tacsName = "TACSAssembler";
 
 /**
    Return the MPI communicator for the TACSAssembler object
@@ -318,7 +318,7 @@ void TACSAssembler::setNumThreads(int t) { thread_info->setNumThreads(t); }
 
    @return the thread info object
 */
-TACSThreadInfo *TACSAssembler::getThreadInfo() { return thread_info; }
+TACSThreadInfo* TACSAssembler::getThreadInfo() { return thread_info; }
 
 /**
    Get the number of degrees of freedom per node
@@ -367,21 +367,21 @@ int TACSAssembler::getNumElements() { return numElements; }
 
   @return The map that defines the nodal assignment to each processor
 */
-TACSNodeMap *TACSAssembler::getNodeMap() { return nodeMap; }
+TACSNodeMap* TACSAssembler::getNodeMap() { return nodeMap; }
 
 /**
   Get the node-processor design variable assignment
 
   @return The map that defines the design variable assignment to each processor
 */
-TACSNodeMap *TACSAssembler::getDesignNodeMap() { return designNodeMap; }
+TACSNodeMap* TACSAssembler::getDesignNodeMap() { return designNodeMap; }
 
 /**
   Get the boundary conditions
 
   @return The boundary conditions (may be NULL)
 */
-TACSBcMap *TACSAssembler::getBcMap() { return bcMap; }
+TACSBcMap* TACSAssembler::getBcMap() { return bcMap; }
 
 /**
   Get the additional boundary conditions associated with the initial
@@ -389,21 +389,21 @@ TACSBcMap *TACSAssembler::getBcMap() { return bcMap; }
 
   @return Initial boundary conditions (may be NULL)
 */
-TACSBcMap *TACSAssembler::getInitBcMap() { return bcInitMap; }
+TACSBcMap* TACSAssembler::getInitBcMap() { return bcInitMap; }
 
 /**
   Get the vector distribution object
 
   @return The object for distributing vector values
 */
-TACSBVecDistribute *TACSAssembler::getBVecDistribute() { return extDist; }
+TACSBVecDistribute* TACSAssembler::getBVecDistribute() { return extDist; }
 
 /**
   Get the dependent node vectors
 
   @return The object used to define the dependent node equations
 */
-TACSBVecDepNodes *TACSAssembler::getBVecDepNodes() { return depNodes; }
+TACSBVecDepNodes* TACSAssembler::getBVecDepNodes() { return depNodes; }
 
 /**
   Get the maximum number of nodes for an element
@@ -431,7 +431,7 @@ int TACSAssembler::getMaxElementDesignVars() { return maxElementDesignVars; }
 
   @return The array of element objects
 */
-TACSElement **TACSAssembler::getElements() { return elements; }
+TACSElement** TACSAssembler::getElements() { return elements; }
 
 /**
   Get the element object and the corresponding element variables
@@ -443,13 +443,13 @@ TACSElement **TACSAssembler::getElements() { return elements; }
   @param dvars The element variable time derivative array (may be NULL)
   @return The element object (NULL if index is out of range)
 */
-TACSElement *TACSAssembler::getElement(int index, TacsScalar *Xpts,
-                                       TacsScalar *vars, TacsScalar *dvars,
-                                       TacsScalar *ddvars) {
+TACSElement* TACSAssembler::getElement(int index, TacsScalar* Xpts,
+                                       TacsScalar* vars, TacsScalar* dvars,
+                                       TacsScalar* ddvars) {
   if (elements && xptVec && (index >= 0 && index < numElements)) {
     int ptr = elementNodeIndex[index];
     int len = elementNodeIndex[index + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     if (Xpts) {
       xptVec->getValues(len, nodes, Xpts);
     }
@@ -477,7 +477,7 @@ TACSElement *TACSAssembler::getElement(int index, TacsScalar *Xpts,
   @param len The number of nodes for this element
   @return The element object (NULL if index is out of range)
 */
-TACSElement *TACSAssembler::getElement(int index, int *len, const int **nodes) {
+TACSElement* TACSAssembler::getElement(int index, int* len, const int** nodes) {
   if (elements && (index >= 0 && index < numElements)) {
     int ptr = elementNodeIndex[index];
     if (len) {
@@ -510,7 +510,7 @@ TACSElement *TACSAssembler::getElement(int index, int *len, const int **nodes) {
   @param conn The connectivity from elements to global node index
   @return Fail flag indicating if a failure occured
 */
-int TACSAssembler::setElementConnectivity(const int *ptr, const int *conn) {
+int TACSAssembler::setElementConnectivity(const int* ptr, const int* conn) {
   if (meshInitializedFlag) {
     fprintf(stderr,
             "[%d] Cannot call setElementConnectivity() after initialize()\n",
@@ -556,7 +556,7 @@ int TACSAssembler::setElementConnectivity(const int *ptr, const int *conn) {
 
   // Check that the node numbers are all within range and that the
   // dependent node numbers (if any) are in range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   for (int i = 0; i < numElements; i++) {
@@ -586,7 +586,7 @@ int TACSAssembler::setElementConnectivity(const int *ptr, const int *conn) {
   @param ptr Offset into the connectivity array for this processor
   @param conn The connectivity from elements to global node index
 */
-void TACSAssembler::getElementConnectivity(const int **ptr, const int **conn) {
+void TACSAssembler::getElementConnectivity(const int** ptr, const int** conn) {
   if (!meshInitializedFlag) {
     fprintf(stderr,
             "[%d] Cannot call getElementConnectivity() before initialize()\n",
@@ -620,7 +620,7 @@ void TACSAssembler::getElementConnectivity(const int **ptr, const int **conn) {
   @param elements The array of element pointers with length = numElements.
   @return Fail flag indicating if a failure occured
 */
-int TACSAssembler::setElements(TACSElement **_elements) {
+int TACSAssembler::setElements(TACSElement** _elements) {
   if (meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call setElements() after initialize()\n",
             mpiRank);
@@ -649,8 +649,8 @@ int TACSAssembler::setElements(TACSElement **_elements) {
       elements[i] = _elements[i];
     }
   } else {
-    elements = new TACSElement *[numElements];
-    memset(elements, 0, numElements * sizeof(TACSElement *));
+    elements = new TACSElement*[numElements];
+    memset(elements, 0, numElements * sizeof(TACSElement*));
     for (int i = 0; i < numElements; i++) {
       _elements[i]->incref();
       elements[i] = _elements[i];
@@ -721,9 +721,9 @@ int TACSAssembler::setElements(TACSElement **_elements) {
   @param depNodeWeights The weight applied to each independent node
   @return Fail flag indicating if a failure occured
 */
-int TACSAssembler::setDependentNodes(const int *_depNodePtr,
-                                     const int *_depNodeToTacs,
-                                     const double *_depNodeWeights) {
+int TACSAssembler::setDependentNodes(const int* _depNodePtr,
+                                     const int* _depNodeToTacs,
+                                     const double* _depNodeWeights) {
   if (meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call setDependentNodes() after initialize()\n",
             mpiRank);
@@ -741,7 +741,7 @@ int TACSAssembler::setDependentNodes(const int *_depNodePtr,
   }
 
   // Get the ownership range of the nodes
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   // Check that all the independent nodes are positive and are within an
@@ -763,14 +763,14 @@ int TACSAssembler::setDependentNodes(const int *_depNodePtr,
 
   if (numDependentNodes > 0) {
     // Allocate the new memory and copy over the data
-    int *depNodePtr = new int[numDependentNodes + 1];
+    int* depNodePtr = new int[numDependentNodes + 1];
     memcpy(depNodePtr, _depNodePtr, (numDependentNodes + 1) * sizeof(int));
 
     int size = depNodePtr[numDependentNodes];
-    int *depNodeToTacs = new int[size];
+    int* depNodeToTacs = new int[size];
     memcpy(depNodeToTacs, _depNodeToTacs, size * sizeof(int));
 
-    double *depNodeWeights = new double[size];
+    double* depNodeWeights = new double[size];
     memcpy(depNodeWeights, _depNodeWeights, size * sizeof(double));
 
     // Allocate the dependent node data structure
@@ -798,8 +798,8 @@ int TACSAssembler::setDependentNodes(const int *_depNodePtr,
   @param vars The variable indices satisfying (0 <= vars[i] < varsPerNode)
   @param vals The boundary condition values
 */
-void TACSAssembler::addBCs(int nnodes, const int *nodes, int nbcs,
-                           const int *vars, const TacsScalar *vals) {
+void TACSAssembler::addBCs(int nnodes, const int* nodes, int nbcs,
+                           const int* vars, const TacsScalar* vals) {
   if (meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call addBC() after initialize()\n", mpiRank);
     return;
@@ -813,7 +813,7 @@ void TACSAssembler::addBCs(int nnodes, const int *nodes, int nbcs,
   }
 
   // Get the ownership range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   // Add all the boundary conditions within the specified owner range
@@ -840,8 +840,8 @@ void TACSAssembler::addBCs(int nnodes, const int *nodes, int nbcs,
   @param vars The variable indices satisfying (0 <= vars[i] < varsPerNode)
   @param vals The boundary condition values
 */
-void TACSAssembler::addInitBCs(int nnodes, const int *nodes, int nbcs,
-                               const int *vars, const TacsScalar *vals) {
+void TACSAssembler::addInitBCs(int nnodes, const int* nodes, int nbcs,
+                               const int* vars, const TacsScalar* vals) {
   if (meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call addInitBC() after initialize()\n",
             mpiRank);
@@ -856,7 +856,7 @@ void TACSAssembler::addInitBCs(int nnodes, const int *nodes, int nbcs,
   }
 
   // Get the ownership range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   // Add all the boundary conditions within the specified owner range
@@ -875,17 +875,17 @@ void TACSAssembler::addInitBCs(int nnodes, const int *nodes, int nbcs,
 
   @param vec The vector containing the new boundary condition values
 */
-void TACSAssembler::setBCValuesFromVec(TACSBVec *vec) {
-  TacsScalar *xvals = NULL;
+void TACSAssembler::setBCValuesFromVec(TACSBVec* vec) {
+  TacsScalar* xvals = NULL;
   vec->getArray(&xvals);
 
   // Get the values from the boundary condition arrays
   const int *nodes, *vars;
-  TacsScalar *values;
+  TacsScalar* values;
   int nbcs = bcMap->getBCs(&nodes, &vars, &values);
 
   // Get the ownership range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   for (int i = 0; i < nbcs; i++) {
@@ -908,7 +908,7 @@ void TACSAssembler::setBCValuesFromVec(TACSBVec *vec) {
 
   @return A new vector for spatial coordinates
 */
-TACSBVec *TACSAssembler::createNodeVec() {
+TACSBVec* TACSAssembler::createNodeVec() {
   return new TACSBVec(nodeMap, TACS_SPATIAL_DIM, extDist, depNodes);
 }
 
@@ -917,7 +917,7 @@ TACSBVec *TACSAssembler::createNodeVec() {
 
   @param X The nodal coordinate vector
 */
-void TACSAssembler::setNodes(TACSBVec *X) {
+void TACSAssembler::setNodes(TACSBVec* X) {
   xptVec->copyValues(X);
 
   // Distribute the values at this point
@@ -930,7 +930,7 @@ void TACSAssembler::setNodes(TACSBVec *X) {
 
   @param X The nodal coordinates are copied into this vector
 */
-void TACSAssembler::getNodes(TACSBVec *X) {
+void TACSAssembler::getNodes(TACSBVec* X) {
   if (X) {
     X->copyValues(xptVec);
   }
@@ -942,7 +942,7 @@ void TACSAssembler::getNodes(TACSBVec *X) {
   @param X A pointer to the nodal coordinate vector used by this Assembler
   object
 */
-void TACSAssembler::getNodes(TACSBVec **X) {
+void TACSAssembler::getNodes(TACSBVec** X) {
   if (X) {
     *X = xptVec;
   }
@@ -960,7 +960,7 @@ void TACSAssembler::getNodes(TACSBVec **X) {
 
   @param auxElems Auxiliary element object
 */
-void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
+void TACSAssembler::setAuxElements(TACSAuxElements* auxElems) {
   // Increase the reference count to the input elements (Note that
   // the input may be NULL to over-write the internal object
   if (auxElems) {
@@ -976,7 +976,7 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
   // Check whether the auxiliary elements match
   if (auxElements) {
     int naux = 0;
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     naux = auxElements->getAuxElements(&aux);
     for (int k = 0; k < naux; k++) {
       int elem = aux[k].num;
@@ -998,7 +998,7 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
 
   @return The auxiliary element object
 */
-TACSAuxElements *TACSAssembler::getAuxElements() { return auxElements; }
+TACSAuxElements* TACSAssembler::getAuxElements() { return auxElements; }
 
 /**
   Compute the external list of nodes and sort these nodes
@@ -1025,7 +1025,7 @@ int TACSAssembler::computeExtNodes() {
   }
 
   // Get the ownership range of the nodes
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   // Find the maximum possible size of array
@@ -1034,8 +1034,8 @@ int TACSAssembler::computeExtNodes() {
   // Get the dependent node connectivity information (if any) and
   // increase the size of the array to account for any external dependent
   // nodes we may find.
-  const int *depNodePtr = NULL;
-  const int *depNodeConn = NULL;
+  const int* depNodePtr = NULL;
+  const int* depNodeConn = NULL;
   if (depNodes) {
     depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
     max_size += depNodePtr[numDependentNodes];
@@ -1043,7 +1043,7 @@ int TACSAssembler::computeExtNodes() {
 
   // Keep track of the external nodes that we've found
   int ext_size = 0;
-  int *ext_list = new int[max_size];
+  int* ext_list = new int[max_size];
 
   // First loop over the element connectivity
   for (int i = 0; i < elementNodeIndex[numElements]; i++) {
@@ -1140,7 +1140,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
   // Compute the local node numbers that correspond to the coupling
   // nodes between processors
-  int *couplingNodes;
+  int* couplingNodes;
   int *extPtr, *extCount;
   int *recvPtr, *recvCount, *recvNodes;
   int numCoupling = computeCouplingNodes(&couplingNodes, &extPtr, &extCount,
@@ -1148,7 +1148,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
   // The new node numbers to be set according to the different
   // re-ordering schemes
-  int *newNodeNums = new int[numNodes];
+  int* newNodeNums = new int[numNodes];
 
   // Metis can't handle the non-zero diagonal in the CSR data structure
   int removeDiagonal = 0;
@@ -1175,12 +1175,12 @@ void TACSAssembler::computeReordering(OrderingType order_type,
     computeLocalNodeToNodeCSR(&rowp, &cols, removeDiagonal);
 
     // Get the owner range
-    const int *ownerRange;
+    const int* ownerRange;
     nodeMap->getOwnerRange(&ownerRange);
 
     // Compute the node types. This is the node type relative to its
     // owner.
-    int *nodeType = new int[numNodes];
+    int* nodeType = new int[numNodes];
 
     for (int i = 0; i < numNodes; i++) {
       // Set the node as a local node type
@@ -1232,14 +1232,14 @@ void TACSAssembler::computeReordering(OrderingType order_type,
     // respectively.
 
     // Now allocate space for the node types
-    int *sendNodeType = new int[numExtNodes];
+    int* sendNodeType = new int[numExtNodes];
     for (int i = 0; i < numExtNodes; i++) {
       // Get the local node number
       int index = getLocalNodeNum(tacsExtNodeNums[i]);
       sendNodeType[i] = nodeType[index];
     }
 
-    int *recvNodeType = new int[recvPtr[mpiSize]];
+    int* recvNodeType = new int[recvPtr[mpiSize]];
     MPI_Alltoallv(sendNodeType, extCount, extPtr, MPI_INT, recvNodeType,
                   recvCount, recvPtr, MPI_INT, tacs_comm);
 
@@ -1262,7 +1262,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
     // So now the local nodes have the correct node types,
     // compute the local ordering.
-    int *reducedNodes = new int[numNodes];
+    int* reducedNodes = new int[numNodes];
     memset(reducedNodes, 0, numNodes * sizeof(int));
 
     // Exclude all the nodes that are external to this processor
@@ -1289,7 +1289,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
       if (numReducedNodes > 0) {
         // Compute the reordering for the reduced set of nodes
-        int *newReducedNodes = new int[numReducedNodes];
+        int* newReducedNodes = new int[numReducedNodes];
         int *reduced_rowp, *reduced_cols;
         computeLocalNodeToNodeCSR(&reduced_rowp, &reduced_cols, numReducedNodes,
                                   reducedNodes, removeDiagonal);
@@ -1320,7 +1320,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
     // First, find the reduced nodes - the set of nodes that are only
     // referenced by this processor. These can be reordered without
     // affecting other processors.
-    int *reducedNodes = new int[numNodes];
+    int* reducedNodes = new int[numNodes];
     memset(reducedNodes, 0, numNodes * sizeof(int));
 
     // Exclude all the nodes that are external to this processor
@@ -1368,7 +1368,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
     }
 
     // Compute the reordering for the reduced set of nodes
-    int *newReducedNodes = new int[numReducedNodes];
+    int* newReducedNodes = new int[numReducedNodes];
     int *rowp, *cols;
     computeLocalNodeToNodeCSR(&rowp, &cols, numReducedNodes, reducedNodes,
                               removeDiagonal);
@@ -1379,7 +1379,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
     // Place the result back into the newNodeNums - add the
     // ownership offset
-    const int *ownerRange;
+    const int* ownerRange;
     nodeMap->getOwnerRange(&ownerRange);
     int offset = ownerRange[mpiRank];
     for (int i = 0, j = 0; i < numNodes; i++) {
@@ -1455,7 +1455,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
   // Now send the new node numbers back to the other processors
   // that reference them. This also uses all-to-all communication.
-  int *newExtNodes = new int[extPtr[mpiSize]];
+  int* newExtNodes = new int[extPtr[mpiSize]];
   MPI_Alltoallv(recvNodes, recvCount, recvPtr, MPI_INT, newExtNodes, extCount,
                 extPtr, MPI_INT, tacs_comm);
 
@@ -1473,8 +1473,8 @@ void TACSAssembler::computeReordering(OrderingType order_type,
   delete[] newExtNodes;
 
   // Reorder the local dependent node connectivity
-  int *depConn = NULL;
-  const int *depPtr = NULL;
+  int* depConn = NULL;
+  const int* depPtr = NULL;
   if (depNodes) {
     depNodes->getDepNodeReorder(&depPtr, &depConn);
     int end = depPtr[numDependentNodes];
@@ -1496,7 +1496,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
 
   // If boundary conditions are set, reorder them
   if (bcMap) {
-    int *nodeNums;
+    int* nodeNums;
     int nbcs = bcMap->getBCNodeNums(&nodeNums);
     for (int i = 0; i < nbcs; i++) {
       int node = getLocalNodeNum(nodeNums[i]);
@@ -1504,7 +1504,7 @@ void TACSAssembler::computeReordering(OrderingType order_type,
     }
   }
   if (bcInitMap) {
-    int *nodeNums;
+    int* nodeNums;
     int nbcs = bcInitMap->getBCNodeNums(&nodeNums);
     for (int i = 0; i < nbcs; i++) {
       int node = getLocalNodeNum(nodeNums[i]);
@@ -1566,10 +1566,10 @@ void TACSAssembler::computeReordering(OrderingType order_type,
   @param new_vars New variable array
 */
 void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
-                                         int *rowp, int *cols, int *perm,
-                                         int *new_vars) {
-  int *_perm = perm;
-  int *_new_vars = new_vars;
+                                         int* rowp, int* cols, int* perm,
+                                         int* new_vars) {
+  int* _perm = perm;
+  int* _new_vars = new_vars;
   if (!perm) {
     _perm = new int[nvars];
   }
@@ -1604,7 +1604,7 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
 #else
     int use_exact_degree = 0;
     int ncoupling_nodes = 0;
-    int *coupling_nodes = NULL;
+    int* coupling_nodes = NULL;
     amd_order_interface(nvars, rowp, cols, _perm, coupling_nodes,
                         ncoupling_nodes, 0, NULL, NULL, NULL, use_exact_degree);
 
@@ -1625,7 +1625,7 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
   } else if (order_type == TACS_AMD_ORDER) {
     int use_exact_degree = 0;
     int ncoupling_nodes = 0;
-    int *coupling_nodes = NULL;
+    int* coupling_nodes = NULL;
     amd_order_interface(nvars, rowp, cols, _perm, coupling_nodes,
                         ncoupling_nodes, 0, NULL, NULL, NULL, use_exact_degree);
 
@@ -1637,7 +1637,7 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
   } else if (order_type == MULTICOLOR_ORDER) {
     // Compute the matrix reordering using RCM TACS' version of the
     // RCM algorithm
-    int *colors = new int[nvars];
+    int* colors = new int[nvars];
     TacsComputeSerialMultiColor(nvars, rowp, cols, colors, new_vars);
     delete[] colors;
 
@@ -1680,13 +1680,13 @@ void TACSAssembler::computeMatReordering(OrderingType order_type, int nvars,
 */
 int TACSAssembler::getLocalNodeNum(int node) {
   // Get the ownership range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   if (node >= ownerRange[mpiRank] && node < ownerRange[mpiRank + 1]) {
     node = (node - ownerRange[mpiRank]) + extNodeOffset;
   } else if (node >= 0) {
-    const int *ext_nodes = NULL;
+    const int* ext_nodes = NULL;
     if (tacsExtNodeNums) {
       ext_nodes = tacsExtNodeNums;
     } else if (extDistIndices) {
@@ -1697,7 +1697,7 @@ int TACSAssembler::getLocalNodeNum(int node) {
     }
 
     // Find the local index for external nodes
-    int *item = TacsSearchArray(node, numExtNodes, ext_nodes);
+    int* item = TacsSearchArray(node, numExtNodes, ext_nodes);
 
     // Check if the item is found in the list
     if (item) {
@@ -1732,11 +1732,11 @@ int TACSAssembler::getLocalNodeNum(int node) {
 */
 int TACSAssembler::getGlobalNodeNum(int node) {
   // Get the ownership range
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   if (node < extNodeOffset) {
-    const int *ext_nodes = NULL;
+    const int* ext_nodes = NULL;
     if (tacsExtNodeNums) {
       ext_nodes = tacsExtNodeNums;
     } else if (extDistIndices) {
@@ -1750,7 +1750,7 @@ int TACSAssembler::getGlobalNodeNum(int node) {
   } else if (node < extNodeOffset + numOwnedNodes) {
     return (node - extNodeOffset) + ownerRange[mpiRank];
   } else if (node < numNodes) {
-    const int *ext_nodes = NULL;
+    const int* ext_nodes = NULL;
     if (tacsExtNodeNums) {
       ext_nodes = tacsExtNodeNums;
     } else if (extDistIndices) {
@@ -1788,15 +1788,15 @@ int TACSAssembler::getGlobalNodeNum(int node) {
   @param _nodeElementPtr Pointer into the array nodeToElements
   @param _nodeToElements Element index associated with each node
 */
-void TACSAssembler::computeNodeToElementCSR(int **_nodeElementPtr,
-                                            int **_nodeToElements) {
+void TACSAssembler::computeNodeToElementCSR(int** _nodeElementPtr,
+                                            int** _nodeToElements) {
   // Determine the node->element connectivity using local nodes
-  int *nodeElementPtr = new int[numNodes + 1];
+  int* nodeElementPtr = new int[numNodes + 1];
   memset(nodeElementPtr, 0, (numNodes + 1) * sizeof(int));
 
   // Get the dependent node connectivity information
-  const int *depNodePtr = NULL;
-  const int *depNodeConn = NULL;
+  const int* depNodePtr = NULL;
+  const int* depNodeConn = NULL;
   if (depNodes) {
     depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
   }
@@ -1832,7 +1832,7 @@ void TACSAssembler::computeNodeToElementCSR(int **_nodeElementPtr,
 
   // Allocate space for the nodeToElement connectivity
   int size = nodeElementPtr[numNodes];
-  int *nodeToElements = new int[size];
+  int* nodeToElements = new int[size];
 
   // Loop over the elements again, this time adding the nodes to the
   // connectivity
@@ -1896,25 +1896,25 @@ void TACSAssembler::computeNodeToElementCSR(int **_nodeElementPtr,
   @param cols The column indices for each row of the CSR data structure
   @param nodiag Flag to indicate whether to remove the diagonal matrix entry
 */
-void TACSAssembler::computeLocalNodeToNodeCSR(int **_rowp, int **_cols,
+void TACSAssembler::computeLocalNodeToNodeCSR(int** _rowp, int** _cols,
                                               int nodiag) {
-  int *cols = NULL;
-  int *rowp = new int[numNodes + 1];
+  int* cols = NULL;
+  int* rowp = new int[numNodes + 1];
   memset(rowp, 0, (numNodes + 1) * sizeof(int));
 
   // Create the node -> element data structure
-  int *nodeElementPtr = NULL;
-  int *nodeToElements = NULL;
+  int* nodeElementPtr = NULL;
+  int* nodeToElements = NULL;
   computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
 
   // If we have dependent nodes, use a different algorithm
   if (depNodes) {
-    const int *depNodePtr = NULL;
-    const int *depNodeConn = NULL;
+    const int* depNodePtr = NULL;
+    const int* depNodeConn = NULL;
     depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
 
     // Count the number of nodes associated with each element
-    int *nodeCount = new int[numElements];
+    int* nodeCount = new int[numElements];
     memset(nodeCount, 0, numElements * sizeof(int));
 
     for (int i = 0; i < numElements; i++) {
@@ -2069,25 +2069,25 @@ void TACSAssembler::computeLocalNodeToNodeCSR(int **_rowp, int **_cols,
   @param rnodes The indices of the reduced nodes
   @param nodiag Flag to indicate whether to remove the diagonal matrix entry
 */
-void TACSAssembler::computeLocalNodeToNodeCSR(int **_rowp, int **_cols,
-                                              int nrnodes, const int *rnodes,
+void TACSAssembler::computeLocalNodeToNodeCSR(int** _rowp, int** _cols,
+                                              int nrnodes, const int* rnodes,
                                               int nodiag) {
-  int *cols = NULL;
-  int *rowp = new int[nrnodes + 1];
+  int* cols = NULL;
+  int* rowp = new int[nrnodes + 1];
   memset(rowp, 0, (nrnodes + 1) * sizeof(int));
 
   // Create/get the node -> element data structure
-  int *nodeElementPtr = NULL;
-  int *nodeToElements = NULL;
+  int* nodeElementPtr = NULL;
+  int* nodeToElements = NULL;
   computeNodeToElementCSR(&nodeElementPtr, &nodeToElements);
 
   if (depNodes) {
-    const int *depNodePtr = NULL;
-    const int *depNodeConn = NULL;
+    const int* depNodePtr = NULL;
+    const int* depNodeConn = NULL;
     depNodes->getDepNodes(&depNodePtr, &depNodeConn, NULL);
 
     // Count the number of nodes associated with each element
-    int *nodeCount = new int[numElements];
+    int* nodeCount = new int[numElements];
     memset(nodeCount, 0, numElements * sizeof(int));
 
     for (int i = 0; i < numElements; i++) {
@@ -2273,22 +2273,22 @@ void TACSAssembler::computeLocalNodeToNodeCSR(int **_rowp, int **_cols,
   @param recvCount Incoming external node count (may be NULL)
   @param recvNodes The incoming nodes from other procs (may be NULL)
 */
-int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
-                                        int **_extCount, int **_recvPtr,
-                                        int **_recvCount, int **_recvNodes) {
+int TACSAssembler::computeCouplingNodes(int** _couplingNodes, int** _extPtr,
+                                        int** _extCount, int** _recvPtr,
+                                        int** _recvCount, int** _recvNodes) {
   // Get the ownership range and match the intervals of ownership
-  const int *ownerRange;
+  const int* ownerRange;
   nodeMap->getOwnerRange(&ownerRange);
 
   // Get the external node numbers
-  const int *extNodes = tacsExtNodeNums;
+  const int* extNodes = tacsExtNodeNums;
   if (extDistIndices) {
     extDistIndices->getIndices(&extNodes);
   }
 
   // Match the intervals for the external node numbers
-  int *extPtr = new int[mpiSize + 1];
-  int *extCount = new int[mpiSize];
+  int* extPtr = new int[mpiSize + 1];
+  int* extCount = new int[mpiSize];
   TacsMatchIntervals(mpiSize, ownerRange, numExtNodes, extNodes, extPtr);
 
   // Send the nodes owned by other processors the information. First
@@ -2300,8 +2300,8 @@ int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
     }
   }
 
-  int *recvCount = new int[mpiSize];
-  int *recvPtr = new int[mpiSize + 1];
+  int* recvCount = new int[mpiSize];
+  int* recvPtr = new int[mpiSize + 1];
   MPI_Alltoall(extCount, 1, MPI_INT, recvCount, 1, MPI_INT, tacs_comm);
 
   // Now prepare to send the node numbers to the other processors
@@ -2311,12 +2311,12 @@ int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
   }
 
   // Number of nodes that will be received from other procs
-  int *recvNodes = new int[recvPtr[mpiSize]];
-  MPI_Alltoallv((void *)extNodes, extCount, extPtr, MPI_INT, recvNodes,
+  int* recvNodes = new int[recvPtr[mpiSize]];
+  MPI_Alltoallv((void*)extNodes, extCount, extPtr, MPI_INT, recvNodes,
                 recvCount, recvPtr, MPI_INT, tacs_comm);
 
   // Sort the recv'd nodes
-  int *recvNodesSorted = NULL;
+  int* recvNodesSorted = NULL;
   if (_recvNodes) {
     recvNodesSorted = new int[recvPtr[mpiSize]];
     memcpy(recvNodesSorted, recvNodes, recvPtr[mpiSize] * sizeof(int));
@@ -2328,7 +2328,7 @@ int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
   int nrecv_unique = TacsUniqueSort(recvPtr[mpiSize], recvNodesSorted);
 
   int num_multipliers = 0;
-  int *multipliers = NULL;
+  int* multipliers = NULL;
 
   if (numMultiplierNodes > 0) {
     // Count up the number of multiplier nodes (if any). These are not
@@ -2379,7 +2379,7 @@ int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
   // Count up the number of coupling nodes
   int numCouplingNodes = nrecv_unique + numExtNodes + num_multipliers;
   if (_couplingNodes) {
-    int *couplingNodes = new int[numCouplingNodes];
+    int* couplingNodes = new int[numCouplingNodes];
 
     // Automatically add in the external node numbers
     int index = 0;
@@ -2465,9 +2465,9 @@ int TACSAssembler::computeCouplingNodes(int **_couplingNodes, int **_extPtr,
 
   @param _couplingElems The elements coupled to other processors
 */
-int TACSAssembler::computeCouplingElements(int **_couplingElems) {
+int TACSAssembler::computeCouplingElements(int** _couplingElems) {
   // Compute the nodes that couple to other processors
-  int *couplingNodes;
+  int* couplingNodes;
   int numCouplingNodes = computeCouplingNodes(&couplingNodes);
 
   // Compute the node->element data structure
@@ -2476,7 +2476,7 @@ int TACSAssembler::computeCouplingElements(int **_couplingElems) {
 
   // Determine the elements that contain a coupling node
   int numCouplingElems = 0;
-  int *couplingElems = new int[numElements];
+  int* couplingElems = new int[numElements];
 
   // Loop over all the coupling nodes and add all the elements
   // touched by each coupling node
@@ -2549,7 +2549,7 @@ int TACSAssembler::initialize() {
   // to have enough memory for TRANSPOSE matrix assembly.
   maxElementIndepNodes = maxElementNodes;
   if (numDependentNodes > 0) {
-    const int *depNodePtr;
+    const int* depNodePtr;
     depNodes->getDepNodes(&depNodePtr, NULL, NULL);
 
     // Compute the maximum number of independent nodes
@@ -2633,16 +2633,16 @@ int TACSAssembler::initialize() {
     // Get the design variables from the auxiliary elements
     int dvLen = 0;
     const int maxDVs = maxElementDesignVars;
-    int *dvNums = elementSensIData;
+    int* dvNums = elementSensIData;
 
     // Get the design variable range
-    const int *range;
+    const int* range;
     designNodeMap->getOwnerRange(&range);
     int lower = range[mpiRank];
     int upper = range[mpiRank + 1];
 
     if (auxElements) {
-      TACSAuxElem *aux = NULL;
+      TACSAuxElem* aux = NULL;
       int naux = auxElements->getAuxElements(&aux);
       for (int i = 0; i < naux; i++) {
         int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -2673,12 +2673,12 @@ int TACSAssembler::initialize() {
     }
 
     // Allocate space for absolutely everything!
-    int *allDVs = new int[dvLen];
+    int* allDVs = new int[dvLen];
 
     // Add all of the design variable numbers to the external node values
     dvLen = 0;
     if (auxElements) {
-      TACSAuxElem *aux = NULL;
+      TACSAuxElem* aux = NULL;
       int naux = auxElements->getAuxElements(&aux);
       for (int i = 0; i < naux; i++) {
         int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -2712,11 +2712,11 @@ int TACSAssembler::initialize() {
     }
 
     dvLen = TacsUniqueSort(dvLen, allDVs);
-    int *dvs = new int[dvLen];
+    int* dvs = new int[dvLen];
     memcpy(dvs, allDVs, dvLen * sizeof(int));
     delete[] allDVs;
 
-    TACSBVecIndices *dvIndices = new TACSBVecIndices(&dvs, dvLen);
+    TACSBVecIndices* dvIndices = new TACSBVecIndices(&dvs, dvLen);
     dvIndices->setUpInverse();
     designExtDist = new TACSBVecDistribute(designNodeMap, dvIndices);
     designExtDist->incref();
@@ -2733,18 +2733,18 @@ int TACSAssembler::initialize() {
 void TACSAssembler::checkElementDeterminants() {
   if (elements) {
     TacsScalar *vars, *dvars, *ddvars;
-    TacsScalar *elemXpts;
+    TacsScalar* elemXpts;
     getDataPointers(elementData, &vars, &dvars, &ddvars, NULL, &elemXpts, NULL,
                     NULL, NULL);
 
     for (int elemIndex = 0; elemIndex < numElements; elemIndex++) {
-      TACSElement *element = elements[elemIndex];
+      TACSElement* element = elements[elemIndex];
 
       // Determine the values of the state variables for the
       // current element
       int ptr = elementNodeIndex[elemIndex];
       int len = elementNodeIndex[elemIndex + 1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
       dvarsVec->getValues(len, nodes, dvars);
@@ -2783,7 +2783,7 @@ void TACSAssembler::checkElementDeterminants() {
 
   This function is called during initialize()
 */
-void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
+void TACSAssembler::scatterExternalBCs(TACSBcMap* bcs) {
   // Get the coupling nodes shared between processors
   int *extPtr, *extCount;
   int *recvPtr, *recvCount, *recvNodes;
@@ -2796,7 +2796,7 @@ void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
 
   // Allocate the maximum array size that will be required
   int max_recv_size = 100;
-  int *recvBCs = new int[max_recv_size];
+  int* recvBCs = new int[max_recv_size];
   int index = 0;
 
   // Search through the coupling nodes recvd from other procs
@@ -2808,7 +2808,7 @@ void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
     if (recvCount[k] > 0) {
       int size = recvCount[k];
       for (int i = 0; i < nbcs; i++) {
-        int *item = TacsSearchArray(nodes[i], size, &recvNodes[ptr]);
+        int* item = TacsSearchArray(nodes[i], size, &recvNodes[ptr]);
 
         // This node is an interface node and a boundary node
         // add it to the list
@@ -2816,7 +2816,7 @@ void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
           // Extend the array if required
           if (2 * (index + 1) >= max_recv_size) {
             max_recv_size *= 2;
-            int *temp = new int[max_recv_size];
+            int* temp = new int[max_recv_size];
             memcpy(temp, recvBCs, 2 * index * sizeof(int));
             delete[] recvBCs;
             recvBCs = temp;
@@ -2849,7 +2849,7 @@ void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
 
   // Allocate an array for the incoming data
   int numExtBCs = extPtr[mpiSize];
-  int *extBCs = new int[numExtBCs];
+  int* extBCs = new int[numExtBCs];
   MPI_Alltoallv(recvBCs, recvCount, recvPtr, MPI_INT, extBCs, extCount, extPtr,
                 MPI_INT, tacs_comm);
 
@@ -2875,11 +2875,11 @@ void TACSAssembler::scatterExternalBCs(TACSBcMap *bcs) {
   Note that this is coded in such a way that you can provide NULL
   arguments
 */
-void TACSAssembler::getDataPointers(TacsScalar *data, TacsScalar **v1,
-                                    TacsScalar **v2, TacsScalar **v3,
-                                    TacsScalar **v4, TacsScalar **x1,
-                                    TacsScalar **x2, TacsScalar **weights,
-                                    TacsScalar **mat) {
+void TACSAssembler::getDataPointers(TacsScalar* data, TacsScalar** v1,
+                                    TacsScalar** v2, TacsScalar** v3,
+                                    TacsScalar** v4, TacsScalar** x1,
+                                    TacsScalar** x2, TacsScalar** weights,
+                                    TacsScalar** mat) {
   int s = 0;
   if (v1) {
     *v1 = &data[s];
@@ -2926,14 +2926,14 @@ int TACSAssembler::isReordered() { return (newNodeIndices != NULL); }
 
   @param oldToNew Array of size equal to the number of owned nodes
 */
-void TACSAssembler::getReordering(int *oldToNew) {
+void TACSAssembler::getReordering(int* oldToNew) {
   if (newNodeIndices) {
     // Get the new node indices
-    const int *newNodes;
+    const int* newNodes;
     newNodeIndices->getIndices(&newNodes);
     memcpy(oldToNew, &newNodes[extNodeOffset], numOwnedNodes * sizeof(int));
   } else {
-    const int *ownerRange;
+    const int* ownerRange;
     nodeMap->getOwnerRange(&ownerRange);
     for (int k = 0; k < numOwnedNodes; k++) {
       oldToNew[k] = ownerRange[mpiRank] + k;
@@ -2950,23 +2950,23 @@ void TACSAssembler::getReordering(int *oldToNew) {
 
   @param vec The vector to be reordered in place
 */
-void TACSAssembler::reorderVec(TACSBVec *vec) {
+void TACSAssembler::reorderVec(TACSBVec* vec) {
   if (newNodeIndices) {
     // Get the ownership range
-    const int *ownerRange;
+    const int* ownerRange;
     nodeMap->getOwnerRange(&ownerRange);
 
     // Get the vector of values from the array
-    TacsScalar *x;
+    TacsScalar* x;
     int bsize = vec->getBlockSize();
     int size = vec->getArray(&x);
 
     // Allocate an array to store the old values and fill them in
-    TacsScalar *xold = new TacsScalar[size];
+    TacsScalar* xold = new TacsScalar[size];
     memcpy(xold, x, size * sizeof(TacsScalar));
 
     // Get the new node indices
-    const int *newNodes;
+    const int* newNodes;
     newNodeIndices->getIndices(&newNodes);
 
     // Loop through the owned nodes
@@ -2995,14 +2995,14 @@ void TACSAssembler::reorderVec(TACSBVec *vec) {
   @param num_nodes The length of the nodes array
   @param nodes The owned node numbers that will be converted
 */
-void TACSAssembler::reorderNodes(int num_nodes, int *nodes) {
+void TACSAssembler::reorderNodes(int num_nodes, int* nodes) {
   if (newNodeIndices) {
     // Get the ownership range
-    const int *ownerRange;
+    const int* ownerRange;
     nodeMap->getOwnerRange(&ownerRange);
 
     // Get the new node indices
-    const int *newNodes;
+    const int* newNodes;
     newNodeIndices->getIndices(&newNodes);
 
     for (int i = 0; i < num_nodes; i++) {
@@ -3025,7 +3025,7 @@ void TACSAssembler::reorderNodes(int num_nodes, int *nodes) {
 
   @return A new design variable vector
 */
-TACSBVec *TACSAssembler::createDesignVec() {
+TACSBVec* TACSAssembler::createDesignVec() {
   if (!meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call createDeignVec() before initialize()\n",
             mpiRank);
@@ -3044,7 +3044,7 @@ TACSBVec *TACSAssembler::createDesignVec() {
   @param designVarMap The design variable mapping
 */
 void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
-                                     TACSNodeMap *_designNodeMap) {
+                                     TACSNodeMap* _designNodeMap) {
   if (meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call setDesignVarMap() after initialize()\n",
             mpiRank);
@@ -3072,9 +3072,9 @@ void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
   @return Error code indicating failure or success
 */
 int TACSAssembler::setDesignDependentNodes(int numDepDesignVars,
-                                           const int *_depNodePtr,
-                                           const int *_depNodeConn,
-                                           const double *_depNodeWeights) {
+                                           const int* _depNodePtr,
+                                           const int* _depNodeConn,
+                                           const double* _depNodeWeights) {
   if (meshInitializedFlag) {
     fprintf(stderr,
             "[%d] Cannot call setDesignDependentNodes() after initialize()\n",
@@ -3090,7 +3090,7 @@ int TACSAssembler::setDesignDependentNodes(int numDepDesignVars,
 
   // Get the ownership range of the nodes
   if (designNodeMap) {
-    const int *ownerRange;
+    const int* ownerRange;
     designNodeMap->getOwnerRange(&ownerRange);
 
     // Check that all the independent nodes are positive and are within an
@@ -3115,14 +3115,14 @@ int TACSAssembler::setDesignDependentNodes(int numDepDesignVars,
 
   if (numDepDesignVars > 0) {
     // Allocate the new memory and copy over the data
-    int *depNodePtr = new int[numDepDesignVars + 1];
+    int* depNodePtr = new int[numDepDesignVars + 1];
     memcpy(depNodePtr, _depNodePtr, (numDepDesignVars + 1) * sizeof(int));
 
     int size = depNodePtr[numDepDesignVars];
-    int *depNodeConn = new int[size];
+    int* depNodeConn = new int[size];
     memcpy(depNodeConn, _depNodeConn, size * sizeof(int));
 
-    double *depNodeWeights = new double[size];
+    double* depNodeWeights = new double[size];
     memcpy(depNodeWeights, _depNodeWeights, size * sizeof(double));
 
     // Allocate the dependent node data structure
@@ -3145,20 +3145,20 @@ int TACSAssembler::setDesignDependentNodes(int numDepDesignVars,
 */
 int TACSAssembler::getNumDesignVars() {
   if (designNodeMap) {
-    const int *range;
+    const int* range;
     designNodeMap->getOwnerRange(&range);
     return range[mpiRank];
   } else if (elementSensIData) {
     // Get the design variables from the elements on this process
     const int maxDVs = maxElementDesignVars;
-    int *dvNums = elementSensIData;
+    int* dvNums = elementSensIData;
 
     // Set the maximum design variable number
     int maxDV = 0;
 
     // Get the design variables from the auxiliary elements
     if (auxElements) {
-      TACSAuxElem *aux = NULL;
+      TACSAuxElem* aux = NULL;
       int naux = auxElements->getAuxElements(&aux);
       for (int i = 0; i < naux; i++) {
         int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -3204,15 +3204,15 @@ int TACSAssembler::getNumDesignVars() {
 
   @param dvs The vector of design variables
 */
-void TACSAssembler::getDesignVars(TACSBVec *dvs) {
+void TACSAssembler::getDesignVars(TACSBVec* dvs) {
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *dvVals = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* dvVals = elementSensData;
+  int* dvNums = elementSensIData;
 
   // Get the design variables from the auxiliary elements
   if (auxElements) {
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     int naux = auxElements->getAuxElements(&aux);
     for (int i = 0; i < naux; i++) {
       int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -3239,19 +3239,19 @@ void TACSAssembler::getDesignVars(TACSBVec *dvs) {
 
   @param dvs The design variable values
 */
-void TACSAssembler::setDesignVars(TACSBVec *dvs) {
+void TACSAssembler::setDesignVars(TACSBVec* dvs) {
   // Distribute the non-local design variable values
   dvs->beginDistributeValues();
   dvs->endDistributeValues();
 
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *dvVals = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* dvVals = elementSensData;
+  int* dvNums = elementSensIData;
 
   // Get the design variables from the auxiliary elements
   if (auxElements) {
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     int naux = auxElements->getAuxElements(&aux);
     for (int i = 0; i < naux; i++) {
       int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -3277,16 +3277,16 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   @param lb the lower bound on the design variables
   @param ub the upper bound on the design variables
 */
-void TACSAssembler::getDesignVarRange(TACSBVec *lb, TACSBVec *ub) {
+void TACSAssembler::getDesignVarRange(TACSBVec* lb, TACSBVec* ub) {
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *dvVals = elementSensData;
-  TacsScalar *ubVals = new TacsScalar[designVarsPerNode * maxDVs];
-  int *dvNums = elementSensIData;
+  TacsScalar* dvVals = elementSensData;
+  TacsScalar* ubVals = new TacsScalar[designVarsPerNode * maxDVs];
+  int* dvNums = elementSensIData;
 
   // Get the design variables from the auxiliary elements
   if (auxElements) {
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     int naux = auxElements->getAuxElements(&aux);
     for (int i = 0; i < naux; i++) {
       int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
@@ -3320,7 +3320,7 @@ void TACSAssembler::getDesignVarRange(TACSBVec *lb, TACSBVec *ub) {
 
   @return A new, empty solution vector initialized to zero
 */
-TACSBVec *TACSAssembler::createVec() {
+TACSBVec* TACSAssembler::createVec() {
   if (!meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call createVec() before initialize()\n",
             mpiRank);
@@ -3338,21 +3338,21 @@ TACSBVec *TACSAssembler::createVec() {
 
   @param vec Apply the boundary conditions to this vector
 */
-void TACSAssembler::applyBCs(TACSVec *vec) { vec->applyBCs(bcMap); }
+void TACSAssembler::applyBCs(TACSVec* vec) { vec->applyBCs(bcMap); }
 
 /**
   Apply the boundary conditions to the matrix
 
   @param mat Apply the boundary conditions to the rows of this matrix
 */
-void TACSAssembler::applyBCs(TACSMat *mat) { mat->applyBCs(bcMap); }
+void TACSAssembler::applyBCs(TACSMat* mat) { mat->applyBCs(bcMap); }
 
 /**
   Apply the boundary conditions to the tranpose of the matrix
 
   @param mat Apply the boundary conditions to the columns of this matrix
 */
-void TACSAssembler::applyTransposeBCs(TACSMat *mat) {
+void TACSAssembler::applyTransposeBCs(TACSMat* mat) {
   mat->applyTransposeBCs(bcMap);
 }
 
@@ -3362,7 +3362,7 @@ void TACSAssembler::applyTransposeBCs(TACSMat *mat) {
 
   @param vec Set the boundary conditions values into this vector
 */
-void TACSAssembler::setBCs(TACSVec *vec) { vec->setBCs(bcMap); }
+void TACSAssembler::setBCs(TACSVec* vec) { vec->setBCs(bcMap); }
 
 /**
   Create a distributed matrix
@@ -3378,7 +3378,7 @@ void TACSAssembler::setBCs(TACSVec *vec) { vec->setBCs(bcMap); }
 
   @return A new parallel matrix with zeroed entries
 */
-TACSParallelMat *TACSAssembler::createMat() {
+TACSParallelMat* TACSAssembler::createMat() {
   if (!meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call createMat() before initialize()\n",
             mpiRank);
@@ -3388,7 +3388,7 @@ TACSParallelMat *TACSAssembler::createMat() {
   // Create the parMat indices if they do not already exist
   if (!parMatIndices) {
     // Get the global node numbering
-    int *indices = new int[numNodes];
+    int* indices = new int[numNodes];
     for (int i = 0; i < numNodes; i++) {
       indices[i] = getGlobalNodeNum(i);
     }
@@ -3403,7 +3403,7 @@ TACSParallelMat *TACSAssembler::createMat() {
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Create the distributed matrix class
-  TACSParallelMat *dmat = new TACSParallelMat(
+  TACSParallelMat* dmat = new TACSParallelMat(
       thread_info, nodeMap, varsPerNode, numNodes, rowp, cols, parMatIndices);
 
   // Free the local connectivity
@@ -3429,9 +3429,9 @@ TACSParallelMat *TACSAssembler::createMat() {
   @param indep_ptr Pointer into the array of independent node numbers
   @param indep_nodes Independent nodes associated with each multiplier
 */
-void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
-                                          int **_multipliers, int **_indep_ptr,
-                                          int **_indep_nodes) {
+void TACSAssembler::computeMultiplierConn(int* _num_multipliers,
+                                          int** _multipliers, int** _indep_ptr,
+                                          int** _indep_nodes) {
   *_num_multipliers = 0;
   *_multipliers = NULL;
   *_indep_ptr = NULL;
@@ -3443,7 +3443,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
 
   // Determine the local multiplier index - the local node number for
   // each multiplier node.
-  int *multipliers = new int[numMultiplierNodes];
+  int* multipliers = new int[numMultiplierNodes];
   int num_multipliers = 0;
   for (int i = 0; i < numElements; i++) {
     int multiplier = elements[i]->getMultiplierIndex();
@@ -3465,7 +3465,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
   num_multipliers = TacsUniqueSort(num_multipliers, multipliers);
 
   // Create the array of offsets into the pointer array
-  int *ptr = new int[num_multipliers + 1];
+  int* ptr = new int[num_multipliers + 1];
   memset(ptr, 0, (num_multipliers + 1) * sizeof(int));
 
   // Now count up again to determine the total size of the non-zero
@@ -3481,7 +3481,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
       int mult_node = getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
 
       // Find the local index for external nodes
-      int *item = TacsSearchArray(mult_node, num_multipliers, multipliers);
+      int* item = TacsSearchArray(mult_node, num_multipliers, multipliers);
       if (item) {
         int index = item - multipliers;
 
@@ -3497,7 +3497,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
   }
 
   // Allocate the array of nodes
-  int *nodes = new int[ptr[num_multipliers]];
+  int* nodes = new int[ptr[num_multipliers]];
 
   // Add in the values
   for (int i = 0; i < numElements; i++) {
@@ -3511,7 +3511,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
       int mult_node = getLocalNodeNum(elementTacsNodes[elem_ptr + multiplier]);
 
       // Find the local index for external nodes
-      int *item = TacsSearchArray(mult_node, num_multipliers, multipliers);
+      int* item = TacsSearchArray(mult_node, num_multipliers, multipliers);
       if (item) {
         int index = item - multipliers;
         for (int j = 0; j < size; j++) {
@@ -3580,7 +3580,7 @@ void TACSAssembler::computeMultiplierConn(int *_num_multipliers,
   @param order_type Order the Schur matrix with this type of ordeirng
   @return A new TACSSchurMat matrix with zeroed entries
 */
-TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
+TACSSchurMat* TACSAssembler::createSchurMat(OrderingType order_type) {
   if (!meshInitializedFlag) {
     fprintf(stderr,
             "[%d] Cannot call createSchurMat() before "
@@ -3596,10 +3596,10 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
     int ncoupling_nodes = 0;
 
     // The local nodes and their
-    int *perm_local_nodes = NULL;
-    int *tacs_local_nodes = NULL;
-    int *perm_coupling_nodes = NULL;
-    int *tacs_coupling_nodes = NULL;
+    int* perm_local_nodes = NULL;
+    int* tacs_local_nodes = NULL;
+    int* perm_coupling_nodes = NULL;
+    int* tacs_coupling_nodes = NULL;
 
     if (order_type == TACS_AMD_ORDER) {
       // Use the AMD ordering scheme in TACS to compute an ordering of
@@ -3610,7 +3610,7 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
 
       // Find the local node numbers of the coupling nodes.
       // Note that this is a sorted list
-      int *coupling_nodes;
+      int* coupling_nodes;
       ncoupling_nodes = computeCouplingNodes(&coupling_nodes);
       nlocal_nodes = numNodes - ncoupling_nodes;
 
@@ -3622,14 +3622,14 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
 
       // Compute the multipliers/connectivity
       int num_multipliers = 0;
-      int *multipliers = NULL;
-      int *indep_ptr = NULL;
-      int *indep_nodes = NULL;
+      int* multipliers = NULL;
+      int* indep_ptr = NULL;
+      int* indep_nodes = NULL;
       computeMultiplierConn(&num_multipliers, &multipliers, &indep_ptr,
                             &indep_nodes);
 
       // Here perm is the entire permutation array
-      int *perm = new int[numNodes];
+      int* perm = new int[numNodes];
       int use_exact_degree = 0;  // Don't use the exact degree
       amd_order_interface(numNodes, rowp, cols, perm, coupling_nodes,
                           ncoupling_nodes, num_multipliers, multipliers,
@@ -3672,12 +3672,12 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
 
       // Find the local node numbers of the coupling nodes.
       // Note that this is a sorted list
-      int *coupling_nodes;
+      int* coupling_nodes;
       ncoupling_nodes = computeCouplingNodes(&coupling_nodes);
       nlocal_nodes = numNodes - ncoupling_nodes;
 
       // Set the coupling nodes for ordering
-      int *all_nodes = new int[numNodes];
+      int* all_nodes = new int[numNodes];
       for (int k = 0; k < numNodes; k++) {
         all_nodes[k] = -1;
       }
@@ -3712,7 +3712,7 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
       // Set the remaining, local nodes for coupling
       perm_local_nodes = new int[nlocal_nodes];
       tacs_local_nodes = new int[nlocal_nodes];
-      int *local_nodes = new int[nlocal_nodes];
+      int* local_nodes = new int[nlocal_nodes];
       for (int j = 0, k = 0; k < numNodes; k++) {
         if (all_nodes[k] < 0) {
           all_nodes[k] = j;
@@ -3750,9 +3750,9 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
     schurBIndices->incref();
     schurCIndices->incref();
 
-    TACSBVecIndices *tlocal =
+    TACSBVecIndices* tlocal =
         new TACSBVecIndices(&tacs_local_nodes, nlocal_nodes);
-    TACSBVecIndices *tcoupling =
+    TACSBVecIndices* tcoupling =
         new TACSBVecIndices(&tacs_coupling_nodes, ncoupling_nodes);
     schurBMap = new TACSBVecDistribute(nodeMap, tlocal);
     schurCMap = new TACSBVecDistribute(nodeMap, tcoupling);
@@ -3764,7 +3764,7 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
   int *rowp, *cols;
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
-  TACSSchurMat *mat =
+  TACSSchurMat* mat =
       new TACSSchurMat(thread_info, nodeMap, varsPerNode, numNodes, rowp, cols,
                        schurBIndices, schurBMap, schurCIndices, schurCMap);
   delete[] rowp;
@@ -3779,7 +3779,7 @@ TACSSchurMat *TACSAssembler::createSchurMat(OrderingType order_type) {
   testing the effects of roundoff errors in the solution process.  It
   does not work in parallel applications.
 */
-TACSSerialPivotMat *TACSAssembler::createSerialMat() {
+TACSSerialPivotMat* TACSAssembler::createSerialMat() {
   if (!meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call createSerialMat() before initialize()\n",
             mpiRank);
@@ -3797,7 +3797,7 @@ TACSSerialPivotMat *TACSAssembler::createSerialMat() {
   computeLocalNodeToNodeCSR(&rowp, &cols);
 
   // Allocate the matrix
-  TACSSerialPivotMat *mat = new TACSSerialPivotMat(
+  TACSSerialPivotMat* mat = new TACSSerialPivotMat(
       nodeMap, varsPerNode, numNodes, numNodes, rowp, cols);
   delete[] rowp;
   delete[] cols;
@@ -3812,8 +3812,8 @@ TACSSerialPivotMat *TACSAssembler::createSerialMat() {
   @param dvars The initial time derivative values (may be NULL)
   @param ddvars The initial second time derivative values (may be NULL)
 */
-void TACSAssembler::getInitConditions(TACSBVec *vars, TACSBVec *dvars,
-                                      TACSBVec *ddvars) {
+void TACSAssembler::getInitConditions(TACSBVec* vars, TACSBVec* dvars,
+                                      TACSBVec* ddvars) {
   // If the user requests initial conditions of vars and vars0 has not been set,
   // zero the vector to prepare to get initial conditions from the element
   // interface
@@ -3837,7 +3837,7 @@ void TACSAssembler::getInitConditions(TACSBVec *vars, TACSBVec *dvars,
     for (int i = 0; i < numElements; i++) {
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
 
       // Get the initial condition values
@@ -3902,8 +3902,8 @@ Set the initial conditions for the problem
   @param dvars The initial time derivative values (may be NULL)
   @param ddvars The initial second time derivative values (may be NULL)
 */
-void TACSAssembler::setInitConditions(TACSBVec *vars, TACSBVec *dvars,
-                                      TACSBVec *ddvars) {
+void TACSAssembler::setInitConditions(TACSBVec* vars, TACSBVec* dvars,
+                                      TACSBVec* ddvars) {
   // Copy the values to the array.
   if (vars) {
     if (!vars0) {
@@ -3952,8 +3952,8 @@ void TACSAssembler::zeroDDotVariables() { ddvarsVec->zeroEntries(); }
   @param dvars The time derivative values (may be NULL)
   @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::setVariables(TACSBVec *vars, TACSBVec *dvars,
-                                 TACSBVec *ddvars) {
+void TACSAssembler::setVariables(TACSBVec* vars, TACSBVec* dvars,
+                                 TACSBVec* ddvars) {
   // Copy the values to the array.
   if (vars) {
     varsVec->copyValues(vars);
@@ -3998,8 +3998,8 @@ void TACSAssembler::setVariables(TACSBVec *vars, TACSBVec *dvars,
   @param dvars The time derivative values (may be NULL)
   @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::copyVariables(TACSBVec *vars, TACSBVec *dvars,
-                                  TACSBVec *ddvars) {
+void TACSAssembler::copyVariables(TACSBVec* vars, TACSBVec* dvars,
+                                  TACSBVec* ddvars) {
   if (vars) {
     varsVec->copyValues(vars);
   }
@@ -4018,8 +4018,8 @@ void TACSAssembler::copyVariables(TACSBVec *vars, TACSBVec *dvars,
   @param dvars The time derivative values (may be NULL)
   @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::getVariables(TACSBVec *vars, TACSBVec *dvars,
-                                 TACSBVec *ddvars) {
+void TACSAssembler::getVariables(TACSBVec* vars, TACSBVec* dvars,
+                                 TACSBVec* ddvars) {
   // Copy the values to the array. Only local values are
   // copied, not external/dependents
   if (vars) {
@@ -4040,8 +4040,8 @@ void TACSAssembler::getVariables(TACSBVec *vars, TACSBVec *dvars,
   @param dvars The time derivative values (may be NULL)
   @param ddvars The second time derivative values (may be NULL)
 */
-void TACSAssembler::getVariables(TACSBVec **vars, TACSBVec **dvars,
-                                 TACSBVec **ddvars) {
+void TACSAssembler::getVariables(TACSBVec** vars, TACSBVec** dvars,
+                                 TACSBVec** ddvars) {
   // Copy the values to the array. Only local values are
   // copied, not external/dependents
   if (vars) {
@@ -4075,7 +4075,7 @@ double TACSAssembler::getSimulationTime() { return time; }
   @param Te The kinetic energy
   @param Pe The potential energy
 */
-void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
+void TACSAssembler::evalEnergies(TacsScalar* Te, TacsScalar* Pe) {
   // Zero the kinetic and potential energy
   *Te = 0.0;
   *Pe = 0.0;
@@ -4090,7 +4090,7 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   for (int i = 0; i < numElements; i++) {
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
     dvarsVec->getValues(len, nodes, dvars);
@@ -4127,7 +4127,7 @@ void TACSAssembler::evalEnergies(TacsScalar *Te, TacsScalar *Pe) {
   @param residual The residual vector
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
-void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
+void TACSAssembler::assembleRes(TACSBVec* residual, const TacsScalar lambda) {
   // Sort the list of auxiliary elements - this only performs the
   // sort if it is required (if new elements are added)
   if (auxElements) {
@@ -4150,7 +4150,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
 
     for (int k = 0; k < thread_info->getNumThreads(); k++) {
       pthread_create(&threads[k], &attr, TACSAssembler::assembleRes_thread,
-                     (void *)tacsPInfo);
+                     (void*)tacsPInfo);
     }
 
     // Join all the threads
@@ -4168,7 +4168,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
 
     // Get the auxiliary elements
     int naux = 0, aux_count = 0;
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     if (auxElements) {
       naux = auxElements->getAuxElements(&aux);
     }
@@ -4176,7 +4176,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
     // To avoid allocating memory inside the element loop, make the aux element
     // contribution array big enough for the largest element
     int maxNVar = this->maxElementSize;
-    TacsScalar *auxElemRes = NULL;
+    TacsScalar* auxElemRes = NULL;
     bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
     if (scaleAux) {
       auxElemRes = new TacsScalar[maxNVar];
@@ -4186,7 +4186,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
     for (int i = 0; i < numElements; i++) {
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
       dvarsVec->getValues(len, nodes, dvars);
@@ -4255,8 +4255,8 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda) {
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
-                                     TacsScalar gamma, TACSBVec *residual,
-                                     TACSMat *A, MatrixOrientation matOr,
+                                     TacsScalar gamma, TACSBVec* residual,
+                                     TACSMat* A, MatrixOrientation matOr,
                                      const TacsScalar lambda) {
   // Zero the residual and the matrix
   if (residual) {
@@ -4290,7 +4290,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
 
     for (int k = 0; k < thread_info->getNumThreads(); k++) {
       pthread_create(&threads[k], &attr, TACSAssembler::assembleJacobian_thread,
-                     (void *)tacsPInfo);
+                     (void*)tacsPInfo);
     }
 
     // Join all the threads
@@ -4309,7 +4309,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
 
     // Set the data for the auxiliary elements - if there are any
     int naux = 0, aux_count = 0;
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     if (auxElements) {
       naux = auxElements->getAuxElements(&aux);
     }
@@ -4317,7 +4317,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
     for (int i = 0; i < numElements; i++) {
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
       dvarsVec->getValues(len, nodes, dvars);
@@ -4378,7 +4378,7 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
   @param matOr The matrix orientation: NORMAL or TRANSPOSE
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
-void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
+void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat* A,
                                     MatrixOrientation matOr,
                                     const TacsScalar lambda) {
   // Zero the matrix
@@ -4400,7 +4400,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
 
     for (int k = 0; k < thread_info->getNumThreads(); k++) {
       pthread_create(&threads[k], &attr, TACSAssembler::assembleMatType_thread,
-                     (void *)tacsPInfo);
+                     (void*)tacsPInfo);
     }
 
     // Join all the threads
@@ -4418,7 +4418,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
 
     // Get the auxiliary elements
     int naux = 0, aux_count = 0;
-    TACSAuxElem *aux = NULL;
+    TACSAuxElem* aux = NULL;
     if (auxElements) {
       naux = auxElements->getAuxElements(&aux);
     }
@@ -4426,14 +4426,14 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
     // To avoid allocating memory inside the element loop, make the aux element
     // contribution mat big enough for the largest element
     int maxNVar = this->maxElementSize;
-    TacsScalar *auxElemMat = new TacsScalar[maxNVar * maxNVar];
+    TacsScalar* auxElemMat = new TacsScalar[maxNVar * maxNVar];
 
     for (int i = 0; i < numElements; i++) {
       // Retrieve the element variables and node locations
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
       int nvars = elements[i]->getNumVariables();
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
 
@@ -4477,7 +4477,7 @@ void TACSAssembler::assembleMatType(ElementMatrixType matType, TACSMat *A,
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
-                                     TacsScalar scale[], int nmats, TACSMat *A,
+                                     TacsScalar scale[], int nmats, TACSMat* A,
                                      MatrixOrientation matOr,
                                      TacsScalar lambda) {
   // Zero the matrix
@@ -4490,7 +4490,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
 
   // Get the auxiliary elements
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -4498,7 +4498,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
   // To avoid allocating memory inside the element loop, make the aux element
   // contribution mat big enough for the largest element
   int maxNVar = this->maxElementSize;
-  TacsScalar *auxElemMat = NULL;
+  TacsScalar* auxElemMat = NULL;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemMat = new TacsScalar[maxNVar * maxNVar];
@@ -4508,7 +4508,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
     // Retrieve the element variables and node locations
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
 
@@ -4572,8 +4572,8 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
   @param funcs Array of functions to evaluate
   @param funcVals The function values
 */
-void TACSAssembler::evalFunctions(int numFuncs, TACSFunction **funcs,
-                                  TacsScalar *funcVals) {
+void TACSAssembler::evalFunctions(int numFuncs, TACSFunction** funcs,
+                                  TacsScalar* funcVals) {
   // Here we will use time-independent formulation
   TacsScalar tcoef = 1.0;
 
@@ -4637,10 +4637,10 @@ void TACSAssembler::evalFunctions(int numFuncs, TACSFunction **funcs,
 */
 void TACSAssembler::integrateFunctions(TacsScalar tcoef,
                                        TACSFunction::EvaluationType ftype,
-                                       int numFuncs, TACSFunction **funcs) {
+                                       int numFuncs, TACSFunction** funcs) {
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars;
-  TacsScalar *elemXpts;
+  TacsScalar* elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL, &elemXpts, NULL,
                   NULL, NULL);
 
@@ -4652,7 +4652,7 @@ void TACSAssembler::integrateFunctions(TacsScalar tcoef,
           // current element
           int ptr = elementNodeIndex[i];
           int len = elementNodeIndex[i + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4663,7 +4663,7 @@ void TACSAssembler::integrateFunctions(TacsScalar tcoef,
                                     elemXpts, vars, dvars, ddvars);
         }
       } else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN) {
-        const int *elementNums;
+        const int* elementNums;
         int subDomainSize = funcs[k]->getElementNums(&elementNums);
 
         for (int i = 0; i < subDomainSize; i++) {
@@ -4674,7 +4674,7 @@ void TACSAssembler::integrateFunctions(TacsScalar tcoef,
             // for the current element
             int ptr = elementNodeIndex[elemNum];
             int len = elementNodeIndex[elemNum + 1] - ptr;
-            const int *nodes = &elementTacsNodes[ptr];
+            const int* nodes = &elementTacsNodes[ptr];
             xptVec->getValues(len, nodes, elemXpts);
             varsVec->getValues(len, nodes, vars);
             dvarsVec->getValues(len, nodes, dvars);
@@ -4723,7 +4723,7 @@ void TACSAssembler::integrateFunctions(TacsScalar tcoef,
   @param dfdx The derivative vector
 */
 void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
-                              TACSFunction **funcs, TACSBVec **dfdx) {
+                              TACSFunction** funcs, TACSBVec** dfdx) {
   // Retrieve pointers to temporary storage
   TacsScalar *vars, *dvars, *ddvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, NULL, &elemXpts, NULL,
@@ -4731,8 +4731,8 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
 
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* fdvSens = elementSensData;
+  int* dvNums = elementSensIData;
 
   // For each function, evaluate the derivative w.r.t. the
   // design variables for each element
@@ -4740,7 +4740,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
     if (funcs[k]) {
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN) {
         // Get the funcs[k] sub-domain
-        const int *elemSubList;
+        const int* elemSubList;
         int numSubElems = funcs[k]->getElementNums(&elemSubList);
 
         for (int i = 0; i < numSubElems; i++) {
@@ -4748,7 +4748,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
           // Determine the values of the state variables for subElem
           int ptr = elementNodeIndex[elemNum];
           int len = elementNodeIndex[elemNum + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4772,7 +4772,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
           // Determine the values of the state variables for elemNum
           int ptr = elementNodeIndex[elemNum];
           int len = elementNodeIndex[elemNum + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4814,7 +4814,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
   @param dfdXpt The derivative vector
 */
 void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
-                               TACSFunction **funcs, TACSBVec **dfdXpt) {
+                               TACSFunction** funcs, TACSBVec** dfdXpt) {
   // First check if this is the right assembly object
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k] && this != funcs[k]->getAssembler()) {
@@ -4835,14 +4835,14 @@ void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
     if (funcs[k]) {
       if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN) {
         // Get the function sub-domain
-        const int *elemSubList;
+        const int* elemSubList;
         int numSubElems = funcs[k]->getElementNums(&elemSubList);
         for (int i = 0; i < numSubElems; i++) {
           int elemNum = elemSubList[i];
           // Determine the values of the state variables for subElem
           int ptr = elementNodeIndex[elemNum];
           int len = elementNodeIndex[elemNum + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4859,7 +4859,7 @@ void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
           // Determine the values of the state variables for elemNum
           int ptr = elementNodeIndex[elemNum];
           int len = elementNodeIndex[elemNum + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4898,7 +4898,7 @@ void TACSAssembler::addXptSens(TacsScalar coef, int numFuncs,
 */
 void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
                               TacsScalar gamma, int numFuncs,
-                              TACSFunction **funcs, TACSBVec **dfdu) {
+                              TACSFunction** funcs, TACSBVec** dfdu) {
   // First check if this is the right assembly object
   for (int k = 0; k < numFuncs; k++) {
     if (funcs[k] && this != funcs[k]->getAssembler()) {
@@ -4919,7 +4919,7 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
           // Determine the values of the state variables for subElem
           int ptr = elementNodeIndex[elemNum];
           int len = elementNodeIndex[elemNum + 1] - ptr;
-          const int *nodes = &elementTacsNodes[ptr];
+          const int* nodes = &elementTacsNodes[ptr];
           xptVec->getValues(len, nodes, elemXpts);
           varsVec->getValues(len, nodes, vars);
           dvarsVec->getValues(len, nodes, dvars);
@@ -4932,7 +4932,7 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
           dfdu[k]->setValues(len, nodes, elemRes, TACS_ADD_VALUES);
         }
       } else if (funcs[k]->getDomainType() == TACSFunction::SUB_DOMAIN) {
-        const int *elementNums;
+        const int* elementNums;
         int subDomainSize = funcs[k]->getElementNums(&elementNums);
 
         for (int i = 0; i < subDomainSize; i++) {
@@ -4942,7 +4942,7 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
             // current element
             int ptr = elementNodeIndex[elemNum];
             int len = elementNodeIndex[elemNum + 1] - ptr;
-            const int *nodes = &elementTacsNodes[ptr];
+            const int* nodes = &elementTacsNodes[ptr];
             xptVec->getValues(len, nodes, elemXpts);
             varsVec->getValues(len, nodes, vars);
             dvarsVec->getValues(len, nodes, dvars);
@@ -4990,7 +4990,7 @@ void TACSAssembler::addSVSens(TacsScalar alpha, TacsScalar beta,
   @param lambda Scaling factor for the aux element contributions, by default 1
 */
 void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
-                                          TACSBVec **adjoint, TACSBVec **dfdx,
+                                          TACSBVec** adjoint, TACSBVec** dfdx,
                                           const TacsScalar lambda) {
   // Distribute the design variable values to all processors
   for (int k = 0; k < numAdjoints; k++) {
@@ -5014,12 +5014,12 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* fdvSens = elementSensData;
+  int* dvNums = elementSensIData;
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5028,7 +5028,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
     // Find the variables and nodes
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
     dvarsVec->getValues(len, nodes, dvars);
@@ -5094,8 +5094,8 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 */
 void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
                                                  int numAdjoints,
-                                                 TACSBVec **adjoint,
-                                                 TACSBVec **dfdXpt,
+                                                 TACSBVec** adjoint,
+                                                 TACSBVec** dfdXpt,
                                                  const TacsScalar lambda) {
   for (int k = 0; k < numAdjoints; k++) {
     adjoint[k]->beginDistributeValues();
@@ -5118,7 +5118,7 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5127,7 +5127,7 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
     // Find the variables and nodes
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
     dvarsVec->getValues(len, nodes, dvars);
@@ -5180,8 +5180,8 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
 */
 void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
                                              ElementMatrixType matType,
-                                             TACSBVec *psi, TACSBVec *phi,
-                                             TACSBVec *dfdx) {
+                                             TACSBVec* psi, TACSBVec* phi,
+                                             TACSBVec* dfdx) {
   psi->beginDistributeValues();
   if (phi != psi) {
     phi->beginDistributeValues();
@@ -5198,8 +5198,8 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
 
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* fdvSens = elementSensData;
+  int* dvNums = elementSensIData;
 
   // Go through each element in the domain and compute the derivative
   // of the residuals with respect to each design variable and multiply by
@@ -5208,7 +5208,7 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
     // Find the variables and nodes
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, elemVars);
     psi->getValues(len, nodes, elemPsi);
@@ -5242,8 +5242,8 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
 */
 void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
                                               ElementMatrixType matType,
-                                              TACSBVec *psi, TACSBVec *phi,
-                                              TACSBVec *dfdXpt) {
+                                              TACSBVec* psi, TACSBVec* phi,
+                                              TACSBVec* dfdXpt) {
   psi->beginDistributeValues();
   if (phi != psi) {
     phi->beginDistributeValues();
@@ -5260,8 +5260,8 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
 
   // Get the design variables from the elements on this process
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
+  TacsScalar* fdvSens = elementSensData;
+  int* dvNums = elementSensIData;
 
   // Go through each element in the domain and compute the derivative
   // of the residuals with respect to each design variable and multiply by
@@ -5270,7 +5270,7 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
     // Find the variables and nodes
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, elemVars);
     psi->getValues(len, nodes, elemPsi);
@@ -5300,8 +5300,8 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
   @param dfdu The derivative of the inner product w.r.t. the state vars
 */
 void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
-                                              TACSBVec *psi, TACSBVec *phi,
-                                              TACSBVec *dfdu) {
+                                              TACSBVec* psi, TACSBVec* phi,
+                                              TACSBVec* dfdu) {
   // Zero the entries in the residual vector
   dfdu->zeroEntries();
 
@@ -5327,7 +5327,7 @@ void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
     // Find the variables and nodes
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, elemVars);
     psi->getValues(len, nodes, elemPsi);
@@ -5371,7 +5371,7 @@ void TACSAssembler::evalMatSVSensInnerProduct(ElementMatrixType matType,
 */
 void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
                                           TacsScalar beta, TacsScalar gamma,
-                                          TACSBVec *x, TACSBVec *y,
+                                          TACSBVec* x, TACSBVec* y,
                                           MatrixOrientation matOr,
                                           const TacsScalar lambda) {
   x->beginDistributeValues();
@@ -5385,7 +5385,7 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5394,7 +5394,7 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
   for (int i = 0; i < numElements; i++) {
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
     dvarsVec->getValues(len, nodes, dvars);
@@ -5420,7 +5420,7 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
 
     // Temporarily set the variable array as the element input array
     // and get the local variable input values from the local array.
-    TacsScalar *xvars = vars;
+    TacsScalar* xvars = vars;
     x->getValues(len, nodes, xvars);
 
     // Take the matrix vector product. Note the matrix is stored in
@@ -5453,13 +5453,13 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
   for a matrix-free matrix-vector product
 */
 void TACSAssembler::getMatrixFreeDataSize(ElementMatrixType matType,
-                                          int *_data_size, int *_temp_size) {
+                                          int* _data_size, int* _temp_size) {
   int data_size = 0;
   int temp_size = 0;
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5519,7 +5519,7 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5529,7 +5529,7 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
     // Extract the element node locations and variable values
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     if (data) {
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
@@ -5574,8 +5574,8 @@ void TACSAssembler::assembleMatrixFreeData(ElementMatrixType matType,
 */
 void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
                                             const TacsScalar data[],
-                                            TacsScalar temp[], TACSBVec *x,
-                                            TACSBVec *y,
+                                            TacsScalar temp[], TACSBVec* x,
+                                            TACSBVec* y,
                                             MatrixOrientation matOr,
                                             const TacsScalar lambda) {
   x->beginDistributeValues();
@@ -5588,7 +5588,7 @@ void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
-  TACSAuxElem *aux = NULL;
+  TACSAuxElem* aux = NULL;
   if (auxElements) {
     naux = auxElements->getAuxElements(&aux);
   }
@@ -5597,7 +5597,7 @@ void TACSAssembler::addMatrixFreeVecProduct(ElementMatrixType matType,
   for (int i = 0; i < numElements; i++) {
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
 
     // Get the number of variables from the element
     int nvars = elements[i]->getNumVariables();
@@ -5682,14 +5682,14 @@ void TACSAssembler::testElement(int elemNum, int print_level, double dh,
   }
 
   // Retrieve pointers to temporary storage
-  TacsScalar *res;
+  TacsScalar* res;
   TacsScalar *vars, *dvars, *ddvars, *elemXpts;
   getDataPointers(elementData, &vars, &dvars, &ddvars, &res, &elemXpts, NULL,
                   NULL, NULL);
 
   int ptr = elementNodeIndex[elemNum];
   int len = elementNodeIndex[elemNum + 1] - ptr;
-  const int *nodes = &elementTacsNodes[ptr];
+  const int* nodes = &elementTacsNodes[ptr];
   xptVec->getValues(len, nodes, elemXpts);
   varsVec->getValues(len, nodes, vars);
   dvarsVec->getValues(len, nodes, dvars);
@@ -5700,7 +5700,7 @@ void TACSAssembler::testElement(int elemNum, int print_level, double dh,
                           dvars, ddvars, col, dh, print_level, rtol, atol);
 
   const int maxDVs = maxElementDesignVars;
-  TacsScalar *x = elementSensData;
+  TacsScalar* x = elementSensData;
   elements[elemNum]->getDesignVars(elemNum, maxDVs, x);
   TacsTestAdjResProduct(elements[elemNum], elemNum, time, elemXpts, vars, dvars,
                         ddvars, maxDVs, x, dh, print_level, rtol, atol);
@@ -5719,7 +5719,7 @@ void TACSAssembler::testElement(int elemNum, int print_level, double dh,
   // TacsTestElementResidual(elements[elemNum], elemNum, time, elemXpts,
   //                         vars, dvars, ddvars,
   //                         dh, print_level, rtol, atol);
-  TACSElementModel *model = elements[elemNum]->getElementModel();
+  TACSElementModel* model = elements[elemNum]->getElementModel();
   if (model) {
     TacsTestElementModel(model, elemNum, time, dh, print_level, rtol, atol);
   }
@@ -5754,7 +5754,7 @@ void TACSAssembler::testElement(int elemNum, int print_level, double dh,
   @param func The function to test
   @param dh The finite-difference or complex-step step size
 */
-void TACSAssembler::testFunction(TACSFunction *func, double dh) {
+void TACSAssembler::testFunction(TACSFunction* func, double dh) {
   if (!meshInitializedFlag) {
     fprintf(stderr, "[%d] Cannot call testFunction() before initialize()\n",
             mpiRank);
@@ -5762,9 +5762,9 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   }
 
   // First, test the design variable values
-  TACSBVec *x = createDesignVec();
-  TACSBVec *xpert = createDesignVec();
-  TACSBVec *xtemp = createDesignVec();
+  TACSBVec* x = createDesignVec();
+  TACSBVec* xpert = createDesignVec();
+  TACSBVec* xtemp = createDesignVec();
   x->incref();
   xpert->incref();
   xtemp->incref();
@@ -5811,7 +5811,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
 
   if (mpiRank == 0) {
     fprintf(stderr, "Testing function %s\n", func->getObjectName());
-    const char *descript = "df/dx^{T}p";
+    const char* descript = "df/dx^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n", (int)strlen(descript), "Val",
             "Analytic", "Approximate", "Rel. Error");
     if (pdf != 0.0) {
@@ -5828,9 +5828,9 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   xtemp->decref();
   xpert->decref();
 
-  TACSBVec *temp = createVec();
-  TACSBVec *pert = createVec();
-  TACSBVec *vars = createVec();
+  TACSBVec* temp = createVec();
+  TACSBVec* pert = createVec();
+  TACSBVec* vars = createVec();
   temp->incref();
   pert->incref();
   vars->incref();
@@ -5877,7 +5877,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   pdf = temp->dot(pert);
 
   if (mpiRank == 0) {
-    const char *descript = "df/du^{T}p";
+    const char* descript = "df/du^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n", (int)strlen(descript), "Val",
             "Analytic", "Approximate", "Rel. Error");
     if (pdf != 0.0) {
@@ -5894,9 +5894,9 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   pert->decref();
   vars->decref();
 
-  TACSBVec *Xtemp = createNodeVec();
-  TACSBVec *Xpert = createNodeVec();
-  TACSBVec *Xvars = createNodeVec();
+  TACSBVec* Xtemp = createNodeVec();
+  TACSBVec* Xpert = createNodeVec();
+  TACSBVec* Xvars = createNodeVec();
   Xtemp->incref();
   Xpert->incref();
   Xvars->incref();
@@ -5943,7 +5943,7 @@ void TACSAssembler::testFunction(TACSFunction *func, double dh) {
   pdf = Xtemp->dot(Xpert);
 
   if (mpiRank == 0) {
-    const char *descript = "df/dX^{T}p";
+    const char* descript = "df/dX^{T}p";
     fprintf(stderr, "%*s[   ] %15s %15s %15s\n", (int)strlen(descript), "Val",
             "Analytic", "Approximate", "Rel. Error");
     if (pdf != 0.0) {
@@ -6002,14 +6002,14 @@ int TACSAssembler::getNumComponents() {
   @param data The data for each point for each value (output)
 */
 void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
-                                         int *_len, int *_nvals,
-                                         TacsScalar **_data) {
+                                         int* _len, int* _nvals,
+                                         TacsScalar** _data) {
   int nvals = TacsGetTotalOutputCount(elem_type, write_flag);
   int len = 0;
   for (int i = 0; i < numElements; i++) {
     len += elements[i]->getNumNodes();
   }
-  TacsScalar *data = new TacsScalar[len * nvals];
+  TacsScalar* data = new TacsScalar[len * nvals];
   memset(data, 0, len * nvals * sizeof(TacsScalar));
 
   // Retrieve pointers to temporary storage
@@ -6020,7 +6020,7 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
   for (int i = 0, offset = 0; i < numElements; i++) {
     int ptr = elementNodeIndex[i];
     int len = elementNodeIndex[i + 1] - ptr;
-    const int *nodes = &elementTacsNodes[ptr];
+    const int* nodes = &elementTacsNodes[ptr];
     xptVec->getValues(len, nodes, elemXpts);
     varsVec->getValues(len, nodes, vars);
     dvarsVec->getValues(len, nodes, dvars);
@@ -6040,7 +6040,7 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
 
 /* get average output stress resultants from TACS*/
 void TACSAssembler::getAverageStresses(ElementType elem_type,
-                                       TacsScalar *avgStresses,
+                                       TacsScalar* avgStresses,
                                        int componentNum) {
   // TacsScalar *avgStresses = new TacsScalar[9];
   // memset(avgStresses, 0, 9);
@@ -6058,7 +6058,7 @@ void TACSAssembler::getAverageStresses(ElementType elem_type,
       numCompElems += 1;
       int ptr = elementNodeIndex[i];
       int len = elementNodeIndex[i + 1] - ptr;
-      const int *nodes = &elementTacsNodes[ptr];
+      const int* nodes = &elementTacsNodes[ptr];
       xptVec->getValues(len, nodes, elemXpts);
       varsVec->getValues(len, nodes, vars);
       dvarsVec->getValues(len, nodes, dvars);

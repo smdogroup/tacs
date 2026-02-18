@@ -28,13 +28,13 @@
 template <int order>
 class PlaneStressQuad : public TACS2DElement<order * order> {
  public:
-  PlaneStressQuad(PlaneStressStiffness *_stiff,
+  PlaneStressQuad(PlaneStressStiffness* _stiff,
                   ElementBehaviorType type = LINEAR, int _componentNum = 0);
   ~PlaneStressQuad();
 
   // Return the name of this element
   // -------------------------------
-  const char *elementName() { return elemName; }
+  const char* elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -55,10 +55,10 @@ class PlaneStressQuad : public TACS2DElement<order * order> {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
-  void getOutputData(unsigned int out_type, double *data, int ld_data,
+  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
+  void getOutputData(unsigned int out_type, double* data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int *con, int node);
+  void getOutputConnectivity(int* con, int node);
 
  protected:
   void getPartUnityShapeFunctions(const double pt[], double N[], double Na[],
@@ -74,11 +74,11 @@ class PlaneStressQuad : public TACS2DElement<order * order> {
   const double *gaussWts, *gaussPts;
 
   // Store the name of the element
-  static const char *elemName;
+  static const char* elemName;
 };
 
 template <int order>
-PlaneStressQuad<order>::PlaneStressQuad(PlaneStressStiffness *_stiff,
+PlaneStressQuad<order>::PlaneStressQuad(PlaneStressStiffness* _stiff,
                                         ElementBehaviorType type,
                                         int _componentNum)
     : TACS2DElement<order * order>(_stiff, type, _componentNum) {
@@ -104,7 +104,7 @@ template <int order>
 PlaneStressQuad<order>::~PlaneStressQuad() {}
 
 template <int order>
-const char *PlaneStressQuad<order>::elemName = "PlaneStressQuad";
+const char* PlaneStressQuad<order>::elemName = "PlaneStressQuad";
 
 /*
   Get the number of Gauss points in the Gauss quadrature scheme
@@ -253,8 +253,8 @@ void PlaneStressQuad<order>::addLocalizedError(double time, TacsScalar err[],
       // displacements
       this->getBmat(B, J, Na, Nb, vars);
 
-      const TacsScalar *adj = adjoint;
-      const TacsScalar *b = B;
+      const TacsScalar* adj = adjoint;
+      const TacsScalar* b = B;
 
       // Compute the local product of the stress/strain
       TacsScalar product = 0.0;
@@ -279,8 +279,8 @@ void PlaneStressQuad<order>::addLocalizedError(double time, TacsScalar err[],
   this element.
 */
 template <int order>
-void PlaneStressQuad<order>::addOutputCount(int *nelems, int *nnodes,
-                                            int *ncsr) {
+void PlaneStressQuad<order>::addOutputCount(int* nelems, int* nnodes,
+                                            int* ncsr) {
   *nelems += (order - 1) * (order - 1);
   *nnodes += order * order;
   *ncsr += 4 * (order - 1) * (order - 1);
@@ -308,7 +308,7 @@ void PlaneStressQuad<order>::addOutputCount(int *nelems, int *nnodes,
   Xpts:     the element nodal locations
 */
 template <int order>
-void PlaneStressQuad<order>::getOutputData(unsigned int out_type, double *data,
+void PlaneStressQuad<order>::getOutputData(unsigned int out_type, double* data,
                                            int ld_data, const TacsScalar Xpts[],
                                            const TacsScalar vars[]) {
   for (int m = 0; m < order; m++) {
@@ -401,7 +401,7 @@ void PlaneStressQuad<order>::getOutputData(unsigned int out_type, double *data,
   less global
 */
 template <int order>
-void PlaneStressQuad<order>::getOutputConnectivity(int *con, int node) {
+void PlaneStressQuad<order>::getOutputConnectivity(int* con, int node) {
   int p = 0;
   for (int m = 0; m < order - 1; m++) {
     for (int n = 0; n < order - 1; n++) {

@@ -15,8 +15,8 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSBeamInertialForce : public TACSElement {
  public:
-  TACSBeamInertialForce(TACSBeamTransform *_transform,
-                        TACSBeamConstitutive *_con,
+  TACSBeamInertialForce(TACSBeamTransform* _transform,
+                        TACSBeamConstitutive* _con,
                         const TacsScalar _inertiaVec[]) {
     transform = _transform;
     transform->incref();
@@ -36,7 +36,7 @@ class TACSBeamInertialForce : public TACSElement {
     }
   }
 
-  const char *getObjectName() { return "TACSBeamInertialForce"; }
+  const char* getObjectName() { return "TACSBeamInertialForce"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -81,14 +81,14 @@ class TACSBeamInertialForce : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
-                   const TacsScalar *vars, const TacsScalar *dvars,
-                   const TacsScalar *ddvars, TacsScalar *res) {
+  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
+                   const TacsScalar* vars, const TacsScalar* dvars,
+                   const TacsScalar* ddvars, TacsScalar* res) {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 
     // Get the reference axis
-    const A2D::Vec3 &axis = transform->getRefAxis();
+    const A2D::Vec3& axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -138,8 +138,8 @@ class TACSBeamInertialForce : public TACSElement {
 
  private:
   TacsScalar inertiaVec[3];
-  TACSBeamTransform *transform;
-  TACSBeamConstitutive *con;
+  TACSBeamTransform* transform;
+  TACSBeamConstitutive* con;
 };
 
 #endif  // TACS_BEAM_INERTIAL_FORCE_H

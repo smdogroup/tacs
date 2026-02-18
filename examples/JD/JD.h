@@ -34,28 +34,28 @@
 
 class OctCreator : public TMROctConformTACSTopoCreator {
  public:
-  OctCreator(TMRBoundaryConditions *_bcs, TMROctForest *_forest,
-             TMRStiffnessProperties *_stiff_props);
+  OctCreator(TMRBoundaryConditions* _bcs, TMROctForest* _forest,
+             TMRStiffnessProperties* _stiff_props);
 
-  TACSElement *createElement(int order, TMROctant *oct, int nweights,
-                             const int *index, TMROctForest *filter);
+  TACSElement* createElement(int order, TMROctant* oct, int nweights,
+                             const int* index, TMROctForest* filter);
 
  private:
-  TMRBoundaryConditions *bcs;
-  TMROctForest *forest;
-  TMRStiffnessProperties *stiff_props;
+  TMRBoundaryConditions* bcs;
+  TMROctForest* forest;
+  TMRStiffnessProperties* stiff_props;
 };
 
 class CreatorCallback : public TMREntity {
  public:
-  CreatorCallback(TMRBoundaryConditions *_bcs,
-                  TMRStiffnessProperties *_stiff_props);
+  CreatorCallback(TMRBoundaryConditions* _bcs,
+                  TMRStiffnessProperties* _stiff_props);
 
-  OctCreator *creator_callback(TMROctForest *forest);
+  OctCreator* creator_callback(TMROctForest* forest);
 
  private:
-  TMRBoundaryConditions *bcs;
-  TMRStiffnessProperties *stiff_props;
+  TMRBoundaryConditions* bcs;
+  TMRStiffnessProperties* stiff_props;
 };
 
 /*
@@ -69,7 +69,7 @@ class OptFilterWeights {
 
   ~OptFilterWeights();
 
-  void set_alphas(double *w, double *alpha);
+  void set_alphas(double* w, double* alpha);
 
   int get_size_A() { return size_A; }
 
@@ -77,9 +77,9 @@ class OptFilterWeights {
 
   int get_ncon() { return ncon; }
 
-  double *get_A() { return A; }
+  double* get_A() { return A; }
 
-  double *get_b() { return b; }
+  double* get_b() { return b; }
 
   void obj_counter_inc() { nfev_obj++; }
 
@@ -92,7 +92,7 @@ class OptFilterWeights {
  private:
   int diagonal_index, dim, npts, n_entries_H;
   double delta;
-  const TacsScalar *Xpts;
+  const TacsScalar* Xpts;
 
   int size_A, size_b, ncon;
   double *A, *b, *H;
@@ -103,8 +103,8 @@ class OptFilterWeights {
 
 class Mfilter : public TMRHelmholtzPUFilter {
  public:
-  Mfilter(int _N, int _nlevels, TACSAssembler *_assembler[],
-          TMROctForest *_filter[], double _r);
+  Mfilter(int _N, int _nlevels, TACSAssembler* _assembler[],
+          TMROctForest* _filter[], double _r);
 
   int getInteriorStencil(int diagonal_index, int npts, const TacsScalar Xpts[],
                          double alpha[]);
@@ -116,7 +116,7 @@ class Mfilter : public TMRHelmholtzPUFilter {
   int mpi_rank;
   double r;
   int dim, vars_per_node;
-  OptFilterWeights *opt_data;
+  OptFilterWeights* opt_data;
 };
 
 class MFilterCreator : public TMREntity {
@@ -127,8 +127,8 @@ class MFilterCreator : public TMREntity {
   //                                   TACSAssembler *assemblers[],
   //                                   TMROctForest *filters[]);
 
-  Mfilter *create_filter(int nlevels, TACSAssembler *assemblers[],
-                         TMROctForest *filters[]);
+  Mfilter* create_filter(int nlevels, TACSAssembler* assemblers[],
+                         TMROctForest* filters[]);
 
  private:
   double r0_frac, a;
@@ -137,26 +137,26 @@ class MFilterCreator : public TMREntity {
 
 class TopoProblemCreator : public TMREntity {
  public:
-  TopoProblemCreator(TMROctForest *_forest,
-                     CreatorCallback *_creator_callback_obj,
-                     MFilterCreator *_filter_creator, int _nlevels,
+  TopoProblemCreator(TMROctForest* _forest,
+                     CreatorCallback* _creator_callback_obj,
+                     MFilterCreator* _filter_creator, int _nlevels,
                      int _use_galerkin);
 
   ~TopoProblemCreator();
 
-  TMRTopoProblem *createTopoProblem();
+  TMRTopoProblem* createTopoProblem();
 
  private:
-  TMROctForest *forest;
-  CreatorCallback *creator_callback_obj;
-  MFilterCreator *filter_creator;
+  TMROctForest* forest;
+  CreatorCallback* creator_callback_obj;
+  MFilterCreator* filter_creator;
   int nlevels;
   int use_galerkin;
 
-  TMROctForest **forests;
-  TMROctForest **filters;
-  TACSAssembler **assemblers;
-  TACSMg *mg;
+  TMROctForest** forests;
+  TMROctForest** filters;
+  TACSAssembler** assemblers;
+  TACSMg* mg;
 };
 
 /*
@@ -168,16 +168,16 @@ class MassObj : public ParOptBase {
 
   ~MassObj();
 
-  void evalObj(TMRTopoFilter *_filter, TACSMg *dummy, TacsScalar *val);
+  void evalObj(TMRTopoFilter* _filter, TACSMg* dummy, TacsScalar* val);
 
-  void evalGrad(TMRTopoFilter *dummy1, TACSMg *dummy2, TACSBVec *dfdx);
+  void evalGrad(TMRTopoFilter* dummy1, TACSMg* dummy2, TACSBVec* dfdx);
 
  private:
   int allocated;
   double m_fixed;
-  TMRTopoFilter *filter;
-  TACSAssembler *assembler;
-  TACSFunction *mass_func;
+  TMRTopoFilter* filter;
+  TACSAssembler* assembler;
+  TACSFunction* mass_func;
 };
 
 /*
@@ -185,20 +185,20 @@ class MassObj : public ParOptBase {
 */
 class FrequencyConstr : public ParOptBase {
  public:
-  FrequencyConstr(TMROctForest *_forest, double _len0, double _lambda0,
+  FrequencyConstr(TMROctForest* _forest, double _len0, double _lambda0,
                   int _max_jd_size, int _max_gmres_size, double _ksrho,
                   double _non_design_mass);
 
   ~FrequencyConstr();
 
-  void evalConstr(TMRTopoFilter *_filter, TACSMg *_mg, int nconstr,
-                  TacsScalar *vals);
+  void evalConstr(TMRTopoFilter* _filter, TACSMg* _mg, int nconstr,
+                  TacsScalar* vals);
 
-  void evalConstrGrad(TMRTopoFilter *dummy1, TACSMg *dummy2, int nconstr,
-                      TACSBVec **vecs);
+  void evalConstrGrad(TMRTopoFilter* dummy1, TACSMg* dummy2, int nconstr,
+                      TACSBVec** vecs);
 
-  void qn_correction(ParOptVec *x, ParOptScalar z[], ParOptVec *dummy,
-                     ParOptVec *s, ParOptVec *y);
+  void qn_correction(ParOptVec* x, ParOptScalar z[], ParOptVec* dummy,
+                     ParOptVec* s, ParOptVec* y);
 
  private:
   MPI_Comm comm;
@@ -209,12 +209,12 @@ class FrequencyConstr : public ParOptBase {
 
   int allocated;
 
-  KSMPrint *ksm_print;
+  KSMPrint* ksm_print;
 
-  TMROctForest *forest;
-  TMRTopoFilter *filter;
-  TACSMg *mg;
-  TACSAssembler *assembler;
+  TMROctForest* forest;
+  TMRTopoFilter* filter;
+  TACSMg* mg;
+  TACSAssembler* assembler;
 
   TACSBVec *svec, *mvec, *dv;
   TACSParallelMat *mmat, *m0mat, *Amat;
@@ -224,13 +224,13 @@ class FrequencyConstr : public ParOptBase {
 
   TACSBVec *rho, *rho_original, *update, *temp;
 
-  TACSJacobiDavidsonOperator *oper;
-  TACSJacobiDavidson *jd;
+  TACSJacobiDavidsonOperator* oper;
+  TACSJacobiDavidson* jd;
 
-  TacsScalar *mvals;
-  TMRPoint *Xpts;
+  TacsScalar* mvals;
+  TMRPoint* Xpts;
 
-  TACSMat *mgmat;
+  TACSMat* mgmat;
 
   ParOptBVecWrap *s_wrap, *y_wrap;
   TACSBVec *s_tacs, *y_tacs;
@@ -238,18 +238,18 @@ class FrequencyConstr : public ParOptBase {
 
 class OutputCallback : public ParOptBase {
  public:
-  OutputCallback(TACSAssembler *_assembler, int _iter_offset);
+  OutputCallback(TACSAssembler* _assembler, int _iter_offset);
 
   ~OutputCallback();
 
   void write_output() {}
 
  private:
-  TACSAssembler *assembler;
+  TACSAssembler* assembler;
   int iter_offset;
   int flag;
-  TACSToFH5 *f5;
-  TACSBVec *xt;
+  TACSToFH5* f5;
+  TACSBVec* xt;
 };
 
 /*
@@ -258,56 +258,55 @@ class OutputCallback : public ParOptBase {
 */
 class ProblemCreator : public ParOptBase {
  public:
-  ProblemCreator(TMROctForest *forest, TMRBoundaryConditions *bcs,
-                 TMRStiffnessProperties *stiff_props, int nlevels,
+  ProblemCreator(TMROctForest* forest, TMRBoundaryConditions* bcs,
+                 TMRStiffnessProperties* stiff_props, int nlevels,
                  double lambda0, double ksrho, double vol_frac, double r0_frac,
                  double len0, double density, int qn_correction,
                  double non_design_mass, int max_jd_size, int max_gmres_size);
 
   ~ProblemCreator();
 
-  TMRTopoProblem *get_problem();
+  TMRTopoProblem* get_problem();
 
  private:
-  TopoProblemCreator *tpc;
-  TMRTopoProblem *problem;
-  MFilterCreator *filter_creator;
-  CreatorCallback *creator_callback_obj;
-  MassObj *mass_obj;
-  FrequencyConstr *freq_con;
+  TopoProblemCreator* tpc;
+  TMRTopoProblem* problem;
+  MFilterCreator* filter_creator;
+  CreatorCallback* creator_callback_obj;
+  MassObj* mass_obj;
+  FrequencyConstr* freq_con;
 };
 
 /* Evaluate objective and constraint for nlopt_optimize */
-double objective(unsigned n, const double *w, double *grad, void *data);
+double objective(unsigned n, const double* w, double* grad, void* data);
 
-void constraint(unsigned ncon, double *cons, unsigned n, const double *w,
-                double *grad, void *data);
+void constraint(unsigned ncon, double* cons, unsigned n, const double* w,
+                double* grad, void* data);
 
 /* Helper functions for calling member function via function pointer */
 
-void forwarder_objval(void *massobj, TMRTopoFilter *filter, TACSMg *dummy,
-                      TacsScalar *val) {
-  static_cast<MassObj *>(massobj)->evalObj(filter, dummy, val);
+void forwarder_objval(void* massobj, TMRTopoFilter* filter, TACSMg* dummy,
+                      TacsScalar* val) {
+  static_cast<MassObj*>(massobj)->evalObj(filter, dummy, val);
 }
 
-void forwarder_objgrad(void *massobj, TMRTopoFilter *dummy1, TACSMg *dummy2,
-                       TACSBVec *dfdx) {
-  static_cast<MassObj *>(massobj)->evalGrad(dummy1, dummy2, dfdx);
+void forwarder_objgrad(void* massobj, TMRTopoFilter* dummy1, TACSMg* dummy2,
+                       TACSBVec* dfdx) {
+  static_cast<MassObj*>(massobj)->evalGrad(dummy1, dummy2, dfdx);
 }
 
-void forwarder_conval(void *freqcon, TMRTopoFilter *filter, TACSMg *mg,
-                      int nconstr, TacsScalar *vals) {
-  static_cast<FrequencyConstr *>(freqcon)->evalConstr(filter, mg, nconstr,
-                                                      vals);
+void forwarder_conval(void* freqcon, TMRTopoFilter* filter, TACSMg* mg,
+                      int nconstr, TacsScalar* vals) {
+  static_cast<FrequencyConstr*>(freqcon)->evalConstr(filter, mg, nconstr, vals);
 }
 
-void forwarder_congrad(void *freqcon, TMRTopoFilter *dummy1, TACSMg *dummy2,
-                       int nconstr, TACSBVec **vecs) {
-  static_cast<FrequencyConstr *>(freqcon)->evalConstrGrad(dummy1, dummy2,
-                                                          nconstr, vecs);
+void forwarder_congrad(void* freqcon, TMRTopoFilter* dummy1, TACSMg* dummy2,
+                       int nconstr, TACSBVec** vecs) {
+  static_cast<FrequencyConstr*>(freqcon)->evalConstrGrad(dummy1, dummy2,
+                                                         nconstr, vecs);
 }
 
-void forwarder_qn(int dummy1, void *freqcon, ParOptVec *x, ParOptScalar z[],
-                  ParOptVec *dummy2, ParOptVec *s, ParOptVec *y) {
-  static_cast<FrequencyConstr *>(freqcon)->qn_correction(x, z, dummy2, s, y);
+void forwarder_qn(int dummy1, void* freqcon, ParOptVec* x, ParOptScalar z[],
+                  ParOptVec* dummy2, ParOptVec* s, ParOptVec* y) {
+  static_cast<FrequencyConstr*>(freqcon)->qn_correction(x, z, dummy2, s, y);
 }

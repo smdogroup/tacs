@@ -23,18 +23,18 @@
 */
 class TACSMatrixFreeMat : public TACSMat {
  public:
-  TACSMatrixFreeMat(TACSAssembler *_assembler);
+  TACSMatrixFreeMat(TACSAssembler* _assembler);
   ~TACSMatrixFreeMat();
 
   void assembleMatrixFreeData(ElementMatrixType _matType, double alpha,
                               double beta, double gamma);
-  TACSVec *createVec();
-  void mult(TACSVec *x, TACSVec *y);
-  void multTranspose(TACSVec *x, TACSVec *y);
-  const char *getObjectName();
+  TACSVec* createVec();
+  void mult(TACSVec* x, TACSVec* y);
+  void multTranspose(TACSVec* x, TACSVec* y);
+  const char* getObjectName();
 
  private:
-  TACSAssembler *assembler;
+  TACSAssembler* assembler;
   ElementMatrixType matType;
   TacsScalar *data, *temp;
   int data_size, temp_size;

@@ -153,7 +153,7 @@ static inline void addSRateProduct(const TacsScalar eta, const TacsScalar eps[],
 static inline void addSRateTransProduct(const TacsScalar a,
                                         const TacsScalar eta,
                                         const TacsScalar eps[],
-                                        const TacsScalar x[], TacsScalar *yeta,
+                                        const TacsScalar x[], TacsScalar* yeta,
                                         TacsScalar yeps[]) {
   *yeta -= 2.0 * a * vec3Dot(eps, x);
   crossProductAdd(2.0 * a, eps, x, yeps);
@@ -219,7 +219,7 @@ static inline void computeSRateMat(const TacsScalar eta, const TacsScalar eps[],
 static inline void addDMatTransProduct(const TacsScalar a, const TacsScalar v[],
                                        const TacsScalar x[],
                                        const TacsScalar eta,
-                                       const TacsScalar eps[], TacsScalar *yeta,
+                                       const TacsScalar eps[], TacsScalar* yeta,
                                        TacsScalar yeps[]) {
   // Compute the cross product
   TacsScalar t[3];
@@ -259,7 +259,7 @@ static inline void addDMatTransProduct(const TacsScalar a, const TacsScalar v[],
 static inline void addEMatTransProduct(const TacsScalar a, const TacsScalar v[],
                                        const TacsScalar x[],
                                        const TacsScalar eta,
-                                       const TacsScalar eps[], TacsScalar *yeta,
+                                       const TacsScalar eps[], TacsScalar* yeta,
                                        TacsScalar yeps[]) {
   // Compute the cross product
   TacsScalar t[3];

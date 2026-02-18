@@ -15,7 +15,7 @@
 #include "TACSThermoelasticity.h"
 
 TACSLinearThermoelasticity2D::TACSLinearThermoelasticity2D(
-    TACSPlaneStressConstitutive *_stiff, ElementStrainType _strain_type,
+    TACSPlaneStressConstitutive* _stiff, ElementStrainType _strain_type,
     int _steady_state_flag) {
   stiff = _stiff;
   stiff->incref();
@@ -146,8 +146,8 @@ void TACSLinearThermoelasticity2D::evalWeakIntegrand(
 }
 
 void TACSLinearThermoelasticity2D::getWeakMatrixNonzeros(
-    ElementMatrixType matType, int elemIndex, int *Jac_nnz,
-    const int *Jac_pairs[]) {
+    ElementMatrixType matType, int elemIndex, int* Jac_nnz,
+    const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 27;
     *Jac_pairs = linear_Jac_pairs;
@@ -303,7 +303,7 @@ void TACSLinearThermoelasticity2D::addWeakAdjProduct(
     int elemIndex, const double time, TacsScalar scale, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
     const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar Psi[],
-    const TacsScalar Psix[], int dvLen, TacsScalar *dfdx) {
+    const TacsScalar Psix[], int dvLen, TacsScalar* dfdx) {
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
@@ -362,7 +362,7 @@ void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
   dfdXd[0] = dfdXd[1] = dfdXd[2] = 0.0;
@@ -443,7 +443,7 @@ void TACSLinearThermoelasticity2D::evalWeakAdjXptSensProduct(
 int TACSLinearThermoelasticity2D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       // Compute the thermal strain components
@@ -803,7 +803,7 @@ void TACSLinearThermoelasticity2D::evalPointQuantitySens(
 void TACSLinearThermoelasticity2D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
   if (etype == TACS_PLANE_STRESS_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];
@@ -853,7 +853,7 @@ void TACSLinearThermoelasticity2D::getOutputData(
 }
 
 TACSLinearThermoelasticity3D::TACSLinearThermoelasticity3D(
-    TACSSolidConstitutive *_stiff, ElementStrainType _strain_type,
+    TACSSolidConstitutive* _stiff, ElementStrainType _strain_type,
     int _steady_state_flag) {
   stiff = _stiff;
   stiff->incref();
@@ -1029,8 +1029,8 @@ void TACSLinearThermoelasticity3D::evalWeakIntegrand(
 }
 
 void TACSLinearThermoelasticity3D::getWeakMatrixNonzeros(
-    ElementMatrixType matType, int elemIndex, int *Jac_nnz,
-    const int *Jac_pairs[]) {
+    ElementMatrixType matType, int elemIndex, int* Jac_nnz,
+    const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 103;
     *Jac_pairs = linear_Jac_pairs;
@@ -1385,7 +1385,7 @@ void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
@@ -1508,7 +1508,7 @@ void TACSLinearThermoelasticity3D::evalWeakAdjXptSensProduct(
 int TACSLinearThermoelasticity3D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       // Compute the thermal strain components
@@ -2030,7 +2030,7 @@ void TACSLinearThermoelasticity3D::evalPointQuantitySens(
 void TACSLinearThermoelasticity3D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
   if (etype == TACS_SOLID_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       // doesn't this depend whether it's linear/quadratic/etc?

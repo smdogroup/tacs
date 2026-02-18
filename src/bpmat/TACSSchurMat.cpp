@@ -46,9 +46,9 @@
   b_map: the global variables corresponding to the B-variables
   c_map: the global variables corresponding to the C-variables
 */
-TACSSchurMat::TACSSchurMat(TACSNodeMap *_rmap, BCSRMat *_B, BCSRMat *_E,
-                           BCSRMat *_F, BCSRMat *_C, TACSBVecDistribute *_b_map,
-                           TACSBVecDistribute *_c_map) {
+TACSSchurMat::TACSSchurMat(TACSNodeMap* _rmap, BCSRMat* _B, BCSRMat* _E,
+                           BCSRMat* _F, BCSRMat* _C, TACSBVecDistribute* _b_map,
+                           TACSBVecDistribute* _c_map) {
   init(_rmap, _B, _E, _F, _C, _b_map, _c_map);
 }
 
@@ -115,12 +115,12 @@ TACSSchurMat::TACSSchurMat(TACSNodeMap *_rmap, BCSRMat *_B, BCSRMat *_E,
   However, the matrix A is provided in a CSR format. This complicates
   the code somewhat.
 */
-TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
-                           int bsize, int nlocal_vars, const int *rowp,
-                           const int *cols, TACSBVecIndices *b_local_indices,
-                           TACSBVecDistribute *_b_map,
-                           TACSBVecIndices *c_local_indices,
-                           TACSBVecDistribute *_c_map) {
+TACSSchurMat::TACSSchurMat(TACSThreadInfo* thread_info, TACSNodeMap* _rmap,
+                           int bsize, int nlocal_vars, const int* rowp,
+                           const int* cols, TACSBVecIndices* b_local_indices,
+                           TACSBVecDistribute* _b_map,
+                           TACSBVecIndices* c_local_indices,
+                           TACSBVecDistribute* _c_map) {
   // Get the block size
   int rank;
   MPI_Comm_rank(_rmap->getMPIComm(), &rank);
@@ -138,8 +138,8 @@ TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
 
   // Compute the inverse mapping
   // binv : i in A -> binv[i] in B
-  int *binv = new int[nlocal_vars];
-  int *cinv = new int[nlocal_vars];
+  int* binv = new int[nlocal_vars];
+  int* cinv = new int[nlocal_vars];
 
   for (int i = 0; i < nlocal_vars; i++) {
     binv[i] = cinv[i] = -1;
@@ -152,10 +152,10 @@ TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
   }
 
   // Count up the size of the b matrix
-  int *browp = new int[Nb + 1];
-  int *erowp = new int[Nb + 1];
-  int *frowp = new int[Nc + 1];
-  int *crowp = new int[Nc + 1];
+  int* browp = new int[Nb + 1];
+  int* erowp = new int[Nb + 1];
+  int* frowp = new int[Nc + 1];
+  int* crowp = new int[Nc + 1];
   memset(browp, 0, (Nb + 1) * sizeof(int));
   memset(erowp, 0, (Nb + 1) * sizeof(int));
   memset(frowp, 0, (Nc + 1) * sizeof(int));
@@ -206,10 +206,10 @@ TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
   // Now, prepare to add in all the indices.
   // This modifies the pointers *rowp, these
   // will be adjusted back after the computation
-  int *bcols = new int[browp[Nb]];
-  int *ecols = new int[erowp[Nb]];
-  int *fcols = new int[frowp[Nc]];
-  int *ccols = new int[crowp[Nc]];
+  int* bcols = new int[browp[Nb]];
+  int* ecols = new int[erowp[Nb]];
+  int* fcols = new int[frowp[Nc]];
+  int* ccols = new int[crowp[Nc]];
 
   // Count up the size of the different matrices
   for (int i = 0; i < Nb; i++) {
@@ -297,10 +297,10 @@ TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
 
   // Create the block matrices
   MPI_Comm comm = _rmap->getMPIComm();
-  BCSRMat *_B = new BCSRMat(comm, thread_info, bsize, Nb, Nb, &browp, &bcols);
-  BCSRMat *_E = new BCSRMat(comm, thread_info, bsize, Nb, Nc, &erowp, &ecols);
-  BCSRMat *_F = new BCSRMat(comm, thread_info, bsize, Nc, Nb, &frowp, &fcols);
-  BCSRMat *_C = new BCSRMat(comm, thread_info, bsize, Nc, Nc, &crowp, &ccols);
+  BCSRMat* _B = new BCSRMat(comm, thread_info, bsize, Nb, Nb, &browp, &bcols);
+  BCSRMat* _E = new BCSRMat(comm, thread_info, bsize, Nb, Nc, &erowp, &ecols);
+  BCSRMat* _F = new BCSRMat(comm, thread_info, bsize, Nc, Nb, &frowp, &fcols);
+  BCSRMat* _C = new BCSRMat(comm, thread_info, bsize, Nc, Nc, &crowp, &ccols);
 
   // Insure that the inverse look-up has been allocated
   (_b_map->getIndices())->setUpInverse();
@@ -321,9 +321,9 @@ TACSSchurMat::TACSSchurMat(TACSThreadInfo *thread_info, TACSNodeMap *_rmap,
   b_map: the global variables corresponding to the B-variables
   c_map: the global variables corresponding to the C-variables
 */
-void TACSSchurMat::init(TACSNodeMap *_rmap, BCSRMat *_B, BCSRMat *_E,
-                        BCSRMat *_F, BCSRMat *_C, TACSBVecDistribute *_b_map,
-                        TACSBVecDistribute *_c_map) {
+void TACSSchurMat::init(TACSNodeMap* _rmap, BCSRMat* _B, BCSRMat* _E,
+                        BCSRMat* _F, BCSRMat* _C, TACSBVecDistribute* _b_map,
+                        TACSBVecDistribute* _c_map) {
   rmap = _rmap;
   rmap->incref();
 
@@ -450,11 +450,11 @@ TACSSchurMat::~TACSSchurMat() {
   statically allocated array, otherwise dynamically allocate temporary
   arrays to store the indices.
 */
-void TACSSchurMat::addValues(int nrow, const int *row, int ncol, const int *col,
-                             int nv, int mv, const TacsScalar *values) {
+void TACSSchurMat::addValues(int nrow, const int* row, int ncol, const int* col,
+                             int nv, int mv, const TacsScalar* values) {
   int bsize = B->getBlockSize();
-  TACSBVecIndices *bindx = b_map->getIndices();
-  TACSBVecIndices *cindx = c_map->getIndices();
+  TACSBVecIndices* bindx = b_map->getIndices();
+  TACSBVecIndices* cindx = c_map->getIndices();
 
   // Set up storage for the values of the local variable numbers
   int array[256];
@@ -550,16 +550,16 @@ void TACSSchurMat::addValues(int nrow, const int *row, int ncol, const int *col,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void TACSSchurMat::addWeightValues(int nvars, const int *varp, const int *vars,
-                                   const TacsScalar *weights, int nv, int mv,
-                                   const TacsScalar *values,
+void TACSSchurMat::addWeightValues(int nvars, const int* varp, const int* vars,
+                                   const TacsScalar* weights, int nv, int mv,
+                                   const TacsScalar* values,
                                    MatrixOrientation matOr) {
   // The block size for the matrix
   int bsize = B->getBlockSize();
 
   // Get the index sets corresponding to the B/C matrices
-  TACSBVecIndices *bindx = b_map->getIndices();
-  TACSBVecIndices *cindx = c_map->getIndices();
+  TACSBVecIndices* bindx = b_map->getIndices();
+  TACSBVecIndices* cindx = c_map->getIndices();
 
   // The number of variables we'll have to convert = row dim(W^{T})
   int n = varp[nvars];
@@ -650,7 +650,7 @@ void TACSSchurMat::addWeightValues(int nvars, const int *varp, const int *vars,
 /*
   Create a vector that is compatible with this matrix
 */
-TACSVec *TACSSchurMat::createVec() {
+TACSVec* TACSSchurMat::createVec() {
   return new TACSBVec(rmap, B->getBlockSize());
 }
 
@@ -659,15 +659,15 @@ TACSVec *TACSSchurMat::createVec() {
   associated with the boundary conditions and setting corresponding
   the diagonal entries to 1.
 */
-void TACSSchurMat::applyBCs(TACSBcMap *bcmap) {
+void TACSSchurMat::applyBCs(TACSBcMap* bcmap) {
   if (bcmap) {
-    TACSBVecIndices *bindx = b_map->getIndices();
-    TACSBVecIndices *cindx = c_map->getIndices();
+    TACSBVecIndices* bindx = b_map->getIndices();
+    TACSBVecIndices* cindx = c_map->getIndices();
 
     int mpiRank;
     MPI_Comm_rank(rmap->getMPIComm(), &mpiRank);
 
-    const int *ownerRange;
+    const int* ownerRange;
     rmap->getOwnerRange(&ownerRange);
 
     // apply the boundary conditions
@@ -702,7 +702,7 @@ void TACSSchurMat::applyBCs(TACSBcMap *bcmap) {
   Apply the transpose of the Dirichlet boundary conditions (zero-ing)
   columns and setting the diagonal entries to unity.
 */
-void TACSSchurMat::applyTransposeBCs(TACSBcMap *bcmap) {
+void TACSSchurMat::applyTransposeBCs(TACSBcMap* bcmap) {
   if (bcmap) {
     /*
     TACSBVecIndices *bindx = b_map->getIndices();
@@ -752,7 +752,7 @@ void TACSSchurMat::applyTransposeBCs(TACSBcMap *bcmap) {
   nr:  the row dimension
   nc:  the column dimension
 */
-void TACSSchurMat::getSize(int *nr, int *nc) {
+void TACSSchurMat::getSize(int* nr, int* nc) {
   int bs = B->getBlockSize();
   *nr = bs * rmap->getNumNodes();
   *nc = bs * rmap->getNumNodes();
@@ -774,10 +774,10 @@ void TACSSchurMat::zeroEntries() {
   input:
   mat:  the matrix to copy the values from
 */
-void TACSSchurMat::copyValues(TACSMat *mat) {
+void TACSSchurMat::copyValues(TACSMat* mat) {
   // Safely down-cast the matrix to an TACSSchurMat - returns NULL
   // if this is not possible
-  TACSSchurMat *smat = dynamic_cast<TACSSchurMat *>(mat);
+  TACSSchurMat* smat = dynamic_cast<TACSSchurMat*>(mat);
   if (smat) {
     B->copyValues(smat->B);
     E->copyValues(smat->E);
@@ -804,8 +804,8 @@ void TACSSchurMat::scale(TacsScalar alpha) {
 /*!
   Compute y <- y + alpha * x
 */
-void TACSSchurMat::axpy(TacsScalar alpha, TACSMat *mat) {
-  TACSSchurMat *smat = dynamic_cast<TACSSchurMat *>(mat);
+void TACSSchurMat::axpy(TacsScalar alpha, TACSMat* mat) {
+  TACSSchurMat* smat = dynamic_cast<TACSSchurMat*>(mat);
   if (smat) {
     B->axpy(alpha, smat->B);
     E->axpy(alpha, smat->E);
@@ -819,8 +819,8 @@ void TACSSchurMat::axpy(TacsScalar alpha, TACSMat *mat) {
 /*!
   Compute y <- alpha * x + beta * y
 */
-void TACSSchurMat::axpby(TacsScalar alpha, TacsScalar beta, TACSMat *mat) {
-  TACSSchurMat *smat = dynamic_cast<TACSSchurMat *>(mat);
+void TACSSchurMat::axpby(TacsScalar alpha, TacsScalar beta, TACSMat* mat) {
+  TACSSchurMat* smat = dynamic_cast<TACSSchurMat*>(mat);
   if (smat) {
     B->axpby(alpha, beta, smat->B);
     E->axpby(alpha, beta, smat->E);
@@ -880,13 +880,13 @@ void TACSSchurMat::addDiag(TacsScalar alpha) {
   9) Begin setting y_b in global y vector
   10) Wait for communication with global y vector to finish
 */
-void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
+void TACSSchurMat::mult(TACSVec* txvec, TACSVec* tyvec) {
   tyvec->zeroEntries();
 
   // Safely down-cast the TACSVec vectors to TACSBVecs
   TACSBVec *xvec, *yvec;
-  xvec = dynamic_cast<TACSBVec *>(txvec);
-  yvec = dynamic_cast<TACSBVec *>(tyvec);
+  xvec = dynamic_cast<TACSBVec*>(txvec);
+  yvec = dynamic_cast<TACSBVec*>(tyvec);
 
   if (xvec && yvec) {
     TacsScalar *x, *y;
@@ -894,10 +894,10 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
     yvec->getArray(&y);
 
     // Make some aliases so code matches the explanation above
-    TacsScalar *const x_b = xlocal;
-    TacsScalar *const x_c = &xlocal[local_offset];
-    TacsScalar *const y_b = ylocal;
-    TacsScalar *const y_c = &ylocal[local_offset];
+    TacsScalar* const x_b = xlocal;
+    TacsScalar* const x_c = &xlocal[local_offset];
+    TacsScalar* const y_b = ylocal;
+    TacsScalar* const y_c = &ylocal[local_offset];
 
     // First begin the communication of x to the local values
     b_map->beginForward(b_ctx, x, x_b);
@@ -937,13 +937,13 @@ void TACSSchurMat::mult(TACSVec *txvec, TACSVec *tyvec) {
  * @param txvec Vector to multiply with
  * @param tyvec Vector to store result in
  */
-void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
+void TACSSchurMat::multTranspose(TACSVec* txvec, TACSVec* tyvec) {
   tyvec->zeroEntries();
 
   // Safely down-cast the TACSVec vectors to TACSBVecs
   TACSBVec *xvec, *yvec;
-  xvec = dynamic_cast<TACSBVec *>(txvec);
-  yvec = dynamic_cast<TACSBVec *>(tyvec);
+  xvec = dynamic_cast<TACSBVec*>(txvec);
+  yvec = dynamic_cast<TACSBVec*>(tyvec);
 
   if (xvec && yvec) {
     TacsScalar *x, *y;
@@ -951,10 +951,10 @@ void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
     yvec->getArray(&y);
 
     // Make some aliases so code matches the explanation above
-    TacsScalar *const x_b = xlocal;
-    TacsScalar *const x_c = &xlocal[local_offset];
-    TacsScalar *const y_b = ylocal;
-    TacsScalar *const y_c = &ylocal[local_offset];
+    TacsScalar* const x_b = xlocal;
+    TacsScalar* const x_c = &xlocal[local_offset];
+    TacsScalar* const y_b = ylocal;
+    TacsScalar* const y_c = &ylocal[local_offset];
 
     // First begin the communication of x to the local values
     b_map->beginForward(b_ctx, x, x_b);
@@ -988,8 +988,8 @@ void TACSSchurMat::multTranspose(TACSVec *txvec, TACSVec *tyvec) {
   output:
   B, E, F, C: the matrices in the TACSSchurMat class
 */
-void TACSSchurMat::getBCSRMat(BCSRMat **_B, BCSRMat **_E, BCSRMat **_F,
-                              BCSRMat **_C) {
+void TACSSchurMat::getBCSRMat(BCSRMat** _B, BCSRMat** _E, BCSRMat** _F,
+                              BCSRMat** _C) {
   if (_B) {
     *_B = B;
   }
@@ -1021,7 +1021,7 @@ void TACSSchurMat::getBCSRMat(BCSRMat **_B, BCSRMat **_E, BCSRMat **_F,
   fill:    the expected/best estimate of the fill-in factor
   reorder: flag to indicate whether to re-order the global Schur complement
 */
-TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
+TACSSchurPc::TACSSchurPc(TACSSchurMat* _mat, int levFill, double fill,
                          int reorder_schur_complement) {
   mat = _mat;
   mat->incref();
@@ -1056,7 +1056,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   b_ctx->incref();
 
   // Symbolically calculate Sc = C - F * B^{-1} * E
-  TACSNodeMap *rmap = mat->getNodeMap();
+  TACSNodeMap* rmap = mat->getNodeMap();
   MPI_Comm comm = rmap->getMPIComm();
   Bpc = new BCSRMat(comm, B, E, F, C, levFill, fill, &Epc, &Fpc, &Sc,
                     use_full_schur);
@@ -1073,7 +1073,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   MPI_Comm_rank(rmap->getMPIComm(), &rank);
   MPI_Comm_size(rmap->getMPIComm(), &size);
 
-  const int *ownerRange;
+  const int* ownerRange;
   rmap->getOwnerRange(&ownerRange);
 
   // Compute the max proc grid size
@@ -1086,15 +1086,15 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   }
 
   // Get the indices of the global variables
-  TACSBVecIndices *c_map_indx = c_map->getIndices();
+  TACSBVecIndices* c_map_indx = c_map->getIndices();
 
   // Get the number of global Schur variables
-  const int *schur_vars;
+  const int* schur_vars;
   num_local_schur_vars = c_map_indx->getIndices(&schur_vars);
 
   // Gather the size of the indices on each process
-  int *schur_count = NULL;
-  int *schur_ptr = NULL;
+  int* schur_count = NULL;
+  int* schur_ptr = NULL;
   if (rank == root) {
     schur_count = new int[size];
     schur_ptr = new int[size];
@@ -1108,7 +1108,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   // processing on the root node, schur_root is an array of these same
   // variables but now with the order obtained from uniquely sorting
   // the list of the original schur_root variables.
-  int *schur_root = NULL;
+  int* schur_root = NULL;
   int num_schur_root = 0;
   if (rank == root) {
     for (int i = 0; i < size; i++) {
@@ -1119,11 +1119,11 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   }
 
   // Gather all the global Schur variables to the root process
-  MPI_Gatherv((void *)schur_vars, num_local_schur_vars, MPI_INT, schur_root,
+  MPI_Gatherv((void*)schur_vars, num_local_schur_vars, MPI_INT, schur_root,
               schur_count, schur_ptr, MPI_INT, root, comm);
 
   // Duplicate the global list and uniquify the result
-  int *unique_schur = NULL;
+  int* unique_schur = NULL;
   int num_unique_schur = 0;
 
   if (rank == root) {
@@ -1134,7 +1134,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
     // For each global Schur variable, now assign an output - the index
     // into the unique list of global Schur variables
     for (int i = 0; i < num_schur_root; i++) {
-      int *item =
+      int* item =
           TacsSearchArray(schur_root[i], num_unique_schur, unique_schur);
       schur_root[i] = item - unique_schur;
     }
@@ -1153,7 +1153,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   // and pass it into the block-cyclic matrix
   int bs, num_schur_vars;
   const int *rowp, *cols;
-  TacsScalar *vals;
+  TacsScalar* vals;
   Sc->getArrays(&bs, &num_schur_vars, &num_schur_vars, &rowp, &cols, &vals);
 
   // Determine the size of the global Schur complement
@@ -1165,7 +1165,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
     csr_blocks_per_block = 36 / bsize;
   }
 
-  int *schur_cols = new int[rowp[num_schur_vars]];
+  int* schur_cols = new int[rowp[num_schur_vars]];
   for (int i = 0; i < rowp[num_schur_vars]; i++) {
     schur_cols[i] = local_schur_vars[cols[i]];
   }
@@ -1190,8 +1190,8 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   int local_var_count = xbptr[nrows] / bsize;
 
   // Allocate space for the new pointers
-  int *tacs_schur_count = NULL;
-  int *tacs_schur_ptr = NULL;
+  int* tacs_schur_count = NULL;
+  int* tacs_schur_ptr = NULL;
   if (rank == root) {
     tacs_schur_count = new int[size];
     tacs_schur_ptr = new int[size];
@@ -1202,7 +1202,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
              comm);
 
   // Now, reorder the variables in the Schur complement
-  int *local_tacs_schur_vars = NULL;
+  int* local_tacs_schur_vars = NULL;
   if (rank == root) {
     // Compute the offset into the block order
     int num_schur = 0;
@@ -1254,11 +1254,11 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   }
 
   // Send unique_schur back to the owning processes
-  int *tacs_schur_vars = new int[local_var_count];
+  int* tacs_schur_vars = new int[local_var_count];
   MPI_Scatterv(local_tacs_schur_vars, tacs_schur_count, tacs_schur_ptr, MPI_INT,
                tacs_schur_vars, local_var_count, MPI_INT, root, comm);
 
-  int *local_schur = new int[num_local_schur_vars];
+  int* local_schur = new int[num_local_schur_vars];
   MPI_Scatterv(schur_root, schur_count, schur_ptr, MPI_INT, local_schur,
                num_local_schur_vars, MPI_INT, root, comm);
 
@@ -1278,7 +1278,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   schur_map->incref();
 
   // Create the index set for the new Schur complement variables
-  TACSBVecIndices *schur_index =
+  TACSBVecIndices* schur_index =
       new TACSBVecIndices(&local_schur, num_local_schur_vars);
 
   // Create the Schur complement variable distribution object
@@ -1289,7 +1289,7 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   schur_ctx = schur_dist->createCtx(bsize);
   schur_ctx->incref();
 
-  TACSBVecIndices *tacs_schur_index =
+  TACSBVecIndices* tacs_schur_index =
       new TACSBVecIndices(&tacs_schur_vars, local_var_count);
 
   // Create the index set for the global Schur complement variables
@@ -1366,10 +1366,10 @@ TACSSchurPc::~TACSSchurPc() {
   preconditioner has been factored since the matrix Sc is not
   populated until this time.
 */
-void TACSSchurPc::testSchurComplement(TACSVec *tin, TACSVec *tout) {
+void TACSSchurPc::testSchurComplement(TACSVec* tin, TACSVec* tout) {
   TACSBVec *invec, *outvec;
-  invec = dynamic_cast<TACSBVec *>(tin);
-  outvec = dynamic_cast<TACSBVec *>(tout);
+  invec = dynamic_cast<TACSBVec*>(tin);
+  outvec = dynamic_cast<TACSBVec*>(tout);
 
   if (invec && outvec) {
     // Test two methods of computing the effect of the Schur complement
@@ -1383,7 +1383,7 @@ void TACSSchurPc::testSchurComplement(TACSVec *tin, TACSVec *tout) {
     // Allocate a temporary array to store c-entries
     int bsize = B->getBlockSize();
     int c_size = bsize * c_map->getNumNodes();
-    TacsScalar *temp = new TacsScalar[c_size];
+    TacsScalar* temp = new TacsScalar[c_size];
 
     // Comput the schur complement product
     c_map->beginForward(c_ctx, in, yinterface);
@@ -1395,12 +1395,12 @@ void TACSSchurPc::testSchurComplement(TACSVec *tin, TACSVec *tout) {
     delete[] temp;
 
     // Compute the schur complement product a second way
-    TacsScalar *y;
+    TacsScalar* y;
     yschur->getArray(&y);
     schur_dist->beginReverse(schur_ctx, yinterface, y, TACS_INSERT_VALUES);
     schur_dist->endReverse(schur_ctx, yinterface, y, TACS_INSERT_VALUES);
 
-    TacsScalar *g = NULL;
+    TacsScalar* g = NULL;
     yschur->getArray(&y);
     bcyclic->mult(y, g);
 
@@ -1434,8 +1434,8 @@ void TACSSchurPc::testSchurComplement(TACSVec *tin, TACSVec *tout) {
   output:
   B, E, F, C: the matrices in the TACSSchurMat class
 */
-void TACSSchurPc::getBCSRMat(BCSRMat **_Bpc, BCSRMat **_Epc, BCSRMat **_Fpc,
-                             BCSRMat **_Sc) {
+void TACSSchurPc::getBCSRMat(BCSRMat** _Bpc, BCSRMat** _Epc, BCSRMat** _Fpc,
+                             BCSRMat** _Sc) {
   if (_Bpc) {
     *_Bpc = Bpc;
   }
@@ -1549,10 +1549,10 @@ void TACSSchurPc::factor() {
   // Retrieve the local arrays for the local Schur complement
   int bsize, mlocal, nlocal;
   const int *rowp, *cols;
-  TacsScalar *scvals;
+  TacsScalar* scvals;
   Sc->getArrays(&bsize, &mlocal, &nlocal, &rowp, &cols, &scvals);
 
-  int *schur_cols = new int[rowp[mlocal]];
+  int* schur_cols = new int[rowp[mlocal]];
   for (int i = 0; i < rowp[mlocal]; i++) {
     schur_cols[i] = local_schur_vars[cols[i]];
   }
@@ -1626,11 +1626,11 @@ void TACSSchurPc::factor() {
   3. Solve approximately (C - F B^{-1} E) y = g'
   4. Compute x <- U^{-1} (x - L^{-1} E * y) = U^{-1} (x - Epc * y)
 */
-void TACSSchurPc::applyFactor(TACSVec *tin, TACSVec *tout) {
+void TACSSchurPc::applyFactor(TACSVec* tin, TACSVec* tout) {
   // First, perform a safe down-cast from TACSVec to BVec
   TACSBVec *invec, *outvec;
-  invec = dynamic_cast<TACSBVec *>(tin);
-  outvec = dynamic_cast<TACSBVec *>(tout);
+  invec = dynamic_cast<TACSBVec*>(tin);
+  outvec = dynamic_cast<TACSBVec*>(tout);
 
   if (invec && outvec) {
     // Set the variables for the back-solve monitor
@@ -1647,7 +1647,7 @@ void TACSSchurPc::applyFactor(TACSVec *tin, TACSVec *tout) {
     outvec->getArray(&out);
 
     // Pass g to the global Schur complement
-    TacsScalar *g = NULL;
+    TacsScalar* g = NULL;
     gschur->getArray(&g);
     tacs_schur_dist->beginForward(tacs_schur_ctx, in, g);
 
@@ -1665,7 +1665,7 @@ void TACSSchurPc::applyFactor(TACSVec *tin, TACSVec *tout) {
     // Transmit yinterface to the Schur complement system
     // Pass F U^{-1} L^{-1} f to yschur
     yschur->zeroEntries();
-    TacsScalar *y = NULL;
+    TacsScalar* y = NULL;
     yschur->getArray(&y);
     schur_dist->beginReverse(schur_ctx, yinterface, y, TACS_ADD_VALUES);
 
@@ -1734,4 +1734,4 @@ void TACSSchurPc::applyFactor(TACSVec *tin, TACSVec *tout) {
 /*
   Retrieve the underlying matrix
 */
-void TACSSchurPc::getMat(TACSMat **_mat) { *_mat = mat; }
+void TACSSchurPc::getMat(TACSMat** _mat) { *_mat = mat; }

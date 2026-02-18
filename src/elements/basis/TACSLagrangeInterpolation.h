@@ -43,7 +43,7 @@ static const double TacsGaussLobattoPoints6[] = {-1.0,
   N:      the values of the shape functions at u
 */
 inline void TacsLagrangeShapeFunctions(const int order, const double u,
-                                       const double *knots, double *N) {
+                                       const double* knots, double* N) {
   // Loop over the shape functions
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -70,8 +70,8 @@ inline void TacsLagrangeShapeFunctions(const int order, const double u,
   Nd:     the derivative of the shape functions at u
 */
 inline void TacsLagrangeShapeFuncDerivative(const int order, const double u,
-                                            const double *knots, double *N,
-                                            double *Nd) {
+                                            const double* knots, double* N,
+                                            double* Nd) {
   // Loop over the shape function knot locations
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -114,9 +114,9 @@ inline void TacsLagrangeShapeFuncDerivative(const int order, const double u,
 */
 inline void TacsLagrangeShapeFuncSecondDerivative(const int order,
                                                   const double u,
-                                                  const double *knots,
-                                                  double *N, double *Nd,
-                                                  double *Ndd) {
+                                                  const double* knots,
+                                                  double* N, double* Nd,
+                                                  double* Ndd) {
   // Loop over the shape function control points
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;

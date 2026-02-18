@@ -49,26 +49,26 @@ class TACSCreator : public TACSObject {
   // Set the connectivity for the global mesh
   // ----------------------------------------
   void setGlobalConnectivity(int _num_nodes, int _num_elements,
-                             const int *_elem_node_ptr,
-                             const int *_elem_node_conn,
-                             const int *_elem_id_nums);
+                             const int* _elem_node_ptr,
+                             const int* _elem_node_conn,
+                             const int* _elem_id_nums);
 
   // Set the boundary conditions
   // ---------------------------
-  void setBoundaryConditions(int _num_bcs, const int *_bc_nodes,
-                             const int *_bc_ptr = NULL,
-                             const int *_bc_vars = NULL,
-                             const TacsScalar *_bc_vals = NULL);
+  void setBoundaryConditions(int _num_bcs, const int* _bc_nodes,
+                             const int* _bc_ptr = NULL,
+                             const int* _bc_vars = NULL,
+                             const TacsScalar* _bc_vals = NULL);
 
   // Set the dependent node connectivity and weights
   // -----------------------------------------------
-  void setDependentNodes(int num_dep_nodes, const int *_dep_node_ptr,
-                         const int *_dep_node_conn,
-                         const double *_dep_node_weights);
+  void setDependentNodes(int num_dep_nodes, const int* _dep_node_ptr,
+                         const int* _dep_node_conn,
+                         const double* _dep_node_weights);
 
   // Set the nodal locations
   // -----------------------
-  void setNodes(const TacsScalar *_Xpts);
+  void setNodes(const TacsScalar* _Xpts);
 
   // Set the type of ordering to use
   // -------------------------------
@@ -77,37 +77,37 @@ class TACSCreator : public TACSObject {
 
   // Partition the mesh
   // ------------------
-  void partitionMesh(int split_size = 0, const int *part = NULL);
+  void partitionMesh(int split_size = 0, const int* part = NULL);
 
   // Set the elements into TACS creator
   // ----------------------------------
-  void setElements(int _num_elems, TACSElement **_elements);
-  void setElementCreator(TACSElement *(*func)(int, int));
+  void setElements(int _num_elems, TACSElement** _elements);
+  void setElementCreator(TACSElement* (*func)(int, int));
 
   // Create the TACSAssembler object
   // -------------------------------
-  TACSAssembler *createTACS();
+  TACSAssembler* createTACS();
 
   // Get local element numbers with the given set of element-id numbers
   // ------------------------------------------------------------------
-  int getElementIdNums(int num_ids, int *ids, int **elem_nums);
+  int getElementIdNums(int num_ids, int* ids, int** elem_nums);
 
   // Convert from the list of nodes from the original serial ordering
   // ----------------------------------------------------------------
-  void getAssemblerNodeNums(TACSAssembler *tacs, int num_orig_nodes,
-                            const int *orig_nodes, int *num_dist_nodes,
-                            int **new_nodes);
+  void getAssemblerNodeNums(TACSAssembler* tacs, int num_orig_nodes,
+                            const int* orig_nodes, int* num_dist_nodes,
+                            int** new_nodes);
 
   // Get the new node numbers and element partition on the root proc
   // ---------------------------------------------------------------
-  int getNodeNums(const int **_new_nodes);
-  int getElementPartition(const int **_partition);
-  void getNumOwnedNodes(int **_owned_nodes);
-  void getNumOwnedElements(int **_owned_elements);
+  int getNodeNums(const int** _new_nodes);
+  int getElementPartition(const int** _partition);
+  void getNumOwnedNodes(int** _owned_nodes);
+  void getNumOwnedElements(int** _owned_elements);
 
  private:
   // The magic element-generator function pointer
-  TACSElement *(*element_creator)(int local, int elem_id);
+  TACSElement* (*element_creator)(int local, int elem_id);
 
   // Set the type of reordering to use
   int use_reordering;
@@ -127,38 +127,38 @@ class TACSCreator : public TACSObject {
   // The dependent node data, connectivity and weights
   int num_dependent_nodes;
   int *dep_node_ptr, *dep_node_conn;
-  double *dep_node_weights;
+  double* dep_node_weights;
 
   // The element connectivity
   int *elem_node_ptr, *elem_node_conn;
 
   // Unique global element identifier
-  int *elem_id_nums;
+  int* elem_id_nums;
 
   // Boundary conditions
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
-  TacsScalar *bc_vals;
+  TacsScalar* bc_vals;
 
   // The node locations
-  TacsScalar *Xpts;
+  TacsScalar* Xpts;
 
   // Elements and the corresponding element id numbers
   int num_elem_ids;
-  TACSElement **elements;
+  TACSElement** elements;
 
   // Keep the number of owned nodes/elements
   int *owned_nodes, *owned_elements;
 
   // The new node numbers for the independent nodes
-  int *new_nodes;
+  int* new_nodes;
 
   // The element partition
-  int *partition;
+  int* partition;
 
   // Local information about the partitioned mesh
   int num_owned_elements, num_owned_nodes;
-  int *local_elem_id_nums;
+  int* local_elem_id_nums;
 };
 
 #endif  // TACS_CREATOR_H

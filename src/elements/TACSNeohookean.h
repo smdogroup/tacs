@@ -40,7 +40,7 @@ class TACSNeohookean3D : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                             int *Jac_nnz, const int *Jac_pairs[]);
+                             int* Jac_nnz, const int* Jac_pairs[]);
 
   /**
     Evaluate the derivatives of the weak form coefficients
@@ -57,7 +57,7 @@ class TACSNeohookean3D : public TACSElementModel {
   void getOutputData(int elemIndex, const double time, ElementType etype,
                      int write_flag, const double pt[], const TacsScalar X[],
                      const TacsScalar Ut[], const TacsScalar Ux[], int ld_data,
-                     TacsScalar *data);
+                     TacsScalar* data);
 
  private:
   // Store the coefficients
@@ -67,13 +67,13 @@ class TACSNeohookean3D : public TACSElementModel {
   TacsScalar evalStrainEnergy(TacsScalar I1, TacsScalar J) {
     return C1 * (I1 - 3.0 - 2.0 * log(J)) + D1 * (J - 1.0) * (J - 1.0);
   }
-  void evalStrainEnergyDeriv(TacsScalar I1, TacsScalar J, TacsScalar *dI1,
-                             TacsScalar *dJ) {
+  void evalStrainEnergyDeriv(TacsScalar I1, TacsScalar J, TacsScalar* dI1,
+                             TacsScalar* dJ) {
     *dI1 = C1;
     *dJ = -2.0 * C1 / J + 2.0 * D1 * (J - 1.0);
   }
-  void evalStrainEnergy2ndDeriv(TacsScalar I1, TacsScalar J, TacsScalar *dI1,
-                                TacsScalar *dJ, TacsScalar *dIJ) {
+  void evalStrainEnergy2ndDeriv(TacsScalar I1, TacsScalar J, TacsScalar* dI1,
+                                TacsScalar* dJ, TacsScalar* dIJ) {
     *dI1 = 0.0;
     *dJ = 2.0 * C1 / (J * J) + 2.0 * D1;
     *dIJ = 0.0;

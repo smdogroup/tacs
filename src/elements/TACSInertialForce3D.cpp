@@ -17,8 +17,8 @@
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D(int _varsPerNode,
-                                         TACSConstitutive *_con,
-                                         TACSElementBasis *_basis,
+                                         TACSConstitutive* _con,
+                                         TACSElementBasis* _basis,
                                          const TacsScalar _inertiaVec[]) {
   varsPerNode = _varsPerNode;
   con = _con;
@@ -33,7 +33,7 @@ TACSInertialForce3D::~TACSInertialForce3D() {
   basis->decref();
 }
 
-const char *TACSInertialForce3D::getObjectName() {
+const char* TACSInertialForce3D::getObjectName() {
   return "TACSInertialForce3D";
 }
 
@@ -46,7 +46,7 @@ ElementLayout TACSInertialForce3D::getLayoutType() {
   return basis->getLayoutType();
 }
 
-TACSElementBasis *TACSInertialForce3D::getElementBasis() { return basis; }
+TACSElementBasis* TACSInertialForce3D::getElementBasis() { return basis; }
 
 int TACSInertialForce3D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -97,8 +97,8 @@ int TACSInertialForce3D::getDesignVarRange(int elemIndex, int dvLen,
   Add the residual to the provided vector
 */
 void TACSInertialForce3D::addResidual(
-    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
-    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
+    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
+    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 
@@ -139,11 +139,11 @@ void TACSInertialForce3D::addResidual(
 */
 void TACSInertialForce3D::addJacobian(int elemIndex, double time,
                                       TacsScalar alpha, TacsScalar beta,
-                                      TacsScalar gamma, const TacsScalar *Xpts,
-                                      const TacsScalar *vars,
-                                      const TacsScalar *dvars,
-                                      const TacsScalar *ddvars, TacsScalar *res,
-                                      TacsScalar *mat) {
+                                      TacsScalar gamma, const TacsScalar* Xpts,
+                                      const TacsScalar* vars,
+                                      const TacsScalar* dvars,
+                                      const TacsScalar* ddvars, TacsScalar* res,
+                                      TacsScalar* mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
 

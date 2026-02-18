@@ -35,7 +35,7 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                             TacsScalar rhoIyz, TacsScalar EA, TacsScalar GJ,
                             TacsScalar EIy, TacsScalar EIz, TacsScalar kGAy,
                             TacsScalar kGAz);
-  TACSBasicBeamConstitutive(TACSMaterialProperties *properties, TacsScalar A,
+  TACSBasicBeamConstitutive(TACSMaterialProperties* properties, TacsScalar A,
                             TacsScalar J, TacsScalar Iy, TacsScalar Iz,
                             TacsScalar Iyz, TacsScalar ky = 5.0 / 6.0,
                             TacsScalar kz = 5.0 / 6.0);
@@ -111,7 +111,7 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   }
 
   // The name of the constitutive object
-  const char *getObjectName();
+  const char* getObjectName();
 
  private:
   // The constitutive matrix
@@ -121,10 +121,10 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar rho[6];
 
   // Material properties class
-  TACSMaterialProperties *props;
+  TACSMaterialProperties* props;
 
   // The object name
-  static const char *constName;
+  static const char* constName;
 };
 
 #endif  // TACS_BASIC_BEAM_CONSTITUTIVE_H

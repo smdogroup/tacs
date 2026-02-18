@@ -14,6 +14,6 @@
 
 #include "TACSBeamConstitutive.h"
 
-const char *TACSBeamConstitutive::constName = "TACSBeamConstitutive";
+const char* TACSBeamConstitutive::constName = "TACSBeamConstitutive";
 
-const char *TACSBeamConstitutive::getObjectName() { return constName; }
+const char* TACSBeamConstitutive::getObjectName() { return constName; }

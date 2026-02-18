@@ -21,18 +21,18 @@
 #include "TACSElementAlgebra.h"
 #include "TacsUtilities.h"
 
-const char *TACSSmearedCompositeShellConstitutive::constName =
+const char* TACSSmearedCompositeShellConstitutive::constName =
     "TACSSmearedCompositeShellConstitutive";
 
 /*
   Create the shell constitutive
 */
 TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
-    int _num_plies, TACSOrthotropicPly **_ply_props, TacsScalar _thickness,
-    const TacsScalar *_ply_angles, const TacsScalar *_ply_fractions,
-    int _thickness_dv_num, const int *_ply_fraction_dv_nums,
+    int _num_plies, TACSOrthotropicPly** _ply_props, TacsScalar _thickness,
+    const TacsScalar* _ply_angles, const TacsScalar* _ply_fractions,
+    int _thickness_dv_num, const int* _ply_fraction_dv_nums,
     TacsScalar _thickness_lb, TacsScalar _thickness_ub,
-    const TacsScalar *_ply_fraction_lb, const TacsScalar *_ply_fraction_ub,
+    const TacsScalar* _ply_fraction_lb, const TacsScalar* _ply_fraction_ub,
     TacsScalar _t_offset) {
   num_plies = _num_plies;
 
@@ -48,7 +48,7 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   ply_angles = new TacsScalar[num_plies];
   ply_fraction_lb = new TacsScalar[num_plies];
   ply_fraction_ub = new TacsScalar[num_plies];
-  ply_props = new TACSOrthotropicPly *[num_plies];
+  ply_props = new TACSOrthotropicPly*[num_plies];
 
   for (int i = 0; i < num_plies; i++) {
     ply_props[i] = _ply_props[i];
@@ -81,7 +81,7 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   nfvals = 2 * num_plies;
   fvals = new TacsScalar[nfvals];
   dks_vals = new TacsScalar[nfvals];
-  dfvals = new TacsScalar *[nfvals];
+  dfvals = new TacsScalar*[nfvals];
   for (int i = 0; i < nfvals; i++) {
     dfvals[i] = new TacsScalar[NUM_STRESSES];
   }
@@ -544,10 +544,10 @@ void TACSSmearedCompositeShellConstitutive::getLaminaStrain(
 // Evaluate the tangent stiffness
 void TACSSmearedCompositeShellConstitutive::evalTangentStiffness(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[]) {
-  TacsScalar *A = &C[0];
-  TacsScalar *B = &C[6];
-  TacsScalar *D = &C[12];
-  TacsScalar *As = &C[18];
+  TacsScalar* A = &C[0];
+  TacsScalar* B = &C[6];
+  TacsScalar* D = &C[12];
+  TacsScalar* As = &C[18];
 
   C[21] = evalFSDTStiffness(elemIndex, pt, X, A, B, D, As);
 }
@@ -578,7 +578,7 @@ void TACSSmearedCompositeShellConstitutive::evalTangentHeatFlux(
 /*
   Return the constitutive name
 */
-const char *TACSSmearedCompositeShellConstitutive::getObjectName() {
+const char* TACSSmearedCompositeShellConstitutive::getObjectName() {
   return constName;
 }
 
@@ -593,7 +593,7 @@ TacsScalar TACSSmearedCompositeShellConstitutive::getLaminateThickness() {
   Get ply angles
 */
 void TACSSmearedCompositeShellConstitutive::getPlyAngles(
-    TacsScalar *_ply_angles) {
+    TacsScalar* _ply_angles) {
   for (int i = 0; i < num_plies; i++) {
     _ply_angles[i] = ply_angles[i];
   }
@@ -603,7 +603,7 @@ void TACSSmearedCompositeShellConstitutive::getPlyAngles(
   Get ply angles
 */
 void TACSSmearedCompositeShellConstitutive::getPlyFractions(
-    TacsScalar *_ply_fractions) {
+    TacsScalar* _ply_fractions) {
   for (int i = 0; i < num_plies; i++) {
     _ply_fractions[i] = ply_fractions[i];
   }

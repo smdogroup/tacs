@@ -16,13 +16,13 @@
 
 #include "FElibrary.h"
 
-PlaneStressTri6::PlaneStressTri6(PlaneStressStiffness *_stiff,
+PlaneStressTri6::PlaneStressTri6(PlaneStressStiffness* _stiff,
                                  ElementBehaviorType type, int _componentNum)
     : TACS2DElement<6>(_stiff, type, _componentNum) {}
 
 PlaneStressTri6::~PlaneStressTri6() {}
 
-const char *PlaneStressTri6::elemName = "PlaneStressTri6";
+const char* PlaneStressTri6::elemName = "PlaneStressTri6";
 
 /*
   Evaluates the shape function at pt = [xi, eta], and its derivatives
@@ -106,7 +106,7 @@ double PlaneStressTri6::getGaussWtsPts(const int num, double pt[]) {
   Get the number of elemens/nodes and CSR size of the contributed by
   this element.
 */
-void PlaneStressTri6::addOutputCount(int *nelems, int *nnodes, int *ncsr) {
+void PlaneStressTri6::addOutputCount(int* nelems, int* nnodes, int* ncsr) {
   *nelems += 3;
   *nnodes += 6;
   *ncsr += 12;
@@ -133,7 +133,7 @@ void PlaneStressTri6::addOutputCount(int *nelems, int *nnodes, int *ncsr) {
   vars:     the element variables
   Xpts:     the element nodal locations
 */
-void PlaneStressTri6::getOutputData(unsigned int out_type, double *data,
+void PlaneStressTri6::getOutputData(unsigned int out_type, double* data,
                                     int ld_data, const TacsScalar Xpts[],
                                     const TacsScalar vars[]) {
   // Set the nodal parametric coordinates
@@ -221,7 +221,7 @@ void PlaneStressTri6::getOutputData(unsigned int out_type, double *data,
   node:  the node offset number - so that this connectivity is more or
   less global
 */
-void PlaneStressTri6::getOutputConnectivity(int *con, int node) {
+void PlaneStressTri6::getOutputConnectivity(int* con, int node) {
   con[0] = node;
   con[1] = node + 3;
   con[2] = node + 4;

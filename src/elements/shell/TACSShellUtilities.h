@@ -648,7 +648,7 @@ void TacsShellAddDispGradHessian(const double pt[], const TacsScalar T[],
 */
 template <int vars_per_node, int offset, class basis, class director,
           class model>
-void TacsShellComputeDrillStrain(TACSShellTransform *transform,
+void TacsShellComputeDrillStrain(TACSShellTransform* transform,
                                  const TacsScalar Xdn[], const TacsScalar fn[],
                                  const TacsScalar vars[], TacsScalar XdinvTn[],
                                  TacsScalar Tn[], TacsScalar u0xn[],
@@ -709,7 +709,7 @@ void TacsShellComputeDrillStrain(TACSShellTransform *transform,
 template <int vars_per_node, int offset, class basis, class director,
           class model>
 void TacsShellComputeDrillStrainDeriv(
-    TACSShellTransform *transform, const TacsScalar Xdn[],
+    TACSShellTransform* transform, const TacsScalar Xdn[],
     const TacsScalar fn[], const TacsScalar vars[], const TacsScalar varsd[],
     TacsScalar XdinvTn[], TacsScalar Tn[], TacsScalar u0xn[], TacsScalar Ctn[],
     TacsScalar etn[], TacsScalar etnd[]) {
@@ -850,7 +850,7 @@ void TacsShellAddDrillStrainHessian(
 
   for (int i = 0; i < num_nodes; i++) {
     // Set the
-    TacsScalar *t = &drot[i * size];
+    TacsScalar* t = &drot[i * size];
 
     // Get the node location
     double pt[2];
@@ -885,7 +885,7 @@ void TacsShellAddDrillStrainHessian(
   // Add the contribution to the residual from the drilling rotation
   if (res) {
     for (int i = 0; i < num_nodes; i++) {
-      const TacsScalar *t = &drot[i * size];
+      const TacsScalar* t = &drot[i * size];
       for (int j = 0; j < size; j++) {
         res[j] += detn[i] * t[j];
       }
@@ -900,13 +900,13 @@ void TacsShellAddDrillStrainHessian(
         size * sizeof(TacsScalar));  // *const TacsScalar *t1 = &drot[i*size];
 
     for (int j = 0; j < num_nodes; j++) {
-      const TacsScalar *t1 = &drot[j * size];
+      const TacsScalar* t1 = &drot[j * size];
       for (int ii = 0; ii < size; ii++) {
         t[ii] += d2etn[i * num_nodes + j] * t1[ii];
       }
     }
 
-    const TacsScalar *t2 = &drot[i * size];
+    const TacsScalar* t2 = &drot[i * size];
     for (int ii = 0; ii < size; ii++) {
       for (int jj = 0; jj < size; jj++) {
         mat[ii * size + jj] += t[ii] * t2[jj];

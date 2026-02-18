@@ -131,10 +131,10 @@ TACSPanelAnalysis::TACSPanelAnalysis(int _nnodes, int _nsegments, int _nbeams,
   }
 
   Xpts = new TacsScalar[2 * nnodes];
-  panels = new FSDTStiffness *[nsegments];
+  panels = new FSDTStiffness*[nsegments];
   nodes = new int[2 * nsegments];
 
-  beams = new EBStiffness *[nbeams];
+  beams = new EBStiffness*[nbeams];
   bnodes = new int[nbeams];
 
   segmentType = new int[nsegments];
@@ -177,8 +177,8 @@ TACSPanelAnalysis::TACSPanelAnalysis(int _nnodes, int _nsegments, int _nbeams,
   first_node_bc = (4 | 8);
   last_node_bc = (4 | 8);
 
-  memset(panels, 0, nsegments * sizeof(FSDTStiffness *));
-  memset(beams, 0, nbeams * sizeof(EBStiffness *));
+  memset(panels, 0, nsegments * sizeof(FSDTStiffness*));
+  memset(beams, 0, nbeams * sizeof(EBStiffness*));
   memset(Xpts, 0, 2 * nnodes * sizeof(TacsScalar));
 
   // 4*nmodes variables for each node
@@ -262,7 +262,7 @@ void TACSPanelAnalysis::setLanczosSubspaceSize(int subspace_size) {
   Xpts:    the nodal locatiosn
   npoints: the number of points in the y-z plane
 */
-void TACSPanelAnalysis::setPoints(TacsScalar *_Xpts, int npoints) {
+void TACSPanelAnalysis::setPoints(TacsScalar* _Xpts, int npoints) {
   memcpy(Xpts, _Xpts, 2 * nnodes * sizeof(TacsScalar));
 }
 
@@ -275,7 +275,7 @@ void TACSPanelAnalysis::setPoints(TacsScalar *_Xpts, int npoints) {
   stiff:    the constitutive object for this segment
   n1, n2:   the start and end nodes for this segment
 */
-void TACSPanelAnalysis::setSegment(int seg, int seg_type, FSDTStiffness *stiff,
+void TACSPanelAnalysis::setSegment(int seg, int seg_type, FSDTStiffness* stiff,
                                    int n1, int n2) {
   if (seg >= 0 && seg < nsegments) {
     if (stiff) {
@@ -299,7 +299,7 @@ void TACSPanelAnalysis::setSegment(int seg, int seg_type, FSDTStiffness *stiff,
   stiff: the stiffness object associated with the beam
   n:     the node number at which to place the beam
 */
-void TACSPanelAnalysis::setBeam(int beam, EBStiffness *stiff, int n) {
+void TACSPanelAnalysis::setBeam(int beam, EBStiffness* stiff, int n) {
   if (beam >= 0 && beam < nbeams) {
     if (stiff) {
       stiff->incref();
@@ -366,10 +366,10 @@ void TACSPanelAnalysis::setLastNodeBC(int _last_node, int _last_node_bc) {
   dvNums:    the geometric design variable numbers
   nDvGeo:    the number of geometric design variables
 */
-void TACSPanelAnalysis::setGeoDesignDependence(TacsScalar *_XptConst,
-                                               TacsScalar *_XptLin,
-                                               TacsScalar *_geoDvs,
-                                               int *_dvNums, int _nDvGeo) {
+void TACSPanelAnalysis::setGeoDesignDependence(TacsScalar* _XptConst,
+                                               TacsScalar* _XptLin,
+                                               TacsScalar* _geoDvs,
+                                               int* _dvNums, int _nDvGeo) {
   if (!XptConst) {
     nDvGeo = _nDvGeo;
     geoDvNums = new int[nDvGeo];
@@ -395,7 +395,7 @@ void TACSPanelAnalysis::setGeoDesignDependence(TacsScalar *_XptConst,
   input:
   lb, ub:  the lower/upper bounds on the geometric design variables
 */
-void TACSPanelAnalysis::setGeoDVBounds(TacsScalar *lb, TacsScalar *ub) {
+void TACSPanelAnalysis::setGeoDVBounds(TacsScalar* lb, TacsScalar* ub) {
   if (!geoLb || !geoUb) {
     geoLb = new TacsScalar[nDvGeo];
     geoUb = new TacsScalar[nDvGeo];
@@ -441,9 +441,9 @@ void TACSPanelAnalysis::setLxDvBounds(int _LxDvNum, TacsScalar _LxLb,
 void TACSPanelAnalysis::initialize() {
   // Perform a Cuthill McKee reordering of the nodes to minimize
   // the bandwidth of the matrix
-  int *work = new int[2 * nnodes];
-  int *node_order = &work[0];
-  int *node_flag = &work[nnodes];
+  int* work = new int[2 * nnodes];
+  int* node_order = &work[0];
+  int* node_flag = &work[nnodes];
 
   for (int k = 0; k < nnodes; k++) {
     node_order[k] = -1;
@@ -1366,9 +1366,9 @@ void TACSPanelAnalysis::computeStiffnessDVSens( int dvNum,
   eigvecs: the k (or 2*k if (lm == True)) converged eigenvectors
 */
 int TACSPanelAnalysis::computeEigenvalues(
-    int lm, const char *auplo, const char *buplo, int n, int ka, TacsScalar *A,
-    int lda, int kb, TacsScalar *B, int ldb, int k, int m, TacsScalar *work,
-    double tol, TacsScalar *eigs, TacsScalar *eigvecs) {
+    int lm, const char* auplo, const char* buplo, int n, int ka, TacsScalar* A,
+    int lda, int kb, TacsScalar* B, int ldb, int k, int m, TacsScalar* work,
+    double tol, TacsScalar* eigs, TacsScalar* eigvecs) {
   if (k >= m || (lm && 2 * k >= m)) {
     fprintf(stderr,
             "TACSPanelAnalysis: Error, Lanczos method \
@@ -1388,17 +1388,17 @@ factorizaiton failed: %d\n",
   }
 
   // Set up the data that we will be accessing
-  TacsScalar *V = work;                          // (m+1)*n locations
-  TacsScalar *tmp = &work[n * (m + 1)];          // n locations
-  TacsScalar *diag = &work[n * (m + 2)];         // m locations
-  TacsScalar *subdiag = &work[n * (m + 2) + m];  // m locations
+  TacsScalar* V = work;                          // (m+1)*n locations
+  TacsScalar* tmp = &work[n * (m + 1)];          // n locations
+  TacsScalar* diag = &work[n * (m + 2)];         // m locations
+  TacsScalar* subdiag = &work[n * (m + 2) + m];  // m locations
 
   // Keep track of how many eigenvalues have converged
   int nconv = 0, npconv = 0;
 
   // Randomly generate an initial vector that will be used
   // as the starting point to generate the Lanczos basis
-  TacsScalar *v0 = &V[0];
+  TacsScalar* v0 = &V[0];
   for (int i = 0; i < n; i++) {
     v0[i] = -1.0 + 2.0 * rand() / RAND_MAX;
   }
@@ -1471,8 +1471,8 @@ factorizaiton failed: %d\n",
     }
 
     // Set pointers to the required data
-    TacsScalar *Z = &work[n * (m + 2) + 2 * m];          // m*m locations
-    TacsScalar *W = &work[n * (m + 2) + 2 * m + m * m];  // 2*m locations
+    TacsScalar* Z = &work[n * (m + 2) + 2 * m];          // m*m locations
+    TacsScalar* W = &work[n * (m + 2) + 2 * m + m * m];  // 2*m locations
 
     // Compute full eigenvalue spectrum
     int ldz = m, vinfo;
@@ -1592,7 +1592,7 @@ did not converge to zero\n",
 
       // Pick a new starting Lanczos vector that is a linear
       // combination of the remaining eigenvalues
-      TacsScalar *v0 = &V[n * nev];
+      TacsScalar* v0 = &V[n * nev];
 
       // Normalize the Lanczos vector
       vnrm = BLASnrm2(&n, v0, &incx);
@@ -1618,12 +1618,12 @@ did not converge to zero\n",
   K*x = f
 */
 int TACSPanelAnalysis::computePressureLoad(TacsScalar p,
-                                           const char *file_name) {
+                                           const char* file_name) {
   double pt[3] = {0.0, 0.0, 0.0};
 
   int nentries = (nband + 1) * nvars;
-  TacsScalar *K = new TacsScalar[nentries];
-  TacsScalar *f = new TacsScalar[nvars];
+  TacsScalar* K = new TacsScalar[nentries];
+  TacsScalar* f = new TacsScalar[nvars];
 
   memset(K, 0, nentries * sizeof(TacsScalar));
   memset(f, 0, nvars * sizeof(TacsScalar));
@@ -1689,14 +1689,14 @@ int TACSPanelAnalysis::computePressureLoad(TacsScalar p,
 */
 int TACSPanelAnalysis::computeBucklingLoads(TacsScalar Nx, TacsScalar Nxy,
                                             TacsScalar loads[], int nloads,
-                                            const char *prefix) {
+                                            const char* prefix) {
   // Allocate space for the eigenvalues and eigenvectors
-  TacsScalar *eigvals = new TacsScalar[nloads];
-  TacsScalar *eigvecs = new TacsScalar[nloads * nvars];
+  TacsScalar* eigvals = new TacsScalar[nloads];
+  TacsScalar* eigvecs = new TacsScalar[nloads * nvars];
 
   // Allocate space for the segment loads
-  TacsScalar *segmentLoads = new TacsScalar[3 * nsegments];
-  TacsScalar *beamLoads = new TacsScalar[nbeams];
+  TacsScalar* segmentLoads = new TacsScalar[3 * nsegments];
+  TacsScalar* beamLoads = new TacsScalar[nbeams];
 
   // Compute the segment loads
   computeSegmentLoads(Nx, Nxy, segmentLoads, beamLoads);
@@ -1714,7 +1714,7 @@ int TACSPanelAnalysis::computeBucklingLoads(TacsScalar Nx, TacsScalar Nxy,
   // Print out the buckling modes
   if (prefix) {
     int file_len = strlen(prefix) + 81;
-    char *file_name = new char[file_len];
+    char* file_name = new char[file_len];
 
     for (int i = 0; i < nloads; i++) {
       snprintf(file_name, file_len, "%sbuckling_mode%02d.dat", prefix, i);
@@ -1756,12 +1756,12 @@ int TACSPanelAnalysis::computeBucklingLoads(TacsScalar Nxy,
   TacsScalar Nx = 0.0;
 
   // Allocate space for the eigenvalues and eigenvectors
-  TacsScalar *eigvals = new TacsScalar[2 * nloads];
-  TacsScalar *eigvecs = new TacsScalar[2 * nvars * nloads];
+  TacsScalar* eigvals = new TacsScalar[2 * nloads];
+  TacsScalar* eigvecs = new TacsScalar[2 * nvars * nloads];
 
   // Allocate space for the segment loads
-  TacsScalar *segmentLoads = new TacsScalar[3 * nsegments];
-  TacsScalar *beamLoads = new TacsScalar[nbeams];
+  TacsScalar* segmentLoads = new TacsScalar[3 * nsegments];
+  TacsScalar* beamLoads = new TacsScalar[nbeams];
 
   // Compute the segment loads in the segments and beams
   computeSegmentLoads(Nx, Nxy, segmentLoads, beamLoads);
@@ -1827,8 +1827,8 @@ int TACSPanelAnalysis::computeBucklingLoads(const TacsScalar segmentLoads[],
   // G: the geometric stiffness matrix
   int nentries = (nband + 1) * nvars;
 
-  TacsScalar *K = new TacsScalar[nentries];
-  TacsScalar *G = new TacsScalar[nentries];
+  TacsScalar* K = new TacsScalar[nentries];
+  TacsScalar* G = new TacsScalar[nentries];
 
   memset(K, 0, nentries * sizeof(TacsScalar));
   memset(G, 0, nentries * sizeof(TacsScalar));
@@ -1860,9 +1860,9 @@ int TACSPanelAnalysis::computeBucklingLoads(const TacsScalar segmentLoads[],
     int ldk = nband + 1, ldg = nband + 1;
 
     // Allocate space for the matrices required
-    TacsScalar *eigs = new TacsScalar[nvars];
-    TacsScalar *Z = new TacsScalar[nvars * nvars];
-    TacsScalar *work = new TacsScalar[3 * nvars];
+    TacsScalar* eigs = new TacsScalar[nvars];
+    TacsScalar* Z = new TacsScalar[nvars * nvars];
+    TacsScalar* work = new TacsScalar[3 * nvars];
 
     LAPACKdsbgv("V", "U", &nvars, &nband, &nband, G, &ldg, K, &ldk, eigs, Z,
                 &ldz, work, &info);
@@ -1898,7 +1898,7 @@ positive definite\n");
     int m = lanczos_subspace_size;
     double tol = lanczos_eigen_tol;
     int lwork = nvars * (m + 2) + m * m + 4 * m;
-    TacsScalar *work = new TacsScalar[lwork];
+    TacsScalar* work = new TacsScalar[lwork];
 
     info = computeEigenvalues(two_sided, "U", "U", nvars, nband, G, nband + 1,
                               nband, K, nband + 1, neigs, m, work, tol, eigvals,
@@ -2162,8 +2162,8 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
   eigenvalues of the modal decomposition problem.
 */
 int TACSPanelAnalysis::computeFrequencies(TacsScalar freq[], int nfreq,
-                                          const char *prefix) {
-  TacsScalar *eigvecs = new TacsScalar[nvars * nfreq];
+                                          const char* prefix) {
+  TacsScalar* eigvecs = new TacsScalar[nvars * nfreq];
 
   int info = computeFrequencies(nfreq, freq, eigvecs);
 
@@ -2173,7 +2173,7 @@ int TACSPanelAnalysis::computeFrequencies(TacsScalar freq[], int nfreq,
 
   if (prefix) {
     int file_len = strlen(prefix) + 81;
-    char *file_name = new char[file_len];
+    char* file_name = new char[file_len];
 
     for (int i = 0; i < nfreq; i++) {
       snprintf(file_name, sizeof(file_name), "%spanel_mode%02d.dat", prefix, i);
@@ -2206,8 +2206,8 @@ int TACSPanelAnalysis::computeFrequencies(int neigs, TacsScalar eigvals[],
   // M: the mass matrix
   int nentries = (nband + 1) * nvars;
 
-  TacsScalar *K = new TacsScalar[nentries];
-  TacsScalar *M = new TacsScalar[nentries];
+  TacsScalar* K = new TacsScalar[nentries];
+  TacsScalar* M = new TacsScalar[nentries];
 
   memset(K, 0, nentries * sizeof(TacsScalar));
   memset(M, 0, nentries * sizeof(TacsScalar));
@@ -2248,9 +2248,9 @@ int TACSPanelAnalysis::computeFrequencies(int neigs, TacsScalar eigvals[],
     int ldk = nband + 1, ldm = nband + 1;
 
     // Allocate space for the solution
-    TacsScalar *eigs = new TacsScalar[nvars];
-    TacsScalar *Z = new TacsScalar[nvars * nvars];
-    TacsScalar *work = new TacsScalar[3 * nvars];
+    TacsScalar* eigs = new TacsScalar[nvars];
+    TacsScalar* Z = new TacsScalar[nvars * nvars];
+    TacsScalar* work = new TacsScalar[3 * nvars];
 
     LAPACKdsbgv("V", "U", &nvars, &nband, &nband, K, &ldk, M, &ldm, eigs, Z,
                 &nvars, work, &info);
@@ -2278,7 +2278,7 @@ int TACSPanelAnalysis::computeFrequencies(int neigs, TacsScalar eigvals[],
     int m = lanczos_subspace_size;
     double tol = lanczos_eigen_tol;
     int lwork = nvars * (m + 2) + m * m + 4 * m;
-    TacsScalar *work = new TacsScalar[lwork];
+    TacsScalar* work = new TacsScalar[lwork];
     int two_sided = 0;
 
     info = computeEigenvalues(two_sided, "U", "U", nvars, nband, K, nband + 1,
@@ -5351,8 +5351,8 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens(TacsScalar Nx,
   x:          the variables
   nx:         the level of the discretization in the x-direction
 */
-void TACSPanelAnalysis::printPanelMode(const char *file_name,
-                                       const TacsScalar *x, int nx) {
+void TACSPanelAnalysis::printPanelMode(const char* file_name,
+                                       const TacsScalar* x, int nx) {
   // Go through each segment and plot the
   int ns = 5;  // Number of segments per panel to use
 
@@ -5362,11 +5362,11 @@ void TACSPanelAnalysis::printPanelMode(const char *file_name,
   double N[NUM_NODES], Na[NUM_NODES];
   double Nhp[2 * NUM_NODES], Nahp[2 * NUM_NODES], Naahp[2 * NUM_NODES];
 
-  FILE *fp = fopen(file_name, "w");
+  FILE* fp = fopen(file_name, "w");
   if (fp) {
-    TacsScalar *local_vars = new TacsScalar[8 * nmodes];
-    TacsScalar *v1 = &local_vars[0];
-    TacsScalar *v2 = &local_vars[4 * nmodes];
+    TacsScalar* local_vars = new TacsScalar[8 * nmodes];
+    TacsScalar* v1 = &local_vars[0];
+    TacsScalar* v2 = &local_vars[4 * nmodes];
 
     fprintf(fp, "Variables = x, y, z, u, v, w\n");
     fprintf(fp, "Zone T = Panel, N=%d, E=%d, ", tnodes, telems);

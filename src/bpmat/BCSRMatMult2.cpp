@@ -26,11 +26,11 @@
   Compute the matrix-vector product: y = A * x
 */
 
-void BCSRMatVecMult2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
+void BCSRMatVecMult2(BCSRMatData* data, TacsScalar* x, TacsScalar* y) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const TacsScalar* A = data->A;
 
   for (int i = 0; i < nrows; i++) {
     y[0] = 0.0;
@@ -38,7 +38,7 @@ void BCSRMatVecMult2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 
     int end = rowp[i + 1];
     int k = rowp[i];
-    const TacsScalar *a = &A[4 * k];
+    const TacsScalar* a = &A[4 * k];
     for (; k < end; k++) {
       int bj = 2 * cols[k];
 
@@ -54,12 +54,12 @@ void BCSRMatVecMult2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   Compute the matrix vector product plus addition: z = A * x + y
 */
 
-void BCSRMatVecMultAdd2(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
-                        TacsScalar *z) {
+void BCSRMatVecMultAdd2(BCSRMatData* data, TacsScalar* x, TacsScalar* y,
+                        TacsScalar* z) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const TacsScalar* A = data->A;
 
   for (int i = 0; i < nrows; i++) {
     z[0] = y[0];
@@ -67,7 +67,7 @@ void BCSRMatVecMultAdd2(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
 
     int end = rowp[i + 1];
     int k = rowp[i];
-    const TacsScalar *a = &A[4 * k];
+    const TacsScalar* a = &A[4 * k];
     for (; k < end; k++) {
       int bj = 2 * cols[k];
 
@@ -84,14 +84,14 @@ void BCSRMatVecMultAdd2(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
   Apply the lower factorization y = L^{-1} x
 */
 
-void BCSRMatApplyLower2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
+void BCSRMatApplyLower2(BCSRMatData* data, TacsScalar* x, TacsScalar* y) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const int* diag = data->diag;
+  const TacsScalar* A = data->A;
 
-  TacsScalar *yy = y;
+  TacsScalar* yy = y;
 
   for (int i = 0; i < nrows; i++) {
     yy[0] = x[0];
@@ -99,7 +99,7 @@ void BCSRMatApplyLower2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 
     int end = diag[i];
     int j = rowp[i];
-    const TacsScalar *a = &A[4 * j];
+    const TacsScalar* a = &A[4 * j];
     for (; j < end; j++) {
       int bj = 2 * cols[j];
 
@@ -116,15 +116,15 @@ void BCSRMatApplyLower2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   Apply the upper factorization y = U^{-1} x
 */
 
-void BCSRMatApplyUpper2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
+void BCSRMatApplyUpper2(BCSRMatData* data, TacsScalar* x, TacsScalar* y) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const int* diag = data->diag;
+  const TacsScalar* A = data->A;
 
   TacsScalar y1, y2;
-  TacsScalar *yy = &y[2 * (nrows - 1)];
+  TacsScalar* yy = &y[2 * (nrows - 1)];
   x = &x[2 * (nrows - 1)];
 
   for (int i = nrows - 1; i >= 0; i--) {
@@ -133,7 +133,7 @@ void BCSRMatApplyUpper2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 
     int end = rowp[i + 1];
     int j = diag[i];
-    const TacsScalar *a = &A[4 * j];
+    const TacsScalar* a = &A[4 * j];
     TacsScalar a11, a12, a21, a22;
     a11 = a[0];
     a12 = a[1];
@@ -163,15 +163,15 @@ void BCSRMatApplyUpper2(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
   Apply the lower factorization x = L^{-1} x
 */
 
-void BCSRMatApplyPartialLower2(BCSRMatData *data, TacsScalar *x,
+void BCSRMatApplyPartialLower2(BCSRMatData* data, TacsScalar* x,
                                int var_offset) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const int* diag = data->diag;
+  const TacsScalar* A = data->A;
 
-  TacsScalar *xx = &x[2];
+  TacsScalar* xx = &x[2];
   int off = 2 * var_offset;
 
   for (int i = var_offset + 1; i < nrows; i++) {
@@ -179,7 +179,7 @@ void BCSRMatApplyPartialLower2(BCSRMatData *data, TacsScalar *x,
     int j = rowp[i];
     while (cols[j] < var_offset) j++;
 
-    const TacsScalar *a = &A[4 * j];
+    const TacsScalar* a = &A[4 * j];
     for (; j < end; j++) {
       int bj = 2 * cols[j] - off;
 
@@ -195,18 +195,18 @@ void BCSRMatApplyPartialLower2(BCSRMatData *data, TacsScalar *x,
   Apply the upper factorization y = U^{-1} x
 */
 
-void BCSRMatApplyPartialUpper2(BCSRMatData *data, TacsScalar *x,
+void BCSRMatApplyPartialUpper2(BCSRMatData* data, TacsScalar* x,
                                int var_offset) {
   const int nrows = data->nrows;
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const int* diag = data->diag;
+  const TacsScalar* A = data->A;
 
   TacsScalar y1, y2;
   int off = 2 * var_offset;
 
-  TacsScalar *xx = &x[2 * (nrows - var_offset - 1)];
+  TacsScalar* xx = &x[2 * (nrows - var_offset - 1)];
 
   for (int i = nrows - 1; i >= var_offset; i--) {
     y1 = xx[0];
@@ -214,8 +214,8 @@ void BCSRMatApplyPartialUpper2(BCSRMatData *data, TacsScalar *x,
 
     int end = rowp[i + 1];
     int j = diag[i];
-    const TacsScalar *adiag = &A[4 * j];
-    const TacsScalar *a = adiag;
+    const TacsScalar* adiag = &A[4 * j];
+    const TacsScalar* a = adiag;
     j++;
     a += 4;
 
@@ -247,15 +247,15 @@ void BCSRMatApplyPartialUpper2(BCSRMatData *data, TacsScalar *x,
   where the division is set by the variable var_offset.
 */
 
-void BCSRMatApplyFactorSchur2(BCSRMatData *data, TacsScalar *x,
+void BCSRMatApplyFactorSchur2(BCSRMatData* data, TacsScalar* x,
                               int var_offset) {
-  const int *rowp = data->rowp;
-  const int *cols = data->cols;
-  const int *diag = data->diag;
-  const TacsScalar *A = data->A;
+  const int* rowp = data->rowp;
+  const int* cols = data->cols;
+  const int* diag = data->diag;
+  const TacsScalar* A = data->A;
 
   TacsScalar y1, y2;
-  TacsScalar *xx = &x[2 * (var_offset - 1)];
+  TacsScalar* xx = &x[2 * (var_offset - 1)];
 
   for (int i = var_offset - 1; i >= 0; i--) {
     y1 = xx[0];
@@ -263,8 +263,8 @@ void BCSRMatApplyFactorSchur2(BCSRMatData *data, TacsScalar *x,
 
     int j = diag[i];
     int end = rowp[i + 1];
-    const TacsScalar *adiag = &A[4 * j];
-    const TacsScalar *a = adiag;
+    const TacsScalar* adiag = &A[4 * j];
+    const TacsScalar* a = adiag;
     a += 4;
     j++;
 
@@ -286,37 +286,37 @@ void BCSRMatApplyFactorSchur2(BCSRMatData *data, TacsScalar *x,
   Perform a matrix-matrix multiplication
 */
 
-void BCSRMatMatMultAdd2(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
-                        BCSRMatData *Cdata) {
+void BCSRMatMatMultAdd2(double alpha, BCSRMatData* Adata, BCSRMatData* Bdata,
+                        BCSRMatData* Cdata) {
   // Retrieve the data required from the matrix
   const int nrows_a = Adata->nrows;
-  const int *arowp = Adata->rowp;
-  const int *acols = Adata->cols;
-  const TacsScalar *A = Adata->A;
+  const int* arowp = Adata->rowp;
+  const int* acols = Adata->cols;
+  const TacsScalar* A = Adata->A;
 
-  const int *browp = Bdata->rowp;
-  const int *bcols = Bdata->cols;
-  const TacsScalar *B = Bdata->A;
+  const int* browp = Bdata->rowp;
+  const int* bcols = Bdata->cols;
+  const TacsScalar* B = Bdata->A;
 
   // The matrix being written to
-  const int *crowp = Cdata->rowp;
-  const int *ccols = Cdata->cols;
-  TacsScalar *C = Cdata->A;
+  const int* crowp = Cdata->rowp;
+  const int* ccols = Cdata->cols;
+  TacsScalar* C = Cdata->A;
 
   if (alpha == 1.0) {
     // C_{ik} = A_{ij} B_{jk}
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
-        const TacsScalar *a = &A[4 * jp];
+        const TacsScalar* a = &A[4 * jp];
 
         int kp = browp[j];
         int kp_end = browp[j + 1];
-        const TacsScalar *b = &B[4 * kp];
+        const TacsScalar* b = &B[4 * kp];
 
         int cp = crowp[i];
         int cp_end = crowp[i + 1];
-        TacsScalar *c = &C[4 * cp];
+        TacsScalar* c = &C[4 * cp];
 
         for (; kp < kp_end; kp++) {
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])) {
@@ -344,15 +344,15 @@ void BCSRMatMatMultAdd2(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
-        const TacsScalar *a = &A[4 * jp];
+        const TacsScalar* a = &A[4 * jp];
 
         int kp = browp[j];
         int kp_end = browp[j + 1];
-        const TacsScalar *b = &B[4 * kp];
+        const TacsScalar* b = &B[4 * kp];
 
         int cp = crowp[i];
         int cp_end = crowp[i + 1];
-        TacsScalar *c = &C[4 * cp];
+        TacsScalar* c = &C[4 * cp];
 
         for (; kp < kp_end; kp++) {
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])) {
@@ -380,15 +380,15 @@ void BCSRMatMatMultAdd2(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
-        const TacsScalar *a = &A[4 * jp];
+        const TacsScalar* a = &A[4 * jp];
 
         int kp = browp[j];
         int kp_end = browp[j + 1];
-        const TacsScalar *b = &B[4 * kp];
+        const TacsScalar* b = &B[4 * kp];
 
         int cp = crowp[i];
         int cp_end = crowp[i + 1];
-        TacsScalar *c = &C[4 * cp];
+        TacsScalar* c = &C[4 * cp];
 
         for (; kp < kp_end; kp++) {
           while ((cp < cp_end) && (ccols[cp] < bcols[kp])) {
@@ -417,15 +417,15 @@ void BCSRMatMatMultAdd2(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
 /*!
   Apply a step of SOR to the system A*x = b.
 */
-void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
+void BCSRMatApplySOR2(BCSRMatData* Adata, BCSRMatData* Bdata, const int start,
                       const int end, const int var_offset,
-                      const TacsScalar *Adiag, const TacsScalar omega,
-                      const TacsScalar *b, const TacsScalar *xext,
-                      TacsScalar *x) {
-  const int *Arowp = Adata->rowp;
-  const int *Acols = Adata->cols;
-  const int *Browp = NULL;
-  const int *Bcols = NULL;
+                      const TacsScalar* Adiag, const TacsScalar omega,
+                      const TacsScalar* b, const TacsScalar* xext,
+                      TacsScalar* x) {
+  const int* Arowp = Adata->rowp;
+  const int* Acols = Adata->cols;
+  const int* Browp = NULL;
+  const int* Bcols = NULL;
   if (Bdata) {
     Browp = Bdata->rowp;
     Bcols = Bdata->cols;
@@ -442,14 +442,14 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
       t2 = b[2 * i + 1];
 
       // Set the pointer to the beginning of the current row
-      const TacsScalar *a = &Adata->A[4 * Arowp[i]];
+      const TacsScalar* a = &Adata->A[4 * Arowp[i]];
 
       // Scan through the row and compute the result:
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = Arowp[i + 1];
       for (int k = Arowp[i]; k < end; k++) {
         int j = Acols[k];
-        TacsScalar *y = &x[2 * j];
+        TacsScalar* y = &x[2 * j];
 
         if (i != j) {
           t1 -= a[0] * y[0] + a[1] * y[1];
@@ -468,7 +468,7 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
         end = Browp[row + 1];
         for (int k = Browp[row]; k < end; k++) {
           int j = Bcols[k];
-          const TacsScalar *y = &xext[2 * j];
+          const TacsScalar* y = &xext[2 * j];
 
           t1 -= a[0] * y[0] + a[1] * y[1];
           t2 -= a[2] * y[0] + a[3] * y[1];
@@ -477,7 +477,7 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
       }
 
       // Set a pointer to the inverse of the diagonal
-      const TacsScalar *d = &Adiag[4 * i];
+      const TacsScalar* d = &Adiag[4 * i];
 
       // Compute the first term in the update:
       // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx
@@ -493,14 +493,14 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
       t2 = b[2 * i + 1];
 
       // Set the pointer to the beginning of the current row
-      const TacsScalar *a = &Adata->A[4 * Arowp[i]];
+      const TacsScalar* a = &Adata->A[4 * Arowp[i]];
 
       // Scan through the row and compute the result:
       // tx <- b_i - A_{ij}*x_{j} for j != i
       int end = Arowp[i + 1];
       for (int k = Arowp[i]; k < end; k++) {
         int j = Acols[k];
-        TacsScalar *y = &x[2 * j];
+        TacsScalar* y = &x[2 * j];
 
         if (i != j) {
           t1 -= a[0] * y[0] + a[1] * y[1];
@@ -519,7 +519,7 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
         end = Browp[row + 1];
         for (int k = Browp[row]; k < end; k++) {
           int j = Bcols[k];
-          const TacsScalar *y = &xext[2 * j];
+          const TacsScalar* y = &xext[2 * j];
 
           t1 -= a[0] * y[0] + a[1] * y[1];
           t2 -= a[2] * y[0] + a[3] * y[1];
@@ -528,7 +528,7 @@ void BCSRMatApplySOR2(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
       }
 
       // Set a pointer to the inverse of the diagonal
-      const TacsScalar *d = &Adiag[4 * i];
+      const TacsScalar* d = &Adiag[4 * i];
 
       // Compute the first term in the update:
       // x[i] = (1.0 - omega)*x[i] + omega*D^{-1}tx

@@ -25,8 +25,8 @@
   A generic constructor for the rigid body where the user can directly
   supply the information about the geometry
 */
-TACSRigidBodyViz::TACSRigidBodyViz(int _npts, int _nelems, TacsScalar *_Xpt,
-                                   int _conn[], TACSGibbsVector *vref) {
+TACSRigidBodyViz::TACSRigidBodyViz(int _npts, int _nelems, TacsScalar* _Xpt,
+                                   int _conn[], TACSGibbsVector* vref) {
   init(_npts, _nelems, _Xpt, _conn, vref);
 }
 
@@ -96,8 +96,8 @@ TACSRigidBodyViz::TACSRigidBodyViz(TacsScalar Lx, TacsScalar Ly,
 /*
   Initialize the rigid body mesh
 */
-void TACSRigidBodyViz::init(int _npts, int _nelems, TacsScalar *_Xpt,
-                            int _conn[], TACSGibbsVector *vref) {
+void TACSRigidBodyViz::init(int _npts, int _nelems, TacsScalar* _Xpt,
+                            int _conn[], TACSGibbsVector* vref) {
   // Copy over the inputs
   npts = _npts;
   nelems = _nelems;
@@ -107,7 +107,7 @@ void TACSRigidBodyViz::init(int _npts, int _nelems, TacsScalar *_Xpt,
 
   Xpts = new TacsScalar[npts * 3];
   if (vref) {
-    const TacsScalar *vorig;
+    const TacsScalar* vorig;
     vref->getVector(&vorig);
     for (int i = 0; i < npts; i++) {
       Xpts[i * 3 + 0] = _Xpt[i * 3 + 0] - vorig[0];
@@ -134,8 +134,8 @@ TACSRigidBodyViz::~TACSRigidBodyViz() {
 /*
   Get the mesh for the rigid body
 */
-void TACSRigidBodyViz::getMesh(int *_npts, int *_nelems,
-                               const TacsScalar **_Xpts, const int **_conn) {
+void TACSRigidBodyViz::getMesh(int* _npts, int* _nelems,
+                               const TacsScalar** _Xpts, const int** _conn) {
   if (_npts) {
     *_npts = npts;
   }
@@ -162,8 +162,8 @@ void TACSRigidBodyViz::getMesh(int *_npts, int *_nelems,
   size:       the number of values
   rel_err:    relative error tolerance
 */
-static void writeErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
-                                 TacsScalar *fd, int size,
+static void writeErrorComponents(FILE* fp, const char* descript, TacsScalar* a,
+                                 TacsScalar* fd, int size,
                                  double rel_err = 1e-12) {
   int print_flag = 1;
   for (int i = 0; i < size; i++) {
@@ -206,8 +206,8 @@ static void writeErrorComponents(FILE *fp, const char *descript, TacsScalar *a,
   r1:    (r1 - r0)/||r1 - r0|| forms the first direction
   r2:    direction perpendicular to (r1 - r0) used as second direction
 */
-TACSRefFrame::TACSRefFrame(TACSGibbsVector *_r0, TACSGibbsVector *_r1,
-                           TACSGibbsVector *_r2) {
+TACSRefFrame::TACSRefFrame(TACSGibbsVector* _r0, TACSGibbsVector* _r1,
+                           TACSGibbsVector* _r2) {
   r0 = _r0;
   r1 = _r1;
   r2 = _r2;
@@ -229,7 +229,7 @@ TACSRefFrame::~TACSRefFrame() {
 /*
   Retrieve the rotation matrix from the global to local coordinates
 */
-void TACSRefFrame::getRotation(const TacsScalar **_C) { *_C = C; }
+void TACSRefFrame::getRotation(const TacsScalar** _C) { *_C = C; }
 
 /*
   Update the coordinate frame to reflect any changes to the vectors
@@ -467,8 +467,8 @@ void TACSRefFrame::testRotation(double dh) {
   // Allocate design variable arrays
   int elemIndex = 0;
   int numDVs = getDesignVarNums(0, 0, NULL);
-  TacsScalar *x = new TacsScalar[numDVs];
-  TacsScalar *product = new TacsScalar[numDVs];
+  TacsScalar* x = new TacsScalar[numDVs];
+  TacsScalar* product = new TacsScalar[numDVs];
 
   // Set random values into the psi/phi vectors
   TacsScalar psi[3], phi[3];
@@ -537,11 +537,11 @@ void TACSRefFrame::testRotation(double dh) {
   J:          the symmetric second moment of inertia
   g:          the acceleration due to gravity in the global frame
 */
-TACSRigidBody::TACSRigidBody(TACSRefFrame *_CRef, const TacsScalar _mass,
+TACSRigidBody::TACSRigidBody(TACSRefFrame* _CRef, const TacsScalar _mass,
                              const TacsScalar _cRef[], const TacsScalar _JRef[],
-                             TACSGibbsVector *_rInit, TACSGibbsVector *_vInit,
-                             TACSGibbsVector *_omegaInit,
-                             TACSGibbsVector *_gvec) {
+                             TACSGibbsVector* _rInit, TACSGibbsVector* _vInit,
+                             TACSGibbsVector* _omegaInit,
+                             TACSGibbsVector* _gvec) {
   // Copy over the property values
   mass = _mass;
 
@@ -596,7 +596,7 @@ TACSRigidBody::~TACSRigidBody() {
 }
 
 // Set the element name
-const char *TACSRigidBody::elem_name = "TACSRigidBody";
+const char* TACSRigidBody::elem_name = "TACSRigidBody";
 
 int TACSRigidBody::getVarsPerNode() { return 8; }
 
@@ -678,7 +678,7 @@ int TACSRigidBody::setDesignVars(int elemIndex, int dvLen,
 /*
   Retrieve the design variable numbers
 */
-int TACSRigidBody::getDesignVarNums(int elemIndex, int dvLen, int *dvNums) {
+int TACSRigidBody::getDesignVarNums(int elemIndex, int dvLen, int* dvNums) {
   // Get the mass design variable
   int count = 0;
   if (massDV >= 0 && massDV < dvLen) {
@@ -766,7 +766,7 @@ int TACSRigidBody::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
   inertial properties in the reference frame
 */
 void TACSRigidBody::updateInertialProperties() {
-  const TacsScalar *C;
+  const TacsScalar* C;
   CRef->getRotation(&C);
 
   // Convert the first moment of inertial from the local to the
@@ -826,15 +826,15 @@ void TACSRigidBody::getInitConditions(int elemIndex, const TacsScalar X[],
   vars[3] = 1.0;
 
   // Get the initial position
-  const TacsScalar *r;
+  const TacsScalar* r;
   rInit->getVector(&r);
 
   // Get the initial velocity
-  const TacsScalar *v;
+  const TacsScalar* v;
   vInit->getVector(&v);
 
   // Get the initial angular velocity
-  const TacsScalar *w;
+  const TacsScalar* w;
   omegaInit->getVector(&w);
 
   // Set the initial velocity
@@ -856,7 +856,7 @@ void TACSRigidBody::getInitConditions(int elemIndex, const TacsScalar X[],
 /*
   Retrieve the position of the rigid body
 */
-TACSGibbsVector *TACSRigidBody::getInitPosition() { return rInit; }
+TACSGibbsVector* TACSRigidBody::getInitPosition() { return rInit; }
 
 /*
   Compute the kinematic and potential energies of the rigid body
@@ -885,21 +885,21 @@ TACSGibbsVector *TACSRigidBody::getInitPosition() { return rInit; }
 void TACSRigidBody::computeEnergies(int elemIndex, double time,
                                     const TacsScalar X[],
                                     const TacsScalar vars[],
-                                    const TacsScalar dvars[], TacsScalar *Te,
-                                    TacsScalar *Pe) {
+                                    const TacsScalar dvars[], TacsScalar* Te,
+                                    TacsScalar* Pe) {
   // Get the acceleration due to gravity
-  const TacsScalar *g;
+  const TacsScalar* g;
   gvec->getVector(&g);
 
   // Set the location
-  const TacsScalar *r0 = &vars[0];
-  const TacsScalar *v0 = &dvars[0];
+  const TacsScalar* r0 = &vars[0];
+  const TacsScalar* v0 = &dvars[0];
 
   // Set the pointers to the Euler parameters
   TacsScalar eta = vars[3];
   TacsScalar deta = dvars[3];
-  const TacsScalar *eps = &vars[4];
-  const TacsScalar *deps = &dvars[4];
+  const TacsScalar* eps = &vars[4];
+  const TacsScalar* deps = &dvars[4];
 
   // Compute the rotation matrix
   TacsScalar C[9];
@@ -968,25 +968,25 @@ void TACSRigidBody::computeEnergies(int elemIndex, double time,
   res:     the residual of the governing equations
 */
 void TACSRigidBody::addResidual(int elemIndex, double time,
-                                const TacsScalar *Xpts, const TacsScalar *vars,
-                                const TacsScalar *dvars,
-                                const TacsScalar *ddvars, TacsScalar *res) {
+                                const TacsScalar* Xpts, const TacsScalar* vars,
+                                const TacsScalar* dvars,
+                                const TacsScalar* ddvars, TacsScalar* res) {
   // Get the acceleration due to gravity
-  const TacsScalar *g;
+  const TacsScalar* g;
   gvec->getVector(&g);
 
   // Set the location and its time derivatives
-  const TacsScalar *v0 = &dvars[0];
-  const TacsScalar *a0 = &ddvars[0];
+  const TacsScalar* v0 = &dvars[0];
+  const TacsScalar* a0 = &ddvars[0];
 
   // Set the pointers to the Euler parameters and all their time
   // derivatives
   TacsScalar eta = vars[3];
   TacsScalar deta = dvars[3];
   TacsScalar ddeta = ddvars[3];
-  const TacsScalar *eps = &vars[4];
-  const TacsScalar *deps = &dvars[4];
-  const TacsScalar *ddeps = &ddvars[4];
+  const TacsScalar* eps = &vars[4];
+  const TacsScalar* deps = &dvars[4];
+  const TacsScalar* ddeps = &ddvars[4];
 
   // Compute the rotation matrix
   TacsScalar C[9], dotC[9];
@@ -1060,28 +1060,28 @@ void TACSRigidBody::addResidual(int elemIndex, double time,
 */
 void TACSRigidBody::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                 TacsScalar beta, TacsScalar gamma,
-                                const TacsScalar *Xpts, const TacsScalar *vars,
-                                const TacsScalar *dvars,
-                                const TacsScalar *ddvars, TacsScalar *res,
-                                TacsScalar *mat) {
+                                const TacsScalar* Xpts, const TacsScalar* vars,
+                                const TacsScalar* dvars,
+                                const TacsScalar* ddvars, TacsScalar* res,
+                                TacsScalar* mat) {
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
 
   // Get the acceleration due to gravity
-  const TacsScalar *g;
+  const TacsScalar* g;
   gvec->getVector(&g);
 
   // Set the location and its time derivatives
-  const TacsScalar *v0 = &dvars[0];
-  const TacsScalar *a0 = &ddvars[0];
+  const TacsScalar* v0 = &dvars[0];
+  const TacsScalar* a0 = &ddvars[0];
 
   // Set the pointers to the Euler parameters and all their time
   // derivatives
   TacsScalar eta = vars[3];
-  const TacsScalar *eps = &vars[4];
+  const TacsScalar* eps = &vars[4];
   TacsScalar deta = dvars[3];
-  const TacsScalar *deps = &dvars[4];
+  const TacsScalar* deps = &dvars[4];
   TacsScalar ddeta = ddvars[3];
-  const TacsScalar *ddeps = &ddvars[4];
+  const TacsScalar* ddeps = &ddvars[4];
 
   // Compute the rotation matrix
   TacsScalar C[9], dotC[9];
@@ -1530,27 +1530,27 @@ void TACSRigidBody::getOutputData(int elemIndex, ElementType etype,
                                   const TacsScalar vars[],
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[], int ld_data,
-                                  TacsScalar *data) {
+                                  TacsScalar* data) {
   // Get the initial vector location
-  const TacsScalar *rinit;
+  const TacsScalar* rinit;
   rInit->getVector(&rinit);
 
   // Write out the displacements at each node
-  const TacsScalar *u0 = &vars[0];
+  const TacsScalar* u0 = &vars[0];
   TacsScalar eta = vars[3];
-  const TacsScalar *eps = &vars[4];
+  const TacsScalar* eps = &vars[4];
 
   // Compute the rotation matrix
   TacsScalar C[9];
   computeRotationMat(eta, eps, C);
 
   // Get the reference rotation
-  const TacsScalar *Cr;
+  const TacsScalar* Cr;
   CRef->getRotation(&Cr);
 
   // Get the nodal locations for the body
   int npts, nelems;
-  const TacsScalar *X;
+  const TacsScalar* X;
   viz->getMesh(&npts, &nelems, &X, NULL);
 
   // Set the locations/variables for all the points from the
@@ -1559,7 +1559,7 @@ void TACSRigidBody::getOutputData(int elemIndex, ElementType etype,
     int index = 0;
 
     // Compute the initial base-points for each node
-    const TacsScalar *x = &X[3 * i];
+    const TacsScalar* x = &X[3 * i];
 
     if (write_flag & TACS_OUTPUT_NODES) {
       // Write out the nodal locations
@@ -1601,7 +1601,7 @@ void TACSRigidBody::getOutputData(int elemIndex, ElementType etype,
 /*
   Sets the visualization information for the rigid body
 */
-void TACSRigidBody::setVisualization(TACSRigidBodyViz *_viz) {
+void TACSRigidBody::setVisualization(TACSRigidBodyViz* _viz) {
   if (viz) {
     viz->decref();
   }

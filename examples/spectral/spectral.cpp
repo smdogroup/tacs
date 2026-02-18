@@ -12,8 +12,8 @@
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
-                     TACSCreator **_creator) {
+void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler** _assembler,
+                     TACSCreator** _creator) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -21,7 +21,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
   int varsPerNode = 1;
 
   // Set up the creator object
-  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
 
   if (rank == 0) {
     // Set the number of elements
@@ -29,9 +29,9 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
     int numElements = nx * ny;
 
     // Allocate the input arrays into the creator object
-    int *ids = new int[numElements];
-    int *ptr = new int[numElements + 1];
-    int *conn = new int[4 * numElements];
+    int* ids = new int[numElements];
+    int* ptr = new int[numElements + 1];
+    int* conn = new int[4 * numElements];
 
     // Set the ids as alternating
     memset(ids, 0, numElements * sizeof(int));
@@ -66,7 +66,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
 
     // We're over-counting one of the nodes on each edge
     int numBcs = (nx + 1);
-    int *bcNodes = new int[numBcs];
+    int* bcNodes = new int[numBcs];
 
     for (int i = 0; i < (nx + 1); i++) {
       bcNodes[i] = i;
@@ -77,7 +77,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
     delete[] bcNodes;
 
     // Set the node locations
-    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
     for (int j = 0; j < ny + 1; j++) {
       for (int i = 0; i < nx + 1; i++) {
         int node = i + (nx + 1) * j;
@@ -101,30 +101,30 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties *props1 =
+  TACSMaterialProperties* props1 =
       new TACSMaterialProperties(rho, specific_heat, E1, nu, ys, cte, kappa);
-  TACSMaterialProperties *props2 =
+  TACSMaterialProperties* props2 =
       new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
   TacsScalar t1 = 1.0, t2 = 1.0;
   int t1Num = 0, t2Num = 1;
-  TACSPlaneStressConstitutive *stiff1 =
+  TACSPlaneStressConstitutive* stiff1 =
       new TACSPlaneStressConstitutive(props1, t1, t1Num);
-  TACSPlaneStressConstitutive *stiff2 =
+  TACSPlaneStressConstitutive* stiff2 =
       new TACSPlaneStressConstitutive(props2, t2, t2Num);
 
   // Create the model class
-  TACSHeatConduction2D *model1 = new TACSHeatConduction2D(stiff1);
-  TACSHeatConduction2D *model2 = new TACSHeatConduction2D(stiff2);
+  TACSHeatConduction2D* model1 = new TACSHeatConduction2D(stiff1);
+  TACSHeatConduction2D* model2 = new TACSHeatConduction2D(stiff2);
 
   // Create the element class
-  TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
-  TACSElement2D *linear_element1 = new TACSElement2D(model1, linear_basis);
-  TACSElement2D *linear_element2 = new TACSElement2D(model2, linear_basis);
+  TACSElementBasis* linear_basis = new TACSLinearQuadBasis();
+  TACSElement2D* linear_element1 = new TACSElement2D(model1, linear_basis);
+  TACSElement2D* linear_element2 = new TACSElement2D(model2, linear_basis);
 
   // Set the one element
-  TACSElement *elems[2];
+  TACSElement* elems[2];
   elems[0] = linear_element1;
   elems[1] = linear_element2;
   creator->setElements(2, elems);
@@ -133,7 +133,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler *assembler = creator->createTACS();
+  TACSAssembler* assembler = creator->createTACS();
 
   // Set the pointers
   *_assembler = assembler;
@@ -144,7 +144,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSAssembler **_assembler,
   The following code illustrates the use of the geometric multigrid
   capabilities in TACS combined with a spectral time integration technique.
 */
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
 
   // Get the rank
@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
   // Number of different levels
   int nlevels = 3;
   const int max_nlevels = 8;
-  TACSAssembler *assembler[max_nlevels];
-  TACSCreator *creator[max_nlevels];
+  TACSAssembler* assembler[max_nlevels];
+  TACSCreator* creator[max_nlevels];
 
   // Set the dimension of the largest meshes
   int nx = 128;
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Allocate the interpolation objects for all remaining levels
-  TACSBVecInterp *interp[max_nlevels - 1];
+  TACSBVecInterp* interp[max_nlevels - 1];
 
   // Create the interpolation operators
   for (int level = 0; level < nlevels - 1; level++) {
@@ -273,12 +273,12 @@ int main(int argc, char *argv[]) {
   // Now create the spectral integrator class
   double tfinal = 300.0;  // Final time for the simulation
   int N = 32;
-  TACSSpectralIntegrator *spectral =
+  TACSSpectralIntegrator* spectral =
       new TACSSpectralIntegrator(assembler[0], tfinal, N);
   spectral->incref();
 
   // Create the matrix
-  TACSLinearSpectralMat *mat = spectral->createLinearMat();
+  TACSLinearSpectralMat* mat = spectral->createLinearMat();
   mat->incref();
 
   // Create the multigrid preconditioner for the spectral problem
@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
     coarsen_time[i] = 1;
   }
 
-  TACSLinearSpectralMg *mg =
+  TACSLinearSpectralMg* mg =
       new TACSLinearSpectralMg(mat, nlevels, assembler, interp, coarsen_time);
   mg->incref();
 
@@ -302,11 +302,11 @@ int main(int argc, char *argv[]) {
   mg->factor();
 
   // Solve the problem
-  TACSSpectralVec *res = spectral->createVec();
+  TACSSpectralVec* res = spectral->createVec();
   res->incref();
-  TACSSpectralVec *rhs = spectral->createVec();
+  TACSSpectralVec* rhs = spectral->createVec();
   rhs->incref();
-  TACSSpectralVec *ans = spectral->createVec();
+  TACSSpectralVec* ans = spectral->createVec();
   ans->incref();
 
   // Set the values of the right-hand-side
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
     assembler[0]->applyBCs(rhs->getVec(i));
   }
 
-  TACSKsm *ksm = NULL;
+  TACSKsm* ksm = NULL;
 
   if (use_gmres) {
     // Allocate the GMRES solution method
@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
 
   // Evaluate a function of interest
   double ksweight = 100;
-  TACSFunction *func = new TACSKSTemperature(assembler[0], ksweight);
+  TACSFunction* func = new TACSKSTemperature(assembler[0], ksweight);
   func->incref();
 
   TacsScalar fval;
@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
     printf("||R||: %25.15e\n", TacsRealPart(res_norm));
   }
 
-  TACSSpectralVec *dfdu = spectral->createVec();
+  TACSSpectralVec* dfdu = spectral->createVec();
   dfdu->incref();
 
   // Assemble the system of equations
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
   // Solve for the adjoint variables
   ksm->solve(dfdu, ans);
 
-  TACSBVec *dfdx = assembler[0]->createDesignVec();
+  TACSBVec* dfdx = assembler[0]->createDesignVec();
   dfdx->incref();
 
   spectral->addAdjointResProduct(-1.0, ans, dfdx);
@@ -381,15 +381,15 @@ int main(int argc, char *argv[]) {
   dfdx->beginSetValues(TACS_ADD_VALUES);
   dfdx->endSetValues(TACS_ADD_VALUES);
 
-  TacsScalar *dfdx_array;
+  TacsScalar* dfdx_array;
   int len = dfdx->getArray(&dfdx_array);
   for (int i = 0; i < len; i++) {
     printf("dfdx[%d] = %25.15e\n", i, TacsRealPart(dfdx_array[i]));
   }
 
-  TACSBVec *x = assembler[0]->createDesignVec();
+  TACSBVec* x = assembler[0]->createDesignVec();
   assembler[0]->getDesignVars(x);
-  TACSBVec *px = assembler[0]->createDesignVec();
+  TACSBVec* px = assembler[0]->createDesignVec();
   px->setRand(-1.0, 1.0);
   double dh = 1e-6;
   x->axpy(dh, px);
@@ -427,10 +427,10 @@ int main(int argc, char *argv[]) {
   int write_flag = (TACS_OUTPUT_NODES | TACS_OUTPUT_CONNECTIVITY |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
+  TACSToFH5* f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
 
-  TACSBVec *u = assembler[0]->createVec();
+  TACSBVec* u = assembler[0]->createVec();
   u->incref();
 
   int nviz = 100;

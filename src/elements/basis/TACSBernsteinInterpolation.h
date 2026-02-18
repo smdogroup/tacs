@@ -29,7 +29,7 @@
   N:      the values of the shape functions at u
 */
 inline void TacsBernsteinShapeFunctions(const int order, const double u,
-                                        double *N) {
+                                        double* N) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -59,7 +59,7 @@ inline void TacsBernsteinShapeFunctions(const int order, const double u,
   Nd:     the derivative of the shape functions at u
 */
 inline void TacsBernsteinShapeFuncDerivative(const int order, const double u,
-                                             double *N, double *Nd) {
+                                             double* N, double* Nd) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -105,8 +105,8 @@ inline void TacsBernsteinShapeFuncDerivative(const int order, const double u,
   Ndd:    the second derivative of the shape functions at u
 */
 inline void TacsBernsteinShapeFuncSecondDerivative(const int order,
-                                                   const double u, double *N,
-                                                   double *Nd, double *Ndd) {
+                                                   const double u, double* N,
+                                                   double* Nd, double* Ndd) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 

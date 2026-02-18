@@ -17,7 +17,7 @@ class TACSBeamTransform : public TACSObject {
   virtual void addTransformSens(const TacsScalar X0xi_vals[],
                                 const TacsScalar dTvals[],
                                 TacsScalar dX0xi[]) = 0;
-  virtual A2D::Vec3 &getRefAxis() = 0;
+  virtual A2D::Vec3& getRefAxis() = 0;
 };
 
 /*
@@ -104,7 +104,7 @@ class TACSBeamRefAxisTransform : public TACSBeamTransform {
       dX0xi[i] += X0xi.xd[i];
     }
   }
-  A2D::Vec3 &getRefAxis() { return axis; }
+  A2D::Vec3& getRefAxis() { return axis; }
 
   void getRefAxis(TacsScalar _axis[]) {
     _axis[0] = axis.x[0];

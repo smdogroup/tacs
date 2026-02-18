@@ -67,9 +67,9 @@
   6. Clean up time.
 */
 TACSBlockCyclicMat::TACSBlockCyclicMat(MPI_Comm _comm, int csr_m, int csr_n,
-                                       int csr_bsize, const int *csr_vars,
-                                       int csr_nvars, const int *csr_rowp,
-                                       const int *csr_cols,
+                                       int csr_bsize, const int* csr_vars,
+                                       int csr_nvars, const int* csr_rowp,
+                                       const int* csr_cols,
                                        int csr_blocks_per_block,
                                        int reorder_blocks, int max_grid_size) {
   comm = _comm;
@@ -131,7 +131,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat(MPI_Comm _comm, int csr_m, int csr_n,
   // required. However, it is fixed to at most len(csr_rowp) + nvars+1
   // new allocations. This is probably not the end of the world.
   // A tighter bound could be found.
-  int *rowp = new int[nrows + 1];
+  int* rowp = new int[nrows + 1];
   memset(rowp, 0, (nrows + 1) * sizeof(int));
 
   for (int ip = 0; ip < csr_nvars; ip++) {
@@ -148,7 +148,7 @@ TACSBlockCyclicMat::TACSBlockCyclicMat(MPI_Comm _comm, int csr_m, int csr_n,
   }
 
   int col_size = rowp[nrows];
-  int *cols = new int[col_size];
+  int* cols = new int[col_size];
 
   for (int ip = 0; ip < csr_nvars; ip++) {
     int i = csr_vars[ip];
@@ -341,7 +341,7 @@ TACSBlockCyclicMat::~TACSBlockCyclicMat() {
   computed. Finally, the arrays Urowp/Ucols and Lcolp/Lrows can be
   allocated and set.
 */
-void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
+void TACSBlockCyclicMat::merge_nz_pattern(int root, int* rowp, int* cols,
                                           int reorder_blocks) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -352,13 +352,13 @@ void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
   int root_col_size = 0;
   MPI_Reduce(&col_size, &root_col_size, 1, MPI_INT, MPI_SUM, root, comm);
 
-  int *root_rowp = NULL;
-  int *root_cols = NULL;
-  int *root_all_rowp = NULL;
+  int* root_rowp = NULL;
+  int* root_cols = NULL;
+  int* root_all_rowp = NULL;
 
-  int *recv_row = NULL;
-  int *recv_ptr = NULL;
-  int *recv_count = NULL;
+  int* recv_row = NULL;
+  int* recv_ptr = NULL;
+  int* recv_count = NULL;
 
   if (rank == root) {
     root_rowp = new int[nrows + 1];
@@ -427,8 +427,8 @@ void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
         amd_order(nrows, root_rowp, root_cols, perm, control, info);
 #else
         // Allocate temporary space
-        int *tmp_rowp = new int[nrows + 1];
-        int *tmp_cols = new int[root_rowp[nrows]];
+        int* tmp_rowp = new int[nrows + 1];
+        int* tmp_cols = new int[root_rowp[nrows]];
         memcpy(tmp_rowp, root_rowp, (nrows + 1) * sizeof(int));
         memcpy(tmp_cols, root_cols, root_rowp[nrows] * sizeof(int));
 
@@ -448,8 +448,8 @@ void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
           iperm[perm[i]] = i;
         }
 
-        int *temp_rowp = new int[nrows + 1];
-        int *temp_cols = new int[root_col_size];
+        int* temp_rowp = new int[nrows + 1];
+        int* temp_cols = new int[root_col_size];
 
         temp_rowp[0] = 0;
         for (int i = 0, p = 0; i < nrows; i++) {
@@ -518,7 +518,7 @@ void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
     }
 
     // Flip the two
-    int *temp = bptr;
+    int* temp = bptr;
     bptr = orig_bptr;
     orig_bptr = temp;
   }
@@ -586,13 +586,13 @@ void TACSBlockCyclicMat::merge_nz_pattern(int root, int *rowp, int *cols,
   generated at each step in the factorization process.  This shift is
   delayed until all the new entries for the new row are processed.
 */
-void TACSBlockCyclicMat::compute_symbolic_factor(int **_rowp, int **_cols,
+void TACSBlockCyclicMat::compute_symbolic_factor(int** _rowp, int** _cols,
                                                  int max_size) {
-  int *rowp = *_rowp;
-  int *cols = *_cols;
+  int* rowp = *_rowp;
+  int* cols = *_cols;
 
-  int *diag = new int[nrows];
-  int *rcols = new int[ncols];
+  int* diag = new int[nrows];
+  int* rcols = new int[ncols];
 
   for (int i = 0; i < nrows; i++) {
     int nr = 0;  // Number of entries in the current row
@@ -692,7 +692,7 @@ void TACSBlockCyclicMat::compute_symbolic_factor(int **_rowp, int **_cols,
   in Lcolp/Lrows will be sorted if rowp/cols are sorted - which
   they must be!
 */
-void TACSBlockCyclicMat::init_ptr_arrays(int *rowp, int *cols) {
+void TACSBlockCyclicMat::init_ptr_arrays(int* rowp, int* cols) {
   Urowp = new int[nrows + 1];
   Lcolp = new int[ncols + 1];
   memset(Urowp, 0, (nrows + 1) * sizeof(int));
@@ -786,7 +786,7 @@ void TACSBlockCyclicMat::init_proc_grid(int size) {
 /*
   Get the size of the matrix
 */
-void TACSBlockCyclicMat::getSize(int *nr, int *nc) {
+void TACSBlockCyclicMat::getSize(int* nr, int* nc) {
   if (nr) {
     *nr = bptr[nrows];
   }
@@ -798,7 +798,7 @@ void TACSBlockCyclicMat::getSize(int *nr, int *nc) {
 /*
   Retrieve the size of the process grid.
 */
-void TACSBlockCyclicMat::getProcessGridSize(int *_nprows, int *_npcols) {
+void TACSBlockCyclicMat::getProcessGridSize(int* _nprows, int* _npcols) {
   if (_nprows) {
     *_nprows = nprows;
   }
@@ -810,10 +810,10 @@ void TACSBlockCyclicMat::getProcessGridSize(int *_nprows, int *_npcols) {
 /*
   Retrieve the block pointers
 */
-void TACSBlockCyclicMat::getBlockPointers(int *_nrows, int *_ncols,
-                                          const int **_bptr, const int **_xbptr,
-                                          const int **_perm, const int **_iperm,
-                                          const int **_orig_bptr) {
+void TACSBlockCyclicMat::getBlockPointers(int* _nrows, int* _ncols,
+                                          const int** _bptr, const int** _xbptr,
+                                          const int** _perm, const int** _iperm,
+                                          const int** _orig_bptr) {
   if (_nrows) {
     *_nrows = nrows;
   }
@@ -965,8 +965,8 @@ void TACSBlockCyclicMat::zeroEntries() {
   call to MPI_Alltoallv which may be faster, but requires more memory.
 */
 void TACSBlockCyclicMat::addAllValues(int csr_bsize, int nvars,
-                                      const int *csr_vars, const int *csr_rowp,
-                                      const int *csr_cols, TacsScalar *vals) {
+                                      const int* csr_vars, const int* csr_rowp,
+                                      const int* csr_cols, TacsScalar* vals) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -974,13 +974,13 @@ void TACSBlockCyclicMat::addAllValues(int csr_bsize, int nvars,
   int b2 = csr_bsize * csr_bsize;
 
   // Count up the number of recvs for each processor
-  int *recv_count = new int[size];
-  int *recv_ptr = new int[size + 1];
+  int* recv_count = new int[size];
+  int* recv_ptr = new int[size + 1];
 
   int csr_size = csr_rowp[nvars];
-  int *jblock = new int[csr_size];
+  int* jblock = new int[csr_size];
 
-  int *send_counts = new int[size];
+  int* send_counts = new int[size];
   memset(send_counts, 0, size * sizeof(int));
 
   // Go through and add any contributions from the local process
@@ -1029,9 +1029,9 @@ void TACSBlockCyclicMat::addAllValues(int csr_bsize, int nvars,
 
   delete[] send_counts;
 
-  int *send_ivals = new int[max_send_size];
-  int *send_jvals = new int[max_send_size];
-  TacsScalar *send_vals = new TacsScalar[b2 * max_send_size];
+  int* send_ivals = new int[max_send_size];
+  int* send_jvals = new int[max_send_size];
+  TacsScalar* send_vals = new TacsScalar[b2 * max_send_size];
 
   // Iterate over each process
   for (int k = 0; k < size; k++) {
@@ -1068,9 +1068,9 @@ void TACSBlockCyclicMat::addAllValues(int csr_bsize, int nvars,
 
     // Count up the reciving information
     int nrecv = 0;
-    int *recv_ivals = NULL;
-    int *recv_jvals = NULL;
-    TacsScalar *recv_vals = NULL;
+    int* recv_ivals = NULL;
+    int* recv_jvals = NULL;
+    TacsScalar* recv_vals = NULL;
 
     if (rank == k) {
       recv_ptr[0] = 0;
@@ -1160,10 +1160,10 @@ void TACSBlockCyclicMat::addAllValues(int csr_bsize, int nvars,
   All allocated memory is freed.
 */
 void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
-                                           const int *csr_vars,
-                                           const int *csr_rowp,
-                                           const int *csr_cols,
-                                           TacsScalar *vals) {
+                                           const int* csr_vars,
+                                           const int* csr_rowp,
+                                           const int* csr_cols,
+                                           TacsScalar* vals) {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -1171,11 +1171,11 @@ void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
   int b2 = csr_bsize * csr_bsize;
 
   // Count up the number of recvs for each processor
-  int *recv_counts = new int[size];
-  int *recv_ptr = new int[size + 1];
+  int* recv_counts = new int[size];
+  int* recv_ptr = new int[size + 1];
 
-  int *send_counts = new int[size];
-  int *send_ptr = new int[size + 1];
+  int* send_counts = new int[size];
+  int* send_ptr = new int[size + 1];
   memset(send_counts, 0, size * sizeof(int));
 
   // Go through and add any contributions from the local process
@@ -1229,8 +1229,8 @@ void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
   // Create a buffer that is large enough to send everything at once
   // Zero out the send counter
   memset(send_counts, 0, size * sizeof(int));
-  int *send_index = new int[2 * send_ptr[size]];
-  TacsScalar *send_vals = new TacsScalar[b2 * send_ptr[size]];
+  int* send_index = new int[2 * send_ptr[size]];
+  TacsScalar* send_vals = new TacsScalar[b2 * send_ptr[size]];
 
   // Go back through and copy over values to pass to all the processes
   for (int ip = 0; ip < nvars; ip++) {
@@ -1272,10 +1272,10 @@ void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
   }
 
   // Send the indices and the values
-  int *send_counts2 = new int[size];
-  int *send_ptr2 = new int[size];
-  int *recv_counts2 = new int[size];
-  int *recv_ptr2 = new int[size];
+  int* send_counts2 = new int[size];
+  int* send_ptr2 = new int[size];
+  int* recv_counts2 = new int[size];
+  int* recv_ptr2 = new int[size];
 
   // Adjust the pointers/counts to receive the (i,j) indices
   for (int k = 0; k < size; k++) {
@@ -1285,8 +1285,8 @@ void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
     recv_ptr2[k] = 2 * recv_ptr[k];
   }
 
-  int *recv_index = new int[2 * recv_ptr[size]];
-  TacsScalar *recv_vals = new TacsScalar[b2 * recv_ptr[size]];
+  int* recv_index = new int[2 * recv_ptr[size]];
+  TacsScalar* recv_vals = new TacsScalar[b2 * recv_ptr[size]];
 
   MPI_Alltoallv(send_index, send_counts2, send_ptr2, MPI_INT, recv_index,
                 recv_counts2, recv_ptr2, MPI_INT, comm);
@@ -1352,7 +1352,7 @@ void TACSBlockCyclicMat::addAlltoallValues(int csr_bsize, int nvars,
 
   ptr[i] <= var < ptr[i+1]
 */
-int TACSBlockCyclicMat::get_block_num(int var, const int *ptr) {
+int TACSBlockCyclicMat::get_block_num(int var, const int* ptr) {
   int high = (ncols > nrows ? ncols : nrows);
   int low = 0;
 
@@ -1393,8 +1393,8 @@ int TACSBlockCyclicMat::get_block_num(int var, const int *ptr) {
   storage format is in column-major (fortran-order).
 */
 int TACSBlockCyclicMat::add_values(int rank, int i, int j, int csr_bsize,
-                                   int ioff, int joff, TacsScalar *a) {
-  TacsScalar *A = get_block(rank, i, j);
+                                   int ioff, int joff, TacsScalar* a) {
+  TacsScalar* A = get_block(rank, i, j);
 
   if (A) {
     int bi = bptr[i + 1] - bptr[i];
@@ -1434,7 +1434,7 @@ void TACSBlockCyclicMat::setRand() {
     int bi = bptr[i + 1] - bptr[i];
     if (rank == get_block_owner(i, i)) {
       int np = dval_offset[i];
-      TacsScalar *a = &Dvals[np];
+      TacsScalar* a = &Dvals[np];
       for (int k = 0; k < bi * bi; k++) {
         a[k] = (1.0 * rand()) / RAND_MAX;
       }
@@ -1454,7 +1454,7 @@ void TACSBlockCyclicMat::setRand() {
 
       if (rank == get_block_owner(i, j)) {
         int np = uval_offset[jp];
-        TacsScalar *a = &Uvals[np];
+        TacsScalar* a = &Uvals[np];
         for (int k = 0; k < bi * bj; k++) {
           a[k] = (1.0 * rand()) / RAND_MAX;
         }
@@ -1475,7 +1475,7 @@ void TACSBlockCyclicMat::setRand() {
 
       if (rank == get_block_owner(i, j)) {
         int np = lval_offset[ip];
-        TacsScalar *a = &Lvals[np];
+        TacsScalar* a = &Lvals[np];
 
         for (int k = 0; k < bi * bj; k++) {
           a[k] = (1.0 * rand()) / RAND_MAX;
@@ -1496,7 +1496,7 @@ void TACSBlockCyclicMat::setRand() {
   function will not work after the matrix is factored since the
   factorization over-writes the original matrix entries.
 */
-void TACSBlockCyclicMat::mult(TacsScalar *x, TacsScalar *y) {
+void TACSBlockCyclicMat::mult(TacsScalar* x, TacsScalar* y) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -1507,13 +1507,13 @@ void TACSBlockCyclicMat::mult(TacsScalar *x, TacsScalar *y) {
   memset(y, 0, xbptr[nrows] * sizeof(TacsScalar));
 
   // Allocate temporary space (if needed)
-  TacsScalar *tx = new TacsScalar[cbptr[ncols]];
-  TacsScalar *ty = new TacsScalar[rbptr[nrows]];
+  TacsScalar* tx = new TacsScalar[cbptr[ncols]];
+  TacsScalar* ty = new TacsScalar[rbptr[nrows]];
   memset(ty, 0, rbptr[nrows] * sizeof(TacsScalar));
 
   if (proc_row >= 0) {
     // Allocate an array of requests
-    MPI_Request *sreq = new MPI_Request[nprows];
+    MPI_Request* sreq = new MPI_Request[nprows];
 
     // Compute the on-process parts for the diagonal contributions
     for (int j = 0; j < ncols; j++) {
@@ -1619,7 +1619,7 @@ void TACSBlockCyclicMat::mult(TacsScalar *x, TacsScalar *y) {
 
           if (rank == get_block_owner(i, j)) {
             // Set the pointer to the correct components of x
-            TacsScalar *xp = NULL;
+            TacsScalar* xp = NULL;
             if (i == j) {
               int nj = xbptr[j];
               xp = &x[nj];
@@ -1707,7 +1707,7 @@ void TACSBlockCyclicMat::init_row_counts() {
   // it does not participate in the computation
   if (get_proc_row_column(rank, &proc_row, &proc_col)) {
     // Compute the expected number of recvs for this processor
-    int *row_sum_recv = new int[nrows * npcols];
+    int* row_sum_recv = new int[nrows * npcols];
     memset(row_sum_recv, 0, nrows * npcols * sizeof(int));
 
     // Compute the number of local updates for row i in L^{-1}
@@ -1835,18 +1835,18 @@ void TACSBlockCyclicMat::init_row_counts() {
   .     compute x[i] = L[i,i]^{-1}(x[i] - xsum[i]),
   .     send x[i] to the j-th columns
 */
-void TACSBlockCyclicMat::applyFactor(TacsScalar *x) {
+void TACSBlockCyclicMat::applyFactor(TacsScalar* x) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
   // Space required for the factorization
-  TacsScalar *tx = NULL;
-  TacsScalar *xsum = NULL;
-  TacsScalar *xlocal = NULL;
+  TacsScalar* tx = NULL;
+  TacsScalar* xsum = NULL;
+  TacsScalar* xlocal = NULL;
 
   // Row sum and recv counters
-  int *row_sum_count = NULL;
-  int *row_sum_recv = NULL;
+  int* row_sum_count = NULL;
+  int* row_sum_recv = NULL;
 
   // Get the location of rank on the process grid
   int proc_row = -1, proc_col = -1;
@@ -2042,10 +2042,10 @@ void TACSBlockCyclicMat::applyFactor(TacsScalar *x) {
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
   row_sum_recv:  the number of received row sums
 */
-void TACSBlockCyclicMat::lower_column_update(int col, TacsScalar *x,
-                                             TacsScalar *tx, TacsScalar *xsum,
-                                             int *row_sum_count,
-                                             int *row_sum_recv) {
+void TACSBlockCyclicMat::lower_column_update(int col, TacsScalar* x,
+                                             TacsScalar* tx, TacsScalar* xsum,
+                                             int* row_sum_count,
+                                             int* row_sum_recv) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2066,10 +2066,10 @@ void TACSBlockCyclicMat::lower_column_update(int col, TacsScalar *x,
     if (rank == get_block_owner(row, col)) {
       int ni = rbptr[row];
       int bi = bptr[row + 1] - bptr[row];
-      TacsScalar *L = &Lvals[lval_offset[jp]];
+      TacsScalar* L = &Lvals[lval_offset[jp]];
 
       // Set the pointer for where to take xp from...
-      TacsScalar *xp = &tx[nj];
+      TacsScalar* xp = &tx[nj];
       if (rank == get_block_owner(col, col)) {
         xp = &x[dj];
       }
@@ -2129,10 +2129,10 @@ void TACSBlockCyclicMat::lower_column_update(int col, TacsScalar *x,
   row_sum_count: the number of updates required for the row[i]
   row_sum_recv:  the number of received row sums
 */
-void TACSBlockCyclicMat::add_lower_row_sum(int col, TacsScalar *x,
-                                           TacsScalar *tx, TacsScalar *xsum,
-                                           int *row_sum_count,
-                                           int *row_sum_recv) {
+void TACSBlockCyclicMat::add_lower_row_sum(int col, TacsScalar* x,
+                                           TacsScalar* tx, TacsScalar* xsum,
+                                           int* row_sum_count,
+                                           int* row_sum_recv) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2203,10 +2203,10 @@ void TACSBlockCyclicMat::add_lower_row_sum(int col, TacsScalar *x,
   xsum:          the column sums on this processor
   row_sum_count: the number of updates required for row[i] from L[i,0:i]
 */
-void TACSBlockCyclicMat::upper_column_update(int col, TacsScalar *x,
-                                             TacsScalar *tx, TacsScalar *xsum,
-                                             int *row_sum_count,
-                                             int *row_sum_recv) {
+void TACSBlockCyclicMat::upper_column_update(int col, TacsScalar* x,
+                                             TacsScalar* tx, TacsScalar* xsum,
+                                             int* row_sum_count,
+                                             int* row_sum_recv) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2224,7 +2224,7 @@ void TACSBlockCyclicMat::upper_column_update(int col, TacsScalar *x,
       // Find the location where Ucols[jp] == col
       int jp = Urowp[row];
       int size = Urowp[row + 1] - jp;
-      int *item = TacsSearchArray(col, size, &Ucols[jp]);
+      int* item = TacsSearchArray(col, size, &Ucols[jp]);
 
       // Check if the column is in the array
       if (item) {
@@ -2233,10 +2233,10 @@ void TACSBlockCyclicMat::upper_column_update(int col, TacsScalar *x,
         // Find the row-sum information
         int ni = rbptr[row];
         int bi = bptr[row + 1] - bptr[row];
-        TacsScalar *U = &Uvals[uval_offset[jp]];
+        TacsScalar* U = &Uvals[uval_offset[jp]];
 
         // Determine whether this is locally owned or not
-        TacsScalar *xp = &tx[nj];
+        TacsScalar* xp = &tx[nj];
         if (rank == get_block_owner(col, col)) {
           xp = &x[dj];
         }
@@ -2296,10 +2296,10 @@ void TACSBlockCyclicMat::upper_column_update(int col, TacsScalar *x,
   xsum:          the sum of all rows
   row_sum_count: the number of updates required for the row[i]
 */
-void TACSBlockCyclicMat::add_upper_row_sum(int row, TacsScalar *x,
-                                           TacsScalar *tx, TacsScalar *xsum,
-                                           int *row_sum_count,
-                                           int *row_sum_recv) {
+void TACSBlockCyclicMat::add_upper_row_sum(int row, TacsScalar* x,
+                                           TacsScalar* tx, TacsScalar* xsum,
+                                           int* row_sum_count,
+                                           int* row_sum_recv) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -2363,8 +2363,8 @@ void TACSBlockCyclicMat::add_upper_row_sum(int row, TacsScalar *x,
   column it is in. These searches rely on the fact that the
   rows/column indices are sorted.
 */
-TacsScalar *TACSBlockCyclicMat::get_block(int rank, int i, int j) {
-  TacsScalar *A = NULL;
+TacsScalar* TACSBlockCyclicMat::get_block(int rank, int i, int j) {
+  TacsScalar* A = NULL;
 
   if (rank == get_block_owner(i, j)) {
     if (i > j) {  // L
@@ -2372,7 +2372,7 @@ TacsScalar *TACSBlockCyclicMat::get_block(int rank, int i, int j) {
       int size = Lcolp[j + 1] - Lcolp[j];
 
       // Look for row i
-      int *item = TacsSearchArray(i, size, &Lrows[lp]);
+      int* item = TacsSearchArray(i, size, &Lrows[lp]);
       if (item) {
         lp = lp + (item - &Lrows[lp]);
         A = &Lvals[lval_offset[lp]];
@@ -2384,7 +2384,7 @@ TacsScalar *TACSBlockCyclicMat::get_block(int rank, int i, int j) {
       int size = Urowp[i + 1] - Urowp[i];
 
       // Look for column j
-      int *item = TacsSearchArray(j, size, &Ucols[up]);
+      int* item = TacsSearchArray(j, size, &Ucols[up]);
       if (item) {
         up = up + (item - &Ucols[up]);
         A = &Uvals[uval_offset[up]];
@@ -2443,23 +2443,23 @@ void TACSBlockCyclicMat::factor() {
     return;
   }
 
-  int *temp_piv = new int[max_bsize];
-  TacsScalar *temp_diag = new TacsScalar[max_bsize * max_bsize];
-  TacsScalar *temp_block = new TacsScalar[max_bsize * max_bsize];
+  int* temp_piv = new int[max_bsize];
+  TacsScalar* temp_diag = new TacsScalar[max_bsize * max_bsize];
+  TacsScalar* temp_block = new TacsScalar[max_bsize * max_bsize];
   int lwork = 128 * max_bsize;
-  TacsScalar *work = new TacsScalar[lwork];
+  TacsScalar* work = new TacsScalar[lwork];
 
   // Buffers to handle the recieves information
-  TacsScalar *Ubuff = new TacsScalar[max_ubuff_size];
-  TacsScalar *Lbuff = new TacsScalar[max_lbuff_size];
+  TacsScalar* Ubuff = new TacsScalar[max_ubuff_size];
+  TacsScalar* Lbuff = new TacsScalar[max_lbuff_size];
 
   // Send information for rows owning U
-  MPI_Request *U_send_request = new MPI_Request[nprows - 1];
-  MPI_Status *U_send_status = new MPI_Status[nprows - 1];
+  MPI_Request* U_send_request = new MPI_Request[nprows - 1];
+  MPI_Status* U_send_status = new MPI_Status[nprows - 1];
 
   // Send information for columns owning L
-  MPI_Request *L_send_request = new MPI_Request[npcols - 1];
-  MPI_Status *L_send_status = new MPI_Status[npcols - 1];
+  MPI_Request* L_send_request = new MPI_Request[npcols - 1];
+  MPI_Status* L_send_status = new MPI_Status[npcols - 1];
 
   double t_update = 0.0;
   double t_recv_wait = 0.0;
@@ -2470,7 +2470,7 @@ void TACSBlockCyclicMat::factor() {
     int bi = bptr[i + 1] - bptr[i];
 
     // The diagonal factor of A and its pivot
-    TacsScalar *d_diag = NULL;
+    TacsScalar* d_diag = NULL;
     int diag_owner = get_block_owner(i, i);
 
     // Get the owner for the diagonal block
@@ -2645,7 +2645,7 @@ void TACSBlockCyclicMat::factor() {
     }
 
     // Initialize the L-pointer
-    TacsScalar *L = Lbuff;
+    TacsScalar* L = Lbuff;
     if (source_proc_column == proc_col) {
       L = &Lvals[lval_offset[Lcolp[i]]];
     }
@@ -2659,7 +2659,7 @@ void TACSBlockCyclicMat::factor() {
       }
 
       // Initialize the U-pointer
-      TacsScalar *U = Ubuff;
+      TacsScalar* U = Ubuff;
       if (source_proc_row == proc_row) {
         U = &Uvals[uval_offset[Urowp[i]]];
       }
@@ -2672,7 +2672,7 @@ void TACSBlockCyclicMat::factor() {
           continue;
         }
 
-        TacsScalar *A = get_block(rank, ii, jj);
+        TacsScalar* A = get_block(rank, ii, jj);
 
         if (A) {
           // Perform the GEMM update

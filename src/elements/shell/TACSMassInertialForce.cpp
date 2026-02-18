@@ -14,7 +14,7 @@
 
 #include "TACSMassInertialForce.h"
 
-TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
+TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive* _con,
                                              const TacsScalar _inertiaVec[]) {
   con = _con;
   con->incref();
@@ -24,7 +24,7 @@ TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
 
 TACSMassInertialForce::~TACSMassInertialForce() { con->decref(); }
 
-const char *TACSMassInertialForce::getObjectName() {
+const char* TACSMassInertialForce::getObjectName() {
   return "TACSMassInertialForce";
 }
 
@@ -39,8 +39,8 @@ int TACSMassInertialForce::getNumNodes() { return NUM_NODES; }
   Add the residual to the provided vector
 */
 void TACSMassInertialForce::addResidual(
-    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
-    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
+    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
+    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
   TacsScalar f[NUM_DISPS];
   double pt[3] = {0.0, 0.0, 0.0};
   con->evalInertia(elemIndex, pt, Xpts, inertiaVec, f);
@@ -54,9 +54,9 @@ void TACSMassInertialForce::addResidual(
 */
 void TACSMassInertialForce::addJacobian(
     int elemIndex, double time, TacsScalar alpha, TacsScalar beta,
-    TacsScalar gamma, const TacsScalar *Xpts, const TacsScalar *vars,
-    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
-    TacsScalar *mat) {
+    TacsScalar gamma, const TacsScalar* Xpts, const TacsScalar* vars,
+    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res,
+    TacsScalar* mat) {
   if (res) {
     addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   }

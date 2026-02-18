@@ -35,7 +35,7 @@
    @param elem_type The type of element output to generate
    @param write_flag XOR flag indicating classes of output to write
 */
-TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
+TACSToFH5::TACSToFH5(TACSAssembler* _assembler, ElementType _elem_type,
                      int _write_flag) {
   assembler = _assembler;
   assembler->incref();
@@ -61,8 +61,8 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
   num_components = assembler->getNumComponents();
 
   // Allocate space for the component names
-  component_names = new char *[num_components];
-  memset(component_names, 0, num_components * sizeof(char *));
+  component_names = new char*[num_components];
+  memset(component_names, 0, num_components * sizeof(char*));
 
   for (int k = 0; k < num_components; k++) {
     char comp_name[128];
@@ -95,7 +95,7 @@ TACSToFH5::~TACSToFH5() {
    @param comp_num The component number to set
    @param comp_name The component name to apply
 */
-void TACSToFH5::setComponentName(int comp_num, const char *comp_name) {
+void TACSToFH5::setComponentName(int comp_num, const char* comp_name) {
   if (comp_num >= 0 && comp_num < num_components) {
     // If the name already exists, over-write it
     if (component_names[comp_num]) {
@@ -123,13 +123,13 @@ void TACSToFH5::setComponentName(int comp_num, const char *comp_name) {
 
    @param filename The name of the file to write
 */
-int TACSToFH5::writeToFile(const char *filename) {
+int TACSToFH5::writeToFile(const char* filename) {
   int rank, size;
   MPI_Comm_rank(assembler->getMPIComm(), &rank);
   MPI_Comm_size(assembler->getMPIComm(), &size);
 
   // Create the FH5 file object for writting
-  TACSFH5File *file = new TACSFH5File(assembler->getMPIComm());
+  TACSFH5File* file = new TACSFH5File(assembler->getMPIComm());
   file->incref();
 
   // Open the file - if possible for writing
@@ -158,7 +158,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     int nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
     int k = 0;
     for (; (k < nd && k < vars_per_node); k++) {
-      const char *stemp =
+      const char* stemp =
           TacsGetOutputComponentName(elem_type, TACS_OUTPUT_DISPLACEMENTS, k);
       str_len += strlen(stemp) + 1;
     }
@@ -170,7 +170,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     int nl = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_LOADS);
     k = 0;
     for (; (k < nl && k < vars_per_node); k++) {
-      const char *stemp =
+      const char* stemp =
           TacsGetOutputComponentName(elem_type, TACS_OUTPUT_LOADS, k);
       str_len += strlen(stemp) + 1;
     }
@@ -180,7 +180,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       str_len += strlen(stemp) + 1;
     }
 
-    char *var_names = new char[str_len];
+    char* var_names = new char[str_len];
     var_names[0] = '\0';
     if (write_flag & TACS_OUTPUT_NODES) {
       snprintf(var_names, sizeof(var_names), "X,Y,Z");
@@ -189,7 +189,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);
       k = 0;
       for (; (k < nd && k < vars_per_node); k++) {
-        const char *stemp =
+        const char* stemp =
             TacsGetOutputComponentName(elem_type, TACS_OUTPUT_DISPLACEMENTS, k);
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES)) {
@@ -207,7 +207,7 @@ int TACSToFH5::writeToFile(const char *filename) {
       nl = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_LOADS);
       k = 0;
       for (; (k < nl && k < vars_per_node); k++) {
-        const char *stemp =
+        const char* stemp =
             TacsGetOutputComponentName(elem_type, TACS_OUTPUT_LOADS, k);
         size_t len = strlen(var_names);
         if (k == 0 && !(write_flag & TACS_OUTPUT_NODES ||
@@ -262,7 +262,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     }
 
     // Allocate the float data
-    float *float_data = new float[dim1 * dim2];
+    float* float_data = new float[dim1 * dim2];
 
     // Write out the file
     if (write_flag & TACS_OUTPUT_NODES) {
@@ -334,13 +334,13 @@ int TACSToFH5::writeToFile(const char *filename) {
 
   if (nvals > 0) {
     // Write out the data to a file
-    TacsScalar *data;
+    TacsScalar* data;
     int dim1, dim2;
     assembler->getElementOutputData(elem_type, element_write_flag, &dim1, &dim2,
                                     &data);
 
     // Convert the data to float
-    float *float_data = new float[dim1 * dim2];
+    float* float_data = new float[dim1 * dim2];
     for (int i = 0; i < dim1 * dim2; i++) {
       float_data[i] = TacsRealPart(data[i]);
     }
@@ -364,7 +364,7 @@ int TACSToFH5::writeToFile(const char *filename) {
 /**
   Write out the connectivity information to the file
 */
-int TACSToFH5::writeConnectivity(TACSFH5File *file) {
+int TACSToFH5::writeConnectivity(TACSFH5File* file) {
   int mpi_rank, mpi_size;
   MPI_Comm comm = assembler->getMPIComm();
   MPI_Comm_rank(comm, &mpi_rank);
@@ -372,11 +372,11 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
 
   // Record the layout types and component numbers
   int num_elements = assembler->getNumElements();
-  int *comp_nums = new int[num_elements];
-  int *layout_types = new int[num_elements];
+  int* comp_nums = new int[num_elements];
+  int* layout_types = new int[num_elements];
 
   // Get the array of elements
-  TACSElement **elements = assembler->getElements();
+  TACSElement** elements = assembler->getElements();
 
   // Set the layout types and the component numbers
   for (int i = 0; i < num_elements; i++) {
@@ -403,7 +403,7 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
   assembler->getElementConnectivity(&ptr, &conn);
 
   // Modify the pointer so that it is consistent across processors
-  int *ptr_copy = new int[num_elements + 1];
+  int* ptr_copy = new int[num_elements + 1];
   memcpy(ptr_copy, ptr, (num_elements + 1) * sizeof(int));
 
   int offset = 0;
@@ -434,8 +434,8 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
   delete[] ptr_copy;
 
   // Get the ownership range for each group of nodes
-  const int *ownerRange;
-  TACSNodeMap *nodeMap = assembler->getNodeMap();
+  const int* ownerRange;
+  TACSNodeMap* nodeMap = assembler->getNodeMap();
   nodeMap->getOwnerRange(&ownerRange);
 
   // Get the number of nodes and dependent nodes
@@ -446,7 +446,7 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
   // processor. Reset the connectivity so that both dependent and indepdent
   // nodes are all positive.
   int node_count = nnodes + ndep;
-  int *new_owner_range = new int[mpi_size + 1];
+  int* new_owner_range = new int[mpi_size + 1];
   MPI_Allgather(&node_count, 1, MPI_INT, &new_owner_range[1], 1, MPI_INT, comm);
   new_owner_range[0] = 0;
   for (int k = 0; k < mpi_size; k++) {
@@ -455,7 +455,7 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
 
   // Create the copy of the connectivity
   int conn_size = ptr[num_elements];
-  int *conn_copy = new int[conn_size];
+  int* conn_copy = new int[conn_size];
 
   for (int i = 0; i < conn_size; i++) {
     // Get the global node number
@@ -492,24 +492,24 @@ int TACSToFH5::writeConnectivity(TACSFH5File *file) {
 /**
   Create a comma-separated list of the element variable names
 */
-char *TACSToFH5::getElementVarNames(int flag) {
+char* TACSToFH5::getElementVarNames(int flag) {
   // Find the first variable name
-  char *elem_vars = NULL;
-  char *output_names[4] = {NULL, NULL, NULL, NULL};
+  char* elem_vars = NULL;
+  char* output_names[4] = {NULL, NULL, NULL, NULL};
 
   int out_types[4] = {TACS_OUTPUT_STRAINS, TACS_OUTPUT_STRESSES,
                       TACS_OUTPUT_EXTRAS, TACS_OUTPUT_COORDINATE_FRAME};
 
   for (int k = 0; k < 4; k++) {
     if (flag & out_types[k]) {
-      const char *stemp = NULL;
+      const char* stemp = NULL;
       int nd = TacsGetOutputComponentCount(elem_type, out_types[k]);
       size_t str_len = 1;
       for (int i = 0; i < nd; i++) {
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], i);
         str_len += strlen(stemp) + 1;
       }
-      char *temp = new char[str_len];
+      char* temp = new char[str_len];
       if (nd > 0) {
         stemp = TacsGetOutputComponentName(elem_type, out_types[k], 0);
         strcpy(temp, stemp);

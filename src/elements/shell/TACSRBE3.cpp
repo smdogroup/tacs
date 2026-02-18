@@ -55,7 +55,7 @@ TACSRBE3::TACSRBE3(int numNodes, int _dep_dof_constrained[], double weights[],
   /* Identify which dofs should be constrained for dependent node */
   memcpy(dep_dof_constrained, _dep_dof_constrained, NUM_DISPS * sizeof(int));
   /* Identify which dofs should be constrained for independent nodes */
-  indep_dof_constrained = new int *[NUM_INDEP_NODES];
+  indep_dof_constrained = new int*[NUM_INDEP_NODES];
   for (int j = 0; j < NUM_INDEP_NODES; j++) {
     indep_dof_constrained[j] = new int[NUM_DISPS];
     for (int i = 0; i < NUM_DISPS; i++) {
@@ -88,16 +88,16 @@ void TACSRBE3::setScalingParameters(double _C1, double _C2) {
 /*
   Retrieve information about the names of the element variables
 */
-const char *TACSRBE3::getObjectName() { return elemName; }
+const char* TACSRBE3::getObjectName() { return elemName; }
 
-const char *TACSRBE3::displacementName(int i) {
+const char* TACSRBE3::displacementName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return dispNames[i];
   }
   return NULL;
 }
 
-const char *TACSRBE3::extraName(int i) {
+const char* TACSRBE3::extraName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return extraNames[i];
   }
@@ -125,14 +125,14 @@ ElementType TACSRBE3::getElementType() { return TACS_RIGID_ELEMENT; }
 /*
   The element name, variable, stress and strain names.
 */
-const char *TACSRBE3::elemName = "TACSRBE3";
+const char* TACSRBE3::elemName = "TACSRBE3";
 
 /* Tolerance for colinearity test in moment of inertia calculation*/
 const double TACSRBE3::SMALL_NUM = 1e-8;
 
-const char *TACSRBE3::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
+const char* TACSRBE3::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
 
-const char *TACSRBE3::extraNames[] = {"fx", "fy", "fz", "mx", "my", "mz"};
+const char* TACSRBE3::extraNames[] = {"fx", "fy", "fz", "mx", "my", "mz"};
 
 /*
   Assemble the element residual associated with the given design
@@ -143,9 +143,9 @@ void TACSRBE3::addResidual(int elemIndex, double time, const TacsScalar Xpts[],
                            const TacsScalar ddvars[], TacsScalar residual[]) {
   TacsScalar Xcg[3], Jcg[3][3], W[3], Lc;
   const TacsScalar *X0, *Xn, *un, *F0, *M0, *u0, *t0, *tn;
-  TacsScalar *maskedVars;
+  TacsScalar* maskedVars;
 
-  TacsScalar *res = new TacsScalar[NUM_VARIABLES];
+  TacsScalar* res = new TacsScalar[NUM_VARIABLES];
   memset(res, 0, NUM_VARIABLES * sizeof(TacsScalar));
 
   // Store the last 6 variables (Lagrange multipliers) as a force and moment
@@ -433,7 +433,7 @@ void TACSRBE3::addJacobian(int elemIndex, double time, TacsScalar alpha,
   TacsScalar Xcg[3], Jcg[3][3], W[3], Lc;
   const TacsScalar *Xn, *X0;
   int col, row;
-  TacsScalar *mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
+  TacsScalar* mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
   memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
 
   // Store the last 6 variables (Lagrange multipliers) as a force and moment
@@ -702,9 +702,9 @@ void TACSRBE3::addAdjResXptProduct(
   TacsScalar Xcg[3], sXcg[3], Jcg[3][3], sJcg[3][3], W[3], Lc, sLc;
   const TacsScalar *X0, *Xn, *un, *F0, *M0, *u0, *t0, *tn;
   TacsScalar *sXpts, *sXn, *sX0;
-  TacsScalar *maskedVars;
+  TacsScalar* maskedVars;
 
-  TacsScalar *residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
+  TacsScalar* residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
   memset(residual, 0, NUM_NODES * 3 * NUM_VARIABLES * sizeof(TacsScalar));
   sXpts = new TacsScalar[(NUM_NODES - 1) * 3];
 
@@ -717,7 +717,7 @@ void TACSRBE3::addAdjResXptProduct(
   F0 = &maskedVars[ii + 0];
   M0 = &maskedVars[ii + 3];
 
-  TacsScalar *res = residual;
+  TacsScalar* res = residual;
 
   for (int k = 0; k < 3 * (NUM_NODES - 1); k++) {
     memset(sXpts, 0, sizeof(TacsScalar) * (NUM_NODES - 1) * 3);
@@ -1323,7 +1323,7 @@ TacsScalar TACSRBE3::getMomentsOfInertia(TacsScalar IcgInv[3][3],
 /* Find sensitivity of inverse moment of inertia tensor of dependent nodes about
  * centroid */
 TacsScalar TACSRBE3::getMomentsOfInertiaSens(
-    TacsScalar sIcgInv[3][3], TacsScalar IcgInv[3][3], TacsScalar *sLc,
+    TacsScalar sIcgInv[3][3], TacsScalar IcgInv[3][3], TacsScalar* sLc,
     const double w[], const TacsScalar Xpts[], const TacsScalar Xcg[],
     const TacsScalar sXcg[], const int component) {
   TacsScalar Icg[9], r[3], sr[3], temp[9], sIcg[9], stemp[9], c[6], Lc;

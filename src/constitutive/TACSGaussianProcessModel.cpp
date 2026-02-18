@@ -42,7 +42,7 @@ TACSGaussianProcessModel::~TACSGaussianProcessModel() {
 }
 
 TacsScalar TACSGaussianProcessModel::predictMeanTestData(
-    const TacsScalar *Xtest) {
+    const TacsScalar* Xtest) {
   // Xtest is an array of size n_param (for one test data point)
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
   // product] where Ytest is a scalar
@@ -56,7 +56,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestData(
   // iterate over each training data point, get the cross-term covariance and
   // add the coefficient alpha for it
   for (int itrain = 0; itrain < n_train; itrain++) {
-    TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
+    TacsScalar* loc_Xtrain = &Xtrain[n_param * itrain];
     // TacsScalar mkernel = kernel(Xtest, loc_Xtrain);
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
 
@@ -67,7 +67,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestData(
 }
 
 TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
-    const TacsScalar Ysens, const TacsScalar *Xtest, TacsScalar *Xtestsens) {
+    const TacsScalar Ysens, const TacsScalar* Xtest, TacsScalar* Xtestsens) {
   // Xtest is an array of size n_param (for one test data point)
   // the sensitivity here is on log[nondim-params]
   // use the equation mean(Ytest) = cov(Xtest,X_train) @ alpha [this is a dot
@@ -79,7 +79,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
   memset(Xtestsens, 0, n_param * sizeof(TacsScalar));
 
   for (int itrain = 0; itrain < n_train; itrain++) {
-    TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
+    TacsScalar* loc_Xtrain = &Xtrain[n_param * itrain];
     Ytest += kernel(Xtest, loc_Xtrain) * alpha[itrain];
 
     // backwards propagate to the Xtestsens through the kernel computation
@@ -89,8 +89,8 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
   return Ytest;
 }
 
-TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
-                                                    const TacsScalar *Xtrain) {
+TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar* Xtest,
+                                                    const TacsScalar* Xtrain) {
   // define the kernel function k(*,*) on training and testing points for one
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
@@ -122,9 +122,9 @@ TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
 }
 
 void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
-                                                  const TacsScalar *Xtest,
-                                                  const TacsScalar *Xtrain,
-                                                  TacsScalar *Xtestsens) {
+                                                  const TacsScalar* Xtest,
+                                                  const TacsScalar* Xtrain,
+                                                  TacsScalar* Xtestsens) {
   // add into the Xtestsens (don't reset to zero) for x_test = log[nondim
   // params] vector
 
@@ -299,7 +299,7 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
   }
-  TacsScalar *Xtrain = this->Xtrain;
+  TacsScalar* Xtrain = this->Xtrain;
   f0 = kernel(x, Xtrain);
 
   for (int i = 0; i < n_input; i++) {

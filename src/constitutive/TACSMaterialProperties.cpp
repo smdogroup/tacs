@@ -135,8 +135,8 @@ void TACSMaterialProperties::setSpecificHeat(TacsScalar _specific_heat) {
 }
 
 // Extract the coefficients
-void TACSMaterialProperties::getIsotropicProperties(TacsScalar *_E,
-                                                    TacsScalar *_nu) {
+void TACSMaterialProperties::getIsotropicProperties(TacsScalar* _E,
+                                                    TacsScalar* _nu) {
   if (_E) {
     *_E = E;
   }
@@ -146,9 +146,9 @@ void TACSMaterialProperties::getIsotropicProperties(TacsScalar *_E,
 }
 
 void TACSMaterialProperties::getOrthotropicProperties(
-    TacsScalar *_E1, TacsScalar *_E2, TacsScalar *_E3, TacsScalar *_nu12,
-    TacsScalar *_nu13, TacsScalar *_nu23, TacsScalar *_G12, TacsScalar *_G13,
-    TacsScalar *_G23) {
+    TacsScalar* _E1, TacsScalar* _E2, TacsScalar* _E3, TacsScalar* _nu12,
+    TacsScalar* _nu13, TacsScalar* _nu23, TacsScalar* _G12, TacsScalar* _G13,
+    TacsScalar* _G23) {
   if (_E1) {
     *_E1 = E1;
   }
@@ -179,9 +179,9 @@ void TACSMaterialProperties::getOrthotropicProperties(
 }
 
 void TACSMaterialProperties::getStrengthProperties(
-    TacsScalar *_T1, TacsScalar *_C1, TacsScalar *_T2, TacsScalar *_C2,
-    TacsScalar *_T3, TacsScalar *_C3, TacsScalar *_S12, TacsScalar *_S13,
-    TacsScalar *_S23) {
+    TacsScalar* _T1, TacsScalar* _C1, TacsScalar* _T2, TacsScalar* _C2,
+    TacsScalar* _T3, TacsScalar* _C3, TacsScalar* _S12, TacsScalar* _S13,
+    TacsScalar* _S23) {
   if (_T1) {
     *_T1 = T1;
   }
@@ -211,9 +211,9 @@ void TACSMaterialProperties::getStrengthProperties(
   }
 }
 
-void TACSMaterialProperties::getCoefThermalExpansion(TacsScalar *_a1,
-                                                     TacsScalar *_a2,
-                                                     TacsScalar *_a3) {
+void TACSMaterialProperties::getCoefThermalExpansion(TacsScalar* _a1,
+                                                     TacsScalar* _a2,
+                                                     TacsScalar* _a3) {
   if (_a1) {
     *_a1 = alpha1;
   }
@@ -225,9 +225,9 @@ void TACSMaterialProperties::getCoefThermalExpansion(TacsScalar *_a1,
   }
 }
 
-void TACSMaterialProperties::getThermalConductivity(TacsScalar *_k1,
-                                                    TacsScalar *_k2,
-                                                    TacsScalar *_k3) {
+void TACSMaterialProperties::getThermalConductivity(TacsScalar* _k1,
+                                                    TacsScalar* _k2,
+                                                    TacsScalar* _k3) {
   if (_k1) {
     *_k1 = kappa1;
   }
@@ -487,7 +487,7 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
   C = Interaction strength such that sigma_1 = sigma_2 = C
 */
 TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
-                                       TACSMaterialProperties *_properties) {
+                                       TACSMaterialProperties* _properties) {
   plyThickness = _plyThickness;
   properties = _properties;
   properties->incref();
@@ -559,7 +559,7 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
   ksWeight = 100.0;
 }
 
-const char *TACSOrthotropicPly::name = "TACSOrthotropicPly";
+const char* TACSOrthotropicPly::name = "TACSOrthotropicPly";
 
 /*
   Set the KS penalty factor
@@ -594,9 +594,9 @@ TacsScalar TACSOrthotropicPly::getPlyThickness() { return plyThickness; }
 /*
   Get the stiffness constants
 */
-void TACSOrthotropicPly::getStiffness(TacsScalar *_E1, TacsScalar *_E2,
-                                      TacsScalar *_nu12, TacsScalar *_G12,
-                                      TacsScalar *_G23, TacsScalar *_G13) {
+void TACSOrthotropicPly::getStiffness(TacsScalar* _E1, TacsScalar* _E2,
+                                      TacsScalar* _nu12, TacsScalar* _G12,
+                                      TacsScalar* _G23, TacsScalar* _G13) {
   *_E1 = E1;
   *_E2 = E2;
   *_nu12 = nu12;
@@ -609,8 +609,8 @@ void TACSOrthotropicPly::getStiffness(TacsScalar *_E1, TacsScalar *_E2,
   Get the lamination stiffness objects
 */
 void TACSOrthotropicPly::getLaminateStiffness(
-    TacsScalar *_Q11, TacsScalar *_Q12, TacsScalar *_Q22, TacsScalar *_Q44,
-    TacsScalar *_Q55, TacsScalar *_Q66) {
+    TacsScalar* _Q11, TacsScalar* _Q12, TacsScalar* _Q22, TacsScalar* _Q44,
+    TacsScalar* _Q55, TacsScalar* _Q66) {
   *_Q11 = Q11;
   *_Q12 = Q12;
   *_Q22 = Q22;
@@ -622,9 +622,9 @@ void TACSOrthotropicPly::getLaminateStiffness(
 /*
   Get the strength parameters
 */
-void TACSOrthotropicPly::getStrength(TacsScalar *_Xt, TacsScalar *_Xc,
-                                     TacsScalar *_Yt, TacsScalar *_Yc,
-                                     TacsScalar *_S12, TacsScalar *_C) {
+void TACSOrthotropicPly::getStrength(TacsScalar* _Xt, TacsScalar* _Xc,
+                                     TacsScalar* _Yt, TacsScalar* _Yc,
+                                     TacsScalar* _S12, TacsScalar* _C) {
   *_Xt = Xt;
   *_Xc = Xc;
   *_Yt = Yt;
@@ -636,9 +636,9 @@ void TACSOrthotropicPly::getStrength(TacsScalar *_Xt, TacsScalar *_Xc,
 /*
   Get the strength parameters for strain
 */
-void TACSOrthotropicPly::getStrainStrength(TacsScalar *_eXt, TacsScalar *_eXc,
-                                           TacsScalar *_eYt, TacsScalar *_eYc,
-                                           TacsScalar *_eS12) {
+void TACSOrthotropicPly::getStrainStrength(TacsScalar* _eXt, TacsScalar* _eXc,
+                                           TacsScalar* _eYt, TacsScalar* _eYc,
+                                           TacsScalar* _eS12) {
   *_eXt = eXt;
   *_eXc = eXc;
   *_eYt = eYt;
@@ -649,9 +649,9 @@ void TACSOrthotropicPly::getStrainStrength(TacsScalar *_eXt, TacsScalar *_eXc,
 /*
   Get the Tsai-Wu failure constants
 */
-void TACSOrthotropicPly::getTsaiWu(TacsScalar *_F1, TacsScalar *_F2,
-                                   TacsScalar *_F11, TacsScalar *_F12,
-                                   TacsScalar *_F22, TacsScalar *_F66) {
+void TACSOrthotropicPly::getTsaiWu(TacsScalar* _F1, TacsScalar* _F2,
+                                   TacsScalar* _F11, TacsScalar* _F12,
+                                   TacsScalar* _F22, TacsScalar* _F66) {
   *_F1 = F1;
   *_F2 = F2;
   *_F11 = F11;
@@ -663,9 +663,9 @@ void TACSOrthotropicPly::getTsaiWu(TacsScalar *_F1, TacsScalar *_F2,
 /*
   Retrieve the stiffness invariants for the laminate
 */
-void TACSOrthotropicPly::getLaminateInvariants(TacsScalar *U1, TacsScalar *U2,
-                                               TacsScalar *U3, TacsScalar *U4,
-                                               TacsScalar *U5, TacsScalar *U6) {
+void TACSOrthotropicPly::getLaminateInvariants(TacsScalar* U1, TacsScalar* U2,
+                                               TacsScalar* U3, TacsScalar* U4,
+                                               TacsScalar* U5, TacsScalar* U6) {
   *U1 = 0.125 * (3.0 * Q11 + 3.0 * Q22 + 2.0 * Q12 + 4.0 * Q66);
   *U2 = 0.5 * (Q11 - Q22);
   *U3 = 0.125 * (Q11 + Q22 - 2.0 * Q12 - 4.0 * Q66);
@@ -967,7 +967,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
 
 TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
                                                 const TacsScalar strain[],
-                                                TacsScalar *failSens) {
+                                                TacsScalar* failSens) {
   TacsScalar e[3], se[3];  // The ply strain
   transformStrainGlobal2Ply(angle, strain, e);
 
@@ -1210,7 +1210,7 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens(
 */
 TacsScalar TACSOrthotropicPly::calculateFailLoadAngleSens(
     TacsScalar angle, const TacsScalar cstrain[], const TacsScalar lstrain[],
-    TacsScalar *posSens) {
+    TacsScalar* posSens) {
   // The constant and linearly varying components of the strain
   TacsScalar cstn[3], lstn[3];
   transformStrainGlobal2Ply(angle, cstrain, cstn);
@@ -1521,4 +1521,4 @@ void TACSOrthotropicPly::transformStrainPly2GlobalAngleSens(
               (s_cos2 - s_sin2) * plyStrain[2];
 }
 
-const char *TACSOrthotropicPly::getObjectName() { return name; }
+const char* TACSOrthotropicPly::getObjectName() { return name; }

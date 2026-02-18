@@ -17,7 +17,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSPressure2D::TACSPressure2D(int _varsPerNode, int _faceIndex,
-                               TACSElementBasis *_basis, TacsScalar _p) {
+                               TACSElementBasis* _basis, TacsScalar _p) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -27,7 +27,7 @@ TACSPressure2D::TACSPressure2D(int _varsPerNode, int _faceIndex,
 
 TACSPressure2D::~TACSPressure2D() { basis->decref(); }
 
-const char *TACSPressure2D::getObjectName() { return "TACSPressure2D"; }
+const char* TACSPressure2D::getObjectName() { return "TACSPressure2D"; }
 
 // Get the layout properties of the element
 int TACSPressure2D::getVarsPerNode() { return varsPerNode; }
@@ -36,7 +36,7 @@ int TACSPressure2D::getNumNodes() { return basis->getNumNodes(); }
 
 ElementLayout TACSPressure2D::getLayoutType() { return basis->getLayoutType(); }
 
-TACSElementBasis *TACSPressure2D::getElementBasis() { return basis; }
+TACSElementBasis* TACSPressure2D::getElementBasis() { return basis; }
 
 int TACSPressure2D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -65,9 +65,9 @@ double TACSPressure2D::getFaceQuadraturePoint(int face, int n, double pt[],
   Add the residual to the provided vector
 */
 void TACSPressure2D::addResidual(int elemIndex, double time,
-                                 const TacsScalar *Xpts, const TacsScalar *vars,
-                                 const TacsScalar *dvars,
-                                 const TacsScalar *ddvars, TacsScalar *res) {
+                                 const TacsScalar* Xpts, const TacsScalar* vars,
+                                 const TacsScalar* dvars,
+                                 const TacsScalar* ddvars, TacsScalar* res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
@@ -110,10 +110,10 @@ void TACSPressure2D::addResidual(int elemIndex, double time,
 */
 void TACSPressure2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                  TacsScalar beta, TacsScalar gamma,
-                                 const TacsScalar *Xpts, const TacsScalar *vars,
-                                 const TacsScalar *dvars,
-                                 const TacsScalar *ddvars, TacsScalar *res,
-                                 TacsScalar *mat) {
+                                 const TacsScalar* Xpts, const TacsScalar* vars,
+                                 const TacsScalar* dvars,
+                                 const TacsScalar* ddvars, TacsScalar* res,
+                                 TacsScalar* mat) {
   // This element has no Jacobian contributions, so just compute the residual if
   // it's requested
   if (res != NULL) {

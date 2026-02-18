@@ -47,12 +47,12 @@ enum TACSTranslationConType { COINCIDENT, COLINEAR, COPLANAR };
 */
 class TACSSphericalConstraint : public TACSElement {
  public:
-  TACSSphericalConstraint(TACSRigidBody *_bodyA, TACSRigidBody *_bodyB,
-                          TACSGibbsVector *_point,
-                          TACSGibbsVector *_axis = NULL,
+  TACSSphericalConstraint(TACSRigidBody* _bodyA, TACSRigidBody* _bodyB,
+                          TACSGibbsVector* _point,
+                          TACSGibbsVector* _axis = NULL,
                           TACSTranslationConType con_type = COINCIDENT);
-  TACSSphericalConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
-                          TACSGibbsVector *_axis = NULL,
+  TACSSphericalConstraint(TACSRigidBody* _bodyA, TACSGibbsVector* _point,
+                          TACSGibbsVector* _axis = NULL,
                           TACSTranslationConType con_type = COINCIDENT);
   ~TACSSphericalConstraint();
 
@@ -72,7 +72,7 @@ class TACSSphericalConstraint : public TACSElement {
   // --------------------------------------------
   int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char *getObjectName() { return elem_name; }
+  const char* getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -101,13 +101,13 @@ class TACSSphericalConstraint : public TACSElement {
 
   // The axis used to define either the axis or plane for the
   // constraints
-  TACSGibbsVector *axis;
+  TACSGibbsVector* axis;
 
   // The point where the joint is located in global frame
-  TACSGibbsVector *point;
+  TACSGibbsVector* point;
 
   // The name of the element
-  static const char *elem_name;
+  static const char* elem_name;
 };
 
 /*
@@ -133,19 +133,19 @@ class TACSSphericalConstraint : public TACSElement {
 */
 class TACSRevoluteConstraint : public TACSElement {
  public:
-  TACSRevoluteConstraint(TACSRigidBody *_bodyA, TACSRigidBody *_bodyB,
-                         TACSGibbsVector *_point, TACSGibbsVector *_eAVec,
+  TACSRevoluteConstraint(TACSRigidBody* _bodyA, TACSRigidBody* _bodyB,
+                         TACSGibbsVector* _point, TACSGibbsVector* _eAVec,
                          int _inertial_rev_axis = 0);
-  TACSRevoluteConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
-                         TACSGibbsVector *_eAVec);
-  TACSRevoluteConstraint(int _fixed_ref_point, TACSGibbsVector *_point,
-                         TACSGibbsVector *_eAVec, int _inertial_rev_axis = 0);
+  TACSRevoluteConstraint(TACSRigidBody* _bodyA, TACSGibbsVector* _point,
+                         TACSGibbsVector* _eAVec);
+  TACSRevoluteConstraint(int _fixed_ref_point, TACSGibbsVector* _point,
+                         TACSGibbsVector* _eAVec, int _inertial_rev_axis = 0);
   ~TACSRevoluteConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
   // ------------------------------------------------------------
   int getMultiplierIndex();
-  void setRevoluteAxis(TACSGibbsVector *_eAVec);
+  void setRevoluteAxis(TACSGibbsVector* _eAVec);
 
   // Set and retrieve design variable values
   // ---------------------------------------
@@ -159,7 +159,7 @@ class TACSRevoluteConstraint : public TACSElement {
   // --------------------------------------------
   int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char *getObjectName() { return elem_name; }
+  const char* getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -190,18 +190,18 @@ class TACSRevoluteConstraint : public TACSElement {
   TACSRigidBody *bodyA, *bodyB;
 
   // Point where the joint is located in global frame
-  TACSGibbsVector *point;
+  TACSGibbsVector* point;
 
   // Revolute direction in global frame
-  TACSGibbsVector *eAVec;
+  TACSGibbsVector* eAVec;
 
   // Local axis in the B-frame
   TACSGibbsVector *eB1Vec, *eB2Vec;
 
   // The coordinate direction in global frame
-  TACSGibbsVector *eVec;
+  TACSGibbsVector* eVec;
 
-  static const char *elem_name;  // The name of the element
+  static const char* elem_name;  // The name of the element
 };
 
 /*
@@ -209,7 +209,7 @@ class TACSRevoluteConstraint : public TACSElement {
 */
 class TACSRigidLink : public TACSElement {
  public:
-  TACSRigidLink(TACSRigidBody *_bodyA);
+  TACSRigidLink(TACSRigidBody* _bodyA);
   ~TACSRigidLink();
 
   // Get the multiplier precedent to ensure they are ordered last
@@ -220,7 +220,7 @@ class TACSRigidLink : public TACSElement {
   // --------------------------------------------
   int getVarsPerNode();
   int getNumNodes();
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -237,8 +237,8 @@ class TACSRigidLink : public TACSElement {
                    TacsScalar mat[]);
 
  private:
-  TACSRigidBody *bodyA;          // The rigid body
-  static const char *elem_name;  // The name of the element
+  TACSRigidBody* bodyA;          // The rigid body
+  static const char* elem_name;  // The name of the element
 
   // Parameter used to avoid linearly dependent Jacobian rows
   static const TacsScalar delta;
@@ -300,8 +300,8 @@ class TACSAverageConstraint : public TACSElement {
   static const int Y_MOMENT = 2;
   static const int Z_MOMENT = 4;
 
-  TACSAverageConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point,
-                        TACSRefFrame *_refFrame, int _moment_flag);
+  TACSAverageConstraint(TACSRigidBody* _bodyA, TACSGibbsVector* _point,
+                        TACSRefFrame* _refFrame, int _moment_flag);
   ~TACSAverageConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
@@ -312,7 +312,7 @@ class TACSAverageConstraint : public TACSElement {
   // ----------------------------------------------------------
   int getVarsPerNode();
   int getNumNodes();
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -334,18 +334,18 @@ class TACSAverageConstraint : public TACSElement {
   int moment_flag;
 
   // The rigid body
-  TACSRigidBody *bodyA;
+  TACSRigidBody* bodyA;
 
   // The point in the inertial reference frame
-  TACSGibbsVector *point;
+  TACSGibbsVector* point;
 
   // The reference frame used to define the local coordinate system in
   // the initial configuration (moments are taken about the y-z plane
   // in this reference frame)
-  TACSRefFrame *refFrame;
+  TACSRefFrame* refFrame;
 
   // The element name
-  static const char *elem_name;
+  static const char* elem_name;
 };
 
 /*
@@ -353,7 +353,7 @@ class TACSAverageConstraint : public TACSElement {
 */
 class TACSMotionDriver : public TACSElement {
  public:
-  TACSMotionDriver(TACSGibbsVector *_dir, TacsScalar _omega,
+  TACSMotionDriver(TACSGibbsVector* _dir, TacsScalar _omega,
                    int _fix_rotations = 0) {
     // Copy over the direction
     dir = _dir;
@@ -373,17 +373,17 @@ class TACSMotionDriver : public TACSElement {
 
   int getVarsPerNode() { return 8; }
   int getNumNodes() { return 2; }
-  const char *getObjectName() { return "TACSMotionDriver"; }
+  const char* getObjectName() { return "TACSMotionDriver"; }
 
   void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
                    const TacsScalar vars[], const TacsScalar dvars[],
                    const TacsScalar ddvars[], TacsScalar res[]) {
     // Retrieve the direction
-    const TacsScalar *d;
+    const TacsScalar* d;
     dir->getVector(&d);
 
     // The Lagrange multipliers
-    const TacsScalar *lam = &vars[8];
+    const TacsScalar* lam = &vars[8];
 
     // Specify a sinusoidal motion
     const TacsScalar scale = sin(omega * time);
@@ -422,7 +422,7 @@ class TACSMotionDriver : public TACSElement {
 
  private:
   TacsScalar omega;
-  TACSGibbsVector *dir;
+  TACSGibbsVector* dir;
   int fix_rotations;
 };
 
@@ -432,7 +432,7 @@ class TACSMotionDriver : public TACSElement {
 */
 class TACSRevoluteDriver : public TACSElement {
  public:
-  TACSRevoluteDriver(TACSGibbsVector *rev, TacsScalar _omega);
+  TACSRevoluteDriver(TACSGibbsVector* rev, TacsScalar _omega);
   ~TACSRevoluteDriver();
 
   // Get the multiplier precedent to ensure they are ordered last
@@ -446,7 +446,7 @@ class TACSRevoluteDriver : public TACSElement {
 
   int getVarsPerNode();
   int getNumNodes();
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -464,7 +464,7 @@ class TACSRevoluteDriver : public TACSElement {
 
  private:
   TacsScalar omega;
-  TACSGibbsVector *revVec;
+  TACSGibbsVector* revVec;
 
   // Parameter used to avoid linearly dependent Jacobian rows
   static const TacsScalar delta;
@@ -476,7 +476,7 @@ class TACSRevoluteDriver : public TACSElement {
 */
 class TACSFixedConstraint : public TACSElement {
  public:
-  TACSFixedConstraint(TACSRigidBody *_bodyA, TACSGibbsVector *_point);
+  TACSFixedConstraint(TACSRigidBody* _bodyA, TACSGibbsVector* _point);
   ~TACSFixedConstraint();
 
   // Get the multiplier precedent to ensure they are ordered last
@@ -495,7 +495,7 @@ class TACSFixedConstraint : public TACSElement {
   // --------------------------------------------
   int getVarsPerNode() { return 8; }
   int getNumNodes();
-  const char *getObjectName() { return elem_name; }
+  const char* getObjectName() { return elem_name; }
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -508,16 +508,16 @@ class TACSFixedConstraint : public TACSElement {
   void updatePoints();
 
   // The rigid bodies involved in the joint
-  TACSRigidBody *body;
+  TACSRigidBody* body;
 
   // The point where the joint is located in global frame
-  TACSGibbsVector *point;
+  TACSGibbsVector* point;
 
   // The positions of joint from each body in global frame
-  TACSGibbsVector *xVec;
+  TACSGibbsVector* xVec;
 
   // The name of the element
-  static const char *elem_name;
+  static const char* elem_name;
 };
 
 #endif  // TACS_KINEMATIC_CONSTRAINTS_H

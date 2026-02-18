@@ -49,7 +49,7 @@ class EBStiffness : public TACSConstitutive {
   // The reference direction of the beam
   // -----------------------------------
   const EBReferenceDirection ref_type;
-  const TacsScalar *getRefDir() { return ref_dir; }
+  const TacsScalar* getRefDir() { return ref_dir; }
 
   // Retrieve the stiffness
   // ----------------------
@@ -71,7 +71,7 @@ class EBStiffness : public TACSConstitutive {
   void addPointwiseMassDVSens(const double pt[], const TacsScalar alpha[],
                               TacsScalar dvSens[], int dvLen);
 
-  const char *constitutiveName();
+  const char* constitutiveName();
 
  protected:
   EBStiffness();
@@ -84,7 +84,7 @@ class EBStiffness : public TACSConstitutive {
                          TacsScalar s[]);
 
  private:
-  static const char *constName;
+  static const char* constName;
 };
 
 /*

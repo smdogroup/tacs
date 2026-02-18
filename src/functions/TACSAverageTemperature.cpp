@@ -23,7 +23,7 @@
 /*
   Initialize the TACSAverageTemperature class properties
 */
-TACSAverageTemperature::TACSAverageTemperature(TACSAssembler *_assembler,
+TACSAverageTemperature::TACSAverageTemperature(TACSAssembler* _assembler,
                                                TacsScalar _volume)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                    TACSFunction::SINGLE_STAGE, 0) {
@@ -37,9 +37,9 @@ TACSAverageTemperature::TACSAverageTemperature(TACSAssembler *_assembler,
 
 TACSAverageTemperature::~TACSAverageTemperature() {}
 
-const char *TACSAverageTemperature::funcName = "TACSAverageTemperature";
+const char* TACSAverageTemperature::funcName = "TACSAverageTemperature";
 
-const char *TACSAverageTemperature::getObjectName() { return funcName; }
+const char* TACSAverageTemperature::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -70,7 +70,7 @@ void TACSAverageTemperature::finalEvaluation(EvaluationType ftype) {
   Evaluate the temperature contributed by this element
 */
 void TACSAverageTemperature::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -93,7 +93,7 @@ void TACSAverageTemperature::elementWiseEval(
   function to the state variables.
 */
 void TACSAverageTemperature::getElementSVSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -127,7 +127,7 @@ void TACSAverageTemperature::getElementSVSens(
   w.r.t. the element nodes
 */
 void TACSAverageTemperature::getElementXptSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -159,7 +159,7 @@ void TACSAverageTemperature::getElementXptSens(
   design variables
 */
 void TACSAverageTemperature::addElementDVSens(
-    int elemIndex, TACSElement *element, double time, TacsScalar scale,
+    int elemIndex, TACSElement* element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

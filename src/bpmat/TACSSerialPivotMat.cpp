@@ -17,8 +17,8 @@
 /*
   Compare integers for binary searches
 */
-int compare_integers(const void *a, const void *b) {
-  return (*(int *)a - *(int *)b);
+int compare_integers(const void* a, const void* b) {
+  return (*(int*)a - *(int*)b);
 }
 
 /*
@@ -42,10 +42,10 @@ int compare_integers(const void *a, const void *b) {
   block_cols:       the columns in each row
   bcs:              the boundary conditions for the problem
 */
-TACSSerialPivotMat::TACSSerialPivotMat(TACSNodeMap *_rmap, int _bsize,
+TACSSerialPivotMat::TACSSerialPivotMat(TACSNodeMap* _rmap, int _bsize,
                                        int num_block_rows, int num_block_cols,
-                                       const int *block_rowp,
-                                       const int *block_cols) {
+                                       const int* block_rowp,
+                                       const int* block_cols) {
   rmap = _rmap;
   rmap->incref();
   mat = new BCSCMat(rmap->getMPIComm(), _bsize, num_block_rows, num_block_cols,
@@ -93,9 +93,9 @@ void TACSSerialPivotMat::zeroEntries() { mat->zeroEntries(); }
   mv:      the column dimension of the dense vaules matrix
   values:  the values to add to the matrix
 */
-void TACSSerialPivotMat::addValues(int nrow, const int *row, int ncol,
-                                   const int *col, int nv, int mv,
-                                   const TacsScalar *values) {
+void TACSSerialPivotMat::addValues(int nrow, const int* row, int ncol,
+                                   const int* col, int nv, int mv,
+                                   const TacsScalar* values) {
   mat->addMatBlockValues(nrow, row, ncol, col, values, mv);
 }
 
@@ -110,10 +110,10 @@ void TACSSerialPivotMat::addValues(int nrow, const int *row, int ncol,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void TACSSerialPivotMat::addWeightValues(int nvars, const int *varp,
-                                         const int *vars,
-                                         const TacsScalar *weights, int nv,
-                                         int mv, const TacsScalar *values,
+void TACSSerialPivotMat::addWeightValues(int nvars, const int* varp,
+                                         const int* vars,
+                                         const TacsScalar* weights, int nv,
+                                         int mv, const TacsScalar* values,
                                          MatrixOrientation matOr) {
   if (varp[nvars] == nvars) {
     // Special case when there are no weights - no copying required
@@ -125,7 +125,7 @@ void TACSSerialPivotMat::addWeightValues(int nvars, const int *varp,
   } else {
     // Allocate space for the matrix
     int n = varp[nvars];
-    TacsScalar *Aw = new TacsScalar[bsize * bsize * n * n];
+    TacsScalar* Aw = new TacsScalar[bsize * bsize * n * n];
 
     // Compute the weighted matrix - this loop is a bit horrendous
     for (int i = 0; i < nvars; i++) {
@@ -162,14 +162,14 @@ void TACSSerialPivotMat::addWeightValues(int nvars, const int *varp,
   matrix data to simplify searching for the columns with the rows
   corresponding to each boundary condition.
 */
-void TACSSerialPivotMat::applyBCs(TACSBcMap *bcmap) {
+void TACSSerialPivotMat::applyBCs(TACSBcMap* bcmap) {
   // Set up data so that we can quickly zero rows associated with the
   // boundary conditions in the column-oriented storage format. This
   // relies on the boundary conditions remaining fixed after they are
   // set/initialized. This is guaranteed by the TACSAssembler object.
   int ncols;
   const int *bptr, *aptr, *colp, *rows;
-  TacsScalar *A;
+  TacsScalar* A;
   mat->getArrays(NULL, NULL, &ncols, &bptr, &aptr, &colp, &rows, &A);
 
   const int *nodes, *vars;
@@ -183,7 +183,7 @@ void TACSSerialPivotMat::applyBCs(TACSBcMap *bcmap) {
 
       // Jump to column jp and search for the variables
       int col_size = colp[col + 1] - colp[col];
-      const int *col_rows = &rows[colp[col]];
+      const int* col_rows = &rows[colp[col]];
 
       // Loop over each of the variables
       for (int j = 0; j < bsize; j++) {
@@ -191,10 +191,10 @@ void TACSSerialPivotMat::applyBCs(TACSBcMap *bcmap) {
           int row = bsize * node + j;
 
           // Search for the row
-          int *item = (int *)bsearch(&row, col_rows, col_size, sizeof(int),
-                                     compare_integers);
+          int* item = (int*)bsearch(&row, col_rows, col_size, sizeof(int),
+                                    compare_integers);
           if (item) {
-            TacsScalar *a = &A[aptr[col] + bsize * (item - col_rows)];
+            TacsScalar* a = &A[aptr[col] + bsize * (item - col_rows)];
 
             // Zero the row
             memset(a, 0, bsize * sizeof(TacsScalar));
@@ -213,18 +213,18 @@ void TACSSerialPivotMat::applyBCs(TACSBcMap *bcmap) {
 /*
   Create the TACSBVec object that matches with this matrix
 */
-TACSVec *TACSSerialPivotMat::createVec() {
+TACSVec* TACSSerialPivotMat::createVec() {
   return new TACSBVec(rmap, mat->getMaxBlockSize());
 }
 
 /*
   Perform a matrix multiplication
 */
-void TACSSerialPivotMat::mult(TACSVec *tx, TACSVec *ty) {
+void TACSSerialPivotMat::mult(TACSVec* tx, TACSVec* ty) {
   // Dynamic cast to TACSBVec
   TACSBVec *xvec, *yvec;
-  xvec = dynamic_cast<TACSBVec *>(tx);
-  yvec = dynamic_cast<TACSBVec *>(ty);
+  xvec = dynamic_cast<TACSBVec*>(tx);
+  yvec = dynamic_cast<TACSBVec*>(ty);
 
   if (xvec && yvec) {
     // Get the entries in the array
@@ -239,7 +239,7 @@ void TACSSerialPivotMat::mult(TACSVec *tx, TACSVec *ty) {
 /*
   Retrieve the underlying BCSCMat object
 */
-BCSCMat *TACSSerialPivotMat::getBCSCMat() { return mat; }
+BCSCMat* TACSSerialPivotMat::getBCSCMat() { return mat; }
 
 /*
   Create the preconditioner (a direct solve) associated with the
@@ -248,7 +248,7 @@ BCSCMat *TACSSerialPivotMat::getBCSCMat() { return mat; }
   This code uses a direct factorization and applyFactor can be used to
   solve the problem.
 */
-TACSSerialPivotPc::TACSSerialPivotPc(TACSSerialPivotMat *_mat) {
+TACSSerialPivotPc::TACSSerialPivotPc(TACSSerialPivotMat* _mat) {
   mat = _mat;
   mat->incref();
   fill = 10.0;
@@ -284,11 +284,11 @@ void TACSSerialPivotPc::factor() {
   Apply the factorization to the input vector and store the result in
   the output vector without over-writing the right-hand-side.
 */
-void TACSSerialPivotPc::applyFactor(TACSVec *txvec, TACSVec *tyvec) {
+void TACSSerialPivotPc::applyFactor(TACSVec* txvec, TACSVec* tyvec) {
   // Covert to TACSBVec objects
   TACSBVec *xvec, *yvec;
-  xvec = dynamic_cast<TACSBVec *>(txvec);
-  yvec = dynamic_cast<TACSBVec *>(tyvec);
+  xvec = dynamic_cast<TACSBVec*>(txvec);
+  yvec = dynamic_cast<TACSBVec*>(tyvec);
 
   if (xvec && yvec) {
     // Get the arrays
@@ -307,4 +307,4 @@ void TACSSerialPivotPc::applyFactor(TACSVec *txvec, TACSVec *tyvec) {
 /*
   Retrieve the underlying matrix
 */
-void TACSSerialPivotPc::getMat(TACSMat **_mat) { *_mat = mat; }
+void TACSSerialPivotPc::getMat(TACSMat** _mat) { *_mat = mat; }

@@ -35,24 +35,24 @@ class TACSJacobiDavidsonOperator : public TACSObject {
   virtual MPI_Comm getMPIComm() = 0;
 
   // Create a vector
-  virtual TACSVec *createVec() = 0;
+  virtual TACSVec* createVec() = 0;
 
   // Set the eigenvalue estimate (and reset the factorization)
   virtual void setEigenvalueEstimate(double estimate) = 0;
 
   // Apply the preconditioner
-  virtual void applyFactor(TACSVec *x, TACSVec *y) = 0;
+  virtual void applyFactor(TACSVec* x, TACSVec* y) = 0;
 
   // Apply boundary conditions associated with the matrix
-  virtual void applyBCs(TACSVec *x) {}
+  virtual void applyBCs(TACSVec* x) {}
 
   // Perform a dot-product of two vectors in the operator space e.g.
   // output <- x^{T}*B*y
-  virtual TacsScalar dot(TACSVec *x, TACSVec *y) { return x->dot(y); }
+  virtual TacsScalar dot(TACSVec* x, TACSVec* y) { return x->dot(y); }
 
   // Matrix-vector products with either the A or B operators.
-  virtual void multA(TACSVec *x, TACSVec *y) = 0;
-  virtual void multB(TACSVec *x, TACSVec *y) { y->copyValues(x); }
+  virtual void multA(TACSVec* x, TACSVec* y) = 0;
+  virtual void multB(TACSVec* x, TACSVec* y) { y->copyValues(x); }
 };
 
 /*
@@ -60,37 +60,37 @@ class TACSJacobiDavidsonOperator : public TACSObject {
 */
 class TACSJDSimpleOperator : public TACSJacobiDavidsonOperator {
  public:
-  TACSJDSimpleOperator(TACSAssembler *_assembler, TACSMat *_mat, TACSPc *_pc);
+  TACSJDSimpleOperator(TACSAssembler* _assembler, TACSMat* _mat, TACSPc* _pc);
   ~TACSJDSimpleOperator();
 
   // Get the MPI_Comm
   MPI_Comm getMPIComm();
 
   // Create a vector
-  TACSVec *createVec();
+  TACSVec* createVec();
 
   // Set the eigenvalue estimate (and reset the factorization)
   // pc = K in this case
   void setEigenvalueEstimate(double estimate);
 
   // Apply the preconditioner
-  void applyFactor(TACSVec *x, TACSVec *y);
+  void applyFactor(TACSVec* x, TACSVec* y);
 
   // Apply boundary conditions associated with the matrix
-  void applyBCs(TACSVec *x);
+  void applyBCs(TACSVec* x);
 
   // Perform a dot-product of two vectors in the operator space e.g.
   // output <- x^{T}*B*y
-  TacsScalar dot(TACSVec *x, TACSVec *y);
+  TacsScalar dot(TACSVec* x, TACSVec* y);
 
   // Matrix-vector products with either the A or B operators.
-  void multA(TACSVec *x, TACSVec *y);
-  void multB(TACSVec *x, TACSVec *y);
+  void multA(TACSVec* x, TACSVec* y);
+  void multB(TACSVec* x, TACSVec* y);
 
  private:
-  TACSAssembler *assembler;
-  TACSMat *mat;
-  TACSPc *pc;
+  TACSAssembler* assembler;
+  TACSMat* mat;
+  TACSPc* pc;
 };
 
 /*
@@ -98,39 +98,39 @@ class TACSJDSimpleOperator : public TACSJacobiDavidsonOperator {
 */
 class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
  public:
-  TACSJDFrequencyOperator(TACSAssembler *_assembler, TACSMat *_kmat,
-                          TACSMat *_mmat, TACSMat *_pc_mat, TACSPc *_pc);
+  TACSJDFrequencyOperator(TACSAssembler* _assembler, TACSMat* _kmat,
+                          TACSMat* _mmat, TACSMat* _pc_mat, TACSPc* _pc);
   ~TACSJDFrequencyOperator();
 
   // Get the MPI_Comm
   MPI_Comm getMPIComm();
 
   // Create a vector
-  TACSVec *createVec();
+  TACSVec* createVec();
 
   // Set the eigenvalue estimate (and reset the factorization)
   // pc = K in this case
   void setEigenvalueEstimate(double estimate);
 
   // Apply the preconditioner
-  void applyFactor(TACSVec *x, TACSVec *y);
+  void applyFactor(TACSVec* x, TACSVec* y);
 
   // Apply boundary conditions associated with the matrix
-  void applyBCs(TACSVec *x);
+  void applyBCs(TACSVec* x);
 
   // Perform a dot-product of two vectors in the operator space e.g.
   // output <- x^{T}*B*y
-  TacsScalar dot(TACSVec *x, TACSVec *y);
+  TacsScalar dot(TACSVec* x, TACSVec* y);
 
   // Matrix-vector products with either the A or B operators.
-  void multA(TACSVec *x, TACSVec *y);
-  void multB(TACSVec *x, TACSVec *y);
+  void multA(TACSVec* x, TACSVec* y);
+  void multB(TACSVec* x, TACSVec* y);
 
  private:
-  TACSAssembler *assembler;
+  TACSAssembler* assembler;
   TACSMat *kmat, *mmat, *pc_mat;
-  TACSPc *pc;
-  TACSVec *work;
+  TACSPc* pc;
+  TACSVec* work;
 };
 
 /*
@@ -138,7 +138,7 @@ class TACSJDFrequencyOperator : public TACSJacobiDavidsonOperator {
 */
 class TACSJacobiDavidson : public TACSObject {
  public:
-  TACSJacobiDavidson(TACSJacobiDavidsonOperator *oper,
+  TACSJacobiDavidson(TACSJacobiDavidsonOperator* oper,
                      int _max_eigen_vectors = 10, int _max_jd_size = 20,
                      int _max_gmres_size = 30);
   ~TACSJacobiDavidson();
@@ -148,11 +148,11 @@ class TACSJacobiDavidson : public TACSObject {
 
   // Extract the eigenvalues and eigenvectors
   int getNumConvergedEigenvalues();
-  TacsScalar extractEigenvalue(int n, TacsScalar *error);
-  TacsScalar extractEigenvector(int n, TACSVec *ans, TacsScalar *error);
+  TacsScalar extractEigenvalue(int n, TacsScalar* error);
+  TacsScalar extractEigenvector(int n, TACSVec* ans, TacsScalar* error);
 
   // Solve the eigenvalue problem
-  void solve(KSMPrint *ksm_print = NULL, int print_level = 0);
+  void solve(KSMPrint* ksm_print = NULL, int print_level = 0);
 
   // Set tolerances to FGMRES
   void setTolerances(double _eig_rtol, double _eig_atol, double _rtol,
@@ -167,7 +167,7 @@ class TACSJacobiDavidson : public TACSObject {
 
  private:
   // The operator class that defines the eigenproblem
-  TACSJacobiDavidsonOperator *oper;
+  TACSJacobiDavidsonOperator* oper;
 
   // The recycle flag that indicates the number of converged eigenvectors to
   // recycle in the next solve
@@ -175,7 +175,7 @@ class TACSJacobiDavidson : public TACSObject {
   int num_recycle_vecs;
 
   // Generic work vector
-  TACSVec *work;
+  TACSVec* work;
 
   // The maximum size of the Jacobi--Davidson subspace
   int max_jd_size;
@@ -191,16 +191,16 @@ class TACSJacobiDavidson : public TACSObject {
   double theta_cutoff;
 
   // The matrix of variables
-  TacsScalar *M;
+  TacsScalar* M;
   double *ritzvecs, *ritzvals;
 
   // The eigenvalues
-  TacsScalar *eigvals;   // The eigenvalues
-  TacsScalar *eigerror;  // The error associated with the eigenvalues
-  int *eigindex;  // Argsorted list such that eigvals[argindex[i]] is sorted
+  TacsScalar* eigvals;   // The eigenvalues
+  TacsScalar* eigerror;  // The error associated with the eigenvalues
+  int* eigindex;  // Argsorted list such that eigvals[argindex[i]] is sorted
 
   // The vectors for the eigenvalue space
-  TACSVec **V;
+  TACSVec** V;
 
   // The number of converged eigenvectors/eigenvalues
   int nconverged;
@@ -213,10 +213,10 @@ class TACSJacobiDavidson : public TACSObject {
   double rtol, atol;
 
   // Data for the Hessenberg matrix
-  int *Hptr;
-  TacsScalar *H;
+  int* Hptr;
+  TacsScalar* H;
   TacsScalar *Qcos, *Qsin;
-  TacsScalar *res;
+  TacsScalar* res;
 
   // Subspace data for GMRES whether its flexible or not
   TACSVec **W, **Z;

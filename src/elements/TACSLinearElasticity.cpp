@@ -15,7 +15,7 @@
 #include "TACSLinearElasticity.h"
 
 TACSLinearElasticity2D::TACSLinearElasticity2D(
-    TACSPlaneStressConstitutive *_stiff, ElementStrainType _strain_type) {
+    TACSPlaneStressConstitutive* _stiff, ElementStrainType _strain_type) {
   stiff = _stiff;
   stiff->incref();
   strain_type = _strain_type;
@@ -128,7 +128,7 @@ void TACSLinearElasticity2D::addWeakAdjProduct(
     int elemIndex, const double time, TacsScalar scale, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
     const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar Psi[],
-    const TacsScalar Psix[], int dvLen, TacsScalar *fdvSens) {
+    const TacsScalar Psix[], int dvLen, TacsScalar* fdvSens) {
   // Evaluate the density
   TacsScalar rho_coef = scale * (Ut[2] * Psi[0] + Ut[5] * Psi[1]);
   stiff->addDensityDVSens(elemIndex, rho_coef, pt, X, dvLen, fdvSens);
@@ -164,7 +164,7 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
   dfdUx[0] = dfdUx[1] = dfdUx[2] = dfdUx[3] = 0.0;
@@ -230,8 +230,8 @@ void TACSLinearElasticity2D::evalWeakAdjXptSensProduct(
 }
 
 void TACSLinearElasticity2D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                                   int elemIndex, int *Jac_nnz,
-                                                   const int *Jac_pairs[]) {
+                                                   int elemIndex, int* Jac_nnz,
+                                                   const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 18;
     *Jac_pairs = linear_Jac_pairs;
@@ -450,7 +450,7 @@ void TACSLinearElasticity2D::addWeakMatDVSens(
     TacsScalar scale, int n, const double pt[], const TacsScalar X[],
     const TacsScalar Xd[], const TacsScalar Ut[], const TacsScalar Ux[],
     const TacsScalar Psi[], const TacsScalar Psix[], const TacsScalar Phi[],
-    const TacsScalar Phix[], int dvLen, TacsScalar *dfdx) {
+    const TacsScalar Phix[], int dvLen, TacsScalar* dfdx) {
   if (matType == TACS_MASS_MATRIX) {
     TacsScalar rho_coef = Psi[0] * Phi[0] + Psi[3] * Phi[3];
 
@@ -528,7 +528,7 @@ void TACSLinearElasticity2D::evalWeakMatSVSens(
 int TACSLinearElasticity2D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       TacsScalar e[3];
@@ -753,7 +753,7 @@ void TACSLinearElasticity2D::evalPointQuantitySens(
 void TACSLinearElasticity2D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
   if (etype == TACS_PLANE_STRESS_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];
@@ -802,7 +802,7 @@ void TACSLinearElasticity2D::getOutputData(
   }
 }
 
-TACSLinearElasticity3D::TACSLinearElasticity3D(TACSSolidConstitutive *_stiff,
+TACSLinearElasticity3D::TACSLinearElasticity3D(TACSSolidConstitutive* _stiff,
                                                ElementStrainType _strain_type) {
   stiff = _stiff;
   stiff->incref();
@@ -954,7 +954,7 @@ void TACSLinearElasticity3D::addWeakAdjProduct(
     int elemIndex, const double time, TacsScalar scale, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
     const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar Psi[],
-    const TacsScalar Psix[], int dvLen, TacsScalar *fdvSens) {
+    const TacsScalar Psix[], int dvLen, TacsScalar* fdvSens) {
   // Evaluate the density
   TacsScalar rho_coef =
       scale * (Ut[2] * Psi[0] + Ut[5] * Psi[1] + Ut[8] * Psi[2]);
@@ -1012,7 +1012,7 @@ void TACSLinearElasticity3D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
@@ -1135,8 +1135,8 @@ void TACSLinearElasticity3D::evalWeakAdjXptSensProduct(
 }
 
 void TACSLinearElasticity3D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                                   int elemIndex, int *Jac_nnz,
-                                                   const int *Jac_pairs[]) {
+                                                   int elemIndex, int* Jac_nnz,
+                                                   const int* Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 84;
     *Jac_pairs = linear_Jac_pairs;
@@ -1826,7 +1826,7 @@ void TACSLinearElasticity3D::addWeakMatDVSens(
     TacsScalar scale, int n, const double pt[], const TacsScalar X[],
     const TacsScalar Xd[], const TacsScalar Ut[], const TacsScalar Ux[],
     const TacsScalar Psi[], const TacsScalar Psix[], const TacsScalar Phi[],
-    const TacsScalar Phix[], int dvLen, TacsScalar *dfdx) {
+    const TacsScalar Phix[], int dvLen, TacsScalar* dfdx) {
   if (matType == TACS_MASS_MATRIX) {
     TacsScalar rho_coef = Psi[0] * Phi[0] + Psi[3] * Phi[3] + Psi[6] * Phi[6];
 
@@ -1945,7 +1945,7 @@ void TACSLinearElasticity3D::evalWeakMatSVSens(
 int TACSLinearElasticity3D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       TacsScalar e[6];
@@ -2282,7 +2282,7 @@ void TACSLinearElasticity3D::evalPointQuantitySens(
 void TACSLinearElasticity3D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
   if (etype == TACS_SOLID_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       // doesn't this depend whether it's linear/quadratic/etc?
