@@ -1,6 +1,6 @@
 name: clang-format Check
 
-on: 
+on:
   push:
     branches: [ master ]
   pull_request:
@@ -20,5 +20,4 @@ jobs:
       uses: jidicula/clang-format-action@v4.16.0
       with:
         clang-format-version: '20'
-        check-path: ${{ matrix.path }}
         fallback-style: 'Google'
