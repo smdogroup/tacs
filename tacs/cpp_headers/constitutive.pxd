@@ -138,7 +138,7 @@ cdef extern from "TACSLamParamFullShellConstitutive.h":
             TacsScalar, # tlb
             TacsScalar, # tub
             int[], # lpNums
-            TacsScalar # ksWeight
+            double, # ksWeight
         )
         void setLaminationParameters(TacsScalar[])
         void setNumFailAngles(int)

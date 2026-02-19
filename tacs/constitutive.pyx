@@ -2130,7 +2130,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         The upper bound for the thickness.
     lpNums : np.ndarray[int]
         Array of laminate parameter design variable numbers.
-    ksWeight : float or complex, optional
+    ksWeight : float, optional
         The KS aggregation weight for constraints (default is 30.0).
     """
 
@@ -2144,7 +2144,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
             TacsScalar tlb,
             TacsScalar tub,
             np.ndarray[int, ndim=1, mode="c"] lpNums,
-            TacsScalar ksWeight = 100.0
+            double ksWeight = 100.0
             ):
 
         self.lam_cptr = new TACSLamParamFullShellConstitutive(

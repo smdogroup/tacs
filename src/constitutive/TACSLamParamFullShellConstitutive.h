@@ -44,7 +44,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TACSLamParamFullShellConstitutive(TACSOrthotropicPly *_orthoPly,
                                     TacsScalar _t, int _tNum, TacsScalar _tlb,
                                     TacsScalar _tub, int _lpNums[],
-                                    TacsScalar _ksWeight);
+                                    double _ksWeight);
   ~TACSLamParamFullShellConstitutive();
 
   // -------------------------------------
@@ -174,8 +174,8 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TacsScalar U1, U2, U3, U4, U5;
   TacsScalar U6, U7;  // The invariants for shear
 
-  TACSOrthotropicPly *orthoPly;
-  TacsScalar ksWeight;
+  TACSOrthotropicPly* orthoPly;
+  double ksWeight;
 
   // The thickness information
   TacsScalar t;         // The thickness of the laminate
