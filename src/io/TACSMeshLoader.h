@@ -48,17 +48,17 @@ class TACSMeshLoader : public TACSObject {
 
   // Read a BDF file for input
   // -------------------------
-  int scanBDFFile(const char* file_name);
+  int scanBDFFile(const char *file_name);
 
   // Get information about the mesh after scanning
   // ---------------------------------------------
   int getNumComponents();
-  const char* getComponentDescript(int comp_num);
-  const char* getElementDescript(int comp_num);
+  const char *getComponentDescript(int comp_num);
+  const char *getElementDescript(int comp_num);
 
   // Set the elements corresponding to each of the component numbers
   // ---------------------------------------------------------------
-  void setElement(int component_num, TACSElement* _element);
+  void setElement(int component_num, TACSElement *_element);
 
   // Retrieve the element numbers corresponding to the given
   // component numbers
@@ -68,81 +68,81 @@ class TACSMeshLoader : public TACSObject {
 
   // Create a TACSToFH5 file writer
   // ------------------------------
-  TACSToFH5* createTACSToFH5(TACSAssembler* tacs, ElementType elem_type,
+  TACSToFH5 *createTACSToFH5(TACSAssembler *tacs, ElementType elem_type,
                              int write_flag);
 
   // Distribute the mesh and create TACS
   // -----------------------------------
-  TACSAssembler* createTACS(
+  TACSAssembler *createTACS(
       int vars_per_node,
       TACSAssembler::OrderingType order_type = TACSAssembler::NATURAL_ORDER,
       TACSAssembler::MatrixOrderingType mat_type = TACSAssembler::DIRECT_SCHUR);
 
   // Set the domain of a structural function with component numbers
   // --------------------------------------------------------------
-  void addFunctionDomain(TACSFunction* function, int num_comps,
+  void addFunctionDomain(TACSFunction *function, int num_comps,
                          int comp_nums[]);
 
   // Add the auxiliary element to the given component
   // ------------------------------------------------
-  void addAuxElement(TACSAuxElements* aux, int component_num,
-                     TACSElement* _element);
+  void addAuxElement(TACSAuxElements *aux, int component_num,
+                     TACSElement *_element);
 
   // Get the node numbers in the Assembler object from the file number
   // -----------------------------------------------------------------
-  void getAssemblerNodeNums(TACSAssembler* assembler, int num_nodes,
-                            int* node_nums, int* num_new_nodes,
-                            int** new_nodes);
+  void getAssemblerNodeNums(TACSAssembler *assembler, int num_nodes,
+                            int *node_nums, int *num_new_nodes,
+                            int **new_nodes);
 
   // Get the connectivity and boundary conditions
   // --------------------------------------------
-  void getConnectivity(int* _num_nodes, int* _num_elements,
-                       const int** _elem_node_ptr, const int** _elem_node_conn,
-                       const int** _elem_component, const TacsScalar** _Xpts);
-  void getBCs(int* _num_bcs, const int** _bc_nodes, const int** _bc_vars,
-              const int** _bc_ptr, const TacsScalar** _bc_vals);
+  void getConnectivity(int *_num_nodes, int *_num_elements,
+                       const int **_elem_node_ptr, const int **_elem_node_conn,
+                       const int **_elem_component, const TacsScalar **_Xpts);
+  void getBCs(int *_num_bcs, const int **_bc_nodes, const int **_bc_vars,
+              const int **_bc_ptr, const TacsScalar **_bc_vals);
 
  private:
   // Communicator for all processors
   MPI_Comm comm;
 
   // The underlying creator object
-  TACSCreator* creator;
+  TACSCreator *creator;
 
   // The element corresponding to each of the component numbers
-  TACSElement** elements;
+  TACSElement **elements;
 
   // Original BDF mesh information: Note that the original
   // ordering may not be contiguous. The node numbers associated
   // with the original ordering are stored in node_nums.
-  int* file_node_nums;
-  int* node_arg_sort_list;
-  int* file_elem_nums;
-  int* elem_arg_sort_list;
+  int *file_node_nums;
+  int *node_arg_sort_list;
+  int *file_elem_nums;
+  int *elem_arg_sort_list;
 
   // Reduced set of contiguous nodes
-  TacsScalar* Xpts;
+  TacsScalar *Xpts;
 
   // Store information about the original node numbers,
   // element numbers from the file
   // The mesh and element connectivity
   int num_nodes, num_elements;
   int *elem_node_conn, *elem_node_ptr;
-  int* elem_component;
+  int *elem_component;
 
   // Store information about the components
   int num_components;
-  char* component_elems;
-  char* component_descript;
+  char *component_elems;
+  char *component_descript;
 
   // The boundary conditions
   int num_bcs;
   int *bc_nodes, *bc_vars, *bc_ptr;
-  TacsScalar* bc_vals;
+  TacsScalar *bc_vals;
 
   static const int NumElementTypes;
 
-  static const char* ElementTypes[];
+  static const char *ElementTypes[];
 
   // Lower and upper limits for the number of nodes
   static const int ElementLimits[][2];

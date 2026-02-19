@@ -23,7 +23,7 @@
 /*
   Initialize the TACSKSTemperature class properties
 */
-TACSKSTemperature::TACSKSTemperature(TACSAssembler* _assembler,
+TACSKSTemperature::TACSKSTemperature(TACSAssembler *_assembler,
                                      double _ksWeight, double _alpha)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                    TACSFunction::TWO_STAGE, 0) {
@@ -43,7 +43,7 @@ TACSKSTemperature::~TACSKSTemperature() {}
 /*
   TACSKSTemperature function name
 */
-const char* TACSKSTemperature::funcName = "TACSKSTemperature";
+const char *TACSKSTemperature::funcName = "TACSKSTemperature";
 
 /*
   Set the KS aggregation type
@@ -65,7 +65,7 @@ void TACSKSTemperature::setParameter(double _ksWeight) { ksWeight = _ksWeight; }
 /*
   Return the function name
 */
-const char* TACSKSTemperature::getObjectName() { return funcName; }
+const char *TACSKSTemperature::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -122,7 +122,7 @@ void TACSKSTemperature::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSKSTemperature function.
 */
 void TACSKSTemperature::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -170,7 +170,7 @@ void TACSKSTemperature::elementWiseEval(
   function with respect to the state variables.
 */
 void TACSKSTemperature::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -222,7 +222,7 @@ void TACSKSTemperature::getElementSVSens(
   the element nodal locations
 */
 void TACSKSTemperature::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -276,7 +276,7 @@ void TACSKSTemperature::getElementXptSens(
   the constitutive/material design variables.
 */
 void TACSKSTemperature::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

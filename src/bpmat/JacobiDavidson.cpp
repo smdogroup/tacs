@@ -17,8 +17,8 @@
 #include "TacsUtilities.h"
 #include "tacslapack.h"
 
-TACSJDSimpleOperator::TACSJDSimpleOperator(TACSAssembler* _assembler,
-                                           TACSMat* _mat, TACSPc* _pc) {
+TACSJDSimpleOperator::TACSJDSimpleOperator(TACSAssembler *_assembler,
+                                           TACSMat *_mat, TACSPc *_pc) {
   assembler = _assembler;
   assembler->incref();
   mat = _mat;
@@ -37,7 +37,7 @@ TACSJDSimpleOperator::~TACSJDSimpleOperator() {
 MPI_Comm TACSJDSimpleOperator::getMPIComm() { return assembler->getMPIComm(); }
 
 // Create a vector
-TACSVec* TACSJDSimpleOperator::createVec() { return assembler->createVec(); }
+TACSVec *TACSJDSimpleOperator::createVec() { return assembler->createVec(); }
 
 // Set the eigenvalue estimate (and reset the factorization)
 // pc = K in this case
@@ -46,27 +46,27 @@ void TACSJDSimpleOperator::setEigenvalueEstimate(double estimate) {
 }
 
 // Apply the preconditioner
-void TACSJDSimpleOperator::applyFactor(TACSVec* x, TACSVec* y) {
+void TACSJDSimpleOperator::applyFactor(TACSVec *x, TACSVec *y) {
   pc->applyFactor(x, y);
   assembler->applyBCs(y);
 }
 
 // Apply boundary conditions associated with the matrix
-void TACSJDSimpleOperator::applyBCs(TACSVec* x) { assembler->applyBCs(x); }
+void TACSJDSimpleOperator::applyBCs(TACSVec *x) { assembler->applyBCs(x); }
 
 // Perform a dot-product of two vectors in the operator space e.g.
 // output <- x^{T}*y
-TacsScalar TACSJDSimpleOperator::dot(TACSVec* x, TACSVec* y) {
+TacsScalar TACSJDSimpleOperator::dot(TACSVec *x, TACSVec *y) {
   return y->dot(x);
 }
 
 // Matrix-vector products with either the A or B operators.
-void TACSJDSimpleOperator::multA(TACSVec* x, TACSVec* y) {
+void TACSJDSimpleOperator::multA(TACSVec *x, TACSVec *y) {
   mat->mult(x, y);
   assembler->applyBCs(y);
 }
 
-void TACSJDSimpleOperator::multB(TACSVec* x, TACSVec* y) {
+void TACSJDSimpleOperator::multB(TACSVec *x, TACSVec *y) {
   y->copyValues(x);
   assembler->applyBCs(y);
 }
@@ -74,10 +74,10 @@ void TACSJDSimpleOperator::multB(TACSVec* x, TACSVec* y) {
 /*
   JD operator class for frequency analysis
 */
-TACSJDFrequencyOperator::TACSJDFrequencyOperator(TACSAssembler* _assembler,
-                                                 TACSMat* _kmat, TACSMat* _mmat,
-                                                 TACSMat* _pc_mat,
-                                                 TACSPc* _pc) {
+TACSJDFrequencyOperator::TACSJDFrequencyOperator(TACSAssembler *_assembler,
+                                                 TACSMat *_kmat, TACSMat *_mmat,
+                                                 TACSMat *_pc_mat,
+                                                 TACSPc *_pc) {
   assembler = _assembler;
   assembler->incref();
   kmat = _kmat;
@@ -107,7 +107,7 @@ MPI_Comm TACSJDFrequencyOperator::getMPIComm() {
 }
 
 // Create a vector
-TACSVec* TACSJDFrequencyOperator::createVec() { return assembler->createVec(); }
+TACSVec *TACSJDFrequencyOperator::createVec() { return assembler->createVec(); }
 
 // Set the eigenvalue estimate (and reset the factorization)
 // pc = K in this case
@@ -122,28 +122,28 @@ void TACSJDFrequencyOperator::setEigenvalueEstimate(double estimate) {
 }
 
 // Apply the preconditioner
-void TACSJDFrequencyOperator::applyFactor(TACSVec* x, TACSVec* y) {
+void TACSJDFrequencyOperator::applyFactor(TACSVec *x, TACSVec *y) {
   pc->applyFactor(x, y);
   assembler->applyBCs(y);
 }
 
 // Apply boundary conditions associated with the matrix
-void TACSJDFrequencyOperator::applyBCs(TACSVec* x) { assembler->applyBCs(x); }
+void TACSJDFrequencyOperator::applyBCs(TACSVec *x) { assembler->applyBCs(x); }
 
 // Perform a dot-product of two vectors in the operator space e.g.
 // output <- x^{T}*B*y
-TacsScalar TACSJDFrequencyOperator::dot(TACSVec* x, TACSVec* y) {
+TacsScalar TACSJDFrequencyOperator::dot(TACSVec *x, TACSVec *y) {
   mmat->mult(x, work);
   return y->dot(work);
 }
 
 // Matrix-vector products with either the A or B operators.
-void TACSJDFrequencyOperator::multA(TACSVec* x, TACSVec* y) {
+void TACSJDFrequencyOperator::multA(TACSVec *x, TACSVec *y) {
   kmat->mult(x, y);
   assembler->applyBCs(y);
 }
 
-void TACSJDFrequencyOperator::multB(TACSVec* x, TACSVec* y) {
+void TACSJDFrequencyOperator::multB(TACSVec *x, TACSVec *y) {
   mmat->mult(x, y);
   assembler->applyBCs(y);
 }
@@ -161,7 +161,7 @@ void TACSJDFrequencyOperator::multB(TACSVec* x, TACSVec* y) {
   max_jd_size:       maximum size of the Jacobi-Davidson search space
   max_gmres_size:    maximum number of FGMRES iterations
 */
-TACSJacobiDavidson::TACSJacobiDavidson(TACSJacobiDavidsonOperator* _oper,
+TACSJacobiDavidson::TACSJacobiDavidson(TACSJacobiDavidsonOperator *_oper,
                                        int _max_eigen_vectors, int _max_jd_size,
                                        int _max_gmres_size) {
   oper = _oper;
@@ -198,9 +198,9 @@ TACSJacobiDavidson::TACSJacobiDavidson(TACSJacobiDavidsonOperator* _oper,
   ritzvals = new double[(max_jd_size + 1)];
 
   // Allocate space for the vectors
-  V = new TACSVec*[max_jd_size + 1];
-  Q = new TACSVec*[max_eigen_vectors + 1];
-  P = new TACSVec*[max_eigen_vectors + 1];
+  V = new TACSVec *[max_jd_size + 1];
+  Q = new TACSVec *[max_eigen_vectors + 1];
+  P = new TACSVec *[max_eigen_vectors + 1];
   eigvals = new TacsScalar[max_eigen_vectors];
   eigerror = new TacsScalar[max_eigen_vectors];
   eigindex = new int[max_eigen_vectors];
@@ -233,7 +233,7 @@ TACSJacobiDavidson::TACSJacobiDavidson(TACSJacobiDavidsonOperator* _oper,
   Qcos = new TacsScalar[max_gmres_size];
 
   // Allocate space for the vectors
-  W = new TACSVec*[max_gmres_size + 1];
+  W = new TACSVec *[max_gmres_size + 1];
   for (int i = 0; i < max_gmres_size + 1; i++) {
     W[i] = oper->createVec();
     W[i]->incref();
@@ -243,7 +243,7 @@ TACSJacobiDavidson::TACSJacobiDavidson(TACSJacobiDavidsonOperator* _oper,
   work = oper->createVec();
   work->incref();
 
-  Z = new TACSVec*[max_gmres_size];
+  Z = new TACSVec *[max_gmres_size];
   for (int i = 0; i < max_gmres_size; i++) {
     Z[i] = oper->createVec();
     Z[i]->incref();
@@ -307,7 +307,7 @@ int TACSJacobiDavidson::getNumConvergedEigenvalues() { return nconverged; }
 /*!
   Extract the eigenvalue from the analysis
 */
-TacsScalar TACSJacobiDavidson::extractEigenvalue(int n, TacsScalar* error) {
+TacsScalar TACSJacobiDavidson::extractEigenvalue(int n, TacsScalar *error) {
   if (error) {
     *error = 0.0;
   }
@@ -330,8 +330,8 @@ TacsScalar TACSJacobiDavidson::extractEigenvalue(int n, TacsScalar* error) {
     // Assemble the predicted Ritz vector
     if (error) {
       // Set the temporary vector space
-      TACSVec* qvec = Q[n];
-      TACSVec* pvec = P[n];
+      TACSVec *qvec = Q[n];
+      TACSVec *pvec = P[n];
       qvec->zeroEntries();
       for (int j = 0; j <= max_jd_size; j++) {
         qvec->axpy(ritzvecs[n * (max_jd_size + 1) + j], V[j]);
@@ -362,8 +362,8 @@ TacsScalar TACSJacobiDavidson::extractEigenvalue(int n, TacsScalar* error) {
 /*!
   Extract the eigenvector and eigenvalue from the eigenvalue analysis
 */
-TacsScalar TACSJacobiDavidson::extractEigenvector(int n, TACSVec* ans,
-                                                  TacsScalar* error) {
+TacsScalar TACSJacobiDavidson::extractEigenvector(int n, TACSVec *ans,
+                                                  TacsScalar *error) {
   if (error) {
     *error = 0.0;
   }
@@ -389,11 +389,11 @@ TacsScalar TACSJacobiDavidson::extractEigenvector(int n, TACSVec* ans,
     // Assemble the predicted Ritz vector
     if (error || ans) {
       // Set which vectors to use
-      TACSVec* qvec = Q[n];
+      TACSVec *qvec = Q[n];
       if (ans) {
         qvec = ans;
       }
-      TACSVec* pvec = P[n];
+      TACSVec *pvec = P[n];
 
       qvec->zeroEntries();
       for (int j = 0; j <= max_jd_size; j++) {
@@ -450,7 +450,7 @@ TacsScalar TACSJacobiDavidson::extractEigenvector(int n, TACSVec* ans,
   where r is orthogonal to the subspace Q and t is orthogonal to the
   subspace t by construction. FGMRES builds the subspaces W and Z.
 */
-void TACSJacobiDavidson::solve(KSMPrint* ksm_print, int print_level) {
+void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
   // Keep track of the current subspace
   V[0]->setRand(-1.0, 1.0);
   oper->applyBCs(V[0]);
@@ -461,7 +461,7 @@ void TACSJacobiDavidson::solve(KSMPrint* ksm_print, int print_level) {
 
   // Allocate the space for the real work vector
   int lwork = 16 * max_jd_size;
-  double* rwork = new double[lwork];
+  double *rwork = new double[lwork];
 
   // Store the number of iterations of the inner GMRES algorithm
   int iteration = 0;

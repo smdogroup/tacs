@@ -36,12 +36,12 @@
 */
 class compFSDTStiffness : public FSDTStiffness {
  public:
-  compFSDTStiffness(OrthoPly** _ortho_ply, TacsScalar _kcorr,
-                    TacsScalar* _thickness, TacsScalar* _ply_angles,
+  compFSDTStiffness(OrthoPly **_ortho_ply, TacsScalar _kcorr,
+                    TacsScalar *_thickness, TacsScalar *_ply_angles,
                     int _num_plies);
   ~compFSDTStiffness();
 
-  const char* constitutiveName();
+  const char *constitutiveName();
 
   // Functions required by FSDTStiffness
   // -----------------------------------
@@ -51,7 +51,7 @@ class compFSDTStiffness : public FSDTStiffness {
 
   // Compute the failure criteria
   // ----------------------------
-  void failure(const double pt[], const TacsScalar strain[], TacsScalar* fail);
+  void failure(const double pt[], const TacsScalar strain[], TacsScalar *fail);
 
  private:
   // Get the strain in a particular lamina -- still in the global ref. axis
@@ -63,13 +63,13 @@ class compFSDTStiffness : public FSDTStiffness {
 
   // The composite data
   // ------------------
-  OrthoPly** ortho_ply;
+  OrthoPly **ortho_ply;
   TacsScalar kcorr;
-  TacsScalar* thickness;
-  TacsScalar* ply_angles;
+  TacsScalar *thickness;
+  TacsScalar *ply_angles;
   int num_plies;
 
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif

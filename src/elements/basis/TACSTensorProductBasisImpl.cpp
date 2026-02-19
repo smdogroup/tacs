@@ -20,14 +20,14 @@ void TACSInterpAllTensor3DInterp5(const int m, const double N[],
   memset(out, 0, 4 * m * 125 * sizeof(TacsScalar));
 
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -35,7 +35,7 @@ void TACSInterpAllTensor3DInterp5(const int m, const double N[],
         double n2x3 = n2x[j] * n3[k];
         double n23x = n2[j] * n3x[k];
 
-        TacsScalar* g = &out[m];
+        TacsScalar *g = &out[m];
         for (int p = 0; p < m; p++) {
           g[0] += n23 * (n1x[0] * v[0] + n1x[1] * v[m] + n1x[2] * v[2 * m] +
                          n1x[3] * v[3 * m] + n1x[4] * v[4 * m]);
@@ -62,14 +62,14 @@ void TACSInterpAllTensor3DInterp5VarsPerNode1(const double N[],
   memset(out, 0, 4 * 125 * sizeof(TacsScalar));
 
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -98,14 +98,14 @@ void TACSInterpAllTensor3DInterp5VarsPerNode3(const double N[],
   memset(out, 0, 4 * 3 * 125 * sizeof(TacsScalar));
 
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
         TacsScalar t1;
@@ -151,14 +151,14 @@ void TACSInterpAllTensor3DInterp5VarsPerNode4(const double N[],
   memset(out, 0, 4 * 4 * 125 * sizeof(TacsScalar));
 
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -211,14 +211,14 @@ void TacsAddAllTransTensor3DInterp5(const int m, const double N[],
                                     const double Nx[], const TacsScalar in[],
                                     TacsScalar values[]) {
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -226,7 +226,7 @@ void TacsAddAllTransTensor3DInterp5(const int m, const double N[],
         double n2x3 = n2x[j] * n3[k];
         double n23x = n2[j] * n3x[k];
 
-        const TacsScalar* g = &in[m];
+        const TacsScalar *g = &in[m];
         for (int p = 0; p < m; p++) {
           TacsScalar a = n23 * in[p] + n2x3 * g[1] + n23x * g[2];
           TacsScalar b = n23 * g[0];
@@ -250,14 +250,14 @@ void TacsAddAllTransTensor3DInterp5VarsPerNode1(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -284,14 +284,14 @@ void TacsAddAllTransTensor3DInterp5VarsPerNode3(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
         double n23 = n2[j] * n3[k];
@@ -339,14 +339,14 @@ void TacsAddAllTransTensor3DInterp5VarsPerNode4(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 125; n++) {
-    const double* n1 = &N[5 * (n % 5)];
-    const double* n2 = &N[5 * ((n % 25) / 5)];
-    const double* n3 = &N[5 * (n / 25)];
-    const double* n1x = &Nx[5 * (n % 5)];
-    const double* n2x = &Nx[5 * ((n % 25) / 5)];
-    const double* n3x = &Nx[5 * (n / 25)];
+    const double *n1 = &N[5 * (n % 5)];
+    const double *n2 = &N[5 * ((n % 25) / 5)];
+    const double *n3 = &N[5 * (n / 25)];
+    const double *n1x = &Nx[5 * (n % 5)];
+    const double *n2x = &Nx[5 * ((n % 25) / 5)];
+    const double *n3x = &Nx[5 * (n / 25)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -403,14 +403,14 @@ void TACSInterpAllTensor3DInterp6(const int m, const double N[],
                                   TacsScalar out[]) {
   memset(out, 0, 4 * m * 216 * sizeof(TacsScalar));
   for (int n = 0; n < 216; n++) {
-    const double* n1 = &N[6 * (n % 6)];
-    const double* n2 = &N[6 * ((n % 36) / 6)];
-    const double* n3 = &N[6 * (n / 36)];
-    const double* n1x = &Nx[6 * (n % 6)];
-    const double* n2x = &Nx[6 * ((n % 36) / 6)];
-    const double* n3x = &Nx[6 * (n / 36)];
+    const double *n1 = &N[6 * (n % 6)];
+    const double *n2 = &N[6 * ((n % 36) / 6)];
+    const double *n3 = &N[6 * (n / 36)];
+    const double *n1x = &Nx[6 * (n % 6)];
+    const double *n2x = &Nx[6 * ((n % 36) / 6)];
+    const double *n3x = &Nx[6 * (n / 36)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -418,7 +418,7 @@ void TACSInterpAllTensor3DInterp6(const int m, const double N[],
         double n2x3 = n2x[j] * n3[k];
         double n23x = n2[j] * n3x[k];
 
-        TacsScalar* g = &out[m];
+        TacsScalar *g = &out[m];
         for (int p = 0; p < m; p++) {
           g[0] +=
               n23 * (n1x[0] * v[0] + n1x[1] * v[m] + n1x[2] * v[2 * m] +
@@ -447,26 +447,26 @@ void TACSInterpAllTensor3DInterp6VarsPerNode1(const double N[],
   memset(out, 0, 4 * 216 * sizeof(TacsScalar));
 
   for (int n = 0; n < 36; n++) {
-    const double* n11 = &N[0];
-    const double* n12 = &N[6];
-    const double* n13 = &N[12];
-    const double* n14 = &N[18];
-    const double* n15 = &N[24];
-    const double* n16 = &N[30];
+    const double *n11 = &N[0];
+    const double *n12 = &N[6];
+    const double *n13 = &N[12];
+    const double *n14 = &N[18];
+    const double *n15 = &N[24];
+    const double *n16 = &N[30];
 
-    const double* n1x1 = &Nx[0];
-    const double* n1x2 = &Nx[6];
-    const double* n1x3 = &Nx[12];
-    const double* n1x4 = &Nx[18];
-    const double* n1x5 = &Nx[24];
-    const double* n1x6 = &Nx[30];
+    const double *n1x1 = &Nx[0];
+    const double *n1x2 = &Nx[6];
+    const double *n1x3 = &Nx[12];
+    const double *n1x4 = &Nx[18];
+    const double *n1x5 = &Nx[24];
+    const double *n1x6 = &Nx[30];
 
-    const double* n2 = &N[6 * (n % 6)];
-    const double* n3 = &N[6 * (n / 6)];
-    const double* n2x = &Nx[6 * (n % 6)];
-    const double* n3x = &Nx[6 * (n / 6)];
+    const double *n2 = &N[6 * (n % 6)];
+    const double *n3 = &N[6 * (n / 6)];
+    const double *n2x = &Nx[6 * (n % 6)];
+    const double *n3x = &Nx[6 * (n / 6)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -536,14 +536,14 @@ void TACSInterpAllTensor3DInterp6VarsPerNode3(const double N[],
   memset(out, 0, 4 * 3 * 216 * sizeof(TacsScalar));
 
   for (int n = 0; n < 216; n++) {
-    const double* n1 = &N[6 * (n % 6)];
-    const double* n2 = &N[6 * ((n % 36) / 6)];
-    const double* n3 = &N[6 * (n / 36)];
-    const double* n1x = &Nx[6 * (n % 6)];
-    const double* n2x = &Nx[6 * ((n % 36) / 6)];
-    const double* n3x = &Nx[6 * (n / 36)];
+    const double *n1 = &N[6 * (n % 6)];
+    const double *n2 = &N[6 * ((n % 36) / 6)];
+    const double *n3 = &N[6 * (n / 36)];
+    const double *n1x = &Nx[6 * (n % 6)];
+    const double *n2x = &Nx[6 * ((n % 36) / 6)];
+    const double *n3x = &Nx[6 * (n / 36)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -590,14 +590,14 @@ void TACSInterpAllTensor3DInterp6VarsPerNode4(const double N[],
   memset(out, 0, 4 * 4 * 216 * sizeof(TacsScalar));
 
   for (int n = 0; n < 216; n++) {
-    const double* n1 = &N[6 * (n % 6)];
-    const double* n2 = &N[6 * ((n % 36) / 6)];
-    const double* n3 = &N[6 * (n / 36)];
-    const double* n1x = &Nx[6 * (n % 6)];
-    const double* n2x = &Nx[6 * ((n % 36) / 6)];
-    const double* n3x = &Nx[6 * (n / 36)];
+    const double *n1 = &N[6 * (n % 6)];
+    const double *n2 = &N[6 * ((n % 36) / 6)];
+    const double *n3 = &N[6 * (n / 36)];
+    const double *n1x = &Nx[6 * (n % 6)];
+    const double *n2x = &Nx[6 * ((n % 36) / 6)];
+    const double *n3x = &Nx[6 * (n / 36)];
 
-    const TacsScalar* v = values;
+    const TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -649,21 +649,21 @@ void TacsAddAllTransTensor3DInterp6(const int m, const double N[],
                                     const double Nx[], const TacsScalar in[],
                                     TacsScalar values[]) {
   for (int n = 0; n < 216; n++) {
-    const double* n1 = &N[6 * (n % 6)];
-    const double* n2 = &N[6 * ((n % 36) / 6)];
-    const double* n3 = &N[6 * (n / 36)];
-    const double* n1x = &Nx[6 * (n % 6)];
-    const double* n2x = &Nx[6 * ((n % 36) / 6)];
-    const double* n3x = &Nx[6 * (n / 36)];
+    const double *n1 = &N[6 * (n % 6)];
+    const double *n2 = &N[6 * ((n % 36) / 6)];
+    const double *n3 = &N[6 * (n / 36)];
+    const double *n1x = &Nx[6 * (n % 6)];
+    const double *n2x = &Nx[6 * ((n % 36) / 6)];
+    const double *n3x = &Nx[6 * (n / 36)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
         double n23 = n2[j] * n3[k];
         double n2x3 = n2x[j] * n3[k];
         double n23x = n2[j] * n3x[k];
 
-        const TacsScalar* g = &in[m];
+        const TacsScalar *g = &in[m];
         for (int p = 0; p < m; p++) {
           TacsScalar a = n23 * in[p] + n2x3 * g[1] + n23x * g[2];
           TacsScalar b = n23 * g[0];
@@ -689,26 +689,26 @@ void TacsAddAllTransTensor3DInterp6VarsPerNode1(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 36; n++) {
-    const double* n11 = &N[0];
-    const double* n12 = &N[6];
-    const double* n13 = &N[12];
-    const double* n14 = &N[18];
-    const double* n15 = &N[24];
-    const double* n16 = &N[30];
+    const double *n11 = &N[0];
+    const double *n12 = &N[6];
+    const double *n13 = &N[12];
+    const double *n14 = &N[18];
+    const double *n15 = &N[24];
+    const double *n16 = &N[30];
 
-    const double* n1x1 = &Nx[0];
-    const double* n1x2 = &Nx[6];
-    const double* n1x3 = &Nx[12];
-    const double* n1x4 = &Nx[18];
-    const double* n1x5 = &Nx[24];
-    const double* n1x6 = &Nx[30];
+    const double *n1x1 = &Nx[0];
+    const double *n1x2 = &Nx[6];
+    const double *n1x3 = &Nx[12];
+    const double *n1x4 = &Nx[18];
+    const double *n1x5 = &Nx[24];
+    const double *n1x6 = &Nx[30];
 
-    const double* n2 = &N[6 * (n % 6)];
-    const double* n3 = &N[6 * (n / 6)];
-    const double* n2x = &Nx[6 * (n % 6)];
-    const double* n3x = &Nx[6 * (n / 6)];
+    const double *n2 = &N[6 * (n % 6)];
+    const double *n3 = &N[6 * (n / 6)];
+    const double *n2x = &Nx[6 * (n % 6)];
+    const double *n3x = &Nx[6 * (n / 6)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -771,26 +771,26 @@ void TacsAddAllTransTensor3DInterp6VarsPerNode3(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 36; n++) {
-    const double* n11 = &N[0];
-    const double* n12 = &N[6];
-    const double* n13 = &N[12];
-    const double* n14 = &N[18];
-    const double* n15 = &N[24];
-    const double* n16 = &N[30];
+    const double *n11 = &N[0];
+    const double *n12 = &N[6];
+    const double *n13 = &N[12];
+    const double *n14 = &N[18];
+    const double *n15 = &N[24];
+    const double *n16 = &N[30];
 
-    const double* n1x1 = &Nx[0];
-    const double* n1x2 = &Nx[6];
-    const double* n1x3 = &Nx[12];
-    const double* n1x4 = &Nx[18];
-    const double* n1x5 = &Nx[24];
-    const double* n1x6 = &Nx[30];
+    const double *n1x1 = &Nx[0];
+    const double *n1x2 = &Nx[6];
+    const double *n1x3 = &Nx[12];
+    const double *n1x4 = &Nx[18];
+    const double *n1x5 = &Nx[24];
+    const double *n1x6 = &Nx[30];
 
-    const double* n2 = &N[6 * (n % 6)];
-    const double* n3 = &N[6 * (n / 6)];
-    const double* n2x = &Nx[6 * (n % 6)];
-    const double* n3x = &Nx[6 * (n / 6)];
+    const double *n2 = &N[6 * (n % 6)];
+    const double *n3 = &N[6 * (n / 6)];
+    const double *n2x = &Nx[6 * (n % 6)];
+    const double *n3x = &Nx[6 * (n / 6)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {
@@ -921,26 +921,26 @@ void TacsAddAllTransTensor3DInterp6VarsPerNode4(const double N[],
                                                 const TacsScalar in[],
                                                 TacsScalar values[]) {
   for (int n = 0; n < 36; n++) {
-    const double* n11 = &N[0];
-    const double* n12 = &N[6];
-    const double* n13 = &N[12];
-    const double* n14 = &N[18];
-    const double* n15 = &N[24];
-    const double* n16 = &N[30];
+    const double *n11 = &N[0];
+    const double *n12 = &N[6];
+    const double *n13 = &N[12];
+    const double *n14 = &N[18];
+    const double *n15 = &N[24];
+    const double *n16 = &N[30];
 
-    const double* n1x1 = &Nx[0];
-    const double* n1x2 = &Nx[6];
-    const double* n1x3 = &Nx[12];
-    const double* n1x4 = &Nx[18];
-    const double* n1x5 = &Nx[24];
-    const double* n1x6 = &Nx[30];
+    const double *n1x1 = &Nx[0];
+    const double *n1x2 = &Nx[6];
+    const double *n1x3 = &Nx[12];
+    const double *n1x4 = &Nx[18];
+    const double *n1x5 = &Nx[24];
+    const double *n1x6 = &Nx[30];
 
-    const double* n2 = &N[6 * (n % 6)];
-    const double* n3 = &N[6 * (n / 6)];
-    const double* n2x = &Nx[6 * (n % 6)];
-    const double* n3x = &Nx[6 * (n / 6)];
+    const double *n2 = &N[6 * (n % 6)];
+    const double *n3 = &N[6 * (n / 6)];
+    const double *n2x = &Nx[6 * (n % 6)];
+    const double *n3x = &Nx[6 * (n / 6)];
 
-    TacsScalar* v = values;
+    TacsScalar *v = values;
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {

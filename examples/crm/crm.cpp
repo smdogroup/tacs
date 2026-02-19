@@ -3,7 +3,7 @@
 #include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
   }
 
   // Write name of BDF file to be load to char array
-  const char* filename = "CRM_box_2nd.bdf";
+  const char *filename = "CRM_box_2nd.bdf";
 
   // Create the mesh loader object and load file
-  TACSMeshLoader* mesh = new TACSMeshLoader(comm);
+  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
   mesh->scanBDFFile(filename);
 
@@ -46,50 +46,50 @@ int main(int argc, char** argv) {
   TacsScalar cte = 24.0e-6;  // Coefficient of thermal expansion
   TacsScalar kappa = 230.0;  // Thermal conductivity
 
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  TACSShellTransform* transform = new TACSShellNaturalTransform();
+  TACSShellTransform *transform = new TACSShellNaturalTransform();
 
   // Loop over components, creating constituitive object for each
   for (int i = 0; i < num_components; i++) {
-    const char* descriptor = mesh->getElementDescript(i);
+    const char *descriptor = mesh->getElementDescript(i);
     TacsScalar thickness = 0.01;
     int thickness_index = i;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TACSShellConstitutive* con = new TACSIsoShellConstitutive(
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(
         props, thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
-    TACSElement* shell = TacsCreateShellByName(descriptor, transform, con);
+    TACSElement *shell = TacsCreateShellByName(descriptor, transform, con);
 
     // Set the shell element
     mesh->setElement(i, shell);
   }
 
   // Create tacs assembler from mesh loader object
-  TACSAssembler* assembler = mesh->createTACS(6);
+  TACSAssembler *assembler = mesh->createTACS(6);
   assembler->incref();
   mesh->decref();
 
   // Create the function of interest
-  TACSFunction* func = new TACSKSFailure(assembler, 100.0);
+  TACSFunction *func = new TACSKSFailure(assembler, 100.0);
   func->incref();
 
   // Create the design vector
-  TACSBVec* x = assembler->createDesignVec();
+  TACSBVec *x = assembler->createDesignVec();
   x->incref();
 
   // Get the design variable values
   assembler->getDesignVars(x);
 
   // Create matrix and vectors
-  TACSBVec* ans = assembler->createVec();  // displacements and rotations
-  TACSBVec* f = assembler->createVec();    // loads
-  TACSBVec* res = assembler->createVec();  // The residual
-  TACSBVec* adjoint = assembler->createVec();
-  TACSSchurMat* mat = assembler->createSchurMat();  // stiffness matrix
+  TACSBVec *ans = assembler->createVec();  // displacements and rotations
+  TACSBVec *f = assembler->createVec();    // loads
+  TACSBVec *res = assembler->createVec();  // The residual
+  TACSBVec *adjoint = assembler->createVec();
+  TACSSchurMat *mat = assembler->createSchurMat();  // stiffness matrix
 
   // Increment reference count to the matrix/vectors
   ans->incref();
@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
   int lev = 10000;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->incref();
 
   // Set all the entries in load vector to specified value
-  TacsScalar* force_vals;
+  TacsScalar *force_vals;
   int size = f->getArray(&force_vals);
   for (int k = 2; k < size; k += 6) {
     force_vals[k] += 100.0;
@@ -125,10 +125,10 @@ int main(int argc, char** argv) {
   TacsScalar fval;
   assembler->evalFunctions(1, &func, &fval);
 
-  TACSBVec* dfdx = assembler->createDesignVec();
+  TACSBVec *dfdx = assembler->createDesignVec();
   dfdx->incref();
 
-  TACSBVec* dfdXpts = assembler->createNodeVec();
+  TACSBVec *dfdXpts = assembler->createNodeVec();
   dfdXpts->incref();
 
   // Solve the adjoint equations
@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
   dfdXpts->endSetValues(TACS_ADD_VALUES);
 
   // Create a random vector and set it to a random array
-  TACSBVec* p = assembler->createDesignVec();
+  TACSBVec *p = assembler->createDesignVec();
   p->incref();
   p->setRand(-1.0, 1.0);
 
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
   TacsScalar dfdp = dfdx->dot(p);
 
   // Create a new vector of design variables
-  TACSBVec* xnew = assembler->createDesignVec();
+  TACSBVec *xnew = assembler->createDesignVec();
   xnew->incref();
 
 #ifdef TACS_USE_COMPLEX
@@ -203,12 +203,12 @@ int main(int argc, char** argv) {
   assembler->setDesignVars(x);
 
   // Create a new vector of points
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
   // Create a perturbation in the node locations
-  TACSBVec* pert = assembler->createNodeVec();
+  TACSBVec *pert = assembler->createNodeVec();
   pert->incref();
   pert->setRand(-1.0, 1.0);
 
@@ -249,7 +249,7 @@ int main(int argc, char** argv) {
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 =
+  TACSToFH5 *f5 =
       new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
   f5->writeToFile("ucrm.f5");

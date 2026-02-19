@@ -23,12 +23,12 @@
 
 #include "tacslapack.h"
 
-const char* TACSConstitutive::constName = "TACSConstitutive";
+const char *TACSConstitutive::constName = "TACSConstitutive";
 
 /**
   Return the generic constitutive class name
 */
-const char* TACSConstitutive::getObjectName() { return constName; }
+const char *TACSConstitutive::getObjectName() { return constName; }
 
 /*
   Compute a two-dimensional representation of the failure envelope.
@@ -56,12 +56,12 @@ void TACSConstitutive::getFailureEnvelope(
   int nstress = getNumStresses();
 
   // Compute an explicit form of the constitutive relationship
-  int* ipiv = new int[nstress];
-  TacsScalar* e = new TacsScalar[nstress];
-  TacsScalar* f_sens = new TacsScalar[nstress];
-  TacsScalar* x_strain = new TacsScalar[nstress];
-  TacsScalar* y_strain = new TacsScalar[nstress];
-  TacsScalar* C = new TacsScalar[nstress * nstress];
+  int *ipiv = new int[nstress];
+  TacsScalar *e = new TacsScalar[nstress];
+  TacsScalar *f_sens = new TacsScalar[nstress];
+  TacsScalar *x_strain = new TacsScalar[nstress];
+  TacsScalar *y_strain = new TacsScalar[nstress];
+  TacsScalar *C = new TacsScalar[nstress * nstress];
 
   for (int i = 0; i < nstress; i++) {
     memset(e, 0, nstress * sizeof(TacsScalar));

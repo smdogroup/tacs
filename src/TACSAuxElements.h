@@ -36,7 +36,7 @@
 */
 class TACSAuxElem {
  public:
-  TACSElement* elem;
+  TACSElement *elem;
   int num;
 };
 
@@ -60,15 +60,15 @@ class TACSAuxElements : public TACSObject {
 
   // Add a single element
   // --------------------
-  void addElement(int num, TACSElement* elem);
+  void addElement(int num, TACSElement *elem);
 
   // Add an entire list of elements
   // ------------------------------
-  void addElements(int nums[], TACSElement** elem, int num_elems);
+  void addElements(int nums[], TACSElement **elem, int num_elems);
 
   // Get the elements and sort them (if they are not already)
   // --------------------------------------------------------
-  int getAuxElements(TACSAuxElem** elems);
+  int getAuxElements(TACSAuxElem **elems);
 
   // Functions to control the design variables
   // -----------------------------------------
@@ -78,7 +78,7 @@ class TACSAuxElements : public TACSObject {
 
   // Print the name of the TACSObject
   // --------------------------------
-  const char* TACSObjectName() { return auxName; }
+  const char *TACSObjectName() { return auxName; }
 
  private:
   // Keep track of whether the element list has been sorted
@@ -92,10 +92,10 @@ class TACSAuxElements : public TACSObject {
   int num_elements;
 
   // The auxiliary elements
-  TACSAuxElem* aux;
+  TACSAuxElem *aux;
 
   // The auxiliary object name
-  static const char* auxName;
+  static const char *auxName;
 };
 
 #endif  // TACS_AUXILIARY_ELEMENTS_H

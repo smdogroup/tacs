@@ -4,7 +4,7 @@
 #include "TACSMeshLoader.h"
 #include "TACSShellElementDefs.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   // Intialize MPI and declare communicator
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -25,10 +25,10 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(comm, &rank);
 
   // Write name of BDF file to be load to char array
-  const char* filename = "CRM_box_2nd.bdf";
+  const char *filename = "CRM_box_2nd.bdf";
 
   // Create the mesh loader object and load file
-  TACSMeshLoader* mesh = new TACSMeshLoader(comm);
+  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
   mesh->scanBDFFile(filename);
 
@@ -44,38 +44,38 @@ int main(int argc, char** argv) {
   TacsScalar cte = 24.0e-6;  // Coefficient of thermal expansion
   TacsScalar kappa = 230.0;  // Thermal conductivity
 
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  TACSShellTransform* transform = new TACSShellNaturalTransform();
+  TACSShellTransform *transform = new TACSShellNaturalTransform();
 
   // Loop over components, creating constituitive object for each
   for (int i = 0; i < num_components; i++) {
-    const char* descriptor = mesh->getElementDescript(i);
+    const char *descriptor = mesh->getElementDescript(i);
     TacsScalar thickness = 0.01;
     int thickness_index = i;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TACSShellConstitutive* con = new TACSIsoShellConstitutive(
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(
         props, thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
-    TACSElement* shell = TacsCreateShellByName(descriptor, transform, con);
+    TACSElement *shell = TacsCreateShellByName(descriptor, transform, con);
 
     // Set the shell element
     mesh->setElement(i, shell);
   }
 
   // Create tacs assembler from mesh loader object
-  TACSAssembler* assembler = mesh->createTACS(6);
+  TACSAssembler *assembler = mesh->createTACS(6);
   assembler->incref();
   mesh->decref();
 
   // Create matrix and vectors
-  TACSSchurMat* kmat = assembler->createSchurMat();  // stiffness matrix
+  TACSSchurMat *kmat = assembler->createSchurMat();  // stiffness matrix
   kmat->incref();
 
-  TACSSchurMat* mmat = assembler->createSchurMat();
+  TACSSchurMat *mmat = assembler->createSchurMat();
   mmat->incref();
 
   // Parameters for the preconditioner
@@ -84,10 +84,10 @@ int main(int argc, char** argv) {
   int reorder_schur = 1;
 
   if (use_lanczos) {
-    TACSSchurPc* pc = new TACSSchurPc(kmat, lev_fill, fill, reorder_schur);
+    TACSSchurPc *pc = new TACSSchurPc(kmat, lev_fill, fill, reorder_schur);
     pc->incref();
 
-    TACSBVec* vec = assembler->createVec();
+    TACSBVec *vec = assembler->createVec();
     vec->incref();
 
     // Assemble and factor the stiffness/Jacobian matrix. Factor the
@@ -99,7 +99,7 @@ int main(int argc, char** argv) {
     int gmres_iters = 15;
     int nrestart = 0;     // Number of allowed restarts
     int is_flexible = 0;  // Is a flexible preconditioner?
-    GMRES* ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
+    GMRES *ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
     ksm->incref();
     ksm->setTolerances(1e-12, 1e-30);
 
@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
     TacsScalar sigma = 10.0;
     int output_freq = 1;
 
-    KSMPrint* ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
-    TACSFrequencyAnalysis* freq_analysis = new TACSFrequencyAnalysis(
+    KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+    TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
         assembler, sigma, mmat, kmat, ksm, max_lanczos, num_eigvals, eig_tol);
     freq_analysis->incref();
 
@@ -136,8 +136,8 @@ int main(int argc, char** argv) {
     ksm->decref();
     freq_analysis->decref();
   } else {
-    TACSSchurMat* pcmat = assembler->createSchurMat();
-    TACSSchurPc* pc = new TACSSchurPc(pcmat, lev_fill, fill, reorder_schur);
+    TACSSchurMat *pcmat = assembler->createSchurMat();
+    TACSSchurPc *pc = new TACSSchurPc(pcmat, lev_fill, fill, reorder_schur);
     pc->incref();
 
     int num_eigvals = 20;
@@ -147,14 +147,14 @@ int main(int argc, char** argv) {
     if (use_tacs_freq) {
       double rtol = 1e-3;
       double atol = 1e-16;
-      TACSFrequencyAnalysis* freq_analysis = new TACSFrequencyAnalysis(
+      TACSFrequencyAnalysis *freq_analysis = new TACSFrequencyAnalysis(
           assembler, sigma, mmat, kmat, pcmat, pc, jd_size, fgmres_size,
           num_eigvals, rtol, atol);
       freq_analysis->incref();
 
       double t1 = MPI_Wtime();
       int output_freq = 1;
-      KSMPrint* ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+      KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
       freq_analysis->solve(ksm_print);
       t1 = MPI_Wtime() - t1;
 
@@ -172,16 +172,16 @@ int main(int argc, char** argv) {
       assembler->assembleMatType(TACS_MASS_MATRIX, mmat);
       assembler->assembleMatType(TACS_STIFFNESS_MATRIX, kmat);
 
-      TACSJDFrequencyOperator* oper =
+      TACSJDFrequencyOperator *oper =
           new TACSJDFrequencyOperator(assembler, kmat, mmat, pcmat, pc);
       oper->setEigenvalueEstimate(0.0);
 
-      TACSJacobiDavidson* jd =
+      TACSJacobiDavidson *jd =
           new TACSJacobiDavidson(oper, num_eigvals, jd_size, fgmres_size);
       jd->incref();
 
       int output_freq = 1;
-      KSMPrint* ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
+      KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, output_freq);
       double t1 = MPI_Wtime();
       jd->solve(ksm_print);
       t1 = MPI_Wtime() - t1;

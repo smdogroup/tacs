@@ -20,13 +20,13 @@
 
 #include "TACSElementAlgebra.h"
 
-const char* TACSIsoShellConstitutive::constName = "TACSIsoShellConstitutive";
+const char *TACSIsoShellConstitutive::constName = "TACSIsoShellConstitutive";
 
 /*
   Create the shell constitutive object
 */
 TACSIsoShellConstitutive::TACSIsoShellConstitutive(
-    TACSMaterialProperties* props, TacsScalar _t, int _tNum, TacsScalar _tlb,
+    TACSMaterialProperties *props, TacsScalar _t, int _tNum, TacsScalar _tlb,
     TacsScalar _tub, TacsScalar _tOffset) {
   properties = props;
   if (properties) {
@@ -194,10 +194,10 @@ void TACSIsoShellConstitutive::evalTangentStiffness(int elemIndex,
                                                     const TacsScalar X[],
                                                     TacsScalar C[]) {
   if (properties) {
-    TacsScalar* A = &C[0];
-    TacsScalar* B = &C[6];
-    TacsScalar* D = &C[12];
-    TacsScalar* As = &C[18];
+    TacsScalar *A = &C[0];
+    TacsScalar *B = &C[6];
+    TacsScalar *D = &C[12];
+    TacsScalar *As = &C[18];
 
     // Compute the tangent stiffness matrix
     properties->evalTangentStiffness2D(A);
@@ -498,7 +498,7 @@ void TACSIsoShellConstitutive::addHeatFluxDVSens(
 /*
   Return the constitutive name
 */
-const char* TACSIsoShellConstitutive::getObjectName() { return constName; }
+const char *TACSIsoShellConstitutive::getObjectName() { return constName; }
 
 TacsScalar TACSIsoShellConstitutive::evalDesignFieldValue(int elemIndex,
                                                           const double pt[],

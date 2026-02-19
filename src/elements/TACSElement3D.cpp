@@ -21,8 +21,8 @@
 #include "TACSPressure3D.h"
 #include "TACSTraction3D.h"
 
-TACSElement3D::TACSElement3D(TACSElementModel* _model,
-                             TACSElementBasis* _basis) {
+TACSElement3D::TACSElement3D(TACSElementModel *_model,
+                             TACSElementBasis *_basis) {
   model = _model;
   model->incref();
   basis = _basis;
@@ -34,7 +34,7 @@ TACSElement3D::~TACSElement3D() {
   basis->decref();
 }
 
-const char* TACSElement3D::getObjectName() { return "TACSElement3D"; }
+const char *TACSElement3D::getObjectName() { return "TACSElement3D"; }
 
 // Get the layout properties of the element
 int TACSElement3D::getVarsPerNode() { return model->getVarsPerNode(); }
@@ -45,29 +45,29 @@ int TACSElement3D::getDesignVarsPerNode() {
   return model->getDesignVarsPerNode();
 }
 
-TACSElement* TACSElement3D::createElementTraction(int faceIndex,
+TACSElement *TACSElement3D::createElementTraction(int faceIndex,
                                                   const TacsScalar t[]) {
   int varsPerNode = getVarsPerNode();
   return new TACSTraction3D(varsPerNode, faceIndex, basis, t);
 }
 
-TACSElement* TACSElement3D::createElementPressure(int faceIndex, TacsScalar p) {
+TACSElement *TACSElement3D::createElementPressure(int faceIndex, TacsScalar p) {
   int varsPerNode = getVarsPerNode();
   return new TACSPressure3D(varsPerNode, faceIndex, basis, p);
 }
 
-TACSElement* TACSElement3D::createElementInertialForce(
+TACSElement *TACSElement3D::createElementInertialForce(
     const TacsScalar inertiaVec[]) {
   int varsPerNode = getVarsPerNode();
-  TACSConstitutive* con = model->getConstitutive();
+  TACSConstitutive *con = model->getConstitutive();
   return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec);
 }
 
-TACSElement* TACSElement3D::createElementCentrifugalForce(
+TACSElement *TACSElement3D::createElementCentrifugalForce(
     const TacsScalar omegaVec[], const TacsScalar rotCenter[],
     const bool first_order) {
   int varsPerNode = getVarsPerNode();
-  TACSConstitutive* con = model->getConstitutive();
+  TACSConstitutive *con = model->getConstitutive();
   return new TACSCentrifugalForce3D(varsPerNode, con, basis, omegaVec,
                                     rotCenter);
 }
@@ -76,9 +76,9 @@ ElementLayout TACSElement3D::getLayoutType() { return basis->getLayoutType(); }
 
 ElementType TACSElement3D::getElementType() { return TACS_SOLID_ELEMENT; }
 
-TACSElementBasis* TACSElement3D::getElementBasis() { return basis; }
+TACSElementBasis *TACSElement3D::getElementBasis() { return basis; }
 
-TACSElementModel* TACSElement3D::getElementModel() { return model; }
+TACSElementModel *TACSElement3D::getElementModel() { return model; }
 
 int TACSElement3D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -137,9 +137,9 @@ int TACSElement3D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
   Add the residual to the provided vector
 */
 void TACSElement3D::addResidual(int elemIndex, double time,
-                                const TacsScalar* Xpts, const TacsScalar* vars,
-                                const TacsScalar* dvars,
-                                const TacsScalar* ddvars, TacsScalar* res) {
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
@@ -175,17 +175,17 @@ void TACSElement3D::addResidual(int elemIndex, double time,
 */
 void TACSElement3D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                 TacsScalar beta, TacsScalar gamma,
-                                const TacsScalar* Xpts, const TacsScalar* vars,
-                                const TacsScalar* dvars,
-                                const TacsScalar* ddvars, TacsScalar* res,
-                                TacsScalar* mat) {
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res,
+                                TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
 
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex, &Jac_nnz,
                                &Jac_pairs);
 
@@ -326,7 +326,7 @@ void TACSElement3D::getMatType(ElementMatrixType matType, int elemIndex,
 
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   // Loop over each quadrature point and add the residual contribution
@@ -360,9 +360,9 @@ void TACSElement3D::getMatType(ElementMatrixType matType, int elemIndex,
 }
 
 void TACSElement3D::getMatVecDataSizes(ElementMatrixType matType, int elemIndex,
-                                       int* _data_size, int* _temp_size) {
+                                       int *_data_size, int *_temp_size) {
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   const int nquad = basis->getNumQuadraturePoints();
@@ -387,7 +387,7 @@ void TACSElement3D::getMatVecProductData(
 
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   // Loop over each quadrature point and add the residual contribution
@@ -398,8 +398,8 @@ void TACSElement3D::getMatVecProductData(
 
     // Set pointers to the Jacobian transformation and the entries
     // of the weak form Jacobian
-    TacsScalar* J = &data[0];
-    TacsScalar* Jac = &data[9];
+    TacsScalar *J = &data[0];
+    TacsScalar *Jac = &data[9];
 
     // Get the solution field and the solution field gradient and the
     // Jacobian transformation
@@ -430,7 +430,7 @@ void TACSElement3D::addMatVecProduct(ElementMatrixType matType, int elemIndex,
                                      const TacsScalar px[], TacsScalar py[]) {
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   const int vars_per_node = model->getVarsPerNode();
@@ -537,7 +537,7 @@ void TACSElement3D::getMatSVSensInnerProduct(
 int TACSElement3D::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar* detXd, TacsScalar* quantity) {
+    const TacsScalar ddvars[], TacsScalar *detXd, TacsScalar *quantity) {
   const int vars_per_node = model->getVarsPerNode();
   TacsScalar X[3], Xd[9], J[9];
   TacsScalar Ut[3 * MAX_VARS_PER_NODE];
@@ -660,7 +660,7 @@ void TACSElement3D::getOutputData(int elemIndex, ElementType etype,
                                   const TacsScalar vars[],
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[], int ld_data,
-                                  TacsScalar* data) {
+                                  TacsScalar *data) {
   int num_vis_nodes = TacsGetNumVisNodes(basis->getLayoutType());
   const int vars_per_node = model->getVarsPerNode();
 

@@ -23,7 +23,7 @@
 /*
   Initialize the Compliance class properties
 */
-TACSCompliance::TACSCompliance(TACSAssembler* _assembler)
+TACSCompliance::TACSCompliance(TACSAssembler *_assembler)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                    TACSFunction::SINGLE_STAGE, 0) {
   compliance = 0.0;
@@ -32,9 +32,9 @@ TACSCompliance::TACSCompliance(TACSAssembler* _assembler)
 
 TACSCompliance::~TACSCompliance() {}
 
-const char* TACSCompliance::funcName = "TACSCompliance";
+const char *TACSCompliance::funcName = "TACSCompliance";
 
-const char* TACSCompliance::getObjectName() { return funcName; }
+const char *TACSCompliance::getObjectName() { return funcName; }
 
 /*
   Set the compliance type
@@ -67,7 +67,7 @@ void TACSCompliance::finalEvaluation(EvaluationType ftype) {
   Evaluate the compliance contributed by this element
 */
 void TACSCompliance::elementWiseEval(EvaluationType ftype, int elemIndex,
-                                     TACSElement* element, double time,
+                                     TACSElement *element, double time,
                                      TacsScalar scale, const TacsScalar Xpts[],
                                      const TacsScalar vars[],
                                      const TacsScalar dvars[],
@@ -93,7 +93,7 @@ void TACSCompliance::elementWiseEval(EvaluationType ftype, int elemIndex,
   function to the state variables.
 */
 void TACSCompliance::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -127,7 +127,7 @@ void TACSCompliance::getElementSVSens(
   w.r.t. the element nodes
 */
 void TACSCompliance::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -160,7 +160,7 @@ void TACSCompliance::getElementXptSens(
   design variables
 */
 void TACSCompliance::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

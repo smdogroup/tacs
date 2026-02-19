@@ -47,8 +47,8 @@ class MITC3 : public TACSElement {
   static const int NUM_DISPS = 8;
   static const int NUM_STRESSES = 6;
 
-  MITC3(TACSBeamConstitutive* _stiff, TACSGibbsVector* _gravity = NULL,
-        TACSGibbsVector* _vInit = NULL, TACSGibbsVector* _omegaInit = NULL);
+  MITC3(TACSBeamConstitutive *_stiff, TACSGibbsVector *_gravity = NULL,
+        TACSGibbsVector *_vInit = NULL, TACSGibbsVector *_omegaInit = NULL);
   ~MITC3();
 
   // Return the sizes of the array components
@@ -58,12 +58,12 @@ class MITC3 : public TACSElement {
 
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   ElementLayout getLayoutType();
 
   // Get the element basis
   // ---------------------
-  TACSElementBasis* getElementBasis() { return &basis; }
+  TACSElementBasis *getElementBasis() { return &basis; }
 
   // Functions for handling the design variables
   // -------------------------------------------
@@ -82,7 +82,7 @@ class MITC3 : public TACSElement {
   // -----------------------------------------------------------
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -111,14 +111,14 @@ class MITC3 : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
   // Evaluate a point-wise quantity of interest.
   // ------------------------------------------
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *quantity);
 
   // Add the derivative of the point quantity w.r.t. the design variables
   // --------------------------------------------------------------------
@@ -151,7 +151,7 @@ class MITC3 : public TACSElement {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive* getConstitutive();
+  TACSConstitutive *getConstitutive();
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -275,16 +275,16 @@ class MITC3 : public TACSElement {
   const double *gaussPts, *gaussWts;
 
   // The stiffness object
-  TACSBeamConstitutive* stiff;
+  TACSBeamConstitutive *stiff;
 
   // The gravity vector (if any)
-  TACSGibbsVector* gravity;
+  TACSGibbsVector *gravity;
 
   // Initial velocity/angular velocity
   TACSGibbsVector *vInit, *omegaInit;
 
   // The element name
-  static const char* elemName;
+  static const char *elemName;
 
   // The element basis
   TACSQuadraticBeamBasis basis;

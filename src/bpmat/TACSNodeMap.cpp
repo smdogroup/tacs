@@ -73,7 +73,7 @@ MPI_Comm TACSNodeMap::getMPIComm() { return comm; }
 /*
   Get the ownership range for this processor
 */
-void TACSNodeMap::getOwnerRange(const int** _ownerRange) {
+void TACSNodeMap::getOwnerRange(const int **_ownerRange) {
   *_ownerRange = ownerRange;
 }
 

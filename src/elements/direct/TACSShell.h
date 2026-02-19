@@ -34,7 +34,7 @@ class TACSShell : public TACSElement {
   static const int NUM_STRESSES = 8;
   static const int NUM_EXTRAS = 4;
 
-  TACSShell(FSDTStiffness* _stiff, int componentNum);
+  TACSShell(FSDTStiffness *_stiff, int componentNum);
   ~TACSShell();
 
   // Functions to access the design variable information
@@ -46,11 +46,11 @@ class TACSShell : public TACSElement {
 
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
-  const char* elementName();
-  const char* displacementName(int i);
-  const char* stressName(int i);
-  const char* strainName(int i);
-  const char* extraName(int i);
+  const char *elementName();
+  const char *displacementName(int i);
+  const char *stressName(int i);
+  const char *strainName(int i);
+  const char *extraName(int i);
   int numDisplacements();
   int numStresses();
   int numExtras();
@@ -58,15 +58,15 @@ class TACSShell : public TACSElement {
 
  protected:
   // The constitutive object pointer
-  FSDTStiffness* stiff;
+  FSDTStiffness *stiff;
 
  private:
   // The names of the displacements, stresses etc.
-  static const char* elemName;
-  static const char* dispNames[6];
-  static const char* stressNames[8];
-  static const char* strainNames[8];
-  static const char* extraNames[4];
+  static const char *elemName;
+  static const char *dispNames[6];
+  static const char *stressNames[8];
+  static const char *strainNames[8];
+  static const char *extraNames[4];
 };
 
 #endif

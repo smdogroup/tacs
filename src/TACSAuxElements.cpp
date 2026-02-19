@@ -18,14 +18,14 @@
 
 #include "TACSAuxElements.h"
 
-static int compare_elems(const void* a, const void* b) {
-  const TACSAuxElem* ao = static_cast<const TACSAuxElem*>(a);
-  const TACSAuxElem* bo = static_cast<const TACSAuxElem*>(b);
+static int compare_elems(const void *a, const void *b) {
+  const TACSAuxElem *ao = static_cast<const TACSAuxElem *>(a);
+  const TACSAuxElem *bo = static_cast<const TACSAuxElem *>(b);
 
   return ao->num - bo->num;
 }
 
-const char* TACSAuxElements::auxName = "TACSAuxElements";
+const char *TACSAuxElements::auxName = "TACSAuxElements";
 
 /*
   Initialize the auxiliary element object
@@ -75,12 +75,12 @@ void TACSAuxElements::sort() {
   num:   the TACSAssembler element number
   elem:  the TACSElement pointer
 */
-void TACSAuxElements::addElement(int num, TACSElement* elem) {
+void TACSAuxElements::addElement(int num, TACSElement *elem) {
   // The array is not large enough to handle a new element
   // Create a new array and copy over the values
   if (num_elements >= max_elements) {
     max_elements *= 2;
-    TACSAuxElem* tmp = new TACSAuxElem[max_elements];
+    TACSAuxElem *tmp = new TACSAuxElem[max_elements];
     memcpy(tmp, aux, num_elements * sizeof(TACSAuxElem));
     delete[] aux;
     aux = tmp;
@@ -108,13 +108,13 @@ void TACSAuxElements::addElement(int num, TACSElement* elem) {
   elem:        an array of axuiliary elements
   num_elems:   the number of elements in the arrays
 */
-void TACSAuxElements::addElements(int nums[], TACSElement** elem,
+void TACSAuxElements::addElements(int nums[], TACSElement **elem,
                                   int num_elems) {
   // The array is not large enough to handle a new element
   // Create a new array and copy over the values
   if (num_elements + num_elems >= max_elements) {
     max_elements = 2 * max_elements + num_elems;
-    TACSAuxElem* tmp = new TACSAuxElem[max_elements];
+    TACSAuxElem *tmp = new TACSAuxElem[max_elements];
     memcpy(tmp, aux, num_elements * sizeof(TACSAuxElem));
     delete[] aux;
     aux = tmp;
@@ -135,7 +135,7 @@ void TACSAuxElements::addElements(int nums[], TACSElement** elem,
 /*
   Get the elements and sort them (if they are not already)
 */
-int TACSAuxElements::getAuxElements(TACSAuxElem** _elems) {
+int TACSAuxElements::getAuxElements(TACSAuxElem **_elems) {
   *_elems = aux;
   return num_elements;
 }

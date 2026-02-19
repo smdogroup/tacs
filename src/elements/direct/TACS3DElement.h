@@ -42,7 +42,7 @@ class TACS3DElement : public TACSElement {
   static const int NUM_EXTRAS = 4;
   static const int NUM_VARIABLES = 3 * NUM_NODES;
 
-  TACS3DElement(SolidStiffness* _stiff, ElementBehaviorType type,
+  TACS3DElement(SolidStiffness *_stiff, ElementBehaviorType type,
                 int _component);
   ~TACS3DElement();
 
@@ -104,10 +104,10 @@ class TACS3DElement : public TACSElement {
 
   // Get the variable information
   // ----------------------------
-  const char* displacementName(int i);
-  const char* stressName(int i);
-  const char* strainName(int i);
-  const char* extraName(int i);
+  const char *displacementName(int i);
+  const char *stressName(int i);
+  const char *strainName(int i);
+  const char *extraName(int i);
   int numDisplacements();
   int numStresses();
   int numNodes();
@@ -117,7 +117,7 @@ class TACS3DElement : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* _Te, TacsScalar* _Pe,
+  void computeEnergies(double time, TacsScalar *_Te, TacsScalar *_Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]);
 
@@ -170,7 +170,7 @@ class TACS3DElement : public TACSElement {
 
   // Functions for evaluating global functionals of interest
   // -------------------------------------------------------
-  TACSConstitutive* getConstitutive() { return stiff; }
+  TACSConstitutive *getConstitutive() { return stiff; }
 
   // Evaluate the determinant of the Jacobian and its derivative
   // -----------------------------------------------------------
@@ -191,20 +191,20 @@ class TACS3DElement : public TACSElement {
 
  protected:
   ElementBehaviorType strain_type;
-  SolidStiffness* stiff;
+  SolidStiffness *stiff;
 
  private:
-  static const char* dispNames[NUM_DISPS];
-  static const char* stressNames[NUM_STRESSES];
-  static const char* strainNames[NUM_STRESSES];
-  static const char* extraNames[NUM_EXTRAS];
+  static const char *dispNames[NUM_DISPS];
+  static const char *stressNames[NUM_STRESSES];
+  static const char *strainNames[NUM_STRESSES];
+  static const char *extraNames[NUM_EXTRAS];
 };
 
 /*
   The constructor for the 3D element matrix
 */
 template <int NUM_NODES>
-TACS3DElement<NUM_NODES>::TACS3DElement(SolidStiffness* _stiff,
+TACS3DElement<NUM_NODES>::TACS3DElement(SolidStiffness *_stiff,
                                         ElementBehaviorType type, int component)
     : TACSElement(component) {
   strain_type = type;
@@ -222,25 +222,25 @@ TACS3DElement<NUM_NODES>::~TACS3DElement() {
   and stresses
 */
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::dispNames[] = {"u", "v", "w"};
+const char *TACS3DElement<NUM_NODES>::dispNames[] = {"u", "v", "w"};
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::stressNames[] = {"sxx", "syy", "szz",
+const char *TACS3DElement<NUM_NODES>::stressNames[] = {"sxx", "syy", "szz",
                                                        "syz", "sxz", "sxy"};
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::strainNames[] = {"exx", "eyy", "ezz",
+const char *TACS3DElement<NUM_NODES>::strainNames[] = {"exx", "eyy", "ezz",
                                                        "eyz", "exz", "exy"};
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::extraNames[] = {"lambda", "buckling",
+const char *TACS3DElement<NUM_NODES>::extraNames[] = {"lambda", "buckling",
                                                       "dv1", "dv2"};
 
 /*
   Get the names of the displacements/stress etc.
 */
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::displacementName(int i) {
+const char *TACS3DElement<NUM_NODES>::displacementName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return dispNames[i];
   }
@@ -248,7 +248,7 @@ const char* TACS3DElement<NUM_NODES>::displacementName(int i) {
 }
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::stressName(int i) {
+const char *TACS3DElement<NUM_NODES>::stressName(int i) {
   if (i >= 0 && i < NUM_STRESSES) {
     return stressNames[i];
   }
@@ -256,7 +256,7 @@ const char* TACS3DElement<NUM_NODES>::stressName(int i) {
 }
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::strainName(int i) {
+const char *TACS3DElement<NUM_NODES>::strainName(int i) {
   if (i >= 0 && i < NUM_STRESSES) {
     return strainNames[i];
   }
@@ -264,7 +264,7 @@ const char* TACS3DElement<NUM_NODES>::strainName(int i) {
 }
 
 template <int NUM_NODES>
-const char* TACS3DElement<NUM_NODES>::extraName(int i) {
+const char *TACS3DElement<NUM_NODES>::extraName(int i) {
   if (i >= 0 && i < NUM_EXTRAS) {
     return extraNames[i];
   }
@@ -1067,8 +1067,8 @@ void TACS3DElement<NUM_NODES>::addStrainXptSens(
 
  */
 template <int NUM_NODES>
-void TACS3DElement<NUM_NODES>::computeEnergies(double time, TacsScalar* _Te,
-                                               TacsScalar* _Pe,
+void TACS3DElement<NUM_NODES>::computeEnergies(double time, TacsScalar *_Te,
+                                               TacsScalar *_Pe,
                                                const TacsScalar Xpts[],
                                                const TacsScalar vars[],
                                                const TacsScalar dvars[]) {
@@ -1187,7 +1187,7 @@ void TACS3DElement<NUM_NODES>::addResidual(double time, TacsScalar res[],
     // displacements
     getBmat(B, J, Na, Nb, Nc, vars);
 
-    TacsScalar* b = B;
+    TacsScalar *b = B;
     for (int i = 0; i < NUM_VARIABLES; i++) {
       res[i] += h * (b[0] * stress[0] + b[1] * stress[1] + b[2] * stress[2] +
                      b[3] * stress[3] + b[4] * stress[4] + b[5] * stress[5]);
@@ -1275,13 +1275,13 @@ void TACS3DElement<NUM_NODES>::addJacobian(
       getBmat(B, J, Na, Nb, Nc, vars);
 
       // Fill-in the upper portion of the matrix
-      TacsScalar* bj = B;
+      TacsScalar *bj = B;
       for (int j = 0; j < NUM_VARIABLES; j++) {
         // Compute the stress at the given point
         TacsScalar bs[NUM_STRESSES];
         stiff->calculateStress(pt, bj, bs);
 
-        TacsScalar* bi = B;
+        TacsScalar *bi = B;
         for (int i = 0; i <= j; i++) {
           mat[i + j * NUM_VARIABLES] +=
               alpha * h *
@@ -1379,8 +1379,8 @@ void TACS3DElement<NUM_NODES>::addAdjResProduct(
     TacsScalar bpsi[NUM_STRESSES];
     memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
 
-    TacsScalar* b = B;
-    const TacsScalar* ps = psi;
+    TacsScalar *b = B;
+    const TacsScalar *ps = psi;
     for (int i = 0; i < NUM_VARIABLES; i++) {
       bpsi[0] += ps[0] * b[0];
       bpsi[1] += ps[0] * b[1];
@@ -1564,7 +1564,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct(
       memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
       memset(bphi, 0, NUM_STRESSES * sizeof(TacsScalar));
 
-      TacsScalar* b = B;
+      TacsScalar *b = B;
       const TacsScalar *ps = psi, *ph = phi;
       for (int i = 0; i < 3 * NUM_NODES; i++) {
         bpsi[0] += ps[0] * b[0];
@@ -1703,7 +1703,7 @@ void TACS3DElement<NUM_NODES>::addMatDVSensInnerProduct(
       upsi[0] = upsi[1] = upsi[2] = 0.0;
       uphi[0] = uphi[1] = uphi[2] = 0.0;
 
-      double* ns = N;
+      double *ns = N;
       const TacsScalar *ps = psi, *ph = phi;
       for (int i = 0; i < NUM_NODES; i++) {
         upsi[0] += ns[0] * ps[0];
@@ -1845,7 +1845,7 @@ void TACS3DElement<NUM_NODES>::getMatSVSensInnerProduct(
         stiff->calculateStress(pt, &B[NUM_STRESSES * j], &DB[NUM_STRESSES * j]);
       }
 
-      TacsScalar* db = DB;
+      TacsScalar *db = DB;
       for (int j = 0; j < NUM_VARIABLES; j++) {
         res[j] += h * (db[0] * sumN[0] + db[1] * sumN[1] + db[2] * sumN[2] +
                        db[3] * sumN[3] + db[4] * sumN[4] + db[5] * sumN[5]);
@@ -2024,13 +2024,13 @@ void TACS3DElement<NUM_NODES>::getMatType(ElementMatrixType matType,
       getBmat(B, J, Na, Nb, Nc, vars);
 
       // Fill-in the upper portion of the matrix
-      TacsScalar* bj = B;
+      TacsScalar *bj = B;
       for (int j = 0; j < NUM_VARIABLES; j++) {
         // Compute the stress at the given point
         TacsScalar bs[NUM_STRESSES];
         stiff->calculateStress(pt, bj, bs);
 
-        TacsScalar* bi = B;
+        TacsScalar *bi = B;
         for (int i = 0; i <= j; i++) {
           mat[i + j * NUM_VARIABLES] +=
               h * (bi[0] * bs[0] + bi[1] * bs[1] + bi[2] * bs[2] +
@@ -2090,7 +2090,7 @@ TacsScalar TACS3DElement<NUM_NODES>::getDetJacobian(const double pt[],
 */
 template <int NUM_NODES>
 TacsScalar TACS3DElement<NUM_NODES>::getDetJacobianXptSens(
-    TacsScalar* hXptSens, const double pt[], const TacsScalar Xpts[]) {
+    TacsScalar *hXptSens, const double pt[], const TacsScalar Xpts[]) {
   // Compute the element shape functions
   double N[NUM_NODES];
   double Na[NUM_NODES], Nb[NUM_NODES], Nc[NUM_NODES];
@@ -2203,7 +2203,7 @@ void TACS3DElement<NUM_NODES>::addStrainSVSens(TacsScalar sens[],
   // displacements
   getBmat(B, J, Na, Nb, Nc, vars);
 
-  TacsScalar* b = B;
+  TacsScalar *b = B;
   for (int i = 0; i < NUM_VARIABLES; i++) {
     sens[i] += scale * (strainSens[0] * b[0] + strainSens[1] * b[1] +
                         strainSens[2] * b[2] + strainSens[3] * b[3] +

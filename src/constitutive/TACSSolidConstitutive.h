@@ -31,7 +31,7 @@ class TACSSolidConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 6;
 
-  TACSSolidConstitutive(TACSMaterialProperties* properties, TacsScalar _t = 1.0,
+  TACSSolidConstitutive(TACSMaterialProperties *properties, TacsScalar _t = 1.0,
                         int _tNum = -1, TacsScalar _tlb = 0.0,
                         TacsScalar _tub = 1.0);
   ~TACSSolidConstitutive();
@@ -108,21 +108,21 @@ class TACSSolidConstitutive : public TACSConstitutive {
                                    TacsScalar sens[]);
 
   // Extra info about the constitutive class
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Return the material properties object
-  TACSMaterialProperties* getMaterialProperties();
+  TACSMaterialProperties *getMaterialProperties();
 
  protected:
   // Materiial properties class
-  TACSMaterialProperties* properties;
+  TACSMaterialProperties *properties;
 
  private:
   // Store information about the design variable
   TacsScalar t, tlb, tub;
   int tNum;
 
-  static const char* sName;
+  static const char *sName;
 };
 
 #endif  // TACS_SOLID_CONSTITUTIVE_H

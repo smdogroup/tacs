@@ -34,8 +34,8 @@ class TACSThermalShellElement : public TACSElement {
   // The thermal degree of freedom. This comes last
   static const int thermal_dof = vars_per_node - 1;
 
-  TACSThermalShellElement(TACSShellTransform* _transform,
-                          TACSShellConstitutive* _con) {
+  TACSThermalShellElement(TACSShellTransform *_transform,
+                          TACSShellConstitutive *_con) {
     transform = _transform;
     transform->incref();
 
@@ -56,7 +56,7 @@ class TACSThermalShellElement : public TACSElement {
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return num_nodes; }
 
-  const char* getObjectName() { return "TACSThermalShellElement"; }
+  const char *getObjectName() { return "TACSThermalShellElement"; }
 
   ElementLayout getLayoutType() { return basis::getLayoutType(); }
 
@@ -102,11 +102,11 @@ class TACSThermalShellElement : public TACSElement {
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res);
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
                    TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
@@ -127,8 +127,8 @@ class TACSThermalShellElement : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   void addPointQuantityDVSens(int elemIndex, int quantityType, double time,
                               TacsScalar scale, int n, double pt[],
@@ -149,7 +149,7 @@ class TACSThermalShellElement : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
  private:
   // Set sizes for the different components
@@ -158,8 +158,8 @@ class TACSThermalShellElement : public TACSElement {
   static const int dsize = 3 * num_nodes;
   static const int csize = 9 * num_nodes;
 
-  TACSShellTransform* transform;
-  TACSShellConstitutive* con;
+  TACSShellTransform *transform;
+  TACSShellConstitutive *con;
 };
 
 /*
@@ -168,11 +168,11 @@ class TACSThermalShellElement : public TACSElement {
 template <class quadrature, class basis, class director, class model>
 void TACSThermalShellElement<quadrature, basis, director,
                              model>::computeEnergies(int elemIndex, double time,
-                                                     const TacsScalar* Xpts,
-                                                     const TacsScalar* vars,
-                                                     const TacsScalar* dvars,
-                                                     TacsScalar* _Te,
-                                                     TacsScalar* _Ue) {
+                                                     const TacsScalar *Xpts,
+                                                     const TacsScalar *vars,
+                                                     const TacsScalar *dvars,
+                                                     TacsScalar *_Te,
+                                                     TacsScalar *_Ue) {
   // Zero the kinetic and potential energies
   TacsScalar Te = 0.0;
   TacsScalar Ue = 0.0;
@@ -272,8 +272,8 @@ void TACSThermalShellElement<quadrature, basis, director,
 */
 template <class quadrature, class basis, class director, class model>
 void TACSThermalShellElement<quadrature, basis, director, model>::addResidual(
-    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
+    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
 
@@ -924,8 +924,8 @@ int TACSThermalShellElement<quadrature, basis, director,
                                                       const TacsScalar vars[],
                                                       const TacsScalar dvars[],
                                                       const TacsScalar ddvars[],
-                                                      TacsScalar* detXd,
-                                                      TacsScalar* quantity) {
+                                                      TacsScalar *detXd,
+                                                      TacsScalar *quantity) {
   // Compute the node normal directions
   TacsScalar fn[3 * num_nodes];
   TacsShellComputeNodeNormals<basis>(Xpts, fn);
@@ -1337,7 +1337,7 @@ template <class quadrature, class basis, class director, class model>
 void TACSThermalShellElement<quadrature, basis, director, model>::getOutputData(
     int elemIndex, ElementType etype, int write_flag, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], int ld_data, TacsScalar* data) {
+    const TacsScalar ddvars[], int ld_data, TacsScalar *data) {
   // Get the number of nodes associated with the visualization
   int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
 

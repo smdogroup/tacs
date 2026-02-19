@@ -36,7 +36,7 @@
 class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
  public:
   TACSIsoRectangleBeamConstitutive(
-      TACSMaterialProperties* properties, TacsScalar _width,
+      TACSMaterialProperties *properties, TacsScalar _width,
       TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
       int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
       TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
@@ -106,7 +106,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
                         int dvLen, TacsScalar dfdx[]);
 
   // The name of the constitutive object
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -125,7 +125,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar evalTorsionalConstantSens(int dvNum);
 
  private:
-  TACSMaterialProperties* props;
+  TACSMaterialProperties *props;
   TacsScalar width, thickness, buckle_length, buckle_length_factor;
   int width_num, thickness_num, buckle_length_num;
   TacsScalar lb_thickness, ub_thickness;
@@ -139,7 +139,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar E, nu, G, kcorr;
 
   // The object name
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif  // TACS_ISO_RECTANGLE_BEAM_CONSTITUTIVE_H

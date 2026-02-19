@@ -12,8 +12,8 @@
   Create the TACSAssembler object and return the associated TACS
   creator object
 */
-void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
-                     TACSAssembler** _assembler, TACSCreator** _creator) {
+void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement *element,
+                     TACSAssembler **_assembler, TACSCreator **_creator) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -21,7 +21,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
   int varsPerNode = element->getVarsPerNode();
 
   // Set up the creator object
-  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
 
   if (rank == 0) {
     // Set the number of elements
@@ -29,9 +29,9 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
     int numElements = nx * ny;
 
     // Allocate the input arrays into the creator object
-    int* ids = new int[numElements];
-    int* ptr = new int[numElements + 1];
-    int* conn = new int[9 * numElements];
+    int *ids = new int[numElements];
+    int *ptr = new int[numElements + 1];
+    int *conn = new int[9 * numElements];
 
     // Set the element identifiers to all zero
     memset(ids, 0, numElements * sizeof(int));
@@ -60,7 +60,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
 
     // We're over-counting one of the nodes on each edge
     int numBcs = 4 * (2 * nx + 1);
-    int* bcNodes = new int[numBcs];
+    int *bcNodes = new int[numBcs];
 
     for (int i = 0; i < (2 * nx + 1); i++) {
       bcNodes[4 * i] = i;
@@ -74,7 +74,7 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
     delete[] bcNodes;
 
     // Set the node locations
-    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
     for (int j = 0; j < 2 * ny + 1; j++) {
       for (int i = 0; i < 2 * nx + 1; i++) {
         int node = i + (2 * nx + 1) * j;
@@ -100,14 +100,14 @@ void createAssembler(MPI_Comm comm, int nx, int ny, TACSElement* element,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler* assembler = creator->createTACS();
+  TACSAssembler *assembler = creator->createTACS();
 
   // Set the pointers
   *_assembler = assembler;
   *_creator = creator;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Get the rank
@@ -122,22 +122,22 @@ int main(int argc, char* argv[]) {
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TacsScalar axis[] = {0.0, 1.0, 0.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   TacsScalar t = 0.01;
   int t_num = 0;
-  TACSShellConstitutive* con = new TACSIsoShellConstitutive(props, t, t_num);
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
 
-  TACSElement* shell9 = new TACSQuad9Shell(transform, con);
+  TACSElement *shell9 = new TACSQuad9Shell(transform, con);
   shell9->incref();
 
   int nx = 20, ny = 20;
-  TACSAssembler* assembler;
-  TACSCreator* creator;
+  TACSAssembler *assembler;
+  TACSCreator *creator;
   createAssembler(comm, nx, ny, shell9, &assembler, &creator);
   assembler->incref();
   creator->incref();
@@ -146,10 +146,10 @@ int main(int argc, char* argv[]) {
   creator->decref();
 
   // Create matrix and vectors
-  TACSBVec* ans = assembler->createVec();  // displacements and rotations
-  TACSBVec* f = assembler->createVec();    // loads
-  TACSBVec* res = assembler->createVec();  // The residual
-  TACSSchurMat* mat = assembler->createSchurMat();  // stiffness matrix
+  TACSBVec *ans = assembler->createVec();  // displacements and rotations
+  TACSBVec *f = assembler->createVec();    // loads
+  TACSBVec *res = assembler->createVec();  // The residual
+  TACSSchurMat *mat = assembler->createSchurMat();  // stiffness matrix
 
   // Increment reference count to the matrix/vectors
   ans->incref();
@@ -161,11 +161,11 @@ int main(int argc, char* argv[]) {
   int lev = 10000;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->incref();
 
   // Set all the entries in load vector to specified value
-  TacsScalar* force_vals;
+  TacsScalar *force_vals;
   int size = f->getArray(&force_vals);
   for (int k = 2; k < size; k += assembler->getVarsPerNode()) {
     force_vals[k] += 100.0;
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_NODES | TACS_OUTPUT_CONNECTIVITY |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(assembler, etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("plate_solution.f5");
   assembler->decref();

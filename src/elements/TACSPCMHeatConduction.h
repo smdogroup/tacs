@@ -20,7 +20,7 @@
 
 class TACSPCMHeatConduction2D : public TACSElementModel {
  public:
-  TACSPCMHeatConduction2D(TACSPhaseChangeMaterialConstitutive* _con);
+  TACSPCMHeatConduction2D(TACSPhaseChangeMaterialConstitutive *_con);
   ~TACSPCMHeatConduction2D();
 
   int getNumParameters();
@@ -56,7 +56,7 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
   /**
     Get underlying tacs constitutive object for this model
   */
-  TACSConstitutive* getConstitutive() { return stiff; }
+  TACSConstitutive *getConstitutive() { return stiff; }
 
   /**
     Evaluate the coefficients of the weak form integrand
@@ -85,7 +85,7 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
                                  const double pt[], const TacsScalar X[],
                                  const TacsScalar Xd[], const TacsScalar Ut[],
                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                 const TacsScalar Psix[], TacsScalar* product,
+                                 const TacsScalar Psix[], TacsScalar *product,
                                  TacsScalar dfdX[], TacsScalar dfdXd[],
                                  TacsScalar dfdUx[], TacsScalar dfdPsix[]);
 
@@ -93,7 +93,7 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                             int* Jac_nnz, const int* Jac_pairs[]);
+                             int *Jac_nnz, const int *Jac_pairs[]);
 
   /**
     Evaluate the derivatives of the weak form coefficients
@@ -111,7 +111,7 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
                         const double time, int n, const double pt[],
                         const TacsScalar X[], const TacsScalar Xd[],
                         const TacsScalar Ut[], const TacsScalar Ux[],
-                        TacsScalar* quantity);
+                        TacsScalar *quantity);
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -141,10 +141,10 @@ class TACSPCMHeatConduction2D : public TACSElementModel {
   void getOutputData(int elemIndex, const double time, ElementType etype,
                      int write_flag, const double pt[], const TacsScalar X[],
                      const TacsScalar Ut[], const TacsScalar Ux[], int ld_data,
-                     TacsScalar* data);
+                     TacsScalar *data);
 
  private:
-  TACSPhaseChangeMaterialConstitutive* stiff;
+  TACSPhaseChangeMaterialConstitutive *stiff;
 
   // Constant member data
   static const int linear_Jac_pairs[16];

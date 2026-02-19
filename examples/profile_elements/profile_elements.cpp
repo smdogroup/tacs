@@ -24,12 +24,12 @@
 /*
   Apply all the tests to the element
 */
-void test_element(TACSElement* element, int elemIndex, double time,
+void test_element(TACSElement *element, int elemIndex, double time,
                   const TacsScalar Xpts[], const TacsScalar vars[],
                   const TacsScalar dvars[], const TacsScalar ddvars[]) {
   // Get the design variable numbers
   int dvLen = element->getDesignVarNums(elemIndex, 0, NULL);
-  TacsScalar* x = new TacsScalar[dvLen];
+  TacsScalar *x = new TacsScalar[dvLen];
   element->getDesignVars(elemIndex, dvLen, x);
 
   // Test the element
@@ -55,7 +55,7 @@ void test_element(TACSElement* element, int elemIndex, double time,
   TacsTestElementMatSVSens(element, TACS_GEOMETRIC_STIFFNESS_MATRIX, elemIndex,
                            time, Xpts, vars, dh);
 
-  TACSElementModel* model = element->getElementModel();
+  TACSElementModel *model = element->getElementModel();
   if (model) {
     TacsTestElementModel(model, elemIndex, time, dh);
   }
@@ -72,13 +72,13 @@ void test_element(TACSElement* element, int elemIndex, double time,
   Useage:
   ./profile_elements [fd=value]
 */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
   // Test only the input element type - if specified, otherwise
   // test everything
-  const char* ename = NULL;
+  const char *ename = NULL;
   if (argc > 1) {
     ename = argv[1];
   }
@@ -116,13 +116,13 @@ int main(int argc, char* argv[]) {
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
   props->incref();
 
   // Create the basis functions for 3D
   const int NUM_3D_BASIS = 5;
-  TACSElementBasis* basis3d[NUM_3D_BASIS];
+  TACSElementBasis *basis3d[NUM_3D_BASIS];
   basis3d[0] = new TACSLinearTetrahedralBasis();
   basis3d[1] = new TACSQuadraticTetrahedralBasis();
   basis3d[2] = new TACSLinearHexaBasis();
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
 
   // Create the basis functions for 2D
   const int NUM_2D_BASIS = 5;
-  TACSElementBasis* basis2d[NUM_3D_BASIS];
+  TACSElementBasis *basis2d[NUM_3D_BASIS];
   basis2d[0] = new TACSLinearTriangleBasis();
   basis2d[1] = new TACSQuadraticTriangleBasis();
   basis2d[2] = new TACSLinearQuadBasis();
@@ -145,19 +145,19 @@ int main(int argc, char* argv[]) {
   }
 
   // Create stiffness (need class)
-  TACSSolidConstitutive* con3d = new TACSSolidConstitutive(props, 1.0, 0);
+  TACSSolidConstitutive *con3d = new TACSSolidConstitutive(props, 1.0, 0);
   con3d->incref();
 
-  TACSPlaneStressConstitutive* con2d =
+  TACSPlaneStressConstitutive *con2d =
       new TACSPlaneStressConstitutive(props, 1.0, 0);
   con2d->incref();
 
-  TACSShellConstitutive* conShell = new TACSIsoShellConstitutive(props, 1.0, 0);
+  TACSShellConstitutive *conShell = new TACSIsoShellConstitutive(props, 1.0, 0);
   conShell->incref();
 
   // Set the model type
   const int NUM_3D_MODELS = 5;
-  TACSElementModel* model3d[NUM_3D_MODELS];
+  TACSElementModel *model3d[NUM_3D_MODELS];
   model3d[0] = new TACSHeatConduction3D(con3d);
   model3d[1] = new TACSLinearElasticity3D(con3d, TACS_LINEAR_STRAIN);
   model3d[2] = new TACSLinearElasticity3D(con3d, TACS_NONLINEAR_STRAIN);
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
   }
 
   const int NUM_2D_MODELS = 4;
-  TACSElementModel* model2d[NUM_2D_MODELS];
+  TACSElementModel *model2d[NUM_2D_MODELS];
   model2d[0] = new TACSHeatConduction2D(con2d);
   model2d[1] = new TACSLinearElasticity2D(con2d, TACS_LINEAR_STRAIN);
   model2d[2] = new TACSLinearElasticity2D(con2d, TACS_NONLINEAR_STRAIN);
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
     for (int i = NUM_3D_BASIS - 1; i < NUM_3D_BASIS; i++) {
       printf("Testing with model %s with basis functions %s\n",
              model3d[j]->getObjectName(), basis3d[i]->getObjectName());
-      TACSElement* element = new TACSElement3D(model3d[j], basis3d[i]);
+      TACSElement *element = new TACSElement3D(model3d[j], basis3d[i]);
       element->incref();
       test_element(element, elemIndex, time, Xpts, vars, dvars, ddvars);
       element->decref();
@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < NUM_2D_BASIS; i++) {
       printf("Testing with model %s with basis functions %s\n",
              model2d[j]->getObjectName(), basis2d[i]->getObjectName());
-      TACSElement* element = new TACSElement2D(model2d[j], basis2d[i]);
+      TACSElement *element = new TACSElement2D(model2d[j], basis2d[i]);
       element->incref();
       test_element(element, elemIndex, time, Xpts, vars, dvars, ddvars);
       element->decref();

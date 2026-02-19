@@ -35,7 +35,7 @@
   funcEval:      the type of evaluation to use
   maxElems:      the maximum number of elements expected
 */
-TACSFunction::TACSFunction(TACSAssembler* _assembler, DomainType _funcDomain,
+TACSFunction::TACSFunction(TACSAssembler *_assembler, DomainType _funcDomain,
                            StageType _funcStages, int _maxElems) {
   assembler = _assembler;
   assembler->incref();
@@ -125,7 +125,7 @@ void TACSFunction::addDomain(int _numElems, const int _elemNums[]) {
 
     if (_numElems + numElems > maxElems) {
       maxElems = _numElems + numElems;
-      int* temp = new int[maxElems];
+      int *temp = new int[maxElems];
 
       int i = 0;
       for (; i < numElems; i++) {
@@ -154,7 +154,7 @@ void TACSFunction::addDomain(int _numElems, const int _elemNums[]) {
 /*
   Get the elements in the domain of this object
 */
-int TACSFunction::getElementNums(const int** _elemNums) {
+int TACSFunction::getElementNums(const int **_elemNums) {
   if (_elemNums) {
     *_elemNums = elemNums;
   }
@@ -164,9 +164,9 @@ int TACSFunction::getElementNums(const int** _elemNums) {
 /*
   Get the TACSAssembler object associated with this function
 */
-TACSAssembler* TACSFunction::getAssembler() { return assembler; }
+TACSAssembler *TACSFunction::getAssembler() { return assembler; }
 
 /*
   Retrieve the object name
 */
-const char* TACSFunction::getObjectName() { return "TACSFunction"; }
+const char *TACSFunction::getObjectName() { return "TACSFunction"; }

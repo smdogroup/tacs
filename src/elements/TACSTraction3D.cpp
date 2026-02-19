@@ -17,7 +17,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
-                               TACSElementBasis* _basis,
+                               TACSElementBasis *_basis,
                                const TacsScalar _trac[],
                                int _tractionCoordinateComponent) {
   varsPerNode = _varsPerNode;
@@ -34,9 +34,9 @@ TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
 }
 
 TACSTraction3D::TACSTraction3D(
-    int _varsPerNode, int _faceIndex, TACSElementBasis* _basis,
-    void (*_getTractionComponents)(int, int, double, const TacsScalar*,
-                                   const TacsScalar*, TacsScalar*)) {
+    int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
+    void (*_getTractionComponents)(int, int, double, const TacsScalar *,
+                                   const TacsScalar *, TacsScalar *)) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -47,7 +47,7 @@ TACSTraction3D::TACSTraction3D(
 
 TACSTraction3D::~TACSTraction3D() { basis->decref(); }
 
-const char* TACSTraction3D::getObjectName() { return "TACSTraction3D"; }
+const char *TACSTraction3D::getObjectName() { return "TACSTraction3D"; }
 
 // Get the layout properties of the element
 int TACSTraction3D::getVarsPerNode() { return varsPerNode; }
@@ -56,7 +56,7 @@ int TACSTraction3D::getNumNodes() { return basis->getNumNodes(); }
 
 ElementLayout TACSTraction3D::getLayoutType() { return basis->getLayoutType(); }
 
-TACSElementBasis* TACSTraction3D::getElementBasis() { return basis; }
+TACSElementBasis *TACSTraction3D::getElementBasis() { return basis; }
 
 int TACSTraction3D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -85,9 +85,9 @@ double TACSTraction3D::getFaceQuadraturePoint(int face, int n, double pt[],
   Add the residual to the provided vector
 */
 void TACSTraction3D::addResidual(int elemIndex, double time,
-                                 const TacsScalar* Xpts, const TacsScalar* vars,
-                                 const TacsScalar* dvars,
-                                 const TacsScalar* ddvars, TacsScalar* res) {
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
@@ -141,10 +141,10 @@ void TACSTraction3D::addResidual(int elemIndex, double time,
 */
 void TACSTraction3D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                  TacsScalar beta, TacsScalar gamma,
-                                 const TacsScalar* Xpts, const TacsScalar* vars,
-                                 const TacsScalar* dvars,
-                                 const TacsScalar* ddvars, TacsScalar* res,
-                                 TacsScalar* mat) {
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res,
+                                 TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 

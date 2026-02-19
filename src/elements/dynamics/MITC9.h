@@ -46,8 +46,8 @@ class MITC9 : public TACSElement {
   static const int NUM_DISPS = 8;
   static const int NUM_STRESSES = 8;
 
-  MITC9(FSDTStiffness* _stiff, TACSGibbsVector* _gravity = NULL,
-        TACSGibbsVector* _vInit = NULL, TACSGibbsVector* _omegaInit = NULL);
+  MITC9(FSDTStiffness *_stiff, TACSGibbsVector *_gravity = NULL,
+        TACSGibbsVector *_vInit = NULL, TACSGibbsVector *_omegaInit = NULL);
   ~MITC9();
 
   // Return the sizes of the array components
@@ -57,7 +57,7 @@ class MITC9 : public TACSElement {
 
   // Functions to determine the variable names and quantities
   // --------------------------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   ElementLayout getLayoutType();
 
   // Functions for handling the design variables
@@ -77,7 +77,7 @@ class MITC9 : public TACSElement {
   // -----------------------------------------------------------
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
   // Compute the residual of the governing equations
   // -----------------------------------------------
@@ -109,11 +109,11 @@ class MITC9 : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive* getConstitutive();
+  TACSConstitutive *getConstitutive();
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -149,10 +149,10 @@ class MITC9 : public TACSElement {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int* con, int node);
+  void getOutputConnectivity(int *con, int node);
 
   // Test the strain implementation
   // ------------------------------
@@ -343,20 +343,20 @@ class MITC9 : public TACSElement {
   double drill_inertia_factor;
 
   // The stiffness object
-  FSDTStiffness* stiff;
+  FSDTStiffness *stiff;
 
   // The gravity vector (if any)
-  TACSGibbsVector* gravity;
+  TACSGibbsVector *gravity;
 
   // Initial velocity/angular velocity
   TACSGibbsVector *vInit, *omegaInit;
 
   // The names of the displacements, stresses etc.
-  static const char* elemName;
-  static const char* dispNames[NUM_DISPS];
-  static const char* stressNames[NUM_STRESSES];
-  static const char* strainNames[NUM_STRESSES];
-  static const char* extraNames[NUM_EXTRAS];
+  static const char *elemName;
+  static const char *dispNames[NUM_DISPS];
+  static const char *stressNames[NUM_STRESSES];
+  static const char *strainNames[NUM_STRESSES];
+  static const char *extraNames[NUM_EXTRAS];
 };
 
 #endif  // TACS_MITC9_H

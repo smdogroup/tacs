@@ -229,8 +229,8 @@ class TACSShellInplaneLinearModel {
       basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
@@ -412,10 +412,10 @@ class TACSShellInplaneLinearModel {
       basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
@@ -675,7 +675,7 @@ class TACSShellInplaneLinearModel {
     memset(d2e0tyu1x, 0, 54 * sizeof(TacsScalar));
 
     // Compute the second derivatives
-    TacsScalar* d2;
+    TacsScalar *d2;
     d2 = d2u0x;
     d2[0] = scale * A[0];
     d2[4] = scale * A[1];
@@ -789,7 +789,7 @@ class TACSShellInplaneLinearModel {
     memset(d2e0tyu1xd, 0, 54 * sizeof(TacsScalar));
 
     // Compute the second derivatives
-    TacsScalar* d2;
+    TacsScalar *d2;
     d2 = d2u0x;
     d2[0] = scale * A[0];
     d2[4] = scale * A[1];
@@ -1131,8 +1131,8 @@ class TACSShellInplaneNonlinearModel {
       basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
                                                 3>(pt1, d2Uxi, mat);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
@@ -1461,10 +1461,10 @@ class TACSShellInplaneNonlinearModel {
       basis::template addInterpGradOuterProduct<vars_per_node, vars_per_node, 3,
                                                 3>(pt1, d2Uxid, matpsi);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2d[3 * basis::NUM_NODES * i + j] +=
@@ -1730,7 +1730,7 @@ class TACSShellInplaneNonlinearModel {
     memset(d2e0tyu0x, 0, 54 * sizeof(TacsScalar));
     memset(d2e0tyu1x, 0, 54 * sizeof(TacsScalar));
 
-    TacsScalar* d2 = &d2e0ty[0];
+    TacsScalar *d2 = &d2e0ty[0];
     d2 = &d2e0ty[4 * 6];
     d2[4] = 4.0 * scale * As[0];
     d2[2] = 4.0 * scale * As[1];
@@ -2172,7 +2172,7 @@ class TACSShellInplaneNonlinearModel {
     memset(d2e0tyu0xd, 0, 54 * sizeof(TacsScalar));
     memset(d2e0tyu1xd, 0, 54 * sizeof(TacsScalar));
 
-    TacsScalar* d2 = &d2e0ty[0];
+    TacsScalar *d2 = &d2e0ty[0];
     d2 = &d2e0ty[4 * 6];
     d2[4] = 4.0 * scale * As[0];
     d2[2] = 4.0 * scale * As[1];

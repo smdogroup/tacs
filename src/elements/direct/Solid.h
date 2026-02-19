@@ -27,13 +27,13 @@
 template <int order>
 class Solid : public TACS3DElement<order * order * order> {
  public:
-  Solid(SolidStiffness* _stiff, ElementBehaviorType type = LINEAR,
+  Solid(SolidStiffness *_stiff, ElementBehaviorType type = LINEAR,
         int _componentNum = 0);
   ~Solid();
 
   // Return the name of this element
   // -------------------------------
-  const char* elementName() { return elemName; }
+  const char *elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -48,10 +48,10 @@ class Solid : public TACS3DElement<order * order * order> {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int* con, int node);
+  void getOutputConnectivity(int *con, int node);
 
  private:
   // The number of nodes in the element
@@ -65,11 +65,11 @@ class Solid : public TACS3DElement<order * order * order> {
   const double *gaussWts, *gaussPts;
 
   // Store the name of the element
-  static const char* elemName;
+  static const char *elemName;
 };
 
 template <int order>
-Solid<order>::Solid(SolidStiffness* _stiff, ElementBehaviorType type,
+Solid<order>::Solid(SolidStiffness *_stiff, ElementBehaviorType type,
                     int _componentNum)
     : TACS3DElement<order * order * order>(_stiff, type, _componentNum) {
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
@@ -94,7 +94,7 @@ template <int order>
 Solid<order>::~Solid() {}
 
 template <int order>
-const char* Solid<order>::elemName = "Solid";
+const char *Solid<order>::elemName = "Solid";
 
 /*
   Get the number of Gauss points in the scheme
@@ -173,7 +173,7 @@ void Solid<order>::getShapeFunctions(const double pt[], double N[], double Na[],
   this element.
 */
 template <int order>
-void Solid<order>::addOutputCount(int* nelems, int* nnodes, int* ncsr) {
+void Solid<order>::addOutputCount(int *nelems, int *nnodes, int *ncsr) {
   *nelems += (order - 1) * (order - 1) * (order - 1);
   *nnodes += order * order * order;
   *ncsr += 8 * (order - 1) * (order - 1) * (order - 1);
@@ -201,7 +201,7 @@ void Solid<order>::addOutputCount(int* nelems, int* nnodes, int* ncsr) {
   Xpts:     the element nodal locations
 */
 template <int order>
-void Solid<order>::getOutputData(unsigned int out_type, double* data,
+void Solid<order>::getOutputData(unsigned int out_type, double *data,
                                  int ld_data, const TacsScalar Xpts[],
                                  const TacsScalar vars[]) {
   for (int p = 0; p < order; p++) {
@@ -297,7 +297,7 @@ void Solid<order>::getOutputData(unsigned int out_type, double* data,
   less global
 */
 template <int order>
-void Solid<order>::getOutputConnectivity(int* con, int node) {
+void Solid<order>::getOutputConnectivity(int *con, int node) {
   int j = 0;
   for (int p = 0; p < order - 1; p++) {
     for (int m = 0; m < order - 1; m++) {

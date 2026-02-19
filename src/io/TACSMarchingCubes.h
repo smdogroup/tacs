@@ -44,6 +44,6 @@ class TACSMarchingCubesTriangle {
   Polygonalize
  */
 int TacsPolygonizeCube(TACSMarchingCubesCell grid, float isolevel,
-                       TACSMarchingCubesTriangle* triangles);
+                       TACSMarchingCubesTriangle *triangles);
 
 #endif  // TACS_MARCHING_CUBES_H

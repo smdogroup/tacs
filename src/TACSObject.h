@@ -132,11 +132,11 @@ class TACSObject {
   /**
     Return the name of the object
   */
-  virtual const char* getObjectName();
+  virtual const char *getObjectName();
 
  private:
   int ref_count;
-  static const char* tacsDefault;
+  static const char *tacsDefault;
 };
 
 /**

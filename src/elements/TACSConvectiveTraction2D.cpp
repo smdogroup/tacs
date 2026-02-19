@@ -18,7 +18,7 @@
 
 TACSConvectiveTraction2D::TACSConvectiveTraction2D(
     int _varsPerNode, int _faceIndex, int _fieldIndex, TacsScalar _alpha,
-    TacsScalar _refValue, TACSElementBasis* _basis) {
+    TacsScalar _refValue, TACSElementBasis *_basis) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   fieldIndex = _fieldIndex;
@@ -42,7 +42,7 @@ ElementLayout TACSConvectiveTraction2D::getLayoutType() {
   return basis->getLayoutType();
 }
 
-TACSElementBasis* TACSConvectiveTraction2D::getElementBasis() { return basis; }
+TACSElementBasis *TACSConvectiveTraction2D::getElementBasis() { return basis; }
 
 int TACSConvectiveTraction2D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -74,8 +74,8 @@ double TACSConvectiveTraction2D::getFaceQuadraturePoint(int face, int n,
   Add the residual to the provided vector
 */
 void TACSConvectiveTraction2D::addResidual(
-    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
+    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
@@ -119,9 +119,9 @@ void TACSConvectiveTraction2D::addResidual(
 */
 void TACSConvectiveTraction2D::addJacobian(
     int elemIndex, double time, TacsScalar alpha, TacsScalar beta,
-    TacsScalar gamma, const TacsScalar* Xpts, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res,
-    TacsScalar* mat) {
+    TacsScalar gamma, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
+    TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 

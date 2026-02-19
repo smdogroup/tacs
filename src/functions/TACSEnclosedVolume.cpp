@@ -23,7 +23,7 @@
 /*
   Allocate the enclosed volume function
 */
-TACSEnclosedVolume::TACSEnclosedVolume(TACSAssembler* _assembler)
+TACSEnclosedVolume::TACSEnclosedVolume(TACSAssembler *_assembler)
     : TACSFunction(_assembler) {
   totalVol = 0.0;
 }
@@ -33,12 +33,12 @@ TACSEnclosedVolume::TACSEnclosedVolume(TACSAssembler* _assembler)
 */
 TACSEnclosedVolume::~TACSEnclosedVolume() {}
 
-const char* TACSEnclosedVolume::funcName = "EnclosedVolume";
+const char *TACSEnclosedVolume::funcName = "EnclosedVolume";
 
 /*
   The enclosed volume function name
 */
-const char* TACSEnclosedVolume::getObjectName() { return funcName; }
+const char *TACSEnclosedVolume::getObjectName() { return funcName; }
 
 /*
   Get the function name
@@ -65,7 +65,7 @@ void TACSEnclosedVolume::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSKSFailure function.
 */
 void TACSEnclosedVolume::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -90,7 +90,7 @@ void TACSEnclosedVolume::elementWiseEval(
   design variables
 */
 void TACSEnclosedVolume::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -116,7 +116,7 @@ void TACSEnclosedVolume::addElementDVSens(
   locations.
 */
 void TACSEnclosedVolume::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the node locations

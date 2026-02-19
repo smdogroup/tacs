@@ -30,7 +30,7 @@
 */
 class TACSIsoShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSIsoShellConstitutive(TACSMaterialProperties* props, TacsScalar _t = 1.0,
+  TACSIsoShellConstitutive(TACSMaterialProperties *props, TacsScalar _t = 1.0,
                            int _tNum = -1, TacsScalar _tlb = 0.0,
                            TacsScalar _tub = 1.0, TacsScalar _tOffset = 0.0);
   ~TACSIsoShellConstitutive();
@@ -114,7 +114,7 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
                          const TacsScalar psi[], int dvLen, TacsScalar dfdx[]);
 
   // The name of the constitutive object
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -122,7 +122,7 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
 
  private:
   // Material properties class
-  TACSMaterialProperties* properties;
+  TACSMaterialProperties *properties;
 
   // Store information about the design variable
   TacsScalar kcorr;  // The shear correction factor
@@ -131,7 +131,7 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
   TacsScalar ksWeight;  // ks weight used in failure calc
 
   // The object name
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif  // TACS_ISO_SHELL_CONSTITUTIVE_H

@@ -52,14 +52,14 @@ class TACSKSTemperature : public TACSFunction {
     PNORM_CONTINUOUS
   };
 
-  TACSKSTemperature(TACSAssembler* _assembler, double ksWeight,
+  TACSKSTemperature(TACSAssembler *_assembler, double ksWeight,
                     double alpha = 1.0);
   ~TACSKSTemperature();
 
   /**
     Get the object/function name
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Set parameters for the KS function
   // ----------------------------------
@@ -85,7 +85,7 @@ class TACSKSTemperature : public TACSFunction {
      Perform an element-wise integration over this element.
   */
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement* element, double time, TacsScalar scale,
+                       TACSElement *element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
@@ -102,16 +102,16 @@ class TACSKSTemperature : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens(int elemIndex, TACSElement* element, double time,
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TacsScalar* elemSVSens);
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement* element, double time,
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -120,7 +120,7 @@ class TACSKSTemperature : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement* element, double time,
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
@@ -136,7 +136,7 @@ class TACSKSTemperature : public TACSFunction {
   double alpha;
 
   // The name of the function
-  static const char* funcName;
+  static const char *funcName;
 
   // The maximum temperature value, the sum of exp(ksWeight*(f[i] - maxTemp)
   // and the value of the KS function

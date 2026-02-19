@@ -18,13 +18,13 @@ template <int order>
 class CoupledThermoSolid
     : public TACS3DCoupledThermoElement<order * order * order> {
  public:
-  CoupledThermoSolid(CoupledThermoSolidStiffness* _stiff,
+  CoupledThermoSolid(CoupledThermoSolidStiffness *_stiff,
                      ElementBehaviorType type = LINEAR, int _componentNum = 0);
   ~CoupledThermoSolid();
 
   // Return the name of this element
   // -------------------------------
-  const char* elementName() { return elemName; }
+  const char *elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -39,10 +39,10 @@ class CoupledThermoSolid
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int* con, int node);
+  void getOutputConnectivity(int *con, int node);
 
  private:
   // The number of nodes in the element
@@ -56,12 +56,12 @@ class CoupledThermoSolid
   const double *gaussWts, *gaussPts;
 
   // Store the name of the element
-  static const char* elemName;
+  static const char *elemName;
 };
 
 template <int order>
 CoupledThermoSolid<order>::CoupledThermoSolid(
-    CoupledThermoSolidStiffness* _stiff, ElementBehaviorType type,
+    CoupledThermoSolidStiffness *_stiff, ElementBehaviorType type,
     int _componentNum)
     : TACS3DCoupledThermoElement<order * order * order>(_stiff, type,
                                                         _componentNum) {
@@ -86,7 +86,7 @@ template <int order>
 CoupledThermoSolid<order>::~CoupledThermoSolid() {}
 
 template <int order>
-const char* CoupledThermoSolid<order>::elemName = "CoupledThermoSolid";
+const char *CoupledThermoSolid<order>::elemName = "CoupledThermoSolid";
 
 /*
   Get the number of Gauss points in the scheme
@@ -167,8 +167,8 @@ void CoupledThermoSolid<order>::getShapeFunctions(const double pt[], double N[],
   this element.
 */
 template <int order>
-void CoupledThermoSolid<order>::addOutputCount(int* nelems, int* nnodes,
-                                               int* ncsr) {
+void CoupledThermoSolid<order>::addOutputCount(int *nelems, int *nnodes,
+                                               int *ncsr) {
   *nelems += (order - 1) * (order - 1) * (order - 1);
   *nnodes += order * order * order;
   *ncsr += 8 * (order - 1) * (order - 1) * (order - 1);
@@ -197,7 +197,7 @@ void CoupledThermoSolid<order>::addOutputCount(int* nelems, int* nnodes,
 */
 template <int order>
 void CoupledThermoSolid<order>::getOutputData(unsigned int out_type,
-                                              double* data, int ld_data,
+                                              double *data, int ld_data,
                                               const TacsScalar Xpts[],
                                               const TacsScalar vars[]) {
   for (int p = 0; p < order; p++) {
@@ -270,14 +270,14 @@ void CoupledThermoSolid<order>::getOutputData(unsigned int out_type,
         if (out_type & TACSElement::OUTPUT_EXTRAS) {
           // Get the temperature
           TacsScalar T[] = {0.0};
-          ThermoSolid* elem = dynamic_cast<ThermoSolid*>(this);
+          ThermoSolid *elem = dynamic_cast<ThermoSolid *>(this);
           if (elem) {
             elem->getTemperature(T, N, vars);
           }
           // Compute the failure value
           TacsScalar lambda = 0.0;
-          CoupledThermoSolidStiffness* con =
-              dynamic_cast<CoupledThermoSolidStiffness*>(this->stiff);
+          CoupledThermoSolidStiffness *con =
+              dynamic_cast<CoupledThermoSolidStiffness *>(this->stiff);
           if (con) {
             con->failure(pt, T, strain, &lambda);
           }
@@ -315,7 +315,7 @@ void CoupledThermoSolid<order>::getOutputData(unsigned int out_type,
   less global
 */
 template <int order>
-void CoupledThermoSolid<order>::getOutputConnectivity(int* con, int node) {
+void CoupledThermoSolid<order>::getOutputConnectivity(int *con, int node) {
   int j = 0;
   for (int p = 0; p < order - 1; p++) {
     for (int m = 0; m < order - 1; m++) {

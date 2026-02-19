@@ -25,7 +25,7 @@
   fd=%f            specify the finite-difference (or CS) interval
   num_threads=%d   specify the number of pthreads
 */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
   }
 
   // Check if the input file exists, if not quit
-  const char* bdf_file = argv[1];
-  FILE* file_test = NULL;
+  const char *bdf_file = argv[1];
+  FILE *file_test = NULL;
   if ((file_test = fopen(bdf_file, "r"))) {
     fclose(file_test);
   } else {
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create the TACS mesh loader class and load in the data file
-  TACSMeshLoader* mesh = new TACSMeshLoader(comm);
+  TACSMeshLoader *mesh = new TACSMeshLoader(comm);
   mesh->incref();
 
   // Scan the BDF file to get the input data
@@ -77,10 +77,10 @@ int main(int argc, char* argv[]) {
   TacsScalar cte = 24.0e-6;  // Coefficient of thermal expansion
   TacsScalar kappa = 230.0;  // Thermal conductivity
 
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
-  TACSShellTransform* transform = new TACSShellNaturalTransform();
+  TACSShellTransform *transform = new TACSShellNaturalTransform();
 
   // Set up the elements for each component using a new design
   // variable number for each stiffness object. This code assumes
@@ -91,16 +91,16 @@ int main(int argc, char* argv[]) {
   // use for gradient verification purposes.
   int num_comp = mesh->getNumComponents();
   for (int k = 0; k < num_comp; k++) {
-    const char* descriptor = mesh->getElementDescript(k);
+    const char *descriptor = mesh->getElementDescript(k);
     TacsScalar thickness = 0.01;
     int thickness_index = k;
     TacsScalar min_thickness = 0.01;
     TacsScalar max_thickness = 0.20;
-    TACSShellConstitutive* con = new TACSIsoShellConstitutive(
+    TACSShellConstitutive *con = new TACSIsoShellConstitutive(
         props, thickness, thickness_index, min_thickness, max_thickness);
 
     // Initialize element object
-    TACSElement* elem = TacsCreateShellByName(descriptor, transform, con);
+    TACSElement *elem = TacsCreateShellByName(descriptor, transform, con);
 
     // Set the element object into the mesh
     mesh->setElement(k, elem);
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   int vars_per_node = 6;
 
   // Create the TACSAssembler object
-  TACSAssembler* assembler = mesh->createTACS(vars_per_node);
+  TACSAssembler *assembler = mesh->createTACS(vars_per_node);
   assembler->incref();
 
   // Set the number of threads
@@ -120,12 +120,12 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 =
+  TACSToFH5 *f5 =
       new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
   // Set a gravity load
-  TACSAuxElements* aux = new TACSAuxElements(assembler->getNumElements());
+  TACSAuxElements *aux = new TACSAuxElements(assembler->getNumElements());
 
   // // Add a traction in the negative z-direction
   // TacsScalar tx = 0.0, ty = 0.0, tz = -1e3;
@@ -155,14 +155,14 @@ int main(int argc, char* argv[]) {
 
   //  Set up the ks functions
   static const int NUM_FUNCS = 12;
-  TACSFunction* funcs[NUM_FUNCS];
+  TACSFunction *funcs[NUM_FUNCS];
 
   // Place functions into the func list
   funcs[0] = new TACSStructuralMass(assembler);
   funcs[1] = new TACSCompliance(assembler);
 
   // Set the discrete and continuous KS functions
-  TACSKSFailure* func = new TACSKSFailure(assembler, 20.0);
+  TACSKSFailure *func = new TACSKSFailure(assembler, 20.0);
   func->setKSFailureType(TACSKSFailure::DISCRETE);
   funcs[2] = func;
 
@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
   funcs[3] = func;
 
   // Set the induced norm failure types
-  TACSInducedFailure* ifunc = new TACSInducedFailure(assembler, 20.0);
+  TACSInducedFailure *ifunc = new TACSInducedFailure(assembler, 20.0);
   ifunc->setInducedType(TACSInducedFailure::EXPONENTIAL);
   funcs[4] = ifunc;
 
@@ -212,9 +212,9 @@ int main(int argc, char* argv[]) {
 
   // Create the structural matrix/preconditioner/KSM to use in conjunction
   // with the aerostructural solution
-  TACSSchurMat* mat = assembler->createSchurMat();
-  TACSBVec* ans = assembler->createVec();
-  TACSBVec* res = assembler->createVec();
+  TACSSchurMat *mat = assembler->createSchurMat();
+  TACSBVec *ans = assembler->createVec();
+  TACSBVec *res = assembler->createVec();
   ans->incref();
   res->incref();
 
@@ -222,13 +222,13 @@ int main(int argc, char* argv[]) {
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->setMonitorFactorFlag(0);
   pc->setAlltoallAssemblyFlag(1);
 
   // Create GMRES object
   int gmres_iters = 4, nrestart = 0, isflexible = 0;
-  GMRES* gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
+  GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
   gmres->incref();
 
   // Set the GMRES tolerances
@@ -236,18 +236,18 @@ int main(int argc, char* argv[]) {
   gmres->setTolerances(rtol, atol);
 
   // Alllocate the design variable vector/arrays
-  TACSBVec* xvals = assembler->createDesignVec();
+  TACSBVec *xvals = assembler->createDesignVec();
   xvals->incref();
 
-  TACSBVec* xtemp = assembler->createDesignVec();
+  TACSBVec *xtemp = assembler->createDesignVec();
   xtemp->incref();
 
   // Set a random perturbation vector
-  TACSBVec* pert = assembler->createDesignVec();
+  TACSBVec *pert = assembler->createDesignVec();
   pert->incref();
   pert->setRand(1.0, 2.0);
 
-  TACSBVec* dfdx[NUM_FUNCS];
+  TACSBVec *dfdx[NUM_FUNCS];
   for (int k = 0; k < NUM_FUNCS; k++) {
     dfdx[k] = assembler->createDesignVec();
     dfdx[k]->incref();
@@ -287,7 +287,7 @@ int main(int argc, char* argv[]) {
   // Write the solution to an .f5 file
   if (f5) {
     // Find the location of the first '.' in the string
-    char* outfile = new char[strlen(bdf_file) + 5];
+    char *outfile = new char[strlen(bdf_file) + 5];
     int len = strlen(bdf_file);
     int i = len - 1;
     for (; i >= 0; i--) {
@@ -315,8 +315,8 @@ int main(int argc, char* argv[]) {
   assembler->addDVSens(1.0, NUM_FUNCS, funcs, dfdx);
 
   // Create the adjoint variables for each function of interest
-  TACSBVec* adjoints[NUM_FUNCS];
-  TACSBVec* dfdu[NUM_FUNCS];
+  TACSBVec *adjoints[NUM_FUNCS];
+  TACSBVec *dfdu[NUM_FUNCS];
   for (int j = 0; j < NUM_FUNCS; j++) {
     adjoints[j] = assembler->createVec();
     adjoints[j]->incref();

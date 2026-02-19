@@ -23,22 +23,22 @@ class TACSElement3D : public TACSElement {
  public:
   static const int MAX_VARS_PER_NODE = 8;
 
-  TACSElement3D(TACSElementModel* _model, TACSElementBasis* _basis);
+  TACSElement3D(TACSElementModel *_model, TACSElementBasis *_basis);
   ~TACSElement3D();
 
   // Get the layout properties of the element
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   int getDesignVarsPerNode();
   ElementLayout getLayoutType();
   ElementType getElementType();
-  TACSElementBasis* getElementBasis();
-  TACSElementModel* getElementModel();
-  TACSElement* createElementTraction(int faceIndex, const TacsScalar t[]);
-  TACSElement* createElementPressure(int faceIndex, TacsScalar p);
-  TACSElement* createElementInertialForce(const TacsScalar inertiaVec[]);
-  TACSElement* createElementCentrifugalForce(const TacsScalar omegaVec[],
+  TACSElementBasis *getElementBasis();
+  TACSElementModel *getElementModel();
+  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]);
+  TACSElement *createElementPressure(int faceIndex, TacsScalar p);
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]);
+  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false);
   int getNumQuadraturePoints();
@@ -72,17 +72,17 @@ class TACSElement3D : public TACSElement {
   /**
     Add the residual to the provided vector
   */
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res);
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
-                   TacsScalar beta, TacsScalar gamma, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res, TacsScalar* mat);
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
   /**
     Add the derivative of the product of the adjoint variables w.r.t.
@@ -107,7 +107,7 @@ class TACSElement3D : public TACSElement {
     Get the size of the data for the matrix-vector product
   */
   void getMatVecDataSizes(ElementMatrixType matType, int elemIndex,
-                          int* _data_size, int* _temp_size);
+                          int *_data_size, int *_temp_size);
 
   /**
     Get the data for a matrix vector product. When data is NULL, the function
@@ -160,8 +160,8 @@ class TACSElement3D : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   /**
     Add the derivative of the point quantity w.r.t. the design variables
@@ -202,11 +202,11 @@ class TACSElement3D : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
  private:
-  TACSElementModel* model;
-  TACSElementBasis* basis;
+  TACSElementModel *model;
+  TACSElementBasis *basis;
 };
 
 #endif  // TACS_ELEMENT_3D_H

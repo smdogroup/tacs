@@ -60,14 +60,14 @@ class TACSKSDisplacement : public TACSFunction {
     PNORM_CONTINUOUS
   };
 
-  TACSKSDisplacement(TACSAssembler* _assembler, double ksWeight,
-                     const double* _dir, double alpha = 1.0);
+  TACSKSDisplacement(TACSAssembler *_assembler, double ksWeight,
+                     const double *_dir, double alpha = 1.0);
   ~TACSKSDisplacement();
 
   /**
     Get the object/function name
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Set parameters for the KS function
   // ----------------------------------
@@ -93,7 +93,7 @@ class TACSKSDisplacement : public TACSFunction {
      Perform an element-wise integration over this element.
   */
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement* element, double time, TacsScalar scale,
+                       TACSElement *element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
@@ -110,16 +110,16 @@ class TACSKSDisplacement : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens(int elemIndex, TACSElement* element, double time,
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TacsScalar* elemSVSens);
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement* element, double time,
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -128,7 +128,7 @@ class TACSKSDisplacement : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement* element, double time,
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
@@ -147,7 +147,7 @@ class TACSKSDisplacement : public TACSFunction {
   double alpha;
 
   // The name of the function
-  static const char* funcName;
+  static const char *funcName;
 
   // The maximum displacement value, the sum of exp(ksWeight*(f[i] - maxDisp)
   // and the value of the KS function

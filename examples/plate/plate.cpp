@@ -7,7 +7,7 @@
 #include "TACSShellElementDefs.h"
 #include "TACSToFH5.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   int nx = 25, ny = 25;
 
   // Set up the creator object
-  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
   creator->incref();
 
   if (rank == 0) {
@@ -31,13 +31,13 @@ int main(int argc, char* argv[]) {
     int numElements = nx * ny;
 
     // The elements are ordered as (i + j*nx)
-    int* ptr = new int[numElements + 1];
-    int* conn = new int[order * order * numElements];
-    int* ids = new int[numElements];
+    int *ptr = new int[numElements + 1];
+    int *conn = new int[order * order * numElements];
+    int *ids = new int[numElements];
     memset(ids, 0, numElements * sizeof(int));
 
     ptr[0] = 0;
-    int* c = conn;
+    int *c = conn;
     for (int j = 0, k = 0; j < ny; j++) {
       for (int i = 0; i < nx; i++, k++) {
         // Set the node connectivity
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 
     // We're over-counting one of the nodes on each edge
     int numBcs = 4 * ((order - 1) * nx + 1);
-    int* bcNodes = new int[numBcs];
+    int *bcNodes = new int[numBcs];
 
     for (int i = 0; i < ((order - 1) * nx + 1); i++) {
       bcNodes[4 * i] = i;
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
     delete[] bcNodes;
 
     // Set the node locations
-    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
     for (int j = 0; j < (order - 1) * ny + 1; j++) {
       for (int i = 0; i < (order - 1) * nx + 1; i++) {
         int node = i + ((order - 1) * nx + 1) * j;
@@ -93,16 +93,16 @@ int main(int argc, char* argv[]) {
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TacsScalar axis[] = {1.0, 0.0, 0.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   TacsScalar t = 0.01;
-  TACSShellConstitutive* con = new TACSIsoShellConstitutive(props, t);
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t);
 
-  TACSElement* element = NULL;
+  TACSElement *element = NULL;
   if (order == 2) {
     element = new TACSQuad4Shell(transform, con);
 
@@ -114,13 +114,13 @@ int main(int argc, char* argv[]) {
   creator->setElements(1, &element);
 
   // Create the TACSAssembler object
-  TACSAssembler* assembler = creator->createTACS();
+  TACSAssembler *assembler = creator->createTACS();
   creator->decref();
   assembler->incref();
 
   // Create the preconditioner
-  TACSBVec* res = assembler->createVec();
-  TACSBVec* ans = assembler->createVec();
+  TACSBVec *res = assembler->createVec();
+  TACSBVec *ans = assembler->createVec();
 
   // Increment the reference count to the matrix/vectors
   res->incref();
@@ -130,13 +130,13 @@ int main(int argc, char* argv[]) {
   double alpha = 1.0, beta = 0.0, gamma = 0.0;
 
   // Allocate, assemble and factor the TACSSchurMat and preconditioner
-  TACSSchurMat* schur_mat = assembler->createSchurMat();
+  TACSSchurMat *schur_mat = assembler->createSchurMat();
   schur_mat->incref();
 
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* schur_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
+  TACSSchurPc *schur_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
   schur_pc->incref();
 
   double schur_time = MPI_Wtime();
@@ -153,9 +153,9 @@ int main(int argc, char* argv[]) {
   int gmres_iters = 10;  // Number of GMRES iterations
   int nrestart = 2;      // Number of allowed restarts
   int is_flexible = 1;   // Is a flexible preconditioner?
-  GMRES* schur_gmres =
+  GMRES *schur_gmres =
       new GMRES(schur_mat, schur_pc, gmres_iters, nrestart, is_flexible);
-  TacsScalar* res_array;
+  TacsScalar *res_array;
   int size = res->getArray(&res_array);
   for (int i = 2; i < size; i += varsPerNode) {
     res_array[i] = 1.0;
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(assembler, etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("plate.f5");
   f5->decref();

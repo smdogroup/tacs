@@ -24,13 +24,13 @@
 
 class TACSSpringElement : public TACSElement {
  public:
-  TACSSpringElement(TACSSpringTransform* _transform,
-                    TACSGeneralSpringConstitutive* _springStiff);
+  TACSSpringElement(TACSSpringTransform *_transform,
+                    TACSGeneralSpringConstitutive *_springStiff);
   ~TACSSpringElement();
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementType getElementType();
@@ -49,7 +49,7 @@ class TACSSpringElement : public TACSElement {
   // ----------------------
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
   void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
                    const TacsScalar vars[], const TacsScalar dvars[],
@@ -75,8 +75,8 @@ class TACSSpringElement : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   void addPointQuantityDVSens(int elemIndex, int quantityType, double time,
                               TacsScalar scale, int n, double pt[],
@@ -137,10 +137,10 @@ class TACSSpringElement : public TACSElement {
   static const int NUM_VARIABLES = NUM_NODES * NUM_DISPS;
   static const int NUM_STRESSES = 6;
 
-  static const char* elemName;
+  static const char *elemName;
 
-  TACSGeneralSpringConstitutive* springStiff;
-  TACSSpringTransform* transform;
+  TACSGeneralSpringConstitutive *springStiff;
+  TACSSpringTransform *transform;
 };
 
 #endif  // TACS_SPRING_ELEMENT_H

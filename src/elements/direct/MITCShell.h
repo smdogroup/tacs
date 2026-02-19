@@ -62,7 +62,7 @@ using namespace largerot;
 template <int order, int tying_order = order>
 class MITCShell : public TACSShell {
  public:
-  MITCShell(FSDTStiffness* _stiff, ElementBehaviorType type = LINEAR,
+  MITCShell(FSDTStiffness *_stiff, ElementBehaviorType type = LINEAR,
             int _componentNum = 0, int _use_lobatto_quadrature = 0);
   ~MITCShell();
 
@@ -73,7 +73,7 @@ class MITCShell : public TACSShell {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* _Te, TacsScalar* _Pe,
+  void computeEnergies(double time, TacsScalar *_Te, TacsScalar *_Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]);
 
@@ -126,7 +126,7 @@ class MITCShell : public TACSShell {
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------
-  TACSConstitutive* getConstitutive() { return stiff; }
+  TACSConstitutive *getConstitutive() { return stiff; }
 
   // Get the number of Gauss quadrature points
   // -----------------------------------------
@@ -134,7 +134,7 @@ class MITCShell : public TACSShell {
 
   // Get the quadrature points and weights
   // -------------------------------------
-  double getGaussWtsPts(const int num, double* pt);
+  double getGaussWtsPts(const int num, double *pt);
 
   // Get the shape functions from the element
   // ----------------------------------------
@@ -142,11 +142,11 @@ class MITCShell : public TACSShell {
 
   // Return the determinant of the Jacobian at this point
   // ----------------------------------------------------
-  TacsScalar getDetJacobian(const double* pt, const TacsScalar Xpts[]);
+  TacsScalar getDetJacobian(const double *pt, const TacsScalar Xpts[]);
 
   // Return the determinant of the Jacobian and its sensitivity at this point
   // ------------------------------------------------------------------------
-  TacsScalar getDetJacobianXptSens(TacsScalar* hXptSens, const double* pt,
+  TacsScalar getDetJacobianXptSens(TacsScalar *hXptSens, const double *pt,
                                    const TacsScalar Xpts[]);
 
   // This function returns the strain evaluated at pt
@@ -174,10 +174,10 @@ class MITCShell : public TACSShell {
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int* con, int node);
+  void getOutputConnectivity(int *con, int node);
 
   // Set the number of nodes/number of variables per element
   // -------------------------------------------------------
@@ -209,14 +209,14 @@ class MITCShell : public TACSShell {
   const double *gaussWts, *gaussPts;
 
   // The knot locations
-  const double* knots;   // "tying_order" Gauss points
-  const double* pknots;  // "tying_order"-1 Gauss points
+  const double *knots;   // "tying_order" Gauss points
+  const double *pknots;  // "tying_order"-1 Gauss points
 };
 
 const double MITCShellFirstOrderKnots[2] = {-1.0, 1.0};
 
 template <int order, int tying_order>
-MITCShell<order, tying_order>::MITCShell(FSDTStiffness* _stiff,
+MITCShell<order, tying_order>::MITCShell(FSDTStiffness *_stiff,
                                          ElementBehaviorType _type,
                                          int _componentNum,
                                          int use_lobatto_quadrature)
@@ -283,7 +283,7 @@ int MITCShell<order, tying_order>::numVariables() {
 */
 template <int order, int tying_order>
 void MITCShell<order, tying_order>::computeEnergies(
-    double time, TacsScalar* _Te, TacsScalar* _Pe, const TacsScalar Xpts[],
+    double time, TacsScalar *_Te, TacsScalar *_Pe, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[]) {
   // Geometric data
   TacsScalar X[3], Xd[9], Xdd[9];
@@ -352,7 +352,7 @@ void MITCShell<order, tying_order>::computeEnergies(
         h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                               Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                       axis, Xd, Xdd);
       }
@@ -482,7 +482,7 @@ void MITCShell<order, tying_order>::addResidual(double time, TacsScalar res[],
         h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                               Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                       axis, Xd, Xdd);
       }
@@ -541,9 +541,9 @@ void MITCShell<order, tying_order>::addResidual(double time, TacsScalar res[],
       TacsScalar Uddot[NUM_DISPS];
       compute_shell_U(NUM_NODES, Uddot, ddvars, N);
 
-      TacsScalar* r = res;
-      const TacsScalar* b = B;
-      const TacsScalar* br = drot;
+      TacsScalar *r = res;
+      const TacsScalar *b = B;
+      const TacsScalar *br = drot;
       for (int i = 0; i < NUM_NODES; i++) {
         for (int ii = 0; ii < NUM_DISPS; ii++) {
           r[ii] += h * (strain_product(b, stress) + kpenalty * rot * br[0]);
@@ -656,7 +656,7 @@ void MITCShell<order, tying_order>::addJacobian(
         h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                               Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                       axis, Xd, Xdd);
       }
@@ -830,7 +830,7 @@ void MITCShell<order, tying_order>::addJacobian(
 */
 template <int order, int tying_order>
 void MITCShell<order, tying_order>::getMatType(ElementMatrixType matType,
-                                               TacsScalar* mat,
+                                               TacsScalar *mat,
                                                const TacsScalar Xpts[],
                                                const TacsScalar vars[]) {
   memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
@@ -905,7 +905,7 @@ void MITCShell<order, tying_order>::getMatType(ElementMatrixType matType,
           h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                                 Xdd);
         } else {
-          const TacsScalar* axis = stiff->getRefAxis();
+          const TacsScalar *axis = stiff->getRefAxis();
           h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                         normal_eta, axis, Xd, Xdd);
         }
@@ -1141,7 +1141,7 @@ void MITCShell<order, tying_order>::getMatType(ElementMatrixType matType,
           h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                                 Xdd);
         } else {
-          const TacsScalar* axis = stiff->getRefAxis();
+          const TacsScalar *axis = stiff->getRefAxis();
           h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                         normal_eta, axis, Xd, Xdd);
         }
@@ -1256,7 +1256,7 @@ void MITCShell<order, tying_order>::addAdjResProduct(
         h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                               Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                       axis, Xd, Xdd);
       }
@@ -1311,7 +1311,7 @@ void MITCShell<order, tying_order>::addAdjResProduct(
       memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
 
       TacsScalar *b = B, *dr = drot;
-      const TacsScalar* ps = psi;
+      const TacsScalar *ps = psi;
       for (int i = 0; i < NUM_VARIABLES; i++) {
         bpsi[0] += ps[0] * b[0];
         bpsi[1] += ps[0] * b[1];
@@ -1346,7 +1346,7 @@ void MITCShell<order, tying_order>::addAdjResProduct(
 
       // Set the scalar for the mass matrix
       TacsScalar mscale[2] = {0.0, 0.0};
-      const TacsScalar* p = psi;
+      const TacsScalar *p = psi;
       for (int i = 0; i < NUM_NODES; i++) {
         mscale[0] +=
             h * N[i] * (Uddot[0] * p[0] + Uddot[1] * p[1] + Uddot[2] * p[2]);
@@ -1462,7 +1462,7 @@ void MITCShell<order, tying_order>::addAdjResXptProduct(
                                    dnormal_eta, Xd, Xdd, Na, Nb, Naa, Nab, Nbb,
                                    NUM_NODES);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis_sens(
             dh, t, dt, tx, dtx, ztx, dztx, normal, dnormal, normal_xi,
             dnormal_xi, normal_eta, dnormal_eta, axis, Xd, Xdd, Na, Nb, Naa,
@@ -1548,7 +1548,7 @@ void MITCShell<order, tying_order>::addAdjResXptProduct(
       double alpha = scale * gaussWts[n] * gaussWts[m];
       TacsScalar hd = 0.0;
       TacsScalar nd[3] = {0.0, 0.0, 0.0};
-      const TacsScalar* p = psi;
+      const TacsScalar *p = psi;
       for (int i = 0; i < NUM_NODES; i++) {
         hd += alpha * mass[0] * N[i] *
               (Uddot[0] * p[0] + Uddot[1] * p[1] + Uddot[2] * p[2]);
@@ -1678,7 +1678,7 @@ void MITCShell<order, tying_order>::addMatDVSensInnerProduct(
           h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                                 Xdd);
         } else {
-          const TacsScalar* axis = stiff->getRefAxis();
+          const TacsScalar *axis = stiff->getRefAxis();
           h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                         normal_eta, axis, Xd, Xdd);
         }
@@ -1778,7 +1778,7 @@ void MITCShell<order, tying_order>::addMatDVSensInnerProduct(
         upsi[0] = upsi[1] = upsi[2] = upsi[3] = upsi[4] = upsi[5] = 0.0;
         uphi[0] = uphi[1] = uphi[2] = uphi[3] = uphi[4] = uphi[5] = 0.0;
 
-        double* ns = N;
+        double *ns = N;
         const TacsScalar *ps = psi, *ph = phi;
         for (int i = 0; i < NUM_NODES; i++) {
           upsi[0] += ns[0] * ps[0];
@@ -1860,7 +1860,7 @@ void MITCShell<order, tying_order>::addMatDVSensInnerProduct(
           h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                                 Xdd);
         } else {
-          const TacsScalar* axis = stiff->getRefAxis();
+          const TacsScalar *axis = stiff->getRefAxis();
           h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                         normal_eta, axis, Xd, Xdd);
         }
@@ -1982,7 +1982,7 @@ void MITCShell<order, tying_order>::getMatSVSensInnerProduct(
           h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                                 Xdd);
         } else {
-          const TacsScalar* axis = stiff->getRefAxis();
+          const TacsScalar *axis = stiff->getRefAxis();
           h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi,
                                         normal_eta, axis, Xd, Xdd);
         }
@@ -2052,7 +2052,7 @@ int MITCShell<order, tying_order>::getNumGaussPts() {
 */
 template <int order, int tying_order>
 double MITCShell<order, tying_order>::getGaussWtsPts(const int num,
-                                                     double* pt) {
+                                                     double *pt) {
   int m = (int)(num / numGauss);
   int n = num % numGauss;
   pt[0] = gaussPts[n];
@@ -2096,7 +2096,7 @@ void MITCShell<order, tying_order>::getShapeFunctions(const double pt[],
 */
 template <int order, int tying_order>
 TacsScalar MITCShell<order, tying_order>::getDetJacobian(
-    const double* pt, const TacsScalar Xpts[]) {
+    const double *pt, const TacsScalar Xpts[]) {
   TacsScalar X[3], Xd[9];
   TacsScalar normal[3];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
@@ -2127,7 +2127,7 @@ TacsScalar MITCShell<order, tying_order>::getDetJacobian(
 */
 template <int order, int tying_order>
 TacsScalar MITCShell<order, tying_order>::getDetJacobianXptSens(
-    TacsScalar* hXptSens, const double* pt, const TacsScalar Xpts[]) {
+    TacsScalar *hXptSens, const double *pt, const TacsScalar Xpts[]) {
   TacsScalar h = 0.0;
   TacsScalar X[3], Xd[9], XdSens[9];
   double N[NUM_NODES], Na[NUM_NODES], Nb[NUM_NODES];
@@ -2198,7 +2198,7 @@ void MITCShell<order, tying_order>::getStrain(TacsScalar strain[],
   if (stiff->getTransformType() == FSDTStiffness::NATURAL) {
     compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd, Xdd);
   } else {
-    const TacsScalar* axis = stiff->getRefAxis();
+    const TacsScalar *axis = stiff->getRefAxis();
     compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta, axis,
                               Xd, Xdd);
   }
@@ -2310,7 +2310,7 @@ void MITCShell<order, tying_order>::addStrainXptSens(
                            normal_xi, dnormal_xi, normal_eta, dnormal_eta, Xd,
                            Xdd, Na, Nb, Naa, Nab, Nbb, NUM_NODES);
   } else {
-    const TacsScalar* axis = stiff->getRefAxis();
+    const TacsScalar *axis = stiff->getRefAxis();
     compute_transform_refaxis_sens(dh, t, dt, tx, dtx, ztx, dztx, normal,
                                    dnormal, normal_xi, dnormal_xi, normal_eta,
                                    dnormal_eta, axis, Xd, Xdd, Na, Nb, Naa, Nab,
@@ -2359,7 +2359,7 @@ void MITCShell<order, tying_order>::addStrainXptSens(
 
   // Add the product of the input sensitivity and the derivative of the
   // strain w.r.t. the node locations to the input vector
-  TacsScalar* s = strainXptSens;
+  TacsScalar *s = strainXptSens;
   for (int i = 0; i < 3 * NUM_NODES; i++) {
     for (int j = 0; j < NUM_STRESSES; j++, s++) {
       fXptSens[i] += scale * s[0] * strainSens[j];
@@ -2420,7 +2420,7 @@ void MITCShell<order, tying_order>::addStrainSVSens(
   if (stiff->getTransformType() == FSDTStiffness::NATURAL) {
     compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd, Xdd);
   } else {
-    const TacsScalar* axis = stiff->getRefAxis();
+    const TacsScalar *axis = stiff->getRefAxis();
     compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta, axis,
                               Xd, Xdd);
   }
@@ -2525,8 +2525,8 @@ void MITCShell<order, tying_order>::addLocalizedError(
   TacsScalar B[NUM_STRESSES * NUM_VARIABLES];
 
   // Determine the knots/pknots from the lower-order element
-  const double* low_knots = NULL;
-  const double* low_pknots = NULL;
+  const double *low_knots = NULL;
+  const double *low_pknots = NULL;
   if (tying_order == 3) {
     low_knots = MITCShellFirstOrderKnots;
   } else {
@@ -2600,7 +2600,7 @@ void MITCShell<order, tying_order>::addLocalizedError(
         h = compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd,
                               Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         h = compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                       axis, Xd, Xdd);
       }
@@ -2648,9 +2648,9 @@ void MITCShell<order, tying_order>::addLocalizedError(
       // Compute the stress at the current Gauss point
       stiff->calculateStress(At, Bt, Dt, Ats, strain, stress);
 
-      const TacsScalar* adj = adjoint;
-      const TacsScalar* b = B;
-      const TacsScalar* br = drot;
+      const TacsScalar *adj = adjoint;
+      const TacsScalar *b = B;
+      const TacsScalar *br = drot;
 
       // Compute the local product of the stress/strain
       TacsScalar product = 0.0;
@@ -2689,8 +2689,8 @@ void MITCShell<order, tying_order>::addLocalizedError(
   to store the connectivity
 */
 template <int order, int tying_order>
-void MITCShell<order, tying_order>::addOutputCount(int* nelems, int* nnodes,
-                                                   int* ncsr) {
+void MITCShell<order, tying_order>::addOutputCount(int *nelems, int *nnodes,
+                                                   int *ncsr) {
   *nelems += (order - 1) * (order - 1);
   *nnodes += order * order;
   *ncsr += 4 * (order - 1) * (order - 1);
@@ -2719,7 +2719,7 @@ void MITCShell<order, tying_order>::addOutputCount(int* nelems, int* nnodes,
 */
 template <int order, int tying_order>
 void MITCShell<order, tying_order>::getOutputData(unsigned int out_type,
-                                                  double* data, int ld_data,
+                                                  double *data, int ld_data,
                                                   const TacsScalar Xpts[],
                                                   const TacsScalar vars[]) {
   // Geometric data
@@ -2764,7 +2764,7 @@ void MITCShell<order, tying_order>::getOutputData(unsigned int out_type,
       if (stiff->getTransformType() == FSDTStiffness::NATURAL) {
         compute_transform(t, tx, ztx, normal, normal_xi, normal_eta, Xd, Xdd);
       } else {
-        const TacsScalar* axis = stiff->getRefAxis();
+        const TacsScalar *axis = stiff->getRefAxis();
         compute_transform_refaxis(t, tx, ztx, normal, normal_xi, normal_eta,
                                   axis, Xd, Xdd);
       }
@@ -2873,7 +2873,7 @@ void MITCShell<order, tying_order>::getOutputData(unsigned int out_type,
   less global
 */
 template <int order, int tying_order>
-void MITCShell<order, tying_order>::getOutputConnectivity(int* con, int node) {
+void MITCShell<order, tying_order>::getOutputConnectivity(int *con, int node) {
   int p = 0;
   for (int m = 0; m < order - 1; m++) {
     for (int n = 0; n < order - 1; n++) {

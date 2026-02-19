@@ -24,7 +24,7 @@
 template <int order>
 class PoissonQuad : public TACSElement {
  public:
-  PoissonQuad(void* _self, TacsScalar (*_evalf)(void*, const TacsScalar*)) {
+  PoissonQuad(void *_self, TacsScalar (*_evalf)(void *, const TacsScalar *)) {
     self = _self;
     evalf = _evalf;
     memset(f, 0, order * order * sizeof(TacsScalar));
@@ -40,9 +40,9 @@ class PoissonQuad : public TACSElement {
   }
   ~PoissonQuad() {}
 
-  const char* elementName() { return "PoissonQuad"; }
-  const char* displacementName(int i) { return "phi"; }
-  const char* stressName(int i) {
+  const char *elementName() { return "PoissonQuad"; }
+  const char *displacementName(int i) { return "phi"; }
+  const char *stressName(int i) {
     if (i == 0) {
       return "px";
     } else if (i == 1) {
@@ -50,7 +50,7 @@ class PoissonQuad : public TACSElement {
     }
     return NULL;
   }
-  const char* strainName(int i) {
+  const char *strainName(int i) {
     if (i == 0) {
       return "px";
     } else if (i == 1) {
@@ -58,7 +58,7 @@ class PoissonQuad : public TACSElement {
     }
     return NULL;
   }
-  const char* extraName(int i) { return NULL; }
+  const char *extraName(int i) { return NULL; }
   int numDisplacements() { return 1; }
   int numNodes() { return order * order; }
   int numStresses() { return 2; }
@@ -66,7 +66,7 @@ class PoissonQuad : public TACSElement {
   ElementType getElementType() { return TACS_POISSON_2D_ELEMENT; }
 
   int getNumGaussPts() { return order * order; }
-  double getGaussWtsPts(const int num, double* pt) {
+  double getGaussWtsPts(const int num, double *pt) {
     int n = num % order;
     int m = num / order;
 
@@ -76,7 +76,7 @@ class PoissonQuad : public TACSElement {
     pt[1] = pts[m];
     return wts[n] * wts[m];
   }
-  TacsScalar getDetJacobian(const double* pt, const TacsScalar Xpts[]) {
+  TacsScalar getDetJacobian(const double *pt, const TacsScalar Xpts[]) {
     // Get the shape functions
     double N[order * order], Na[order * order], Nb[order * order];
     getShapeFunctions(pt, N, Na, Nb);
@@ -325,12 +325,12 @@ class PoissonQuad : public TACSElement {
       }
     }
   }
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr) {
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr) {
     *nelems += (order - 1) * (order - 1);
     *nnodes += order * order;
     *ncsr += 4 * (order - 1) * (order - 1);
   }
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]) {
     for (int m = 0; m < order; m++) {
       for (int n = 0; n < order; n++) {
@@ -384,7 +384,7 @@ class PoissonQuad : public TACSElement {
       }
     }
   }
-  void getOutputConnectivity(int* con, int node) {
+  void getOutputConnectivity(int *con, int node) {
     int p = 0;
     for (int m = 0; m < order - 1; m++) {
       for (int n = 0; n < order - 1; n++) {
@@ -422,8 +422,8 @@ class PoissonQuad : public TACSElement {
   TacsScalar f[order * order];
 
   // The data/function for the right-hand-side
-  void* self;
-  TacsScalar (*evalf)(void*, const TacsScalar*);
+  void *self;
+  TacsScalar (*evalf)(void *, const TacsScalar *);
 
   double knots[order];
 };

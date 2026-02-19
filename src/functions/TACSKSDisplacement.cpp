@@ -23,7 +23,7 @@
 /*
   Initialize the TACSKSDisplacement class properties
 */
-TACSKSDisplacement::TACSKSDisplacement(TACSAssembler* _assembler,
+TACSKSDisplacement::TACSKSDisplacement(TACSAssembler *_assembler,
                                        double _ksWeight, const double _dir[],
                                        double _alpha)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
@@ -47,7 +47,7 @@ TACSKSDisplacement::~TACSKSDisplacement() {}
 /*
   TACSKSDisplacement function name
 */
-const char* TACSKSDisplacement::funcName = "TACSKSDisplacement";
+const char *TACSKSDisplacement::funcName = "TACSKSDisplacement";
 
 /*
   Set the KS aggregation type
@@ -71,7 +71,7 @@ void TACSKSDisplacement::setParameter(double _ksWeight) {
 /*
   Return the function name
 */
-const char* TACSKSDisplacement::getObjectName() { return funcName; }
+const char *TACSKSDisplacement::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -128,7 +128,7 @@ void TACSKSDisplacement::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSKSDisplacement function.
 */
 void TACSKSDisplacement::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -181,7 +181,7 @@ void TACSKSDisplacement::elementWiseEval(
   function with respect to the state variables.
 */
 void TACSKSDisplacement::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -241,7 +241,7 @@ void TACSKSDisplacement::getElementSVSens(
   the element nodal locations
 */
 void TACSKSDisplacement::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -303,7 +303,7 @@ void TACSKSDisplacement::getElementXptSens(
   the constitutive/material design variables.
 */
 void TACSKSDisplacement::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

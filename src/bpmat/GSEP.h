@@ -45,19 +45,19 @@ class EPOperator : public TACSObject {
 
   // Create a vector associated with this operator
   // ---------------------------------------------
-  virtual TACSVec* createVec() = 0;
+  virtual TACSVec *createVec() = 0;
 
   // Compute y = A *x
   // -----------------
-  virtual void mult(TACSVec* x, TACSVec* y) = 0;
+  virtual void mult(TACSVec *x, TACSVec *y) = 0;
 
   // Compute the inner product <x,y>
   // -------------------------------
-  virtual TacsScalar dot(TACSVec* x, TACSVec* y) { return x->dot(y); }
+  virtual TacsScalar dot(TACSVec *x, TACSVec *y) { return x->dot(y); }
 
   // Compute || B *x || - this is used to compute the eigenvalue error
   // ------------------------------------------------------------------
-  virtual TacsScalar errorNorm(TACSVec* x) { return 1.0; }
+  virtual TacsScalar errorNorm(TACSVec *x) { return 1.0; }
 
   // Convert the shifted spectrum back to the regular spectrum
   // ---------------------------------------------------------
@@ -70,14 +70,14 @@ class EPOperator : public TACSObject {
 */
 class EPRegular : public EPOperator {
  public:
-  EPRegular(TACSMat* _mat);
+  EPRegular(TACSMat *_mat);
   ~EPRegular();
 
-  TACSVec* createVec();
-  void mult(TACSVec* x, TACSVec* y);
+  TACSVec *createVec();
+  void mult(TACSVec *x, TACSVec *y);
 
  private:
-  TACSMat* mat;
+  TACSMat *mat;
 };
 
 /*!
@@ -85,18 +85,18 @@ class EPRegular : public EPOperator {
 */
 class EPShiftInvert : public EPOperator {
  public:
-  EPShiftInvert(TacsScalar _sigma, TACSKsm* _ksm);
+  EPShiftInvert(TacsScalar _sigma, TACSKsm *_ksm);
   ~EPShiftInvert();
 
-  TACSVec* createVec();
-  void mult(TACSVec* x, TACSVec* y);
+  TACSVec *createVec();
+  void mult(TACSVec *x, TACSVec *y);
 
   // The eigenvalues are computed as mu = 1.0/( eig - sigma )
   // eig = 1.0/mu + sigma
   TacsScalar convertEigenvalue(TacsScalar value);
 
  private:
-  TACSKsm* ksm;
+  TACSKsm *ksm;
   TacsScalar sigma;
 };
 
@@ -114,21 +114,21 @@ class EPShiftInvert : public EPOperator {
 */
 class EPGeneralizedShiftInvert : public EPOperator {
  public:
-  EPGeneralizedShiftInvert(TacsScalar _sigma, TACSKsm* _ksm, TACSMat* _inner);
+  EPGeneralizedShiftInvert(TacsScalar _sigma, TACSKsm *_ksm, TACSMat *_inner);
   ~EPGeneralizedShiftInvert();
 
   void setSigma(TacsScalar _sigma);
-  TACSVec* createVec();
-  void mult(TACSVec* x, TACSVec* y);  // Compute y = (A - sigma B)^{-1}*inner*x
-  TacsScalar dot(TACSVec* x, TACSVec* y);  // Compute <x,y> = x^{T}*inner*y
-  TacsScalar errorNorm(TACSVec* x);
+  TACSVec *createVec();
+  void mult(TACSVec *x, TACSVec *y);  // Compute y = (A - sigma B)^{-1}*inner*x
+  TacsScalar dot(TACSVec *x, TACSVec *y);  // Compute <x,y> = x^{T}*inner*y
+  TacsScalar errorNorm(TACSVec *x);
   TacsScalar convertEigenvalue(TacsScalar value);
 
  private:
   TacsScalar sigma;
-  TACSKsm* ksm;
-  TACSMat* inner;
-  TACSVec* temp;
+  TACSKsm *ksm;
+  TACSMat *inner;
+  TACSVec *temp;
 };
 
 /*
@@ -145,21 +145,21 @@ class EPGeneralizedShiftInvert : public EPOperator {
 */
 class EPBucklingShiftInvert : public EPOperator {
  public:
-  EPBucklingShiftInvert(TacsScalar _sigma, TACSKsm* _ksm, TACSMat* _inner);
+  EPBucklingShiftInvert(TacsScalar _sigma, TACSKsm *_ksm, TACSMat *_inner);
   ~EPBucklingShiftInvert();
 
   void setSigma(TacsScalar _sigma);
-  TACSVec* createVec();
-  void mult(TACSVec* x, TACSVec* y);  // Compute y = (A - sigma B)^{-1}*inner*x
-  TacsScalar dot(TACSVec* x, TACSVec* y);  // Compute <x,y> = x^{T}*inner*y
-  TacsScalar errorNorm(TACSVec* x);
+  TACSVec *createVec();
+  void mult(TACSVec *x, TACSVec *y);  // Compute y = (A - sigma B)^{-1}*inner*x
+  TacsScalar dot(TACSVec *x, TACSVec *y);  // Compute <x,y> = x^{T}*inner*y
+  TacsScalar errorNorm(TACSVec *x);
   TacsScalar convertEigenvalue(TacsScalar value);
 
  private:
   TacsScalar sigma;
-  TACSKsm* ksm;
-  TACSMat* inner;
-  TACSVec* temp;
+  TACSKsm *ksm;
+  TACSMat *inner;
+  TACSVec *temp;
 };
 
 /*
@@ -185,8 +185,8 @@ class SEP : public TACSObject {
     LARGEST_MAGNITUDE
   };
 
-  SEP(EPOperator* _Op, int _max_iters, OrthoType _ortho_type = FULL,
-      TACSBcMap* _bcs = NULL);
+  SEP(EPOperator *_Op, int _max_iters, OrthoType _ortho_type = FULL,
+      TACSBcMap *_bcs = NULL);
   ~SEP();
 
   // Set the orthogonalization strategy
@@ -196,14 +196,14 @@ class SEP : public TACSObject {
   void setTolerances(double _tol, EigenSpectrum _spectrum, int _neigvals);
 
   // Reset the eigenproblem operator
-  void setOperator(EPOperator* _Op);
+  void setOperator(EPOperator *_Op);
 
   // Solve the eigenproblem
-  void solve(KSMPrint* ksm_print = NULL, KSMPrint* ksm_file = NULL);
+  void solve(KSMPrint *ksm_print = NULL, KSMPrint *ksm_file = NULL);
 
   // Extract the eigenvalues and eigenvectors from the solver
-  TacsScalar extractEigenvalue(int n, TacsScalar* error);
-  TacsScalar extractEigenvector(int n, TACSVec* ans, TacsScalar* error);
+  TacsScalar extractEigenvalue(int n, TacsScalar *error);
+  TacsScalar extractEigenvector(int n, TACSVec *ans, TacsScalar *error);
 
   // Check the orthogonality of the Lanczos subspace (expensive)
   TacsScalar checkOrthogonality();
@@ -211,10 +211,10 @@ class SEP : public TACSObject {
 
  private:
   // Sort the eigenvalues by the desired spectrum
-  void sortEigenvalues(TacsScalar* values, int neigs, int* permutation);
+  void sortEigenvalues(TacsScalar *values, int neigs, int *permutation);
 
   // Check whether the right eigenvalues have converged
-  int checkConverged(TacsScalar* A, TacsScalar* B, int n);
+  int checkConverged(TacsScalar *A, TacsScalar *B, int n);
 
   // Data used to determine which spectrum to use and when
   // enough eigenvalues are converged
@@ -223,7 +223,7 @@ class SEP : public TACSObject {
   int neigvals;
 
   // The eigenproblem operator object
-  EPOperator* Op;
+  EPOperator *Op;
 
   // The number of iterations completed thus far
   int niters;
@@ -236,16 +236,16 @@ class SEP : public TACSObject {
 
   // Permutation yielding an ascending ordering of the eigenvalues after
   // the shift has been applied
-  int* perm;
+  int *perm;
 
   // The type of orthogonalization to use
   OrthoType ortho_type;
 
   int max_iters;
-  TACSVec** Q;  // The Vectors for the eigenvalue problem...
+  TACSVec **Q;  // The Vectors for the eigenvalue problem...
 
   // Boundary conditions that are applied
-  TACSBcMap* bcs;
+  TACSBcMap *bcs;
 };
 
 #endif  // TACS_GSEP_H

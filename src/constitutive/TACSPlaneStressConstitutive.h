@@ -31,7 +31,7 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
  public:
   static const int NUM_STRESSES = 3;
 
-  TACSPlaneStressConstitutive(TACSMaterialProperties* properties,
+  TACSPlaneStressConstitutive(TACSMaterialProperties *properties,
                               TacsScalar _t = 1.0, int _tNum = -1,
                               TacsScalar _tlb = 0.0, TacsScalar _tub = 1.0);
   ~TACSPlaneStressConstitutive();
@@ -103,18 +103,18 @@ class TACSPlaneStressConstitutive : public TACSConstitutive {
                                    TacsScalar sens[]);
 
   // Extra info about the constitutive class
-  const char* getObjectName();
+  const char *getObjectName();
 
  protected:
   // Materiial properties class
-  TACSMaterialProperties* properties;
+  TACSMaterialProperties *properties;
 
  private:
   // Store information about the design variable
   TacsScalar t, tlb, tub;
   int tNum;
 
-  static const char* psName;
+  static const char *psName;
 };
 
 #endif  // TACS_PLANE_STRESS_CONSTITUTIVE_H

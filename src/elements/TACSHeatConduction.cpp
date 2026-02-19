@@ -15,7 +15,7 @@
 #include "TACSHeatConduction.h"
 
 TACSHeatConduction2D::TACSHeatConduction2D(
-    TACSPlaneStressConstitutive* _stiff) {
+    TACSPlaneStressConstitutive *_stiff) {
   stiff = _stiff;
   stiff->incref();
 }
@@ -93,8 +93,8 @@ void TACSHeatConduction2D::evalWeakIntegrand(
 }
 
 void TACSHeatConduction2D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                                 int elemIndex, int* Jac_nnz,
-                                                 const int* Jac_pairs[]) {
+                                                 int elemIndex, int *Jac_nnz,
+                                                 const int *Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 5;
     *Jac_pairs = linear_Jac_pairs;
@@ -149,7 +149,7 @@ void TACSHeatConduction2D::addWeakAdjProduct(
     int elemIndex, const double time, TacsScalar scale, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
     const TacsScalar Ut[], const TacsScalar Ux[], const TacsScalar Psi[],
-    const TacsScalar Psix[], int dvLen, TacsScalar* dfdx) {
+    const TacsScalar Psix[], int dvLen, TacsScalar *dfdx) {
   // Evaluate the density
   TacsScalar rho = stiff->evalDensity(elemIndex, pt, X);
   TacsScalar c = stiff->evalSpecificHeat(elemIndex, pt, X);
@@ -167,7 +167,7 @@ void TACSHeatConduction2D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
@@ -189,7 +189,7 @@ void TACSHeatConduction2D::evalWeakAdjXptSensProduct(
 int TACSHeatConduction2D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
   if (quantityType == TACS_HEAT_FLUX) {
     if (quantity) {
       stiff->evalHeatFlux(elemIndex, pt, X, Ux, quantity);
@@ -304,7 +304,7 @@ void TACSHeatConduction2D::evalPointQuantitySens(
 void TACSHeatConduction2D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
   if (etype == TACS_SCALAR_2D_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];
@@ -343,7 +343,7 @@ void TACSHeatConduction2D::getOutputData(
   }
 }
 
-TACSHeatConduction3D::TACSHeatConduction3D(TACSSolidConstitutive* _stiff) {
+TACSHeatConduction3D::TACSHeatConduction3D(TACSSolidConstitutive *_stiff) {
   stiff = _stiff;
   stiff->incref();
 }
@@ -423,8 +423,8 @@ void TACSHeatConduction3D::evalWeakIntegrand(
 }
 
 void TACSHeatConduction3D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                                 int elemIndex, int* Jac_nnz,
-                                                 const int* Jac_pairs[]) {
+                                                 int elemIndex, int *Jac_nnz,
+                                                 const int *Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 10;
     *Jac_pairs = linear_Jac_pairs;
@@ -508,7 +508,7 @@ void TACSHeatConduction3D::evalWeakAdjXptSensProduct(
     int elemIndex, const double time, int n, const double pt[],
     const TacsScalar X[], const TacsScalar Xd[], const TacsScalar Ut[],
     const TacsScalar Ux[], const TacsScalar Psi[], const TacsScalar Psix[],
-    TacsScalar* product, TacsScalar dfdX[], TacsScalar dfdXd[],
+    TacsScalar *product, TacsScalar dfdX[], TacsScalar dfdXd[],
     TacsScalar dfdUx[], TacsScalar dfdPsix[]) {
   dfdX[0] = dfdX[1] = dfdX[2] = 0.0;
 
@@ -532,7 +532,7 @@ void TACSHeatConduction3D::evalWeakAdjXptSensProduct(
 int TACSHeatConduction3D::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
   if (quantityType == TACS_HEAT_FLUX) {
     if (quantity) {
       // Add the flux components to the heat transfer portion
@@ -664,7 +664,7 @@ void TACSHeatConduction3D::evalPointQuantitySens(
 void TACSHeatConduction3D::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
   if (etype == TACS_SCALAR_3D_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];

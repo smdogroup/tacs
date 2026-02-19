@@ -16,9 +16,9 @@
 
 #include "tacslapack.h"
 
-int TacsTestConstitutiveDensity(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveDensity(TACSConstitutive *con, int elemIndex,
                                 const double pt[], const TacsScalar X[],
-                                int ndvs, const TacsScalar* dvs, double dh,
+                                int ndvs, const TacsScalar *dvs, double dh,
                                 int test_print_level, double test_fail_atol,
                                 double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
@@ -27,9 +27,9 @@ int TacsTestConstitutiveDensity(TACSConstitutive* con, int elemIndex,
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
 
   // Compute the sensitivity w.r.t. the density
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -95,18 +95,18 @@ int TacsTestConstitutiveDensity(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveSpecificHeat(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
                                      const double pt[], const TacsScalar X[],
-                                     int ndvs, const TacsScalar* dvs, double dh,
+                                     int ndvs, const TacsScalar *dvs, double dh,
                                      int test_print_level,
                                      double test_fail_atol,
                                      double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
 
   // Compute the sensitivity w.r.t. the density
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -175,9 +175,9 @@ int TacsTestConstitutiveSpecificHeat(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveHeatFlux(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveHeatFlux(TACSConstitutive *con, int elemIndex,
                                  const double pt[], const TacsScalar X[],
-                                 int ndvs, const TacsScalar* dvs, double dh,
+                                 int ndvs, const TacsScalar *dvs, double dh,
                                  int test_print_level, double test_fail_atol,
                                  double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
@@ -187,9 +187,9 @@ int TacsTestConstitutiveHeatFlux(TACSConstitutive* con, int elemIndex,
   TacsGenerateRandomArray(psi, 3);
 
   // Allocate space for the derivatives
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -268,24 +268,24 @@ int TacsTestConstitutiveHeatFlux(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveStress(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
                                const double pt[], const TacsScalar X[],
-                               int ndvs, const TacsScalar* dvs, double dh,
+                               int ndvs, const TacsScalar *dvs, double dh,
                                int test_print_level, double test_fail_atol,
                                double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
 
   int nstress = con->getNumStresses();
-  TacsScalar* s = new TacsScalar[nstress];
-  TacsScalar* e = new TacsScalar[nstress];
-  TacsScalar* psi = new TacsScalar[nstress];
+  TacsScalar *s = new TacsScalar[nstress];
+  TacsScalar *e = new TacsScalar[nstress];
+  TacsScalar *psi = new TacsScalar[nstress];
   TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
   TacsGenerateRandomArray(psi, nstress);
 
   // Allocate space for the derivatives
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -364,24 +364,24 @@ int TacsTestConstitutiveStress(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveThermalStrain(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
                                       const double pt[], const TacsScalar X[],
-                                      int ndvs, const TacsScalar* dvs,
+                                      int ndvs, const TacsScalar *dvs,
                                       double dh, int test_print_level,
                                       double test_fail_atol,
                                       double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
 
   int nstress = con->getNumStresses();
-  TacsScalar* e = new TacsScalar[nstress];
-  TacsScalar* psi = new TacsScalar[nstress];
+  TacsScalar *e = new TacsScalar[nstress];
+  TacsScalar *psi = new TacsScalar[nstress];
   TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
   TacsGenerateRandomArray(psi, nstress);
 
   // Allocate space for the derivatives
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -461,21 +461,21 @@ int TacsTestConstitutiveThermalStrain(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveFailure(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
                                 const double pt[], const TacsScalar X[],
-                                int ndvs, const TacsScalar* dvs, double dh,
+                                int ndvs, const TacsScalar *dvs, double dh,
                                 int test_print_level, double test_fail_atol,
                                 double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
 
   int nstress = con->getNumStresses();
-  TacsScalar* e = new TacsScalar[nstress];
+  TacsScalar *e = new TacsScalar[nstress];
   TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
 
   // Allocate space for the derivatives
-  TacsScalar* xtemp = new TacsScalar[ndvs];
-  TacsScalar* dfdx = new TacsScalar[ndvs];
-  TacsScalar* dfdx_approx = new TacsScalar[ndvs];
+  TacsScalar *xtemp = new TacsScalar[ndvs];
+  TacsScalar *dfdx = new TacsScalar[ndvs];
+  TacsScalar *dfdx_approx = new TacsScalar[ndvs];
 
   // Copy the design variable values
   memcpy(xtemp, dvs, ndvs * sizeof(TacsScalar));
@@ -545,19 +545,19 @@ int TacsTestConstitutiveFailure(TACSConstitutive* con, int elemIndex,
   return !allClose;
 }
 
-int TacsTestConstitutiveFailureStrainSens(TACSConstitutive* con, int elemIndex,
+int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
                                           const double pt[],
                                           const TacsScalar X[], double dh,
                                           int test_print_level,
                                           double test_fail_atol,
                                           double test_fail_rtol) {
   int nstress = con->getNumStresses();
-  TacsScalar* e = new TacsScalar[nstress];
+  TacsScalar *e = new TacsScalar[nstress];
   TacsGenerateRandomArray(e, nstress, -1e-3, 1e-3);
 
   // Allocate space for the derivatives
-  TacsScalar* dfde = new TacsScalar[nstress];
-  TacsScalar* dfde_approx = new TacsScalar[nstress];
+  TacsScalar *dfde = new TacsScalar[nstress];
+  TacsScalar *dfde_approx = new TacsScalar[nstress];
 
   // Evaluate the derivatives
   con->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
@@ -621,7 +621,7 @@ int TacsTestConstitutiveFailureStrainSens(TACSConstitutive* con, int elemIndex,
   Test the derivative of the inner product of the adjoint vector and
   the residual with respect to material design variables.
 */
-int TacsTestConstitutive(TACSConstitutive* con, int elemIndex, double dh,
+int TacsTestConstitutive(TACSConstitutive *con, int elemIndex, double dh,
                          int test_print_level, double test_fail_atol,
                          double test_fail_rtol) {
   // Retrieve the number of variables
@@ -629,7 +629,7 @@ int TacsTestConstitutive(TACSConstitutive* con, int elemIndex, double dh,
   ndvs *= con->getDesignVarsPerNode();
 
   // Test the sensitivities w.r.t. the design variables first...
-  TacsScalar* dvs = new TacsScalar[ndvs];
+  TacsScalar *dvs = new TacsScalar[ndvs];
   con->getDesignVars(elemIndex, ndvs, dvs);
 
   srand(time(NULL));

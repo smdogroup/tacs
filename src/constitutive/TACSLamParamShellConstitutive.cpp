@@ -22,11 +22,11 @@
 
 #include "TACSElementAlgebra.h"
 
-const char* TACSLamParamShellConstitutive::constName =
+const char *TACSLamParamShellConstitutive::constName =
     "TACSLamParamShellConstitutive";
 
 TACSLamParamShellConstitutive::TACSLamParamShellConstitutive(
-    TACSOrthotropicPly* _orthoPly, TacsScalar _t, int _t_num, TacsScalar _min_t,
+    TACSOrthotropicPly *_orthoPly, TacsScalar _t, int _t_num, TacsScalar _min_t,
     TacsScalar _max_t, TacsScalar _f0, TacsScalar _f45, TacsScalar _f90,
     int _f0_num, int _f45_num, int _f90_num, TacsScalar _min_f0,
     TacsScalar _min_f45, TacsScalar _min_f90, TacsScalar _W1, TacsScalar _W3,
@@ -336,7 +336,7 @@ TacsScalar TACSLamParamShellConstitutive::evalSpecificHeat(
 void TACSLamParamShellConstitutive::getStiffness(TacsScalar A[], TacsScalar B[],
                                                  TacsScalar D[],
                                                  TacsScalar As[],
-                                                 TacsScalar* drill) {
+                                                 TacsScalar *drill) {
   // Calculate the in-plane stiffness using the lamination
   // parameters
   TacsScalar V1 = f0 - f90;
@@ -396,11 +396,11 @@ void TACSLamParamShellConstitutive::evalTangentStiffness(int elemIndex,
                                                          const double pt[],
                                                          const TacsScalar X[],
                                                          TacsScalar C[]) {
-  TacsScalar* A = &C[0];
-  TacsScalar* B = &C[6];
-  TacsScalar* D = &C[12];
-  TacsScalar* As = &C[18];
-  TacsScalar* drill = &C[21];
+  TacsScalar *A = &C[0];
+  TacsScalar *B = &C[6];
+  TacsScalar *D = &C[12];
+  TacsScalar *As = &C[18];
+  TacsScalar *drill = &C[21];
   getStiffness(A, B, D, As, drill);
 }
 
@@ -515,7 +515,7 @@ void TACSLamParamShellConstitutive::addStressDVSens(
 */
 void TACSLamParamShellConstitutive::computeFailure(const TacsScalar strain[],
                                                    TacsScalar fvals[],
-                                                   TacsScalar* _max) {
+                                                   TacsScalar *_max) {
   TacsScalar max = 0.0;
   for (int k = 0; k < NUM_FAIL_ANGLES; k++) {
     TacsScalar angle = 0.0, factor = 1.0;

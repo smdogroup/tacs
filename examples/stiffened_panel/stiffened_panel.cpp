@@ -188,12 +188,12 @@
   2. The results will be written to files in the ./results/ directory.
   If no such directory exists, then no results will be written.
 */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Depending on the arguments, load in a different
-  const char* bdf_file = "axial_stiffened_panel.bdf";
-  const char* shear_file = "shear_stiffened_panel.bdf";
+  const char *bdf_file = "axial_stiffened_panel.bdf";
+  const char *shear_file = "shear_stiffened_panel.bdf";
 
   // Interpret the input flags
   double dh = 1e-6;
@@ -231,18 +231,18 @@ int main(int argc, char* argv[]) {
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
 
-  TACSMaterialProperties* props = new TACSMaterialProperties(
+  TACSMaterialProperties *props = new TACSMaterialProperties(
       rho, specific_heat, E, nu, yield_stress, cte, kappa);
 
   TacsScalar axis[] = {1.0, 0.0, 0.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   // Create the stiffness objects for the skin/base and stiffener
-  TACSIsoShellConstitutive* stiff_skin =
+  TACSIsoShellConstitutive *stiff_skin =
       new TACSIsoShellConstitutive(props, tskin, 0);
-  TACSIsoShellConstitutive* stiff_base =
+  TACSIsoShellConstitutive *stiff_base =
       new TACSIsoShellConstitutive(props, tbase, 1);
-  TACSIsoShellConstitutive* stiff_stiffener =
+  TACSIsoShellConstitutive *stiff_stiffener =
       new TACSIsoShellConstitutive(props, tstiff, 2);
 
   // Allocate the elements associated with the skin/stiffener/base
@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
   // #endif // TACS_USE_COMPLEX
 
   // Load in the .bdf file using the TACS mesh loader
-  TACSMeshLoader* mesh = new TACSMeshLoader(MPI_COMM_WORLD);
+  TACSMeshLoader *mesh = new TACSMeshLoader(MPI_COMM_WORLD);
   mesh->incref();
 
   // Scan the file
@@ -284,14 +284,14 @@ int main(int argc, char* argv[]) {
 
   // Create the TACSAssembler object
   int vars_per_node = 6;
-  TACSAssembler* assembler = mesh->createTACS(vars_per_node);
+  TACSAssembler *assembler = mesh->createTACS(vars_per_node);
   assembler->incref();
 
   // Output for visualization
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 =
+  TACSToFH5 *f5 =
       new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
@@ -300,8 +300,8 @@ int main(int argc, char* argv[]) {
 
   // These calls compute the symbolic factorization and allocate
   // the space required for the preconditioners
-  TACSSchurMat* aux_mat = assembler->createSchurMat();
-  TACSSchurPc* pc = new TACSSchurPc(aux_mat, lev_fill, fill, 1);
+  TACSSchurMat *aux_mat = assembler->createSchurMat();
+  TACSSchurPc *pc = new TACSSchurPc(aux_mat, lev_fill, fill, 1);
   aux_mat->incref();
   pc->incref();
 
@@ -310,7 +310,7 @@ int main(int argc, char* argv[]) {
   int nrestart = 0;     // Number of allowed restarts
   int is_flexible = 0;  // Is a flexible preconditioner?
 
-  GMRES* ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
+  GMRES *ksm = new GMRES(aux_mat, pc, gmres_iters, nrestart, is_flexible);
   ksm->setTolerances(1e-12, 1e-30);
   ksm->incref();
 
@@ -321,15 +321,15 @@ int main(int argc, char* argv[]) {
   TacsScalar sigma = 0.15;
 
   // Allocate matrices for the stiffness/geometric stiffness matrix
-  TACSSchurMat* kmat = assembler->createSchurMat();
-  TACSSchurMat* gmat = assembler->createSchurMat();
+  TACSSchurMat *kmat = assembler->createSchurMat();
+  TACSSchurMat *gmat = assembler->createSchurMat();
 
   // Create a print object for writing output to the screen
   int freq = 1;
-  KSMPrint* ksm_print = new KSMPrintStdout("KSM", rank, freq);
+  KSMPrint *ksm_print = new KSMPrintStdout("KSM", rank, freq);
 
   // Allocate the linear buckling analysis object
-  TACSLinearBuckling* linear_buckling =
+  TACSLinearBuckling *linear_buckling =
       new TACSLinearBuckling(assembler, sigma, gmat, kmat, aux_mat, ksm,
                              max_lanczos, neigvals, eig_tol);
   linear_buckling->incref();

@@ -23,7 +23,7 @@
 /*
   Initialize the TACSKSFailure class properties
 */
-TACSKSFailure::TACSKSFailure(TACSAssembler* _assembler, double _ksWeight,
+TACSKSFailure::TACSKSFailure(TACSAssembler *_assembler, double _ksWeight,
                              double _alpha, double _safetyFactor)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                    TACSFunction::TWO_STAGE, 0) {
@@ -44,7 +44,7 @@ TACSKSFailure::~TACSKSFailure() {}
 /*
   TACSKSFailure function name
 */
-const char* TACSKSFailure::funcName = "TACSKSFailure";
+const char *TACSKSFailure::funcName = "TACSKSFailure";
 
 /*
   Set the KS aggregation type
@@ -64,7 +64,7 @@ void TACSKSFailure::setParameter(double _ksWeight) { ksWeight = _ksWeight; }
 /*
   Return the function name
 */
-const char* TACSKSFailure::getObjectName() { return funcName; }
+const char *TACSKSFailure::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -121,7 +121,7 @@ void TACSKSFailure::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSKSFailure function.
 */
 void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
-                                    TACSElement* element, double time,
+                                    TACSElement *element, double time,
                                     TacsScalar scale, const TacsScalar Xpts[],
                                     const TacsScalar vars[],
                                     const TacsScalar dvars[],
@@ -172,7 +172,7 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
   function with respect to the state variables.
 */
 void TACSKSFailure::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -229,7 +229,7 @@ void TACSKSFailure::getElementSVSens(
   the element nodal locations
 */
 void TACSKSFailure::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -288,7 +288,7 @@ void TACSKSFailure::getElementXptSens(
   the constitutive/material design variables.
 */
 void TACSKSFailure::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

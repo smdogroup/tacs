@@ -51,8 +51,8 @@ enum ZoneType {
   dir_name  == Name of the directory
   file_type == Type of data
 */
-int create_tec_file(char* data_info, char* var_names, char* file_name,
-                    char* dir_name, enum FileType _file_type) {
+int create_tec_file(char *data_info, char *var_names, char *file_name,
+                    char *dir_name, enum FileType _file_type) {
   INTEGER4 file_type = _file_type;
   INTEGER4 debug = 0;
   INTEGER4 variables_are_double = 0;
@@ -70,8 +70,8 @@ int create_tec_file(char* data_info, char* var_names, char* file_name,
   value_location   == The location of the values (0 for element-wise, 1 for
   nodal)
 */
-int create_fe_tec_zone(char* zone_name, ZoneType _zone_type, int _num_points,
-                       int _num_elements, int* _value_location = NULL,
+int create_fe_tec_zone(char *zone_name, ZoneType _zone_type, int _num_points,
+                       int _num_elements, int *_value_location = NULL,
                        int use_strands = 0, double solution_time = 0.0) {
   if (_zone_type == ORDERED || _zone_type == FEPOLYGON ||
       _zone_type == FEPOLYHEDRA) {
@@ -95,10 +95,10 @@ zone type\n");
   INTEGER4 total_num_face_nodes = 0;
   INTEGER4 num_connected_boundary_faces = 0;
   INTEGER4 total_num_boundary_connections = 0;
-  INTEGER4* passive_var_list = NULL;  // No passive variables
-  INTEGER4* value_location =
+  INTEGER4 *passive_var_list = NULL;  // No passive variables
+  INTEGER4 *value_location =
       _value_location;  // Array defining if value is nodal or element-wise
-  INTEGER4* share_var_from_zone = NULL;
+  INTEGER4 *share_var_from_zone = NULL;
   INTEGER4 share_con_from_zone = 0;
 
   // If we're using strands, set the strand ID
@@ -121,7 +121,7 @@ zone type\n");
   len  == Length of the data
   data == The array of data
 */
-int write_tec_double_data(int _len, double* data) {
+int write_tec_double_data(int _len, double *data) {
   INTEGER4 len = _len;
   INTEGER4 is_double = 1;
   return TECDAT112(&len, data, &is_double);
@@ -130,7 +130,7 @@ int write_tec_double_data(int _len, double* data) {
 /*
   Write float data to a tecplot file
 */
-int write_tec_float_data(int _len, float* data) {
+int write_tec_float_data(int _len, float *data) {
   INTEGER4 len = _len;
   INTEGER4 is_double = 0;
   return TECDAT112(&len, data, &is_double);
@@ -139,14 +139,14 @@ int write_tec_float_data(int _len, float* data) {
 /*
   Write the connectivity data
 */
-int write_con_data(int* con_data) { return TECNOD112(con_data); }
+int write_con_data(int *con_data) { return TECNOD112(con_data); }
 
 /*
   End the file output
 */
 int close_tec_file() { return TECEND112(); }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Check if we're going to use strands or not
@@ -164,10 +164,10 @@ int main(int argc, char* argv[]) {
   }
 
   for (int k = 1; k < argc; k++) {
-    char* infile = new char[strlen(argv[k]) + 1];
+    char *infile = new char[strlen(argv[k]) + 1];
     strcpy(infile, argv[k]);
 
-    FILE* fp = fopen(infile, "r");
+    FILE *fp = fopen(infile, "r");
     if (fp) {
       fclose(fp);
     } else {
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Set the output file
-    char* outfile = new char[strlen(infile) + 5];
+    char *outfile = new char[strlen(infile) + 5];
     int len = strlen(infile);
     int i = len - 1;
     for (; i >= 0; i--) {
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     int tec_init = 0;       // Tecplot initialized flag
 
     // Create the loader object
-    TACSFH5Loader* loader = new TACSFH5Loader();
+    TACSFH5Loader *loader = new TACSFH5Loader();
     loader->incref();
 
     int fail = loader->loadData(infile);
@@ -211,13 +211,13 @@ int main(int argc, char* argv[]) {
 
     const char *cname, *var_names;
     int num_points, num_variables;
-    float* cdata;
+    float *cdata;
     loader->getContinuousData(&cname, &var_names, &num_points, &num_variables,
                               &cdata);
 
     const char *ename, *evar_names;
     int edim1, num_evariables;
-    float* edata;
+    float *edata;
     loader->getElementData(&ename, &evar_names, &edim1, &num_evariables,
                            &edata);
 
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
 
     // Initialize the tecplot file with the variables
     // Concatenate continuous and element variable names
-    char* all_vars = new char[strlen(var_names) + strlen(evar_names) + 2];
+    char *all_vars = new char[strlen(var_names) + strlen(evar_names) + 2];
     strcpy(all_vars, var_names);
     all_vars[strlen(var_names)] = ',';
     strcpy(&all_vars[strlen(var_names) + 1], evar_names);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
 
     // For each element, average the values at the nodes to get a single element
     // value
-    float* avg_edata = new float[num_elements * num_evariables];
+    float *avg_edata = new float[num_elements * num_evariables];
     memset(avg_edata, 0, num_elements * num_evariables * sizeof(float));
     for (int i = 0; i < num_elements; i++) {
       int nnodes = ptr[i + 1] - ptr[i];
@@ -278,15 +278,15 @@ int main(int argc, char* argv[]) {
       basic_conn_size += nconn;
     }
 
-    int* basic_ltypes = new int[num_basic_elements];
-    int* basic_element_comp_num = new int[num_basic_elements];
-    int* basic_conn = new int[basic_conn_size];
-    int* basic_element_global_ptr = new int[num_basic_elements];
+    int *basic_ltypes = new int[num_basic_elements];
+    int *basic_element_comp_num = new int[num_basic_elements];
+    int *basic_conn = new int[basic_conn_size];
+    int *basic_element_global_ptr = new int[num_basic_elements];
 
-    int* btypes = basic_ltypes;
-    int* belem_comp_num = basic_element_comp_num;
-    int* bconn = basic_conn;
-    int* belem_global_ptr = basic_element_global_ptr;
+    int *btypes = basic_ltypes;
+    int *belem_comp_num = basic_element_comp_num;
+    int *bconn = basic_conn;
+    int *belem_global_ptr = basic_element_global_ptr;
     for (int k = 0; k < num_elements; k++) {
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
       if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
           ltype == TACS_TRI_CUBIC_ELEMENT) {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
-        int* tri_conn = new int[nconn];
+        int *tri_conn = new int[nconn];
         TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]], btypes, tri_conn);
 
         const int convert[] = {0, 1, 2, 2};
@@ -333,9 +333,9 @@ int main(int argc, char* argv[]) {
 
     int num_comp = loader->getNumComponents();
 
-    int* reduced_points = new int[num_points];
-    int* reduced_conn = new int[basic_conn_size];
-    int* value_location = new int[num_variables + num_evariables];
+    int *reduced_points = new int[num_points];
+    int *reduced_conn = new int[basic_conn_size];
+    int *value_location = new int[num_variables + num_evariables];
     for (int j = 0; j < num_variables; j++) {
       value_location[j] = 1;  // 1 = nodal
     }
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
 
     for (int k = 0; k < num_comp; k++) {
       // Count up the number of elements that use the connectivity
-      char* comp_name = loader->getComponentName(k);
+      char *comp_name = loader->getComponentName(k);
       // printf("Converting zone %d: %s at time %g\n",
       //  k, comp_name, solution_time);
 
@@ -418,10 +418,10 @@ int main(int argc, char* argv[]) {
         return (1);
       }
 
-      float* reduced_float_data = NULL;
+      float *reduced_float_data = NULL;
       reduced_float_data = new float[npts];
 
-      float* element_float_data = NULL;
+      float *element_float_data = NULL;
       element_float_data = new float[nelems];
 
       if (nelems > 0 && npts > 0) {

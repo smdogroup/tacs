@@ -47,9 +47,9 @@ class TACSPanelGPs : public TACSObject {
   /*
 
    */
-  TACSPanelGPs(TACSBucklingGaussianProcessModel* axialGP,
-               TACSBucklingGaussianProcessModel* shearGP,
-               TACSBucklingGaussianProcessModel* cripplingGP, bool saveData);
+  TACSPanelGPs(TACSBucklingGaussianProcessModel *axialGP,
+               TACSBucklingGaussianProcessModel *shearGP,
+               TACSBucklingGaussianProcessModel *cripplingGP, bool saveData);
   ~TACSPanelGPs();
 
   /**
@@ -67,7 +67,7 @@ class TACSPanelGPs : public TACSObject {
    * @param Xtest the test data point, a rank 1-tensor of length 4
    * @return the Ytest mean prediction of the GP
    */
-  TacsScalar predictMeanTestData(int predInd, const TacsScalar* Xtest);
+  TacsScalar predictMeanTestData(int predInd, const TacsScalar *Xtest);
 
   /**
    * derivatives of predictMeanTestData, which also saves and restores the
@@ -81,7 +81,7 @@ class TACSPanelGPs : public TACSObject {
    * @return the derivative df/dXtest which we compute by jacobian product
    */
   void predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
-                               const TacsScalar* Xtest, TacsScalar* Xtestsens);
+                               const TacsScalar *Xtest, TacsScalar *Xtestsens);
 
   /**
    * clear and reset all the saved data.
@@ -98,9 +98,9 @@ class TACSPanelGPs : public TACSObject {
   // GETTERS AND SETTERS
   // -------------------
 
-  TACSBucklingGaussianProcessModel* getAxialGP() { return this->axialGP; }
-  TACSBucklingGaussianProcessModel* getShearGP() { return this->shearGP; }
-  TACSBucklingGaussianProcessModel* getCripplingGP() {
+  TACSBucklingGaussianProcessModel *getAxialGP() { return this->axialGP; }
+  TACSBucklingGaussianProcessModel *getShearGP() { return this->shearGP; }
+  TACSBucklingGaussianProcessModel *getCripplingGP() {
     return this->cripplingGP;
   }
 
@@ -110,15 +110,15 @@ class TACSPanelGPs : public TACSObject {
   bool saveData;
 
   // saved forward data in this class
-  TacsScalar* savedYtest;
-  bool* savedForward;
+  TacsScalar *savedYtest;
+  bool *savedForward;
 
   // saved adjoint data in this class
-  TacsScalar* savedJacobians;
-  bool* savedAdjoint;
+  TacsScalar *savedJacobians;
+  bool *savedAdjoint;
 
   // stored GP model pointers
-  TACSBucklingGaussianProcessModel* axialGP;
-  TACSBucklingGaussianProcessModel* shearGP;
-  TACSBucklingGaussianProcessModel* cripplingGP;
+  TACSBucklingGaussianProcessModel *axialGP;
+  TACSBucklingGaussianProcessModel *shearGP;
+  TACSBucklingGaussianProcessModel *cripplingGP;
 };

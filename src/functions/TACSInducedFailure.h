@@ -73,12 +73,12 @@ class TACSInducedFailure : public TACSFunction {
     DISCRETE_POWER_SQUARED
   };
 
-  TACSInducedFailure(TACSAssembler* _assembler, double _P);
+  TACSInducedFailure(TACSAssembler *_assembler, double _P);
   ~TACSInducedFailure();
 
   // Retrieve the name of the function
   // ---------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Set parameters to control how the induced functions are evaluated
   // -----------------------------------------------------------------
@@ -99,7 +99,7 @@ class TACSInducedFailure : public TACSFunction {
      Perform an element-wise integration over this element.
   */
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement* element, double time, TacsScalar scale,
+                       TACSElement *element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
@@ -116,16 +116,16 @@ class TACSInducedFailure : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens(int elemIndex, TACSElement* element, double time,
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
-                        TacsScalar* elemSVSens);
+                        TacsScalar *elemSVSens);
 
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement* element, double time,
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -134,7 +134,7 @@ class TACSInducedFailure : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement* element, double time,
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
@@ -150,7 +150,7 @@ class TACSInducedFailure : public TACSFunction {
   double P;
 
   // The name of the function
-  static const char* funcName;
+  static const char *funcName;
 };
 
 #endif  // TACS_INDUCED_FAILURE_H

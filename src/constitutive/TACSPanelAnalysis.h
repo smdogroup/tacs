@@ -46,9 +46,9 @@ class TACSPanelAnalysis : public TACSObject {
 
   // Functions for initialization
   // ----------------------------
-  void setPoints(TacsScalar* Xpts, int npoints);
-  void setSegment(int seg, int seg_type, FSDTStiffness* stiff, int n1, int n2);
-  void setBeam(int beam, EBStiffness* stiff, int n);
+  void setPoints(TacsScalar *Xpts, int npoints);
+  void setSegment(int seg, int seg_type, FSDTStiffness *stiff, int n1, int n2);
+  void setBeam(int beam, EBStiffness *stiff, int n);
   void setFirstNodeBC(int _first_node, int _first_node_bc);
   void setLastNodeBC(int _last_node, int _last_node_bc);
   void initialize();
@@ -78,17 +78,17 @@ class TACSPanelAnalysis : public TACSObject {
   // Update the buckling loads or frequencies
   // ----------------------------------------
   int computeFrequencies(TacsScalar freq[], int nfreq,
-                         const char* prefix = NULL);
+                         const char *prefix = NULL);
   // Compute just the positive values of the buckling loads
   int computeBucklingLoads(TacsScalar Nx, TacsScalar Nxy, TacsScalar loads[],
-                           int nloads, const char* prefix = NULL);
+                           int nloads, const char *prefix = NULL);
   // Compute the positive and negative loads
   int computeBucklingLoads(TacsScalar Nxy, TacsScalar posLoads[],
                            TacsScalar negLoads[], int nloads);
 
   // Compute the solution with a uniform surface pressure
   // ----------------------------------------------------
-  int computePressureLoad(TacsScalar p, const char* file_name);
+  int computePressureLoad(TacsScalar p, const char *file_name);
 
   // Compute the design variable sensitivity of the
   // buckling loads or frequencies
@@ -107,9 +107,9 @@ class TACSPanelAnalysis : public TACSObject {
 
   // Set the geometric design variable dependence
   // --------------------------------------------
-  void setGeoDesignDependence(TacsScalar* _XptConst, TacsScalar* _XptLin,
-                              TacsScalar* _geoDvs, int* _dvNums, int _nDvGeo);
-  void setGeoDVBounds(TacsScalar* lb, TacsScalar* ub);
+  void setGeoDesignDependence(TacsScalar *_XptConst, TacsScalar *_XptLin,
+                              TacsScalar *_geoDvs, int *_dvNums, int _nDvGeo);
+  void setGeoDVBounds(TacsScalar *lb, TacsScalar *ub);
   void setLxDvBounds(int _LxDvNum, TacsScalar _LxLb, TacsScalar _LxUb);
 
   // Design variable information
@@ -142,10 +142,10 @@ class TACSPanelAnalysis : public TACSObject {
  private:
   // Compute the raw eigenvalues and eigenmodes
   // ------------------------------------------
-  int computeEigenvalues(int lm, const char* auplo, const char* buplo, int n,
-                         int ka, TacsScalar* A, int lda, int kb, TacsScalar* B,
-                         int ldb, int k, int m, TacsScalar* work, double tol,
-                         TacsScalar* eigs, TacsScalar* Z);
+  int computeEigenvalues(int lm, const char *auplo, const char *buplo, int n,
+                         int ka, TacsScalar *A, int lda, int kb, TacsScalar *B,
+                         int ldb, int k, int m, TacsScalar *work, double tol,
+                         TacsScalar *eigs, TacsScalar *Z);
   int computeFrequencies(int neigs, TacsScalar eigvals[], TacsScalar eigvecs[]);
   int computeBucklingLoads(const TacsScalar segmentLoads[],
                            const TacsScalar beamLoads[], int neigs,
@@ -172,7 +172,7 @@ class TACSPanelAnalysis : public TACSObject {
 
   // Print the displaced shape of the panel
   // --------------------------------------
-  void printPanelMode(const char* file_name, const TacsScalar* x, int nx);
+  void printPanelMode(const char *file_name, const TacsScalar *x, int nx);
 
   // Update the Xpt array based on the current values of the geoDvs
   void updateGeometry();
@@ -378,8 +378,8 @@ class TACSPanelAnalysis : public TACSObject {
 
   // The Gauss points and weights
   int numGauss;
-  const double* gaussWts;
-  const double* gaussPts;
+  const double *gaussWts;
+  const double *gaussPts;
 
   // Set a flag to indicate whether to use the LAPACK eigenvalue
   // computational routines, or to use the internal eigenvalue
@@ -397,8 +397,8 @@ class TACSPanelAnalysis : public TACSObject {
   int first_node_bc, last_node_bc;
 
   int nDvGeo;          // Number of geometric design variables
-  int* geoDvNums;      // Geometric design variable numbers
-  TacsScalar* geoDvs;  // The geometric design variable values
+  int *geoDvNums;      // Geometric design variable numbers
+  TacsScalar *geoDvs;  // The geometric design variable values
   TacsScalar *geoLb, *geoUb;
   TacsScalar *XptConst, *XptLin;
 
@@ -408,21 +408,21 @@ class TACSPanelAnalysis : public TACSObject {
   TacsScalar Lx;  // The length of the panel
   TacsScalar LxLb, LxUb;  // The lower and upper bounds associated with Lx
 
-  TacsScalar* Xpts;  // The positions of the nodes in the panel
+  TacsScalar *Xpts;  // The positions of the nodes in the panel
   int nnodes;        // The number of nodal locations
-  int* nodes;        // The nodes for each segment
-  int* bnodes;       // The nodes associated with longitudinal beams
+  int *nodes;        // The nodes for each segment
+  int *bnodes;       // The nodes associated with longitudinal beams
 
-  FSDTStiffness** panels;  // The sub-stiffness properties of each panel
-  EBStiffness** beams;     // The beam stiffness objects
+  FSDTStiffness **panels;  // The sub-stiffness properties of each panel
+  EBStiffness **beams;     // The beam stiffness objects
   int nsegments;           // The number of panel segments
   int nbeams;              // The number of longitudinal beams
   int nmodes;              // The number of terms in the
-  int* segmentType;        // Segment types - skin or stiffener
+  int *segmentType;        // Segment types - skin or stiffener
 
   // The unknowns associated with each panel segment
   // Note that negative unknowns do not appear in the final matrix
-  int* vars;
+  int *vars;
   int nvars;  // The number of variables
   int nband;  // The number of super-diagonals in the banded matrix
 

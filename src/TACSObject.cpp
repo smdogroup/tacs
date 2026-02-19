@@ -40,10 +40,10 @@ void TacsZeroNumFlops() { tacs_local_flop_count = 0.0; }
   These definite the min/max operations for complex values
 */
 #ifdef TACS_USE_COMPLEX
-void TacsMPIComplexMax(void* _in, void* _out, int* count, MPI_Datatype* data) {
+void TacsMPIComplexMax(void *_in, void *_out, int *count, MPI_Datatype *data) {
   if (*data == MPI_DOUBLE_COMPLEX) {
-    TacsScalar* in = (TacsScalar*)_in;
-    TacsScalar* out = (TacsScalar*)_out;
+    TacsScalar *in = (TacsScalar *)_in;
+    TacsScalar *out = (TacsScalar *)_out;
 
     // Compare the real parts of the array
     for (int i = 0; i < *count; i++) {
@@ -54,10 +54,10 @@ void TacsMPIComplexMax(void* _in, void* _out, int* count, MPI_Datatype* data) {
   }
 }
 
-void TacsMPIComplexMin(void* _in, void* _out, int* count, MPI_Datatype* data) {
+void TacsMPIComplexMin(void *_in, void *_out, int *count, MPI_Datatype *data) {
   if (*data == MPI_DOUBLE_COMPLEX) {
-    TacsScalar* in = (TacsScalar*)_in;
-    TacsScalar* out = (TacsScalar*)_out;
+    TacsScalar *in = (TacsScalar *)_in;
+    TacsScalar *out = (TacsScalar *)_out;
 
     // Compare the real parts of the array
     for (int i = 0; i < *count; i++) {
@@ -133,9 +133,9 @@ void TACSObject::decref() {
 int TACSObject::refcount() { return ref_count; }
 
 //! Return the name of the object
-const char* TACSObject::getObjectName() { return tacsDefault; }
+const char *TACSObject::getObjectName() { return tacsDefault; }
 
-const char* TACSObject::tacsDefault = "TACSObject";
+const char *TACSObject::tacsDefault = "TACSObject";
 
 /*
   Implementation of the TACSThreadInfo object

@@ -111,7 +111,7 @@ class PSQuadTraction : public TACSElement {
       FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
 
       // Calcualte the Jacobian at the current point
-      const TacsScalar* x = Xpts;
+      const TacsScalar *x = Xpts;
       TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
       for (int j = 0; j < order; j++) {
         for (int i = 0; i < order; i++) {
@@ -139,7 +139,7 @@ class PSQuadTraction : public TACSElement {
       }
 
       // Add the result to the element
-      TacsScalar* r = res;
+      TacsScalar *r = res;
       for (int j = 0; j < order; j++) {
         for (int i = 0; i < order; i++) {
           r[0] -= hsurf * na[i] * nb[j] * Tx;
@@ -171,7 +171,7 @@ class PSQuadTraction : public TACSElement {
       FElibrary::lagrangeSFKnots(nb, dnb, pt[1], knots, order);
 
       // Calcualte the Jacobian at the current point
-      const TacsScalar* x = Xpts;
+      const TacsScalar *x = Xpts;
       TacsScalar Xd[4] = {0.0, 0.0, 0.0, 0.0};
       TacsScalar Ax = 0.0, Ay = 0.0;
       for (int j = 0; j < order; j++) {

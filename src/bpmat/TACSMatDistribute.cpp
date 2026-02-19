@@ -62,12 +62,12 @@
   7. The CSR data structures from all procs are merged
   8. The persistent data communication paths are initialized
 */
-TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
-                                     TACSNodeMap* _row_map, int _bsize,
-                                     int numNodes, const int* rowp,
-                                     const int* cols, TACSBVecIndices* rowIndex,
-                                     BCSRMat** Aloc, BCSRMat** Bext,
-                                     TACSBVecDistribute** colMap) {
+TACSMatDistribute::TACSMatDistribute(TACSThreadInfo *thread_info,
+                                     TACSNodeMap *_row_map, int _bsize,
+                                     int numNodes, const int *rowp,
+                                     const int *cols, TACSBVecIndices *rowIndex,
+                                     BCSRMat **Aloc, BCSRMat **Bext,
+                                     TACSBVecDistribute **colMap) {
   // Copy over the row map
   row_map = _row_map;
   row_map->incref();
@@ -82,7 +82,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
   bsize = _bsize;
 
   // Get the external variables
-  const int* ext_vars;
+  const int *ext_vars;
 
   if (rowIndex->getIndices(&ext_vars) != numNodes) {
     fprintf(stderr,
@@ -94,7 +94,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
 
   // Get the owner range for the number of variables owned by
   // each node
-  const int* ownerRange;
+  const int *ownerRange;
   row_map->getOwnerRange(&ownerRange);
 
   // Get the non-zero pattern of the input matrix
@@ -135,7 +135,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
 
   for (int i = 0; i < numNodes; i++) {
     if (ext_vars[i] < lower || ext_vars[i] >= upper) {
-      int* item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
+      int *item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
       int index = item - ext_rows;
       ext_rowp[index + 1] = rowp[i + 1] - rowp[i];
     }
@@ -151,7 +151,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
 
   for (int i = 0; i < numNodes; i++) {
     if (ext_vars[i] < lower || ext_vars[i] >= upper) {
-      int* item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
+      int *item = TacsSearchArray(ext_vars[i], num_ext_rows, ext_rows);
       int index = item - ext_rows;
 
       for (int j = ext_rowp[index], jj = rowp[i]; j < ext_rowp[index + 1];
@@ -169,7 +169,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
 
   // Match the intervals of the external variables to be sent to other
   // processes
-  int* ext_ptr = new int[mpiSize + 1];
+  int *ext_ptr = new int[mpiSize + 1];
   TacsMatchIntervals(mpiSize, ownerRange, num_ext_rows, ext_rows, ext_ptr);
 
   // Count up the processors that will be sending information
@@ -203,7 +203,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
   }
 
   // Allocate space to store the number of in-coming entries
-  int* in_full = new int[mpiSize];
+  int *in_full = new int[mpiSize];
   MPI_Alltoall(ext_ptr, 1, MPI_INT, in_full, 1, MPI_INT, comm);
   delete[] ext_ptr;
 
@@ -274,7 +274,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
   }
 
   // Prepare to pass information from ext_rowp to in_rowp
-  int* ext_row_var_count = new int[num_ext_rows];
+  int *ext_row_var_count = new int[num_ext_rows];
   for (int k = 0; k < num_ext_rows; k++) {
     ext_row_var_count[k] = ext_rowp[k + 1] - ext_rowp[k];
   }
@@ -365,7 +365,7 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
   }
 
   int col_vars_size = 0;
-  int* temp_col_vars = new int[max_col_vars_size];
+  int *temp_col_vars = new int[max_col_vars_size];
 
   // Get contributions from ext_rows
   for (int i = 0; i < num_ext_rows; i++) {
@@ -386,11 +386,11 @@ TACSMatDistribute::TACSMatDistribute(TACSThreadInfo* thread_info,
   // Uniquely sort the array
   col_vars_size = TacsUniqueSort(col_vars_size, temp_col_vars);
 
-  int* col_vars = new int[col_vars_size];
+  int *col_vars = new int[col_vars_size];
   memcpy(col_vars, temp_col_vars, col_vars_size * sizeof(int));
   delete[] temp_col_vars;
 
-  TACSBVecIndices* col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
+  TACSBVecIndices *col_indices = new TACSBVecIndices(&col_vars, col_vars_size);
   *colMap = new TACSBVecDistribute(row_map, col_indices);
   col_map_size = col_indices->getIndices(&col_map_vars);
 
@@ -450,25 +450,25 @@ void TACSMatDistribute::zeroEntries() {
   [ B, E ][ x ]
   [ F, C ][ y ] + [ Bext ][ y_ext ] = 0
 */
-void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
-                                        const int* rowp, const int* cols,
+void TACSMatDistribute::computeLocalCSR(int numNodes, const int *ext_vars,
+                                        const int *rowp, const int *cols,
                                         int lower, int upper, int nz_per_row,
-                                        int** _Arowp, int** _Acols, int* _np,
-                                        int** _Browp, int** _Bcols) {
+                                        int **_Arowp, int **_Acols, int *_np,
+                                        int **_Browp, int **_Bcols) {
   int mpiRank, mpiSize;
   MPI_Comm_rank(comm, &mpiRank);
   MPI_Comm_size(comm, &mpiSize);
 
   // For each row, find the non-zero pattern
   int A_max_row_size = 2 * nz_per_row;
-  int* A_row_vars = new int[A_max_row_size];
+  int *A_row_vars = new int[A_max_row_size];
 
   int B_max_row_size = 2 * nz_per_row;
-  int* B_row_vars = new int[B_max_row_size];
+  int *B_row_vars = new int[B_max_row_size];
 
   int A_rows = upper - lower;
-  int* A_rowp = new int[A_rows + 1];
-  int* B_rowp = new int[A_rows + 1];
+  int *A_rowp = new int[A_rows + 1];
+  int *B_rowp = new int[A_rows + 1];
 
   for (int i = 0; i < A_rows + 1; i++) {
     A_rowp[i] = 0;
@@ -476,7 +476,7 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
   }
 
   // Set up a temporary array to keep track of the variables in ext_vars
-  int* var_map = new int[A_rows];
+  int *var_map = new int[A_rows];
   for (int i = 0; i < A_rows; i++) {
     var_map[i] = -1;
   }
@@ -529,7 +529,7 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
       // Try to find the variable in the k-th input - these are sorted
       // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
       int count = in_row_ptr[k + 1] - in_row_ptr[k];
-      int* item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
+      int *item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
 
       if (item) {
         int row = item - &in_rows[in_row_ptr[k]];
@@ -588,7 +588,7 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
 
   int nc = A_rows - np;
   if (np > 0) {
-    int* temp = new int[nc + 1];
+    int *temp = new int[nc + 1];
     for (int i = 0; i < nc + 1; i++) {
       temp[i] = B_rowp[i + np];
     }
@@ -597,8 +597,8 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
   }
 
   // Now, go through and build up A_cols/B_cols
-  int* A_cols = new int[A_rowp[A_rows]];
-  int* B_cols = new int[B_rowp[nc]];
+  int *A_cols = new int[A_rowp[A_rows]];
+  int *B_cols = new int[B_rowp[nc]];
 
   // Size the A_rowp/B_rowp arrays
   for (int i = 0; i < A_rows; i++) {  // For each variable
@@ -630,7 +630,7 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
       // Try to find the variable in the k-th input - these are sorted
       // locally between in_rows[in_row_ptr[k]:in_row_ptr[k+1]]
       int count = in_row_ptr[k + 1] - in_row_ptr[k];
-      int* item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
+      int *item = TacsSearchArray(var, count, &in_rows[in_row_ptr[k]]);
 
       if (item) {
         int row = item - &in_rows[in_row_ptr[k]];
@@ -663,7 +663,7 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
     B_row_size = TacsUniqueSort(B_row_size, B_row_vars);
     if (var - lower >= np) {
       for (int k = 0; k < B_row_size; k++) {
-        int* item = TacsSearchArray(B_row_vars[k], col_map_size, col_map_vars);
+        int *item = TacsSearchArray(B_row_vars[k], col_map_size, col_map_vars);
 
         if (!item) {
           fprintf(stderr, "[%d] Error: variable %d not in column map\n",
@@ -709,9 +709,9 @@ void TACSMatDistribute::computeLocalCSR(int numNodes, const int* ext_vars,
   nv, mv:   number of true rows/columns in the dense matrix
   values:   the dense matrix values
 */
-void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
-                                  const int* row, int ncol, const int* col,
-                                  int nv, int mv, const TacsScalar* values) {
+void TACSMatDistribute::addValues(TACSParallelMat *mat, int nrow,
+                                  const int *row, int ncol, const int *col,
+                                  int nv, int mv, const TacsScalar *values) {
   // Get the block matrices
   BCSRMat *Aloc, *Bext;
   mat->getBCSRMat(&Aloc, &Bext);
@@ -743,7 +743,7 @@ void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
 
-  const int* ownerRange;
+  const int *ownerRange;
   row_map->getOwnerRange(&ownerRange);
 
   // The lower/upper variable ranges
@@ -762,7 +762,7 @@ void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
       acols[i] = c - lower;
     } else if (c >= 0) {
       // The column is in the B off-processor part
-      int* item = TacsSearchArray(c, col_map_size, col_map_vars);
+      int *item = TacsSearchArray(c, col_map_size, col_map_vars);
       if (item) {
         nb++;
         bcols[i] = item - col_map_vars;
@@ -802,7 +802,7 @@ void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
       // The row is not on this processor, search for it in the
       // off-processor part that we'll have to communicate later
       // Locate the row within ext_rows
-      int* item = TacsSearchArray(r, num_ext_rows, ext_rows);
+      int *item = TacsSearchArray(r, num_ext_rows, ext_rows);
       if (item) {
         int r_ext = item - ext_rows;
 
@@ -816,7 +816,7 @@ void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
             item = TacsSearchArray(c, size, &ext_cols[start]);
 
             if (item) {
-              TacsScalar* a = &ext_A[b2 * (item - ext_cols)];
+              TacsScalar *a = &ext_A[b2 * (item - ext_cols)];
 
               for (int ii = 0; ii < bsize; ii++) {
                 for (int jj = 0; jj < bsize; jj++) {
@@ -866,10 +866,10 @@ void TACSMatDistribute::addValues(TACSParallelMat* mat, int nrow,
   nv, nw:   the number of rows and number of columns in the values matrix
   values:   the dense input matrix
 */
-void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
-                                        const int* varp, const int* vars,
-                                        const TacsScalar* weights, int nv,
-                                        int mv, const TacsScalar* values,
+void TACSMatDistribute::addWeightValues(TACSParallelMat *mat, int nvars,
+                                        const int *varp, const int *vars,
+                                        const TacsScalar *weights, int nv,
+                                        int mv, const TacsScalar *values,
                                         MatrixOrientation matOr) {
   // Get the block matrices
   BCSRMat *Aloc, *Bext;
@@ -905,7 +905,7 @@ void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
 
-  const int* ownerRange;
+  const int *ownerRange;
   row_map->getOwnerRange(&ownerRange);
 
   // The lower/upper variable ranges
@@ -924,7 +924,7 @@ void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
       avars[i] = c - lower;
     } else if (c >= 0) {
       // The column is in the B off-processor part
-      int* item = TacsSearchArray(c, col_map_size, col_map_vars);
+      int *item = TacsSearchArray(c, col_map_size, col_map_vars);
       if (item) {
         nb++;
         bvars[i] = item - col_map_vars;
@@ -971,7 +971,7 @@ void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
         // The row is not on this processor, search for it in the
         // off-processor part that we'll have to communicate later
         // Locate the row within ext_rows
-        int* item = TacsSearchArray(vars[ip], num_ext_rows, ext_rows);
+        int *item = TacsSearchArray(vars[ip], num_ext_rows, ext_rows);
         if (item) {
           int r_ext = item - ext_rows;
 
@@ -987,7 +987,7 @@ void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
                 item = TacsSearchArray(c, size, &ext_cols[start]);
 
                 if (item) {
-                  TacsScalar* a = &ext_A[b2 * (item - ext_cols)];
+                  TacsScalar *a = &ext_A[b2 * (item - ext_cols)];
 
                   if (matOr == TACS_MAT_NORMAL) {
                     for (int ii = 0; ii < bsize; ii++) {
@@ -1033,9 +1033,9 @@ void TACSMatDistribute::addWeightValues(TACSParallelMat* mat, int nvars,
 /*!
   Given a non-zero pattern, pass in the values for the array
 */
-void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
-                                  const int* ext_vars, const int* rowp,
-                                  const int* cols, TacsScalar* avals) {
+void TACSMatDistribute::setValues(TACSParallelMat *mat, int nvars,
+                                  const int *ext_vars, const int *rowp,
+                                  const int *cols, TacsScalar *avals) {
   // Get the block matrices
   BCSRMat *Aloc, *Bext;
   mat->getBCSRMat(&Aloc, &Bext);
@@ -1061,14 +1061,14 @@ void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
 
-  const int* ownerRange;
+  const int *ownerRange;
   row_map->getOwnerRange(&ownerRange);
 
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank + 1];
 
-  int* acols = new int[2 * max_row];
-  int* bcols = &acols[max_row];
+  int *acols = new int[2 * max_row];
+  int *bcols = &acols[max_row];
 
   for (int i = 0; i < nvars; i++) {
     int row = ext_vars[i];
@@ -1089,7 +1089,7 @@ void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
         if (col >= lower && col < upper) {
           acols[k] = col - lower;
         } else {
-          int* item = TacsSearchArray(col, col_map_size, col_map_vars);
+          int *item = TacsSearchArray(col, col_map_size, col_map_vars);
           bcols[k] = item - col_map_vars;
           nb++;
         }
@@ -1107,7 +1107,7 @@ void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
         }
       }
     } else {
-      int* item = TacsSearchArray(row, num_ext_rows, ext_rows);
+      int *item = TacsSearchArray(row, num_ext_rows, ext_rows);
 
       if (item) {
         int r_ext = item - ext_rows;
@@ -1123,7 +1123,7 @@ void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
             item = TacsSearchArray(col, ext_size, &ext_cols[ext_start]);
 
             if (item) {
-              TacsScalar* a = &ext_A[b2 * (item - ext_cols)];
+              TacsScalar *a = &ext_A[b2 * (item - ext_cols)];
               memcpy(a, &avals[b2 * j], b2 * sizeof(TacsScalar));
             } else {
               fprintf(stderr,
@@ -1151,7 +1151,7 @@ void TACSMatDistribute::setValues(TACSParallelMat* mat, int nvars,
 /*
    Initiate the communication of the off-process matrix entries
 */
-void TACSMatDistribute::beginAssembly(TACSParallelMat* mat) {
+void TACSMatDistribute::beginAssembly(TACSParallelMat *mat) {
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
 
@@ -1190,7 +1190,7 @@ void TACSMatDistribute::beginAssembly(TACSParallelMat* mat) {
   Once the communication is completed, add the off-processor
   entries to the matrix.
 */
-void TACSMatDistribute::endAssembly(TACSParallelMat* mat) {
+void TACSMatDistribute::endAssembly(TACSParallelMat *mat) {
   int mpiRank;
   MPI_Comm_rank(comm, &mpiRank);
 
@@ -1209,7 +1209,7 @@ void TACSMatDistribute::endAssembly(TACSParallelMat* mat) {
   const int b2 = bsize * bsize;
 
   // Find the owner range for mapping variables
-  const int* ownerRange;
+  const int *ownerRange;
   row_map->getOwnerRange(&ownerRange);
   int lower = ownerRange[mpiRank];
   int upper = ownerRange[mpiRank + 1];
@@ -1239,7 +1239,7 @@ void TACSMatDistribute::endAssembly(TACSParallelMat* mat) {
 
       // Find the local row index
       for (int k = in_rowp[j]; k < in_rowp[j + 1]; k++) {
-        TacsScalar* a = &in_A[b2 * k];
+        TacsScalar *a = &in_A[b2 * k];
 
         // Set the column indices
         int col = in_cols[k];
@@ -1250,7 +1250,7 @@ void TACSMatDistribute::endAssembly(TACSParallelMat* mat) {
         } else {
           // Use the map from the global column index back to the
           // processor
-          int* item = TacsSearchArray(col, col_map_size, col_map_vars);
+          int *item = TacsSearchArray(col, col_map_size, col_map_vars);
           if (item) {
             int c = item - col_map_vars;
             Bext->addBlockRowValues(row - Np, 1, &c, a);

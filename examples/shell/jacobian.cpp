@@ -3,7 +3,7 @@
 #include "TACSIsoShellConstitutive.h"
 #include "TACSShellElementDefs.h"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Get the rank
@@ -42,15 +42,15 @@ int main(int argc, char* argv[]) {
     rho = 0.0;
   }
 
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TacsScalar axis[] = {0.0, 1.0, 1.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   TacsScalar t = 0.01;
   int t_num = 0;
-  TACSShellConstitutive* con = new TACSIsoShellConstitutive(props, t, t_num);
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t, t_num);
 
   if (test_constitutive) {
     TacsTestConstitutive(con, elemIndex);
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
                                   TACSShellInplaneNonlinearModel>();
   }
 
-  TACSElement* shell = NULL;
+  TACSElement *shell = NULL;
   if (argc > 1) {
     for (int k = 0; k < argc; k++) {
       shell = TacsCreateShellByName(argv[k], transform, con);
@@ -108,10 +108,10 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  TacsScalar* Xpts = new TacsScalar[3 * num_nodes];
-  TacsScalar* vars = new TacsScalar[num_vars];
-  TacsScalar* dvars = new TacsScalar[num_vars];
-  TacsScalar* ddvars = new TacsScalar[num_vars];
+  TacsScalar *Xpts = new TacsScalar[3 * num_nodes];
+  TacsScalar *vars = new TacsScalar[num_vars];
+  TacsScalar *dvars = new TacsScalar[num_vars];
+  TacsScalar *ddvars = new TacsScalar[num_vars];
   TacsGenerateRandomArray(Xpts, 3 * num_nodes);
   TacsGenerateRandomArray(vars, num_vars);
   TacsGenerateRandomArray(dvars, num_vars);

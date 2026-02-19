@@ -21,7 +21,7 @@
 
   Evaluate the Induced only on the elements specified
 */
-TACSInducedFailure::TACSInducedFailure(TACSAssembler* _assembler, double _P)
+TACSInducedFailure::TACSInducedFailure(TACSAssembler *_assembler, double _P)
     : TACSFunction(_assembler, TACSFunction::ENTIRE_DOMAIN,
                    TACSFunction::TWO_STAGE, 0) {
   // Set the penalization information
@@ -42,7 +42,7 @@ TACSInducedFailure::~TACSInducedFailure() {}
 /*
   The name of the function class
 */
-const char* TACSInducedFailure::funcName = "TACSInducedFailure";
+const char *TACSInducedFailure::funcName = "TACSInducedFailure";
 
 /*
   Set the value of P
@@ -64,7 +64,7 @@ void TACSInducedFailure::setInducedType(enum InducedNormType type) {
 /*
   Retrieve the function name
 */
-const char* TACSInducedFailure::getObjectName() { return funcName; }
+const char *TACSInducedFailure::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -113,7 +113,7 @@ void TACSInducedFailure::finalEvaluation(EvaluationType ftype) {
   function.
 */
 void TACSInducedFailure::elementWiseEval(
-    EvaluationType ftype, int elemIndex, TACSElement* element, double time,
+    EvaluationType ftype, int elemIndex, TACSElement *element, double time,
     TacsScalar scale, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
@@ -178,7 +178,7 @@ void TACSInducedFailure::elementWiseEval(
   variables over this element.
 */
 void TACSInducedFailure::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -267,7 +267,7 @@ void TACSInducedFailure::getElementSVSens(
   nodal locations
 */
 void TACSInducedFailure::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -366,7 +366,7 @@ void TACSInducedFailure::getElementXptSens(
   constitutive/material design variables.
 */
 void TACSInducedFailure::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {

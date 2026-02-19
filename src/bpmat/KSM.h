@@ -47,13 +47,13 @@ class TACSBcMap : public TACSObject {
 
   // Add/get the boundary conditions stored in this object
   // -----------------------------------------------------
-  void addBC(int node, int nvals, const int* bc_nums = NULL,
-             const TacsScalar* bc_vals = NULL);
-  int getBCs(const int** _nodes, const int** _vars, TacsScalar** _values);
+  void addBC(int node, int nvals, const int *bc_nums = NULL,
+             const TacsScalar *bc_vals = NULL);
+  int getBCs(const int **_nodes, const int **_vars, TacsScalar **_values);
 
   // Get the node numbers associated with the BCs for reordering
   // -----------------------------------------------------------
-  int getBCNodeNums(int** _nodes);
+  int getBCNodeNums(int **_nodes);
 
   // Add the boundary condition using the binary flags directly
   // ----------------------------------------------------------
@@ -64,14 +64,14 @@ class TACSBcMap : public TACSObject {
   int bsize;
 
   // Information used to apply boundary conditions
-  int* nodes;
+  int *nodes;
 
   // The total number of boundary conditions
   int nbcs;
 
   // The local index of the unknowns and the values
-  int* vars;
-  TacsScalar* values;
+  int *vars;
+  TacsScalar *values;
 
   // Set the boundary condition sizes
   int max_size;
@@ -96,21 +96,21 @@ class TACSVec : public TACSObject {
   // -------------------------------------
   virtual TacsScalar norm() = 0;             // Compute the Cartesian 2 norm
   virtual void scale(TacsScalar alpha) = 0;  // Scale the vector by a value
-  virtual TacsScalar dot(TACSVec* x) = 0;    // Compute x^{T} * y
-  virtual void mdot(TACSVec** x, TacsScalar* ans,
+  virtual TacsScalar dot(TACSVec *x) = 0;    // Compute x^{T} * y
+  virtual void mdot(TACSVec **x, TacsScalar *ans,
                     int m);                             // Multiple dot product
-  virtual void axpy(TacsScalar alpha, TACSVec* x) = 0;  // y <- y + alpha * x
-  virtual void copyValues(TACSVec* x) = 0;  // Copy values from x to this
+  virtual void axpy(TacsScalar alpha, TACSVec *x) = 0;  // y <- y + alpha * x
+  virtual void copyValues(TACSVec *x) = 0;  // Copy values from x to this
   virtual void axpby(TacsScalar alpha, TacsScalar beta,
-                     TACSVec* x) = 0;  // Compute y <- alpha * x + beta * y
+                     TACSVec *x) = 0;  // Compute y <- alpha * x + beta * y
   virtual void zeroEntries() = 0;      // Zero all the entries
 
   // Additional useful member functions
   // ----------------------------------
   virtual void setRand(double lower = -1.0, double upper = 1.0) {}
   virtual void initRand() {}
-  virtual void applyBCs(TACSBcMap* map, TACSVec* vec = NULL) {}
-  virtual void setBCs(TACSBcMap* map) {}
+  virtual void applyBCs(TACSBcMap *map, TACSVec *vec = NULL) {}
+  virtual void setBCs(TACSBcMap *map) {}
 };
 
 /*!
@@ -150,41 +150,41 @@ class TACSMat : public TACSObject {
   // Operations for assembly/setting values
   // --------------------------------------
   virtual void zeroEntries() {}
-  virtual void addValues(int nrow, const int* row, int ncol, const int* col,
-                         int nv, int mv, const TacsScalar* values) {}
-  virtual void addWeightValues(int nvars, const int* varp, const int* vars,
-                               const TacsScalar* weights, int nv, int mv,
-                               const TacsScalar* values,
+  virtual void addValues(int nrow, const int *row, int ncol, const int *col,
+                         int nv, int mv, const TacsScalar *values) {}
+  virtual void addWeightValues(int nvars, const int *varp, const int *vars,
+                               const TacsScalar *weights, int nv, int mv,
+                               const TacsScalar *values,
                                MatrixOrientation matOr = TACS_MAT_NORMAL) {}
-  virtual void applyBCs(TACSBcMap* bcmap) {}
-  virtual void applyTransposeBCs(TACSBcMap* bcmap) {}
+  virtual void applyBCs(TACSBcMap *bcmap) {}
+  virtual void applyTransposeBCs(TACSBcMap *bcmap) {}
   virtual void beginAssembly() {}
   virtual void endAssembly() {}
 
   // Create a duplicate with the same non-zero pattern. Values are not copied
   // ------------------------------------------------------------------------
-  virtual TACSMat* createDuplicate() { return NULL; }
+  virtual TACSMat *createDuplicate() { return NULL; }
 
   // Create vectors/retrieve sizes
   // -----------------------------
-  virtual void getSize(int* _nr, int* _nc) {}
-  virtual TACSVec* createVec() = 0;
+  virtual void getSize(int *_nr, int *_nc) {}
+  virtual TACSVec *createVec() = 0;
 
   // Operations required for solving problems
   // ----------------------------------------
-  virtual void mult(TACSVec* x, TACSVec* y) = 0;
-  virtual void multTranspose(TACSVec* x, TACSVec* y) {}
-  virtual void copyValues(TACSMat* mat) {}
+  virtual void mult(TACSVec *x, TACSVec *y) = 0;
+  virtual void multTranspose(TACSVec *x, TACSVec *y) {}
+  virtual void copyValues(TACSMat *mat) {}
   virtual void scale(TacsScalar alpha) {}
-  virtual void axpy(TacsScalar alpha, TACSMat* mat) {}
+  virtual void axpy(TacsScalar alpha, TACSMat *mat) {}
   virtual void addDiag(TacsScalar alpha) {}
 
   // Return the name of the object
   // -----------------------------
-  const char* getObjectName();
+  const char *getObjectName();
 
  private:
-  static const char* matName;
+  static const char *matName;
 };
 
 /*!
@@ -202,21 +202,21 @@ class TACSPc : public TACSObject {
 
   // Apply the preconditioner to x, to produce y
   // -------------------------------------------
-  virtual void applyFactor(TACSVec* x, TACSVec* y) = 0;
+  virtual void applyFactor(TACSVec *x, TACSVec *y) = 0;
 
   // Factor (or set up) the preconditioner
   // -------------------------------------
   virtual void factor() = 0;
 
   // Get the matrix associated with the preconditioner itself
-  virtual void getMat(TACSMat** _mat) { *_mat = NULL; }
+  virtual void getMat(TACSMat **_mat) { *_mat = NULL; }
 
   // Retrieve the object name
   // ------------------------
-  const char* getObjectName();
+  const char *getObjectName();
 
  private:
-  static const char* pcName;
+  static const char *pcName;
 };
 
 /*!
@@ -230,11 +230,11 @@ class KSMPrint : public TACSObject {
   virtual ~KSMPrint() {}
 
   virtual void printResidual(int iter, TacsScalar res) = 0;
-  virtual void print(const char* cstr) = 0;
-  const char* getObjectName();
+  virtual void print(const char *cstr) = 0;
+  const char *getObjectName();
 
  private:
-  static const char* printName;
+  static const char *printName;
 };
 
 /*!
@@ -267,18 +267,18 @@ class TACSKsm : public TACSObject {
   TACSKsm() : iterCount(0), resNorm(0.0) {}
   virtual ~TACSKsm() {}
 
-  virtual TACSVec* createVec() = 0;
-  virtual void setOperators(TACSMat* _mat, TACSPc* _pc) = 0;
-  virtual void getOperators(TACSMat** _mat, TACSPc** _pc) = 0;
-  virtual int solve(TACSVec* b, TACSVec* x, int zero_guess = 1) = 0;
+  virtual TACSVec *createVec() = 0;
+  virtual void setOperators(TACSMat *_mat, TACSPc *_pc) = 0;
+  virtual void getOperators(TACSMat **_mat, TACSPc **_pc) = 0;
+  virtual int solve(TACSVec *b, TACSVec *x, int zero_guess = 1) = 0;
   virtual void setTolerances(double _rtol, double _atol) = 0;
-  virtual void setMonitor(KSMPrint* _monitor) = 0;
+  virtual void setMonitor(KSMPrint *_monitor) = 0;
   virtual int getIterCount() { return iterCount; }
   virtual TacsScalar getResidualNorm() { return resNorm; }
-  const char* getObjectName();
+  const char *getObjectName();
 
  private:
-  static const char* ksmName;
+  static const char *ksmName;
 
  protected:
   int iterCount;       ///< Number of iterations taken during the last solve
@@ -291,14 +291,14 @@ class TACSKsm : public TACSObject {
 */
 class KSMPrintStdout : public KSMPrint {
  public:
-  KSMPrintStdout(const char* _descript, int _rank, int _freq);
+  KSMPrintStdout(const char *_descript, int _rank, int _freq);
   ~KSMPrintStdout();
 
   void printResidual(int iter, TacsScalar res);
-  void print(const char* cstr);
+  void print(const char *cstr);
 
  private:
-  char* descript;
+  char *descript;
   int rank;
   int freq;
 };
@@ -308,16 +308,16 @@ class KSMPrintStdout : public KSMPrint {
 */
 class KSMPrintFile : public KSMPrint {
  public:
-  KSMPrintFile(const char* filename, const char* _descript, int _rank,
+  KSMPrintFile(const char *filename, const char *_descript, int _rank,
                int _freq);
   ~KSMPrintFile();
 
   void printResidual(int iter, TacsScalar res);
-  void print(const char* cstr);
+  void print(const char *cstr);
 
  private:
-  FILE* fp;
-  char* descript;
+  FILE *fp;
+  char *descript;
   int rank;
   int freq;
 };
@@ -327,20 +327,20 @@ class KSMPrintFile : public KSMPrint {
 */
 class PCG : public TACSKsm {
  public:
-  PCG(TACSMat* _mat, TACSPc* _pc, int reset, int _nouter);
+  PCG(TACSMat *_mat, TACSPc *_pc, int reset, int _nouter);
   ~PCG();
 
-  TACSVec* createVec() { return mat->createVec(); }
-  int solve(TACSVec* b, TACSVec* x, int zero_guess = 1);
-  void setOperators(TACSMat* _mat, TACSPc* _pc);
-  void getOperators(TACSMat** _mat, TACSPc** _pc);
+  TACSVec *createVec() { return mat->createVec(); }
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  void setOperators(TACSMat *_mat, TACSPc *_pc);
+  void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
-  void setMonitor(KSMPrint* _print);
+  void setMonitor(KSMPrint *_print);
 
  private:
   // Operators in the KSM method
-  TACSMat* mat;
-  TACSPc* pc;
+  TACSMat *mat;
+  TACSPc *pc;
 
   // The relative/absolute tolerances
   double rtol, atol;
@@ -349,12 +349,12 @@ class PCG : public TACSKsm {
   int nouter, reset;
 
   // Vectors required for the solution method
-  TACSVec* work;
-  TACSVec* R;
-  TACSVec* P;
-  TACSVec* Z;
+  TACSVec *work;
+  TACSVec *R;
+  TACSVec *P;
+  TACSVec *Z;
 
-  KSMPrint* monitor;
+  KSMPrint *monitor;
 };
 
 /*!
@@ -391,51 +391,51 @@ class PCG : public TACSKsm {
 class GMRES : public TACSKsm {
  public:
   enum OrthoType { CLASSICAL_GRAM_SCHMIDT, MODIFIED_GRAM_SCHMIDT };
-  GMRES(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart, int _isFlexible);
-  GMRES(TACSMat* _mat, int _m, int _nrestart);
+  GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible);
+  GMRES(TACSMat *_mat, int _m, int _nrestart);
   ~GMRES();
 
-  TACSVec* createVec() { return mat->createVec(); }
-  int solve(TACSVec* b, TACSVec* x, int zero_guess = 1);
-  void setOperators(TACSMat* _mat, TACSPc* _pc);
-  void getOperators(TACSMat** _mat, TACSPc** _pc);
+  TACSVec *createVec() { return mat->createVec(); }
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  void setOperators(TACSMat *_mat, TACSPc *_pc);
+  void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
-  void setMonitor(KSMPrint* _monitor);
+  void setMonitor(KSMPrint *_monitor);
   void setOrthoType(enum OrthoType otype);
   void setTimeMonitor();
-  const char* getObjectName();
+  const char *getObjectName();
 
  private:
   // Initialize the class
-  void init(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart, int _isFlexible);
+  void init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart, int _isFlexible);
 
   // Orthogonalize a vector against a set of vectors
-  void (*orthogonalize)(TacsScalar*, TACSVec*, TACSVec**, int);
+  void (*orthogonalize)(TacsScalar *, TACSVec *, TACSVec **, int);
 
-  TACSMat* mat;
-  TACSPc* pc;
+  TACSMat *mat;
+  TACSPc *pc;
   int msub;
   int nrestart;
   int isFlexible;
 
-  TACSVec** W;    // The Arnoldi vectors that span the Krylov subspace
-  TACSVec** Z;    // An additional flexible subspace of vectors
-  TACSVec* work;  // A work vector
+  TACSVec **W;    // The Arnoldi vectors that span the Krylov subspace
+  TACSVec **Z;    // An additional flexible subspace of vectors
+  TACSVec *work;  // A work vector
 
-  int* Hptr;      // Array to make accessing the elements of the matrix easier!
-  TacsScalar* H;  // The Hessenberg matrix
+  int *Hptr;      // Array to make accessing the elements of the matrix easier!
+  TacsScalar *H;  // The Hessenberg matrix
 
   double rtol;
   double atol;
 
-  TacsScalar* Qsin;
-  TacsScalar* Qcos;
-  TacsScalar* res;
+  TacsScalar *Qsin;
+  TacsScalar *Qcos;
+  TacsScalar *res;
 
   int monitor_time;
-  KSMPrint* monitor;
+  KSMPrint *monitor;
 
-  static const char* gmresName;
+  static const char *gmresName;
 };
 
 /*!
@@ -455,48 +455,48 @@ class GMRES : public TACSKsm {
 */
 class GCROT : public TACSKsm {
  public:
-  GCROT(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer, int _msub,
+  GCROT(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, int _msub,
         int _isFlexible);
-  GCROT(TACSMat* _mat, int _outer, int _max_outer, int _msub);
+  GCROT(TACSMat *_mat, int _outer, int _max_outer, int _msub);
   ~GCROT();
 
-  TACSVec* createVec() { return mat->createVec(); }
-  int solve(TACSVec* b, TACSVec* x, int zero_guess = 1);
-  void setOperators(TACSMat* _mat, TACSPc* _pc);
-  void getOperators(TACSMat** _mat, TACSPc** _pc);
+  TACSVec *createVec() { return mat->createVec(); }
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
+  void setOperators(TACSMat *_mat, TACSPc *_pc);
+  void getOperators(TACSMat **_mat, TACSPc **_pc);
   void setTolerances(double _rtol, double _atol);
-  void setMonitor(KSMPrint* _monitor);
-  const char* getObjectName();
+  void setMonitor(KSMPrint *_monitor);
+  const char *getObjectName();
 
  private:
-  void init(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer, int _msub,
+  void init(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, int _msub,
             int _isFlexible);
 
-  TACSMat* mat;
-  TACSPc* pc;
+  TACSMat *mat;
+  TACSPc *pc;
   int msub;              // Size of the GMRES subspace
   int outer, max_outer;  // Number of outer vectors
   int isFlexible;
 
-  TACSVec** W;  // The Arnoldi vectors that span the Krylov subspace
-  TACSVec** Z;  // Additional subspace of vectors - for the flexible variant
+  TACSVec **W;  // The Arnoldi vectors that span the Krylov subspace
+  TACSVec **Z;  // Additional subspace of vectors - for the flexible variant
   TACSVec **U, **C;  // The subspaces for the outer GCR iterations
   TACSVec *u_hat, *c_hat, *R;
 
-  int* Hptr;      // Array to make accessing the elements of the matrix easier!
-  TacsScalar* H;  // The Hessenberg matrix
-  TacsScalar* B;  // The matrix that stores C^{T}*A*W
+  int *Hptr;      // Array to make accessing the elements of the matrix easier!
+  TacsScalar *H;  // The Hessenberg matrix
+  TacsScalar *B;  // The matrix that stores C^{T}*A*W
 
   double rtol;
   double atol;
 
-  TacsScalar* Qsin;
-  TacsScalar* Qcos;
-  TacsScalar* res;
+  TacsScalar *Qsin;
+  TacsScalar *Qcos;
+  TacsScalar *res;
 
-  KSMPrint* monitor;
+  KSMPrint *monitor;
 
-  static const char* gcrotName;
+  static const char *gcrotName;
 };
 
 /*
@@ -509,19 +509,19 @@ class GCROT : public TACSKsm {
 */
 class KsmPreconditioner : public TACSKsm {
  public:
-  KsmPreconditioner(TACSMat* _mat, TACSPc* _pc);
+  KsmPreconditioner(TACSMat *_mat, TACSPc *_pc);
   ~KsmPreconditioner();
 
-  TACSVec* createVec();
-  void setOperators(TACSMat* _mat, TACSPc* _pc);
-  void getOperators(TACSMat** _mat, TACSPc** _pc);
-  int solve(TACSVec* b, TACSVec* x, int zero_guess = 1);
+  TACSVec *createVec();
+  void setOperators(TACSMat *_mat, TACSPc *_pc);
+  void getOperators(TACSMat **_mat, TACSPc **_pc);
+  int solve(TACSVec *b, TACSVec *x, int zero_guess = 1);
   void setTolerances(double _rtol, double _atol);
-  void setMonitor(KSMPrint* _monitor);
+  void setMonitor(KSMPrint *_monitor);
 
  private:
-  TACSMat* mat;
-  TACSPc* pc;
+  TACSMat *mat;
+  TACSPc *pc;
 };
 
 #endif  // TACS_KSM_H

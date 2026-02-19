@@ -20,8 +20,8 @@
 #include "TACSPressure2D.h"
 #include "TACSTraction2D.h"
 
-TACSElement2D::TACSElement2D(TACSElementModel* _model,
-                             TACSElementBasis* _basis) {
+TACSElement2D::TACSElement2D(TACSElementModel *_model,
+                             TACSElementBasis *_basis) {
   model = _model;
   model->incref();
   basis = _basis;
@@ -48,25 +48,25 @@ ElementType TACSElement2D::getElementType() {
   return TACS_PLANE_STRESS_ELEMENT;
 }
 
-TACSElementBasis* TACSElement2D::getElementBasis() { return basis; }
+TACSElementBasis *TACSElement2D::getElementBasis() { return basis; }
 
-TACSElementModel* TACSElement2D::getElementModel() { return model; }
+TACSElementModel *TACSElement2D::getElementModel() { return model; }
 
-TACSElement* TACSElement2D::createElementTraction(int faceIndex,
+TACSElement *TACSElement2D::createElementTraction(int faceIndex,
                                                   const TacsScalar t[]) {
   int varsPerNode = getVarsPerNode();
   return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
 }
 
-TACSElement* TACSElement2D::createElementPressure(int faceIndex, TacsScalar p) {
+TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p) {
   int varsPerNode = getVarsPerNode();
   return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
 }
 
-TACSElement* TACSElement2D::createElementInertialForce(
+TACSElement *TACSElement2D::createElementInertialForce(
     const TacsScalar inertiaVec[]) {
   int varsPerNode = getVarsPerNode();
-  TACSConstitutive* con = model->getConstitutive();
+  TACSConstitutive *con = model->getConstitutive();
   return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec);
 }
 
@@ -127,9 +127,9 @@ int TACSElement2D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
   Add the residual to the provided vector
 */
 void TACSElement2D::addResidual(int elemIndex, double time,
-                                const TacsScalar* Xpts, const TacsScalar* vars,
-                                const TacsScalar* dvars,
-                                const TacsScalar* ddvars, TacsScalar* res) {
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
@@ -165,17 +165,17 @@ void TACSElement2D::addResidual(int elemIndex, double time,
 */
 void TACSElement2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                 TacsScalar beta, TacsScalar gamma,
-                                const TacsScalar* Xpts, const TacsScalar* vars,
-                                const TacsScalar* dvars,
-                                const TacsScalar* ddvars, TacsScalar* res,
-                                TacsScalar* mat) {
+                                const TacsScalar *Xpts, const TacsScalar *vars,
+                                const TacsScalar *dvars,
+                                const TacsScalar *ddvars, TacsScalar *res,
+                                TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
   const int vars_per_node = model->getVarsPerNode();
 
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(TACS_JACOBIAN_MATRIX, elemIndex, &Jac_nnz,
                                &Jac_pairs);
 
@@ -316,7 +316,7 @@ void TACSElement2D::getMatType(ElementMatrixType matType, int elemIndex,
 
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   // Loop over each quadrature point and add the residual contribution
@@ -350,9 +350,9 @@ void TACSElement2D::getMatType(ElementMatrixType matType, int elemIndex,
 }
 
 void TACSElement2D::getMatVecDataSizes(ElementMatrixType matType, int elemIndex,
-                                       int* _data_size, int* _temp_size) {
+                                       int *_data_size, int *_temp_size) {
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   const int nquad = basis->getNumQuadraturePoints();
@@ -373,7 +373,7 @@ void TACSElement2D::getMatVecProductData(
     const TacsScalar ddvars[], TacsScalar data[]) {
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   // Compute the number of quadrature points
@@ -388,8 +388,8 @@ void TACSElement2D::getMatVecProductData(
 
     // Set pointers to the Jacobian transformation and the entries
     // of the weak form Jacobian
-    TacsScalar* J = &data[0];
-    TacsScalar* Jac = &data[4];
+    TacsScalar *J = &data[0];
+    TacsScalar *Jac = &data[4];
 
     // Get the solution field and the solution field gradient and the
     // Jacobian transformation
@@ -420,7 +420,7 @@ void TACSElement2D::addMatVecProduct(ElementMatrixType matType, int elemIndex,
                                      const TacsScalar px[], TacsScalar py[]) {
   // Extract the non-zero pattern
   int Jac_nnz;
-  const int* Jac_pairs;
+  const int *Jac_pairs;
   model->getWeakMatrixNonzeros(matType, elemIndex, &Jac_nnz, &Jac_pairs);
 
   const int vars_per_node = model->getVarsPerNode();
@@ -527,7 +527,7 @@ void TACSElement2D::getMatSVSensInnerProduct(
 int TACSElement2D::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar* detXd, TacsScalar* quantity) {
+    const TacsScalar ddvars[], TacsScalar *detXd, TacsScalar *quantity) {
   const int vars_per_node = model->getVarsPerNode();
   TacsScalar X[3], Xd[6], J[4];
   TacsScalar Ut[3 * MAX_VARS_PER_NODE];
@@ -645,7 +645,7 @@ void TACSElement2D::getOutputData(int elemIndex, ElementType etype,
                                   const TacsScalar vars[],
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[], int ld_data,
-                                  TacsScalar* data) {
+                                  TacsScalar *data) {
   int num_vis_nodes = TacsGetNumVisNodes(basis->getLayoutType());
   const int vars_per_node = model->getVarsPerNode();
 

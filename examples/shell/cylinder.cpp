@@ -12,22 +12,22 @@
   Take the difference between what's in the vector and what the exact
   solution is at each point in the mesh.
 */
-void setExactSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
+void setExactSolution(TACSAssembler *assembler, TACSBVec *ans, TacsScalar R,
                       double alpha, double beta, TacsScalar U, TacsScalar V,
                       TacsScalar W, TacsScalar theta, TacsScalar phi) {
   // Get the x,y,z locations of the nodes from TACS
   int nnodes = assembler->getNumNodes();
 
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
   // Get the nodal array
-  TacsScalar* Xpts;
+  TacsScalar *Xpts;
   X->getArray(&Xpts);
 
   // Get the finite-element solution from TACS
-  TacsScalar* uans;
+  TacsScalar *uans;
   ans->getArray(&uans);
 
   for (int node = 0; node < nnodes; node++) {
@@ -69,19 +69,19 @@ void setExactSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
 
   This can be used to check the strain expressions for the cylinder.
 */
-void setLinearSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
+void setLinearSolution(TACSAssembler *assembler, TACSBVec *ans, TacsScalar R,
                        TacsScalar coef[]) {
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
   // Get the x,y,z locations of the nodes from TACS
   int nnodes = assembler->getNumNodes();
-  TacsScalar* Xpts;
+  TacsScalar *Xpts;
   X->getArray(&Xpts);
 
   // Get the finite-element solution from TACS
-  TacsScalar* uans;
+  TacsScalar *uans;
   ans->getArray(&uans);
 
   // Set the coefficients from the array
@@ -145,8 +145,8 @@ void setLinearSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
   frame. Likewise, psi_x and psi_y are the rotations of the normal
   along the x-direction and the tangential y-direction.
 */
-void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
-                         TacsScalar* theta, TacsScalar* phi, double alpha,
+void computeCoefficients(TacsScalar *U, TacsScalar *V, TacsScalar *W,
+                         TacsScalar *theta, TacsScalar *phi, double alpha,
                          double beta, TacsScalar ainv, TacsScalar A11,
                          TacsScalar A12, TacsScalar A22, TacsScalar A33,
                          TacsScalar D11, TacsScalar D12, TacsScalar D22,
@@ -159,7 +159,7 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
 
   TacsScalar B[8 * 5];
   memset(B, 0, sizeof(B));
-  TacsScalar* b = B;
+  TacsScalar *b = B;
 
   // Assign the columns for u
   b[0] = -beta;
@@ -193,9 +193,9 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
   b[6] = 1.0;
 
   for (int j = 0; j < 5; j++) {
-    TacsScalar* bj = &B[8 * j];
+    TacsScalar *bj = &B[8 * j];
     for (int i = 0; i < 5; i++) {
-      TacsScalar* bi = &B[8 * i];
+      TacsScalar *bi = &B[8 * i];
 
       A2[i + 5 * j] =
           -((bi[0] * (A11 * bj[0] + A12 * bj[1]) +
@@ -246,7 +246,7 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
 
   int print_equations = 1;
   if (print_equations) {
-    const char* variables[] = {"U", "V", "W", "theta", "phi"};
+    const char *variables[] = {"U", "V", "W", "theta", "phi"};
     for (int k = 0; k < 5; k++) {
       printf("Equation %d\n", k);
       for (int j = 0; j < 5; j++) {
@@ -275,8 +275,8 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
   creator object
 */
 void createAssembler(MPI_Comm comm, int order, int nx, int ny,
-                     TACSElement* element, TACSAssembler** _assembler,
-                     TACSCreator** _creator) {
+                     TACSElement *element, TACSAssembler **_assembler,
+                     TACSCreator **_creator) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -293,7 +293,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
   int varsPerNode = element->getVarsPerNode();
 
   // Set up the creator object
-  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
 
   if (rank == 0) {
     // Set the number of elements
@@ -303,9 +303,9 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
     int numElements = nx * ny;
 
     // Allocate the input arrays into the creator object
-    int* ids = new int[numElements];
-    int* ptr = new int[numElements + 1];
-    int* conn = new int[order * order * numElements];
+    int *ids = new int[numElements];
+    int *ptr = new int[numElements + 1];
+    int *conn = new int[order * order * numElements];
 
     // Set the element identifiers to all zero
     memset(ids, 0, numElements * sizeof(int));
@@ -339,7 +339,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
     delete[] ids;
 
     int numBcs = 2 * nny;
-    int* bcNodes = new int[numBcs];
+    int *bcNodes = new int[numBcs];
     int k = 0;
 
     for (int j = 0; j < nny; j++) {
@@ -353,11 +353,11 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
     }
 
     // Following copied from TACSCreator
-    int* bc_ptr = new int[numBcs + 1];
+    int *bc_ptr = new int[numBcs + 1];
 
     // Since the bc_vars array is input as NULL, assume that
     // all the variables at this node are fully restrained.
-    int* bc_vars = new int[numBcs * 3 + 1];
+    int *bc_vars = new int[numBcs * 3 + 1];
     bc_ptr[0] = 0;
 
     for (int i = 0; i < numBcs; i++) {
@@ -377,7 +377,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
       }
     }
 
-    TacsScalar* bc_vals = new TacsScalar[bc_ptr[numBcs]];
+    TacsScalar *bc_vals = new TacsScalar[bc_ptr[numBcs]];
     memset(bc_vals, 0, bc_ptr[numBcs] * sizeof(TacsScalar));
 
     // Set the boundary conditions
@@ -389,7 +389,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
     delete[] bc_vals;
 
     // Set the node locations
-    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
 
     for (int j = 0; j < nny; j++) {
       double v = -M_PI + (2.0 * M_PI * j) / nny;
@@ -421,21 +421,21 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler* assembler = creator->createTACS();
+  TACSAssembler *assembler = creator->createTACS();
 
   // Set the elements the node vector
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
-  TACSAuxElements* aux = new TACSAuxElements();
+  TACSAuxElements *aux = new TACSAuxElements();
 
   for (int elem = 0; elem < assembler->getNumElements(); elem++) {
     TacsScalar Xelem[3 * 9];
     TacsScalar tr[3 * 9];
 
     int nnodes;
-    const int* nodes;
+    const int *nodes;
     assembler->getElement(elem, &nnodes, &nodes);
     X->getValues(nnodes, nodes, Xelem);
 
@@ -454,7 +454,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
       tr[3 * node + 2] = znorm * pval;
     }
 
-    TACSElement* trac = NULL;
+    TACSElement *trac = NULL;
     if (order == 2) {
       trac = new TACSShellTraction<6, TACSQuadLinearQuadrature,
                                    TACSShellQuadBasis<2> >(tr);
@@ -481,8 +481,8 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
   creator object
 */
 void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
-                        TACSElement* element, TACSAssembler** _assembler,
-                        TACSCreator** _creator) {
+                        TACSElement *element, TACSAssembler **_assembler,
+                        TACSCreator **_creator) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -499,7 +499,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
   int varsPerNode = element->getVarsPerNode();
 
   // Set up the creator object
-  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
 
   if (rank == 0) {
     // Set the number of elements
@@ -509,9 +509,9 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
     int numElements = 2 * nx * ny;
 
     // Allocate the input arrays into the creator object
-    int* ids = new int[numElements];
-    int* ptr = new int[numElements + 1];
-    int* conn = new int[6 * numElements];
+    int *ids = new int[numElements];
+    int *ptr = new int[numElements + 1];
+    int *conn = new int[6 * numElements];
 
     // Set the element identifiers to all zero
     memset(ids, 0, numElements * sizeof(int));
@@ -538,7 +538,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
 
       // Set the connectivity from the nodes
       if (order == 2) {
-        int* c = &conn[6 * k];
+        int *c = &conn[6 * k];
         c[0] = nodes[0];
         c[1] = nodes[1];
         c[2] = nodes[3];
@@ -550,7 +550,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
         c[2] = nodes[2];
         ptr[2 * k + 2] = 3 * (2 * k + 2);
       } else if (order == 3) {
-        int* c = &conn[12 * k];
+        int *c = &conn[12 * k];
         c[0] = nodes[0];
         c[1] = nodes[2];
         c[2] = nodes[8];
@@ -577,7 +577,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
     delete[] ids;
 
     int numBcs = 2 * nny;
-    int* bcNodes = new int[numBcs];
+    int *bcNodes = new int[numBcs];
     int k = 0;
 
     for (int j = 0; j < nny; j++) {
@@ -591,11 +591,11 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
     }
 
     // Following copied from TACSCreator
-    int* bc_ptr = new int[numBcs + 1];
+    int *bc_ptr = new int[numBcs + 1];
 
     // Since the bc_vars array is input as NULL, assume that
     // all the variables at this node are fully restrained.
-    int* bc_vars = new int[numBcs * 3 + 1];
+    int *bc_vars = new int[numBcs * 3 + 1];
     bc_ptr[0] = 0;
 
     for (int i = 0; i < numBcs; i++) {
@@ -615,7 +615,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
       }
     }
 
-    TacsScalar* bc_vals = new TacsScalar[bc_ptr[numBcs]];
+    TacsScalar *bc_vals = new TacsScalar[bc_ptr[numBcs]];
     memset(bc_vals, 0, bc_ptr[numBcs] * sizeof(TacsScalar));
 
     // Set the boundary conditions
@@ -627,7 +627,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
     delete[] bc_vals;
 
     // Set the node locations
-    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
 
     for (int j = 0; j < nny; j++) {
       double v = -M_PI + (2.0 * M_PI * j) / nny;
@@ -657,21 +657,21 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler* assembler = creator->createTACS();
+  TACSAssembler *assembler = creator->createTACS();
 
   // Set the elements the node vector
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
-  TACSAuxElements* aux = new TACSAuxElements();
+  TACSAuxElements *aux = new TACSAuxElements();
 
   for (int elem = 0; elem < assembler->getNumElements(); elem++) {
     TacsScalar Xelem[3 * 9];
     TacsScalar tr[3 * 9];
 
     int nnodes;
-    const int* nodes;
+    const int *nodes;
     assembler->getElement(elem, &nnodes, &nodes);
     X->getValues(nnodes, nodes, Xelem);
 
@@ -690,7 +690,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
       tr[3 * node + 2] = znorm * pval;
     }
 
-    TACSElement* trac = NULL;
+    TACSElement *trac = NULL;
     if (order == 2) {
       trac = new TACSShellTraction<6, TACSTriLinearQuadrature,
                                    TACSShellTriLinearBasis>(tr);
@@ -712,7 +712,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
   *_creator = creator;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Get the rank
@@ -772,17 +772,17 @@ int main(int argc, char* argv[]) {
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   TacsScalar axis[] = {1.0, 0.0, 0.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
-  TACSShellConstitutive* con = new TACSIsoShellConstitutive(props, t);
+  TACSShellConstitutive *con = new TACSIsoShellConstitutive(props, t);
 
-  TACSAssembler* assembler = NULL;
-  TACSCreator* creator = NULL;
-  TACSElement* shell = NULL;
+  TACSAssembler *assembler = NULL;
+  TACSCreator *creator = NULL;
+  TACSElement *shell = NULL;
   if (mesh_type == 0) {  // Quadrilateral mesh
     if (order == 2) {
       shell = new TACSQuad4Shell(transform, con);
@@ -808,9 +808,9 @@ int main(int argc, char* argv[]) {
   creator->decref();
 
   // Create matrix and vectors
-  TACSBVec* ans = assembler->createVec();  // displacements and rotations
-  TACSBVec* res = assembler->createVec();  // The residual
-  TACSSchurMat* mat = assembler->createSchurMat();  // stiffness matrix
+  TACSBVec *ans = assembler->createVec();  // displacements and rotations
+  TACSBVec *res = assembler->createVec();  // The residual
+  TACSSchurMat *mat = assembler->createSchurMat();  // stiffness matrix
 
   // Increment reference count to the matrix/vectors
   ans->incref();
@@ -821,7 +821,7 @@ int main(int argc, char* argv[]) {
   int lev = 10000;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->incref();
 
   assembler->assembleJacobian(1.0, 0.0, 0.0, res, mat);
@@ -836,7 +836,7 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_NODES | TACS_OUTPUT_CONNECTIVITY |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(assembler, etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("cylinder_solution.f5");
 

@@ -41,8 +41,8 @@
   2. Count the number of duplicates
   3. Scan from the end of the whole array to the beginning
 */
-static int mergeArraysWithLevels(int* a, int* alevs, int na, const int* b,
-                                 const int* blevs, int nb, int add_lev,
+static int mergeArraysWithLevels(int *a, int *alevs, int na, const int *b,
+                                 const int *blevs, int nb, int add_lev,
                                  int lev_fill) {
   int ndup = 0;
   int ndiscard = 0;
@@ -135,8 +135,8 @@ static int mergeArraysWithLevels(int* a, int* alevs, int na, const int* b,
 
   3. Allocate space for the non-zero pattern that is determined.
 */
-BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* mat, int levFill, double fill,
-                 const char* fname) {
+BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *mat, int levFill, double fill,
+                 const char *fname) {
   comm = _comm;
   thread_info = mat->thread_info;
   thread_info->incref();
@@ -153,7 +153,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* mat, int levFill, double fill,
   data->incref();
   initBlockImpl();
 
-  int* levs;
+  int *levs;
   computeILUk(mat, levFill, fill, &levs);
 
   int length = data->rowp[data->nrows];
@@ -165,7 +165,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* mat, int levFill, double fill,
 
   // Go through and print out the nz-pattern of the matrix
   if (fname) {
-    FILE* fp = fopen(fname, "w");
+    FILE *fp = fopen(fname, "w");
     if (fp) {
       fprintf(fp, "VARIABLES = \"i\",\"j\"\n");
 
@@ -207,9 +207,9 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* mat, int levFill, double fill,
   cols:         the column indices
   A:            the matrix values
 */
-BCSRMat::BCSRMat(MPI_Comm _comm, TACSThreadInfo* _thread_info, int bsize,
-                 int nrows, int ncols, int** _rowp, int** _cols,
-                 TacsScalar** _A) {
+BCSRMat::BCSRMat(MPI_Comm _comm, TACSThreadInfo *_thread_info, int bsize,
+                 int nrows, int ncols, int **_rowp, int **_cols,
+                 TacsScalar **_A) {
   comm = _comm;
   thread_info = _thread_info;
   thread_info->incref();
@@ -253,9 +253,9 @@ BCSRMat::BCSRMat(MPI_Comm _comm, TACSThreadInfo* _thread_info, int bsize,
   3. The factor Fpc = F * U_{B}^{-1} + Rf
   4. Form the Schur complement system S = C - Fpc*Epc
 */
-BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* Bmat, BCSRMat* Emat, BCSRMat* Fmat,
-                 BCSRMat* Cmat, int levFill, double fill, BCSRMat** Epc,
-                 BCSRMat** Fpc, BCSRMat** Smat, int use_full_schur) {
+BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *Bmat, BCSRMat *Emat, BCSRMat *Fmat,
+                 BCSRMat *Cmat, int levFill, double fill, BCSRMat **Epc,
+                 BCSRMat **Fpc, BCSRMat **Smat, int use_full_schur) {
   comm = _comm;
   thread_info = Bmat->thread_info;
   thread_info->incref();
@@ -275,7 +275,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* Bmat, BCSRMat* Emat, BCSRMat* Fmat,
   data->incref();
   initBlockImpl();
 
-  int* levs;
+  int *levs;
   computeILUk(Bmat, levFill, fill, &levs);
 
   if (use_full_schur) {
@@ -316,8 +316,8 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* Bmat, BCSRMat* Emat, BCSRMat* Fmat,
   alevs and blevs are not supplied, ie. alevs = NULL, blevs = NULL,
   find all non-zero entries. In this case, levFill is not significant
 */
-BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* smat, int* alevs, BCSRMat* amat,
-                 int* blevs, BCSRMat* bmat, int levFill, double fill) {
+BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *smat, int *alevs, BCSRMat *amat,
+                 int *blevs, BCSRMat *bmat, int levFill, double fill) {
   comm = _comm;
   thread_info = smat->thread_info;
   thread_info->incref();
@@ -351,17 +351,17 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* smat, int* alevs, BCSRMat* amat,
                    smat->data->rowp[smat->data->nrows]);
   int max_size = (int)(fill * init_size);
 
-  int* rowp = new int[nrows + 1];
-  int* cols = new int[max_size];
+  int *rowp = new int[nrows + 1];
+  int *cols = new int[max_size];
 
   // C_{ik} = A_{ij}*B_{jk}
-  int* tcols = new int[nrows];
+  int *tcols = new int[nrows];
 
   int nnz = 0;
   rowp[0] = 0;
 
   if (alevs && blevs) {
-    int* tlevs = new int[nrows];
+    int *tlevs = new int[nrows];
     memset(tlevs, 0, nrows * sizeof(int));
 
     for (int i = 0; i < amat->data->nrows; i++) {
@@ -485,7 +485,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* smat, int* alevs, BCSRMat* amat,
   B:     the matrix for
   fill:  the expected fill in
 */
-BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* B, double fill) {
+BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *B, double fill) {
   comm = _comm;
   thread_info = B->thread_info;
   thread_info->incref();
@@ -503,12 +503,12 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat* B, double fill) {
   int mat_size = B->data->rowp[nrows];
   int max_size = (int)(fill * mat_size);  // The maximum size - for now
 
-  int* cols = new int[max_size];
-  int* rowp = new int[nrows + 1];
-  int* diag = new int[nrows];
+  int *cols = new int[max_size];
+  int *rowp = new int[nrows + 1];
+  int *diag = new int[nrows];
 
-  int* new_nz = new int[nrows];
-  int* kptr = new int[nrows_b];
+  int *new_nz = new int[nrows];
+  int *kptr = new int[nrows_b];
   rowp[0] = 0;
   memcpy(kptr, B->data->rowp, nrows_b * sizeof(int));
 
@@ -598,15 +598,15 @@ BCSRMat::~BCSRMat() {
 /*
   Create a duplicate of the BCSRMat non-zero data
 */
-BCSRMat* BCSRMat::createDuplicate() {
+BCSRMat *BCSRMat::createDuplicate() {
   int bsize = data->bsize;
   int nrows = data->nrows;
   int ncols = data->ncols;
-  int* rowp = new int[nrows + 1];
+  int *rowp = new int[nrows + 1];
   memcpy(rowp, data->rowp, (nrows + 1) * sizeof(int));
 
   int size = rowp[nrows];
-  int* cols = new int[size];
+  int *cols = new int[size];
   memcpy(cols, data->cols, size * sizeof(int));
 
   return new BCSRMat(comm, thread_info, bsize, nrows, ncols, &rowp, &cols);
@@ -614,7 +614,7 @@ BCSRMat* BCSRMat::createDuplicate() {
 
 MPI_Comm BCSRMat::getMPIComm() { return comm; }
 
-TACSThreadInfo* BCSRMat::getThreadInfo() { return thread_info; }
+TACSThreadInfo *BCSRMat::getThreadInfo() { return thread_info; }
 
 /*!
   Compute the ILU(levFill) preconditioner
@@ -622,7 +622,7 @@ TACSThreadInfo* BCSRMat::getThreadInfo() { return thread_info; }
   fill == The expected degree of fill-in after the computation
   levs == The level set of the entry
 */
-void BCSRMat::computeILUk(BCSRMat* mat, int levFill, double fill, int** _levs) {
+void BCSRMat::computeILUk(BCSRMat *mat, int levFill, double fill, int **_levs) {
   int nrows = mat->data->nrows;  // Record the number of rows/columns
   int ncols = mat->data->ncols;
 
@@ -631,17 +631,17 @@ void BCSRMat::computeILUk(BCSRMat* mat, int levFill, double fill, int** _levs) {
   int size = 0;
   int max_size = (int)(fill * mat_size);  // The maximum size - for now
 
-  int* cols = new int[max_size];
-  int* levs = new int[max_size];  // The level of fill of an entry
-  int* rowp = new int[nrows + 1];
-  int* diag = new int[nrows];
+  int *cols = new int[max_size];
+  int *levs = new int[max_size];  // The level of fill of an entry
+  int *rowp = new int[nrows + 1];
+  int *diag = new int[nrows];
 
   // Fill in the first entries
   rowp[0] = 0;
 
   // Allocate space for the temporary row info
-  int* rlevs = new int[ncols];
-  int* rcols = new int[ncols];
+  int *rlevs = new int[ncols];
+  int *rcols = new int[ncols];
 
   for (int i = 0; i < nrows; i++) {
     int nr = 0;  // Number of entries in the current row
@@ -753,17 +753,17 @@ void BCSRMat::computeILUk(BCSRMat* mat, int levFill, double fill, int** _levs) {
   Compute the ILU fill in for the off-diagonal matrix E.
   [ L_{B} U_{B} |  L_{B}^{-1} E ]
 */
-BCSRMat* BCSRMat::computeILUkEpc(BCSRMat* Emat, const int* levs, int levFill,
-                                 double fill, int** _elevs) {
+BCSRMat *BCSRMat::computeILUkEpc(BCSRMat *Emat, const int *levs, int levFill,
+                                 double fill, int **_elevs) {
   // Retrieve the matrix data
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
 
   // Compute compute fill in for the off-diagonal matrices
   // First compute the extra fill-in for the E-matrix
-  int* rlevs = new int[Emat->data->ncols];
-  int* rcols = new int[Emat->data->ncols];
+  int *rlevs = new int[Emat->data->ncols];
+  int *rcols = new int[Emat->data->ncols];
 
   // Set up data for keeping track of the column entries
   int size = 0;
@@ -772,9 +772,9 @@ BCSRMat* BCSRMat::computeILUkEpc(BCSRMat* Emat, const int* levs, int levFill,
   int mat_size = Emat->data->rowp[Emat->data->nrows];
   int max_size = (int)(fill * mat_size);  // The maximum size - for now
 
-  int* ecols = new int[max_size];
-  int* elevs = new int[max_size];  // The level of fill of an entry
-  int* erowp = new int[Emat->data->nrows + 1];
+  int *ecols = new int[max_size];
+  int *elevs = new int[max_size];  // The level of fill of an entry
+  int *erowp = new int[Emat->data->nrows + 1];
   erowp[0] = 0;
 
   for (int i = 0; i < Emat->data->nrows; i++) {
@@ -857,17 +857,17 @@ BCSRMat* BCSRMat::computeILUkEpc(BCSRMat* Emat, const int* levs, int levFill,
                      Emat->data->ncols, &erowp, &ecols);
 }
 
-BCSRMat* BCSRMat::computeILUkFpc(BCSRMat* Fmat, const int* levs, int levFill,
-                                 double fill, int** _flevs) {
+BCSRMat *BCSRMat::computeILUkFpc(BCSRMat *Fmat, const int *levs, int levFill,
+                                 double fill, int **_flevs) {
   // Retrieve the matrix data
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
 
   // Compute compute fill in for the off-diagonal matrices
   // First compute the extra fill-in for the E-matrix
-  int* rlevs = new int[Fmat->data->ncols];
-  int* rcols = new int[Fmat->data->ncols];
+  int *rlevs = new int[Fmat->data->ncols];
+  int *rcols = new int[Fmat->data->ncols];
 
   // Set up data for keeping track of the column entries
   int size = 0;
@@ -876,9 +876,9 @@ BCSRMat* BCSRMat::computeILUkFpc(BCSRMat* Fmat, const int* levs, int levFill,
   int mat_size = Fmat->data->rowp[Fmat->data->nrows];
   int max_size = (int)(fill * mat_size);  // The maximum size - for now
 
-  int* fcols = new int[max_size];
-  int* flevs = new int[max_size];  // The level of fill of an entry
-  int* frowp = new int[Fmat->data->nrows + 1];
+  int *fcols = new int[max_size];
+  int *flevs = new int[max_size];  // The level of fill of an entry
+  int *frowp = new int[Fmat->data->nrows + 1];
   frowp[0] = 0;
 
   // Compute extra fill-in for the F-matrix
@@ -980,7 +980,7 @@ void BCSRMat::setUpDiag() {
     int row_size = data->rowp[i + 1] - data->rowp[i];
 
     // Figure out the location of the diagonal entry
-    int* item = TacsSearchArray(i, row_size, &data->cols[data->rowp[i]]);
+    int *item = TacsSearchArray(i, row_size, &data->cols[data->rowp[i]]);
     if (item == NULL) {
       data->diag[i] = -1;  // No diagonal entry
     } else {
@@ -1207,7 +1207,7 @@ void BCSRMat::factor() {
 
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bfactor_thread, (void*)tdata);
+      pthread_create(&tdata->threads[k], &attr, bfactor_thread, (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1223,7 +1223,7 @@ void BCSRMat::factor() {
 /*!
   Compute y = A*x
 */
-void BCSRMat::mult(TacsScalar* xvec, TacsScalar* yvec) {
+void BCSRMat::mult(TacsScalar *xvec, TacsScalar *yvec) {
   if (bmultadd_thread && thread_info->getNumThreads() > 1) {
     // If not allocated, allocate the threaded data
     if (!tdata) {
@@ -1243,7 +1243,7 @@ void BCSRMat::mult(TacsScalar* xvec, TacsScalar* yvec) {
 
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void*)tdata);
+      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1261,7 +1261,7 @@ void BCSRMat::mult(TacsScalar* xvec, TacsScalar* yvec) {
 /*!
   Compute y = A*x + z
 */
-void BCSRMat::multAdd(TacsScalar* xvec, TacsScalar* zvec, TacsScalar* yvec) {
+void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
   if (bmultadd_thread && thread_info->getNumThreads() > 1) {
     // If not allocated, allocate the threaded data
     if (!tdata) {
@@ -1285,7 +1285,7 @@ void BCSRMat::multAdd(TacsScalar* xvec, TacsScalar* zvec, TacsScalar* yvec) {
 
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void*)tdata);
+      pthread_create(&tdata->threads[k], &attr, bmultadd_thread, (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1303,7 +1303,7 @@ void BCSRMat::multAdd(TacsScalar* xvec, TacsScalar* zvec, TacsScalar* yvec) {
 /*!
   Compute y = A^{T}*x
 */
-void BCSRMat::multTranspose(TacsScalar* xvec, TacsScalar* yvec) {
+void BCSRMat::multTranspose(TacsScalar *xvec, TacsScalar *yvec) {
   memset(yvec, 0, data->bsize * data->ncols * sizeof(TacsScalar));
   bmulttrans(data, xvec, yvec);
 }
@@ -1311,8 +1311,8 @@ void BCSRMat::multTranspose(TacsScalar* xvec, TacsScalar* yvec) {
 /*!
   Compute outVec = A^{T}*inVec + addVec
 */
-void BCSRMat::multTransposeAdd(TacsScalar* inVec, TacsScalar* addVec,
-                               TacsScalar* outVec) {
+void BCSRMat::multTransposeAdd(TacsScalar *inVec, TacsScalar *addVec,
+                               TacsScalar *outVec) {
   bmulttransadd(data, inVec, addVec, outVec);
 }
 
@@ -1323,7 +1323,7 @@ void BCSRMat::multTransposeAdd(TacsScalar* inVec, TacsScalar* addVec,
 
   y = U^{-1} L^{-1} x
 */
-void BCSRMat::applyFactor(TacsScalar* xvec, TacsScalar* yvec) {
+void BCSRMat::applyFactor(TacsScalar *xvec, TacsScalar *yvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyFactor error: matrix not factored\n");
   } else {
@@ -1351,7 +1351,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec, TacsScalar* yvec) {
       // Go through and run the threads
       for (long k = 0; k < thread_info->getNumThreads(); k++) {
         pthread_create(&tdata->threads[k], &attr, applylower_thread,
-                       (void*)tdata);
+                       (void *)tdata);
       }
 
       for (int k = 0; k < thread_info->getNumThreads(); k++) {
@@ -1364,7 +1364,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec, TacsScalar* yvec) {
       // Go through and run the threads
       for (long k = 0; k < thread_info->getNumThreads(); k++) {
         pthread_create(&tdata->threads[k], &attr, applyupper_thread,
-                       (void*)tdata);
+                       (void *)tdata);
       }
 
       for (int k = 0; k < thread_info->getNumThreads(); k++) {
@@ -1387,7 +1387,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec, TacsScalar* yvec) {
 
   x = U^{-1} L^{-1} x
 */
-void BCSRMat::applyFactor(TacsScalar* xvec) {
+void BCSRMat::applyFactor(TacsScalar *xvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyFactor error: matrix not factored\n");
   } else {
@@ -1412,7 +1412,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec) {
       // Go through and run the threads
       for (long k = 0; k < thread_info->getNumThreads(); k++) {
         pthread_create(&tdata->threads[k], &attr, applylower_thread,
-                       (void*)tdata);
+                       (void *)tdata);
       }
 
       for (int k = 0; k < thread_info->getNumThreads(); k++) {
@@ -1425,7 +1425,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec) {
       // Go through and run the threads
       for (long k = 0; k < thread_info->getNumThreads(); k++) {
         pthread_create(&tdata->threads[k], &attr, applyupper_thread,
-                       (void*)tdata);
+                       (void *)tdata);
       }
 
       for (int k = 0; k < thread_info->getNumThreads(); k++) {
@@ -1446,7 +1446,7 @@ void BCSRMat::applyFactor(TacsScalar* xvec) {
 
   y = U^{-1} x
 */
-void BCSRMat::applyUpper(TacsScalar* xvec, TacsScalar* yvec) {
+void BCSRMat::applyUpper(TacsScalar *xvec, TacsScalar *yvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyUpper error: matrix not factored\n");
   } else {
@@ -1459,7 +1459,7 @@ void BCSRMat::applyUpper(TacsScalar* xvec, TacsScalar* yvec) {
 
   y = L^{-1} x
 */
-void BCSRMat::applyLower(TacsScalar* xvec, TacsScalar* yvec) {
+void BCSRMat::applyLower(TacsScalar *xvec, TacsScalar *yvec) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyLower error: matrix not factored\n");
   } else {
@@ -1475,7 +1475,7 @@ void BCSRMat::applyLower(TacsScalar* xvec, TacsScalar* yvec) {
   structure is set up the same way as the full vector.  Apply the part
   of L^{-1} from var_offset to nrows, with ordering starting at zero.
 */
-void BCSRMat::applyPartialLower(TacsScalar* xvec, int var_offset) {
+void BCSRMat::applyPartialLower(TacsScalar *xvec, int var_offset) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyPartialLower error: matrix not factored\n");
   } else {
@@ -1491,7 +1491,7 @@ void BCSRMat::applyPartialLower(TacsScalar* xvec, int var_offset) {
   is set up the same way as the full vector.  Apply the part of U^{-1}
   from var_offset to nrows, with ordering starting at zero.
 */
-void BCSRMat::applyPartialUpper(TacsScalar* xvec, int var_offset) {
+void BCSRMat::applyPartialUpper(TacsScalar *xvec, int var_offset) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyPartialUpper error: matrix not factored\n");
   } else {
@@ -1512,7 +1512,7 @@ void BCSRMat::applyPartialUpper(TacsScalar* xvec, int var_offset) {
 
   where the division is set by the variable var_offset.
 */
-void BCSRMat::applyFactorSchur(TacsScalar* x, int var_offset) {
+void BCSRMat::applyFactorSchur(TacsScalar *x, int var_offset) {
   if (!data->diag) {
     fprintf(stderr, "BCSRMat applyFactorSchur error: matrix not factored\n");
   } else {
@@ -1524,7 +1524,7 @@ void BCSRMat::applyFactorSchur(TacsScalar* x, int var_offset) {
   Copy the diagonal entries to a set of diagonal matrices.  Factor
   these matrices and store the result.
 */
-void BCSRMat::factorDiag(const TacsScalar* diag) {
+void BCSRMat::factorDiag(const TacsScalar *diag) {
   if (!data->diag) {
     setUpDiag();
   }
@@ -1533,8 +1533,8 @@ void BCSRMat::factorDiag(const TacsScalar* diag) {
   const int b2 = bsize * bsize;
   const int nrows = data->nrows;
 
-  int* ipiv = new int[2 * bsize];
-  TacsScalar* D = new TacsScalar[4 * b2];
+  int *ipiv = new int[2 * bsize];
+  TacsScalar *D = new TacsScalar[4 * b2];
 
   if (!Adiag) {
     Adiag = new TacsScalar[nrows * b2];
@@ -1558,7 +1558,7 @@ void BCSRMat::factorDiag(const TacsScalar* diag) {
 /*!
   Apply a given number of steps of SOR to the system A*x = b.
 */
-void BCSRMat::applySOR(TacsScalar* b, TacsScalar* x, TacsScalar omega,
+void BCSRMat::applySOR(TacsScalar *b, TacsScalar *x, TacsScalar omega,
                        int iters) {
   if (Adiag) {
     for (int i = 0; i < iters; i++) {
@@ -1572,9 +1572,9 @@ void BCSRMat::applySOR(TacsScalar* b, TacsScalar* x, TacsScalar omega,
 /*!
   Apply SOR to the matrix over the given interval
 */
-void BCSRMat::applySOR(BCSRMat* B, int start, int end, int var_offset,
-                       TacsScalar omega, const TacsScalar* b,
-                       const TacsScalar* xext, TacsScalar* x) {
+void BCSRMat::applySOR(BCSRMat *B, int start, int end, int var_offset,
+                       TacsScalar omega, const TacsScalar *b,
+                       const TacsScalar *xext, TacsScalar *x) {
   if (Adiag) {
     if (B) {
       applysor(data, B->data, start, end, var_offset, Adiag, omega, b, xext, x);
@@ -1592,7 +1592,7 @@ void BCSRMat::applySOR(BCSRMat* B, int start, int end, int var_offset,
   This matrix must be created with a call to BCSRMat( A, B, fill ) for this
   matrix to have the correct non-zero pattern.
 */
-void BCSRMat::matMultAdd(double alpha, BCSRMat* amat, BCSRMat* bmat) {
+void BCSRMat::matMultAdd(double alpha, BCSRMat *amat, BCSRMat *bmat) {
   // Check that the sizes work
   if (data->bsize != amat->data->bsize || data->bsize != bmat->data->bsize) {
     fprintf(stderr,
@@ -1630,7 +1630,7 @@ void BCSRMat::matMultAdd(double alpha, BCSRMat* amat, BCSRMat* bmat) {
 
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
-      pthread_create(&tdata->threads[k], &attr, bmatmult_thread, (void*)tdata);
+      pthread_create(&tdata->threads[k], &attr, bmatmult_thread, (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1649,7 +1649,7 @@ void BCSRMat::matMultAdd(double alpha, BCSRMat* amat, BCSRMat* bmat) {
 /*!
   Compute L^{-1} E
 */
-void BCSRMat::applyLowerFactor(BCSRMat* emat) {
+void BCSRMat::applyLowerFactor(BCSRMat *emat) {
   if (!data->diag) {
     fprintf(stderr,
             "BCSRMat error: cannot use applyLowerFactor "
@@ -1680,7 +1680,7 @@ void BCSRMat::applyLowerFactor(BCSRMat* emat) {
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
       pthread_create(&tdata->threads[k], &attr, bfactorlower_thread,
-                     (void*)tdata);
+                     (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1698,7 +1698,7 @@ void BCSRMat::applyLowerFactor(BCSRMat* emat) {
 /*!
   Compute F U^{-1}
 */
-void BCSRMat::applyUpperFactor(BCSRMat* fmat) {
+void BCSRMat::applyUpperFactor(BCSRMat *fmat) {
   if (!data->diag) {
     fprintf(stderr,
             "BCSRMat error: cannot use applyUpperFactor with "
@@ -1729,7 +1729,7 @@ void BCSRMat::applyUpperFactor(BCSRMat* fmat) {
     // Go through and run the threads
     for (long k = 0; k < thread_info->getNumThreads(); k++) {
       pthread_create(&tdata->threads[k], &attr, bfactorupper_thread,
-                     (void*)tdata);
+                     (void *)tdata);
     }
 
     // Destroy the attribute and join all the threads
@@ -1750,7 +1750,7 @@ void BCSRMat::applyUpperFactor(BCSRMat* fmat) {
   Note that there is not yet a threaded implementation of
   this code.
 */
-void BCSRMat::matMultNormal(TacsScalar* s, BCSRMat* bmat) {
+void BCSRMat::matMultNormal(TacsScalar *s, BCSRMat *bmat) {
   if (data->nrows != bmat->data->ncols) {
     fprintf(stderr,
             "BCSRMat error: matMultNormal matrices are not the "
@@ -1797,29 +1797,29 @@ void BCSRMat::scale(TacsScalar alpha) {
   nca:       the number of columns in a
   avals:     the values
 */
-void BCSRMat::addRowValues(int row, int ncol, const int* col, int nca,
-                           const TacsScalar* avals) {
+void BCSRMat::addRowValues(int row, int ncol, const int *col, int nca,
+                           const TacsScalar *avals) {
   if (ncol <= 0) {
     return;
   }
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
   if (row >= 0 && row < nrows) {
     int row_size = rowp[row + 1] - rowp[row];
-    const int* col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for (int j = 0; j < ncol; j++) {
       int c = col[j];
       if (c < 0) {  // Skip entries that are negative
         continue;
       } else if (c < ncols) {
-        int* item = TacsSearchArray(c, row_size, col_array);
+        int *item = TacsSearchArray(c, row_size, col_array);
 
         if (item == NULL) {
           fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
@@ -1827,7 +1827,7 @@ void BCSRMat::addRowValues(int row, int ncol, const int* col, int nca,
           // Place the values into the array
           int cp = item - cols;
           int bj = bsize * j;
-          TacsScalar* a = &(data->A[b2 * cp]);
+          TacsScalar *a = &(data->A[b2 * cp]);
 
           for (int jj = 0; jj < bsize; jj++) {
             int njj = nca * jj;
@@ -1877,9 +1877,9 @@ void BCSRMat::addRowValues(int row, int ncol, const int* col, int nca,
   matOr:   the matrix orientation
 */
 void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
-                                 const int* wrowp, const int* wcols,
-                                 const TacsScalar* weights, int nca,
-                                 const TacsScalar* avals,
+                                 const int *wrowp, const int *wcols,
+                                 const TacsScalar *weights, int nca,
+                                 const TacsScalar *avals,
                                  MatrixOrientation matOr) {
   if (nwrows <= 0 || alpha == 0.0) {
     return;
@@ -1887,14 +1887,14 @@ void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
   if (row >= 0 && row < nrows) {
     int row_size = rowp[row + 1] - rowp[row];
-    const int* col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for (int i = 0; i < nwrows; i++) {
       for (int jp = wrowp[i]; jp < wrowp[i + 1]; jp++) {
@@ -1906,14 +1906,14 @@ void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
         if (c < 0 || aw == 0.0) {
           continue;
         } else if (c < ncols) {
-          int* item = TacsSearchArray(c, row_size, col_array);
+          int *item = TacsSearchArray(c, row_size, col_array);
 
           if (item == NULL) {
             fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
           } else {
             // Place the values into the array
             int cp = item - cols;
-            TacsScalar* A = &(data->A[b2 * cp]);
+            TacsScalar *A = &(data->A[b2 * cp]);
 
             if (matOr == TACS_MAT_NORMAL) {
               // Set the offset in the dense input row to the current
@@ -1922,10 +1922,10 @@ void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
 
               // Loop over the rows of the input matrix
               for (int ii = 0; ii < bsize; ii++) {
-                const TacsScalar* arow = &avals[nca * ii + offset];
+                const TacsScalar *arow = &avals[nca * ii + offset];
 
                 // Add the row entries to the block row
-                TacsScalar* Arow = &A[ii * bsize];
+                TacsScalar *Arow = &A[ii * bsize];
                 for (int jj = 0; jj < bsize; jj++) {
                   Arow[jj] += aw * arow[jj];
                 }
@@ -1937,10 +1937,10 @@ void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
 
               // Loop over the rows of the input matrix
               for (int ii = 0; ii < bsize; ii++) {
-                const TacsScalar* acol = &avals[ii + offset];
+                const TacsScalar *acol = &avals[ii + offset];
 
                 // Add the row entries to the block row
-                TacsScalar* Arow = &A[ii * bsize];
+                TacsScalar *Arow = &A[ii * bsize];
                 for (int jj = 0; jj < bsize; jj++) {
                   Arow[jj] += aw * acol[nca * jj];
                 }
@@ -1969,22 +1969,22 @@ void BCSRMat::addRowWeightValues(TacsScalar alpha, int row, int nwrows,
   col:        the column indices (before being offset)
   avals:      the values
 */
-void BCSRMat::addBlockRowValues(int row, int ncol, const int* col,
-                                const TacsScalar* avals) {
+void BCSRMat::addBlockRowValues(int row, int ncol, const int *col,
+                                const TacsScalar *avals) {
   if (ncol <= 0) {
     return;
   }
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
   if (row >= 0 && row < nrows) {
     int row_size = rowp[row + 1] - rowp[row];
-    const int* col_array = &cols[rowp[row]];
+    const int *col_array = &cols[rowp[row]];
 
     for (int j = 0; j < ncol; j++) {
       int c = col[j];
@@ -1992,14 +1992,14 @@ void BCSRMat::addBlockRowValues(int row, int ncol, const int* col,
       if (c < 0) {  // Skip entries that are negative
         continue;
       } else if (c < ncols) {
-        int* item = TacsSearchArray(c, row_size, col_array);
+        int *item = TacsSearchArray(c, row_size, col_array);
 
         if (item == NULL) {
           fprintf(stderr, "BCSRMat error: no entry for (%d,%d)\n", row, c);
         } else {
           // Add values into the array
           int cp = item - cols;
-          TacsScalar* a = &(data->A[b2 * cp]);
+          TacsScalar *a = &(data->A[b2 * cp]);
 
           for (int k = 0; k < b2; k++) {
             a[k] += avals[b2 * j + k];
@@ -2026,14 +2026,14 @@ void BCSRMat::addBlockRowValues(int row, int ncol, const int* col,
 */
 void BCSRMat::zeroRow(int row, int vars, int ident) {
   if (row >= 0 && row < data->nrows) {
-    const int* rowp = data->rowp;
-    const int* cols = data->cols;
+    const int *rowp = data->rowp;
+    const int *cols = data->cols;
     const int bsize = data->bsize;
     const int b2 = bsize * bsize;
 
     int end = rowp[row + 1];
     for (int j = rowp[row]; j < end; j++) {
-      TacsScalar* a = &(data->A[b2 * j]);
+      TacsScalar *a = &(data->A[b2 * j]);
       for (int ii = 0; ii < bsize; ii++) {
         if (vars & (1 << ii)) {
           for (int jj = 0; jj < bsize; jj++) {
@@ -2055,18 +2055,18 @@ void BCSRMat::zeroRow(int row, int vars, int ident) {
 /*!
   Zero the column values
 */
-void BCSRMat::zeroColumns(int num_zero_cols, const int* zero_cols,
-                          const int* zero_vars, int ident) {
+void BCSRMat::zeroColumns(int num_zero_cols, const int *zero_cols,
+                          const int *zero_vars, int ident) {
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
-  const int* diag = data->diag;
+  const int *diag = data->diag;
 
   // Count up the number of columns
-  int* colp = new int[ncols + 1];
+  int *colp = new int[ncols + 1];
   memset(colp, 0, (ncols + 1) * sizeof(int));
 
   // Set the entries of colp to -1 and only those entries
@@ -2100,7 +2100,7 @@ void BCSRMat::zeroColumns(int num_zero_cols, const int* zero_cols,
   colp[ncols] = index;
 
   // Allocate space for the rows
-  int* ptr = new int[colp[ncols]];
+  int *ptr = new int[colp[ncols]];
 
   for (int jp = 0; jp < rowp[nrows]; jp++) {
     int col = cols[jp];
@@ -2123,7 +2123,7 @@ void BCSRMat::zeroColumns(int num_zero_cols, const int* zero_cols,
       for (int j = colp[col]; j < colp[col + 1]; j++) {
         int jp = ptr[j];
 
-        TacsScalar* a = &(data->A[b2 * jp]);
+        TacsScalar *a = &(data->A[b2 * jp]);
         for (int jj = 0; jj < bsize; jj++) {
           if (zero_vars[i] & (1 << jj)) {
             for (int ii = 0; ii < bsize; ii++) {
@@ -2141,7 +2141,7 @@ void BCSRMat::zeroColumns(int num_zero_cols, const int* zero_cols,
       if (col >= 0 && col < ncols) {
         int jp = diag[col];
 
-        TacsScalar* a = &(data->A[b2 * jp]);
+        TacsScalar *a = &(data->A[b2 * jp]);
         for (int jj = 0; jj < bsize; jj++) {
           if (zero_vars[i] & (1 << jj)) {
             for (int ii = 0; ii < bsize; ii++) {
@@ -2168,15 +2168,15 @@ void BCSRMat::zeroColumns(int num_zero_cols, const int* zero_cols,
   A = [ B, E ]
   .   [ F, C ]
 */
-void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
-                        BCSRMat** Fmat, BCSRMat** Cmat) {
+void BCSRMat::partition(int nrows_p, BCSRMat **Bmat, BCSRMat **Emat,
+                        BCSRMat **Fmat, BCSRMat **Cmat) {
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
-  const int* diag = data->diag;
-  const TacsScalar* A = data->A;
+  const int *diag = data->diag;
+  const TacsScalar *A = data->A;
 
   int b2 = bsize * bsize;
   *Bmat = NULL;
@@ -2190,8 +2190,8 @@ void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
   int ncols_c = ncols - nrows_p;
 
   // Create the B and E non-zero pattern
-  int* browp = new int[nrows_b + 1];
-  int* erowp = new int[nrows_b + 1];
+  int *browp = new int[nrows_b + 1];
+  int *erowp = new int[nrows_b + 1];
 
   int nb = 0, ne = 0;
   browp[0] = 0;
@@ -2209,8 +2209,8 @@ void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
     erowp[i + 1] = ne;
   }
 
-  int* bcols = new int[nb];
-  int* ecols = new int[ne];
+  int *bcols = new int[nb];
+  int *ecols = new int[ne];
 
   nb = ne = 0;
   for (int i = 0; i < nrows_b; i++) {
@@ -2259,8 +2259,8 @@ void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
   }
 
   // Create the B and E non-zero pattern
-  int* frowp = new int[nrows_b + 1];
-  int* crowp = new int[nrows_b + 1];
+  int *frowp = new int[nrows_b + 1];
+  int *crowp = new int[nrows_b + 1];
 
   int nf = 0, nc = 0;
   frowp[0] = 0;
@@ -2278,8 +2278,8 @@ void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
     crowp[i + 1 - nrows_b] = nc;
   }
 
-  int* fcols = new int[nf];
-  int* ccols = new int[nc];
+  int *fcols = new int[nf];
+  int *ccols = new int[nc];
 
   nf = nc = 0;
   for (int i = nrows_b; i < nrows; i++) {
@@ -2331,9 +2331,9 @@ void BCSRMat::partition(int nrows_p, BCSRMat** Bmat, BCSRMat** Emat,
 /*!
   Retrieve the underlying array representation of the BCSRMatrix
 */
-void BCSRMat::getArrays(int* _bsize, int* _nrows, int* _ncols,
-                        const int** _rowp, const int** _cols,
-                        TacsScalar** Avals) {
+void BCSRMat::getArrays(int *_bsize, int *_nrows, int *_ncols,
+                        const int **_rowp, const int **_cols,
+                        TacsScalar **Avals) {
   if (_bsize) {
     *_bsize = data->bsize;
   }
@@ -2357,12 +2357,12 @@ void BCSRMat::getArrays(int* _bsize, int* _nrows, int* _ncols,
 /*
   Get the matrix in a dense column-major format appropriate for LAPACK
 */
-void BCSRMat::getDenseColumnMajor(TacsScalar* D) {
+void BCSRMat::getDenseColumnMajor(TacsScalar *D) {
   const int bsize = data->bsize;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const TacsScalar* A = data->A;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const TacsScalar *A = data->A;
 
   // Zero the array first and fill the non-zeros alone
   memset(D, 0, bsize * bsize * nrows * nrows * sizeof(TacsScalar));
@@ -2375,7 +2375,7 @@ void BCSRMat::getDenseColumnMajor(TacsScalar* D) {
     // Loop over the block columns
     for (int jp = rowp[ib]; jp < rowp[ib + 1]; jp++) {
       int jb = cols[jp];
-      const TacsScalar* a = &A[bsize * bsize * jp];
+      const TacsScalar *a = &A[bsize * bsize * jp];
 
       // Now iterate over the block indices
       for (int ii = 0; ii < bsize; ii++) {
@@ -2394,7 +2394,7 @@ void BCSRMat::getDenseColumnMajor(TacsScalar* D) {
 
   Scan through each row of the matrix, copying entries.
 */
-void BCSRMat::copyValues(BCSRMat* mat) {
+void BCSRMat::copyValues(BCSRMat *mat) {
   if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols ||
       data->bsize != mat->data->bsize) {
     fprintf(stderr,
@@ -2404,8 +2404,8 @@ void BCSRMat::copyValues(BCSRMat* mat) {
   }
 
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
@@ -2449,7 +2449,7 @@ void BCSRMat::copyValues(BCSRMat* mat) {
   the matrix being copied into may be larger than the original matrix
 */
 
-void BCSRMat::axpy(TacsScalar alpha, BCSRMat* mat) {
+void BCSRMat::axpy(TacsScalar alpha, BCSRMat *mat) {
   if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols ||
       mat->data->bsize != data->bsize) {
     fprintf(stderr,
@@ -2459,8 +2459,8 @@ void BCSRMat::axpy(TacsScalar alpha, BCSRMat* mat) {
   }
 
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
@@ -2506,7 +2506,7 @@ void BCSRMat::axpy(TacsScalar alpha, BCSRMat* mat) {
   will be allocated in y for these additional entries. The non-zero
   patterns are static.
 */
-void BCSRMat::axpby(TacsScalar alpha, TacsScalar beta, BCSRMat* mat) {
+void BCSRMat::axpby(TacsScalar alpha, TacsScalar beta, BCSRMat *mat) {
   if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols) {
     fprintf(stderr,
             "BCSRMat: Matrices are not the same "
@@ -2514,8 +2514,8 @@ void BCSRMat::axpby(TacsScalar alpha, TacsScalar beta, BCSRMat* mat) {
   }
 
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
@@ -2561,7 +2561,7 @@ void BCSRMat::addDiag(TacsScalar alpha) {
     const int bsize = data->bsize;
     const int b2 = bsize * bsize;
     for (int i = 0; i < data->nrows; i++) {
-      TacsScalar* a = &(data->A[b2 * data->diag[i]]);
+      TacsScalar *a = &(data->A[b2 * data->diag[i]]);
       for (int k = 0; k < bsize; k++) {
         a[(bsize + 1) * k] += alpha;
       }
@@ -2573,7 +2573,7 @@ void BCSRMat::addDiag(TacsScalar alpha) {
       for (int jp = data->rowp[i]; jp < data->rowp[i + 1]; jp++) {
         int j = data->cols[jp];
         if (i == j) {
-          TacsScalar* a = &(data->A[b2 * jp]);
+          TacsScalar *a = &(data->A[b2 * jp]);
           for (int k = 0; k < bsize; k++) {
             a[(bsize + 1) * k] += alpha;
           }
@@ -2586,13 +2586,13 @@ void BCSRMat::addDiag(TacsScalar alpha) {
 /*!
   Add an array of values to the diagonal entries of the matrix
 */
-void BCSRMat::addDiag(TacsScalar* alpha) {
+void BCSRMat::addDiag(TacsScalar *alpha) {
   if (data->diag) {
     const int bsize = data->bsize;
     const int b2 = bsize * bsize;
     for (int i = 0; i < data->nrows; i++) {
-      TacsScalar* d = &alpha[bsize * i];
-      TacsScalar* a = &(data->A[b2 * data->diag[i]]);
+      TacsScalar *d = &alpha[bsize * i];
+      TacsScalar *a = &(data->A[b2 * data->diag[i]]);
       for (int k = 0; k < bsize; k++) {
         a[(bsize + 1) * k] += d[k];
       }
@@ -2601,11 +2601,11 @@ void BCSRMat::addDiag(TacsScalar* alpha) {
     const int bsize = data->bsize;
     const int b2 = bsize * bsize;
     for (int i = 0; i < data->nrows; i++) {
-      TacsScalar* d = &alpha[bsize * i];
+      TacsScalar *d = &alpha[bsize * i];
       for (int jp = data->rowp[i]; jp < data->rowp[i + 1]; jp++) {
         int j = data->cols[jp];
         if (i == j) {
-          TacsScalar* a = &(data->A[b2 * jp]);
+          TacsScalar *a = &(data->A[b2 * jp]);
           for (int k = 0; k < bsize; k++) {
             a[(bsize + 1) * k] += d[k];
           }
@@ -2622,7 +2622,7 @@ void BCSRMat::addDiag(TacsScalar* alpha) {
 
   where b_{i} = max |cols[j] - i|
 */
-void BCSRMat::getNumUpperLowerDiagonals(int* _bl, int* _bu) {
+void BCSRMat::getNumUpperLowerDiagonals(int *_bl, int *_bu) {
   int bl = 0;
   int bu = 0;
 
@@ -2665,7 +2665,7 @@ void BCSRMat::getNumUpperLowerDiagonals(int* _bl, int* _bu) {
 
   returns: the matrix band size
 */
-void BCSRMat::getBandedMatrix(TacsScalar* A, int size, int symm_flag) {
+void BCSRMat::getBandedMatrix(TacsScalar *A, int size, int symm_flag) {
   // Compute the matrix bandwidth
   int bl, bu;
   getNumUpperLowerDiagonals(&bl, &bu);
@@ -2738,7 +2738,7 @@ void BCSRMat::getBandedMatrix(TacsScalar* A, int size, int symm_flag) {
   1. Test the non-zero pattern to see if they are the same.
   2. Test matrix-multiplication against a randomly generated vector
 */
-int BCSRMat::isEqual(BCSRMat* mat, double tol) {
+int BCSRMat::isEqual(BCSRMat *mat, double tol) {
   if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols) {
     printf("Matrices do not have the same dimensions\n");
     return 0;
@@ -2746,8 +2746,8 @@ int BCSRMat::isEqual(BCSRMat* mat, double tol) {
 
   const int ncols = data->ncols;
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
   const int bsize = data->bsize;
 
   for (int i = 0; i < nrows; i++) {
@@ -2779,9 +2779,9 @@ int BCSRMat::isEqual(BCSRMat* mat, double tol) {
 
   srand(time(NULL));
 
-  TacsScalar* a = new TacsScalar[bsize * nrows];
-  TacsScalar* b = new TacsScalar[bsize * nrows];
-  TacsScalar* x = new TacsScalar[bsize * ncols];
+  TacsScalar *a = new TacsScalar[bsize * nrows];
+  TacsScalar *b = new TacsScalar[bsize * nrows];
+  TacsScalar *x = new TacsScalar[bsize * ncols];
 
   for (int i = 0; i < bsize * ncols; i++) {
     x[i] = (2.0 * rand()) / (RAND_MAX - 1.0) - 1.0;
@@ -2842,7 +2842,7 @@ void BCSRMat::testSchur(int nrows_p, int lev, double fill, double tol) {
   printf("dim(F) = (%d,%d) \n", F->data->nrows, F->data->ncols);
   printf("dim(C) = (%d,%d) \n", C->data->nrows, C->data->ncols);
 
-  BCSRMat* Apc = new BCSRMat(comm, this, lev, fill);
+  BCSRMat *Apc = new BCSRMat(comm, this, lev, fill);
   Apc->incref();
   Apc->copyValues(this);
   Apc->factor();
@@ -2855,7 +2855,7 @@ void BCSRMat::testSchur(int nrows_p, int lev, double fill, double tol) {
   Cpc->incref();
 
   BCSRMat *Bsc, *Esc, *Fsc;
-  BCSRMat* S;
+  BCSRMat *S;
   int use_full_schur = 1;
   Bsc =
       new BCSRMat(comm, B, E, F, C, lev, fill, &Esc, &Fsc, &S, use_full_schur);
@@ -2912,15 +2912,15 @@ void BCSRMat::testSchur(int nrows_p, int lev, double fill, double tol) {
   cols                // the column indices
   A                   // the matrix entries
 */
-void BCSRMat::printMat(const char* fname) {
+void BCSRMat::printMat(const char *fname) {
   // Print the matrix in a somewhat human readable format
-  FILE* fp = fopen(fname, "w");
+  FILE *fp = fopen(fname, "w");
 
   if (fp) {
     const int nrows = data->nrows;
     const int ncols = data->ncols;
-    const int* rowp = data->rowp;
-    const int* cols = data->cols;
+    const int *rowp = data->rowp;
+    const int *cols = data->cols;
     const int bsize = data->bsize;
     const int b2 = bsize * bsize;
 
@@ -2952,13 +2952,13 @@ void BCSRMat::printMat(const char* fname) {
   }
 }
 
-void BCSRMat::printNzPattern(const char* fname) {
+void BCSRMat::printNzPattern(const char *fname) {
   // Print the matrix in a somewhat human readable format
-  FILE* fp = fopen(fname, "w");
+  FILE *fp = fopen(fname, "w");
 
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
 
   if (fp) {
     fprintf(fp, "VARIABLES = \"i\",\"j\"\n");

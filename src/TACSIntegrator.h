@@ -33,7 +33,7 @@
 
 class TACSIntegrator : public TACSObject {
  public:
-  TACSIntegrator(TACSAssembler* assembler, double tinit, double tfinal,
+  TACSIntegrator(TACSAssembler *assembler, double tinit, double tfinal,
                  double num_steps);
   ~TACSIntegrator();
 
@@ -42,12 +42,12 @@ class TACSIntegrator : public TACSObject {
   void setRelTol(double _rtol);
   void setAbsTol(double _atol);
   void setMaxNewtonIters(int _max_newton_iters);
-  void setPrintLevel(int _print_level, const char* logfilename = NULL);
+  void setPrintLevel(int _print_level, const char *logfilename = NULL);
   void setJacAssemblyFreq(int _jac_comp_freq);
   void setUseLapack(int _use_lapack);
   void setUseSchurMat(int _use_schur_mat, TACSAssembler::OrderingType _type);
   void setInitNewtonDeltaFraction(double frac);
-  void setKrylovSubspaceMethod(TACSKsm* _ksm);
+  void setKrylovSubspaceMethod(TACSKsm *_ksm);
 
   // Set (or reset) the time interval
   // --------------------------------
@@ -55,23 +55,23 @@ class TACSIntegrator : public TACSObject {
 
   // Set the functions to integrate
   //--------------------------------
-  void setFunctions(int num_funcs, TACSFunction** funcs, int start_plane = -1,
+  void setFunctions(int num_funcs, TACSFunction **funcs, int start_plane = -1,
                     int end_plane = -1);
 
   // Solve for time-step t with
-  virtual int iterate(int step_num, TACSBVec* forces) = 0;
+  virtual int iterate(int step_num, TACSBVec *forces) = 0;
 
   // Integrate the equations of motion forward in time
   virtual int integrate();
 
   // Evaluate the functions of interest
-  virtual void evalFunctions(TacsScalar* fvals) = 0;
+  virtual void evalFunctions(TacsScalar *fvals) = 0;
 
   // Set-up right-hand-sides for the adjoint equations
   virtual void initAdjoint(int step_num) {}
 
   // Iterate to find a solution of the adjoint equations
-  virtual void iterateAdjoint(int step_num, TACSBVec** adj_rhs) {}
+  virtual void iterateAdjoint(int step_num, TACSBVec **adj_rhs) {}
 
   // Add the contributions to the total derivative from the time-step
   virtual void postAdjoint(int step_num) {}
@@ -81,10 +81,10 @@ class TACSIntegrator : public TACSObject {
   virtual void integrateAdjoint();
 
   // Get the adjoint vector for the given function
-  virtual void getAdjoint(int step_num, int func_num, TACSBVec** adjoint) = 0;
+  virtual void getAdjoint(int step_num, int func_num, TACSBVec **adjoint) = 0;
 
   // Copy out the function
-  virtual void getGradient(int func_num, TACSBVec** _dfdx) {
+  virtual void getGradient(int func_num, TACSBVec **_dfdx) {
     *_dfdx = NULL;
     if (func_num >= 0 && func_num < num_funcs) {
       *_dfdx = dfdx[func_num];
@@ -92,7 +92,7 @@ class TACSIntegrator : public TACSObject {
   }
 
   // Get the vector of the shape derivatives
-  virtual void getXptGradient(int func_num, TACSBVec** _dfdXpt) {
+  virtual void getXptGradient(int func_num, TACSBVec **_dfdXpt) {
     *_dfdXpt = NULL;
     if (func_num >= 0 && func_num < num_funcs) {
       *_dfdXpt = dfdXpt[func_num];
@@ -100,8 +100,8 @@ class TACSIntegrator : public TACSObject {
   }
 
   // Retrieve the internal states
-  double getStates(int step_num, TACSBVec** q, TACSBVec** qdot,
-                   TACSBVec** qddot);
+  double getStates(int step_num, TACSBVec **q, TACSBVec **qdot,
+                   TACSBVec **qddot);
 
   // Initialize linear solver
   //--------------------------
@@ -112,10 +112,10 @@ class TACSIntegrator : public TACSObject {
 
   // Functions to export the solution in raw and tecplot binary forms
   //-----------------------------------------------------------------
-  void setOutputPrefix(const char* prefix);
+  void setOutputPrefix(const char *prefix);
   void setOutputFrequency(int _write_step);
-  void setFH5(TACSToFH5* _f5);
-  void writeRawSolution(const char* filename, int format = 2);
+  void setFH5(TACSToFH5 *_f5);
+  void writeRawSolution(const char *filename, int format = 2);
   void writeSolutionToF5();
   void writeStepToF5(int step_num);
   void printWallTime(double t0, int level = 1);
@@ -125,17 +125,17 @@ class TACSIntegrator : public TACSObject {
   // Returns the number of time steps configured during instantiation
   //-----------------------------------------------------------------
   int getNumTimeSteps();
-  int lapackNaturalFrequencies(int use_gyroscopic, TACSBVec* q, TACSBVec* qdot,
-                               TACSBVec* qddot, TacsScalar* eigvals,
-                               TacsScalar* modes = NULL);
-  void getRawMatrix(TACSMat* mat, TacsScalar* mat_vals);
+  int lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q, TACSBVec *qdot,
+                               TACSBVec *qddot, TacsScalar *eigvals,
+                               TacsScalar *modes = NULL);
+  void getRawMatrix(TACSMat *mat, TacsScalar *mat_vals);
 
  protected:
   // Functions for solutions to linear and nonlinear problems
   int newtonSolve(double alpha, double beta, double gamma, double t,
-                  TACSBVec* q, TACSBVec* qdot, TACSBVec* qddot,
-                  TACSBVec* forces = NULL);
-  void lapackLinearSolve(TACSBVec* res, TACSMat* mat, TACSBVec* update);
+                  TACSBVec *q, TACSBVec *qdot, TACSBVec *qddot,
+                  TACSBVec *forces = NULL);
+  void lapackLinearSolve(TACSBVec *res, TACSMat *mat, TACSBVec *update);
 
   // Variables that keep track of time
   double time_fwd_assembly;
@@ -154,33 +154,33 @@ class TACSIntegrator : public TACSObject {
   void logTimeStep(int time_step);
 
   // TACSAssembler information
-  TACSAssembler* assembler;  // Instance of TACSAssembler
+  TACSAssembler *assembler;  // Instance of TACSAssembler
 
   // The step information
   int num_time_steps;  // Total number of time steps
-  double* time;        // Stores the time values
-  TACSBVec** q;        // state variables across all time steps
-  TACSBVec** qdot;     // first time derivative of ''
-  TACSBVec** qddot;    // second time derivative of ''
+  double *time;        // Stores the time values
+  TACSBVec **q;        // state variables across all time steps
+  TACSBVec **qdot;     // first time derivative of ''
+  TACSBVec **qddot;    // second time derivative of ''
 
   // Objects that store information about the functions of interest
   int start_plane, end_plane;  // Time-window for the functions of interest
   int num_funcs;               // The number of objective functions
-  TACSFunction** funcs;        // List of functions
-  TacsScalar* fvals;           // Function values
-  TACSBVec** dfdx;             // Derivative values
-  TACSBVec** dfdXpt;           // Derivatives w.r.t. node locations
+  TACSFunction **funcs;        // List of functions
+  TacsScalar *fvals;           // Function values
+  TACSBVec **dfdx;             // Derivative values
+  TACSBVec **dfdXpt;           // Derivatives w.r.t. node locations
 
   // Linear algebra objects and parameters associated with the Newton solver
   TACSBVec *res, *update;         // Residual and Newton update
-  TACSMat* mat;                   // Jacobian matrix
-  TACSPc* pc;                     // Preconditioner
-  TACSKsm* ksm;                   // KSM solver
+  TACSMat *mat;                   // Jacobian matrix
+  TACSPc *pc;                     // Preconditioner
+  TACSKsm *ksm;                   // KSM solver
   int linear_solver_initialized;  // flag to indicate whether the linear solver
                                   // is initialized
   int mpiRank;                    // rank of the processor
   int mpiSize;                    // number of processors
-  FILE* logfp;                    // Pointer to the output filename
+  FILE *logfp;                    // Pointer to the output filename
 
   // Newton solver parameters
   int max_newton_iters;      // The max number of nonlinear iterations
@@ -206,7 +206,7 @@ class TACSIntegrator : public TACSObject {
   int print_level;    // 0 = off;
                       // 1 = summary per time step;
                       // 2 = summary per Newton solve iteration
-  TACSToFH5* f5;      // F5 output visualization
+  TACSToFH5 *f5;      // F5 output visualization
   int f5_write_freq;  // Frequency for output during time marching
 
   int niter;                 // Newton iteration number
@@ -222,39 +222,39 @@ class TACSIntegrator : public TACSObject {
 */
 class TACSBDFIntegrator : public TACSIntegrator {
  public:
-  TACSBDFIntegrator(TACSAssembler* _tacs, double _tinit, double _tfinal,
+  TACSBDFIntegrator(TACSAssembler *_tacs, double _tinit, double _tfinal,
                     double _num_steps, int max_bdf_order);
   ~TACSBDFIntegrator();
 
   // Iterate through the forward solution
-  int iterate(int k, TACSBVec* forces);
+  int iterate(int k, TACSBVec *forces);
 
   // Set-up right-hand-sides for the adjoint equations
   void initAdjoint(int step_num);
 
   // Iterate to find a solution of the adjoint equations
-  void iterateAdjoint(int step_num, TACSBVec** adj_rhs);
+  void iterateAdjoint(int step_num, TACSBVec **adj_rhs);
 
   // Add the contributions to the total derivative from the time-step
   void postAdjoint(int step_num);
 
   // Get the adjoint value for the given function
-  void getAdjoint(int step_num, int func_num, TACSBVec** adjoint);
+  void getAdjoint(int step_num, int func_num, TACSBVec **adjoint);
 
   // Evaluate the functions of interest
-  void evalFunctions(TacsScalar* fvals);
+  void evalFunctions(TacsScalar *fvals);
 
  private:
-  void get2ndBDFCoeff(const int k, double bdf[], int* nbdf, double bddf[],
-                      int* nbddf, const int max_order);
+  void get2ndBDFCoeff(const int k, double bdf[], int *nbdf, double bddf[],
+                      int *nbddf, const int max_order);
   int getBDFCoeff(const int k, double bdf[], int order);
 
   int max_bdf_order;  // Maximum order of the BDF integration scheme
 
   // Adjoint information
   int num_adjoint_rhs;  // the number of right hand sides allocated
-  TACSBVec** rhs;       // storage vector for the right hand sides
-  TACSBVec** psi;       // adjoint variable accumulating qdot dependance
+  TACSBVec **rhs;       // storage vector for the right hand sides
+  TACSBVec **psi;       // adjoint variable accumulating qdot dependance
 };
 
 /*
@@ -262,34 +262,34 @@ class TACSBDFIntegrator : public TACSIntegrator {
 */
 class TACSDIRKIntegrator : public TACSIntegrator {
  public:
-  TACSDIRKIntegrator(TACSAssembler* _tacs, double _tinit, double _tfinal,
+  TACSDIRKIntegrator(TACSAssembler *_tacs, double _tinit, double _tfinal,
                      double _num_steps, int _num_stages);
   ~TACSDIRKIntegrator();
 
   // Iterate through the forward solution
-  int iterate(int k, TACSBVec* forces);
+  int iterate(int k, TACSBVec *forces);
 
   // Iterate through the forward solution - per stage
-  int iterateStage(int k, int s, TACSBVec* forces);
+  int iterateStage(int k, int s, TACSBVec *forces);
 
   // Retrieve the internal states - per stage
-  double getStageStates(int step, int stage, TACSBVec** qS, TACSBVec** qdotS,
-                        TACSBVec** qddotS);
+  double getStageStates(int step, int stage, TACSBVec **qS, TACSBVec **qdotS,
+                        TACSBVec **qddotS);
 
   // Set-up right-hand-sides for the adjoint equations
   void initAdjoint(int step_num);
 
   // Iterate to find a solution of the adjoint equations
-  void iterateAdjoint(int step_num, TACSBVec** adj_rhs);
+  void iterateAdjoint(int step_num, TACSBVec **adj_rhs);
 
   // Add the contributions to the total derivative from the time-step
   void postAdjoint(int step_num);
 
   // Get the adjoint value for the given function
-  void getAdjoint(int step_num, int func_num, TACSBVec** adjoint);
+  void getAdjoint(int step_num, int func_num, TACSBVec **adjoint);
 
   // Evaluate the functions of interest
-  void evalFunctions(TacsScalar* fvals);
+  void evalFunctions(TacsScalar *fvals);
 
  private:
   // Set the default coefficients
@@ -308,8 +308,8 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   int getRowIndex(int stageNum);
 
   // Get the linearization coefficients for the given stage/step
-  void getLinearizationCoeffs(const int stage, const double h, double* alpha,
-                              double* beta, double* gamma);
+  void getLinearizationCoeffs(const int stage, const double h, double *alpha,
+                              double *beta, double *gamma);
 
   // The number of stages for this method
   int num_stages;
@@ -324,10 +324,10 @@ class TACSDIRKIntegrator : public TACSIntegrator {
   double *A, *B;
 
   // Right-hand-side vector
-  TACSBVec* rhs;
+  TACSBVec *rhs;
 
   // Store the adjoint-stage vectors
-  TACSBVec** lambda;
+  TACSBVec **lambda;
 
   // Save the stage right-hand-side integrator
   TACSBVec **omega, **domega;
@@ -342,27 +342,27 @@ class TACSDIRKIntegrator : public TACSIntegrator {
 class TACSESDIRKIntegrator : public TACSIntegrator {
  public:
   // Constructor
-  TACSESDIRKIntegrator(TACSAssembler* _tacs, double _tinit, double _tfinal,
+  TACSESDIRKIntegrator(TACSAssembler *_tacs, double _tinit, double _tfinal,
                        double _num_steps, int _num_stages);
 
   // Destructor
   ~TACSESDIRKIntegrator();
 
   // Iterate through the forward solution
-  int iterate(int k, TACSBVec* forces);
+  int iterate(int k, TACSBVec *forces);
 
   // Iterate through the forward solution - per stage
-  int iterateStage(int k, int s, TACSBVec* forces);
+  int iterateStage(int k, int s, TACSBVec *forces);
 
   // Retrieve the internal states - per stage
-  double getStageStates(int step_num, int stage_num, TACSBVec** qS,
-                        TACSBVec** qdotS, TACSBVec** qddotS);
+  double getStageStates(int step_num, int stage_num, TACSBVec **qS,
+                        TACSBVec **qdotS, TACSBVec **qddotS);
 
   // Evaluate the functions of interest
-  void evalFunctions(TacsScalar* fvals);
+  void evalFunctions(TacsScalar *fvals);
 
   // Get the adjoint value for the given function - adjoint not implemented yet
-  void getAdjoint(int step_num, int func_num, TACSBVec** adjoint);
+  void getAdjoint(int step_num, int func_num, TACSBVec **adjoint);
 
  private:
   // set the first-order descirption integration coefficients
@@ -381,8 +381,8 @@ class TACSESDIRKIntegrator : public TACSIntegrator {
   int getRowIndex(int stage_num);
 
   // get the linearization coefficients for the given step/stage
-  void getLinearizationCoeffs(const int stage, const double h, double* alpha,
-                              double* beta, double* gamma);
+  void getLinearizationCoeffs(const int stage, const double h, double *alpha,
+                              double *beta, double *gamma);
 
   // the number of stages for this method
   int num_stages;

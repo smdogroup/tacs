@@ -6,14 +6,14 @@
 #include "TACSIntegrator.h"
 #include "TimoshenkoStiffness.h"
 
-int compare(const void* a, const void* b) {
-  if (*(TacsScalar*)a < *(TacsScalar*)b) {
+int compare(const void *a, const void *b) {
+  if (*(TacsScalar *)a < *(TacsScalar *)b) {
     return -1;
   }
   return 1;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   TacsScalar L = 2.0;
 
   // Create the Timoshenko stiffness object
-  TimoshenkoStiffness* stiff = NULL;
+  TimoshenkoStiffness *stiff = NULL;
 
   const TacsScalar angular_rate = Omega * Omega_ref;
   TacsScalar freq_normalization = 1.0;
@@ -153,33 +153,33 @@ int main(int argc, char* argv[]) {
                                     kG33, axis_A);
   }
 
-  TACSGibbsVector* direction = new TACSGibbsVector(0.0, 0.0, 1.0);
+  TACSGibbsVector *direction = new TACSGibbsVector(0.0, 0.0, 1.0);
 
-  TACSRevoluteDriver* rd = new TACSRevoluteDriver(direction, angular_rate);
+  TACSRevoluteDriver *rd = new TACSRevoluteDriver(direction, angular_rate);
 
   // Create a rigid link
-  TACSGibbsVector* zero = new TACSGibbsVector(0.0, 0.0, 0.0);
-  TACSGibbsVector* e1 = new TACSGibbsVector(1.0, 0.0, 0.0);
-  TACSGibbsVector* e2 = new TACSGibbsVector(0.0, 1.0, 0.0);
-  TACSRefFrame* ref = new TACSRefFrame(zero, e1, e2);
+  TACSGibbsVector *zero = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *e1 = new TACSGibbsVector(1.0, 0.0, 0.0);
+  TACSGibbsVector *e2 = new TACSGibbsVector(0.0, 1.0, 0.0);
+  TACSRefFrame *ref = new TACSRefFrame(zero, e1, e2);
 
   // Create the rigid body
   TacsScalar mass = 1.0;
   TacsScalar c[] = {0.0, 0.0, 0.0};
   TacsScalar J[] = {1.0, 0.0, 0.0, 1.0, 0.0, 1.0};
-  TACSGibbsVector* rinit = new TACSGibbsVector(0.0, 0.0, 0.0);
-  TACSGibbsVector* vinit = new TACSGibbsVector(0.0, 0.0, 0.0);
-  TACSGibbsVector* omegainit = new TACSGibbsVector(0.0, 0.0, angular_rate);
-  TACSGibbsVector* g = new TACSGibbsVector(0.0, 0.0, 0.0);
-  TACSRigidBody* rb =
+  TACSGibbsVector *rinit = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *vinit = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSGibbsVector *omegainit = new TACSGibbsVector(0.0, 0.0, angular_rate);
+  TACSGibbsVector *g = new TACSGibbsVector(0.0, 0.0, 0.0);
+  TACSRigidBody *rb =
       new TACSRigidBody(ref, mass, c, J, rinit, vinit, omegainit, g);
 
   // Create the rigid link
-  TACSRigidLink* rl = new TACSRigidLink(rb);
+  TACSRigidLink *rl = new TACSRigidLink(rb);
 
   // Create the element
-  TACSGibbsVector* gravity = new TACSGibbsVector(0.0, 0.0, 0.0);
-  MITC3* beam = new MITC3(stiff, gravity, zero, omegainit);
+  TACSGibbsVector *gravity = new TACSGibbsVector(0.0, 0.0, 0.0);
+  MITC3 *beam = new MITC3(stiff, gravity, zero, omegainit);
   beam->incref();
 
   // Set the number of elements in the beam
@@ -187,9 +187,9 @@ int main(int argc, char* argv[]) {
   int num_nodes = 3 + 2 * ne + 1;
 
   // Create the input to TACS
-  TACSElement* elements[num_elements];
-  int* ptr = new int[num_elements + 1];
-  int* conn = new int[3 * num_elements];
+  TACSElement *elements[num_elements];
+  int *ptr = new int[num_elements + 1];
+  int *conn = new int[3 * num_elements];
 
   // Set the connectivity
   ptr[0] = 0;
@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
 
   // Create TACS itself and set the elements
   const int vars_per_node = 8;
-  TACSAssembler* tacs =
+  TACSAssembler *tacs =
       new TACSAssembler(comm, vars_per_node, num_nodes, num_elements);
 
   tacs->setElementConnectivity(conn, ptr);
@@ -239,8 +239,8 @@ int main(int argc, char* argv[]) {
   tacs->initialize();
 
   // Set the node locations
-  TacsScalar* X;
-  TACSBVec* Xvec = tacs->createNodeVec();
+  TacsScalar *X;
+  TACSBVec *Xvec = tacs->createNodeVec();
   Xvec->incref();
   Xvec->getArray(&X);
   for (int i = 0; i < 2 * ne + 1; i++) {
@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
   int num_steps = num_rotations * steps_per_rotation;
   int order = 2;
 
-  TACSIntegrator* integrator =
+  TACSIntegrator *integrator =
       new TACSBDFIntegrator(tacs, 0.0, tfinal, num_steps, order);
   integrator->incref();
 
@@ -272,7 +272,7 @@ int main(int argc, char* argv[]) {
       (TACSElement::OUTPUT_NODES | TACSElement::OUTPUT_DISPLACEMENTS |
        TACSElement::OUTPUT_STRAINS | TACSElement::OUTPUT_STRESSES |
        TACSElement::OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(tacs, TACS_TIMOSHENKO_BEAM, write_flag);
   f5->incref();
   f5->writeToFile("ucrm.f5");
 
@@ -284,7 +284,7 @@ int main(int argc, char* argv[]) {
   integrator->getStates(num_steps - 1, &q, &qdot, &qddot);
 
   int nfreq = vars_per_node * num_nodes;
-  TacsScalar* freq = new TacsScalar[2 * nfreq];
+  TacsScalar *freq = new TacsScalar[2 * nfreq];
   nfreq =
       integrator->lapackNaturalFrequencies(gyroscopic, q, qdot, qddot, freq);
 

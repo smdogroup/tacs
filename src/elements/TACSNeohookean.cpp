@@ -91,8 +91,8 @@ void TACSNeohookean3D::evalWeakIntegrand(
   Get the non-zero pattern for the matrix
 */
 void TACSNeohookean3D::getWeakMatrixNonzeros(ElementMatrixType matType,
-                                             int elemIndex, int* Jac_nnz,
-                                             const int* Jac_pairs[]) {
+                                             int elemIndex, int *Jac_nnz,
+                                             const int *Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 81;
     *Jac_pairs = linear_Jac_pairs;
@@ -197,7 +197,7 @@ void TACSNeohookean3D::getOutputData(int elemIndex, const double time,
                                      const double pt[], const TacsScalar X[],
                                      const TacsScalar Ut[],
                                      const TacsScalar Ux[], int ld_data,
-                                     TacsScalar* data) {
+                                     TacsScalar *data) {
   if (etype == TACS_SOLID_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       // doesn't this depend whether it's linear/quadratic/etc?

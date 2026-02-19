@@ -9,7 +9,7 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSShellInertialForce : public TACSElement {
  public:
-  TACSShellInertialForce(TACSShellConstitutive* _con,
+  TACSShellInertialForce(TACSShellConstitutive *_con,
                          const TacsScalar _inertiaVec[]) {
     con = _con;
     con->incref();
@@ -22,7 +22,7 @@ class TACSShellInertialForce : public TACSElement {
     }
   }
 
-  const char* getObjectName() { return "TACSShellInertialForce"; }
+  const char *getObjectName() { return "TACSShellInertialForce"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -67,9 +67,9 @@ class TACSShellInertialForce : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res) {
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res) {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 
@@ -115,7 +115,7 @@ class TACSShellInertialForce : public TACSElement {
 
  private:
   TacsScalar inertiaVec[3];
-  TACSShellConstitutive* con;
+  TACSShellConstitutive *con;
 };
 
 #endif  // TACS_SHELL_INERTIAL_FORCE_H

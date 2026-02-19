@@ -43,7 +43,7 @@ TACSRBE2::TACSRBE2(int _numNodes, int _dof_constrained[]) {
   NUM_VARIABLES = NUM_DISPS * NUM_NODES;
 
   // Identify which dofs should be constrained for dependent nodes
-  dof_constrained = new int*[NUM_DEP_NODES];
+  dof_constrained = new int *[NUM_DEP_NODES];
   for (int j = 0; j < NUM_DEP_NODES; j++) {
     dof_constrained[j] = new int[NUM_DISPS];
     for (int i = 0; i < NUM_DISPS; i++) {
@@ -73,16 +73,16 @@ void TACSRBE2::setScalingParameters(double _C1, double _C2) {
 /*
   Retrieve information about the names of the element variables
 */
-const char* TACSRBE2::getObjectName() { return elemName; }
+const char *TACSRBE2::getObjectName() { return elemName; }
 
-const char* TACSRBE2::displacementName(int i) {
+const char *TACSRBE2::displacementName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return dispNames[i];
   }
   return NULL;
 }
 
-const char* TACSRBE2::extraName(int i) {
+const char *TACSRBE2::extraName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return extraNames[i];
   }
@@ -109,11 +109,11 @@ void TACSRBE2::getMultiplierIndex( int *multiplier ){
 /*
   The element name, variable, stress and strain names.
 */
-const char* TACSRBE2::elemName = "TACSRBE2";
+const char *TACSRBE2::elemName = "TACSRBE2";
 
-const char* TACSRBE2::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
+const char *TACSRBE2::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
 
-const char* TACSRBE2::extraNames[] = {"fx", "fy", "fz", "mx", "my", "mz"};
+const char *TACSRBE2::extraNames[] = {"fx", "fy", "fz", "mx", "my", "mz"};
 
 /*
   Assemble the element residual associated with the given design
@@ -123,7 +123,7 @@ void TACSRBE2::addResidual(int elemIndex, double time, const TacsScalar Xpts[],
                            const TacsScalar vars[], const TacsScalar dvars[],
                            const TacsScalar ddvars[], TacsScalar res[]) {
   const TacsScalar *Fn, *Mn, *Xn, *X0, *un, *tn, *u0, *t0, *actualLM;
-  TacsScalar* maskedLM;
+  TacsScalar *maskedLM;
 
   // memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
 
@@ -251,7 +251,7 @@ void TACSRBE2::addJacobian(int elemIndex, double time, TacsScalar alpha,
                            TacsScalar res[], TacsScalar J[]) {
   const TacsScalar *Xn, *X0;
   int col, row;
-  TacsScalar* mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
+  TacsScalar *mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
   memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
 
   // Store the last 6*N variables (Lagrange multipliers) as a force and moment
@@ -399,7 +399,7 @@ void TACSRBE2::addAdjResXptProduct(
   const TacsScalar *Fn, *t0, *actualLM;
   TacsScalar *sXpts, *sXn, *sX0, *maskedLM;
 
-  TacsScalar* residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
+  TacsScalar *residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
   memset(residual, 0, NUM_NODES * 3 * NUM_VARIABLES * sizeof(TacsScalar));
   sXpts = new TacsScalar[(NUM_DEP_NODES + 1) * 3];
 
@@ -412,7 +412,7 @@ void TACSRBE2::addAdjResXptProduct(
   // zero out any terms that have been freed
   getMaskedMultipliers(maskedLM, actualLM);
 
-  TacsScalar* res = residual;
+  TacsScalar *res = residual;
 
   for (int k = 0; k < 3 * (NUM_DEP_NODES + 1); k++) {
     memset(sXpts, 0, sizeof(TacsScalar) * (NUM_DEP_NODES + 1) * 3);

@@ -326,8 +326,8 @@ class TACSShellLinearModel {
 
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
 
-        const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
         for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
           for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
             d2d[3 * basis::NUM_NODES * i + j] +=
@@ -345,7 +345,7 @@ class TACSShellLinearModel {
 
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etd[i] * du1[j];
@@ -353,7 +353,7 @@ class TACSShellLinearModel {
       }
 
       const int nvars = vars_per_node * basis::NUM_NODES;
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         int ii = vars_per_node * (i / 3) + (i % 3);
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
@@ -592,10 +592,10 @@ class TACSShellLinearModel {
 
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
 
-        const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
         for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
           for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
             d2d[3 * basis::NUM_NODES * i + j] +=
@@ -618,8 +618,8 @@ class TACSShellLinearModel {
 
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdd = &d2etydpsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etd[i] * du1[j];
@@ -629,8 +629,8 @@ class TACSShellLinearModel {
       }
 
       const int nvars = vars_per_node * basis::NUM_NODES;
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etud = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         int ii = vars_per_node * (i / 3) + (i % 3);
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
@@ -885,7 +885,7 @@ class TACSShellLinearModel {
     // e[3] = u1x[0];
     // e[4] = u1x[4];
     // e[5] = u1x[1] + u1x[3];
-    TacsScalar* d2;
+    TacsScalar *d2;
     d2 = d2u1x;
     d2[0] = scale * D[0];
     d2[4] = scale * D[1];
@@ -989,7 +989,7 @@ class TACSShellLinearModel {
     // e[3] = u1x[0];
     // e[4] = u1x[4];
     // e[5] = u1x[1] + u1x[3];
-    TacsScalar* d2;
+    TacsScalar *d2;
     d2 = d2u1x;
     d2[0] = scale * D[0];
     d2[4] = scale * D[1];
@@ -1429,8 +1429,8 @@ class TACSShellNonlinearModel {
 
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
 
-        const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
         for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
           for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
             d2d[3 * basis::NUM_NODES * i + j] +=
@@ -1451,7 +1451,7 @@ class TACSShellNonlinearModel {
 
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
 
-      const TacsScalar* etd = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etd = &d2etyd[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etd[i] * du1[j];
@@ -1459,7 +1459,7 @@ class TACSShellNonlinearModel {
       }
 
       const int nvars = vars_per_node * basis::NUM_NODES;
-      const TacsScalar* etu = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etu = &d2etyu[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         int ii = vars_per_node * (i / 3) + i % 3;
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
@@ -1843,10 +1843,10 @@ class TACSShellNonlinearModel {
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
         basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01d, dd1d);
 
-        const TacsScalar* etdown = &d2etyd[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etup = &d2etyu[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etdownd = &d2etydpsi[3 * basis::NUM_NODES * i1];
-        const TacsScalar* etupd = &d2etyupsi[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etdown = &d2etyd[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etup = &d2etyu[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etdownd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+        const TacsScalar *etupd = &d2etyupsi[3 * basis::NUM_NODES * i1];
         for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
           for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
             d2d[3 * basis::NUM_NODES * i + j] +=
@@ -1876,8 +1876,8 @@ class TACSShellNonlinearModel {
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
       basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1d, du1d);
 
-      const TacsScalar* etdown = &d2etyd[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etdownd = &d2etydpsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdown = &d2etyd[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etdownd = &d2etydpsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
           d2du[3 * basis::NUM_NODES * i + j] += etdown[i] * du1[j];
@@ -1887,8 +1887,8 @@ class TACSShellNonlinearModel {
       }
 
       const int nvars = vars_per_node * basis::NUM_NODES;
-      const TacsScalar* etup = &d2etyu[3 * basis::NUM_NODES * i1];
-      const TacsScalar* etupd = &d2etyupsi[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etup = &d2etyu[3 * basis::NUM_NODES * i1];
+      const TacsScalar *etupd = &d2etyupsi[3 * basis::NUM_NODES * i1];
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         int ii = vars_per_node * (i / 3) + i % 3;
         for (int j = 0; j < 3 * basis::NUM_NODES; j++) {
@@ -2184,7 +2184,7 @@ class TACSShellNonlinearModel {
     // Compute the second derivatives
     memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
 
-    TacsScalar* d2 = &d2e0ty[0];
+    TacsScalar *d2 = &d2e0ty[0];
     d2[0] = scale * A[0];
     d2[3] = scale * A[1];
     d2[1] = 2.0 * scale * A[2];
@@ -2696,7 +2696,7 @@ class TACSShellNonlinearModel {
     memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
     memset(d2e0tyd, 0, 36 * sizeof(TacsScalar));
 
-    TacsScalar* d2 = &d2e0ty[0];
+    TacsScalar *d2 = &d2e0ty[0];
     d2[0] = scale * A[0];
     d2[3] = scale * A[1];
     d2[1] = 2.0 * scale * A[2];

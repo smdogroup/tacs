@@ -58,17 +58,17 @@ TACSMg::TACSMg(MPI_Comm _comm, int _nlevels, double _sor_omega, int _sor_iters,
   }
 
   // Create the list of pointers to the TACS objects at each level
-  assembler = new TACSAssembler*[nlevels];
-  memset(assembler, 0, nlevels * sizeof(TACSAssembler*));
+  assembler = new TACSAssembler *[nlevels];
+  memset(assembler, 0, nlevels * sizeof(TACSAssembler *));
 
   // Number of smoothing operations to be performed at each iteration
   iters = new int[nlevels];
   use_galerkin = new int[nlevels];
 
   // The solution, residual and right-hand-side at each iteration
-  x = new TACSBVec*[nlevels];
-  b = new TACSBVec*[nlevels];
-  r = new TACSBVec*[nlevels];
+  x = new TACSBVec *[nlevels];
+  b = new TACSBVec *[nlevels];
+  r = new TACSBVec *[nlevels];
 
   // Initialie the data in the arrays
   for (int i = 0; i < nlevels; i++) {
@@ -81,11 +81,11 @@ TACSMg::TACSMg(MPI_Comm _comm, int _nlevels, double _sor_omega, int _sor_iters,
   }
 
   // Create the pointers to the matrices
-  mat = new TACSMat*[nlevels - 1];
+  mat = new TACSMat *[nlevels - 1];
 
   // should re-assemble this matrix
-  interp = new TACSBVecInterp*[nlevels - 1];
-  pc = new TACSPc*[nlevels - 1];
+  interp = new TACSBVecInterp *[nlevels - 1];
+  pc = new TACSPc *[nlevels - 1];
 
   for (int i = 0; i < nlevels - 1; i++) {
     interp[i] = NULL;
@@ -180,9 +180,9 @@ TACSMg::~TACSMg() {
   @param mat The matrix at this level (may be NULL)
   @param smoother The smoother defined at this level (may be NULL)
 */
-void TACSMg::setLevel(int level, TACSAssembler* _assembler,
-                      TACSBVecInterp* _interp, int _iters, int _use_galerkin,
-                      TACSMat* _mat, TACSPc* _smoother) {
+void TACSMg::setLevel(int level, TACSAssembler *_assembler,
+                      TACSBVecInterp *_interp, int _iters, int _use_galerkin,
+                      TACSMat *_mat, TACSPc *_smoother) {
   assembler[level] = _assembler;
   assembler[level]->incref();
 
@@ -213,7 +213,7 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
     // If not, no matrix or smoother will be defined.
     if (_use_galerkin) {
       if (level == 0) {
-        TACSParallelMat* pmat = assembler[level]->createMat();
+        TACSParallelMat *pmat = assembler[level]->createMat();
         mat[level] = pmat;
         mat[level]->incref();
 
@@ -222,9 +222,9 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
                                         sor_symmetric);
         pc[level]->incref();
       } else {
-        TACSParallelMat* fine_mat =
-            dynamic_cast<TACSParallelMat*>(mat[level - 1]);
-        TACSParallelMat* coarse_mat = NULL;
+        TACSParallelMat *fine_mat =
+            dynamic_cast<TACSParallelMat *>(mat[level - 1]);
+        TACSParallelMat *coarse_mat = NULL;
 
         if (fine_mat && interp[level - 1]) {
           interp[level - 1]->computeGalerkinNonZeroPattern(fine_mat,
@@ -257,7 +257,7 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
         _smoother->incref();
         pc[level] = _smoother;
       } else {
-        TACSParallelMat* pmat = assembler[level]->createMat();
+        TACSParallelMat *pmat = assembler[level]->createMat();
         mat[level] = pmat;
         mat[level]->incref();
 
@@ -271,9 +271,9 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
   } else {
     // On the coarsest level, use a different approach
     if (_use_galerkin) {
-      TACSParallelMat* fine_mat =
-          dynamic_cast<TACSParallelMat*>(mat[level - 1]);
-      TACSParallelMat* coarse_mat = NULL;
+      TACSParallelMat *fine_mat =
+          dynamic_cast<TACSParallelMat *>(mat[level - 1]);
+      TACSParallelMat *coarse_mat = NULL;
 
       if (fine_mat && interp[level - 1]) {
         interp[level - 1]->computeGalerkinNonZeroPattern(fine_mat, &coarse_mat);
@@ -301,7 +301,7 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
         root_pc = _smoother;
       } else {
         // Set up the root matrix
-        TACSSchurMat* schur_mat = assembler[level]->createSchurMat();
+        TACSSchurMat *schur_mat = assembler[level]->createSchurMat();
         root_mat = schur_mat;
         root_mat->incref();
 
@@ -309,7 +309,7 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
         int lev = 10000;
         double fill = 15.0;
         int reorder_schur = 1;
-        TACSSchurPc* _pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
+        TACSSchurPc *_pc = new TACSSchurPc(schur_mat, lev, fill, reorder_schur);
         root_pc = _pc;
         root_pc->incref();
       }
@@ -333,7 +333,7 @@ void TACSMg::setLevel(int level, TACSAssembler* _assembler,
 
   @param vec The vector of state variables on the finest mesh
 */
-void TACSMg::setVariables(TACSBVec* vec) {
+void TACSMg::setVariables(TACSBVec *vec) {
   assembler[0]->setVariables(vec);
 
   for (int i = 0; i < nlevels - 1; i++) {
@@ -357,7 +357,7 @@ void TACSMg::setVariables(TACSBVec* vec) {
 
   @param x The design variable values
 */
-void TACSMg::setDesignVars(TACSBVec* x) {
+void TACSMg::setDesignVars(TACSBVec *x) {
   for (int i = 0; i < nlevels; i++) {
     if (assembler[i]) {
       assembler[i]->setDesignVars(x);
@@ -391,10 +391,10 @@ void TACSMg::factor() {
   TACS_MAT_TRANSPOSE)
 */
 void TACSMg::assembleJacobian(double alpha, double beta, double gamma,
-                              TACSBVec* res, MatrixOrientation matOr) {
+                              TACSBVec *res, MatrixOrientation matOr) {
   // Assemble the matrices
   if (assembler[0]) {
-    TACSMatrixFreeMat* mat_free = dynamic_cast<TACSMatrixFreeMat*>(mat[0]);
+    TACSMatrixFreeMat *mat_free = dynamic_cast<TACSMatrixFreeMat *>(mat[0]);
     if (mat_free) {
       mat_free->assembleMatrixFreeData(TACS_JACOBIAN_MATRIX, alpha, beta,
                                        gamma);
@@ -406,14 +406,14 @@ void TACSMg::assembleJacobian(double alpha, double beta, double gamma,
   // Compute the number
   for (int i = 1; i < nlevels - 1; i++) {
     if (use_galerkin[i]) {
-      TACSParallelMat* fine_mat = dynamic_cast<TACSParallelMat*>(mat[i - 1]);
-      TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat *>(mat[i - 1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(mat[i]);
       if (fine_mat && coarse_mat) {
         interp[i - 1]->computeGalerkin(fine_mat, coarse_mat);
         assembler[i]->applyBCs(coarse_mat);
       }
     } else {
-      TACSMatrixFreeMat* mat_free = dynamic_cast<TACSMatrixFreeMat*>(mat[i]);
+      TACSMatrixFreeMat *mat_free = dynamic_cast<TACSMatrixFreeMat *>(mat[i]);
       if (mat_free) {
         mat_free->assembleMatrixFreeData(TACS_JACOBIAN_MATRIX, alpha, beta,
                                          gamma);
@@ -425,9 +425,9 @@ void TACSMg::assembleJacobian(double alpha, double beta, double gamma,
 
   // Assemble the coarsest problem
   if (use_galerkin[nlevels - 1]) {
-    TACSParallelMat* fine_mat =
-        dynamic_cast<TACSParallelMat*>(mat[nlevels - 2]);
-    TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    TACSParallelMat *fine_mat =
+        dynamic_cast<TACSParallelMat *>(mat[nlevels - 2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(root_mat);
     if (fine_mat && coarse_mat) {
       interp[nlevels - 2]->computeGalerkin(fine_mat, coarse_mat);
       assembler[nlevels - 1]->applyBCs(coarse_mat);
@@ -448,7 +448,7 @@ void TACSMg::assembleJacobian(double alpha, double beta, double gamma,
 void TACSMg::assembleMatType(ElementMatrixType matType,
                              MatrixOrientation matOr) {
   if (assembler[0]) {
-    TACSMatrixFreeMat* mat_free = dynamic_cast<TACSMatrixFreeMat*>(mat[0]);
+    TACSMatrixFreeMat *mat_free = dynamic_cast<TACSMatrixFreeMat *>(mat[0]);
     if (mat_free) {
       double alpha = 1.0, beta = 0.0, gamma = 0.0;
       mat_free->assembleMatrixFreeData(matType, alpha, beta, gamma);
@@ -460,14 +460,14 @@ void TACSMg::assembleMatType(ElementMatrixType matType,
   // Compute the number
   for (int i = 1; i < nlevels - 1; i++) {
     if (use_galerkin[i]) {
-      TACSParallelMat* fine_mat = dynamic_cast<TACSParallelMat*>(mat[i - 1]);
-      TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat *>(mat[i - 1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(mat[i]);
       if (fine_mat && coarse_mat) {
         interp[i - 1]->computeGalerkin(fine_mat, coarse_mat);
         assembler[i]->applyBCs(coarse_mat);
       }
     } else {
-      TACSMatrixFreeMat* mat_free = dynamic_cast<TACSMatrixFreeMat*>(mat[i]);
+      TACSMatrixFreeMat *mat_free = dynamic_cast<TACSMatrixFreeMat *>(mat[i]);
       if (mat_free) {
         double alpha = 1.0, beta = 0.0, gamma = 0.0;
         mat_free->assembleMatrixFreeData(matType, alpha, beta, gamma);
@@ -479,9 +479,9 @@ void TACSMg::assembleMatType(ElementMatrixType matType,
 
   // Assemble the coarsest problem
   if (use_galerkin[nlevels - 1]) {
-    TACSParallelMat* fine_mat =
-        dynamic_cast<TACSParallelMat*>(mat[nlevels - 2]);
-    TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    TACSParallelMat *fine_mat =
+        dynamic_cast<TACSParallelMat *>(mat[nlevels - 2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(root_mat);
     if (fine_mat && coarse_mat) {
       interp[nlevels - 2]->computeGalerkin(fine_mat, coarse_mat);
       assembler[nlevels - 1]->applyBCs(coarse_mat);
@@ -509,8 +509,8 @@ void TACSMg::assembleMatCombo(ElementMatrixType matTypes[], TacsScalar scale[],
   // Compute the number
   for (int i = 1; i < nlevels - 1; i++) {
     if (use_galerkin[i]) {
-      TACSParallelMat* fine_mat = dynamic_cast<TACSParallelMat*>(mat[i - 1]);
-      TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat *>(mat[i - 1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(mat[i]);
       if (fine_mat && coarse_mat) {
         interp[i - 1]->computeGalerkin(fine_mat, coarse_mat);
         assembler[i]->applyBCs(coarse_mat);
@@ -522,9 +522,9 @@ void TACSMg::assembleMatCombo(ElementMatrixType matTypes[], TacsScalar scale[],
 
   // Assemble the coarsest problem
   if (use_galerkin[nlevels - 1]) {
-    TACSParallelMat* fine_mat =
-        dynamic_cast<TACSParallelMat*>(mat[nlevels - 2]);
-    TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    TACSParallelMat *fine_mat =
+        dynamic_cast<TACSParallelMat *>(mat[nlevels - 2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(root_mat);
     if (fine_mat && coarse_mat) {
       interp[nlevels - 2]->computeGalerkin(fine_mat, coarse_mat);
       assembler[nlevels - 1]->applyBCs(coarse_mat);
@@ -548,8 +548,8 @@ int TACSMg::assembleGalerkinMat() {
   // Compute the number
   for (int i = 1; i < nlevels - 1; i++) {
     if (use_galerkin[i]) {
-      TACSParallelMat* fine_mat = dynamic_cast<TACSParallelMat*>(mat[i - 1]);
-      TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(mat[i]);
+      TACSParallelMat *fine_mat = dynamic_cast<TACSParallelMat *>(mat[i - 1]);
+      TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(mat[i]);
       if (fine_mat && coarse_mat) {
         interp[i - 1]->computeGalerkin(fine_mat, coarse_mat);
         assembler[i]->applyBCs(coarse_mat);
@@ -561,9 +561,9 @@ int TACSMg::assembleGalerkinMat() {
 
   // Assemble the coarsest problem
   if (use_galerkin[nlevels - 1]) {
-    TACSParallelMat* fine_mat =
-        dynamic_cast<TACSParallelMat*>(mat[nlevels - 2]);
-    TACSParallelMat* coarse_mat = dynamic_cast<TACSParallelMat*>(root_mat);
+    TACSParallelMat *fine_mat =
+        dynamic_cast<TACSParallelMat *>(mat[nlevels - 2]);
+    TACSParallelMat *coarse_mat = dynamic_cast<TACSParallelMat *>(root_mat);
     if (fine_mat && coarse_mat) {
       interp[nlevels - 2]->computeGalerkin(fine_mat, coarse_mat);
       assembler[nlevels - 1]->applyBCs(coarse_mat);
@@ -579,7 +579,7 @@ int TACSMg::assembleGalerkinMat() {
 
   @param _mat A pointer to the matrix
 */
-void TACSMg::getMat(TACSMat** _mat) { *_mat = mat[0]; }
+void TACSMg::getMat(TACSMat **_mat) { *_mat = mat[0]; }
 
 /**
   Retrieve the matrix at the specified multigrid level.
@@ -589,7 +589,7 @@ void TACSMg::getMat(TACSMat** _mat) { *_mat = mat[0]; }
   @param level The multigrid level
   @return The matrix at the specified level (NULL if invalid)
 */
-TACSMat* TACSMg::getMat(int level) {
+TACSMat *TACSMg::getMat(int level) {
   if (level >= 0 && level < nlevels - 1) {
     return mat[level];
   }
@@ -602,7 +602,7 @@ TACSMat* TACSMg::getMat(int level) {
   @param level The multgrid level
   @return The TACSAssembler object
 */
-TACSAssembler* TACSMg::getAssembler(int level) {
+TACSAssembler *TACSMg::getAssembler(int level) {
   if (level >= 0 && level < nlevels - 1) {
     return assembler[level];
   }
@@ -615,7 +615,7 @@ TACSAssembler* TACSMg::getAssembler(int level) {
   @param level The multgrid level
   @return The TACSBVecInterp object associated with the level
 */
-TACSBVecInterp* TACSMg::getInterpolation(int level) {
+TACSBVecInterp *TACSMg::getInterpolation(int level) {
   if (level >= 0 && level < nlevels - 1) {
     return interp[level];
   }
@@ -627,7 +627,7 @@ TACSBVecInterp* TACSMg::getInterpolation(int level) {
 
   @param monitor The print monitor object
 */
-void TACSMg::setMonitor(KSMPrint* _monitor) {
+void TACSMg::setMonitor(KSMPrint *_monitor) {
   if (_monitor) {
     _monitor->incref();
   }
@@ -640,7 +640,7 @@ void TACSMg::setMonitor(KSMPrint* _monitor) {
 /**
   Repeatedly apply the multi-grid method until the problem is solved
 */
-void TACSMg::solve(TACSBVec* bvec, TACSBVec* xvec, int max_iters, double rtol,
+void TACSMg::solve(TACSBVec *bvec, TACSBVec *xvec, int max_iters, double rtol,
                    double atol) {
   b[0] = bvec;  // Set the RHS at the finest level
   x[0] = xvec;  // Set the solution at the finest level
@@ -676,12 +676,12 @@ void TACSMg::solve(TACSBVec* bvec, TACSBVec* xvec, int max_iters, double rtol,
   @param bvec The input right-hand-side
   @param xvec The output vector
 */
-void TACSMg::applyFactor(TACSVec* bvec, TACSVec* xvec) {
+void TACSMg::applyFactor(TACSVec *bvec, TACSVec *xvec) {
   // Set the RHS at the finest level
-  b[0] = dynamic_cast<TACSBVec*>(bvec);
+  b[0] = dynamic_cast<TACSBVec *>(bvec);
 
   // Set the solution at the finest level
-  x[0] = dynamic_cast<TACSBVec*>(xvec);
+  x[0] = dynamic_cast<TACSBVec *>(xvec);
 
   if (b[0] && x[0]) {
     x[0]->zeroEntries();

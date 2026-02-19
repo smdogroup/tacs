@@ -34,7 +34,7 @@
 */
 class TACSElementWrapper : public TACSElement {
  public:
-  TACSElementWrapper(PyObject* _self_ptr, int _vars_per_node, int _num_nodes) {
+  TACSElementWrapper(PyObject *_self_ptr, int _vars_per_node, int _num_nodes) {
     self_ptr = _self_ptr;
     vars_per_node = _vars_per_node;
     num_nodes = _num_nodes;
@@ -114,21 +114,21 @@ class TACSElementWrapper : public TACSElement {
 
   // Define the object name
   // ----------------------
-  const char* getObjectName() { return "TACSElementWrapper"; }
+  const char *getObjectName() { return "TACSElementWrapper"; }
 
   // Function pointers
   // -----------------
-  PyObject* self_ptr;  // Pointer to the python object
-  int (*getmultiplierindex)(void*);
-  void (*getinitconditions)(void*, int, int, const TacsScalar*, int,
-                            TacsScalar*, TacsScalar*, TacsScalar*);
-  void (*addresidual)(void*, int, double, int, const TacsScalar*, int,
-                      const TacsScalar*, const TacsScalar*, const TacsScalar*,
-                      TacsScalar*);
-  void (*addjacobian)(void*, int, double, TacsScalar, TacsScalar, TacsScalar,
-                      int, const TacsScalar*, int, const TacsScalar*,
-                      const TacsScalar*, const TacsScalar*, TacsScalar*,
-                      TacsScalar*);
+  PyObject *self_ptr;  // Pointer to the python object
+  int (*getmultiplierindex)(void *);
+  void (*getinitconditions)(void *, int, int, const TacsScalar *, int,
+                            TacsScalar *, TacsScalar *, TacsScalar *);
+  void (*addresidual)(void *, int, double, int, const TacsScalar *, int,
+                      const TacsScalar *, const TacsScalar *,
+                      const TacsScalar *, TacsScalar *);
+  void (*addjacobian)(void *, int, double, TacsScalar, TacsScalar, TacsScalar,
+                      int, const TacsScalar *, int, const TacsScalar *,
+                      const TacsScalar *, const TacsScalar *, TacsScalar *,
+                      TacsScalar *);
 };
 
 #endif

@@ -9,9 +9,9 @@
   R.R.A. Martins All rights reserved.
 */
 
-const char* TACSGeneralSpringConstitutive::constName =
+const char *TACSGeneralSpringConstitutive::constName =
     "TACSGeneralSpringConstitutive";
-const char* TACSGeneralSpringConstitutive::constitutiveName() {
+const char *TACSGeneralSpringConstitutive::constitutiveName() {
   return constName;
 }
 

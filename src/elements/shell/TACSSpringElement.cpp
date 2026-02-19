@@ -15,8 +15,8 @@
   Create the spring. Set the reference axis.
 */
 TACSSpringElement::TACSSpringElement(
-    TACSSpringTransform* _transform,
-    TACSGeneralSpringConstitutive* _springStiff) {
+    TACSSpringTransform *_transform,
+    TACSGeneralSpringConstitutive *_springStiff) {
   transform = _transform;
   transform->incref();
 
@@ -32,7 +32,7 @@ TACSSpringElement::~TACSSpringElement() {
 /*
   Retrieve information about the names of the element
 */
-const char* TACSSpringElement::getObjectName() { return elemName; }
+const char *TACSSpringElement::getObjectName() { return elemName; }
 
 /*
   Retrieve the numbers of displacements, nodes, stress and variables
@@ -53,7 +53,7 @@ double TACSSpringElement::getQuadraturePoint(int n, double pt[]) {
 /*
   The element name, variable, stress and strain names.
 */
-const char* TACSSpringElement::elemName = "TACSSpringElement";
+const char *TACSSpringElement::elemName = "TACSSpringElement";
 
 /*
   Transform the global element variables gvars to the set of local
@@ -202,7 +202,7 @@ void TACSSpringElement::computeEnergies(int elemIndex, double time,
                                         const TacsScalar Xpts[],
                                         const TacsScalar vars[],
                                         const TacsScalar dvars[],
-                                        TacsScalar* Te, TacsScalar* Pe) {
+                                        TacsScalar *Te, TacsScalar *Pe) {
   *Te = 0.0;
   *Pe = 0.0;
 
@@ -437,7 +437,7 @@ void TACSSpringElement::addAdjResXptProduct(
 int TACSSpringElement::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar* detXd, TacsScalar* quantity) {
+    const TacsScalar ddvars[], TacsScalar *detXd, TacsScalar *quantity) {
   *detXd = 1.0;
   if (quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     if (quantity) {

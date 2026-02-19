@@ -21,14 +21,14 @@ class TACSConvectiveTraction2D : public TACSElement {
  public:
   TACSConvectiveTraction2D(int _varsPerNode, int _faceIndex, int _fieldIndex,
                            TacsScalar alpha, TacsScalar _refValue,
-                           TACSElementBasis* _basis);
+                           TACSElementBasis *_basis);
   ~TACSConvectiveTraction2D();
 
   // Get the layout properties of the element
   int getVarsPerNode();
   int getNumNodes();
   ElementLayout getLayoutType();
-  TACSElementBasis* getElementBasis();
+  TACSElementBasis *getElementBasis();
   int getNumQuadraturePoints();
   double getQuadratureWeight(int n);
   double getQuadraturePoint(int n, double pt[]);
@@ -39,17 +39,17 @@ class TACSConvectiveTraction2D : public TACSElement {
   /**
     Add the residual to the provided vector
   */
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res);
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
-                   TacsScalar beta, TacsScalar gamma, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res, TacsScalar* mat);
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
   /**
     Add the derivative of the product of the adjoint variables w.r.t.
@@ -73,7 +73,7 @@ class TACSConvectiveTraction2D : public TACSElement {
  private:
   int varsPerNode, faceIndex, fieldIndex;
   TacsScalar alpha, refValue;
-  TACSElementBasis* basis;
+  TACSElementBasis *basis;
 };
 
 #endif  // TACS_CONVECTIVE_TRACTION_2D_H

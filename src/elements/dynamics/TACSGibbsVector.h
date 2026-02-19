@@ -32,7 +32,7 @@ class TACSGibbsVector : public TACSObject {
   ~TACSGibbsVector() {}
 
   // Get the coponents of the vector
-  void getVector(const TacsScalar** _x);
+  void getVector(const TacsScalar **_x);
 
   // Set the design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -115,7 +115,7 @@ inline TACSGibbsVector::TACSGibbsVector(const TacsScalar _x[],
 /*
   Retrieve the coordinates of the point
 */
-inline void TACSGibbsVector::getVector(const TacsScalar** _x) { *_x = x; }
+inline void TACSGibbsVector::getVector(const TacsScalar **_x) { *_x = x; }
 
 /*
   Get the design variable numbers associated with this object
@@ -150,7 +150,7 @@ inline int TACSGibbsVector::getDesignVarNums(int elemIndex, int dvLen,
   numDVs: the number of design variable values in the array
 */
 inline int TACSGibbsVector::setDesignVars(int elemIndex, int dvLen,
-                                          const TacsScalar* dvs) {
+                                          const TacsScalar *dvs) {
   int count = 0;
   if (xDV[0] >= 0) {
     x[0] = dvs[count];
@@ -177,7 +177,7 @@ inline int TACSGibbsVector::setDesignVars(int elemIndex, int dvLen,
   dvs:     the design variable values retrieved from the object
 */
 inline int TACSGibbsVector::getDesignVars(int elemIndex, int dvLen,
-                                          TacsScalar* dvs) {
+                                          TacsScalar *dvs) {
   int count = 0;
   if (xDV[0] >= 0) {
     dvs[count] = x[0];

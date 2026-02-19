@@ -17,7 +17,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSMassCentrifugalForce::TACSMassCentrifugalForce(
-    TACSGeneralMassConstitutive* _con, const TacsScalar _omegaVec[],
+    TACSGeneralMassConstitutive *_con, const TacsScalar _omegaVec[],
     const TacsScalar _rotCenter[]) {
   con = _con;
   con->incref();
@@ -27,7 +27,7 @@ TACSMassCentrifugalForce::TACSMassCentrifugalForce(
 
 TACSMassCentrifugalForce::~TACSMassCentrifugalForce() { con->decref(); }
 
-const char* TACSMassCentrifugalForce::getObjectName() {
+const char *TACSMassCentrifugalForce::getObjectName() {
   return "TACSMassCentrifugalForce";
 }
 
@@ -42,8 +42,8 @@ int TACSMassCentrifugalForce::getNumNodes() { return NUM_NODES; }
   Add the residual to the provided vector
 */
 void TACSMassCentrifugalForce::addResidual(
-    int elemIndex, double time, const TacsScalar* X, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
+    int elemIndex, double time, const TacsScalar *X, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   double pt[3] = {0.0, 0.0, 0.0};
 
   TacsScalar r[3], wxr[3];
@@ -73,9 +73,9 @@ void TACSMassCentrifugalForce::addResidual(
 */
 void TACSMassCentrifugalForce::addJacobian(
     int elemIndex, double time, TacsScalar alpha, TacsScalar beta,
-    TacsScalar gamma, const TacsScalar* X, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res,
-    TacsScalar* mat) {
+    TacsScalar gamma, const TacsScalar *X, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res,
+    TacsScalar *mat) {
   if (res) {
     addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
   }
@@ -83,7 +83,7 @@ void TACSMassCentrifugalForce::addJacobian(
 
 void TACSMassCentrifugalForce::addAdjResProduct(
     int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
-    const TacsScalar* X, const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar *X, const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   double pt[3] = {0.0, 0.0, 0.0};
   TacsScalar r[3], wxr[3];

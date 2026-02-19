@@ -35,7 +35,7 @@
 */
 class PSStiffnessWrapper : public PlaneStressStiffness {
  public:
-  PSStiffnessWrapper(PyObject* _self_ptr) {
+  PSStiffnessWrapper(PyObject *_self_ptr) {
     self_ptr = _self_ptr;
 
     // This causes a circular reference so the object is never
@@ -58,38 +58,40 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
 
   // Define the object name
   // ----------------------
-  const char* constitutiveName() { return "PSStiffnessWrapper"; }
+  const char *constitutiveName() { return "PSStiffnessWrapper"; }
 
   // Function pointers
   // -----------------
-  PyObject* self_ptr;  // Pointer to the python object
-  void (*setdesignvars)(void*, const TacsScalar*, int);
-  void (*getdesignvars)(void*, TacsScalar*, int);
-  void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int);
-  void (*calculatestress)(void*, const double*, const TacsScalar*, TacsScalar*);
-  void (*addstressdvsens)(void*, const double*, const TacsScalar*, TacsScalar,
-                          const TacsScalar*, TacsScalar*, int);
-  void (*getpointwisemass)(void*, const double*, TacsScalar*);
-  void (*addpointwisemassdvsens)(void*, const double*, const TacsScalar*,
-                                 TacsScalar*, int);
-  TacsScalar (*fail)(void*, const double*, const TacsScalar*);
-  void (*failstrainsens)(void*, const double*, const TacsScalar*, TacsScalar*);
-  void (*addfaildvsens)(void*, const double*, const TacsScalar*, TacsScalar,
-                        TacsScalar*, int);
+  PyObject *self_ptr;  // Pointer to the python object
+  void (*setdesignvars)(void *, const TacsScalar *, int);
+  void (*getdesignvars)(void *, TacsScalar *, int);
+  void (*getdesignvarrange)(void *, TacsScalar *, TacsScalar *, int);
+  void (*calculatestress)(void *, const double *, const TacsScalar *,
+                          TacsScalar *);
+  void (*addstressdvsens)(void *, const double *, const TacsScalar *,
+                          TacsScalar, const TacsScalar *, TacsScalar *, int);
+  void (*getpointwisemass)(void *, const double *, TacsScalar *);
+  void (*addpointwisemassdvsens)(void *, const double *, const TacsScalar *,
+                                 TacsScalar *, int);
+  TacsScalar (*fail)(void *, const double *, const TacsScalar *);
+  void (*failstrainsens)(void *, const double *, const TacsScalar *,
+                         TacsScalar *);
+  void (*addfaildvsens)(void *, const double *, const TacsScalar *, TacsScalar,
+                        TacsScalar *, int);
 
   // Design variable access functions
   // --------------------------------
-  void setDesignVars(const TacsScalar* x, int dvLen) {
+  void setDesignVars(const TacsScalar *x, int dvLen) {
     if (self_ptr && setdesignvars) {
       setdesignvars(self_ptr, x, dvLen);
     }
   }
-  void getDesignVars(TacsScalar* x, int dvLen) {
+  void getDesignVars(TacsScalar *x, int dvLen) {
     if (self_ptr && getdesignvars) {
       getdesignvars(self_ptr, x, dvLen);
     }
   }
-  void getDesignVarRange(TacsScalar* lb, TacsScalar* ub, int dvLen) {
+  void getDesignVarRange(TacsScalar *lb, TacsScalar *ub, int dvLen) {
     if (self_ptr && getdesignvarrange) {
       getdesignvarrange(self_ptr, lb, ub, dvLen);
     }
@@ -127,7 +129,7 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
 
   // Evaluate the failure functions
   // ------------------------------
-  void failure(const double pt[], const TacsScalar strain[], TacsScalar* fval) {
+  void failure(const double pt[], const TacsScalar strain[], TacsScalar *fval) {
     if (self_ptr && fail) {
       *fval = fail(self_ptr, pt, strain);
     }
@@ -152,7 +154,7 @@ class PSStiffnessWrapper : public PlaneStressStiffness {
 */
 class FSDTStiffnessWrapper : public FSDTStiffness {
  public:
-  FSDTStiffnessWrapper(PyObject* _self_ptr) {
+  FSDTStiffnessWrapper(PyObject *_self_ptr) {
     self_ptr = _self_ptr;
     Py_INCREF(self_ptr);
     setdesignvars = NULL;
@@ -170,39 +172,40 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
 
   // Define the object name
   // ----------------------
-  const char* constitutiveName() { return "FSDTStiffnessWrapper"; }
+  const char *constitutiveName() { return "FSDTStiffnessWrapper"; }
 
   // Function pointers
   // -----------------
-  PyObject* self_ptr;  // Pointer to the python object
-  void (*setdesignvars)(void*, const TacsScalar*, int);
-  void (*getdesignvars)(void*, TacsScalar*, int);
-  void (*getdesignvarrange)(void*, TacsScalar*, TacsScalar*, int);
-  TacsScalar (*getstiffness)(void*, const double*, TacsScalar*, TacsScalar*,
-                             TacsScalar*, TacsScalar*);
-  void (*addstiffnessdvsens)(void*, const double*, const TacsScalar*,
-                             const TacsScalar*, TacsScalar, TacsScalar*, int);
-  void (*getpointwisemass)(void*, const double*, TacsScalar*);
-  void (*addpointwisemassdvsens)(void*, const double*, const TacsScalar*,
-                                 TacsScalar*, int);
-  TacsScalar (*fail)(void*, const double*, const TacsScalar*);
-  void (*failstrainsens)(void*, const double*, const TacsScalar*, TacsScalar*);
-  void (*addfaildvsens)(void*, const double*, const TacsScalar*, TacsScalar,
-                        TacsScalar*, int);
+  PyObject *self_ptr;  // Pointer to the python object
+  void (*setdesignvars)(void *, const TacsScalar *, int);
+  void (*getdesignvars)(void *, TacsScalar *, int);
+  void (*getdesignvarrange)(void *, TacsScalar *, TacsScalar *, int);
+  TacsScalar (*getstiffness)(void *, const double *, TacsScalar *, TacsScalar *,
+                             TacsScalar *, TacsScalar *);
+  void (*addstiffnessdvsens)(void *, const double *, const TacsScalar *,
+                             const TacsScalar *, TacsScalar, TacsScalar *, int);
+  void (*getpointwisemass)(void *, const double *, TacsScalar *);
+  void (*addpointwisemassdvsens)(void *, const double *, const TacsScalar *,
+                                 TacsScalar *, int);
+  TacsScalar (*fail)(void *, const double *, const TacsScalar *);
+  void (*failstrainsens)(void *, const double *, const TacsScalar *,
+                         TacsScalar *);
+  void (*addfaildvsens)(void *, const double *, const TacsScalar *, TacsScalar,
+                        TacsScalar *, int);
 
   // Design variable access functions
   // --------------------------------
-  void setDesignVars(const TacsScalar* x, int dvLen) {
+  void setDesignVars(const TacsScalar *x, int dvLen) {
     if (self_ptr && setdesignvars) {
       setdesignvars(self_ptr, x, dvLen);
     }
   }
-  void getDesignVars(TacsScalar* x, int dvLen) {
+  void getDesignVars(TacsScalar *x, int dvLen) {
     if (self_ptr && getdesignvars) {
       getdesignvars(self_ptr, x, dvLen);
     }
   }
-  void getDesignVarRange(TacsScalar* lb, TacsScalar* ub, int dvLen) {
+  void getDesignVarRange(TacsScalar *lb, TacsScalar *ub, int dvLen) {
     if (self_ptr && getdesignvarrange) {
       getdesignvarrange(self_ptr, lb, ub, dvLen);
     }
@@ -241,7 +244,7 @@ class FSDTStiffnessWrapper : public FSDTStiffness {
 
   // Evaluate the failure functions
   // ------------------------------
-  void failure(const double pt[], const TacsScalar strain[], TacsScalar* fval) {
+  void failure(const double pt[], const TacsScalar strain[], TacsScalar *fval) {
     if (self_ptr && fail) {
       *fval = fail(self_ptr, pt, strain);
     }

@@ -23,7 +23,7 @@ class TACSElement2D : public TACSElement {
  public:
   static const int MAX_VARS_PER_NODE = 8;
 
-  TACSElement2D(TACSElementModel* _model, TACSElementBasis* _basis);
+  TACSElement2D(TACSElementModel *_model, TACSElementBasis *_basis);
   ~TACSElement2D();
 
   // Get the layout properties of the element
@@ -32,11 +32,11 @@ class TACSElement2D : public TACSElement {
   int getDesignVarsPerNode();
   ElementLayout getLayoutType();
   ElementType getElementType();
-  TACSElementBasis* getElementBasis();
-  TACSElementModel* getElementModel();
-  TACSElement* createElementTraction(int faceIndex, const TacsScalar t[]);
-  TACSElement* createElementPressure(int faceIndex, TacsScalar p);
-  TACSElement* createElementInertialForce(const TacsScalar inertiaVec[]);
+  TACSElementBasis *getElementBasis();
+  TACSElementModel *getElementModel();
+  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]);
+  TACSElement *createElementPressure(int faceIndex, TacsScalar p);
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]);
   int getNumQuadraturePoints();
   double getQuadratureWeight(int n);
   double getQuadraturePoint(int n, double pt[]);
@@ -68,17 +68,17 @@ class TACSElement2D : public TACSElement {
   /**
     Add the residual to the provided vector
   */
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res);
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   /**
     Add the residual and Jacobians to the arrays
   */
   void addJacobian(int elemIndex, double time, TacsScalar alpha,
-                   TacsScalar beta, TacsScalar gamma, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res, TacsScalar* mat);
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
   /**
     Add the derivative of the product of the adjoint variables w.r.t.
@@ -103,7 +103,7 @@ class TACSElement2D : public TACSElement {
     Get the size of the data for the matrix-vector product
   */
   void getMatVecDataSizes(ElementMatrixType matType, int elemIndex,
-                          int* _data_size, int* _temp_size);
+                          int *_data_size, int *_temp_size);
 
   /**
     Get the data for a matrix vector product. When data is NULL, the function
@@ -156,8 +156,8 @@ class TACSElement2D : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   /**
     Add the derivative of the point quantity w.r.t. the design variables
@@ -198,11 +198,11 @@ class TACSElement2D : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
  private:
-  TACSElementModel* model;
-  TACSElementBasis* basis;
+  TACSElementModel *model;
+  TACSElementBasis *basis;
 };
 
 #endif  // TACS_ELEMENT_2D_H

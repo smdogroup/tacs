@@ -6,12 +6,12 @@
 
 class TACSMassElement : public TACSElement {
  public:
-  TACSMassElement(TACSGeneralMassConstitutive* _con);
+  TACSMassElement(TACSGeneralMassConstitutive *_con);
   ~TACSMassElement();
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   ElementType getElementType();
@@ -47,14 +47,14 @@ class TACSMassElement : public TACSElement {
     @return The TACSElement inertial force class associated with this element.
     Possibly NULL.
   */
-  TACSElement* createElementInertialForce(const TacsScalar g[]);
+  TACSElement *createElementInertialForce(const TacsScalar g[]);
 
   /**
     Create element centrifugal force class
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
-  TACSElement* createElementCentrifugalForce(const TacsScalar omegaVec[],
+  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false);
 
@@ -62,7 +62,7 @@ class TACSMassElement : public TACSElement {
   // ----------------------
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
   void addResidual(int elemIndex, double time, const TacsScalar Xpts[],
                    const TacsScalar vars[], const TacsScalar dvars[],
@@ -96,8 +96,8 @@ class TACSMassElement : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   void addPointQuantityDVSens(int elemIndex, int quantityType, double time,
                               TacsScalar scale, int n, double pt[],
@@ -128,9 +128,9 @@ class TACSMassElement : public TACSElement {
   static const int NUM_NODES = 1;
   static const int NUM_VARIABLES = NUM_NODES * NUM_DISPS;
 
-  static const char* elemName;
+  static const char *elemName;
 
-  TACSGeneralMassConstitutive* con;
+  TACSGeneralMassConstitutive *con;
 };
 
 #endif

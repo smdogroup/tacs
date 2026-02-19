@@ -33,7 +33,7 @@
   The command line inputs (nx, ny) provide the number of elements
   along the x and y directions, respectively.
 */
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Find the MPI rank and size
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 
   // There are no dependent nodes in this problem
   int numDependentNodes = 0;
-  TACSAssembler* assembler = new TACSAssembler(
+  TACSAssembler *assembler = new TACSAssembler(
       tacs_comm, varsPerNode, numOwnedNodes, numElements, numDependentNodes);
   assembler->incref();  // Increase the reference count to TACSAssembler
 
@@ -137,8 +137,8 @@ int main(int argc, char* argv[]) {
   */
 
   // The elements are ordered as (i + j*nx)
-  int* ptr = new int[numElements + 1];
-  int* conn = new int[4 * numElements];
+  int *ptr = new int[numElements + 1];
+  int *conn = new int[4 * numElements];
 
   ptr[0] = 0;
   for (int k = 0, elem = firstElem; elem < lastElem; k++, elem++) {
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props =
+  TACSMaterialProperties *props =
       new TACSMaterialProperties(rho, specific_heat, E, nu, ys, cte, kappa);
 
   // Create the element. This element class consists of a constitutive
@@ -176,14 +176,14 @@ int main(int argc, char* argv[]) {
   // which computes the variational form of the governing equations based
   // on input from the basis class, which contains the basis functions and
   // quadrature scheme for the element.
-  TACSElementBasis* linear_basis = new TACSLinearQuadBasis();
+  TACSElementBasis *linear_basis = new TACSLinearQuadBasis();
 
   // Create the plane stress constitutive object
-  TACSPlaneStressConstitutive* stiff = new TACSPlaneStressConstitutive(props);
+  TACSPlaneStressConstitutive *stiff = new TACSPlaneStressConstitutive(props);
   stiff->incref();
 
   // Create and set the elements
-  TACSElement** elements = new TACSElement*[numElements];
+  TACSElement **elements = new TACSElement *[numElements];
 
   // Create the auxiliary element class - we'll use this to apply
   // surface tractions
@@ -195,11 +195,11 @@ int main(int argc, char* argv[]) {
     int tNum = elem;
 
     // Create the plane stress constitutive object
-    TACSPlaneStressConstitutive* stiff =
+    TACSPlaneStressConstitutive *stiff =
         new TACSPlaneStressConstitutive(props, t, tNum);
 
     // Create the element class
-    TACSLinearThermoelasticity2D* model =
+    TACSLinearThermoelasticity2D *model =
         new TACSLinearThermoelasticity2D(stiff, TACS_LINEAR_STRAIN);
     elements[k] = new TACSElement2D(model, linear_basis);
 
@@ -259,11 +259,11 @@ int main(int argc, char* argv[]) {
   assembler->initialize();
 
   // Create the node vector
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
 
   // Get the local node locations
-  TacsScalar* Xpts = NULL;
+  TacsScalar *Xpts = NULL;
   X->getArray(&Xpts);
   for (int k = 0, node = firstNode; node < lastNode; k += 3, node++) {
     int i = node % (nx + 1);
@@ -282,9 +282,9 @@ int main(int argc, char* argv[]) {
   // assembler->setAuxElements(aux);
 
   // Solve the problem and set the variables into TACS
-  TACSMat* kmat = NULL;
-  TACSMat* mmat = NULL;
-  TACSPc* pc = NULL;
+  TACSMat *kmat = NULL;
+  TACSMat *mmat = NULL;
+  TACSPc *pc = NULL;
 
   // Depending on the input options, solve the
   int lev_fill = 5;  // ILU(k) fill in
@@ -301,8 +301,8 @@ int main(int argc, char* argv[]) {
     lev_fill = 1000;
 
     // Create the FE matrix
-    TACSSchurMat* _kmat = assembler->createSchurMat(order_type);
-    TACSSchurMat* _mmat = assembler->createSchurMat();
+    TACSSchurMat *_kmat = assembler->createSchurMat(order_type);
+    TACSSchurMat *_mmat = assembler->createSchurMat();
     int reorder_schur = 1;
     pc = new TACSSchurPc(_kmat, lev_fill, fill, reorder_schur);
     kmat = _kmat;
@@ -317,8 +317,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the distributed matrix class
-    TACSParallelMat* _kmat = assembler->createMat();
-    TACSParallelMat* _mmat = assembler->createMat();
+    TACSParallelMat *_kmat = assembler->createMat();
+    TACSParallelMat *_mmat = assembler->createMat();
     pc = new TACSApproximateSchur(_kmat, lev_fill, fill, inner_gmres_iters,
                                   inner_rtol, inner_atol);
     kmat = _kmat;
@@ -329,13 +329,13 @@ int main(int argc, char* argv[]) {
   pc->incref();
 
   // Allocate space for the vectors
-  TACSBVec* force = assembler->createVec();
+  TACSBVec *force = assembler->createVec();
   force->incref();
-  TACSBVec* res = assembler->createVec();
+  TACSBVec *res = assembler->createVec();
   res->incref();
-  TACSBVec* ans = assembler->createVec();
+  TACSBVec *ans = assembler->createVec();
   ans->incref();
-  TACSBVec* tmp = assembler->createVec();
+  TACSBVec *tmp = assembler->createVec();
   tmp->incref();
 
   // Set all components of the vector to 1.0 and apply boundary
@@ -381,7 +381,7 @@ int main(int argc, char* argv[]) {
   int max_outer_iters = 45;  // Maximum number of outer iterations
 
   // Create the Krylov Subspace Method (KSM) object
-  TACSKsm* ksm = NULL;
+  TACSKsm *ksm = NULL;
   int freq = 1;
   if (use_gmres) {
     ksm = new GMRES(kmat, pc, gmres_iters, nrestart, is_flexible);
@@ -417,7 +417,7 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(assembler, etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler, etype, write_flag);
   f5->incref();
   f5->writeToFile("tutorial.f5");
   f5->decref();
@@ -447,13 +447,13 @@ int main(int argc, char* argv[]) {
   // The function that we will use: The KS failure function evaluated
   // over all the elements in the mesh
   double ksRho = 10.0;
-  TACSKSFailure* ksfunc = new TACSKSFailure(assembler, ksRho);
+  TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
   ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
-  TACSFunction* func = ksfunc;
+  TACSFunction *func = ksfunc;
   func->incref();
 
   // Allocate an array for the design variable values
-  TACSBVec* x = assembler->createDesignVec();
+  TACSBVec *x = assembler->createDesignVec();
   x->incref();
   assembler->getDesignVars(x);
   assembler->getNodes(X);
@@ -463,8 +463,8 @@ int main(int argc, char* argv[]) {
   assembler->evalFunctions(1, &func, &ksFuncVal);
 
   // Now, compute the total derivative of the function of interest
-  TACSBVec* dfdx = assembler->createDesignVec();
-  TACSBVec* dfdX = assembler->createNodeVec();
+  TACSBVec *dfdx = assembler->createDesignVec();
+  TACSBVec *dfdX = assembler->createNodeVec();
   dfdx->incref();
   dfdX->incref();
 
@@ -473,7 +473,7 @@ int main(int argc, char* argv[]) {
   assembler->addXptSens(1.0, 1, &func, &dfdX);
 
   // Evaluate the partial derivative
-  TACSBVec* dfdu = assembler->createVec();
+  TACSBVec *dfdu = assembler->createVec();
   dfdu->incref();
 
   // Add the partial derivative of the function w.r.t. the state
@@ -499,8 +499,8 @@ int main(int argc, char* argv[]) {
   dfdX->endSetValues(TACS_ADD_VALUES);
 
   // Now check with a finite-difference projected derivative
-  TACSBVec* px = assembler->createDesignVec();
-  TACSBVec* pX = assembler->createNodeVec();
+  TACSBVec *px = assembler->createDesignVec();
+  TACSBVec *pX = assembler->createNodeVec();
   px->incref();
   pX->incref();
 
@@ -534,7 +534,7 @@ int main(int argc, char* argv[]) {
   TacsScalar proj_deriv = px->dot(dfdx);
   TacsScalar proj_node_deriv = pX->dot(dfdX);
 
-  TACSBVec* xtemp = assembler->createDesignVec();
+  TACSBVec *xtemp = assembler->createDesignVec();
   xtemp->incref();
 
   xtemp->copyValues(x);

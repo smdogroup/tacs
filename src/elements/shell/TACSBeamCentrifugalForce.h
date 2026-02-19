@@ -15,8 +15,8 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSBeamCentrifugalForce : public TACSElement {
  public:
-  TACSBeamCentrifugalForce(TACSBeamTransform* _transform,
-                           TACSBeamConstitutive* _con,
+  TACSBeamCentrifugalForce(TACSBeamTransform *_transform,
+                           TACSBeamConstitutive *_con,
                            const TacsScalar _omegaVec[],
                            const TacsScalar _rotCenter[]) {
     transform = _transform;
@@ -36,7 +36,7 @@ class TACSBeamCentrifugalForce : public TACSElement {
     }
   }
 
-  const char* getObjectName() { return "TACSBeamCentrifugalForce"; }
+  const char *getObjectName() { return "TACSBeamCentrifugalForce"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -81,14 +81,14 @@ class TACSBeamCentrifugalForce : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res) {
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res) {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 
     // Get the reference axis
-    const A2D::Vec3& axis = transform->getRefAxis();
+    const A2D::Vec3 &axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -154,8 +154,8 @@ class TACSBeamCentrifugalForce : public TACSElement {
 
  private:
   TacsScalar omegaVec[3], rotCenter[3];
-  TACSBeamTransform* transform;
-  TACSBeamConstitutive* con;
+  TACSBeamTransform *transform;
+  TACSBeamConstitutive *con;
 };
 
 #endif  // TACS_BEAM_CENTRIFUGAL_FORCE_H

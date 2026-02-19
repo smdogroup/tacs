@@ -9,7 +9,7 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSShellCentrifugalForce : public TACSElement {
  public:
-  TACSShellCentrifugalForce(TACSShellConstitutive* _con,
+  TACSShellCentrifugalForce(TACSShellConstitutive *_con,
                             const TacsScalar _omegaVec[],
                             const TacsScalar _rotCenter[],
                             bool _first_order = false) {
@@ -26,7 +26,7 @@ class TACSShellCentrifugalForce : public TACSElement {
     }
   }
 
-  const char* getObjectName() { return "TACSShellCentrifugalForce"; }
+  const char *getObjectName() { return "TACSShellCentrifugalForce"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -71,9 +71,9 @@ class TACSShellCentrifugalForce : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res) {
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res) {
     // Compute the number of quadrature points
     const int nquad = quadrature::getNumQuadraturePoints();
 
@@ -244,7 +244,7 @@ class TACSShellCentrifugalForce : public TACSElement {
 
  private:
   TacsScalar omegaVec[3], rotCenter[3];
-  TACSShellConstitutive* con;
+  TACSShellConstitutive *con;
   bool first_order;
 };
 

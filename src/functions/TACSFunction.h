@@ -84,7 +84,7 @@ class TACSFunction : public TACSObject {
   enum StageType { SINGLE_STAGE, TWO_STAGE };
   enum EvaluationType { INITIALIZE, INTEGRATE };
 
-  TACSFunction(TACSAssembler* _assembler,
+  TACSFunction(TACSAssembler *_assembler,
                DomainType _funcDomain = ENTIRE_DOMAIN,
                StageType _funcStages = SINGLE_STAGE, int _maxElems = 0);
   virtual ~TACSFunction();
@@ -92,7 +92,7 @@ class TACSFunction : public TACSObject {
   /**
      Get the object name
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   /**
      Get the type of integration domain
@@ -133,12 +133,12 @@ class TACSFunction : public TACSObject {
      @param elemNums The element numbers defining the domain
      @return The numer of elements in the domain
   */
-  int getElementNums(const int** _elemNums);
+  int getElementNums(const int **_elemNums);
 
   /**
      Return the TACSAssembler object associated with this function
   */
-  TACSAssembler* getAssembler();
+  TACSAssembler *getAssembler();
 
   /**
      Initialize the function for the given type of evaluation
@@ -164,7 +164,7 @@ class TACSFunction : public TACSObject {
      @param ddvars The second time derivatives of the element DOF
   */
   virtual void elementWiseEval(EvaluationType ftype, int elemIndex,
-                               TACSElement* element, double time,
+                               TACSElement *element, double time,
                                TacsScalar scale, const TacsScalar Xpts[],
                                const TacsScalar vars[],
                                const TacsScalar dvars[],
@@ -196,7 +196,7 @@ class TACSFunction : public TACSObject {
      @param dvars The first time derivatives of the element DOF
      @param ddvars The second time derivatives of the element DOF
   */
-  virtual void getElementSVSens(int elemIndex, TACSElement* element,
+  virtual void getElementSVSens(int elemIndex, TACSElement *element,
                                 double time, TacsScalar alpha, TacsScalar beta,
                                 TacsScalar gamma, const TacsScalar Xpts[],
                                 const TacsScalar vars[],
@@ -221,7 +221,7 @@ class TACSFunction : public TACSObject {
      @param dvars The first time derivatives of the element DOF
      @param ddvars The second time derivatives of the element DOF
   */
-  virtual void addElementDVSens(int elemIndex, TACSElement* element,
+  virtual void addElementDVSens(int elemIndex, TACSElement *element,
                                 double time, TacsScalar scale,
                                 const TacsScalar Xpts[],
                                 const TacsScalar vars[],
@@ -241,7 +241,7 @@ class TACSFunction : public TACSObject {
      @param dvars The first time derivatives of the element DOF
      @param ddvars The second time derivatives of the element DOF
   */
-  virtual void getElementXptSens(int elemIndex, TACSElement* element,
+  virtual void getElementXptSens(int elemIndex, TACSElement *element,
                                  double time, TacsScalar scale,
                                  const TacsScalar Xpts[],
                                  const TacsScalar vars[],
@@ -253,7 +253,7 @@ class TACSFunction : public TACSObject {
   }
 
  protected:
-  TACSAssembler* assembler;
+  TACSAssembler *assembler;
 
  private:
   // Store the function domain type
@@ -263,7 +263,7 @@ class TACSFunction : public TACSObject {
   // Store the element domain information
   int maxElems;   // maximum size of currently allocated elemNums array
   int numElems;   // number of elements actually stored in elemNums
-  int* elemNums;  // sorted array of element numbers
+  int *elemNums;  // sorted array of element numbers
 };
 
 #endif  // TACS_FUNCTION_H

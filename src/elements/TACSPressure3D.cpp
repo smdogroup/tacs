@@ -17,7 +17,7 @@
 #include "TACSElementAlgebra.h"
 
 TACSPressure3D::TACSPressure3D(int _varsPerNode, int _faceIndex,
-                               TACSElementBasis* _basis, TacsScalar _p) {
+                               TACSElementBasis *_basis, TacsScalar _p) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -27,7 +27,7 @@ TACSPressure3D::TACSPressure3D(int _varsPerNode, int _faceIndex,
 
 TACSPressure3D::~TACSPressure3D() { basis->decref(); }
 
-const char* TACSPressure3D::getObjectName() { return "TACSPressure3D"; }
+const char *TACSPressure3D::getObjectName() { return "TACSPressure3D"; }
 
 // Get the layout properties of the element
 int TACSPressure3D::getVarsPerNode() { return varsPerNode; }
@@ -36,7 +36,7 @@ int TACSPressure3D::getNumNodes() { return basis->getNumNodes(); }
 
 ElementLayout TACSPressure3D::getLayoutType() { return basis->getLayoutType(); }
 
-TACSElementBasis* TACSPressure3D::getElementBasis() { return basis; }
+TACSElementBasis *TACSPressure3D::getElementBasis() { return basis; }
 
 int TACSPressure3D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
@@ -65,9 +65,9 @@ double TACSPressure3D::getFaceQuadraturePoint(int face, int n, double pt[],
   Add the residual to the provided vector
 */
 void TACSPressure3D::addResidual(int elemIndex, double time,
-                                 const TacsScalar* Xpts, const TacsScalar* vars,
-                                 const TacsScalar* dvars,
-                                 const TacsScalar* ddvars, TacsScalar* res) {
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 
@@ -108,10 +108,10 @@ void TACSPressure3D::addResidual(int elemIndex, double time,
 */
 void TACSPressure3D::addJacobian(int elemIndex, double time, TacsScalar alpha,
                                  TacsScalar beta, TacsScalar gamma,
-                                 const TacsScalar* Xpts, const TacsScalar* vars,
-                                 const TacsScalar* dvars,
-                                 const TacsScalar* ddvars, TacsScalar* res,
-                                 TacsScalar* mat) {
+                                 const TacsScalar *Xpts, const TacsScalar *vars,
+                                 const TacsScalar *dvars,
+                                 const TacsScalar *ddvars, TacsScalar *res,
+                                 TacsScalar *mat) {
   // Compute the number of quadrature points
   const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
 

@@ -30,7 +30,7 @@ const int VTK_HEXAHEDRON = 12;
 const int VTK_QUADRATIC_TRIANGLE = 22;
 const int VTK_QUADRATIC_TETRA = 24;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Convert hdf5 file argv[1] to
@@ -40,11 +40,11 @@ int main(int argc, char* argv[]) {
   }
 
   for (int iter = 1; iter < argc; iter++) {
-    char* infile = new char[strlen(argv[iter]) + 1];
+    char *infile = new char[strlen(argv[iter]) + 1];
     strcpy(infile, argv[iter]);
 
     // Set the output file
-    char* outfile = new char[strlen(infile) + 5];
+    char *outfile = new char[strlen(infile) + 5];
     int len = strlen(infile);
     int i = len - 1;
     for (; i >= 0; i--) {
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     printf("Trying to convert FH5 file %s to vtk file %s\n", infile, outfile);
 
     // Create the loader object
-    TACSFH5Loader* loader = new TACSFH5Loader();
+    TACSFH5Loader *loader = new TACSFH5Loader();
     loader->incref();
 
     int fail = loader->loadData(infile);
@@ -73,16 +73,16 @@ int main(int argc, char* argv[]) {
 
     const char *cname, *cvars;
     int cdim1, cdim2;
-    float* cdata;
+    float *cdata;
     loader->getContinuousData(&cname, &cvars, &cdim1, &cdim2, &cdata);
 
     const char *ename, *evars;
     int edim1, edim2;
-    float* edata;
+    float *edata;
     loader->getElementData(&ename, &evars, &edim1, &edim2, &edata);
 
     // Open the output file
-    FILE* fp = fopen(outfile, "w");
+    FILE *fp = fopen(outfile, "w");
     if (!fp) {
       fprintf(stderr, "Failed to open the output file %s\n", outfile);
       return (1);
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     // Write out the points
     fprintf(fp, "POINTS %d double\n", cdim1);
 
-    const float* d = cdata;
+    const float *d = cdata;
     for (int k = 0; k < cdim1; k++) {
       fprintf(fp, "%e %e %e\n", d[0], d[1], d[2]);
       d += cdim2;
@@ -120,11 +120,11 @@ int main(int argc, char* argv[]) {
       basic_conn_size += nconn;
     }
 
-    int* basic_ltypes = new int[num_basic_elements];
-    int* basic_conn = new int[basic_conn_size];
+    int *basic_ltypes = new int[num_basic_elements];
+    int *basic_conn = new int[basic_conn_size];
 
-    int* btypes = basic_ltypes;
-    int* bconn = basic_conn;
+    int *btypes = basic_ltypes;
+    int *bconn = basic_conn;
     for (int k = 0; k < num_elements; k++) {
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
 
     // Count up the number of times each node is referred to
     // in the discontinuous element-wise data
-    float* counts = new float[cdim1];
+    float *counts = new float[cdim1];
     memset(counts, 0, cdim1 * sizeof(float));
     for (int j = 0; j < ptr[num_elements]; j++) {
       counts[conn[j]] += 1.0;
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
     }
 
     // For each component, average the nodal data
-    float* data = new float[cdim1];
+    float *data = new float[cdim1];
     for (int j = 0; j < edim2; j++) {
       char name[256];
       int index = 0;

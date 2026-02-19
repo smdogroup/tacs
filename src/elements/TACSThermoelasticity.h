@@ -25,7 +25,7 @@ const int TACS_STEADY_STATE_THERMAL = 2;
 
 class TACSLinearThermoelasticity2D : public TACSElementModel {
  public:
-  TACSLinearThermoelasticity2D(TACSPlaneStressConstitutive* _con,
+  TACSLinearThermoelasticity2D(TACSPlaneStressConstitutive *_con,
                                ElementStrainType strain_type,
                                int _steady_state_flag = 0);
   ~TACSLinearThermoelasticity2D();
@@ -58,7 +58,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
   /**
     Get underlying tacs constitutive object for this model
   */
-  TACSConstitutive* getConstitutive() { return stiff; }
+  TACSConstitutive *getConstitutive() { return stiff; }
 
   /**
     Evaluate the coefficients of the weak form integrand
@@ -87,7 +87,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                                  const double pt[], const TacsScalar X[],
                                  const TacsScalar Xd[], const TacsScalar Ut[],
                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                 const TacsScalar Psix[], TacsScalar* product,
+                                 const TacsScalar Psix[], TacsScalar *product,
                                  TacsScalar dfdX[], TacsScalar dfdXd[],
                                  TacsScalar dfdUx[], TacsScalar dfdPsix[]);
 
@@ -95,7 +95,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                             int* Jac_nnz, const int* Jac_pairs[]);
+                             int *Jac_nnz, const int *Jac_pairs[]);
 
   /**
     Evaluate weak form coefficients for the specific type of matrix
@@ -113,7 +113,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
                         const double time, int n, const double pt[],
                         const TacsScalar X[], const TacsScalar Xd[],
                         const TacsScalar Ut[], const TacsScalar Ux[],
-                        TacsScalar* quantity);
+                        TacsScalar *quantity);
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -143,12 +143,12 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
   void getOutputData(int elemIndex, const double time, ElementType etype,
                      int write_flag, const double pt[], const TacsScalar X[],
                      const TacsScalar Ut[], const TacsScalar Ux[], int ld_data,
-                     TacsScalar* data);
+                     TacsScalar *data);
 
  private:
   int steady_state_flag;
   ElementStrainType strain_type;
-  TACSPlaneStressConstitutive* stiff;
+  TACSPlaneStressConstitutive *stiff;
 
   // Constant member data
   static const int linear_Jac_pairs[54];
@@ -156,7 +156,7 @@ class TACSLinearThermoelasticity2D : public TACSElementModel {
 
 class TACSLinearThermoelasticity3D : public TACSElementModel {
  public:
-  TACSLinearThermoelasticity3D(TACSSolidConstitutive* _con,
+  TACSLinearThermoelasticity3D(TACSSolidConstitutive *_con,
                                ElementStrainType strain_type,
                                int _steady_state_flag = 0);
   ~TACSLinearThermoelasticity3D();
@@ -189,7 +189,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
   /**
     Get underlying tacs constitutive object for this model
   */
-  TACSConstitutive* getConstitutive() { return stiff; }
+  TACSConstitutive *getConstitutive() { return stiff; }
 
   /**
     Evaluate the coefficients of the weak form integrand
@@ -218,7 +218,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                                  const double pt[], const TacsScalar X[],
                                  const TacsScalar Xd[], const TacsScalar Ut[],
                                  const TacsScalar Ux[], const TacsScalar Psi[],
-                                 const TacsScalar Psix[], TacsScalar* product,
+                                 const TacsScalar Psix[], TacsScalar *product,
                                  TacsScalar dfdX[], TacsScalar dfdXd[],
                                  TacsScalar dfdUx[], TacsScalar dfdPsix[]);
 
@@ -226,7 +226,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
     Get the non-zero pattern for the matrix
   */
   void getWeakMatrixNonzeros(ElementMatrixType matType, int elemIndex,
-                             int* Jac_nnz, const int* Jac_pairs[]);
+                             int *Jac_nnz, const int *Jac_pairs[]);
 
   /**
     Evaluate weak form coefficients for the specific type of matrix
@@ -244,7 +244,7 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
                         const double time, int n, const double pt[],
                         const TacsScalar X[], const TacsScalar Xd[],
                         const TacsScalar Ut[], const TacsScalar Ux[],
-                        TacsScalar* quantity);
+                        TacsScalar *quantity);
 
   /**
      Add the derivative of the quantity w.r.t. the design variables
@@ -274,12 +274,12 @@ class TACSLinearThermoelasticity3D : public TACSElementModel {
   void getOutputData(int elemIndex, const double time, ElementType etype,
                      int write_flag, const double pt[], const TacsScalar X[],
                      const TacsScalar Ut[], const TacsScalar Ux[], int ld_data,
-                     TacsScalar* data);
+                     TacsScalar *data);
 
  private:
   int steady_state_flag;
   ElementStrainType strain_type;
-  TACSSolidConstitutive* stiff;
+  TACSSolidConstitutive *stiff;
 
   // Constant member data
   static const int linear_Jac_pairs[206];

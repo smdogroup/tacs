@@ -8,7 +8,7 @@
 /*
   Create the material properties object
 */
-void createMaterialProperties(TACSMaterialProperties** props) {
+void createMaterialProperties(TACSMaterialProperties **props) {
   TacsScalar rho = 1.0;
   TacsScalar specific_heat = 0.0;
   TacsScalar E = 70e3;
@@ -24,22 +24,22 @@ void createMaterialProperties(TACSMaterialProperties** props) {
 /*
   Create a plane stress stiffness object with default properties
 */
-void createPlaneStressElement(TACSMaterialProperties* props, int order, int num,
-                              TACSElement** elem) {
-  TACSPlaneStressConstitutive* stiff =
+void createPlaneStressElement(TACSMaterialProperties *props, int order, int num,
+                              TACSElement **elem) {
+  TACSPlaneStressConstitutive *stiff =
       new TACSPlaneStressConstitutive(props, 1.0, num);
 
-  TACSLinearElasticity2D* model =
+  TACSLinearElasticity2D *model =
       new TACSLinearElasticity2D(stiff, TACS_LINEAR_STRAIN);
 
   if (order == 2) {
-    TACSElementBasis* basis = new TACSLinearQuadBasis();
+    TACSElementBasis *basis = new TACSLinearQuadBasis();
     *elem = new TACSElement2D(model, basis);
   } else if (order == 3) {
-    TACSElementBasis* basis = new TACSQuadraticQuadBasis();
+    TACSElementBasis *basis = new TACSQuadraticQuadBasis();
     *elem = new TACSElement2D(model, basis);
   } else {  // if (order == 4){
-    TACSElementBasis* basis = new TACSCubicQuadBasis();
+    TACSElementBasis *basis = new TACSCubicQuadBasis();
     *elem = new TACSElement2D(model, basis);
   }
 }
@@ -59,23 +59,23 @@ void createPlaneStressElement(TACSMaterialProperties* props, int order, int num,
   noptions:     the number of options
   opts:         the option values
 */
-TACSAssembler* create2DModel(MPI_Comm comm, int varsPerNode, int nx, int ny,
+TACSAssembler *create2DModel(MPI_Comm comm, int varsPerNode, int nx, int ny,
                              int order, int firstNode, int lastNode,
                              int firstElem, int lastElem, int noptions,
-                             const char* opts[]) {
+                             const char *opts[]) {
   // Set the number of nodes
   int numOwnedNodes = lastNode - firstNode;
   int numElements = lastElem - firstElem;
 
   // There are no dependent nodes in this problem
-  TACSAssembler* assembler =
+  TACSAssembler *assembler =
       new TACSAssembler(comm, varsPerNode, numOwnedNodes, numElements);
 
   // The elements are ordered as (i + j*nx)
-  int* ptr = new int[numElements + 1];
-  int* conn = new int[order * order * numElements];
+  int *ptr = new int[numElements + 1];
+  int *conn = new int[order * order * numElements];
 
-  int* c = conn;
+  int *c = conn;
   ptr[0] = 0;
   for (int k = 0, elem = firstElem; elem < lastElem; k++, elem++) {
     // Back out the i, j coordinates from the corresponding
@@ -100,9 +100,9 @@ TACSAssembler* create2DModel(MPI_Comm comm, int varsPerNode, int nx, int ny,
   delete[] ptr;
 
   // Create and set the elements
-  TACSElement** elements = new TACSElement*[numElements];
+  TACSElement **elements = new TACSElement *[numElements];
 
-  TACSMaterialProperties* props;
+  TACSMaterialProperties *props;
   createMaterialProperties(&props);
   for (int k = 0, elem = firstElem; elem < lastElem; k++, elem++) {
     // Create a plane stress model
@@ -165,11 +165,11 @@ TACSAssembler* create2DModel(MPI_Comm comm, int varsPerNode, int nx, int ny,
   assembler->initialize();
 
   // Create the node vector
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
 
   // Get the local node locations
-  TacsScalar* Xpts = NULL;
+  TacsScalar *Xpts = NULL;
   X->getArray(&Xpts);
   for (int k = 0, node = firstNode; node < lastNode; k += 3, node++) {
     int i = node % ((order - 1) * nx + 1);
@@ -191,15 +191,15 @@ TACSAssembler* create2DModel(MPI_Comm comm, int varsPerNode, int nx, int ny,
 /*
   Solve the problem with the specified options
 */
-void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
+void testSolve(TACSAssembler *assembler, int noptions, const char *opts[]) {
   int rank, size;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
   // Create the preconditioner
   int isflexible = 1;
-  TACSMat* mat = NULL;
-  TACSPc* pc = NULL;
+  TACSMat *mat = NULL;
+  TACSPc *pc = NULL;
 
   // Set the default options
   double fill = 10.0;
@@ -232,7 +232,7 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
   // Create the matrix and associated preconditioner
   for (int k = 0; k < noptions; k++) {
     if (strcmp(opts[k], "ApproximateSchur") == 0) {
-      TACSParallelMat* _mat = assembler->createMat();
+      TACSParallelMat *_mat = assembler->createMat();
       double inner_rtol = -1.0;
       double inner_atol = 1e-10;
       pc = new TACSApproximateSchur(_mat, levFill, fill, inner_gmres,
@@ -240,14 +240,14 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
       mat = _mat;
       break;
     } else if (strcmp(opts[k], "DirectSchur") == 0) {
-      TACSSchurMat* _mat = assembler->createSchurMat();
+      TACSSchurMat *_mat = assembler->createSchurMat();
       int reorder_schur = 1;
       pc = new TACSSchurPc(_mat, levFill, fill, reorder_schur);
       mat = _mat;
       break;
     } else if (strcmp(opts[k], "GaussSeidel") == 0) {
       int zero_guess = 0;  // Zero the initial guess for psor
-      TACSParallelMat* _mat = assembler->createMat();
+      TACSParallelMat *_mat = assembler->createMat();
       pc = new TACSGaussSeidel(_mat, zero_guess, sor_omega, sor_iters,
                                sor_symmetric);
       mat = _mat;
@@ -257,7 +257,7 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
   // Create the additive Schwarz preconditioner
   if (!pc || !mat) {
     isflexible = 0;
-    TACSParallelMat* _mat = assembler->createMat();
+    TACSParallelMat *_mat = assembler->createMat();
     pc = new TACSAdditiveSchwarz(_mat, levFill, fill);
     mat = _mat;
   }
@@ -265,8 +265,8 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
   pc->incref();
 
   // Create the vectors to be used in the solution
-  TACSBVec* ans = assembler->createVec();
-  TACSBVec* rhs = assembler->createVec();
+  TACSBVec *ans = assembler->createVec();
+  TACSBVec *rhs = assembler->createVec();
   ans->incref();
   rhs->incref();
   assembler->zeroVariables();
@@ -295,7 +295,7 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
          flops / (stop - start));
 
   // Set up the problem
-  GMRES* solver = new GMRES(mat, pc, gmres_iters, 2, isflexible);
+  GMRES *solver = new GMRES(mat, pc, gmres_iters, 2, isflexible);
   solver->incref();
   solver->setTolerances(1e-10, 1e-30);
   solver->setMonitor(new KSMPrintStdout(" Iteration", rank, 5));
@@ -318,7 +318,7 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
   }
 
   // Evaluate the compliance
-  TACSFunction* comp = new TACSCompliance(assembler);
+  TACSFunction *comp = new TACSCompliance(assembler);
   comp->incref();
   TacsScalar compVal = 0.0;
   assembler->evalFunctions(1, &comp, &compVal);
@@ -333,7 +333,7 @@ void testSolve(TACSAssembler* assembler, int noptions, const char* opts[]) {
   rhs->decref();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -353,7 +353,7 @@ int main(int argc, char* argv[]) {
 
   // Retrieve the options
   int noptions = 6;
-  const char* opts[] = {"AMD",   "DirectSchur", "nx=50",
+  const char *opts[] = {"AMD",   "DirectSchur", "nx=50",
                         "ny=50", "order=3",     "levFill=1000"};
 
   for (int k = 0; k < noptions; k++) {
@@ -388,7 +388,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create the TACSAssembler object
-  TACSAssembler* assembler =
+  TACSAssembler *assembler =
       create2DModel(comm, varsPerNode, nx, ny, order, firstNode, lastNode,
                     firstElem, lastElem, noptions, opts);
   assembler->incref();

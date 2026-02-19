@@ -27,8 +27,8 @@
 */
 class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
  public:
-  TACSPhaseChangeMaterialConstitutive(TACSMaterialProperties* solid_properties,
-                                      TACSMaterialProperties* liquid_properties,
+  TACSPhaseChangeMaterialConstitutive(TACSMaterialProperties *solid_properties,
+                                      TACSMaterialProperties *liquid_properties,
                                       TacsScalar _lh, TacsScalar _Tm,
                                       TacsScalar _dT = 10.0,
                                       TacsScalar _t = 1.0, int _tNum = -1,
@@ -118,19 +118,19 @@ class TACSPhaseChangeMaterialConstitutive : public TACSConstitutive {
                       TacsScalar dfdu[], const TacsScalar u[]);
 
   // Extra info about the constitutive class
-  const char* getObjectName();
+  const char *getObjectName();
 
  protected:
   // Material properties class
-  TACSMaterialProperties* solid_properties;
-  TACSMaterialProperties* liquid_properties;
+  TACSMaterialProperties *solid_properties;
+  TACSMaterialProperties *liquid_properties;
 
  private:
   // Store information about the design variable
   TacsScalar lh, Tm, t, tlb, tub, dT, b;
   int tNum;
 
-  static const char* psName;
+  static const char *psName;
 };
 
 #endif  // TACS_PHASE_CHANGE_MATERIAL_CONSTITUTIVE_H

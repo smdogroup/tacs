@@ -47,14 +47,14 @@ class TACSBVecDistCtx;
 */
 class TACSBVecIndices : public TACSObject {
  public:
-  TACSBVecIndices(int** _indices, int _nindices);
-  TACSBVecIndices(TACSBVecIndices* idx1, TACSBVecIndices* idx2);
+  TACSBVecIndices(int **_indices, int _nindices);
+  TACSBVecIndices(TACSBVecIndices *idx1, TACSBVecIndices *idx2);
   ~TACSBVecIndices();
 
   // Retrieve information about the indices
   // --------------------------------------
   int getNumIndices();
-  int getIndices(const int** _indices);
+  int getIndices(const int **_indices);
   int isSorted();
 
   // Set up/use an arg-sorted array to find the reverse
@@ -64,10 +64,10 @@ class TACSBVecIndices : public TACSObject {
   int findIndex(int index);
 
  private:
-  int* indices;
+  int *indices;
   int nindices;
   int issorted;
-  int* index_args;
+  int *index_args;
 };
 
 /*!
@@ -95,84 +95,84 @@ class TACSBVecIndices : public TACSObject {
 */
 class TACSBVecDistribute : public TACSObject {
  public:
-  TACSBVecDistribute(TACSNodeMap* rmap, TACSBVecIndices* bindex);
+  TACSBVecDistribute(TACSNodeMap *rmap, TACSBVecIndices *bindex);
   ~TACSBVecDistribute();
 
   // Create a context to send/recv the data
   // --------------------------------------
-  TACSBVecDistCtx* createCtx(int bsize);
+  TACSBVecDistCtx *createCtx(int bsize);
 
   // Get the size of the local array
   // All arrays passed must be at least this size
   // --------------------------------------------
   int getNumNodes();
-  TACSBVecIndices* getIndices();
+  TACSBVecIndices *getIndices();
 
   // Transfer the data to the array provided
   // ---------------------------------------
-  void beginForward(TACSBVecDistCtx* ctx, TacsScalar* global, TacsScalar* local,
+  void beginForward(TACSBVecDistCtx *ctx, TacsScalar *global, TacsScalar *local,
                     const int node_offset = 0);
-  void endForward(TACSBVecDistCtx* ctx, TacsScalar* global, TacsScalar* local,
+  void endForward(TACSBVecDistCtx *ctx, TacsScalar *global, TacsScalar *local,
                   const int node_offset = 0);
 
   // Add or insert data back into the vector
   // ---------------------------------------
-  void beginReverse(TACSBVecDistCtx* ctx, TacsScalar* local, TacsScalar* global,
+  void beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local, TacsScalar *global,
                     TACSBVecOperation op = TACS_ADD_VALUES);
-  void endReverse(TACSBVecDistCtx* ctx, TacsScalar* local, TacsScalar* global,
+  void endReverse(TACSBVecDistCtx *ctx, TacsScalar *local, TacsScalar *global,
                   TACSBVecOperation op = TACS_ADD_VALUES);
 
   MPI_Comm getMPIComm();
-  const char* getObjectName();
+  const char *getObjectName();
 
  private:
   // Block-specific implementation pointers
   // --------------------------------------
   void initImpl(int bsize);
-  void (*bgetvars)(int bsize, int nvars, const int* vars, int lower,
-                   TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
-  void (*bsetvars)(int bsize, int nvars, const int* vars, int lower,
-                   TacsScalar* x, TacsScalar* y, TACSBVecOperation op);
+  void (*bgetvars)(int bsize, int nvars, const int *vars, int lower,
+                   TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
+  void (*bsetvars)(int bsize, int nvars, const int *vars, int lower,
+                   TacsScalar *x, TacsScalar *y, TACSBVecOperation op);
 
   // The communicator and the MPI data
   MPI_Comm comm;
 
   // Data defining the distribution of the variables
-  TACSNodeMap* rmap;
+  TACSNodeMap *rmap;
 
   // Object containing the indices of the external variables
   // -------------------------------------------------------
-  TACSBVecIndices* bindex;
+  TACSBVecIndices *bindex;
 
   // Data for dealing with indices that are not sorted or unique
   // -----------------------------------------------------------
   int sorted_flag;
   int nvars_unsorted;
-  int* ext_sorted;
-  int* ext_unsorted_index;
+  int *ext_sorted;
+  int *ext_unsorted_index;
 
   // Data for collecting external variables
   // --------------------------------------
   int n_ext_proc;       // number of external procs
-  int* ext_proc;        //  Externall processes
-  int* ext_ptr;         // Displacements into the local external array
-  int* ext_count;       // Count per proc
+  int *ext_proc;        //  Externall processes
+  int *ext_ptr;         // Displacements into the local external array
+  int *ext_count;       // Count per proc
   int next_vars;        // Number of external vars
-  const int* ext_vars;  // External variables requested by this process
+  const int *ext_vars;  // External variables requested by this process
 
   // Data for the requested values
   int n_req_proc;  // Processes to send non-zero mesages to
-  int* req_proc;   // The processors to send
-  int* req_ptr;    // Displacement into requested array
-  int* req_count;  // number of nodes to send to each proc
-  int* req_vars;   // Variables that have been requested
+  int *req_proc;   // The processors to send
+  int *req_ptr;    // Displacement into requested array
+  int *req_count;  // number of nodes to send to each proc
+  int *req_vars;   // Variables that have been requested
 
   // The size of the receiving data on this processor
   int ext_self_ptr;
   int ext_self_count;
 
   // Set the name of the object
-  static const char* name;
+  static const char *name;
 };
 
 /*
@@ -185,23 +185,23 @@ class TACSBVecDistCtx : public TACSObject {
   ~TACSBVecDistCtx();
 
  private:
-  TACSBVecDistCtx(TACSBVecDistribute* _me, int _bsize);
+  TACSBVecDistCtx(TACSBVecDistribute *_me, int _bsize);
 
   // The block size for this context
   int bsize;
 
   // Pointer to ensure the context is used correctly
-  TACSBVecDistribute* me;
+  TACSBVecDistribute *me;
 
   // The external data sorted
-  TacsScalar* ext_sorted_vals;
+  TacsScalar *ext_sorted_vals;
 
   // The requested values
-  TacsScalar* reqvals;
+  TacsScalar *reqvals;
 
   // The MPI requests for either the sends or recvs
-  MPI_Request* sends;
-  MPI_Request* recvs;
+  MPI_Request *sends;
+  MPI_Request *recvs;
 
   // Set the send and recv tags
   int ctx_tag;

@@ -18,7 +18,7 @@
 */
 class SpecialShellConstitutive : public TACSShellConstitutive {
  public:
-  SpecialShellConstitutive(TACSOrthotropicPly* _ply, int _orthotropic_flag,
+  SpecialShellConstitutive(TACSOrthotropicPly *_ply, int _orthotropic_flag,
                            TacsScalar _t, TacsScalar _kcorr) {
     ply = _ply;
     ply->incref();
@@ -60,10 +60,10 @@ class SpecialShellConstitutive : public TACSShellConstitutive {
 
   void evalTangentStiffness(int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar C[]) {
-    TacsScalar* A = &C[0];
-    TacsScalar* B = &C[6];
-    TacsScalar* D = &C[12];
-    TacsScalar* As = &C[18];
+    TacsScalar *A = &C[0];
+    TacsScalar *B = &C[6];
+    TacsScalar *D = &C[12];
+    TacsScalar *As = &C[18];
 
     A[0] = A[1] = A[2] = A[3] = A[4] = A[5] = 0.0;
     B[0] = B[1] = B[2] = B[3] = B[4] = B[5] = 0.0;
@@ -112,7 +112,7 @@ class SpecialShellConstitutive : public TACSShellConstitutive {
   }
 
  private:
-  TACSOrthotropicPly* ply;
+  TACSOrthotropicPly *ply;
   TacsScalar t, kcorr;
   int orthotropic_flag;
 };
@@ -140,8 +140,8 @@ class SpecialShellConstitutive : public TACSShellConstitutive {
   frame. Likewise, psi_x and psi_y are the rotations of the normal
   along the x-direction and the tangential y-direction.
 */
-void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
-                         TacsScalar* theta, TacsScalar* phi, double alpha,
+void computeCoefficients(TacsScalar *U, TacsScalar *V, TacsScalar *W,
+                         TacsScalar *theta, TacsScalar *phi, double alpha,
                          double beta, TacsScalar ainv, TacsScalar A11,
                          TacsScalar A12, TacsScalar A22, TacsScalar A33,
                          TacsScalar D11, TacsScalar D12, TacsScalar D22,
@@ -154,7 +154,7 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
 
   TacsScalar B[8 * 5];
   memset(B, 0, sizeof(B));
-  TacsScalar* b = B;
+  TacsScalar *b = B;
 
   // Assign the columns for u
   b[0] = -beta;
@@ -188,9 +188,9 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
   b[6] = 1.0;
 
   for (int j = 0; j < 5; j++) {
-    TacsScalar* bj = &B[8 * j];
+    TacsScalar *bj = &B[8 * j];
     for (int i = 0; i < 5; i++) {
-      TacsScalar* bi = &B[8 * i];
+      TacsScalar *bi = &B[8 * i];
 
       A2[i + 5 * j] =
           -((bi[0] * (A11 * bj[0] + A12 * bj[1]) +
@@ -241,7 +241,7 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
 
   int print_equations = 1;
   if (print_equations) {
-    const char* variables[] = {"U", "V", "W", "theta", "phi"};
+    const char *variables[] = {"U", "V", "W", "theta", "phi"};
     for (int k = 0; k < 5; k++) {
       printf("Equation %d\n", k);
       for (int j = 0; j < 5; j++) {
@@ -269,8 +269,8 @@ void computeCoefficients(TacsScalar* U, TacsScalar* V, TacsScalar* W,
   Load the cylinder, set the pressure load and solve the problem.
   Note that this will only work for single processor cases.
 */
-TACSAssembler* createAssembler(TACSShellTransform* transform,
-                               TACSShellConstitutive* stiffness, double alpha,
+TACSAssembler *createAssembler(TACSShellTransform *transform,
+                               TACSShellConstitutive *stiffness, double alpha,
                                double beta, int order, int nx, int ny, double L,
                                double R, TacsScalar load) {
   if (order < 2) {
@@ -285,10 +285,10 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
   int vars_per_node = 6;
 
   // For now create a complete cylinder
-  TACSAssembler* assembler =
+  TACSAssembler *assembler =
       new TACSAssembler(MPI_COMM_SELF, vars_per_node, nnodes, nelems);
 
-  TACSElement* shell = NULL;
+  TACSElement *shell = NULL;
   if (order == 2) {
     shell = TacsCreateShellByName("TACSQuad4Shell", transform, stiffness);
   } else if (order == 3) {
@@ -301,8 +301,8 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
   int nny = (order - 1) * ny;
 
   // Set the connectivity for the elements
-  int* conn = new int[order * order * nelems];
-  int* cptr = conn;
+  int *conn = new int[order * order * nelems];
+  int *cptr = conn;
 
   // Set the node numbers
   for (int j = 0; j < ny; j++) {
@@ -320,7 +320,7 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
     }
   }
 
-  int* ptr = new int[nelems + 1];
+  int *ptr = new int[nelems + 1];
   for (int i = 0; i < nelems + 1; i++) {
     ptr[i] = order * order * i;
   }
@@ -331,7 +331,7 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
   delete[] ptr;
 
   // Set the elements
-  TACSElement** elements = new TACSElement*[nelems];
+  TACSElement **elements = new TACSElement *[nelems];
   for (int i = 0; i < nelems; i++) {
     elements[i] = shell;
   }
@@ -358,9 +358,9 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
   assembler->initialize();
 
   // Set the nodal locations
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
-  TacsScalar* Xpts;
+  TacsScalar *Xpts;
   X->getArray(&Xpts);
 
   // Set the node locations
@@ -384,11 +384,11 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
 
   // Create the surface traction object
   int num_elems = assembler->getNumElements();
-  TACSAuxElements* aux = new TACSAuxElements(num_elems);
+  TACSAuxElements *aux = new TACSAuxElements(num_elems);
 
   for (int elem = 0; elem < num_elems; elem++) {
     int nnodes;
-    const int* nodes;
+    const int *nodes;
     assembler->getElement(elem, &nnodes, &nodes);
 
     TacsScalar Xelem[3 * 16], tr[3 * 16];
@@ -409,7 +409,7 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
       tr[3 * node + 2] = znorm * pval;
     }
 
-    TACSElement* trac = NULL;
+    TACSElement *trac = NULL;
     if (order == 2) {
       trac = new TACSShellTraction<6, TACSQuadLinearQuadrature,
                                    TACSShellQuadBasis<2> >(tr);
@@ -441,14 +441,14 @@ TACSAssembler* createAssembler(TACSShellTransform* transform,
 
   error = sqrt( int_{A} (w_{TACS} - w_{exact})^2 dA )
 */
-TacsScalar computeError(int order, TACSAssembler* assembler, TacsScalar R,
+TacsScalar computeError(int order, TACSAssembler *assembler, TacsScalar R,
                         double alpha, double beta, TacsScalar U, TacsScalar V,
                         TacsScalar W, TacsScalar theta, TacsScalar phi) {
   TacsScalar error = 0.0;
   int nelems = assembler->getNumElements();
   for (int k = 0; k < nelems; k++) {
     TacsScalar Xpts[3 * 16], vars[6 * 16], dvars[6 * 16], ddvars[6 * 16];
-    TACSElement* shell = assembler->getElement(k, Xpts, vars, dvars, ddvars);
+    TACSElement *shell = assembler->getElement(k, Xpts, vars, dvars, ddvars);
 
     int num_quad = shell->getNumQuadraturePoints();
 
@@ -514,7 +514,7 @@ TacsScalar evaluateVonMisesPNorm(int P, TacsScalar z, TacsScalar Q11,
                                  double alpha, double beta, TacsScalar ainv,
                                  TacsScalar R, TacsScalar L, TacsScalar U,
                                  TacsScalar V, TacsScalar W, TacsScalar theta,
-                                 TacsScalar phi, TacsScalar* _vm_max) {
+                                 TacsScalar phi, TacsScalar *_vm_max) {
   int K = P / 2;
   if (P % 2 != 0) {
     printf("Warning! P-norm can only be computed for even P!\n");
@@ -602,7 +602,7 @@ TacsScalar evaluateTsaiWuPNorm(int P, int M, int N, TacsScalar z,
                                TacsScalar ainv, TacsScalar R, TacsScalar L,
                                TacsScalar U, TacsScalar V, TacsScalar W,
                                TacsScalar theta, TacsScalar phi,
-                               TacsScalar* tw_max, TacsScalar* unit_load) {
+                               TacsScalar *tw_max, TacsScalar *unit_load) {
   if (P % 2 != 0) {
     printf("Warning! P-norm can only be computed for even P!\n");
   }
@@ -758,22 +758,22 @@ TacsScalar evaluateTsaiWuPNorm(int P, int M, int N, TacsScalar z,
   Take the difference between what's in the vector and what the exact
   solution is at each point in the mesh.
 */
-void setExactSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
+void setExactSolution(TACSAssembler *assembler, TACSBVec *ans, TacsScalar R,
                       double alpha, double beta, TacsScalar U, TacsScalar V,
                       TacsScalar W, TacsScalar theta, TacsScalar phi) {
   // Get the x,y,z locations of the nodes from TACS
   int nnodes = assembler->getNumNodes();
 
-  TACSBVec* X = assembler->createNodeVec();
+  TACSBVec *X = assembler->createNodeVec();
   X->incref();
   assembler->getNodes(X);
 
   // Get the nodal array
-  TacsScalar* Xpts;
+  TacsScalar *Xpts;
   X->getArray(&Xpts);
 
   // Get the finite-element solution from TACS
-  TacsScalar* u_tacs;
+  TacsScalar *u_tacs;
   ans->getArray(&u_tacs);
 
   for (int node = 0; node < nnodes; node++) {
@@ -814,11 +814,11 @@ void setExactSolution(TACSAssembler* assembler, TACSBVec* ans, TacsScalar R,
   Perform a grid study using a series of nx values. Write the results
   to a file.
 */
-void meshStudy(const char* file_name, double P, TACSShellTransform* transform,
-               TACSShellConstitutive* stiffness, TacsScalar load, double R,
+void meshStudy(const char *file_name, double P, TACSShellTransform *transform,
+               TACSShellConstitutive *stiffness, TacsScalar load, double R,
                double L, double alpha, double beta, int order,
                int max_quad_elev) {
-  FILE* fp = fopen(file_name, "w");
+  FILE *fp = fopen(file_name, "w");
   fprintf(fp, "Variables = nx, KS, DKS, IE, DE, ");
   fprintf(fp, "IE2, DE2, IP, DIP, IP2, DP2, SOC\n");
 
@@ -826,14 +826,14 @@ void meshStudy(const char* file_name, double P, TACSShellTransform* transform,
     // Set the size of the finite-element mesh to use
     int ny = (int)(((2 * M_PI * R) * nx) / L);
 
-    TACSAssembler* assembler = createAssembler(transform, stiffness, alpha,
+    TACSAssembler *assembler = createAssembler(transform, stiffness, alpha,
                                                beta, order, nx, ny, L, R, load);
     assembler->incref();
 
     // Create the structural matrix/preconditioner
-    TACSSchurMat* mat = assembler->createSchurMat();
-    TACSBVec* ans = assembler->createVec();
-    TACSBVec* rhs = assembler->createVec();
+    TACSSchurMat *mat = assembler->createSchurMat();
+    TACSBVec *ans = assembler->createVec();
+    TACSBVec *rhs = assembler->createVec();
     mat->incref();
     ans->incref();
     rhs->incref();
@@ -842,13 +842,13 @@ void meshStudy(const char* file_name, double P, TACSShellTransform* transform,
     int lev = 4500;
     double fill = 10.0;
     int reorder_schur = 1;
-    TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+    TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
     pc->setMonitorFactorFlag(0);
     pc->setAlltoallAssemblyFlag(1);
 
     // Create GMRES object
     int gmres_iters = 15, nrestart = 5, isflexible = 0;
-    GMRES* gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
+    GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
     gmres->incref();
 
     // Set the GMRES tolerances
@@ -863,15 +863,15 @@ void meshStudy(const char* file_name, double P, TACSShellTransform* transform,
     assembler->setVariables(ans);
 
     // Set up the KS functional
-    TACSKSFailure* ks_func = new TACSKSFailure(assembler, P);
+    TACSKSFailure *ks_func = new TACSKSFailure(assembler, P);
     ks_func->incref();
 
     // Set up the induced function
-    TACSInducedFailure* ind_func = new TACSInducedFailure(assembler, P);
+    TACSInducedFailure *ind_func = new TACSInducedFailure(assembler, P);
     ind_func->incref();
 
-    TACSFunction* ks = ks_func;
-    TACSFunction* ind = ind_func;
+    TACSFunction *ks = ks_func;
+    TACSFunction *ind = ind_func;
 
     // Evaluate the KS functionals
     TacsScalar dks_tacs, ks_tacs;
@@ -940,7 +940,7 @@ void meshStudy(const char* file_name, double P, TACSShellTransform* transform,
   fclose(fp);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Set the shell geometry parameters
@@ -1005,7 +1005,7 @@ int main(int argc, char* argv[]) {
     printf("Using a 4th order mesh with %d x %d elements\n", nx, ny);
   }
 
-  TACSOrthotropicPly* ply = NULL;
+  TACSOrthotropicPly *ply = NULL;
 
   if (orthotropic_flag) {
     // Set the material properties to use
@@ -1026,7 +1026,7 @@ int main(int argc, char* argv[]) {
     TacsScalar Yc = 10.0;
     TacsScalar S12 = 8.0;
 
-    TACSMaterialProperties* props = new TACSMaterialProperties(
+    TACSMaterialProperties *props = new TACSMaterialProperties(
         rho, specific_heat, E1, E2, E2, nu12, nu13, nu23, G12, G13, G23, Xt, Xc,
         Yt, Yc, Yt, Yc, S12);
 
@@ -1042,7 +1042,7 @@ int main(int argc, char* argv[]) {
     TacsScalar alpha = 0.0;
     TacsScalar kappa = 0.0;
 
-    TACSMaterialProperties* props =
+    TACSMaterialProperties *props =
         new TACSMaterialProperties(rho, specific_heat, E, nu, ys, alpha, kappa);
 
     ply = new TACSOrthotropicPly(t, props);
@@ -1053,11 +1053,11 @@ int main(int argc, char* argv[]) {
 
   // Create the transformation
   TacsScalar axis[] = {0.0, 1.0, 1.0};
-  TACSShellTransform* transform = new TACSShellRefAxisTransform(axis);
+  TACSShellTransform *transform = new TACSShellRefAxisTransform(axis);
 
   // Create the stiffness relationship
   TacsScalar kcorr = 5.0 / 6.0;
-  TACSShellConstitutive* stiffness =
+  TACSShellConstitutive *stiffness =
       new SpecialShellConstitutive(ply, orthotropic_flag, t, kcorr);
   stiffness->incref();
 
@@ -1115,7 +1115,7 @@ int main(int argc, char* argv[]) {
               order, 8 - order);
   }
 
-  TACSAssembler* assembler = createAssembler(transform, stiffness, alpha, beta,
+  TACSAssembler *assembler = createAssembler(transform, stiffness, alpha, beta,
                                              order, nx, ny, L, R, load);
   assembler->incref();
 
@@ -1123,15 +1123,15 @@ int main(int argc, char* argv[]) {
   int write_flag = (TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_STRAINS |
                     TACS_OUTPUT_STRESSES | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 =
+  TACSToFH5 *f5 =
       new TACSToFH5(assembler, TACS_BEAM_OR_SHELL_ELEMENT, write_flag);
   f5->incref();
 
   // Create the structural matrix/preconditioner/KSM to use in conjunction
   // with the aerostructural solution
-  TACSSchurMat* mat = assembler->createSchurMat();
-  TACSBVec* ans = assembler->createVec();
-  TACSBVec* rhs = assembler->createVec();
+  TACSSchurMat *mat = assembler->createSchurMat();
+  TACSBVec *ans = assembler->createVec();
+  TACSBVec *rhs = assembler->createVec();
   mat->incref();
   ans->incref();
   rhs->incref();
@@ -1140,13 +1140,13 @@ int main(int argc, char* argv[]) {
   int lev = 4500;
   double fill = 10.0;
   int reorder_schur = 1;
-  TACSSchurPc* pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
+  TACSSchurPc *pc = new TACSSchurPc(mat, lev, fill, reorder_schur);
   pc->setMonitorFactorFlag(0);
   pc->setAlltoallAssemblyFlag(1);
 
   // Create GMRES object
   int gmres_iters = 15, nrestart = 5, isflexible = 0;
-  GMRES* gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
+  GMRES *gmres = new GMRES(mat, pc, gmres_iters, nrestart, isflexible);
   gmres->incref();
 
   // Set the GMRES tolerances
@@ -1175,20 +1175,20 @@ int main(int argc, char* argv[]) {
              "iso_cylinder_func_order=%d_nx=%d.dat", order, nx);
   }
 
-  FILE* fp = fopen(file_name, "w");
+  FILE *fp = fopen(file_name, "w");
   fprintf(fp, "Variables = P, KS, DKS, IE, DE, ");
   fprintf(fp, "IE2, DE2, IP, DIP, IP2, DP2, SOC\n");
 
   // Set up the KS functional
-  TACSKSFailure* ks_func = new TACSKSFailure(assembler, P);
+  TACSKSFailure *ks_func = new TACSKSFailure(assembler, P);
   ks_func->incref();
 
   // Set up the induced function
-  TACSInducedFailure* ind_func = new TACSInducedFailure(assembler, P);
+  TACSInducedFailure *ind_func = new TACSInducedFailure(assembler, P);
   ind_func->incref();
 
-  TACSFunction* ks = ks_func;
-  TACSFunction* ind = ind_func;
+  TACSFunction *ks = ks_func;
+  TACSFunction *ind = ind_func;
 
   // Evaluate the KS functionals
   TacsScalar dks_tacs, ks_tacs;

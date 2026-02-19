@@ -74,14 +74,14 @@ class TACSElement : public TACSObject {
                                   const TacsScalar vars[],
                                   const TacsScalar dvars[],
                                   const TacsScalar ddvars[],
-                                  TacsScalar* avgStresses) {}
+                                  TacsScalar *avgStresses) {}
 
   /**
     Get a string representation of the element name
 
     @return The name of the element
   */
-  const char* getObjectName() { return "TACSElement"; }
+  const char *getObjectName() { return "TACSElement"; }
 
   /*
     Allow users to set default finite difference order for real analysis
@@ -125,7 +125,7 @@ class TACSElement : public TACSObject {
     @return The TACSElementBasis class associated with this element. Possibly
     NULL.
   */
-  virtual TACSElementBasis* getElementBasis() { return NULL; }
+  virtual TACSElementBasis *getElementBasis() { return NULL; }
 
   /**
     Get the number of quadrature points for the volume/area of the element
@@ -194,7 +194,7 @@ class TACSElement : public TACSObject {
     @return The TACSElementModel class associated with this element. Possibly
     NULL.
   */
-  virtual TACSElementModel* getElementModel() { return NULL; }
+  virtual TACSElementModel *getElementModel() { return NULL; }
 
   /**
     Create element traction class
@@ -202,7 +202,7 @@ class TACSElement : public TACSObject {
     @return The TACSElement traction class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement* createElementTraction(int faceIndex,
+  virtual TACSElement *createElementTraction(int faceIndex,
                                              const TacsScalar t[]) {
     return NULL;
   }
@@ -213,7 +213,7 @@ class TACSElement : public TACSObject {
     @return The TACSElement pressure class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement* createElementPressure(int faceIndex, TacsScalar p) {
+  virtual TACSElement *createElementPressure(int faceIndex, TacsScalar p) {
     return NULL;
   }
 
@@ -223,7 +223,7 @@ class TACSElement : public TACSObject {
     @return The TACSElement inertial force class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement* createElementInertialForce(const TacsScalar g[]) {
+  virtual TACSElement *createElementInertialForce(const TacsScalar g[]) {
     return NULL;
   }
 
@@ -238,7 +238,7 @@ class TACSElement : public TACSObject {
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
-  virtual TACSElement* createElementCentrifugalForce(
+  virtual TACSElement *createElementCentrifugalForce(
       const TacsScalar omega[], const TacsScalar rotCenter[],
       const bool first_order = false) {
     return NULL;
@@ -264,7 +264,7 @@ class TACSElement : public TACSObject {
     The value defaults to one, unless over-ridden by the model
   */
   virtual int getDesignVarsPerNode() {
-    TACSElementModel* model = getElementModel();
+    TACSElementModel *model = getElementModel();
     if (model) {
       model->getDesignVarsPerNode();
     }
@@ -399,8 +399,8 @@ class TACSElement : public TACSObject {
   */
   virtual void computeEnergies(int elemIndex, double time,
                                const TacsScalar Xpts[], const TacsScalar vars[],
-                               const TacsScalar dvars[], TacsScalar* Te,
-                               TacsScalar* Pe) {
+                               const TacsScalar dvars[], TacsScalar *Te,
+                               TacsScalar *Pe) {
     *Te = 0.0;
     *Pe = 0.0;
   }
@@ -535,7 +535,7 @@ class TACSElement : public TACSObject {
     @param _temp_size The size of the temporary array needed as an argument
   */
   virtual void getMatVecDataSizes(ElementMatrixType matType, int elemIndex,
-                                  int* _data_size, int* _temp_size) {
+                                  int *_data_size, int *_temp_size) {
     *_data_size = 0;
     *_temp_size = 0;
   }
@@ -669,8 +669,8 @@ class TACSElement : public TACSObject {
                                 int n, double pt[], const TacsScalar Xpts[],
                                 const TacsScalar vars[],
                                 const TacsScalar dvars[],
-                                const TacsScalar ddvars[], TacsScalar* detXd,
-                                TacsScalar* quantity) {
+                                const TacsScalar ddvars[], TacsScalar *detXd,
+                                TacsScalar *quantity) {
     return 0;  // No quantities defined by default
   }
 
@@ -761,7 +761,7 @@ class TACSElement : public TACSObject {
                              const TacsScalar Xpts[], const TacsScalar vars[],
                              const TacsScalar dvars[],
                              const TacsScalar ddvars[], int ld_data,
-                             TacsScalar* data) {}
+                             TacsScalar *data) {}
 
  private:
   int componentNum;

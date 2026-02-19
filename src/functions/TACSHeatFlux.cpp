@@ -17,8 +17,8 @@
 #include "TACSAssembler.h"
 #include "TACSElementAlgebra.h"
 
-TACSHeatFlux::TACSHeatFlux(TACSAssembler* _assembler, int* elem_index,
-                           int* face_index, int num_elems)
+TACSHeatFlux::TACSHeatFlux(TACSAssembler *_assembler, int *elem_index,
+                           int *face_index, int num_elems)
     : TACSFunction(_assembler) {
   // Set the element indices
   for (int i = 0; i < num_elems; i++) {
@@ -48,12 +48,12 @@ TACSHeatFlux::~TACSHeatFlux() {}
 /*
   HeatFluxIntegral function name
 */
-const char* TACSHeatFlux::funcName = "TACSHeatFlux";
+const char *TACSHeatFlux::funcName = "TACSHeatFlux";
 
 /*
   Return the function name
 */
-const char* TACSHeatFlux::getObjectName() { return funcName; }
+const char *TACSHeatFlux::getObjectName() { return funcName; }
 
 /*
   Retrieve the function value
@@ -78,13 +78,13 @@ void TACSHeatFlux::finalEvaluation(EvaluationType ftype) {
   Perform the element-wise evaluation of the TACSDisplacementIntegral function.
 */
 void TACSHeatFlux::elementWiseEval(EvaluationType ftype, int elemIndex,
-                                   TACSElement* element, double time,
+                                   TACSElement *element, double time,
                                    TacsScalar scale, const TacsScalar Xpts[],
                                    const TacsScalar vars[],
                                    const TacsScalar dvars[],
                                    const TacsScalar ddvars[]) {
   // Retrieve the number of stress components for this element
-  TACSElementBasis* basis = element->getElementBasis();
+  TACSElementBasis *basis = element->getElementBasis();
 
   if (basis) {
     // Get the surface index
@@ -129,7 +129,7 @@ void TACSHeatFlux::elementWiseEval(EvaluationType ftype, int elemIndex,
   function with respect to the state variables.
 */
 void TACSHeatFlux::getElementSVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar alpha,
+    int elemIndex, TACSElement *element, double time, TacsScalar alpha,
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
@@ -139,7 +139,7 @@ void TACSHeatFlux::getElementSVSens(
   memset(dfdu, 0, numVars * sizeof(TacsScalar));
 
   // Get the element basis class
-  TACSElementBasis* basis = element->getElementBasis();
+  TACSElementBasis *basis = element->getElementBasis();
 
   if (basis) {
     // Get the surface index
@@ -193,7 +193,7 @@ void TACSHeatFlux::getElementSVSens(
   the element nodal locations
 */
 void TACSHeatFlux::getElementXptSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the element node
@@ -202,7 +202,7 @@ void TACSHeatFlux::getElementXptSens(
   memset(dfdXpts, 0, 3 * numNodes * sizeof(TacsScalar));
 
   // Get the element basis class
-  TACSElementBasis* basis = element->getElementBasis();
+  TACSElementBasis *basis = element->getElementBasis();
 
   if (basis) {
     // Get the surface index
@@ -272,11 +272,11 @@ void TACSHeatFlux::getElementXptSens(
   the constitutive/material design variables.
 */
 void TACSHeatFlux::addElementDVSens(
-    int elemIndex, TACSElement* element, double time, TacsScalar scale,
+    int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   // Get the element basis class
-  TACSElementBasis* basis = element->getElementBasis();
+  TACSElementBasis *basis = element->getElementBasis();
 
   if (basis) {
     // Get the surface index

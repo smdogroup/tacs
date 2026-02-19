@@ -707,7 +707,7 @@ TacsScalar compute_inplane_penalty(TacsScalar drot[], const int num_points,
     }
 
     for (int j = 0; j < 3; j++) {
-      const TacsScalar* Cd = &Ct[9 * j];
+      const TacsScalar *Cd = &Ct[9 * j];
       TacsScalar dv1[3], dv2[3];
       // Compute v1 = dot(C^{T} + I, Xd[0:3] + Ud[0:6:2]))
       dv1[0] = Cd[0] * (Xd[0] + Ud[0]) + Cd[3] * (Xd[1] + Ud[2]) +
@@ -773,7 +773,7 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
   // (X + U),1  and (X + U),2
 
   for (int i = 0; i < 6; i++) {
-    const TacsScalar* C = &Ctt[9 * i];
+    const TacsScalar *C = &Ctt[9 * i];
 
     // Compute v1 = dot(C^{T} + I, Xd[0:3] + Ud[0:6:2]))
     ddv1[3 * i] = C[0] * (Xd[0] + Ud[0]) + C[3] * (Xd[1] + Ud[2]) +
@@ -795,7 +795,7 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
   // Compute the penalty terms
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 3; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Loop from the start of the i-th row to the diagonal
       for (int j = 0; j <= i; j++) {
@@ -808,7 +808,7 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
 
         for (int jj = 3; jj < end; jj++) {
           TacsScalar dv1[3], dv2[3];
-          const TacsScalar* C = &Ct[9 * (jj - 3)];
+          const TacsScalar *C = &Ct[9 * (jj - 3)];
 
           // Compute v1 = dot(C^{T} + I, Xd[0:3] + Ud[0:6:2]))
           dv1[0] = C[3 * ii] * Na[i];
@@ -830,7 +830,7 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
 
     // Loop over only the rotation terms
     for (int ii = 3; ii < 6; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Loop from the start of the i-th row to the diagonal
       for (int j = 0; j <= i; j++) {
@@ -841,7 +841,7 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
 
         for (int jj = 0; (jj < 3) && (jj < end); jj++) {
           TacsScalar dv1[3], dv2[3];
-          const TacsScalar* C = &Ct[9 * (ii - 3)];
+          const TacsScalar *C = &Ct[9 * (ii - 3)];
 
           // Compute v1 = dot(C^{T} + I, Xd[0:3] + Ud[0:6:2]))
           dv1[0] = C[3 * jj] * Na[j];
@@ -862,32 +862,32 @@ void add_inplane_penalty(TacsScalar matrix[], const int num_points,
         for (int jj = 3; jj < end; jj++) {
           if ((ii == 3 && jj == 4) || (ii == 4 && jj == 3)) {
             // Compute the derivative C,12
-            const TacsScalar* dv1 = &ddv1[3 * 3];
-            const TacsScalar* dv2 = &ddv2[3 * 3];
+            const TacsScalar *dv1 = &ddv1[3 * 3];
+            const TacsScalar *dv2 = &ddv2[3 * 3];
 
             mat[0] += scale * N[i] * N[j] *
                       ((Xd[0] * dv2[0] + Xd[1] * dv2[1] + Xd[2] * dv2[2]) -
                        (Xd[3] * dv1[0] + Xd[4] * dv1[1] + Xd[5] * dv1[2]));
           } else if ((ii == 3 && jj == 5) || (ii == 5 && jj == 3)) {
             // Use the derivatives C,13
-            const TacsScalar* dv1 = &ddv1[3 * 4];
-            const TacsScalar* dv2 = &ddv2[3 * 4];
+            const TacsScalar *dv1 = &ddv1[3 * 4];
+            const TacsScalar *dv2 = &ddv2[3 * 4];
 
             mat[0] += scale * N[i] * N[j] *
                       ((Xd[0] * dv2[0] + Xd[1] * dv2[1] + Xd[2] * dv2[2]) -
                        (Xd[3] * dv1[0] + Xd[4] * dv1[1] + Xd[5] * dv1[2]));
           } else if ((ii == 4 && jj == 5) || (ii == 5 && jj == 4)) {
             // Use the derivatives C,23
-            const TacsScalar* dv1 = &ddv1[3 * 5];
-            const TacsScalar* dv2 = &ddv2[3 * 5];
+            const TacsScalar *dv1 = &ddv1[3 * 5];
+            const TacsScalar *dv2 = &ddv2[3 * 5];
 
             mat[0] += scale * N[i] * N[j] *
                       ((Xd[0] * dv2[0] + Xd[1] * dv2[1] + Xd[2] * dv2[2]) -
                        (Xd[3] * dv1[0] + Xd[4] * dv1[1] + Xd[5] * dv1[2]));
           } else {  // ii == jj
             // Use the diagonal
-            const TacsScalar* dv1 = &ddv1[3 * (ii - 3)];
-            const TacsScalar* dv2 = &ddv2[3 * (ii - 3)];
+            const TacsScalar *dv1 = &ddv1[3 * (ii - 3)];
+            const TacsScalar *dv2 = &ddv2[3 * (ii - 3)];
 
             mat[0] += scale * N[i] * N[j] *
                       ((Xd[0] * dv2[0] + Xd[1] * dv2[1] + Xd[2] * dv2[2]) -
@@ -1064,9 +1064,9 @@ void large_rot_strain(TacsScalar strain[], const TacsScalar Ux[],
                       const TacsScalar n[], const TacsScalar n_xi[],
                       const TacsScalar n_eta[]) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Transform the displacement into the local shell coordinates
   TacsScalar Ud[6];
@@ -1189,9 +1189,9 @@ void large_rot_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
                            const TacsScalar n_eta[], const TacsScalar dn_eta[],
                            const int num_components) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Transform the displacement into the local shell coordinates
   TacsScalar Ud[6];
@@ -1428,17 +1428,17 @@ void large_rot_bmat(TacsScalar B[], const int num_points, const double N[],
                     const TacsScalar ztx[], const TacsScalar n[],
                     const TacsScalar n_xi[], const TacsScalar n_eta[]) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Extract the second derivative information
-  const TacsScalar* C11 = &Ctt[0];
-  const TacsScalar* C22 = &Ctt[9];
-  const TacsScalar* C33 = &Ctt[18];
-  const TacsScalar* C12 = &Ctt[27];
-  const TacsScalar* C13 = &Ctt[36];
-  const TacsScalar* C23 = &Ctt[45];
+  const TacsScalar *C11 = &Ctt[0];
+  const TacsScalar *C22 = &Ctt[9];
+  const TacsScalar *C33 = &Ctt[18];
+  const TacsScalar *C12 = &Ctt[27];
+  const TacsScalar *C13 = &Ctt[36];
+  const TacsScalar *C23 = &Ctt[45];
 
   // Transform the displacement gradient to the local frame
   TacsScalar Ud[6];
@@ -1705,17 +1705,17 @@ void add_large_rot_bmat_sens(
     const TacsScalar dn_xi[], const TacsScalar n_eta[],
     const TacsScalar dn_eta[], const int num_components) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Extract the second derivative information
-  const TacsScalar* C11 = &Ctt[0];
-  const TacsScalar* C22 = &Ctt[9];
-  const TacsScalar* C33 = &Ctt[18];
-  const TacsScalar* C12 = &Ctt[27];
-  const TacsScalar* C13 = &Ctt[36];
-  const TacsScalar* C23 = &Ctt[45];
+  const TacsScalar *C11 = &Ctt[0];
+  const TacsScalar *C22 = &Ctt[9];
+  const TacsScalar *C33 = &Ctt[18];
+  const TacsScalar *C12 = &Ctt[27];
+  const TacsScalar *C13 = &Ctt[36];
+  const TacsScalar *C23 = &Ctt[45];
 
   // Transform the displacement gradient to the local frame
   TacsScalar Ud[6];
@@ -1820,8 +1820,8 @@ void add_large_rot_bmat_sens(
 
   // First, compute the derivatives of the displacements w.r.t. the
   // nodal coordinates
-  TacsScalar* du0 = dU0;
-  TacsScalar* du1 = dU1;
+  TacsScalar *du0 = dU0;
+  TacsScalar *du1 = dU1;
 
   // For each point
   for (int i = 0; i < num_points; i++) {
@@ -2060,8 +2060,8 @@ void add_large_rot_bmat_sens(
                        r[2] * dztx[5]);
 
     // Set the pointers to the pre-computed derivatives
-    const TacsScalar* du0 = dU0;
-    const TacsScalar* du1 = dU1;
+    const TacsScalar *du0 = dU0;
+    const TacsScalar *du1 = dU1;
 
     // For each point
     for (int i = 0; i < num_points; i++) {
@@ -2339,26 +2339,26 @@ void add_large_rot_stress_bmat(
   }
 
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Extract the second derivative information
-  const TacsScalar* C11 = &Ctt[0];
-  const TacsScalar* C22 = &Ctt[9];
-  const TacsScalar* C33 = &Ctt[18];
-  const TacsScalar* C12 = &Ctt[27];
-  const TacsScalar* C13 = &Ctt[36];
-  const TacsScalar* C23 = &Ctt[45];
+  const TacsScalar *C11 = &Ctt[0];
+  const TacsScalar *C22 = &Ctt[9];
+  const TacsScalar *C33 = &Ctt[18];
+  const TacsScalar *C12 = &Ctt[27];
+  const TacsScalar *C13 = &Ctt[36];
+  const TacsScalar *C23 = &Ctt[45];
 
   // Extract the thrid derivative information
-  const TacsScalar* C112 = &Cttt[0];
-  const TacsScalar* C113 = &Cttt[9];
-  const TacsScalar* C122 = &Cttt[18];
-  const TacsScalar* C123 = &Cttt[27];
-  const TacsScalar* C133 = &Cttt[36];
-  const TacsScalar* C223 = &Cttt[45];
-  const TacsScalar* C233 = &Cttt[54];
+  const TacsScalar *C112 = &Cttt[0];
+  const TacsScalar *C113 = &Cttt[9];
+  const TacsScalar *C122 = &Cttt[18];
+  const TacsScalar *C123 = &Cttt[27];
+  const TacsScalar *C133 = &Cttt[36];
+  const TacsScalar *C223 = &Cttt[45];
+  const TacsScalar *C233 = &Cttt[54];
 
   // Transform the displacement gradient to the local frame
   TacsScalar Ud[6];
@@ -2459,8 +2459,8 @@ void add_large_rot_stress_bmat(
   TacsScalar dU0[9 * 6 * shellutils::MAX_NUM_NODES];
   TacsScalar dU1[6 * 6 * shellutils::MAX_NUM_NODES];
 
-  TacsScalar* du0 = dU0;
-  TacsScalar* du1 = dU1;
+  TacsScalar *du0 = dU0;
+  TacsScalar *du1 = dU1;
 
   // For each point
   for (int i = 0; i < num_points; i++) {
@@ -2546,15 +2546,15 @@ void add_large_rot_stress_bmat(
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Set the i-counter from the beginning of the row
-      TacsScalar* di0 = &dU0[9 * (6 * i + ii)];
-      TacsScalar* di1 = &dU1[6 * (6 * i + ii)];
+      TacsScalar *di0 = &dU0[9 * (6 * i + ii)];
+      TacsScalar *di1 = &dU1[6 * (6 * i + ii)];
 
       // Start the j-counter from the i-counter
-      TacsScalar* dj0 = dU0;
-      TacsScalar* dj1 = dU1;
+      TacsScalar *dj0 = dU0;
+      TacsScalar *dj1 = dU1;
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -2675,7 +2675,7 @@ void add_large_rot_stress_bmat(
   // displacement gradient
   for (int i = 0; i < num_points; i++) {
     for (int ii = 3; ii < 6; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -2873,9 +2873,9 @@ void large_rot_bend_strain(TacsScalar strain[], const TacsScalar Ux[],
                            const TacsScalar n[], const TacsScalar n_xi[],
                            const TacsScalar n_eta[]) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Transform the displacement into the local shell coordinates
   TacsScalar Ud[6];
@@ -2984,9 +2984,9 @@ void large_rot_bend_strain_sens(
     const TacsScalar dn_xi[], const TacsScalar n_eta[],
     const TacsScalar dn_eta[], const int num_components) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Transform the displacement into the local shell coordinates
   TacsScalar Ud[6];
@@ -3192,17 +3192,17 @@ void large_rot_bend_bmat(TacsScalar B[], const int num_points, const double N[],
                          const TacsScalar n[], const TacsScalar n_xi[],
                          const TacsScalar n_eta[]) {
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Extract the second derivative information
-  const TacsScalar* C11 = &Ctt[0];
-  const TacsScalar* C22 = &Ctt[9];
-  const TacsScalar* C33 = &Ctt[18];
-  const TacsScalar* C12 = &Ctt[27];
-  const TacsScalar* C13 = &Ctt[36];
-  const TacsScalar* C23 = &Ctt[45];
+  const TacsScalar *C11 = &Ctt[0];
+  const TacsScalar *C22 = &Ctt[9];
+  const TacsScalar *C33 = &Ctt[18];
+  const TacsScalar *C12 = &Ctt[27];
+  const TacsScalar *C13 = &Ctt[36];
+  const TacsScalar *C23 = &Ctt[45];
 
   // Transform the displacement gradient to the local frame
   TacsScalar Ud[6];
@@ -3440,26 +3440,26 @@ void add_large_rot_bend_stress_bmat(
   }
 
   // Extract the derivative information
-  const TacsScalar* C1 = &Ct[0];
-  const TacsScalar* C2 = &Ct[9];
-  const TacsScalar* C3 = &Ct[18];
+  const TacsScalar *C1 = &Ct[0];
+  const TacsScalar *C2 = &Ct[9];
+  const TacsScalar *C3 = &Ct[18];
 
   // Extract the second derivative information
-  const TacsScalar* C11 = &Ctt[0];
-  const TacsScalar* C22 = &Ctt[9];
-  const TacsScalar* C33 = &Ctt[18];
-  const TacsScalar* C12 = &Ctt[27];
-  const TacsScalar* C13 = &Ctt[36];
-  const TacsScalar* C23 = &Ctt[45];
+  const TacsScalar *C11 = &Ctt[0];
+  const TacsScalar *C22 = &Ctt[9];
+  const TacsScalar *C33 = &Ctt[18];
+  const TacsScalar *C12 = &Ctt[27];
+  const TacsScalar *C13 = &Ctt[36];
+  const TacsScalar *C23 = &Ctt[45];
 
   // Extract the thrid derivative information
-  const TacsScalar* C112 = &Cttt[0];
-  const TacsScalar* C113 = &Cttt[9];
-  const TacsScalar* C122 = &Cttt[18];
-  const TacsScalar* C123 = &Cttt[27];
-  const TacsScalar* C133 = &Cttt[36];
-  const TacsScalar* C223 = &Cttt[45];
-  const TacsScalar* C233 = &Cttt[54];
+  const TacsScalar *C112 = &Cttt[0];
+  const TacsScalar *C113 = &Cttt[9];
+  const TacsScalar *C122 = &Cttt[18];
+  const TacsScalar *C123 = &Cttt[27];
+  const TacsScalar *C133 = &Cttt[36];
+  const TacsScalar *C223 = &Cttt[45];
+  const TacsScalar *C233 = &Cttt[54];
 
   // Transform the displacement gradient to the local frame
   TacsScalar Ud[6];
@@ -3557,8 +3557,8 @@ void add_large_rot_bend_stress_bmat(
   TacsScalar dU0[6 * 6 * shellutils::MAX_NUM_NODES];
   TacsScalar dU1[6 * 6 * shellutils::MAX_NUM_NODES];
 
-  TacsScalar* du0 = dU0;
-  TacsScalar* du1 = dU1;
+  TacsScalar *du0 = dU0;
+  TacsScalar *du1 = dU1;
 
   // For each point
   for (int i = 0; i < num_points; i++) {
@@ -3641,15 +3641,15 @@ void add_large_rot_bend_stress_bmat(
 
   for (int i = 0; i < num_points; i++) {
     for (int ii = 0; ii < 6; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // Set the i-counter from the beginning of the row
-      TacsScalar* di0 = &dU0[6 * (6 * i + ii)];
-      TacsScalar* di1 = &dU1[6 * (6 * i + ii)];
+      TacsScalar *di0 = &dU0[6 * (6 * i + ii)];
+      TacsScalar *di1 = &dU1[6 * (6 * i + ii)];
 
       // Start the j-counter from the i-counter
-      TacsScalar* dj0 = dU0;
-      TacsScalar* dj1 = dU1;
+      TacsScalar *dj0 = dU0;
+      TacsScalar *dj1 = dU1;
 
       // For each point
       for (int j = 0; j <= i; j++) {
@@ -3756,7 +3756,7 @@ void add_large_rot_bend_stress_bmat(
   // displacement gradient
   for (int i = 0; i < num_points; i++) {
     for (int ii = 3; ii < 6; ii++) {
-      TacsScalar* mat = &matrix[(6 * i + ii) * (6 * num_points)];
+      TacsScalar *mat = &matrix[(6 * i + ii) * (6 * num_points)];
 
       // For each point
       for (int j = 0; j <= i; j++) {

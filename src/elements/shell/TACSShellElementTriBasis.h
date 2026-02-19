@@ -126,14 +126,14 @@ class TACSShellTriLinearBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpFieldsOuterProduct(const double pt[],
                                           const TacsScalar jac[],
-                                          TacsScalar* mat) {
+                                          TacsScalar *mat) {
     double N[NUM_NODES];
     computeBasis(pt, N);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < NUM_NODES; jx++) {
-      const TacsScalar* jac1 = jac;
+      const TacsScalar *jac1 = jac;
       for (int jm = 0; jm < njrows; jm++, jac1 += njcols) {
         for (int ix = 0; ix < NUM_NODES; ix++) {
           double Ni = N[jx] * N[ix];
@@ -163,15 +163,15 @@ class TACSShellTriLinearBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpGradOuterProduct(const double pt[],
                                         const TacsScalar jac[],
-                                        TacsScalar* mat) {
+                                        TacsScalar *mat) {
     double Nxi[2 * NUM_NODES];
     computeBasisGradient(pt, Nxi);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < NUM_NODES; jx++) {
-      const TacsScalar* jac1 = jac;
-      const TacsScalar* jac2 = &jac[2 * njcols];
+      const TacsScalar *jac1 = jac;
+      const TacsScalar *jac2 = &jac[2 * njcols];
 
       for (int jm = 0; jm < njrows;
            jm++, jac1 += 4 * njcols, jac2 += 4 * njcols) {
@@ -213,7 +213,7 @@ class TACSShellTriLinearBasis {
   static void addInterpGradMixedOuterProduct(const double pt[],
                                              const TacsScalar jac[],
                                              const TacsScalar jacT[],
-                                             TacsScalar* mat) {
+                                             TacsScalar *mat) {
     double N[NUM_NODES];
     computeBasis(pt, N);
 
@@ -224,7 +224,7 @@ class TACSShellTriLinearBasis {
 
     if (jac && jacT) {
       for (int jx = 0; jx < NUM_NODES; jx++) {
-        const TacsScalar* jac1 = jac;
+        const TacsScalar *jac1 = jac;
 
         for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
           for (int ix = 0; ix < NUM_NODES; ix++) {
@@ -233,7 +233,7 @@ class TACSShellTriLinearBasis {
             double Na2 = N[ix] * Nxi[2 * jx];
             double Nb2 = N[ix] * Nxi[2 * jx + 1];
 
-            const TacsScalar* jac2 = &jacT[2 * jm];
+            const TacsScalar *jac2 = &jacT[2 * jm];
             for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
               mat[im] += Na1 * jac1[2 * im] + Nb1 * jac1[2 * im + 1] +
                          Na2 * jac2[0] + Nb2 * jac2[1];
@@ -247,7 +247,7 @@ class TACSShellTriLinearBasis {
       }
     } else if (jac) {
       for (int jx = 0; jx < NUM_NODES; jx++) {
-        const TacsScalar* jac1 = jac;
+        const TacsScalar *jac1 = jac;
 
         for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
           for (int ix = 0; ix < NUM_NODES; ix++) {
@@ -271,7 +271,7 @@ class TACSShellTriLinearBasis {
             double Na2 = N[ix] * Nxi[2 * jx];
             double Nb2 = N[ix] * Nxi[2 * jx + 1];
 
-            const TacsScalar* jac2 = &jacT[2 * jm];
+            const TacsScalar *jac2 = &jacT[2 * jm];
             for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
               mat[im] += Na2 * jac2[0] + Nb2 * jac2[1];
             }
@@ -545,14 +545,14 @@ class TACSShellTriQuadraticBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpFieldsOuterProduct(const double pt[],
                                           const TacsScalar jac[],
-                                          TacsScalar* mat) {
+                                          TacsScalar *mat) {
     double N[NUM_NODES];
     computeBasis(pt, N);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < NUM_NODES; jx++) {
-      const TacsScalar* jac1 = jac;
+      const TacsScalar *jac1 = jac;
       for (int jm = 0; jm < njrows; jm++, jac1 += njcols) {
         for (int ix = 0; ix < NUM_NODES; ix++) {
           double Ni = N[jx] * N[ix];
@@ -582,15 +582,15 @@ class TACSShellTriQuadraticBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpGradOuterProduct(const double pt[],
                                         const TacsScalar jac[],
-                                        TacsScalar* mat) {
+                                        TacsScalar *mat) {
     double Nxi[2 * NUM_NODES];
     computeBasisGradient(pt, Nxi);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < NUM_NODES; jx++) {
-      const TacsScalar* jac1 = jac;
-      const TacsScalar* jac2 = &jac[2 * njcols];
+      const TacsScalar *jac1 = jac;
+      const TacsScalar *jac2 = &jac[2 * njcols];
 
       for (int jm = 0; jm < njrows;
            jm++, jac1 += 4 * njcols, jac2 += 4 * njcols) {
@@ -632,7 +632,7 @@ class TACSShellTriQuadraticBasis {
   static void addInterpGradMixedOuterProduct(const double pt[],
                                              const TacsScalar jac[],
                                              const TacsScalar jacT[],
-                                             TacsScalar* mat) {
+                                             TacsScalar *mat) {
     double N[NUM_NODES];
     computeBasis(pt, N);
 
@@ -643,7 +643,7 @@ class TACSShellTriQuadraticBasis {
 
     if (jac && jacT) {
       for (int jx = 0; jx < NUM_NODES; jx++) {
-        const TacsScalar* jac1 = jac;
+        const TacsScalar *jac1 = jac;
 
         for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
           for (int ix = 0; ix < NUM_NODES; ix++) {
@@ -652,7 +652,7 @@ class TACSShellTriQuadraticBasis {
             double Na2 = N[ix] * Nxi[2 * jx];
             double Nb2 = N[ix] * Nxi[2 * jx + 1];
 
-            const TacsScalar* jac2 = &jacT[2 * jm];
+            const TacsScalar *jac2 = &jacT[2 * jm];
             for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
               mat[im] += Na1 * jac1[2 * im] + Nb1 * jac1[2 * im + 1] +
                          Na2 * jac2[0] + Nb2 * jac2[1];
@@ -666,7 +666,7 @@ class TACSShellTriQuadraticBasis {
       }
     } else if (jac) {
       for (int jx = 0; jx < NUM_NODES; jx++) {
-        const TacsScalar* jac1 = jac;
+        const TacsScalar *jac1 = jac;
 
         for (int jm = 0; jm < njrows; jm++, jac1 += 2 * njcols) {
           for (int ix = 0; ix < NUM_NODES; ix++) {
@@ -690,7 +690,7 @@ class TACSShellTriQuadraticBasis {
             double Na2 = N[ix] * Nxi[2 * jx];
             double Nb2 = N[ix] * Nxi[2 * jx + 1];
 
-            const TacsScalar* jac2 = &jacT[2 * jm];
+            const TacsScalar *jac2 = &jacT[2 * jm];
             for (int im = 0; im < njcols; im++, jac2 += 2 * njcols) {
               mat[im] += Na2 * jac2[0] + Nb2 * jac2[1];
             }

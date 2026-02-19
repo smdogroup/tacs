@@ -22,8 +22,8 @@
   creator object
 */
 void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
-                     int nz, TACSAssembler** _assembler,
-                     TACSCreator** _creator) {
+                     int nz, TACSAssembler **_assembler,
+                     TACSCreator **_creator) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -32,7 +32,7 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
   }
 
   // Set up the creator object
-  TACSCreator* creator = new TACSCreator(comm, varsPerNode);
+  TACSCreator *creator = new TACSCreator(comm, varsPerNode);
   creator->incref();
 
   if (rank == 0) {
@@ -42,9 +42,9 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
     int numElements = nx * ny * nz;
 
     // Allocate the input arrays into the creator object
-    int* ids = new int[numElements];
-    int* ptr = new int[numElements + 1];
-    int* conn = new int[order * order * order * numElements];
+    int *ids = new int[numElements];
+    int *ptr = new int[numElements + 1];
+    int *conn = new int[order * order * order * numElements];
 
     // Set the ids
     memset(ids, 0, numElements * sizeof(int));
@@ -81,7 +81,7 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
 
     // We're over-counting one of the nodes on each edge
     int numBcs = ((order - 1) * nx + 1) * ((order - 1) * ny + 1);
-    int* bcNodes = new int[numBcs];
+    int *bcNodes = new int[numBcs];
 
     for (int i = 0; i < numBcs; i++) {
       bcNodes[i] = i;
@@ -92,12 +92,12 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
     delete[] bcNodes;
 
     // Set the node locations
-    TacsScalar* Xpts = new TacsScalar[3 * numNodes];
+    TacsScalar *Xpts = new TacsScalar[3 * numNodes];
     double hx = 1.0 / nx;
     double hy = 1.0 / ny;
     double hz = 1.0 / nz;
 
-    const double* pts = NULL;
+    const double *pts = NULL;
     if (order == 2) {
       pts = TacsGaussLobattoPoints2;
     }
@@ -140,14 +140,14 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
   TacsScalar ys = 270.0;
   TacsScalar cte = 24.0e-6;
   TacsScalar kappa = 230.0;
-  TACSMaterialProperties* props1 =
+  TACSMaterialProperties *props1 =
       new TACSMaterialProperties(rho, specific_heat, E1, nu, ys, cte, kappa);
-  TACSMaterialProperties* props2 =
+  TACSMaterialProperties *props2 =
       new TACSMaterialProperties(rho, specific_heat, E2, nu, ys, cte, kappa);
 
   // Create the stiffness object
-  TACSSolidConstitutive* stiff1 = new TACSSolidConstitutive(props1);
-  TACSSolidConstitutive* stiff2 = new TACSSolidConstitutive(props2);
+  TACSSolidConstitutive *stiff1 = new TACSSolidConstitutive(props1);
+  TACSSolidConstitutive *stiff2 = new TACSSolidConstitutive(props2);
 
   // Create the model class
   TACSElementModel *model1 = NULL, *model2 = NULL;
@@ -163,7 +163,7 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
   }
 
   // Create the element class
-  TACSElementBasis* basis = NULL;
+  TACSElementBasis *basis = NULL;
   if (order == 2) {
     basis = new TACSLinearHexaBasis();
   } else if (order == 3) {
@@ -175,11 +175,11 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
   } else if (order == 6) {
     basis = new TACSQuinticHexaBasis();
   }
-  TACSElement3D* linear_element1 = new TACSElement3D(model1, basis);
-  TACSElement3D* linear_element2 = new TACSElement3D(model2, basis);
+  TACSElement3D *linear_element1 = new TACSElement3D(model1, basis);
+  TACSElement3D *linear_element2 = new TACSElement3D(model2, basis);
 
   // Set the one element
-  TACSElement* elems[2];
+  TACSElement *elems[2];
   elems[0] = linear_element1;
   elems[1] = linear_element2;
   creator->setElements(2, elems);
@@ -188,7 +188,7 @@ void createAssembler(MPI_Comm comm, int varsPerNode, int order, int nx, int ny,
                              TACSAssembler::GAUSS_SEIDEL);
 
   // Create TACS
-  TACSAssembler* assembler = creator->createTACS();
+  TACSAssembler *assembler = creator->createTACS();
   assembler->incref();
 
   // Set the pointers
@@ -205,17 +205,17 @@ void testMatrixVectorProducts(MPI_Comm comm, int varsPerNode, int order, int nx,
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TACSAssembler* assembler;
-  TACSCreator* creator;
+  TACSAssembler *assembler;
+  TACSCreator *creator;
 
   createAssembler(comm, varsPerNode, order, nx, ny, nz, &assembler, &creator);
 
-  TACSParallelMat* mat = assembler->createMat();
+  TACSParallelMat *mat = assembler->createMat();
   mat->incref();
 
-  TACSBVec* x = assembler->createVec();
-  TACSBVec* y_mat = assembler->createVec();
-  TACSBVec* y_free = assembler->createVec();
+  TACSBVec *x = assembler->createVec();
+  TACSBVec *y_mat = assembler->createVec();
+  TACSBVec *y_free = assembler->createVec();
   x->setRand(-1.0, 1.0);
   assembler->applyBCs(x);
 
@@ -238,7 +238,7 @@ void testMatrixVectorProducts(MPI_Comm comm, int varsPerNode, int order, int nx,
   tprod = MPI_Wtime() - tprod;
   printf("Matrix-vector product time: %e\n", tprod);
 
-  TACSMatrixFreeMat* mat_free = new TACSMatrixFreeMat(assembler);
+  TACSMatrixFreeMat *mat_free = new TACSMatrixFreeMat(assembler);
   double tassemble_free = MPI_Wtime();
   mat_free->assembleMatrixFreeData(TACS_JACOBIAN_MATRIX, alpha, beta, gamma);
   tassemble_free = MPI_Wtime() - tassemble_free;
@@ -264,7 +264,7 @@ void testMatrixVectorProducts(MPI_Comm comm, int varsPerNode, int order, int nx,
   creator->decref();
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
 
   // Set the dimension of the mesh
@@ -335,8 +335,8 @@ int main(int argc, char* argv[]) {
     testMatrixVectorProducts(comm, varsPerNode, order, nx, ny, nz);
   }
 
-  TACSAssembler* assembler[5];
-  TACSCreator* creator[5];
+  TACSAssembler *assembler[5];
+  TACSCreator *creator[5];
 
   // Get the multigrid levels
   for (int i = 0; i < order - 1; i++) {
@@ -347,13 +347,13 @@ int main(int argc, char* argv[]) {
 
   // Create the multigrid object
   int nlevels = order - 1;
-  TACSMg* mg = new TACSMg(comm, nlevels);
+  TACSMg *mg = new TACSMg(comm, nlevels);
   mg->incref();
 
   // Create the interpolation operators
   for (int level = 0; level < nlevels - 1; level++) {
     // Allocate the interpolation object
-    TACSBVecInterp* interp = NULL;
+    TACSBVecInterp *interp = NULL;
     interp = new TACSBVecInterp(assembler[level + 1], assembler[level]);
 
     int fine_order = order - level;
@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
       creator[level]->getNodeNums(&nodes);
       creator[level + 1]->getNodeNums(&coarse_nodes);
 
-      const double* fine_knots = NULL;
+      const double *fine_knots = NULL;
       if (fine_order == 3) {
         fine_knots = TacsGaussLobattoPoints3;
       } else if (fine_order == 4) {
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
         fine_knots = TacsGaussLobattoPoints6;
       }
 
-      const double* coarse_knots = NULL;
+      const double *coarse_knots = NULL;
       if (coarse_order == 2) {
         coarse_knots = TacsGaussLobattoPoints2;
       } else if (coarse_order == 3) {
@@ -490,8 +490,8 @@ int main(int argc, char* argv[]) {
 
     // Set the matrices to use
     int use_galerkin = 0;
-    TACSMat* mat = NULL;
-    TACSPc* smoother = NULL;
+    TACSMat *mat = NULL;
+    TACSPc *smoother = NULL;
 
     if (fine_order > 3) {
       // Create the matrix-free matrix object
@@ -519,18 +519,18 @@ int main(int argc, char* argv[]) {
   }
 
   // Create the residual and solution vectors on the finest TACS mesh
-  TACSBVec* force = assembler[0]->createVec();
+  TACSBVec *force = assembler[0]->createVec();
   force->incref();
-  TACSBVec* res = assembler[0]->createVec();
+  TACSBVec *res = assembler[0]->createVec();
   res->incref();
-  TACSBVec* ans = assembler[0]->createVec();
+  TACSBVec *ans = assembler[0]->createVec();
   ans->incref();
 
   // Allocate the GMRES solution method
   int gmres_iters = 25;
   int nrestart = 8;
   int is_flexible = 0;
-  GMRES* ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
+  GMRES *ksm = new GMRES(mg->getMat(0), mg, gmres_iters, nrestart, is_flexible);
   ksm->incref();
 
   // Set a monitor to check on solution progress
@@ -544,7 +544,7 @@ int main(int argc, char* argv[]) {
   mg->assembleJacobian(1.0, 0.0, 0.0, res);
 
   force->zeroEntries();
-  TacsScalar* force_array;
+  TacsScalar *force_array;
   int size = force->getArray(&force_array);
   for (int i = 1; i < size; i += varsPerNode) {
     force_array[i] = 1.0;
@@ -563,7 +563,7 @@ int main(int argc, char* argv[]) {
   assembler[0]->setVariables(ans);
 
   // Compute the residual
-  TACSMat* matrix = mg->getMat(0);
+  TACSMat *matrix = mg->getMat(0);
   matrix->mult(ans, res);
   res->axpy(-1.0, force);
   TacsScalar res_norm = res->norm();
@@ -576,7 +576,7 @@ int main(int argc, char* argv[]) {
   ElementType etype = TACS_SOLID_ELEMENT;
   int write_flag = (TACS_OUTPUT_NODES | TACS_OUTPUT_CONNECTIVITY |
                     TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_EXTRAS);
-  TACSToFH5* f5 = new TACSToFH5(assembler[0], etype, write_flag);
+  TACSToFH5 *f5 = new TACSToFH5(assembler[0], etype, write_flag);
   f5->incref();
   f5->writeToFile("volume.f5");
 

@@ -74,7 +74,7 @@ static inline void evalPlateStrain(const TacsScalar Ut[], const TacsScalar Ux[],
 }
 
 TACSThermoelasticPlateModel::TACSThermoelasticPlateModel(
-    TACSShellConstitutive* _con) {
+    TACSShellConstitutive *_con) {
   con = _con;
   con->incref();
 }
@@ -167,9 +167,9 @@ void TACSThermoelasticPlateModel::evalWeakIntegrand(
   con->evalHeatFlux(elemIndex, pt, X, grad, flux);
 
   // Set pointers to the in-plane, bending and shear resultants
-  const TacsScalar* N = &s[0];
-  const TacsScalar* M = &s[3];
-  const TacsScalar* Q = &s[6];
+  const TacsScalar *N = &s[0];
+  const TacsScalar *M = &s[3];
+  const TacsScalar *Q = &s[6];
 
   // Set the coefficients
   memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
@@ -202,8 +202,8 @@ void TACSThermoelasticPlateModel::evalWeakIntegrand(
 }
 
 void TACSThermoelasticPlateModel::getWeakMatrixNonzeros(
-    ElementMatrixType matType, int elemIndex, int* Jac_nnz,
-    const int* Jac_pairs[]) {
+    ElementMatrixType matType, int elemIndex, int *Jac_nnz,
+    const int *Jac_pairs[]) {
   if (matType == TACS_JACOBIAN_MATRIX) {
     *Jac_nnz = 100;
     *Jac_pairs = linear_Jac_pairs;
@@ -249,9 +249,9 @@ void TACSThermoelasticPlateModel::evalWeakMatrix(
   con->computeStress(A, B, D, As, drill, e, s);
 
   // Set pointers to the in-plane, bending and shear resultants
-  const TacsScalar* N = &s[0];
-  const TacsScalar* M = &s[3];
-  const TacsScalar* Q = &s[6];
+  const TacsScalar *N = &s[0];
+  const TacsScalar *M = &s[3];
+  const TacsScalar *Q = &s[6];
 
   // Set the coefficients
   memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
@@ -398,7 +398,7 @@ void TACSThermoelasticPlateModel::evalWeakMatrix(
 int TACSThermoelasticPlateModel::evalPointQuantity(
     int elemIndex, const int quantityType, const double time, int n,
     const double pt[], const TacsScalar X[], const TacsScalar Xd[],
-    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar* quantity) {
+    const TacsScalar Ut[], const TacsScalar Ux[], TacsScalar *quantity) {
   if (quantityType == TACS_FAILURE_INDEX) {
     TacsScalar e[9], et[9];
     TacsScalar theta = Ut[3 * 5];  // The temperature
@@ -458,7 +458,7 @@ void TACSThermoelasticPlateModel::evalPointQuantitySens(
 void TACSThermoelasticPlateModel::getOutputData(
     int elemIndex, const double time, ElementType etype, int write_flag,
     const double pt[], const TacsScalar X[], const TacsScalar Ut[],
-    const TacsScalar Ux[], int ld_data, TacsScalar* data) {
+    const TacsScalar Ux[], int ld_data, TacsScalar *data) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (write_flag & TACS_OUTPUT_NODES) {
       data[0] = X[0];

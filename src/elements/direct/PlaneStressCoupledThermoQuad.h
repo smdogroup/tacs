@@ -17,14 +17,14 @@ template <int order>
 class PlaneStressCoupledThermoQuad
     : public TACS2DCoupledThermoElement<order * order> {
  public:
-  PlaneStressCoupledThermoQuad(CoupledThermoPlaneStressStiffness* _stiff,
+  PlaneStressCoupledThermoQuad(CoupledThermoPlaneStressStiffness *_stiff,
                                ElementBehaviorType type = LINEAR,
                                int _componentNum = 0);
   ~PlaneStressCoupledThermoQuad();
 
   // Return the name of this element
   // -------------------------------
-  const char* elementName() { return elemName; }
+  const char *elementName() { return elemName; }
 
   // Retrieve the shape functions
   // ----------------------------
@@ -39,10 +39,10 @@ class PlaneStressCoupledThermoQuad
 
   // Functions for post-processing
   // -----------------------------
-  void addOutputCount(int* nelems, int* nnodes, int* ncsr);
-  void getOutputData(unsigned int out_type, double* data, int ld_data,
+  void addOutputCount(int *nelems, int *nnodes, int *ncsr);
+  void getOutputData(unsigned int out_type, double *data, int ld_data,
                      const TacsScalar Xpts[], const TacsScalar vars[]);
-  void getOutputConnectivity(int* con, int node);
+  void getOutputConnectivity(int *con, int node);
 
  private:
   // The knot locations for the basis functions
@@ -55,12 +55,12 @@ class PlaneStressCoupledThermoQuad
   const double *gaussWts, *gaussPts;
 
   // Store the name of the element
-  static const char* elemName;
+  static const char *elemName;
 };
 
 template <int order>
 PlaneStressCoupledThermoQuad<order>::PlaneStressCoupledThermoQuad(
-    CoupledThermoPlaneStressStiffness* _stiff, ElementBehaviorType type,
+    CoupledThermoPlaneStressStiffness *_stiff, ElementBehaviorType type,
     int _componentNum)
     : TACS2DCoupledThermoElement<order * order>(_stiff, type, _componentNum) {
   numGauss = FElibrary::getGaussPtsWts(order, &gaussPts, &gaussWts);
@@ -84,7 +84,7 @@ template <int order>
 PlaneStressCoupledThermoQuad<order>::~PlaneStressCoupledThermoQuad() {}
 
 template <int order>
-const char* PlaneStressCoupledThermoQuad<order>::elemName =
+const char *PlaneStressCoupledThermoQuad<order>::elemName =
     "PlaneStressCoupledThermoQuad";
 /*
   Get the number of Gauss points in the Gauss quadrature scheme
@@ -153,9 +153,9 @@ void PlaneStressCoupledThermoQuad<order>::getShapeFunctions(const double pt[],
   this element.
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::addOutputCount(int* nelems,
-                                                         int* nnodes,
-                                                         int* ncsr) {
+void PlaneStressCoupledThermoQuad<order>::addOutputCount(int *nelems,
+                                                         int *nnodes,
+                                                         int *ncsr) {
   *nelems += (order - 1) * (order - 1);
   *nnodes += order * order;
   *ncsr += 4 * (order - 1) * (order - 1);
@@ -184,7 +184,7 @@ void PlaneStressCoupledThermoQuad<order>::addOutputCount(int* nelems,
 */
 template <int order>
 void PlaneStressCoupledThermoQuad<order>::getOutputData(
-    unsigned int out_type, double* data, int ld_data, const TacsScalar Xpts[],
+    unsigned int out_type, double *data, int ld_data, const TacsScalar Xpts[],
     const TacsScalar vars[]) {
   for (int m = 0; m < order; m++) {
     for (int n = 0; n < order; n++) {
@@ -250,14 +250,14 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData(
       if (out_type & TACSElement::OUTPUT_EXTRAS) {
         // Get the temperature
         TacsScalar T[] = {0.0};
-        ThermoQuad* elem = dynamic_cast<ThermoQuad*>(this);
+        ThermoQuad *elem = dynamic_cast<ThermoQuad *>(this);
         if (elem) {
           elem->getTemperature(T, N, vars);
         }
         // Compute the failure value
         TacsScalar lambda = 0.0;
-        CoupledThermoPlaneStressStiffness* con =
-            dynamic_cast<CoupledThermoPlaneStressStiffness*>(this->stiff);
+        CoupledThermoPlaneStressStiffness *con =
+            dynamic_cast<CoupledThermoPlaneStressStiffness *>(this->stiff);
         if (con) {
           con->failure(pt, T, strain, &lambda);
         }
@@ -291,7 +291,7 @@ void PlaneStressCoupledThermoQuad<order>::getOutputData(
   less global
 */
 template <int order>
-void PlaneStressCoupledThermoQuad<order>::getOutputConnectivity(int* con,
+void PlaneStressCoupledThermoQuad<order>::getOutputConnectivity(int *con,
                                                                 int node) {
   int p = 0;
   for (int m = 0; m < order - 1; m++) {

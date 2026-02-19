@@ -120,14 +120,14 @@ class TACSBeamBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpFieldsOuterProduct(const double pt[],
                                           const TacsScalar jac[],
-                                          TacsScalar* mat) {
+                                          TacsScalar *mat) {
     double na[order];
     TacsLagrangeLobattoShapeFunction<order>(pt[0], na);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < order; jx++) {
-      const TacsScalar* jac1 = jac;
+      const TacsScalar *jac1 = jac;
       for (int jm = 0; jm < njrows; jm++, jac1 += njcols) {
         for (int ix = 0; ix < order; ix++) {
           for (int im = 0; im < njcols; im++) {
@@ -162,14 +162,14 @@ class TACSBeamBasis {
   template <int nbrows, int nbcols, int njrows, int njcols>
   static void addInterpGradOuterProduct(const double pt[],
                                         const TacsScalar jac[],
-                                        TacsScalar* mat) {
+                                        TacsScalar *mat) {
     double na[order], dna[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
 
     const int ncols = NUM_NODES * nbcols;
 
     for (int jx = 0; jx < order; jx++) {
-      const TacsScalar* jac1 = jac;
+      const TacsScalar *jac1 = jac;
       for (int jm = 0; jm < njrows; jm++, jac1 += njcols) {
         for (int ix = 0; ix < order; ix++) {
           for (int im = 0; im < njcols; im++) {
@@ -201,7 +201,7 @@ class TACSBeamBasis {
   static void addInterpGradMixedOuterProduct(const double pt[],
                                              const TacsScalar jac[],
                                              const TacsScalar jacT[],
-                                             TacsScalar* mat) {
+                                             TacsScalar *mat) {
     double na[order], dna[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
 
@@ -244,7 +244,7 @@ class TACSBeamBasis {
   /*
     Get the knots associated with the tying points
   */
-  static inline void getTyingKnots(const double** ty_knots) {
+  static inline void getTyingKnots(const double **ty_knots) {
     if (order == 2) {
       *ty_knots = TacsGaussQuadPts1;
     } else if (order == 3) {
@@ -265,7 +265,7 @@ class TACSBeamBasis {
     @param pt The parametric point associated with the tying point
   */
   static inline void getTyingPoint(int ty_index, double pt[]) {
-    const double* ty_knots;
+    const double *ty_knots;
     getTyingKnots(&ty_knots);
 
     if (ty_index < G12_OFFSET) {
@@ -279,7 +279,7 @@ class TACSBeamBasis {
     Evaluate the interpolation for all of the tying points
   */
   static void evalTyingInterp(const double pt[], double N[]) {
-    const double* ty_knots;
+    const double *ty_knots;
     getTyingKnots(&ty_knots);
 
     double nar[order - 1];
@@ -326,7 +326,7 @@ class TACSBeamBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double* N0 = N;
+    const double *N0 = N;
     for (int field = 0; field < num_tying_fields; field++) {
       const int npts = getNumTyingPoints(field);
 
@@ -352,7 +352,7 @@ class TACSBeamBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double* N0 = N;
+    const double *N0 = N;
     for (int field = 0; field < num_tying_fields; field++) {
       const int npts = getNumTyingPoints(field);
 
@@ -378,11 +378,11 @@ class TACSBeamBasis {
     double N[NUM_TYING_POINTS];
     evalTyingInterp(pt, N);
 
-    const double* N1 = N;
+    const double *N1 = N;
     for (int field1 = 0; field1 < num_tying_fields; field1++) {
       const int npts1 = getNumTyingPoints(field1);
       for (int k1 = 0; k1 < npts1; k1++, N1++) {
-        const double* N2 = N;
+        const double *N2 = N;
         for (int field2 = 0; field2 < num_tying_fields; field2++) {
           const int npts2 = getNumTyingPoints(field2);
           const TacsScalar value = d2gty[num_tying_fields * field1 + field2];

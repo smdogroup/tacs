@@ -41,7 +41,7 @@ class TACSPointMassConstitutive : public TACSGeneralMassConstitutive {
       TacsScalar _I23ub = 1e20);
 
   // Extra info about the constitutive class
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Retrieve the global design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -68,7 +68,7 @@ class TACSPointMassConstitutive : public TACSGeneralMassConstitutive {
                                        TacsScalar dfdx[]);
 
  private:
-  static const char* name;
+  static const char *name;
 
   TacsScalar m, I11, I22, I33, I12, I13, I23;
   int mNum, I11Num, I22Num, I33Num, I12Num, I13Num, I23Num;

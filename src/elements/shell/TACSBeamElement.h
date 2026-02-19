@@ -126,7 +126,7 @@ class TACSBeamElement : public TACSElement {
   // this constant is used in many locations within the element.
   static const int num_nodes = basis::NUM_NODES;
 
-  TACSBeamElement(TACSBeamTransform* _transform, TACSBeamConstitutive* _con) {
+  TACSBeamElement(TACSBeamTransform *_transform, TACSBeamConstitutive *_con) {
     transform = _transform;
     transform->incref();
 
@@ -144,7 +144,7 @@ class TACSBeamElement : public TACSElement {
     }
   }
 
-  const char* getObjectName() { return "TACSBeamElement"; }
+  const char *getObjectName() { return "TACSBeamElement"; }
 
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
@@ -191,16 +191,16 @@ class TACSBeamElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement* createElementTraction(int faceIndex, const TacsScalar t[]) {
+  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]) {
     return new TACSBeamTraction<vars_per_node, quadrature, basis>(t);
   }
 
-  TACSElement* createElementInertialForce(const TacsScalar inertiaVec[]) {
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]) {
     return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(
         transform, con, inertiaVec);
   }
 
-  TACSElement* createElementCentrifugalForce(const TacsScalar omegaVec[],
+  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
                                              const TacsScalar rotCenter[],
                                              const bool first_order = false) {
     return new TACSBeamCentrifugalForce<vars_per_node, quadrature, basis>(
@@ -209,11 +209,11 @@ class TACSBeamElement : public TACSElement {
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],
                        const TacsScalar vars[], const TacsScalar dvars[],
-                       TacsScalar* Te, TacsScalar* Pe);
+                       TacsScalar *Te, TacsScalar *Pe);
 
-  void addResidual(int elemIndex, double time, const TacsScalar* Xpts,
-                   const TacsScalar* vars, const TacsScalar* dvars,
-                   const TacsScalar* ddvars, TacsScalar* res);
+  void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
+                   const TacsScalar *vars, const TacsScalar *dvars,
+                   const TacsScalar *ddvars, TacsScalar *res);
 
   // void addJacobian( int elemIndex, double time,
   //                   TacsScalar alpha,
@@ -244,8 +244,8 @@ class TACSBeamElement : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar* detXd,
-                        TacsScalar* quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   void addPointQuantityDVSens(int elemIndex, int quantityType, double time,
                               TacsScalar scale, int n, double pt[],
@@ -274,7 +274,7 @@ class TACSBeamElement : public TACSElement {
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
-                     int ld_data, TacsScalar* data);
+                     int ld_data, TacsScalar *data);
 
  private:
   // Set sizes for the different components
@@ -282,8 +282,8 @@ class TACSBeamElement : public TACSElement {
   static const int dsize = 3 * basis::NUM_NODES;
   static const int csize = 9 * basis::NUM_NODES;
 
-  TACSBeamTransform* transform;
-  TACSBeamConstitutive* con;
+  TACSBeamTransform *transform;
+  TACSBeamConstitutive *con;
 };
 
 /*
@@ -291,8 +291,8 @@ class TACSBeamElement : public TACSElement {
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
-    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
-    const TacsScalar* dvars, TacsScalar* Telem, TacsScalar* Uelem) {
+    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, TacsScalar *Telem, TacsScalar *Uelem) {
   // Zero the kinetic and potential energies
   TacsScalar Te = 0.0;
   TacsScalar Ue = 0.0;
@@ -301,7 +301,7 @@ void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -457,13 +457,13 @@ void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::addResidual(
-    int elemIndex, double time, const TacsScalar* Xpts, const TacsScalar* vars,
-    const TacsScalar* dvars, const TacsScalar* ddvars, TacsScalar* res) {
+    int elemIndex, double time, const TacsScalar *Xpts, const TacsScalar *vars,
+    const TacsScalar *dvars, const TacsScalar *ddvars, TacsScalar *res) {
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -710,7 +710,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResProduct(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -905,7 +905,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1232,9 +1232,9 @@ template <class quadrature, class basis, class director, class model>
 int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar* detXdval, TacsScalar* quantity) {
+    const TacsScalar ddvars[], TacsScalar *detXdval, TacsScalar *quantity) {
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1432,7 +1432,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                            const TacsScalar dfdq[], int dvLen,
                            TacsScalar dfdx[]) {
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1662,7 +1662,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   if (quantityType == TACS_FAILURE_INDEX ||
       quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     // Get the reference axis
-    const A2D::Vec3& axis = transform->getRefAxis();
+    const A2D::Vec3 &axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1849,7 +1849,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                             const TacsScalar dfddetXd, const TacsScalar dfdq[],
                             TacsScalar dfdXpts[]) {
   // Get the reference axis
-  const A2D::Vec3& axis = transform->getRefAxis();
+  const A2D::Vec3 &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -2066,13 +2066,13 @@ template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
     int elemIndex, ElementType etype, int write_flag, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], int ld_data, TacsScalar* data) {
+    const TacsScalar ddvars[], int ld_data, TacsScalar *data) {
   if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     // Get the number of nodes associated with the visualization
     int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
 
     // Get the reference axis
-    const A2D::Vec3& axis = transform->getRefAxis();
+    const A2D::Vec3 &axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];

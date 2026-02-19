@@ -29,13 +29,13 @@
 */
 class TACSAverageTemperature : public TACSFunction {
  public:
-  TACSAverageTemperature(TACSAssembler* _assembler, TacsScalar _volume = 1.0);
+  TACSAverageTemperature(TACSAssembler *_assembler, TacsScalar _volume = 1.0);
   ~TACSAverageTemperature();
 
   /**
     Get the object/function name
   */
-  const char* getObjectName();
+  const char *getObjectName();
 
   /**
      Initialize the function for the given type of evaluation
@@ -46,7 +46,7 @@ class TACSAverageTemperature : public TACSFunction {
      Perform an element-wise integration over this element.
   */
   void elementWiseEval(EvaluationType ftype, int elemIndex,
-                       TACSElement* element, double time, TacsScalar scale,
+                       TACSElement *element, double time, TacsScalar scale,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[], const TacsScalar ddvars[]);
 
@@ -63,7 +63,7 @@ class TACSAverageTemperature : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. state variables
   */
-  void getElementSVSens(int elemIndex, TACSElement* element, double time,
+  void getElementSVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar alpha, TacsScalar beta, TacsScalar gamma,
                         const TacsScalar Xpts[], const TacsScalar vars[],
                         const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -72,7 +72,7 @@ class TACSAverageTemperature : public TACSFunction {
   /**
      Add the derivative of the function w.r.t. the design variables
   */
-  void addElementDVSens(int elemIndex, TACSElement* element, double time,
+  void addElementDVSens(int elemIndex, TACSElement *element, double time,
                         TacsScalar scale, const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], int dvLen,
@@ -81,14 +81,14 @@ class TACSAverageTemperature : public TACSFunction {
   /**
      Evaluate the derivative of the function w.r.t. the node locations
   */
-  void getElementXptSens(int elemIndex, TACSElement* element, double time,
+  void getElementXptSens(int elemIndex, TACSElement *element, double time,
                          TacsScalar scale, const TacsScalar Xpts[],
                          const TacsScalar vars[], const TacsScalar dvars[],
                          const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
  private:
   // The name of the function
-  static const char* funcName;
+  static const char *funcName;
 
   // The volume (area) and the integral of temperature
   TacsScalar inv_volume;

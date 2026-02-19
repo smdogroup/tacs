@@ -20,12 +20,12 @@
 
 #include "tacslapack.h"
 
-const char* TACSShellConstitutive::constName = "TACSShellConstitutive";
+const char *TACSShellConstitutive::constName = "TACSShellConstitutive";
 
 /*
   Return the constitutive name
 */
-const char* TACSShellConstitutive::getObjectName() { return constName; }
+const char *TACSShellConstitutive::getObjectName() { return constName; }
 
 /*
   Get the number of stresses
@@ -34,8 +34,8 @@ int TACSShellConstitutive::getNumStresses() { return NUM_STRESSES; }
 
 // Extract the tangent stiffness components from the matrix
 void TACSShellConstitutive::extractTangentStiffness(
-    const TacsScalar* C, const TacsScalar** A, const TacsScalar** B,
-    const TacsScalar** D, const TacsScalar** As, TacsScalar* drill) {
+    const TacsScalar *C, const TacsScalar **A, const TacsScalar **B,
+    const TacsScalar **D, const TacsScalar **As, TacsScalar *drill) {
   if (A) {
     *A = &C[0];
   }

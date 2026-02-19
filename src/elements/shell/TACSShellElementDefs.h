@@ -234,10 +234,10 @@ typedef TACSBeamElement<TACSBeamQuadraticQuadrature, TACSBeamBasis<3>,
   @param transform The transformation used for the shell
   @param con The shell constitutive object
 */
-inline TACSElement* TacsCreateShellByName(const char* name,
-                                          TACSShellTransform* transform,
-                                          TACSShellConstitutive* con) {
-  TACSElement* shell = NULL;
+inline TACSElement *TacsCreateShellByName(const char *name,
+                                          TACSShellTransform *transform,
+                                          TACSShellConstitutive *con) {
+  TACSElement *shell = NULL;
   if (strcmp(name, "TACSQuad4ShellModRot") == 0) {
     shell = new TACSQuad4ShellModRot(transform, con);
   } else if (strcmp(name, "TACSQuad9ShellModRot") == 0) {

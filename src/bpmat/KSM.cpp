@@ -73,15 +73,15 @@ TACSBcMap::~TACSBcMap() {
   bc_vals:    the value to apply
   nvals:      the number of values to apply at this node
 */
-void TACSBcMap::addBC(int node, int nvals, const int* bc_vars,
-                      const TacsScalar* bc_vals) {
+void TACSBcMap::addBC(int node, int nvals, const int *bc_vars,
+                      const TacsScalar *bc_vals) {
   // If the number of boundary conditions exceeds the available
   // space, allocate more space and copy over the arrays
   if (nbcs >= max_size) {
     max_size = max_size + bc_increment;
-    int* temp_nodes = new int[max_size];
-    int* temp_vars = new int[max_size];
-    TacsScalar* temp_values = new TacsScalar[bsize * max_size];
+    int *temp_nodes = new int[max_size];
+    int *temp_vars = new int[max_size];
+    TacsScalar *temp_values = new TacsScalar[bsize * max_size];
     memcpy(temp_nodes, nodes, nbcs * sizeof(int));
     memcpy(temp_vars, vars, nbcs * sizeof(int));
     memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
@@ -140,9 +140,9 @@ void TACSBcMap::addBinaryFlagBC(int node, int _vars) {
   // space, allocate more space and copy over the arrays
   if (nbcs >= max_size) {
     max_size = max_size + bc_increment;
-    int* temp_nodes = new int[max_size];
-    int* temp_vars = new int[max_size];
-    TacsScalar* temp_values = new TacsScalar[bsize * max_size];
+    int *temp_nodes = new int[max_size];
+    int *temp_vars = new int[max_size];
+    TacsScalar *temp_values = new TacsScalar[bsize * max_size];
     memcpy(temp_nodes, nodes, nbcs * sizeof(int));
     memcpy(temp_vars, vars, nbcs * sizeof(int));
     memcpy(temp_values, values, bsize * nbcs * sizeof(TacsScalar));
@@ -174,8 +174,8 @@ void TACSBcMap::addBinaryFlagBC(int node, int _vars) {
   vars:        node unknown numbers to apply boundary conditions
   values:      the values of the boundary conditions to apply
 */
-int TACSBcMap::getBCs(const int** _nodes, const int** _vars,
-                      TacsScalar** _values) {
+int TACSBcMap::getBCs(const int **_nodes, const int **_vars,
+                      TacsScalar **_values) {
   if (_nodes) {
     *_nodes = nodes;
   }
@@ -191,7 +191,7 @@ int TACSBcMap::getBCs(const int** _nodes, const int** _vars,
 /*
   Retrieve the boundary condition node numbers
 */
-int TACSBcMap::getBCNodeNums(int** _nodes) {
+int TACSBcMap::getBCNodeNums(int **_nodes) {
   if (_nodes) {
     *_nodes = nodes;
   }
@@ -209,23 +209,23 @@ int TACSBcMap::getBCNodeNums(int** _nodes) {
   ans: an array of the dot product results
   m:   the number of vectors in x
 */
-void TACSVec::mdot(TACSVec** x, TacsScalar* ans, int m) {
+void TACSVec::mdot(TACSVec **x, TacsScalar *ans, int m) {
   for (int k = 0; k < m; k++) {
     ans[k] = dot(x[k]);
   }
 }
 
-const char* TACSMat::getObjectName() { return matName; }
-const char* TACSMat::matName = "TACSMat";
+const char *TACSMat::getObjectName() { return matName; }
+const char *TACSMat::matName = "TACSMat";
 
-const char* TACSPc::getObjectName() { return pcName; }
-const char* TACSPc::pcName = "TACSPc";
+const char *TACSPc::getObjectName() { return pcName; }
+const char *TACSPc::pcName = "TACSPc";
 
-const char* KSMPrint::getObjectName() { return printName; }
-const char* KSMPrint::printName = "TACSPrint";
+const char *KSMPrint::getObjectName() { return printName; }
+const char *KSMPrint::printName = "TACSPrint";
 
-const char* TACSKsm::getObjectName() { return ksmName; }
-const char* TACSKsm::ksmName = "TACSKsm";
+const char *TACSKsm::getObjectName() { return ksmName; }
+const char *TACSKsm::ksmName = "TACSKsm";
 
 /*
   The KSMPrint object controls how the data it output to the screen
@@ -236,7 +236,7 @@ const char* TACSKsm::ksmName = "TACSKsm";
   rank:     print out the result only if rank == 0
   freq:     print out the result with this frequency
 */
-KSMPrintStdout::KSMPrintStdout(const char* _descript, int _rank, int _freq) {
+KSMPrintStdout::KSMPrintStdout(const char *_descript, int _rank, int _freq) {
   rank = _rank;
   freq = _freq;
   if (freq < 1) {
@@ -270,7 +270,7 @@ void KSMPrintStdout::printResidual(int iter, TacsScalar res) {
   input:
   cstr: the information string to print out
 */
-void KSMPrintStdout::print(const char* cstr) {
+void KSMPrintStdout::print(const char *cstr) {
   if (rank == 0) {
     printf("%s", cstr);
   }
@@ -285,7 +285,7 @@ void KSMPrintStdout::print(const char* cstr) {
   rank:     output/create file if rank == 0
   freq:     the frequency to generate output
 */
-KSMPrintFile::KSMPrintFile(const char* filename, const char* _descript,
+KSMPrintFile::KSMPrintFile(const char *filename, const char *_descript,
                            int _rank, int _freq) {
   rank = _rank;
   freq = _freq;
@@ -325,7 +325,7 @@ void KSMPrintFile::printResidual(int iter, TacsScalar res) {
 /*
   Print a string out to the file
 */
-void KSMPrintFile::print(const char* cstr) {
+void KSMPrintFile::print(const char *cstr) {
   if (fp) {
     fprintf(fp, "%s", cstr);
     fflush(fp);
@@ -344,7 +344,7 @@ void KSMPrintFile::print(const char* cstr) {
   reset:  reset the CG iterations every 'reset' iterations
   nouter: the number of resets to try before giving up
 */
-PCG::PCG(TACSMat* _mat, TACSPc* _pc, int _reset, int _nouter) {
+PCG::PCG(TACSMat *_mat, TACSPc *_pc, int _reset, int _nouter) {
   monitor = NULL;
 
   mat = _mat;
@@ -385,7 +385,7 @@ PCG::~PCG() {
 /*
   Set the operators for the preconditioned conjugate gradient method.
 */
-void PCG::setOperators(TACSMat* _mat, TACSPc* _pc) {
+void PCG::setOperators(TACSMat *_mat, TACSPc *_pc) {
   if (_mat) {
     _mat->incref();
     if (mat) {
@@ -402,7 +402,7 @@ void PCG::setOperators(TACSMat* _mat, TACSPc* _pc) {
   }
 }
 
-void PCG::getOperators(TACSMat** _mat, TACSPc** _pc) {
+void PCG::getOperators(TACSMat **_mat, TACSPc **_pc) {
   if (_mat) {
     *_mat = mat;
   }
@@ -416,7 +416,7 @@ void PCG::setTolerances(double _rtol, double _atol) {
   atol = _atol;
 }
 
-void PCG::setMonitor(KSMPrint* _monitor) {
+void PCG::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
   if (monitor) {
     monitor->decref();
@@ -436,7 +436,7 @@ void PCG::setMonitor(KSMPrint* _monitor) {
   output:
   solve_flag: flag for the whether the solve terminated successfully
 */
-int PCG::solve(TACSVec* b, TACSVec* x, int zero_guess) {
+int PCG::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   int solve_flag = 0;
   iterCount = 0;
   TacsScalar rhs_norm = 0.0;
@@ -512,7 +512,7 @@ int PCG::solve(TACSVec* b, TACSVec* x, int zero_guess) {
   q' = q - w h
   w^{T} q' = w^{T} q - w^{T} w w^{T} q
 */
-static void ClassicalGramSchmidt(TacsScalar* h, TACSVec* q, TACSVec** w,
+static void ClassicalGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
                                  int nvecs) {
   q->mdot(w, h, nvecs);
   for (int j = 0; j < nvecs; j++) {
@@ -523,7 +523,7 @@ static void ClassicalGramSchmidt(TacsScalar* h, TACSVec* q, TACSVec** w,
 /*
   Modified Gram-Schmidt orthogonalization
 */
-static void ModifiedGramSchmidt(TacsScalar* h, TACSVec* q, TACSVec** w,
+static void ModifiedGramSchmidt(TacsScalar *h, TACSVec *q, TACSVec **w,
                                 int nvecs) {
   for (int j = 0; j < nvecs; j++) {
     h[j] = w[j]->dot(q);
@@ -544,7 +544,7 @@ static void ModifiedGramSchmidt(TacsScalar* h, TACSVec* q, TACSVec** w,
   nrestart:   the number of restarts before we give up
   isFlexible: is the preconditioner actually flexible? If so use FGMRES
 */
-GMRES::GMRES(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart,
+GMRES::GMRES(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
              int _isFlexible) {
   init(_mat, _pc, _m, _nrestart, _isFlexible);
 }
@@ -558,7 +558,7 @@ GMRES::GMRES(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart,
   m:        the size of the Krylov subspace
   nrestart: try this many times before giving up
 */
-GMRES::GMRES(TACSMat* _mat, int _m, int _nrestart) {
+GMRES::GMRES(TACSMat *_mat, int _m, int _nrestart) {
   init(_mat, NULL, _m, _nrestart, 0);
 }
 
@@ -567,7 +567,7 @@ GMRES::GMRES(TACSMat* _mat, int _m, int _nrestart) {
 
   This is called by both of the two constructors above.
 */
-void GMRES::init(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart,
+void GMRES::init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
                  int _isFlexible) {
   orthogonalize = ModifiedGramSchmidt;
   monitor = NULL;
@@ -594,7 +594,7 @@ void GMRES::init(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart,
   // Allocate the subspace of vectors
   work = NULL;  // Required only for regular GMRES
   Z = NULL;     // Required only for flexible GMRES
-  W = new TACSVec*[msub + 1];
+  W = new TACSVec *[msub + 1];
 
   for (int i = 0; i < msub + 1; i++) {
     W[i] = mat->createVec();
@@ -602,7 +602,7 @@ void GMRES::init(TACSMat* _mat, TACSPc* _pc, int _m, int _nrestart,
   }
 
   if (isFlexible) {
-    Z = new TACSVec*[msub];
+    Z = new TACSVec *[msub];
     for (int i = 0; i < msub; i++) {
       Z[i] = mat->createVec();
       Z[i]->incref();
@@ -683,7 +683,7 @@ GMRES::~GMRES() {
   mat: the new matrix operator (possibly NULL)
   pc:  the new preconditioner operator (possibly NULL)
 */
-void GMRES::setOperators(TACSMat* _mat, TACSPc* _pc) {
+void GMRES::setOperators(TACSMat *_mat, TACSPc *_pc) {
   if (_mat) {
     _mat->incref();
     if (mat) {
@@ -707,7 +707,7 @@ void GMRES::setOperators(TACSMat* _mat, TACSPc* _pc) {
   mat: the matrix
   pc:  the preconditioner
 */
-void GMRES::getOperators(TACSMat** _mat, TACSPc** _pc) {
+void GMRES::getOperators(TACSMat **_mat, TACSPc **_pc) {
   if (_mat) {
     *_mat = mat;
   }
@@ -736,7 +736,7 @@ void GMRES::setTolerances(double _rtol, double _atol) {
   input:
   monitor: the KSMPrint monitor object
 */
-void GMRES::setMonitor(KSMPrint* _monitor) {
+void GMRES::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
   if (monitor) {
     monitor->decref();
@@ -764,9 +764,9 @@ void GMRES::setOrthoType(enum OrthoType otype) {
 */
 void GMRES::setTimeMonitor() { monitor_time = 1; }
 
-const char* GMRES::getObjectName() { return gmresName; }
+const char *GMRES::getObjectName() { return gmresName; }
 
-const char* GMRES::gmresName = "GMRES";
+const char *GMRES::gmresName = "GMRES";
 
 /*
   Try to solve the linear system using GMRES.
@@ -782,7 +782,7 @@ const char* GMRES::gmresName = "GMRES";
   output:
   solve_flag: flag for the whether the solve terminated successfully
 */
-int GMRES::solve(TACSVec* b, TACSVec* x, int zero_guess) {
+int GMRES::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   iterCount = 0;
@@ -969,7 +969,7 @@ int GMRES::solve(TACSVec* b, TACSVec* x, int zero_guess) {
   msub:       the size of the underlying GMRES (FGMRES) subspace
   isFlexible: flag to indicate required use of flexible GCROT
 */
-GCROT::GCROT(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer, int _msub,
+GCROT::GCROT(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer, int _msub,
              int _isFlexible) {
   init(_mat, _pc, _outer, _max_outer, _msub, _isFlexible);
 }
@@ -978,7 +978,7 @@ GCROT::GCROT(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer, int _msub,
   Create the GCROT linear system solver without a preconditioner. Note
   that this variant is never flexible.
 */
-GCROT::GCROT(TACSMat* _mat, int _outer, int _max_outer, int _msub) {
+GCROT::GCROT(TACSMat *_mat, int _outer, int _max_outer, int _msub) {
   init(_mat, NULL, _outer, _max_outer, _msub, 0);
 }
 
@@ -989,7 +989,7 @@ GCROT::GCROT(TACSMat* _mat, int _outer, int _max_outer, int _msub) {
   After initialization, no new significant memory allocation is
   required.
 */
-void GCROT::init(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer,
+void GCROT::init(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
                  int _msub, int _isFlexible) {
   monitor = NULL;
   msub = _msub;              // Size of the F/GMRES subspace
@@ -1014,7 +1014,7 @@ void GCROT::init(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer,
 
   // Allocate the subspace of vectors
   Z = NULL;  // Required only for flexible GMRES
-  W = new TACSVec*[msub + 1];
+  W = new TACSVec *[msub + 1];
 
   for (int i = 0; i < msub + 1; i++) {
     W[i] = mat->createVec();
@@ -1022,7 +1022,7 @@ void GCROT::init(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer,
   }
 
   if (isFlexible) {
-    Z = new TACSVec*[msub];
+    Z = new TACSVec *[msub];
 
     for (int i = 0; i < msub; i++) {
       Z[i] = mat->createVec();
@@ -1038,8 +1038,8 @@ void GCROT::init(TACSMat* _mat, TACSPc* _pc, int _outer, int _max_outer,
   c_hat->incref();
   u_hat->incref();
 
-  U = new TACSVec*[outer];
-  C = new TACSVec*[outer];
+  U = new TACSVec *[outer];
+  C = new TACSVec *[outer];
 
   for (int i = 0; i < outer; i++) {
     U[i] = mat->createVec();
@@ -1129,7 +1129,7 @@ GCROT::~GCROT() {
 /*
   Set the matrix/preconditioner operators used for GCROT
 */
-void GCROT::setOperators(TACSMat* _mat, TACSPc* _pc) {
+void GCROT::setOperators(TACSMat *_mat, TACSPc *_pc) {
   if (_mat) {
     _mat->incref();
     if (mat) {
@@ -1149,7 +1149,7 @@ void GCROT::setOperators(TACSMat* _mat, TACSPc* _pc) {
 /*
   Retrieve the matrix/preconditioner operators set in the GCROT object
 */
-void GCROT::getOperators(TACSMat** _mat, TACSPc** _pc) {
+void GCROT::getOperators(TACSMat **_mat, TACSPc **_pc) {
   if (_mat) {
     *_mat = mat;
   }
@@ -1169,7 +1169,7 @@ void GCROT::setTolerances(double _rtol, double _atol) {
 /*
   Set the residual/solution monitor object
 */
-void GCROT::setMonitor(KSMPrint* _monitor) {
+void GCROT::setMonitor(KSMPrint *_monitor) {
   _monitor->incref();
   if (monitor) {
     monitor->decref();
@@ -1177,9 +1177,9 @@ void GCROT::setMonitor(KSMPrint* _monitor) {
   monitor = _monitor;
 }
 
-const char* GCROT::getObjectName() { return gcrotName; }
+const char *GCROT::getObjectName() { return gcrotName; }
 
-const char* GCROT::gcrotName = "GCROT";
+const char *GCROT::gcrotName = "GCROT";
 
 /*
   Solve the linear system defined by the matrix operator with the
@@ -1193,7 +1193,7 @@ const char* GCROT::gcrotName = "GCROT";
   output:
   solve_flag: flag for the whether the solve terminated successfully
 */
-int GCROT::solve(TACSVec* b, TACSVec* x, int zero_guess) {
+int GCROT::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   TacsScalar rhs_norm = 0.0;
   int solve_flag = 0;
   int mat_iters = 0;
@@ -1416,15 +1416,15 @@ int GCROT::solve(TACSVec* b, TACSVec* x, int zero_guess) {
     // All this is done with pointers - no copying actually occurs.
     // Otherwise, discard the oldest vector -
     // but use it for the 'new' u_hat/c_hat
-    TACSVec* u = u_hat;
-    TACSVec* c = c_hat;
+    TACSVec *u = u_hat;
+    TACSVec *c = c_hat;
 
     // This is the size of the subspace on the next iteration
     outer_size = (count + 1 < outer ? count + 1 : outer);
 
     for (int i = 0; i < outer_size; i++) {
-      TACSVec* tu = U[i];
-      TACSVec* tc = C[i];
+      TACSVec *tu = U[i];
+      TACSVec *tc = C[i];
 
       U[i] = u;
       C[i] = c;
@@ -1444,7 +1444,7 @@ int GCROT::solve(TACSVec* b, TACSVec* x, int zero_guess) {
   Create the preconditioner class with the specified
   matrix/preconditioner pair
 */
-KsmPreconditioner::KsmPreconditioner(TACSMat* _mat, TACSPc* _pc) {
+KsmPreconditioner::KsmPreconditioner(TACSMat *_mat, TACSPc *_pc) {
   mat = _mat;
   pc = _pc;
   mat->incref();
@@ -1459,12 +1459,12 @@ KsmPreconditioner::~KsmPreconditioner() {
 /*
   Create a solution vector using the direct preconditioner
 */
-TACSVec* KsmPreconditioner::createVec() { return mat->createVec(); }
+TACSVec *KsmPreconditioner::createVec() { return mat->createVec(); }
 
 /*
   Set the operators for the direct preconditioner
 */
-void KsmPreconditioner::setOperators(TACSMat* _mat, TACSPc* _pc) {
+void KsmPreconditioner::setOperators(TACSMat *_mat, TACSPc *_pc) {
   if (_mat) {
     _mat->incref();
   }
@@ -1478,7 +1478,7 @@ void KsmPreconditioner::setOperators(TACSMat* _mat, TACSPc* _pc) {
   pc = _pc;
 }
 
-void KsmPreconditioner::getOperators(TACSMat** _mat, TACSPc** _pc) {
+void KsmPreconditioner::getOperators(TACSMat **_mat, TACSPc **_pc) {
   if (_mat) {
     *_mat = mat;
   }
@@ -1491,7 +1491,7 @@ void KsmPreconditioner::getOperators(TACSMat** _mat, TACSPc** _pc) {
   'Solve' the problem - this is only really a solution if a direct
   solver is used. This is often the case within TACS.
 */
-int KsmPreconditioner::solve(TACSVec* b, TACSVec* x, int zero_guess) {
+int KsmPreconditioner::solve(TACSVec *b, TACSVec *x, int zero_guess) {
   pc->applyFactor(b, x);
   // Return successful solve flag
   return 1;
@@ -1506,7 +1506,7 @@ void KsmPreconditioner::setTolerances(double _rtol, double _atol) {}
   Set a solution monitor - don't monitor anything since there are
   no real iterations
 */
-void KsmPreconditioner::setMonitor(KSMPrint* monitor) {
+void KsmPreconditioner::setMonitor(KSMPrint *monitor) {
   // Delete the monitor if it's allocated as an argument
   monitor->incref();
   monitor->decref();

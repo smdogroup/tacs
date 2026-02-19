@@ -408,8 +408,8 @@ class TACSElementBasis : public TACSObject {
   */
   void scaleWeakMatrix(const TacsScalar weight, const TacsScalar alpha,
                        const TacsScalar beta, const TacsScalar gamma,
-                       const int Jac_nnz, const int* Jac_pairs,
-                       TacsScalar* Jac);
+                       const int Jac_nnz, const int *Jac_pairs,
+                       TacsScalar *Jac);
 
   /**
     Add the entries from the matrix of the weak form residual to a matrix
@@ -425,8 +425,8 @@ class TACSElementBasis : public TACSObject {
   */
   void addWeakMatrix(int n, const double pt[], const TacsScalar J[],
                      const int vars_per_node, const int Jac_nnz,
-                     const int* Jac_pairs, const TacsScalar* Jac,
-                     TacsScalar* mat);
+                     const int *Jac_pairs, const TacsScalar *Jac,
+                     TacsScalar *mat);
 
   /**
     Compute the matrix-vector product using thd data computed from a weak
@@ -463,9 +463,9 @@ class TACSElementBasis : public TACSObject {
     @param py The output vector
   */
   void addMatVecProduct(const int vars_per_node, const int Jac_nnz,
-                        const int* Jac_pairs, const TacsScalar* data,
-                        TacsScalar temp[], const TacsScalar* px,
-                        TacsScalar* py);
+                        const int *Jac_pairs, const TacsScalar *data,
+                        TacsScalar temp[], const TacsScalar *px,
+                        TacsScalar *py);
 
   /**
     Interpolate the specified number of fields
@@ -601,7 +601,7 @@ class TACSElementBasis : public TACSObject {
   virtual void addInterpOuterProduct(const int n, const double pt[],
                                      const TacsScalar weight,
                                      const int row_incr, const int col_incr,
-                                     TacsScalar* mat);
+                                     TacsScalar *mat);
 
   /**
     Add the outer-product of the shape functions to the matrix
@@ -620,7 +620,7 @@ class TACSElementBasis : public TACSObject {
                                          const TacsScalar weight,
                                          const TacsScalar scale[],
                                          const int row_incr, const int col_incr,
-                                         TacsScalar* mat);
+                                         TacsScalar *mat);
 
   /**
     Add the outer-product of the shape functions to the matrix
@@ -637,7 +637,7 @@ class TACSElementBasis : public TACSObject {
   virtual void addInterpGradGradOuterProduct(
       const int n, const double pt[], const TacsScalar weight,
       const TacsScalar iscale[], const TacsScalar jscale[], const int row_incr,
-      const int col_incr, TacsScalar* mat);
+      const int col_incr, TacsScalar *mat);
 
   /**
     Compute the interpolate to a quadrature point on the face

@@ -23,7 +23,7 @@ class TACSLinearizedRotation {
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeRotationMat(const TacsScalar vars[], TacsScalar C[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
     for (int i = 0; i < num_nodes; i++) {
       // C = I - q^{x}
       setMatSkew(-1.0, q, C);
@@ -46,8 +46,8 @@ class TACSLinearizedRotation {
   static void computeRotationMatDeriv(const TacsScalar vars[],
                                       const TacsScalar varsd[], TacsScalar C[],
                                       TacsScalar Cd[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qd = &varsd[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qd = &varsd[offset];
     for (int i = 0; i < num_nodes; i++) {
       // C = I - q^{x}
       setMatSkew(-1.0, q, C);
@@ -78,7 +78,7 @@ class TACSLinearizedRotation {
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatResidual(const TacsScalar vars[],
                                      const TacsScalar dC[], TacsScalar res[]) {
-    TacsScalar* r = &res[offset];
+    TacsScalar *r = &res[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       r[0] += -(dC[7] - dC[5]);
@@ -109,11 +109,11 @@ class TACSLinearizedRotation {
     const int size = vars_per_node * num_nodes;
     const int csize = 9 * num_nodes;
 
-    TacsScalar* r = NULL;
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
 
     for (int i = 0; i < num_nodes; i++) {
       if (res) {
@@ -211,8 +211,8 @@ class TACSLinearizedRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
     for (int i = 0; i < num_nodes; i++) {
       crossProduct(q, t, d);
       crossProduct(qdot, t, ddot);
@@ -247,9 +247,9 @@ class TACSLinearizedRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[], TacsScalar dddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
     for (int i = 0; i < num_nodes; i++) {
       crossProduct(q, t, d);
       crossProduct(qdot, t, ddot);
@@ -292,10 +292,10 @@ class TACSLinearizedRotation {
                                         const TacsScalar t[], TacsScalar d[],
                                         TacsScalar ddot[], TacsScalar dddot[],
                                         TacsScalar dpsi[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
-    const TacsScalar* qpsi = &psi[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
+    const TacsScalar *qpsi = &psi[offset];
     for (int i = 0; i < num_nodes; i++) {
       crossProduct(q, t, d);
       crossProduct(qdot, t, ddot);
@@ -351,7 +351,7 @@ class TACSLinearizedRotation {
                                   const TacsScalar ddvars[],
                                   const TacsScalar t[], const TacsScalar dd[],
                                   TacsScalar res[]) {
-    TacsScalar* r = &res[offset];
+    TacsScalar *r = &res[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       crossProductAdd(1.0, t, dd, r);
@@ -378,15 +378,15 @@ class TACSLinearizedRotation {
     const int nvars = vars_per_node * num_nodes;
 
     // d = crossProduct(q, t, d)
-    const TacsScalar* ti = t;
+    const TacsScalar *ti = t;
     for (int i = 0; i < num_nodes; i++, ti += 3) {
-      TacsScalar* jac1 = &mat[(offset + vars_per_node * i) * nvars + offset];
-      TacsScalar* jac2 =
+      TacsScalar *jac1 = &mat[(offset + vars_per_node * i) * nvars + offset];
+      TacsScalar *jac2 =
           &mat[(offset + vars_per_node * i + 1) * nvars + offset];
-      TacsScalar* jac3 =
+      TacsScalar *jac3 =
           &mat[(offset + vars_per_node * i + 2) * nvars + offset];
 
-      const TacsScalar* tj = t;
+      const TacsScalar *tj = t;
       for (int j = 0; j < num_nodes; j++, tj += 3) {
         // Add the derivative
         TacsScalar d[9];
@@ -475,7 +475,7 @@ class TACSLinearizedRotation {
 
     // Update residual
     if (res) {
-      TacsScalar* r = &res[offset];
+      TacsScalar *r = &res[offset];
 
       for (int i = 0; i < num_nodes; i++) {
         crossProductAdd(1.0, t, dd, r);
@@ -506,7 +506,7 @@ class TACSLinearizedRotation {
   static void addDirectorRefNormalSens(const TacsScalar vars[],
                                        const TacsScalar t[],
                                        const TacsScalar dd[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       crossProductAdd(1.0, dd, q, dt);
@@ -543,8 +543,8 @@ class TACSLinearizedRotation {
   static void addDirectorRefNormalSens(
       const TacsScalar vars[], const TacsScalar psi[], const TacsScalar t[],
       const TacsScalar dd[], const TacsScalar ddpsi[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qpsi = &psi[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       crossProductAdd(1.0, dd, q, dt);
@@ -593,7 +593,7 @@ class TACSLinearizedRotation {
                                          const TacsScalar Ct[],
                                          const TacsScalar u0xd[],
                                          const TacsScalar Ctd[],
-                                         TacsScalar* ed) {
+                                         TacsScalar *ed) {
     *ed = 0.5 * (Ctd[3] + u0xd[3] - Ctd[1] - u0xd[1]);
 
     // Compute the rotational penalty
@@ -630,7 +630,7 @@ class TACSQuadraticRotation {
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeRotationMat(const TacsScalar vars[], TacsScalar C[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar qTq = vec3Dot(q, q);
       setMatSkew(-1.0, q, C);
@@ -654,8 +654,8 @@ class TACSQuadraticRotation {
   static void computeRotationMatDeriv(const TacsScalar vars[],
                                       const TacsScalar varsd[], TacsScalar C[],
                                       TacsScalar Cd[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qd = &varsd[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qd = &varsd[offset];
     for (int i = 0; i < num_nodes; i++) {
       // Compute C
       TacsScalar qTq = vec3Dot(q, q);
@@ -693,8 +693,8 @@ class TACSQuadraticRotation {
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatResidual(const TacsScalar vars[],
                                      const TacsScalar dC[], TacsScalar res[]) {
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = &res[offset];
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar dCtr = (dC[0] + dC[4] + dC[8]);
@@ -735,12 +735,12 @@ class TACSQuadraticRotation {
     const int size = vars_per_node * num_nodes;
     const int csize = 9 * num_nodes;
 
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = NULL;
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
 
     for (int i = 0; i < num_nodes; i++) {
       // Add the contribution to the residual
@@ -760,8 +760,8 @@ class TACSQuadraticRotation {
         r += vars_per_node;
       }
 
-      const TacsScalar* qi = &vars[offset + i * vars_per_node];
-      const TacsScalar* qj = &vars[offset];
+      const TacsScalar *qi = &vars[offset + i * vars_per_node];
+      const TacsScalar *qj = &vars[offset];
 
       for (int j = 0; j < num_nodes; j++, qj += vars_per_node) {
         TacsScalar dfdC[27];
@@ -787,7 +787,7 @@ class TACSQuadraticRotation {
 
         TacsScalar jac[9];
         for (int k = 0; k < 3; k++) {
-          TacsScalar* d2Ct = &dfdC[9 * k];
+          TacsScalar *d2Ct = &dfdC[9 * k];
 
           TacsScalar d2Ctr = (d2Ct[0] + d2Ct[4] + d2Ct[8]);
           jac[k] = -(d2Ct[7] - d2Ct[5] + d2Ctr * qi[0]);
@@ -861,8 +861,8 @@ class TACSQuadraticRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar qxt[3], qxtdot[3];
 
@@ -912,9 +912,9 @@ class TACSQuadraticRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[], TacsScalar dddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar qxt[3], qxtdot[3], qxtddot[3];
 
@@ -982,10 +982,10 @@ class TACSQuadraticRotation {
                                         const TacsScalar t[], TacsScalar d[],
                                         TacsScalar ddot[], TacsScalar dddot[],
                                         TacsScalar dpsi[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
-    const TacsScalar* qpsi = &psi[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
+    const TacsScalar *qpsi = &psi[offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar qxt[3], qxtdot[3], qxtddot[3], qdxt[3];
 
@@ -1060,9 +1060,9 @@ class TACSQuadraticRotation {
                                   const TacsScalar ddvars[],
                                   const TacsScalar t[], const TacsScalar dd[],
                                   TacsScalar res[]) {
-    TacsScalar* r = &res[offset];
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
+    TacsScalar *r = &res[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       // D = (t^{x} + 0.5*(q^{x}t)^{x} - 0.5*t^{x}*q^{x})
@@ -1109,15 +1109,15 @@ class TACSQuadraticRotation {
     const int dsize = 3 * num_nodes;
 
     // Pre-compute the Jacobian matrices
-    const TacsScalar* ti = t;
+    const TacsScalar *ti = t;
     TacsScalar D[9 * num_nodes], Ddot[9 * num_nodes], Dddot[9 * num_nodes];
     for (int i = 0; i < num_nodes; i++, ti += 3) {
-      TacsScalar* Di = &D[9 * i];
-      TacsScalar* Didot = &Ddot[9 * i];
-      TacsScalar* Diddot = &Dddot[9 * i];
-      const TacsScalar* qi = &vars[offset + vars_per_node * i];
-      const TacsScalar* qidot = &dvars[offset + vars_per_node * i];
-      const TacsScalar* qiddot = &ddvars[offset + vars_per_node * i];
+      TacsScalar *Di = &D[9 * i];
+      TacsScalar *Didot = &Ddot[9 * i];
+      TacsScalar *Diddot = &Dddot[9 * i];
+      const TacsScalar *qi = &vars[offset + vars_per_node * i];
+      const TacsScalar *qidot = &dvars[offset + vars_per_node * i];
+      const TacsScalar *qiddot = &ddvars[offset + vars_per_node * i];
 
       Di[0] = 0.5 * (qi[1] * ti[1] + qi[2] * ti[2]);
       Di[1] = -qi[0] * ti[1] + 0.5 * qi[1] * ti[0] - ti[2];
@@ -1156,16 +1156,16 @@ class TACSQuadraticRotation {
       Diddot[8] = 0.5 * (qiddot[0] * ti[0] + qiddot[1] * ti[1]);
     }
 
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    TacsScalar* r = NULL;
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
 
     // Re-set the pointer
-    const TacsScalar* Di = D;
+    const TacsScalar *Di = D;
     for (int i = 0; i < num_nodes; i++, Di += 9) {
       if (res) {
         r[0] += Di[0] * dd[0] + Di[1] * dd[1] + Di[2] * dd[2];
@@ -1175,9 +1175,9 @@ class TACSQuadraticRotation {
         r += vars_per_node;
       }
 
-      const TacsScalar* Dj = D;
-      const TacsScalar* Djdot = Ddot;
-      const TacsScalar* Djddot = Dddot;
+      const TacsScalar *Dj = D;
+      const TacsScalar *Djdot = Ddot;
+      const TacsScalar *Djddot = Dddot;
       for (int j = 0; j < num_nodes; j++, Dj += 9, Djdot += 9, Djddot += 9) {
         TacsScalar dfdq[9];
         for (int k = 0; k < 3; k++) {
@@ -1261,8 +1261,8 @@ class TACSQuadraticRotation {
     }
 
     Di = D;
-    const TacsScalar* Didot = Ddot;
-    const TacsScalar* Diddot = Dddot;
+    const TacsScalar *Didot = Ddot;
+    const TacsScalar *Diddot = Dddot;
     for (int i = 0; i < num_nodes; i++, Di += 9, Didot += 9, Diddot += 9) {
       for (int j = 0; j < num_nodes; j++) {
         TacsScalar dfdq[9], dfdqT[9];
@@ -1351,7 +1351,7 @@ class TACSQuadraticRotation {
   static void addDirectorRefNormalSens(const TacsScalar vars[],
                                        const TacsScalar t[],
                                        const TacsScalar dd[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar tmp[3];
@@ -1396,8 +1396,8 @@ class TACSQuadraticRotation {
   static void addDirectorRefNormalSens(
       const TacsScalar vars[], const TacsScalar psi[], const TacsScalar t[],
       const TacsScalar dd[], const TacsScalar ddpsi[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qpsi = &psi[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar tmp[3];
@@ -1462,7 +1462,7 @@ class TACSQuadraticRotation {
                                          const TacsScalar Ct[],
                                          const TacsScalar u0xd[],
                                          const TacsScalar Ctd[],
-                                         TacsScalar* ed) {
+                                         TacsScalar *ed) {
     *ed = 0.5 * (Ctd[3] + u0xd[3] - Ctd[1] - u0xd[1]);
 
     // Compute the rotational penalty
@@ -1490,7 +1490,7 @@ class TACSQuaternionRotation {
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void computeRotationMat(const TacsScalar vars[], TacsScalar C[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
     for (int i = 0; i < num_nodes; i++) {
       C[0] = 1.0 - 2.0 * (q[2] * q[2] + q[3] * q[3]);
       C[1] = 2.0 * (q[1] * q[2] + q[3] * q[0]);
@@ -1521,8 +1521,8 @@ class TACSQuaternionRotation {
   static void computeRotationMatDeriv(const TacsScalar vars[],
                                       const TacsScalar varsd[], TacsScalar C[],
                                       TacsScalar Cd[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qd = &varsd[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qd = &varsd[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       C[0] = 1.0 - 2.0 * (q[2] * q[2] + q[3] * q[3]);
@@ -1571,8 +1571,8 @@ class TACSQuaternionRotation {
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationMatResidual(const TacsScalar vars[],
                                      const TacsScalar dC[], TacsScalar res[]) {
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = &res[offset];
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       r[0] += 2.0 * (q[3] * (dC[1] - dC[3]) + q[2] * (dC[6] - dC[2]) +
@@ -1609,12 +1609,12 @@ class TACSQuaternionRotation {
     const int size = vars_per_node * num_nodes;
     const int csize = 9 * num_nodes;
 
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = NULL;
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
 
     for (int i = 0; i < num_nodes; i++) {
       if (res) {
@@ -1629,8 +1629,8 @@ class TACSQuaternionRotation {
         r += vars_per_node;
       }
 
-      const TacsScalar* qi = &vars[offset + i * vars_per_node];
-      const TacsScalar* qj = &vars[offset];
+      const TacsScalar *qi = &vars[offset + i * vars_per_node];
+      const TacsScalar *qj = &vars[offset];
 
       for (int j = 0; j < num_nodes; j++, qj += vars_per_node) {
         TacsScalar dfdC[36];
@@ -1659,7 +1659,7 @@ class TACSQuaternionRotation {
 
         TacsScalar jac[16];
         for (int k = 0; k < 4; k++) {
-          TacsScalar* d2Ct = &dfdC[9 * k];
+          TacsScalar *d2Ct = &dfdC[9 * k];
 
           jac[k] =
               2.0 * (qi[3] * (d2Ct[1] - d2Ct[3]) + qi[2] * (d2Ct[6] - d2Ct[2]) +
@@ -1714,8 +1714,8 @@ class TACSQuaternionRotation {
 
   template <int vars_per_node, int offset, int num_nodes>
   static void addRotationConstraint(const TacsScalar vars[], TacsScalar res[]) {
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = &res[offset];
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = &res[offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar lamb = q[4];
 
@@ -1738,14 +1738,14 @@ class TACSQuaternionRotation {
                                         const TacsScalar vars[],
                                         TacsScalar res[], TacsScalar mat[]) {
     const int size = vars_per_node * num_nodes;
-    const TacsScalar* q = &vars[offset];
-    TacsScalar* r = NULL;
+    const TacsScalar *q = &vars[offset];
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
 
     // Add the constribution to the constraints from the quaternions
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar lamb = q[4];
 
@@ -1806,8 +1806,8 @@ class TACSQuaternionRotation {
                                    const TacsScalar dvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar Q[9];
@@ -1882,9 +1882,9 @@ class TACSQuaternionRotation {
                                    const TacsScalar ddvars[],
                                    const TacsScalar t[], TacsScalar d[],
                                    TacsScalar ddot[], TacsScalar dddot[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar Q[9];
@@ -2002,10 +2002,10 @@ class TACSQuaternionRotation {
       const TacsScalar vars[], const TacsScalar dvars[],
       const TacsScalar ddvars[], const TacsScalar varsd[], const TacsScalar t[],
       TacsScalar d[], TacsScalar ddot[], TacsScalar dddot[], TacsScalar dd[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    const TacsScalar* qddot = &ddvars[offset];
-    const TacsScalar* qd = &varsd[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    const TacsScalar *qddot = &ddvars[offset];
+    const TacsScalar *qd = &varsd[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar Q[9];
@@ -2146,9 +2146,9 @@ class TACSQuaternionRotation {
                                   const TacsScalar ddvars[],
                                   const TacsScalar t[], const TacsScalar dd[],
                                   TacsScalar res[]) {
-    TacsScalar* r = &res[offset];
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
+    TacsScalar *r = &res[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       // D = d(Qdot*t)/d(qdot)
@@ -2197,16 +2197,16 @@ class TACSQuaternionRotation {
     const int dsize = 3 * num_nodes;
 
     // Pre-compute the Jacobian matrices
-    const TacsScalar* ti = t;
+    const TacsScalar *ti = t;
     TacsScalar D[12 * num_nodes], Ddot[12 * num_nodes], Dddot[12 * num_nodes];
     for (int i = 0; i < num_nodes; i++, ti += 3) {
       // D = d(Qdot*t)/d(qdot)
-      TacsScalar* Di = &D[12 * i];
-      TacsScalar* Didot = &Ddot[12 * i];
-      TacsScalar* Diddot = &Dddot[12 * i];
-      const TacsScalar* qi = &vars[offset + vars_per_node * i];
-      const TacsScalar* qidot = &dvars[offset + vars_per_node * i];
-      const TacsScalar* qiddot = &ddvars[offset + vars_per_node * i];
+      TacsScalar *Di = &D[12 * i];
+      TacsScalar *Didot = &Ddot[12 * i];
+      TacsScalar *Diddot = &Dddot[12 * i];
+      const TacsScalar *qi = &vars[offset + vars_per_node * i];
+      const TacsScalar *qidot = &dvars[offset + vars_per_node * i];
+      const TacsScalar *qiddot = &ddvars[offset + vars_per_node * i];
 
       Di[0] = 2.0 * (qi[2] * ti[2] - qi[3] * ti[1]);
       Di[1] = 2.0 * (qi[2] * ti[1] + qi[3] * ti[2]);
@@ -2266,16 +2266,16 @@ class TACSQuaternionRotation {
       Diddot[11] = 2.0 * (qiddot[1] * ti[0] + qiddot[2] * ti[1]);
     }
 
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qdot = &dvars[offset];
-    TacsScalar* r = NULL;
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qdot = &dvars[offset];
+    TacsScalar *r = NULL;
     if (res) {
       r = &res[offset];
     }
-    TacsScalar* m = &mat[offset * size + offset];
+    TacsScalar *m = &mat[offset * size + offset];
 
     // Re-set the pointer
-    const TacsScalar* Di = D;
+    const TacsScalar *Di = D;
     for (int i = 0; i < num_nodes; i++, Di += 12) {
       if (res) {
         r[0] += dd[0] * Di[0] + dd[1] * Di[4] + dd[2] * Di[8];
@@ -2286,9 +2286,9 @@ class TACSQuaternionRotation {
         r += vars_per_node;
       }
 
-      const TacsScalar* Dj = D;
-      const TacsScalar* Djdot = Ddot;
-      const TacsScalar* Djddot = Dddot;
+      const TacsScalar *Dj = D;
+      const TacsScalar *Djdot = Ddot;
+      const TacsScalar *Djddot = Dddot;
       for (int j = 0; j < num_nodes; j++, Dj += 12, Djdot += 12, Djddot += 12) {
         TacsScalar dfdq[12];
         for (int k = 0; k < 3; k++) {
@@ -2386,8 +2386,8 @@ class TACSQuaternionRotation {
     }
 
     Di = D;
-    const TacsScalar* Didot = Ddot;
-    const TacsScalar* Diddot = Dddot;
+    const TacsScalar *Didot = Ddot;
+    const TacsScalar *Diddot = Dddot;
     for (int i = 0; i < num_nodes; i++, Di += 12, Didot += 12, Diddot += 12) {
       for (int j = 0; j < num_nodes; j++) {
         TacsScalar dfdq[12], dfdqT[12];
@@ -2482,7 +2482,7 @@ class TACSQuaternionRotation {
   static void addDirectorRefNormalSens(const TacsScalar vars[],
                                        const TacsScalar t[],
                                        const TacsScalar dd[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
+    const TacsScalar *q = &vars[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar C[9];
@@ -2534,8 +2534,8 @@ class TACSQuaternionRotation {
   static void addDirectorRefNormalSens(
       const TacsScalar vars[], const TacsScalar psi[], const TacsScalar t[],
       const TacsScalar dd[], const TacsScalar ddpsi[], TacsScalar dt[]) {
-    const TacsScalar* q = &vars[offset];
-    const TacsScalar* qpsi = &psi[offset];
+    const TacsScalar *q = &vars[offset];
+    const TacsScalar *qpsi = &psi[offset];
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar C[9], Cd[9];
@@ -2622,7 +2622,7 @@ class TACSQuaternionRotation {
                                          const TacsScalar Ct[],
                                          const TacsScalar u0xd[],
                                          const TacsScalar Ctd[],
-                                         TacsScalar* ed) {
+                                         TacsScalar *ed) {
     // e2^{T}*Ct*(e1 + u_{,x}*e1) - e1^{T}*Ct*(e2 + u_{,x}*e2)
     *ed = ((Ctd[3] * (1.0 + u0x[0]) + Ctd[4] * u0x[3] + Ctd[5] * u0x[6]) +
            (Ct[3] * u0xd[0] + Ct[4] * u0xd[3] + Ct[5] * u0xd[6])) -
@@ -3134,7 +3134,7 @@ int TacsTestDirector(double dh = 1e-7, int test_print_level = 2,
 
   TacsScalar dcal[dsize];
   for (int i = 0; i < num_nodes; i++) {
-    const TacsScalar* C0 = &C[9 * i];
+    const TacsScalar *C0 = &C[9 * i];
     TacsScalar Qt[9];
     Qt[0] = C0[0] - 1.0;
     Qt[1] = C0[1];
@@ -3392,8 +3392,8 @@ void TacsTestEvalDirectorEnergy(const TacsScalar Tlin[],
                                 const TacsScalar Tquad[],
                                 const TacsScalar Plin[],
                                 const TacsScalar Pquad[], const TacsScalar d[],
-                                const TacsScalar ddot[], TacsScalar* _T,
-                                TacsScalar* _P) {
+                                const TacsScalar ddot[], TacsScalar *_T,
+                                TacsScalar *_P) {
   TacsScalar T = 0.0;
   TacsScalar P = 0.0;
 

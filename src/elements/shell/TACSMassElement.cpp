@@ -10,7 +10,7 @@
 /*
   Create the MassElement.
 */
-TACSMassElement::TACSMassElement(TACSGeneralMassConstitutive* _con) {
+TACSMassElement::TACSMassElement(TACSGeneralMassConstitutive *_con) {
   con = _con;
   con->incref();
 }
@@ -20,7 +20,7 @@ TACSMassElement::~TACSMassElement() { con->decref(); }
 /*
   Retrieve information about the names of the element variables
 */
-const char* TACSMassElement::getObjectName() { return elemName; }
+const char *TACSMassElement::getObjectName() { return elemName; }
 
 /*
   Retrieve the numbers of displacements, nodes, stress and variables
@@ -34,14 +34,14 @@ ElementType TACSMassElement::getElementType() { return TACS_MASS_ELEMENT; }
 /*
   The element name, variable, stress and strain names.
 */
-const char* TACSMassElement::elemName = "TACSMassElement";
+const char *TACSMassElement::elemName = "TACSMassElement";
 
-TACSElement* TACSMassElement::createElementInertialForce(
+TACSElement *TACSMassElement::createElementInertialForce(
     const TacsScalar inertiaVec[]) {
   return new TACSMassInertialForce(con, inertiaVec);
 }
 
-TACSElement* TACSMassElement::createElementCentrifugalForce(
+TACSElement *TACSMassElement::createElementCentrifugalForce(
     const TacsScalar omegaVec[], const TacsScalar rotCenter[],
     const bool first_order) {
   return new TACSMassCentrifugalForce(con, omegaVec, rotCenter);
@@ -50,8 +50,8 @@ TACSElement* TACSMassElement::createElementCentrifugalForce(
 void TACSMassElement::computeEnergies(int elemIndex, double time,
                                       const TacsScalar Xpts[],
                                       const TacsScalar vars[],
-                                      const TacsScalar dvars[], TacsScalar* Te,
-                                      TacsScalar* Pe) {
+                                      const TacsScalar dvars[], TacsScalar *Te,
+                                      TacsScalar *Pe) {
   *Pe = 0.0;
   *Te = 0.0;
   TacsScalar f[NUM_DISPS];
@@ -136,7 +136,7 @@ void TACSMassElement::addAdjResProduct(
 int TACSMassElement::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
-    const TacsScalar ddvars[], TacsScalar* detXd, TacsScalar* quantity) {
+    const TacsScalar ddvars[], TacsScalar *detXd, TacsScalar *quantity) {
   if (detXd) {
     *detXd = 1.0;
   }

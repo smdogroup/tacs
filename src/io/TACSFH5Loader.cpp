@@ -65,9 +65,9 @@ TACSFH5Loader::~TACSFH5Loader() {
   }
 }
 
-int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
+int TACSFH5Loader::loadData(const char *conn_fname, const char *data_fname) {
   // Load in the data for the connectivity
-  TACSFH5File* conn_file = new TACSFH5File(MPI_COMM_SELF);
+  TACSFH5File *conn_file = new TACSFH5File(MPI_COMM_SELF);
   conn_file->incref();
 
   // Open the connectivity file
@@ -89,9 +89,9 @@ int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
     conn_file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2);
 
     if (strcmp("components", zone_name) == 0) {
-      void* idata;
+      void *idata;
       conn_file->getZoneData(NULL, NULL, NULL, NULL, NULL, &idata);
-      comp_nums = (int*)idata;
+      comp_nums = (int *)idata;
       if (num_elements < 0) {
         num_elements = dim1;
       } else if (num_elements != dim1) {
@@ -99,9 +99,9 @@ int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
         return 1;
       }
     } else if (strcmp("ltypes", zone_name) == 0) {
-      void* idata;
+      void *idata;
       conn_file->getZoneData(NULL, NULL, NULL, NULL, NULL, &idata);
-      ltypes = (int*)idata;
+      ltypes = (int *)idata;
       if (num_elements < 0) {
         num_elements = dim1;
       } else if (num_elements != dim1) {
@@ -109,9 +109,9 @@ int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
         return 1;
       }
     } else if (strcmp("ptr", zone_name) == 0) {
-      void* idata;
+      void *idata;
       conn_file->getZoneData(NULL, NULL, NULL, NULL, NULL, &idata);
-      ptr = (int*)idata;
+      ptr = (int *)idata;
       if (num_elements < 0) {
         num_elements = dim1 - 1;
       } else if (num_elements != dim1 - 1) {
@@ -119,9 +119,9 @@ int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
         return 1;
       }
     } else if (strcmp("connectivity", zone_name) == 0) {
-      void* idata;
+      void *idata;
       conn_file->getZoneData(NULL, NULL, NULL, NULL, NULL, &idata);
-      conn = (int*)idata;
+      conn = (int *)idata;
       conn_size = dim1;
     }
 
@@ -160,19 +160,19 @@ int TACSFH5Loader::loadData(const char* conn_fname, const char* data_fname) {
       data_file->getZoneInfo(&zone_name, &var_names, &dtype, &dim1, &dim2);
 
       if (strncmp("continuous data", zone_name, 15) == 0) {
-        void* fdata;
+        void *fdata;
         data_file->getZoneData(&continuous_zone, &continuous_vars, NULL, NULL,
                                NULL, &fdata);
         num_nodes_continuous = dim1;
         num_vals_continuous = dim2;
-        continuous_data = (float*)fdata;
+        continuous_data = (float *)fdata;
       } else if (strncmp("element data", zone_name, 12) == 0) {
-        void* fdata;
+        void *fdata;
         data_file->getZoneData(&element_zone, &element_vars, NULL, NULL, NULL,
                                &fdata);
         num_nodes_element = dim1;
         num_vals_element = dim2;
-        element_data = (float*)fdata;
+        element_data = (float *)fdata;
       }
 
       if (!data_file->nextZone()) {
@@ -200,7 +200,7 @@ int TACSFH5Loader::getNumComponents() {
    @param comp The component number
    @return The component name
 */
-char* TACSFH5Loader::getComponentName(int comp) {
+char *TACSFH5Loader::getComponentName(int comp) {
   if (data_file) {
     return data_file->getComponentName(comp);
   }
@@ -214,8 +214,8 @@ char* TACSFH5Loader::getComponentName(int comp) {
   @param _comp_nums The component types
 
 */
-void TACSFH5Loader::getConnectivity(int* _num_elements, int** _comp_nums,
-                                    int** _ltypes, int** _ptr, int** _conn) {
+void TACSFH5Loader::getConnectivity(int *_num_elements, int **_comp_nums,
+                                    int **_ltypes, int **_ptr, int **_conn) {
   if (_num_elements) {
     *_num_elements = num_elements;
   }
@@ -233,9 +233,9 @@ void TACSFH5Loader::getConnectivity(int* _num_elements, int** _comp_nums,
   }
 }
 
-void TACSFH5Loader::getContinuousData(const char** zone_name,
-                                      const char** var_names, int* dim1,
-                                      int* dim2, float** data) {
+void TACSFH5Loader::getContinuousData(const char **zone_name,
+                                      const char **var_names, int *dim1,
+                                      int *dim2, float **data) {
   if (zone_name) {
     *zone_name = continuous_zone;
   }
@@ -253,9 +253,9 @@ void TACSFH5Loader::getContinuousData(const char** zone_name,
   }
 }
 
-void TACSFH5Loader::getElementData(const char** zone_name,
-                                   const char** var_names, int* dim1, int* dim2,
-                                   float** data) {
+void TACSFH5Loader::getElementData(const char **zone_name,
+                                   const char **var_names, int *dim1, int *dim2,
+                                   float **data) {
   if (zone_name) {
     *zone_name = element_zone;
   }
@@ -280,11 +280,11 @@ void TACSFH5Loader::getElementData(const char** zone_name,
   @param index Index of the element data to be ordered
   @param data Output array of length the number of continuous nodes
 */
-void TACSFH5Loader::getElementDataAsContinuous(int index, float* data) {
+void TACSFH5Loader::getElementDataAsContinuous(int index, float *data) {
   if (conn && ptr && element_data) {
     memset(data, 0, num_nodes_continuous * sizeof(float));
     if (index >= 0 && index < num_vals_element) {
-      int* count = new int[num_nodes_continuous];
+      int *count = new int[num_nodes_continuous];
       memset(count, 0, num_nodes_continuous * sizeof(int));
       for (int i = 0; i < num_elements; i++) {
         for (int j = ptr[i]; j < ptr[i + 1]; j++) {
@@ -317,7 +317,7 @@ void TACSFH5Loader::getElementDataAsContinuous(int index, float* data) {
 */
 void TACSFH5Loader::computeValueMask(ElementLayout layout,
                                      int use_continuous_data, int index,
-                                     float lower, float upper, int* mask) {
+                                     float lower, float upper, int *mask) {
   if (mask && conn && ptr && ltypes) {
     if (use_continuous_data && continuous_data && index >= 0 &&
         index < num_vals_continuous) {
@@ -376,7 +376,7 @@ void TACSFH5Loader::computeValueMask(ElementLayout layout,
   @param mask Output array containing the specified mask values
 */
 void TACSFH5Loader::computePlanarMask(ElementLayout layout, const float base[],
-                                      const float normal[], int* mask) {
+                                      const float normal[], int *mask) {
   if (mask && conn && ptr && ltypes) {
     if (continuous_data && num_vals_continuous >= 3) {
       for (int i = 0; i < num_elements; i++) {
@@ -429,14 +429,14 @@ void TACSFH5Loader::computePlanarMask(ElementLayout layout, const float base[],
   @param node_to_element_ptr Output pointer into the node_to_element array
   @param node_to_element Elements associated with the specified node
 */
-void TACSFH5Loader::computeNodeToElement(ElementLayout layout, const int* mask,
+void TACSFH5Loader::computeNodeToElement(ElementLayout layout, const int *mask,
                                          int num_sub_indices,
-                                         const int* sub_indices,
-                                         int** _node_to_element_ptr,
-                                         int** _node_to_element) {
+                                         const int *sub_indices,
+                                         int **_node_to_element_ptr,
+                                         int **_node_to_element) {
   // Scan through the elements, and figure out how many times
   // each node is referred to
-  int* node_to_element_ptr = new int[num_nodes_continuous + 1];
+  int *node_to_element_ptr = new int[num_nodes_continuous + 1];
   memset(node_to_element_ptr, 0, (num_nodes_continuous + 1) * sizeof(int));
   for (int i = 0; i < num_elements; i++) {
     if (ltypes[i] == layout && !(mask && mask[i])) {
@@ -460,7 +460,7 @@ void TACSFH5Loader::computeNodeToElement(ElementLayout layout, const int* mask,
   }
 
   // Now, loop over and set the adjacent
-  int* node_to_element = new int[node_to_element_ptr[num_nodes_continuous]];
+  int *node_to_element = new int[node_to_element_ptr[num_nodes_continuous]];
 
   for (int i = 0; i < num_elements; i++) {
     if (ltypes[i] == layout && !(mask && mask[i])) {
@@ -497,9 +497,9 @@ void TACSFH5Loader::computeNodeToElement(ElementLayout layout, const int* mask,
   faces
 */
 void TACSFH5Loader::getUnmatchedEdgesAndFaces(
-    ElementLayout layout, const int* mask, int index, const float* data,
-    int* _num_points, float** _points, float** _values, int* _num_edges,
-    int** _edges, int* _ntris, int** _verts) {
+    ElementLayout layout, const int *mask, int index, const float *data,
+    int *_num_points, float **_points, float **_values, int *_num_edges,
+    int **_edges, int *_ntris, int **_verts) {
   // Keep track of the max number of triangles
   int chunk_size = num_elements;
   if (num_elements > (1 << 16)) {
@@ -509,9 +509,9 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
 
   // Set the number of triangles/vertices
   int ntris = 0;
-  int* vert_indices = NULL;
+  int *vert_indices = NULL;
 
-  TACSMatrixHash* hash = NULL;
+  TACSMatrixHash *hash = NULL;
   if (_edges) {
     hash = new TACSMatrixHash(chunk_size, chunk_size);
     hash->incref();
@@ -570,7 +570,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
       if (ltypes[i] == layout && !(mask && mask[i])) {
         for (int face = 0; face < 6; face++) {
           int len[4];
-          const int* array[4];
+          const int *array[4];
           for (int j = 0; j < 4; j++) {
             // Pull out the node number from the connectivity and set the
             // array pointer and length of each element sub-length
@@ -616,7 +616,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
               // Expand the buffer if needed
               if (2 + ntris > max_num_tris) {
                 max_num_tris = ntris + 2 + chunk_size;
-                int* buff = new int[3 * max_num_tris];
+                int *buff = new int[3 * max_num_tris];
                 memcpy(buff, vert_indices, 3 * ntris * sizeof(int));
                 if (vert_indices) {
                   delete[] vert_indices;
@@ -625,7 +625,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
               }
 
               // Add the new triangles
-              int* v = &vert_indices[3 * ntris];
+              int *v = &vert_indices[3 * ntris];
               v[0] = conn[ptr[i] + hex_face_nodes[face][0]];
               v[1] = conn[ptr[i] + hex_face_nodes[face][1]];
               v[2] = conn[ptr[i] + hex_face_nodes[face][3]];
@@ -668,7 +668,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
   }
 
   int num_points = 0;
-  int* global_to_local = NULL;
+  int *global_to_local = NULL;
 
   if (hash) {
     int nrows;
@@ -680,8 +680,8 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
     num_points = nrows;
 
     int num_edges = rowp[nrows];
-    int* edges = new int[2 * num_edges];
-    int* e = edges;
+    int *edges = new int[2 * num_edges];
+    int *e = edges;
     for (int ip = 0; ip < nrows; ip++) {
       for (int jp = rowp[ip]; jp < rowp[ip + 1]; jp++) {
         e[0] = ip;
@@ -702,7 +702,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
   if (_verts) {
     // Create the global to local mapping
     if (!global_to_local) {
-      TACSIndexHash* index_hash = new TACSIndexHash(ntris);
+      TACSIndexHash *index_hash = new TACSIndexHash(ntris);
       index_hash->incref();
       for (int i = 0; i < 3 * ntris; i++) {
         index_hash->addEntry(vert_indices[i]);
@@ -712,7 +712,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
     }
 
     for (int i = 0; i < 3 * ntris; i++) {
-      int* item = TacsSearchArray(vert_indices[i], num_points, global_to_local);
+      int *item = TacsSearchArray(vert_indices[i], num_points, global_to_local);
       if (item) {
         vert_indices[i] = item - global_to_local;
       }
@@ -722,8 +722,8 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
   }
 
   // Set the points
-  float* points = new float[3 * num_points];
-  float* p = points;
+  float *points = new float[3 * num_points];
+  float *p = points;
   for (int i = 0; i < num_points; i++) {
     p[0] = continuous_data[num_vals_continuous * global_to_local[i]];
     p[1] = continuous_data[num_vals_continuous * global_to_local[i] + 1];
@@ -735,7 +735,7 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
   *_num_points = num_points;
 
   if (_values) {
-    float* values = new float[num_points];
+    float *values = new float[num_points];
     if (data) {
       for (int i = 0; i < num_points; i++) {
         values[i] = data[global_to_local[i]];
@@ -763,12 +763,12 @@ void TACSFH5Loader::getUnmatchedEdgesAndFaces(
   @param _ntris Output number of triangles
   @param _verts Triangles vertices
 */
-void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int* mask,
-                                   float isoval, int index, float* _data,
-                                   int* _ntris, float** _verts) {
+void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int *mask,
+                                   float isoval, int index, float *_data,
+                                   int *_ntris, float **_verts) {
   // Set the proper pointer to the data
   int incr = 1;
-  float* data = NULL;
+  float *data = NULL;
   if (_data) {
     data = _data;
   } else if (index >= 0 && index < num_vals_continuous) {
@@ -778,7 +778,7 @@ void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int* mask,
 
   // Set the number of triangles/vertices
   int ntris = 0;
-  float* verts = NULL;
+  float *verts = NULL;
 
   // Keep track of the max number of triangles
   int chunk_size = num_elements;
@@ -826,7 +826,7 @@ void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int* mask,
                     cell.val[index] = data[incr * node];
 
                     // Extract the node value
-                    const float* vals =
+                    const float *vals =
                         &continuous_data[node * num_vals_continuous];
                     cell.p[index].x = vals[0];
                     cell.p[index].y = vals[1];
@@ -842,7 +842,7 @@ void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int* mask,
               // Expand the buffer if needed
               if (new_tris + ntris > max_num_tris) {
                 max_num_tris = ntris + new_tris + chunk_size;
-                float* buff = new float[9 * max_num_tris];
+                float *buff = new float[9 * max_num_tris];
                 memcpy(buff, verts, 9 * ntris * sizeof(float));
                 if (verts) {
                   delete[] verts;
@@ -851,7 +851,7 @@ void TACSFH5Loader::getIsoSurfaces(ElementLayout layout, const int* mask,
               }
 
               // Add the new triangles
-              float* v = &verts[9 * ntris];
+              float *v = &verts[9 * ntris];
               for (int k = 0; k < new_tris; ntris++, k++) {
                 for (int kk = 0; kk < 3; kk++) {
                   v[0] = tris[k].p[kk].x;

@@ -138,7 +138,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
 /*
   Get the output string associated with the component and index
 */
-const char* TacsGetOutputComponentName(ElementType etype, int comp, int index) {
+const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
   if (index < 0 || index > TacsGetOutputComponentCount(etype, comp)) {
     return NULL;
   }
@@ -625,8 +625,8 @@ int TacsGetNumVisNodes(ElementLayout ltype) {
   Get the element layout count and number of entries in the new
   connectivity.
 */
-void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int* ntypes,
-                                      int* nconn) {
+void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int *ntypes,
+                                      int *nconn) {
   *ntypes = 0;
   *nconn = 0;
 
