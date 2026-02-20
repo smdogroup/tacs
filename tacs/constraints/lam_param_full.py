@@ -103,7 +103,13 @@ class LamParamFullConstraint(TACSConstraint):
         )
 
     def addConstraint(
-        self, conName, compIDs=None, lower=-1e20, upper=1.0, dvIndices=None, lpConScale=1.0
+        self,
+        conName,
+        compIDs=None,
+        lower=-1e20,
+        upper=1.0,
+        dvIndices=None,
+        lpConScale=1.0,
     ):
         """
         Generic method to adding a new constraint set for TACS.
@@ -157,7 +163,9 @@ class LamParamFullConstraint(TACSConstraint):
         ubound = lpConScale * upper
         lbound = lpConScale * lower
 
-        constrObj = self._createConstraint(dvIndices, compIDs, lbound, ubound, lpConScale)
+        constrObj = self._createConstraint(
+            dvIndices, compIDs, lbound, ubound, lpConScale
+        )
         if constrObj.nCon > 0:
             self.constraintList[conName] = constrObj
             success = True
@@ -344,7 +352,19 @@ class SparseLamParamFullConstraint(object):
 
     dtype = TACSConstraint.dtype
 
-    def __init__(self, comm, rows, cols, vals, nComps, nLP, ncols, lb=-1e20, ub=1e20, lpConScale=1.0):
+    def __init__(
+        self,
+        comm,
+        rows,
+        cols,
+        vals,
+        nComps,
+        nLP,
+        ncols,
+        lb=-1e20,
+        ub=1e20,
+        lpConScale=1.0,
+    ):
         """
         Initialize the sparse lamination-parameter constraint object.
 
@@ -567,15 +587,21 @@ class SparseLamParamFullConstraint(object):
                 if hasW1:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 2)
-                    data.append(self.lpConScale * (4.0 * W1 * (1.0 - W3) - 4.0 * W2 * W4))
+                    data.append(
+                        self.lpConScale * (4.0 * W1 * (1.0 - W3) - 4.0 * W2 * W4)
+                    )
                 if hasW2:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 3)
-                    data.append(self.lpConScale * (4.0 * W2 * (1.0 + W3) - 4.0 * W1 * W4))
+                    data.append(
+                        self.lpConScale * (4.0 * W2 * (1.0 + W3) - 4.0 * W1 * W4)
+                    )
                 if hasW3:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 4)
-                    data.append(self.lpConScale * (2.0 * (W2 * W2 - W1 * W1) + 2.0 * W3))
+                    data.append(
+                        self.lpConScale * (2.0 * (W2 * W2 - W1 * W1) + 2.0 * W3)
+                    )
                 if hasW4:
                     rowIdx.append(baseRow + 2)
                     colIdx.append(baseLp + 5)
