@@ -2294,8 +2294,6 @@ class pyTACS(BaseUI):
         constr.setNodes(self.Xpts0)
         return constr
 
-
-
     def getNumComponents(self):
         """
         Return number of components (property) groups found in bdf.
