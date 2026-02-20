@@ -18,6 +18,8 @@
 
 #include "TACSLamParamFullShellConstitutive.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 const char *TACSLamParamFullShellConstitutive::constName =
@@ -467,9 +469,7 @@ void TACSLamParamFullShellConstitutive::computeFailure(
 */
 void TACSLamParamFullShellConstitutive::computeFailureStrainSens(
     const TacsScalar strain[], const TacsScalar weights[], TacsScalar sens[]) {
-  sens[0] = sens[1] = sens[2] = 0.0;
-  sens[3] = sens[4] = sens[5] = 0.0;
-  sens[6] = sens[7] = sens[8] = 0.0;
+  std::fill_n(sens, NUM_STRESSES, TacsScalar(0.0));
 
   for (int k = 0; k < numFailAngles; k++) {
     TacsScalar angle = -0.5 * M_PI + k * M_PI / numFailAngles;
@@ -553,6 +553,7 @@ TacsScalar TACSLamParamFullShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[]) {
   TacsScalar fvals[2 * MAX_NUM_FAIL_ANGLES];
+  std::fill_n(fvals, 2 * MAX_NUM_FAIL_ANGLES, TacsScalar(0.0));
   TacsScalar max = 0.0;
 
   computeFailure(strain, fvals, &max);
