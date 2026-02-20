@@ -478,6 +478,27 @@ cdef class MaterialProperties:
         """
         self.ptr.setSpecificHeat(specific_heat)
 
+cdef class MAT2MaterialProperties(MaterialProperties):
+    """
+    This class only exists so certain constitutive objects can return a TACS MaterialProperties
+    instance that generates the necessary MAT2 nastran cards.
+    """
+    def __cinit__(self, E1, G12, G13, E2, G23, E3, rho=0.0):
+        self.ptr = NULL
+        self.E1 = E1
+        self.G12 = G12
+        self.G13 = G13
+        self.E2 = E2
+        self.G23 = G23
+        self.E3 = E3
+        self.rho = rho
+        self.nastranID = 0
+
+    def generateBDFCard(self):
+        return nastran_cards.materials.MAT2(self.nastranID, np.real(self.E1), np.real(self.G12), np.real(self.G13),
+                                            np.real(self.E2), np.real(self.G23), np.real(self.E3), np.real(self.rho))
+
+
 cdef class OrthotropicPly:
     """
       The following class holds the material stiffness and strength
@@ -2114,6 +2135,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
     """
 
     cdef TACSLamParamFullShellConstitutive* lam_cptr
+    cdef list customMatProps
     def __cinit__(
             self,
             OrthotropicPly ply,
@@ -2136,6 +2158,139 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         )
         self.ptr = self.cptr = self.lam_cptr
         self.ptr.incref()
+        self.customMatProps = None
+
+    def getThicknessProperties(self):
+        """
+        Helper function to gather thickness properties and density of the laminate based on the current design variable values.
+        These properties are needed to compute the equivalent MAT2 properties for the laminate.
+
+        Returns:
+            t (float): thickness of the laminate based on current design variable values
+            tFact (float): thickness factor to compute the equivalent bending stiffness for the MAT2 card
+            rho (float): density of the laminate
+        """
+        # Get the thickness and compute the thickness factor.
+        cdef int index = 0
+        t = self.lam_cptr.evalDesignFieldValue(0, NULL, NULL, index)
+
+        # We also need the mass moments and density
+        cdef np.ndarray mass = np.zeros(3, dtype)
+        self.lam_cptr.evalMassMoments(0, NULL, NULL, <TacsScalar*>mass.data)
+        rho = self.lam_cptr.evalDensity(0, NULL, NULL)
+
+        tFact = 12.0*mass[2] / (rho * t**3)
+
+        return t, tFact, rho
+
+    def getMaterialProperties(self):
+        """
+        Get the material properties objects associated with this constitutive object.
+
+        For this class, the material properties are based directly on the A, B, D, and As matrices as MAT2 entries.
+
+
+        Returns:
+            list[tacs.constitutive.MAT2MaterialProperties]: Custom material property class associated with object. Order is [A, D, As, B].
+        """
+        cdef np.ndarray C = np.zeros(22, dtype)
+        cdef np.ndarray mass = np.zeros(3, dtype)
+
+        matProps = []
+        # First thing we need to do is compute the stiffness matrix
+        self.lam_cptr.evalTangentStiffness(0, NULL, NULL, <TacsScalar*>C.data)
+        A = C[0:6]
+        B = C[6:12]
+        D = C[12:18]
+        As = C[18:21] # Last entry 22 is the drill factor, which we are not using here
+
+        t, tFact, rho = self.getThicknessProperties()
+        kcorr = 5.0/6.0 # Shear correlation factor is fixed internally for this class
+        t1 = t * kcorr
+        t2 = t**2
+        t3 = t**3 * tFact
+
+        # MAT2 entry for membrane stiffness (the A matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(A[0]/t),
+                G12=np.real(A[1]/t),
+                G13=np.real(A[2]/t),
+                E2=np.real(A[3]/t),
+                G23=np.real(A[4]/t),
+                E3=np.real(A[5]/t),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for bending stiffness (the D matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(12.0*D[0]/t3),
+                G12=np.real(12.0*D[1]/t3),
+                G13=np.real(12.0*D[2]/t3),
+                E2=np.real(12.0*D[3]/t3),
+                G23=np.real(12.0*D[4]/t3),
+                E3=np.real(12.0*D[5]/t3),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for transverse shear stiffness (the As matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(As[0]/t1),
+                G12=np.real(As[1]/t1),
+                G13=np.real(0.0),
+                E2=np.real(As[2]/t1),
+                G23=np.real(0.0),
+                E3=np.real(0.0),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for coupling stiffness (the B matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(B[0]/t2),
+                G12=np.real(B[1]/t2),
+                G13=np.real(B[2]/t2),
+                E2=np.real(B[3]/t2),
+                G23=np.real(B[4]/t2),
+                E3=np.real(B[5]/t2),
+                rho=np.real(rho)
+            )
+        )
+
+        # Update so it can be referenced later
+        self.customMatProps = matProps
+
+        return matProps
+
+    def generateBDFCard(self):
+        """Generate pyNASTRAN card class based on current design variable values.
+
+        Parameters
+        ----------
+        mat_ids : list[int]
+            List of material IDs corresponding to the A, D, As, and B matrices in order
+
+        Returns
+        -------
+        card : pyNastran.bdf.cards.properties.shell.PSHELL
+            pyNastran card holding property information
+        """
+
+        t, tFact, rho = self.getThicknessProperties()
+
+        card =  nastran_cards.properties.shell.PSHELL(
+            pid=self.nastranID,
+            mid1=self.customMatProps[0].getNastranID(),
+            t=np.real(t),
+            mid2=self.customMatProps[1].getNastranID(),
+            twelveIt3=np.real(tFact),
+            mid3=self.customMatProps[2].getNastranID(),
+            tst=5.0/6.0,
+            mid4=self.customMatProps[3].getNastranID(),
+        )
+        return card
+
 
     def setLaminationParameters(self, np.ndarray[TacsScalar, ndim=1, mode="c"] lp):
         """

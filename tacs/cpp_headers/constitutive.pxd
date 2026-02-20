@@ -142,6 +142,9 @@ cdef extern from "TACSLamParamFullShellConstitutive.h":
         )
         void setLaminationParameters(TacsScalar[])
         void setNumFailAngles(int)
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
+        void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
 
 cdef extern from "TACSBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
