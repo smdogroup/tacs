@@ -39,6 +39,7 @@
 
 class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  public:
+  static const int NUM_LAM_PARAMS = 6;
   static const int MAX_NUM_FAIL_ANGLES = 12;
 
   TACSLamParamFullShellConstitutive(TACSOrthotropicPly *_orthoPly,
@@ -183,8 +184,9 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TacsScalar tlb, tub;  // The lower and upper bounds
 
   // The lamination parameter values
-  TacsScalar lp[6];  // The lamination parameters
-  int lpNums[6];  // The design variable numbers for the lamination parameters
+  TacsScalar lp[NUM_LAM_PARAMS];  // The lamination parameters
+  int lpNums[NUM_LAM_PARAMS];  // The design variable numbers for the lamination
+                               // parameters
 
   static const char *constName;
 };

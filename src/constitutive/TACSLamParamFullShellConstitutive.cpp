@@ -40,7 +40,7 @@ TACSLamParamFullShellConstitutive::TACSLamParamFullShellConstitutive(
   tlb = _tlb;
   tub = _tub;
 
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < NUM_LAM_PARAMS; k++) {
     lp[k] = 0.0;
     lpNums[k] = _lpNums[k];
     if (lpNums[k] >= 0) {
@@ -77,7 +77,7 @@ TACSLamParamFullShellConstitutive::~TACSLamParamFullShellConstitutive() {
 // Set the lamination parameter values directly
 void TACSLamParamFullShellConstitutive::setLaminationParameters(
     TacsScalar _lp[]) {
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
     lp[k] = _lp[k];
   }
 }
@@ -99,7 +99,7 @@ int TACSLamParamFullShellConstitutive::getDesignVarNums(int elemIndex,
       index++;
     }
 
-    for (int k = 0; k < 6; k++) {
+    for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
       if (lpNums[k] >= 0) {
         dvNums[index] = lpNums[k];
         index++;
@@ -116,7 +116,7 @@ int TACSLamParamFullShellConstitutive::setDesignVars(int elemIndex, int dvLen,
     t = dvs[index];
     index++;
   }
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
     if (lpNums[k] >= 0) {
       lp[k] = dvs[index];
       index++;
@@ -132,7 +132,7 @@ int TACSLamParamFullShellConstitutive::getDesignVars(int elemIndex, int dvLen,
     dvs[index] = t;
     index++;
   }
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
     if (lpNums[k] >= 0) {
       dvs[index] = lp[k];
       index++;
@@ -151,7 +151,7 @@ int TACSLamParamFullShellConstitutive::getDesignVarRange(int elemIndex,
     ub[index] = tub;
     index++;
   }
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < NUM_LAM_PARAMS; k++) {
     if (lpNums[k] >= 0) {
       lb[index] = -1.0;
       ub[index] = 1.0;
@@ -611,7 +611,7 @@ TacsScalar TACSLamParamFullShellConstitutive::evalDesignFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[], int index) {
   if (index == 0) {
     return t;
-  } else if (index <= 6) {
+  } else if (index <= NUM_LAM_PARAMS) {
     // Return the bending parameters
     return lp[index - 1];
   }
