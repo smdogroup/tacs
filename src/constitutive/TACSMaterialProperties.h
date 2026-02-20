@@ -54,7 +54,10 @@ class TACSMaterialProperties : public TACSObject {
                          TacsScalar _S23 = 0.0, TacsScalar _alpha1 = 0.0,
                          TacsScalar _alpha2 = 0.0, TacsScalar _alpha3 = 0.0,
                          TacsScalar _kappa1 = 0.0, TacsScalar _kappa2 = 0.0,
-                         TacsScalar _kappa3 = 0.0);
+                         TacsScalar _kappa3 = 0.0, TacsScalar _b_tt = 0.0, 
+                         TacsScalar _b_tl = 0.0, TacsScalar _muWF = 0.0, 
+                         TacsScalar _mu3W = 0.0, TacsScalar _mu3F = 0.0, 
+                         TacsScalar _m = 0.0);
   ~TACSMaterialProperties() {}
 
   // Get the material type
@@ -78,7 +81,10 @@ class TACSMaterialProperties : public TACSObject {
   void getStrengthProperties(TacsScalar *_T1, TacsScalar *_C1, TacsScalar *_T2,
                              TacsScalar *_C2, TacsScalar *_T3, TacsScalar *_C3,
                              TacsScalar *_S12, TacsScalar *_S13,
-                             TacsScalar *_S23);
+                             TacsScalar *_S23, TacsScalar *_b_tt, 
+                             TacsScalar *_b_tl, TacsScalar *_muWF, 
+                             TacsScalar *_mu3W, TacsScalar *_mu3F, 
+                             TacsScalar *_m);
   void getCoefThermalExpansion(TacsScalar *_a1, TacsScalar *_a2,
                                TacsScalar *_a3);
   void getThermalConductivity(TacsScalar *_k1, TacsScalar *_k2,
@@ -135,7 +141,7 @@ class TACSMaterialProperties : public TACSObject {
   TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23;
 
   // The strength coefficients
-  TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23;
+  TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23, b_tt, b_tl, muWF, mu3W, mu3F, m;
 
   // The thermal coefficients of expansion
   TacsScalar alpha1, alpha2, alpha3;
@@ -152,9 +158,9 @@ class TACSMaterialProperties : public TACSObject {
   The stiffness of the ply in the global axis is supplied by the
   functions calculateAbar/calculateQbar, where the argument 'angle' is
   provided in radians. The failure properties are calculated either
-  based on a Tsai-Wu failure criterion or a smoothed maximum strain
-  failure criterion, where the smoothing is performed using a KS
-  function.
+  based on a Tsai-Wu failure criterion, the Cuntze failure criterion, 
+  or a smoothed maximum strain failure criterion, where the smoothing 
+  is performed using a KS function.
 
   The interaction coefficient for the Tsai-Wu failure criterion is set
   to zero by default. If a value of C, the failure stress under
@@ -175,6 +181,8 @@ class TACSOrthotropicPly : public TACSObject {
   // Set whether to use the standard Tsai-Wu failure index or the modified
   // version which returns a strength ratio
   void setUseModifiedTsaiWu(bool _useModifiedTsaiWu);
+  void setUseCuntzeCriterion_UD();
+  void setUseCuntzeCriterion_Woven();
 
   // Retrieve the material properties
   // --------------------------------
@@ -191,6 +199,7 @@ class TACSOrthotropicPly : public TACSObject {
                          TacsScalar *_eYc, TacsScalar *_eS12);
   void getTsaiWu(TacsScalar *_F1, TacsScalar *_F2, TacsScalar *_F11,
                  TacsScalar *_F12, TacsScalar *_F22, TacsScalar *_F66);
+  void getCuntze(TacsScalar *_b_tl, TacsScalar *_muWF, TacsScalar *_m);
   void getLaminateInvariants(TacsScalar *U1, TacsScalar *U2, TacsScalar *U3,
                              TacsScalar *U4, TacsScalar *U5, TacsScalar *U6);
 
@@ -215,6 +224,22 @@ class TACSOrthotropicPly : public TACSObject {
                                TacsScalar sens[]);
   TacsScalar failureAngleSens(TacsScalar angle, const TacsScalar strain[],
                               TacsScalar *failSens);
+
+  // Given the strain and stress in the local coordinates, 
+  // determine the failure modes of the Cuntze failure criterion
+  // as well as the global failure value.
+  // -----------------------------------------------------------
+  TacsScalar CuntzeFailureModes(const TacsScalar e[], const TacsScalar s[], 
+                                TacsScalar *eff_ff1, TacsScalar *eff_ff2, 
+                                TacsScalar *eff_iff1, TacsScalar *eff_iff2, 
+                                TacsScalar *eff_iff3);
+
+  TacsScalar CuntzeFailureModes(const TacsScalar e[], const TacsScalar s[], 
+                                TacsScalar *eff_ff1, TacsScalar *eff_ff2, 
+                                TacsScalar *eff_ff3, TacsScalar *eff_ff4, 
+                                TacsScalar *eff_iff1, TacsScalar *eff_iff2, 
+                                TacsScalar *eff_iff3, TacsScalar *eff_iff4, 
+                                TacsScalar *eff_iff5);
 
   // Calculate the failure load fraction for given
   // constant and linear strain components
@@ -280,6 +305,8 @@ class TACSOrthotropicPly : public TACSObject {
   // Keep track of which failure criterion to use
   bool useTsaiWuCriterion;
   bool useModifiedTsaiWu;
+  bool useCuntzeCriterion_UD;
+  bool useCuntzeCriterion_Woven;
 
   // The stress-based strength properties
   TacsScalar Xt, Xc;
@@ -290,6 +317,11 @@ class TACSOrthotropicPly : public TACSObject {
   // The coefficients for the Tsai-Wu failure criterion
   TacsScalar F1, F2;
   TacsScalar F11, F12, F22, F66;
+
+  // The material properties for the Cuntze failure criterion
+  TacsScalar b_tt, b_tl;
+  TacsScalar muWF, mu3W, mu3F;
+  TacsScalar m;
 
   // The strain-based strength properties
   TacsScalar eXt, eXc;
