@@ -178,7 +178,6 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
     allCompIDs = FEAAssembler.selectCompIDs()
     constraint.addConstraint("ALL", compIDs=allCompIDs, dvIndices=np.arange(1, 7))
 
-
     return FEAAssembler, staticProb, constraint
 
 
@@ -254,3 +253,4 @@ if __name__ == "__main__":
 
         outname = os.path.join(outputDir, outname)
         staticProb.writeSolution(baseName=outname)
+        FEAAssembler.writeBDF(outname + "_out.bdf", staticProb)
