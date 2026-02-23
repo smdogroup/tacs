@@ -31,6 +31,7 @@ from functools import wraps
 
 import numpy as np
 import pyNastran.bdf as pn
+from pyNastran.bdf.mesh_utils.convert import scale_model
 
 import tacs.constitutive
 import tacs.constraints
@@ -1805,7 +1806,7 @@ class pyTACS(BaseUI):
         return structProblems
 
     @postinitialize_method
-    def writeBDF(self, fileName, problems):
+    def writeBDF(self, fileName, problems, xyz_scale=1.0, mass_scale=1.0, time_scale=1.0, force_scale=1.0, gravity_scale=1.0):
         """
         Write NASTRAN BDF file from problem class.
         Assumes all supplied Problems share the same nodal and design variable values.
@@ -1818,6 +1819,16 @@ class pyTACS(BaseUI):
             Name of file to write BDF file to.
         problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]
             List of pytacs Problem classes to write BDF file from.
+        xyz_scale: float, optional
+            Scale factor for nodal coordinates, by default 1.0
+        mass_scale: float, optional
+            Scale factor for mass, by default 1.0
+        time_scale: float, optional
+            Scale factor for time, by default 1.0
+        force_scale: float, optional
+            Scale factor for force, by default 1.0
+        gravity_scale: float, optional
+            Scale factor for gravity, by default 1.0
         """
         # Make sure problems is in a list
         if hasattr(problems, "__iter__") == False:
@@ -2075,6 +2086,10 @@ class pyTACS(BaseUI):
             if isinstance(problem, tacs.problems.StaticProblem):
                 loadCase = i + 1
                 problem.writeLoadToBDF(newBDFInfo, loadCase)
+
+        # Apply any scaling factors to output BDF specified by the user
+        if self.comm.rank == 0:
+           scale_model(newBDFInfo, xyz_scale, mass_scale, time_scale, force_scale, gravity_scale)
 
         # Write out BDF file
         if self.comm.rank == 0:
