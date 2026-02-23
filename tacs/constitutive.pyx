@@ -2177,7 +2177,9 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         # We also need the mass moments and density
         cdef np.ndarray mass = np.zeros(3, dtype)
         self.lam_cptr.evalMassMoments(0, NULL, NULL, <TacsScalar*>mass.data)
-        rho = self.lam_cptr.evalDensity(0, NULL, NULL)
+
+        # Get density. Note that evalDensity gives mass per unit area, thus divide by thickness to get the material density.
+        rho = self.lam_cptr.evalDensity(0, NULL, NULL) / t
 
         tFact = 12.0*mass[2] / (rho * t**3)
 
