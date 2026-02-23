@@ -2056,7 +2056,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
         cdef TacsScalar W3 = 0.0
         cdef int W1_num = -1
         cdef int W3_num = -3
-        cdef TacsScalar ksWeight = 30.0
+        cdef TacsScalar ksWeight = 100.0
         cdef TacsScalar epsilon = 0.0
 
         if 't' in kwargs:
@@ -2144,7 +2144,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
             TacsScalar tlb,
             TacsScalar tub,
             np.ndarray[int, ndim=1, mode="c"] lpNums,
-            TacsScalar ksWeight = 30.0
+            TacsScalar ksWeight = 100.0
             ):
 
         self.lam_cptr = new TACSLamParamFullShellConstitutive(
