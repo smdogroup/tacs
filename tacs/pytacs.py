@@ -1242,12 +1242,12 @@ class pyTACS(BaseUI):
                     nsm = nsm[0]
                 else:
                     xStations = propInfo.xxb
-                    area = np.trapz(area, xStations)
-                    I1 = np.trapz(I1, xStations)
-                    I2 = np.trapz(I2, xStations)
-                    I12 = np.trapz(I12, xStations)
-                    J = np.trapz(J, xStations)
-                    nsm = np.trapz(nsm, xStations)
+                    area = np.trapezoid(area, xStations)
+                    I1 = np.trapezoid(I1, xStations)
+                    I2 = np.trapezoid(I2, xStations)
+                    I12 = np.trapezoid(I12, xStations)
+                    J = np.trapezoid(J, xStations)
+                    nsm = np.trapezoid(nsm, xStations)
                 con = tacs.constitutive.BasicBeamConstitutive(
                     mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
                 )
@@ -1284,7 +1284,7 @@ class pyTACS(BaseUI):
                         sectionProps[key] = value[0]
                 else:
                     for key, value in sectionProps.items():
-                        sectionProps[key] = np.trapz(value, xStations)
+                        sectionProps[key] = np.trapezoid(value, xStations)
 
                 con = conType(mat, **sectionProps)
 
