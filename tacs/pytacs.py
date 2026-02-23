@@ -2288,12 +2288,12 @@ class pyTACS(BaseUI):
         name : str
             Name to assign constraint.
         options : dict
-            Class-specific options to pass to VolumeConstraint instance (case-insensitive).
+            Class-specific options to pass to LamParamFullConstraint instance (case-insensitive).
             Defaults to None.
 
         Returns
         -------
-        constraint : tacs.constraints.createLamParamFullConstraint
+        constraint : tacs.constraints.LamParamFullConstraint
             LamParamFullConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.LamParamFullConstraint(
