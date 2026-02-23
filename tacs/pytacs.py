@@ -1806,7 +1806,16 @@ class pyTACS(BaseUI):
         return structProblems
 
     @postinitialize_method
-    def writeBDF(self, fileName, problems, xyz_scale=1.0, mass_scale=1.0, time_scale=1.0, force_scale=1.0, gravity_scale=1.0):
+    def writeBDF(
+        self,
+        fileName,
+        problems,
+        xyz_scale=1.0,
+        mass_scale=1.0,
+        time_scale=1.0,
+        force_scale=1.0,
+        gravity_scale=1.0,
+    ):
         """
         Write NASTRAN BDF file from problem class.
         Assumes all supplied Problems share the same nodal and design variable values.
@@ -2089,7 +2098,14 @@ class pyTACS(BaseUI):
 
         # Apply any scaling factors to output BDF specified by the user
         if self.comm.rank == 0:
-           scale_model(newBDFInfo, xyz_scale, mass_scale, time_scale, force_scale, gravity_scale)
+            scale_model(
+                newBDFInfo,
+                xyz_scale,
+                mass_scale,
+                time_scale,
+                force_scale,
+                gravity_scale,
+            )
 
         # Write out BDF file
         if self.comm.rank == 0:

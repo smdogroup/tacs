@@ -324,9 +324,9 @@ class LamParamFullConstraint(TACSConstraint):
             key = f"{self.name}_{conName}"
             # Get sparse Jacobian for dv sensitivity
             funcsSens[key] = {}
-            funcsSens[key][self.varName] = self.constraintList[conName].evalConSens(
-                self.x.getArray()
-            ).toarray()
+            funcsSens[key][self.varName] = (
+                self.constraintList[conName].evalConSens(self.x.getArray()).toarray()
+            )
 
 
 class SparseLamParamFullConstraint(object):
