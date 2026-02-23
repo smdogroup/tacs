@@ -293,6 +293,10 @@ class LamParamFullConstraint(TACSConstraint):
         updated into the provided dictionary. The derivatives with
         respect to all design variables and node locations are computed.
 
+        Notes
+        -----
+        While internally computed as sparse, the sensitivities are returned as dense array
+
         Parameters
         ----------
         funcsSens : dict
@@ -322,7 +326,7 @@ class LamParamFullConstraint(TACSConstraint):
             funcsSens[key] = {}
             funcsSens[key][self.varName] = self.constraintList[conName].evalConSens(
                 self.x.getArray()
-            )
+            ).toarray()
 
 
 class SparseLamParamFullConstraint(object):
