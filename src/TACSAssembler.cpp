@@ -3361,6 +3361,7 @@ void TACSAssembler::applyTransposeBCs(TACSMat *mat) {
   from applyBCs since the boundary condition values are set (not zeroed).
 
   @param vec Set the boundary conditions values into this vector
+  @param lambda Scaling factor on the values set in the vector
 */
 void TACSAssembler::setBCs(TACSVec *vec, const TacsScalar lambda) {
   vec->setBCs(bcMap, lambda);

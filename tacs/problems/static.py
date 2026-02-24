@@ -1037,6 +1037,8 @@ class StaticProblem(TACSProblem):
         ----------
         res : tacs.TACS.Vec, optional
             If provided, the residual is also computed and stored in this vector
+        applyBCs : bool, optional
+            Whether to apply boundary conditions to the jacobian, by default True
         """
         if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
