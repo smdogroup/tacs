@@ -16,4 +16,4 @@ typedef void *PyMPI_MPI_Session;
 #define MPI_Session PyMPI_MPI_Session
 #endif
 
-#endif/*MPI_COMPAT_H*/
+#endif /*MPI_COMPAT_H*/

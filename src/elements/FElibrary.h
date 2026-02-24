@@ -58,7 +58,7 @@ TACS_BEGIN_NAMESPACE(FElibrary)
   least susceptibility to truncation error.
 */
 template <class ScalarType>
-void solveQERoots(ScalarType* r1, ScalarType* r2, ScalarType a, ScalarType b,
+void solveQERoots(ScalarType *r1, ScalarType *r2, ScalarType a, ScalarType b,
                   ScalarType c) {
   ScalarType discrim = b * b - 4.0 * a * c;
   if (TacsRealPart(discrim) < 0.0) {
@@ -108,7 +108,7 @@ void bspline_basis_test(int k);
   n: the number of control points
   k: the order of the b-spline
 */
-int bspline_interval(double u, const double* T, int n, int k);
+int bspline_interval(double u, const double *T, int n, int k);
 
 /*
   Evaluate the basis functions and optionally their derivatives
@@ -126,8 +126,8 @@ int bspline_interval(double u, const double* T, int n, int k);
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis(double* N, const int idx, const double u, const double* Tu,
-                   const int ku, double* work);
+void bspline_basis(double *N, const int idx, const double u, const double *Tu,
+                   const int ku, double *work);
 
 /*
   Compute the derivative of the b-spline basis
@@ -145,9 +145,9 @@ void bspline_basis(double* N, const int idx, const double u, const double* Tu,
   u is on the idx-th knot span such that u is in the interval
   u \in [Tu[idx], Tu[idx+1])
 */
-void bspline_basis_derivative(double* N, const int idx, const double u,
-                              int ideriv, const double* Tu, const int ku,
-                              double* work);
+void bspline_basis_derivative(double *N, const int idx, const double u,
+                              int ideriv, const double *Tu, const int ku,
+                              double *work);
 
 /*
   Evaluate the one-dimensional b-spline
@@ -168,9 +168,9 @@ void bspline_basis_derivative(double* N, const int idx, const double u,
   returns:
   the value of the interpolant (or its derivative) at u
 */
-TacsScalar bspline1d(const double u, const int idu, const double* Tu,
-                     const int nu, const int ku, const TacsScalar* coef,
-                     double* work);
+TacsScalar bspline1d(const double u, const int idu, const double *Tu,
+                     const int nu, const int ku, const TacsScalar *coef,
+                     double *work);
 
 /*
   Evaluate a two-dimensional tensor product b-spline
@@ -192,9 +192,9 @@ TacsScalar bspline1d(const double u, const int idu, const double* Tu,
   the value of the interpolant (or its derivative) at u
 */
 TacsScalar bspline2d(const double u, const double v, const int idu,
-                     const int idv, const double* Tu, const double* Tv,
+                     const int idv, const double *Tu, const double *Tv,
                      const int nu, const int nv, const int ku, const int kv,
-                     const TacsScalar* coef, double* work);
+                     const TacsScalar *coef, double *work);
 
 /*
   Evaluate a three-dimensional tensor product b-spline
@@ -219,10 +219,10 @@ TacsScalar bspline2d(const double u, const double v, const int idu,
 */
 TacsScalar bspline3d(const double u, const double v, const double w,
                      const int idu, const int idv, const int idw,
-                     const double* Tu, const double* Tv, const double* Tw,
+                     const double *Tu, const double *Tv, const double *Tw,
                      const int nu, const int nv, const int nw, const int ku,
-                     const int kv, const int kw, const TacsScalar* coef,
-                     double* work);
+                     const int kv, const int kw, const TacsScalar *coef,
+                     double *work);
 
 /*
   C1 functions for one dimensional problems

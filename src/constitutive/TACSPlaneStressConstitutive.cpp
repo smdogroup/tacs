@@ -18,15 +18,15 @@
 
 #include "TACSPlaneStressConstitutive.h"
 
-const char* TACSPlaneStressConstitutive::psName = "TACSPlaneStressConstitutive";
+const char *TACSPlaneStressConstitutive::psName = "TACSPlaneStressConstitutive";
 
-const char* TACSPlaneStressConstitutive::getObjectName() { return psName; }
+const char *TACSPlaneStressConstitutive::getObjectName() { return psName; }
 
 /*
   PlaneStressStiffness member function definitions
 */
 TACSPlaneStressConstitutive::TACSPlaneStressConstitutive(
-    TACSMaterialProperties* props, TacsScalar _t, int _tNum, TacsScalar _tlb,
+    TACSMaterialProperties *props, TacsScalar _t, int _tNum, TacsScalar _tlb,
     TacsScalar _tub) {
   properties = props;
   if (properties) {

@@ -18,9 +18,9 @@
 
 #include "TACSPointMassConstitutive.h"
 
-const char* TACSPointMassConstitutive::name = "TACSPointMassConstitutive";
+const char *TACSPointMassConstitutive::name = "TACSPointMassConstitutive";
 
-const char* TACSPointMassConstitutive::getObjectName() { return name; }
+const char *TACSPointMassConstitutive::getObjectName() { return name; }
 
 /*
   PointMassConstitutive member function definitions

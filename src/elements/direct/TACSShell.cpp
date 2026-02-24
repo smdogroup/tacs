@@ -18,7 +18,7 @@
 
 #include "TACSShell.h"
 
-TACSShell::TACSShell(FSDTStiffness* _stiff, int componentNum)
+TACSShell::TACSShell(FSDTStiffness *_stiff, int componentNum)
     : TACSElement(componentNum) {
   stiff = _stiff;
   stiff->incref();
@@ -30,46 +30,46 @@ TACSShell::~TACSShell() { stiff->decref(); }
   Set up the internal static data for the names of the element,
   displacements, stresses, strains and extra variables, respectively.
 */
-const char* TACSShell::elemName = "TACSShell";
+const char *TACSShell::elemName = "TACSShell";
 
-const char* TACSShell::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
+const char *TACSShell::dispNames[] = {"u0", "v0", "w0", "rotx", "roty", "rotz"};
 
-const char* TACSShell::stressNames[] = {"sx0", "sy0",  "sxy0", "sx1",
+const char *TACSShell::stressNames[] = {"sx0", "sy0",  "sxy0", "sx1",
                                         "sy1", "sxy1", "syz0", "sxz0"};
 
-const char* TACSShell::strainNames[] = {"ex0", "ey0",  "exy0", "ex1",
+const char *TACSShell::strainNames[] = {"ex0", "ey0",  "exy0", "ex1",
                                         "ey1", "exy1", "eyz0", "exz0"};
 
-const char* TACSShell::extraNames[] = {"lambda", "buckling", "dv1", "dv2"};
+const char *TACSShell::extraNames[] = {"lambda", "buckling", "dv1", "dv2"};
 
 /*
   Define the functions that return the element names, displacements,
   stresses, strains and extra variables.
 */
-const char* TACSShell::elementName() { return elemName; }
+const char *TACSShell::elementName() { return elemName; }
 
-const char* TACSShell::displacementName(int i) {
+const char *TACSShell::displacementName(int i) {
   if (i >= 0 && i < NUM_DISPS) {
     return dispNames[i];
   }
   return NULL;
 }
 
-const char* TACSShell::stressName(int i) {
+const char *TACSShell::stressName(int i) {
   if (i >= 0 && i < NUM_STRESSES) {
     return stressNames[i];
   }
   return NULL;
 }
 
-const char* TACSShell::strainName(int i) {
+const char *TACSShell::strainName(int i) {
   if (i >= 0 && i < NUM_STRESSES) {
     return strainNames[i];
   }
   return NULL;
 }
 
-const char* TACSShell::extraName(int i) {
+const char *TACSShell::extraName(int i) {
   if (i >= 0 && i < NUM_EXTRAS) {
     return extraNames[i];
   }
