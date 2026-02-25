@@ -75,7 +75,7 @@ class TACS3DThermoTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
+  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -315,7 +315,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
+  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -368,7 +368,7 @@ class TACS3DHeatFluxTraction : public TACSElement {
         FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
 
         // Calcualte the Jacobian at the current point
-        const TacsScalar* x = Xpts;
+        const TacsScalar *x = Xpts;
         TacsScalar Xd[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
         for (int k = 0; k < order; k++) {
@@ -673,7 +673,7 @@ class TACS3DThermoPressureTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
+  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -882,7 +882,7 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
 
   // Compute the kinetic and potential energy within the element
   // -----------------------------------------------------------
-  void computeEnergies(double time, TacsScalar* Te, TacsScalar* Pe,
+  void computeEnergies(double time, TacsScalar *Te, TacsScalar *Pe,
                        const TacsScalar Xpts[], const TacsScalar vars[],
                        const TacsScalar dvars[]) {
     *Te = 0.0, *Pe = 0.0;
@@ -935,7 +935,7 @@ class TACS3DNormalHeatFluxTraction : public TACSElement {
         FElibrary::lagrangeSFKnots(nc, dnc, pt[2], knots, order);
 
         // Calcualte the Jacobian at the current point
-        const TacsScalar* x = Xpts;
+        const TacsScalar *x = Xpts;
         TacsScalar Xd[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
         for (int k = 0; k < order; k++) {

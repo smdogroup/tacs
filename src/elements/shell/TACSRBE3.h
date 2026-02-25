@@ -24,16 +24,16 @@ class TACSRBE3 : public TACSElement {
 
   // Info for BDF writer
   // -------------------
-  const int* getDependentDOFs() { return dep_dof_constrained; }
-  int const* const* getIndependentDOFs() { return indep_dof_constrained; }
-  const double* getWeights() { return w; }
+  const int *getDependentDOFs() { return dep_dof_constrained; }
+  int const *const *getIndependentDOFs() { return indep_dof_constrained; }
+  const double *getWeights() { return w; }
   int getNumIndependentNodes() { return NUM_INDEP_NODES; }
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
-  const char* displacementName(int i);
-  const char* extraName(int i);
+  const char *getObjectName();
+  const char *displacementName(int i);
+  const char *extraName(int i);
   int getVarsPerNode();
   int getNumNodes();
   int numExtras();
@@ -90,7 +90,7 @@ class TACSRBE3 : public TACSElement {
                                  const TacsScalar Xpts[],
                                  const TacsScalar Xcg[]);
   TacsScalar getMomentsOfInertiaSens(TacsScalar sJcg[3][3],
-                                     TacsScalar Jcg[3][3], TacsScalar* sLc,
+                                     TacsScalar Jcg[3][3], TacsScalar *sLc,
                                      const double w[], const TacsScalar Xpts[],
                                      const TacsScalar Xcg[],
                                      const TacsScalar sXcg[],
@@ -103,15 +103,15 @@ class TACSRBE3 : public TACSElement {
   int NUM_VARIABLES;
   static const int NUM_EXTRAS = 6;
 
-  static const char* elemName;
-  static const char* dispNames[NUM_DISPS];
-  static const char* extraNames[NUM_EXTRAS];
+  static const char *elemName;
+  static const char *dispNames[NUM_DISPS];
+  static const char *extraNames[NUM_EXTRAS];
 
   // Independent node weights
-  double* w;
+  double *w;
   // Flag which dependent dofs to include
   int dep_dof_constrained[NUM_DISPS];
-  int** indep_dof_constrained;
+  int **indep_dof_constrained;
 
   // constraint matrix scaling factor, see ref [2]
   static double C1;

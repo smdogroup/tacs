@@ -31,10 +31,10 @@ make these values differentiable.
 
 #include "TACSPhaseChangeMaterialConstitutive.h"
 
-const char* TACSPhaseChangeMaterialConstitutive::psName =
+const char *TACSPhaseChangeMaterialConstitutive::psName =
     "TACSPhaseChangeMaterialConstitutive";
 
-const char* TACSPhaseChangeMaterialConstitutive::getObjectName() {
+const char *TACSPhaseChangeMaterialConstitutive::getObjectName() {
   return psName;
 }
 
@@ -42,7 +42,7 @@ const char* TACSPhaseChangeMaterialConstitutive::getObjectName() {
   PhaseChangeMaterialStiffness member function definitions
 */
 TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive(
-    TACSMaterialProperties* solid_props, TACSMaterialProperties* liquid_props,
+    TACSMaterialProperties *solid_props, TACSMaterialProperties *liquid_props,
     TacsScalar _lh, TacsScalar _Tm, TacsScalar _dT, TacsScalar _t, int _tNum,
     TacsScalar _tlb, TacsScalar _tub) {
   solid_properties = solid_props;
