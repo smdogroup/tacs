@@ -1484,7 +1484,7 @@ TacsScalar TACSOrthotropicPly::CuntzeFailureModes(const TacsScalar e[],
   *eff_iff1 = 0.0;
   *eff_iff2 = 0.0;
 
-  *eff_iff3 = abs(s[2]) / (S12 - muWF * (s[0] + s[1]));
+  *eff_iff3 = fabs(s[2]) / (S12 - muWF * (s[0] + s[1]));
   fail += pow(*eff_iff3, m);
 
   *eff_iff4 = 0.0;
