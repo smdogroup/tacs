@@ -85,7 +85,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             mu3F=mu3F,
             m=m,
         )
-        ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop, Cuntze_criterion_Woven=True)
+        ortho_ply = constitutive.OrthotropicPly(
+            ply_thickness, ortho_prop, Cuntze_criterion_Woven=True
+        )
 
         # Shell thickness
         t = 7.5e-4  # m
