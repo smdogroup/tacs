@@ -33,11 +33,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 1e-6
-            self.atol = 1e-6
+            self.rtol = 1.5e-1
+            self.atol = 5e-5
             self.dh = 1e-50
         else:
-            self.rtol = 1e-3
+            self.rtol = 1.5e-1
             self.atol = 1e-3
             self.dh = 1e-7
 

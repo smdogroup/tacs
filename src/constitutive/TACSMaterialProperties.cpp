@@ -1094,7 +1094,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     // is adjusted such that its value corresponds to 99% of the correct derivative 
     // value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 = 
-      atan(s[2] / S12 * 63.7) * 2.0 / M_PI * sqrt(
+      atan(s[2] / S12 * 6366.2) * 2.0 / M_PI * sqrt(
       (b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) / 
       (S12 * S12 * S12));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
@@ -1162,7 +1162,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     // is adjusted such that its value corresponds to 99% of the correct derivative 
     // value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 = 
-      atan(s[2] / S12 * 63.7) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
+      atan(s[2] / S12 * 6366.2) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
 
     sens[2] = pow(fail, 1.0 - m) * tmp;
@@ -1305,7 +1305,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
 
     TacsScalar deff_iff3_ds6 = 
-      atan(s[2] / S12 * 63.7) * 2.0 / M_PI * sqrt(
+      atan(s[2] / S12 * 6366.2) * 2.0 / M_PI * sqrt(
       (b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) / 
       (S12 * S12 * S12));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
@@ -1372,7 +1372,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
 
     TacsScalar deff_iff3_ds6 = 
-      atan(s[2] / S12 * 63.7) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
+      atan(s[2] / S12 * 6366.2) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
 
     // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
