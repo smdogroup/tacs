@@ -1099,7 +1099,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     sens[1] = pow(fail, 1.0 - m) * tmp;
 
     // Use the atan function to smooth the derivative around s[2] = 0. The
-    // function is adjusted such that its value corresponds to 99% of the
+    // function is adjusted such that its value corresponds to 99.99% of the
     // correct derivative value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 =
         atan(s[2] / S12 * 6366.2) * 2.0 / M_PI *
@@ -1169,7 +1169,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     sens[1] = pow(fail, 1.0 - m) * tmp;
 
     // Use the atan function to smooth the derivative around s[2] = 0. The
-    // function is adjusted such that its value corresponds to 99% of the
+    // function is adjusted such that its value corresponds to 99.99% of the
     // correct derivative value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 =
         atan(s[2] / S12 * 6366.2) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
