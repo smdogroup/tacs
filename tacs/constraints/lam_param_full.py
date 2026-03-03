@@ -1,10 +1,11 @@
 """
-Lamination parameter constraints for composite design variables.
+Lamination parameter constraints for composite design variables, specifically
+for the LamParamFullShellConstitutive consitutive model.
 
 This module provides a TACS constraint implementation that enforces
 non-linear relationships between lamination parameters for composite
-components. For each selected component, three scalar constraints are
-evaluated to enforce in-plane and bending feasibility limits.
+components. For each selected component of type LamParamFullShellConstitutive,
+three scalar constraints are evaluated to enforce in-plane and bending feasibility limits.
 
 Lamination parameter ordering
 -----------------------------
