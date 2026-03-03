@@ -57,6 +57,7 @@ import scipy as sp
 import numpy as np
 
 from tacs.constraints.base import TACSConstraint
+from tacs.constitutive import LamParamFullShellConstitutive
 
 
 class LamParamFullConstraint(TACSConstraint):
@@ -150,6 +151,15 @@ class LamParamFullConstraint(TACSConstraint):
         else:
             nComps = self.meshLoader.getNumComponents()
             compIDs = list(range(nComps))
+
+        # Check that all compIDs are of correct type
+        for compID in compIDs:
+            elemObj = self.meshLoader.getElementObject(compID, 0)
+            conObj = elemObj.getConstitutive()
+            if not isinstance(conObj, LamParamFullShellConstitutive):
+                raise TypeError(
+                    f"Constitutive object for compID {compID} is not of type LamParamFullShellConstitutive"
+                )
 
         # If dvIndices not specified, use all available DVs
         if dvIndices is None:
