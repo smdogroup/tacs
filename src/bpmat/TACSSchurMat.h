@@ -87,6 +87,7 @@ class TACSSchurMat : public TACSMat {
   // ---------------------------------------------
   void getSize(int *_nr, int *_nc);
   void mult(TACSVec *x, TACSVec *y);
+  void multTranspose(TACSVec *x, TACSVec *y);
   void copyValues(TACSMat *mat);
   void scale(TacsScalar alpha);
   void axpy(TacsScalar alpha, TACSMat *x);

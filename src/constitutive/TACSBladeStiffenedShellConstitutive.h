@@ -24,7 +24,7 @@ bladeFSDT model from previous versions of TACS developed by Graeme Kennedy.
 #include "TACSShellConstitutive.h"
 #include "TacsUtilities.h"
 
-void printStiffnessMatrix(const TacsScalar* const C);
+void printStiffnessMatrix(const TacsScalar *const C);
 
 // =============================================================================
 // Class Declaration
@@ -152,7 +152,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * height
    */
   TACSBladeStiffenedShellConstitutive(
-      TACSOrthotropicPly* _panelPly, TACSOrthotropicPly* _stiffenerPly,
+      TACSOrthotropicPly *_panelPly, TACSOrthotropicPly *_stiffenerPly,
       TacsScalar _kcorr, TacsScalar _panelLength, int _panelLengthNum,
       TacsScalar _stiffenerPitch, int _stiffenerPitchNum,
       TacsScalar _panelThick, int _panelThickNum, int _numPanelPlies,
@@ -395,7 +395,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // Compute output quantities
   // ==============================================================================
   // Get the object name
-  const char* getObjectName() { return constName; }
+  const char *getObjectName() { return constName; }
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -482,8 +482,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * array ([Q44, Q45, Q55])
    */
   void computeSmearedStiffness(const int numPlies,
-                               const TacsScalar* const QMats,
-                               const TacsScalar* const AbarMats,
+                               const TacsScalar *const QMats,
+                               const TacsScalar *const AbarMats,
                                const TacsScalar plyFractions[], TacsScalar Q[],
                                TacsScalar ABar[]);
 
@@ -499,7 +499,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * ([Q11, Q12, Q16, Q22, Q26, Q66])
    */
   void computeSmearedStiffness(const int numPlies,
-                               const TacsScalar* const QMats,
+                               const TacsScalar *const QMats,
                                const TacsScalar plyFractions[], TacsScalar Q[]);
 
   /**
@@ -741,7 +741,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   static void computeEffectiveModulii(const int numPlies,
                                       const TacsScalar QMats[],
                                       const TacsScalar plyFracs[],
-                                      TacsScalar* const E, TacsScalar* const G);
+                                      TacsScalar *const E, TacsScalar *const G);
 
   /**
    * @brief Compute the failure criterion for the stiffener in a given strain
@@ -794,7 +794,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dAdh Derivative of the stiffener's cross-sectional area with respect
    * to the stiffener height
    */
-  void computeStiffenerAreaSens(TacsScalar& dAdt, TacsScalar& dAdh);
+  void computeStiffenerAreaSens(TacsScalar &dAdt, TacsScalar &dAdh);
 
   /**
    * @brief Compute the stiffener centroid height, this is the height relative
@@ -818,7 +818,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dzdh Derivative of the stiffener centroid height with respect to the
    * stiffener height
    */
-  void computeStiffenerCentroidHeightSens(TacsScalar& dzdt, TacsScalar& dzdh);
+  void computeStiffenerCentroidHeightSens(TacsScalar &dzdt, TacsScalar &dzdh);
 
   /**
    * @brief Compute the second moment of area about the stiffener centroid
@@ -835,7 +835,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dIdt Derivative of Izz with respect to the stiffener thickness
    * @param dIdh Derivative of Izz with respect to the stiffener height
    */
-  void computeStiffenerIzzSens(TacsScalar& dIdt, TacsScalar& dIdh);
+  void computeStiffenerIzzSens(TacsScalar &dIdt, TacsScalar &dIdh);
   /**
    * @brief Compute the torsion constant of the stiffener cross section
    *
@@ -856,7 +856,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dJdt Derivative of Jxx with respect to the stiffener thickness
    * @param dJdh Derivative of Jxx with respect to the stiffener height
    */
-  void computeStiffenerJxxSens(TacsScalar& dJdt, TacsScalar& dJdh);
+  void computeStiffenerJxxSens(TacsScalar &dJdt, TacsScalar &dJdh);
 
   /**
    * @brief Compute the moment of inertia of the stiffener cross section about
@@ -874,7 +874,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @param dMOIdt Derivative of Iyy with respect to the stiffener thickness
    * @param dMOIdh Derivative of Iyy with respect to the stiffener height
    */
-  void computeStiffenerMOISens(TacsScalar& dMOIdt, TacsScalar& dMOIdh);
+  void computeStiffenerMOISens(TacsScalar &dMOIdt, TacsScalar &dMOIdh);
 
   // ==============================================================================
   // Buckling functions
@@ -896,9 +896,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    * @output D2 2-direction bending stiffness
    * @output D3 Twisting stiffness
    */
-  void computeCriticalGlobalBucklingStiffness(TacsScalar* const D1,
-                                              TacsScalar* const D2,
-                                              TacsScalar* const D3);
+  void computeCriticalGlobalBucklingStiffness(TacsScalar *const D1,
+                                              TacsScalar *const D2,
+                                              TacsScalar *const D3);
 
   /**
    * @brief Compute the sensitivity of the global buckling strength ratio w.r.t
@@ -947,8 +947,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   void computeCriticalGlobalBucklingStiffnessSens(
       const TacsScalar dfdD1, const TacsScalar dfdD2, const TacsScalar dfdD3,
-      TacsScalar* const spSens, TacsScalar* const tpSens,
-      TacsScalar* const hsSens, TacsScalar* const tsSens,
+      TacsScalar *const spSens, TacsScalar *const tpSens,
+      TacsScalar *const hsSens, TacsScalar *const tsSens,
       TacsScalar QstiffSens[], TacsScalar QpanelSens[]);
 
   /**
@@ -1041,9 +1041,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeCriticalLocalAxialLoadSens(
       const TacsScalar D11, const TacsScalar D22, const TacsScalar D12,
-      const TacsScalar D66, const TacsScalar L, TacsScalar* const D11Sens,
-      TacsScalar* const D22Sens, TacsScalar* const D12Sens,
-      TacsScalar* const D66Sens, TacsScalar* const LSens);
+      const TacsScalar D66, const TacsScalar L, TacsScalar *const D11Sens,
+      TacsScalar *const D22Sens, TacsScalar *const D12Sens,
+      TacsScalar *const D66Sens, TacsScalar *const LSens);
 
   /**
    * @brief Compute the critical shear load for either local or global buckling
@@ -1114,8 +1114,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeCriticalShearLoadSens(
       const TacsScalar D1, const TacsScalar D2, const TacsScalar D3,
-      const TacsScalar L, TacsScalar* const D1Sens, TacsScalar* const D2Sens,
-      TacsScalar* const D3Sens, TacsScalar* const LSens);
+      const TacsScalar L, TacsScalar *const D1Sens, TacsScalar *const D2Sens,
+      TacsScalar *const D3Sens, TacsScalar *const LSens);
 
   /**
    * @brief Compute the buckling failure criterion
@@ -1150,9 +1150,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar bucklingEnvelopeSens(
       const TacsScalar N1, const TacsScalar N1Crit, const TacsScalar N12,
-      const TacsScalar N12Crit, TacsScalar* const N1Sens,
-      TacsScalar* const N1CritSens, TacsScalar* const N12Sens,
-      TacsScalar* const N12CritSens);
+      const TacsScalar N12Crit, TacsScalar *const N1Sens,
+      TacsScalar *const N1CritSens, TacsScalar *const N12Sens,
+      TacsScalar *const N12CritSens);
 
   /**
    * @brief Compute the strength ratio for the stiffener column buckling failure
@@ -1213,7 +1213,7 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeColumnBucklingLoadSens(
       const TacsScalar E, const TacsScalar I, const TacsScalar L,
-      TacsScalar& dFdE, TacsScalar& dFdI, TacsScalar& dFdL);
+      TacsScalar &dFdE, TacsScalar &dFdI, TacsScalar &dFdL);
 
   /**
    * @brief Compute the sensitivity of the stiffener column buckling failure
@@ -1271,8 +1271,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
    */
   static TacsScalar computeCripplingFactorSens(const TacsScalar b,
                                                const TacsScalar t,
-                                               TacsScalar& dkdb,
-                                               TacsScalar& dkdt);
+                                               TacsScalar &dkdb,
+                                               TacsScalar &dkdt);
 
   /**
    * @brief Compute the strength ratio with respect to stiffener crippling
@@ -1321,8 +1321,8 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
       true;  ///< Whether to consider stiffener crippling failure
 
   // --- Material properties ---
-  TACSOrthotropicPly* panelPly;      ///< Orthotropic ply for the panel
-  TACSOrthotropicPly* stiffenerPly;  ///< Orthotropic ply for the stiffener
+  TACSOrthotropicPly *panelPly;      ///< Orthotropic ply for the panel
+  TACSOrthotropicPly *stiffenerPly;  ///< Orthotropic ply for the stiffener
   TacsScalar kcorr;                  ///< Shear correction factor
 
   // --- Design variable values ---
@@ -1331,20 +1331,20 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar stiffenerHeight;     ///< Stiffener height
   TacsScalar stiffenerThick;      ///< Stiffener thickness
   TacsScalar panelThick;          ///< Panel thickness
-  TacsScalar* panelPlyFracs;      ///< Panel ply Fracs
-  TacsScalar* stiffenerPlyFracs;  ///< Stiffener ply Fracs
+  TacsScalar *panelPlyFracs;      ///< Panel ply Fracs
+  TacsScalar *stiffenerPlyFracs;  ///< Stiffener ply Fracs
 
   // --- Fixed parameters ---
-  TacsScalar* panelPlyAngles;      ///< Panel ply angles
-  TacsScalar* stiffenerPlyAngles;  ///< Stiffener ply angles
+  TacsScalar *panelPlyAngles;      ///< Panel ply angles
+  TacsScalar *stiffenerPlyAngles;  ///< Stiffener ply angles
   TacsScalar flangeFraction;  ///< Flange fraction (stiffener base width as a
                               ///< fraction of stiffener height)
-  TacsScalar* panelQMats;     ///< Panel Q-matrices (they are constant since the
+  TacsScalar *panelQMats;     ///< Panel Q-matrices (they are constant since the
                               ///< ply angles are fixed)
-  TacsScalar* stiffenerQMats;  ///< Panel Q-matrices (they are constant since
+  TacsScalar *stiffenerQMats;  ///< Panel Q-matrices (they are constant since
                                ///< the ply angles are fixed)
-  TacsScalar* panelAbarMats;
-  TacsScalar* stiffenerAbarMats;
+  TacsScalar *panelAbarMats;
+  TacsScalar *stiffenerAbarMats;
 
   // --- Design variable bounds ---
   TacsScalar panelLengthLowerBound = 0.0;
@@ -1357,10 +1357,10 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar stiffenerThickUpperBound = 1e20;
   TacsScalar panelThickLowerBound = 1e-4;
   TacsScalar panelThickUpperBound = 1e20;
-  TacsScalar* panelPlyFracLowerBounds;
-  TacsScalar* panelPlyFracUpperBounds;
-  TacsScalar* stiffenerPlyFracLowerBounds;
-  TacsScalar* stiffenerPlyFracUpperBounds;
+  TacsScalar *panelPlyFracLowerBounds;
+  TacsScalar *panelPlyFracUpperBounds;
+  TacsScalar *stiffenerPlyFracLowerBounds;
+  TacsScalar *stiffenerPlyFracUpperBounds;
 
   // --- Design variable numbers ---
   int panelLengthNum;         ///< Panel length DV number
@@ -1368,31 +1368,31 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   int stiffenerHeightNum;     ///< Stiffener height DV number
   int stiffenerThickNum;      ///< Stiffener thickness DV number
   int panelThickNum;          ///< Panel thickness DV number
-  int* panelPlyFracNums;      ///< Panel ply fraction DV numbers
-  int* stiffenerPlyFracNums;  ///< Stiffener ply fraction DV numbers
+  int *panelPlyFracNums;      ///< Panel ply fraction DV numbers
+  int *stiffenerPlyFracNums;  ///< Stiffener ply fraction DV numbers
 
   // --- Local design variable numbers, these are useful when returning
   // sensitivity values ---
   int panelLengthLocalNum;         ///< Panel length local DV number
   int panelThickLocalNum;          ///< Panel thickness local DV number
-  int* panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
+  int *panelPlyFracLocalNums;      ///< Panel ply fraction local DV numbers
   int stiffenerPitchLocalNum;      ///< Stiffener pitch local DV number
   int stiffenerHeightLocalNum;     ///< Stiffener height local DV number
   int stiffenerThickLocalNum;      ///< Stiffener thickness local DV number
-  int* stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
+  int *stiffenerPlyFracLocalNums;  ///< Stiffener ply fraction local DV numbers
   int panelDVStartNum;             ///< Panel DV start number
   int stiffenerDVStartNum;         ///< Stiffener DV start number
 
   // --- Arrays for storing failure values and their
   // sensitivities ---
-  TacsScalar* panelPlyFailValues;
-  TacsScalar* stiffenerPlyFailValues;
-  TacsScalar** panelPlyFailStrainSens;
-  TacsScalar** stiffenerPlyFailStrainSens;
-  TacsScalar* panelPlyFailSens;
-  TacsScalar* stiffenerPlyFailSens;
+  TacsScalar *panelPlyFailValues;
+  TacsScalar *stiffenerPlyFailValues;
+  TacsScalar **panelPlyFailStrainSens;
+  TacsScalar **stiffenerPlyFailStrainSens;
+  TacsScalar *panelPlyFailSens;
+  TacsScalar *stiffenerPlyFailSens;
 
-  static const char* const constName;  ///< Constitutive model name
+  static const char *const constName;  ///< Constitutive model name
   static const int NUM_Q_ENTRIES = 6;  ///< Number of entries in the Q matrix
   static const int NUM_ABAR_ENTRIES =
       3;  ///< Number of entries in the ABar matrix

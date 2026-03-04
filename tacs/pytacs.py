@@ -839,6 +839,9 @@ class pyTACS(BaseUI):
 
         self._isNonlinear = self._checkNonlinearity()
 
+        # Vector used to store temporarily store state variables
+        self.tempVec = self.assembler.createVec()
+
     @postinitialize_method
     def _checkNonlinearity(self) -> bool:
         """Check if the finite element model is nonlinear
@@ -1059,6 +1062,16 @@ class pyTACS(BaseUI):
                     minThickness = 0.0
                     maxThickness = 1e20
 
+                if (
+                    (propInfo.mid2 is not None)
+                    or (propInfo.mid3 is not None)
+                    or (propInfo.mid4 is not None)
+                ):
+                    self._TACSWarning(
+                        f"PSHELL property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
+                        "Only the first material (MID1) will be used."
+                    )
+
                 con = tacs.constitutive.IsoShellConstitutive(
                     mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
                 )
@@ -1166,7 +1179,17 @@ class pyTACS(BaseUI):
                 if propInfo.Type == "BAR":
                     w = propInfo.dim[0]
                     t = propInfo.dim[1]
-                    con = tacs.constitutive.IsoRectangleBeamConstitutive(mat, w=w, t=t)
+                    elem0 = elemDict[propertyID]["elements"][0]
+                    # Get element axes and offset vectors
+                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
+                    # Take the average of the offset vectors at either end of bar
+                    offset_vector = (wa + wb) / 2.0
+                    # Project the offset vector onto the width and thickness axes
+                    wOffset = -np.dot(khat, offset_vector) / w
+                    tOffset = -np.dot(jhat, offset_vector) / t
+                    con = tacs.constitutive.IsoRectangleBeamConstitutive(
+                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset
+                    )
 
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[0]
@@ -1207,16 +1230,10 @@ class pyTACS(BaseUI):
             # Set up transform object which may be required for certain elements
             transform = None
             if propInfo.type in ["PSHELL", "PCOMP"]:
-                mcid = elemDict[propertyID]["elements"][0].theta_mcid_ref
-                if mcid:
-                    if mcid.type == "CORD2R":
-                        refAxis = mcid.i
-                        transform = tacs.elements.ShellRefAxisTransform(refAxis)
-                    else:  # Don't support spherical/cylindrical yet
-                        raise self._TACSError(
-                            "Unsupported material coordinate system type "
-                            f"'{mcid.type}' for property number {propertyID}."
-                        )
+                elem0 = elemDict[propertyID]["elements"][0]
+                if elem0.theta_mcid is not None:
+                    _, _, refAxis, _, _ = elem0.material_coordinate_system()
+                    transform = tacs.elements.ShellRefAxisTransform(refAxis)
             elif propInfo.type in ["PBAR", "PBARL"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
@@ -1492,9 +1509,8 @@ class pyTACS(BaseUI):
             self.assembler.applyBCs(vec)
         elif isinstance(vec, np.ndarray):
             array = vec
-            # Create temporary BVec
-            vec = self.assembler.createVec()
             # Copy array values to BVec
+            vec = self.tempVec
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.applyBCs(vec)
@@ -1516,9 +1532,8 @@ class pyTACS(BaseUI):
             self.assembler.setBCs(vec)
         elif isinstance(vec, np.ndarray):
             array = vec
-            # Create temporary BVec
-            vec = self.assembler.createVec()
             # Copy array values to BVec
+            vec = self.tempVec
             vec.getArray()[:] = array
             # Apply BCs
             self.assembler.setBCs(vec)
@@ -2204,7 +2219,7 @@ class pyTACS(BaseUI):
         name : str
             Name to assign constraint.
         options : dict
-            Class-specific options to pass to DVConstraint instance (case-insensitive).
+            Class-specific options to pass to PanelLengthConstraint instance (case-insensitive).
 
         Returns
         ----------
@@ -2234,7 +2249,7 @@ class pyTACS(BaseUI):
         name : str
             Name to assign constraint.
         options : dict
-            Class-specific options to pass to DVConstraint instance (case-insensitive).
+            Class-specific options to pass to PanelWidthConstraint instance (case-insensitive).
 
         Returns
         ----------
@@ -2242,6 +2257,36 @@ class pyTACS(BaseUI):
             PanelWidthConstraint object used for calculating constraints.
         """
         constr = tacs.constraints.PanelWidthConstraint(
+            name,
+            self.assembler,
+            self.comm,
+            self.outputViewer,
+            self.meshLoader,
+            options,
+        )
+        # Set with original design vars and coordinates, in case they have changed
+        constr.setDesignVars(self.x0)
+        constr.setNodes(self.Xpts0)
+        return constr
+
+    @postinitialize_method
+    def createStiffenerLengthConstraint(self, name, options=None):
+        """Create a new StiffenerLengthConstraint for enforcing that the stiffener
+        length DV values passed to components match the actual stiffener lengths.
+
+        Parameters
+        ----------
+        name : str
+            Name to assign constraint.
+        options : dict
+            Class-specific options to pass to StiffenerLengthConstraint instance (case-insensitive).
+
+        Returns
+        ----------
+        constraint : tacs.constraints.StiffenerLengthConstraint
+            StiffenerLengthConstraint object used for calculating constraints.
+        """
+        constr = tacs.constraints.StiffenerLengthConstraint(
             name,
             self.assembler,
             self.comm,

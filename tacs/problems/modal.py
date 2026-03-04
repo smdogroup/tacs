@@ -447,10 +447,8 @@ class ModalProblem(TACSProblem):
         eigVector = self.assembler.createVec()
         self.freqSolver.extractEigenvector(index, eigVector)
         # Inplace assignment if vectors were provided
-        if isinstance(states, tacs.TACS.Vec):
-            states.copyValues(eigVector)
-        elif isinstance(states, np.ndarray):
-            states[:] = eigVector.getArray()
+        if states is not None:
+            self.copyFromTACSVec(eigVector, states)
         return eigVal, eigVector.getArray()
 
     def writeSolution(self, outputDir=None, baseName=None, number=None, indices=None):

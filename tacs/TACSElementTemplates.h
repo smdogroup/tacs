@@ -8,24 +8,24 @@
   TACS is licensed under the Apache License, Version 2.0 (the
   "License"); you may not use this software except in compliance with
   the License.  You may obtain a copy of the License at
-  
+
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
 #ifndef TACS_ELEMENT_TEMPLATES_H
 #define TACS_ELEMENT_TEMPLATES_H
 
-#include "PlaneStressQuad.h"
-#include "PlaneStressTraction.h"
-#include "TACSShellTraction.h"
-#include "TACS3DTraction.h"
+#include "CoupledThermoSolid.h"
 #include "MITCShell.h"
-#include "Solid.h"
-#include "PoissonElement.h"
 #include "PlaneStressCoupledThermoQuad.h"
 #include "PlaneStressCoupledThermoTraction.h"
-#include "CoupledThermoSolid.h"
+#include "PlaneStressQuad.h"
+#include "PlaneStressTraction.h"
+#include "PoissonElement.h"
+#include "Solid.h"
 #include "TACS3DCoupledThermoTraction.h"
+#include "TACS3DTraction.h"
+#include "TACSShellTraction.h"
 
 // Add define statements for the element types
 #define PlaneStressQuad2 PlaneStressQuad<2>
@@ -40,9 +40,9 @@
 #define MITCShell3 MITCShell<3>
 #define MITCShell4 MITCShell<4>
 #define MITCShell5 MITCShell<5>
-#define MITCShell32 MITCShell<3,2>
-#define MITCShell43 MITCShell<4,3>
-#define MITCShell54 MITCShell<5,4>
+#define MITCShell32 MITCShell<3, 2>
+#define MITCShell43 MITCShell<4, 3>
+#define MITCShell54 MITCShell<5, 4>
 #define Solid2 Solid<2>
 #define Solid3 Solid<3>
 #define Solid4 Solid<4>
@@ -102,4 +102,4 @@
 #define TACS3DThermoNormalHF4 TACS3DNormalHeatFluxTraction<4>
 #define TACS3DThermoNormalHF5 TACS3DNormalHeatFluxTraction<5>
 
-#endif // TACS_ELEMENT_TEMPLATES_H
+#endif  // TACS_ELEMENT_TEMPLATES_H

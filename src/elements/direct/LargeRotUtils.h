@@ -674,7 +674,7 @@ void compute_lr_tying_bmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the derivative of C w.r.t. each rotation, times the normal
       // vector - store the result in the array rt[]
       for (int k = 0; k < 3; k++) {
-        const TacsScalar* Ca = &Ct[9 * k];
+        const TacsScalar *Ca = &Ct[9 * k];
         rt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -773,7 +773,7 @@ void compute_lr_tying_bmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the derivative of C w.r.t. each rotation, times the normal
       // vector - store the result in the array rt[]
       for (int k = 0; k < 3; k++) {
-        const TacsScalar* Ca = &Ct[9 * k];
+        const TacsScalar *Ca = &Ct[9 * k];
         rt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -884,7 +884,7 @@ void compute_lr_tying_nmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the derivative of C w.r.t. each rotation, times the normal
       // vector - store the result in the array rt[]
       for (int k = 0; k < 3; k++) {
-        const TacsScalar* Ca = &Ct[9 * k];
+        const TacsScalar *Ca = &Ct[9 * k];
         rt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -895,7 +895,7 @@ void compute_lr_tying_nmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the product of the second derivatives w.r.t. the rotations
       // Note that the order
       for (int k = 0; k < 6; k++) {
-        const TacsScalar* Ca = &Ctt[9 * k];
+        const TacsScalar *Ca = &Ctt[9 * k];
         rtt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rtt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -1044,7 +1044,7 @@ void compute_lr_tying_nmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the derivative of C w.r.t. each rotation, times the normal
       // vector - store the result in the array rt[]
       for (int k = 0; k < 3; k++) {
-        const TacsScalar* Ca = &Ct[9 * k];
+        const TacsScalar *Ca = &Ct[9 * k];
         rt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -1055,7 +1055,7 @@ void compute_lr_tying_nmat(TacsScalar g11[], TacsScalar g22[], TacsScalar g12[],
       // Compute the product of the second derivatives w.r.t. the rotations
       // Note that the order
       for (int k = 0; k < 6; k++) {
-        const TacsScalar* Ca = &Ctt[9 * k];
+        const TacsScalar *Ca = &Ctt[9 * k];
         rtt[3 * k] = Ca[0] * normal[0] + Ca[1] * normal[1] + Ca[2] * normal[2];
         rtt[3 * k + 1] =
             Ca[3] * normal[0] + Ca[4] * normal[1] + Ca[5] * normal[2];
@@ -1190,8 +1190,8 @@ void add_lr_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
 
   // Loop over each tying-point in the element
   for (int i = 0; i < tying_order * (tying_order - 1); i++) {
-    TacsScalar* _h13 = h13;
-    TacsScalar* _h23 = h23;
+    TacsScalar *_h13 = h13;
+    TacsScalar *_h23 = h23;
 
     // Compute the interpolation at this point
     for (int j = 0; j < (order * order * (order * order + 1)) / 2; j++) {
@@ -1255,11 +1255,11 @@ void add_lr_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
 
   // Now add the second derivative contributions to the
   // stiffness matrix - scaled by 'scale'
-  TacsScalar* _h11 = h11;
-  TacsScalar* _h22 = h22;
-  TacsScalar* _h12 = h12;
-  TacsScalar* _h13 = h13;
-  TacsScalar* _h23 = h23;
+  TacsScalar *_h11 = h11;
+  TacsScalar *_h22 = h22;
+  TacsScalar *_h12 = h12;
+  TacsScalar *_h13 = h13;
+  TacsScalar *_h23 = h23;
 
   for (int i = 0; i < order * order; i++) {
     const int row = 6 * i;

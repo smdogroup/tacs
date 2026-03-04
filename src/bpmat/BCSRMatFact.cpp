@@ -28,18 +28,18 @@
   are performed in place. This is for an arbitrary block size.
 */
 
-void BCSRMatFactor(BCSRMatData* data) {
+void BCSRMatFactor(BCSRMatData *data) {
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
-  TacsScalar* A = data->A;
+  TacsScalar *A = data->A;
 
-  TacsScalar* D = new TacsScalar[bsize * bsize];
-  int* ipiv = new int[bsize];
+  TacsScalar *D = new TacsScalar[bsize * bsize];
+  int *ipiv = new int[bsize];
 
   for (int i = 0; i < nrows; i++) {
     // variable = i
@@ -54,8 +54,8 @@ void BCSRMatFactor(BCSRMatData* data) {
 
     for (int j = rowp[i]; cols[j] < i; j++) {
       int cj = cols[j];
-      TacsScalar* a = &A[b2 * j];
-      TacsScalar* b = &A[b2 * diag[cj]];
+      TacsScalar *a = &A[b2 * j];
+      TacsScalar *b = &A[b2 * diag[cj]];
 
       // D = A[cj] * A[diag[cj]]
       for (int n = 0; n < bsize; n++) {
@@ -104,7 +104,7 @@ void BCSRMatFactor(BCSRMatData* data) {
     }
 
     // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
-    TacsScalar* a = &A[b2 * diag[i]];
+    TacsScalar *a = &A[b2 * diag[i]];
     for (int n = 0; n < b2; n++) {
       D[n] = a[n];
     }
@@ -123,20 +123,20 @@ void BCSRMatFactor(BCSRMatData* data) {
 /*!
   Compute x = L_{B}^{-1} E
 */
-void BCSRMatFactorLower(BCSRMatData* data, BCSRMatData* Edata) {
+void BCSRMatFactorLower(BCSRMatData *data, BCSRMatData *Edata) {
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
   const int bsize = data->bsize;
-  const TacsScalar* A = data->A;
+  const TacsScalar *A = data->A;
   const int b2 = bsize * bsize;
 
   // Retrieve the data required from the matrix
-  const int* erowp = Edata->rowp;
-  const int* ecols = Edata->cols;
-  TacsScalar* E = Edata->A;
+  const int *erowp = Edata->rowp;
+  const int *ecols = Edata->cols;
+  TacsScalar *E = Edata->A;
 
   for (int i = 0; i < nrows; i++) {
     // Scan from the first entry in the current row, towards the diagonal
@@ -144,7 +144,7 @@ void BCSRMatFactorLower(BCSRMatData* data, BCSRMatData* Edata) {
 
     for (int j = rowp[i]; j < j_end; j++) {
       int cj = cols[j];
-      const TacsScalar* d = &A[b2 * j];
+      const TacsScalar *d = &A[b2 * j];
 
       int k = erowp[i];
       int k_end = erowp[i + 1];
@@ -160,8 +160,8 @@ void BCSRMatFactorLower(BCSRMatData* data, BCSRMatData* Edata) {
         }
 
         if (k < k_end && ecols[k] == ecols[p]) {
-          TacsScalar* a = &E[b2 * k];
-          TacsScalar* b = &E[b2 * p];
+          TacsScalar *a = &E[b2 * k];
+          TacsScalar *b = &E[b2 * p];
 
           for (int n = 0; n < bsize; n++) {
             int nb = n * bsize;
@@ -180,30 +180,30 @@ void BCSRMatFactorLower(BCSRMatData* data, BCSRMatData* Edata) {
 /*!
   Compute x = F U_{B}^{-1}
 */
-void BCSRMatFactorUpper(BCSRMatData* data, BCSRMatData* Fdata) {
+void BCSRMatFactorUpper(BCSRMatData *data, BCSRMatData *Fdata) {
   // Retrieve the data required from the matrix
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
   const int bsize = data->bsize;
-  const TacsScalar* A = data->A;
+  const TacsScalar *A = data->A;
   const int b2 = bsize * bsize;
 
   // Retrieve the data required from the matrix
   const int nrows_f = Fdata->nrows;
-  const int* frowp = Fdata->rowp;
-  const int* fcols = Fdata->cols;
-  TacsScalar* F = Fdata->A;
+  const int *frowp = Fdata->rowp;
+  const int *fcols = Fdata->cols;
+  TacsScalar *F = Fdata->A;
 
-  TacsScalar* D = new TacsScalar[bsize * bsize];
+  TacsScalar *D = new TacsScalar[bsize * bsize];
 
   for (int i = 0; i < nrows_f; i++) {
     int j_end = frowp[i + 1];
 
     for (int j = frowp[i]; j < j_end; j++) {
       int cj = fcols[j];
-      TacsScalar* a = &F[b2 * j];
-      const TacsScalar* b = &A[b2 * diag[cj]];
+      TacsScalar *a = &F[b2 * j];
+      const TacsScalar *b = &A[b2 * diag[cj]];
 
       // D = A[cj] * A[diag[cj]]
       for (int n = 0; n < bsize; n++) {

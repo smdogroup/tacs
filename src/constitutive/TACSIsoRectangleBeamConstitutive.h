@@ -35,14 +35,13 @@
 
 class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
  public:
-  TACSIsoRectangleBeamConstitutive(TACSMaterialProperties *properties,
-                                   TacsScalar _width, TacsScalar _thickness,
-                                   int _width_num, int _thickness_num,
-                                   TacsScalar _lb_width, TacsScalar _ub_width,
-                                   TacsScalar _lb_thickness,
-                                   TacsScalar _ub_thickness,
-                                   TacsScalar _w_offset = 0.0,
-                                   TacsScalar _t_offset = 0.0);
+  TACSIsoRectangleBeamConstitutive(
+      TACSMaterialProperties *properties, TacsScalar _width,
+      TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
+      int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
+      TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
+      TacsScalar _w_offset = 0.0, TacsScalar _t_offset = 0.0,
+      TacsScalar _buckle_length_factor = 0.0);
   ~TACSIsoRectangleBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -113,14 +112,32 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
+  // Evaluate the cross-section area
+  TacsScalar evalArea() { return width * thickness; };
+  TacsScalar evalAreaSens(int dvNum);
+
+  // Evaluate the cross-section moments of inertia
+  void evalMomentsOfInertia(TacsScalar moments[]);
+  void evalMomentsOfInertiaSens(int dvNum, TacsScalar momentsSens[]);
+
+  // Evaluate the torsional constant
+  TacsScalar evalTorsionalConstant();
+  TacsScalar evalTorsionalConstantSens(int dvNum);
+
  private:
   TACSMaterialProperties *props;
-  TacsScalar width, thickness;
-  int width_num, thickness_num;
+  TacsScalar width, thickness, buckle_length, buckle_length_factor;
+  int width_num, thickness_num, buckle_length_num;
   TacsScalar lb_thickness, ub_thickness;
   TacsScalar lb_width, ub_width;
+  TacsScalar lb_buckle_length, ub_buckle_length;
+  // ks weight for failure check
   TacsScalar ks_weight;
+  // epsilon for min/max approx used in torsion constant
+  static constexpr TacsScalar eps = 1e-12;
   TacsScalar w_offset, t_offset;
+  TacsScalar E, nu, G, kcorr;
+
   // The object name
   static const char *constName;
 };

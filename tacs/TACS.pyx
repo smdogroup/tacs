@@ -970,9 +970,22 @@ cdef class Mat:
 
     def mult(self, Vec x, Vec y):
         """
-        Matrix multiplication
+        Matrix multiplication: y = A * x
         """
         self.ptr.mult(x.ptr, y.ptr)
+
+    def multTranspose(self, Vec x, Vec y):
+        """
+        Transpose matrix multiplication: y = A^T * x
+
+        Parameters
+        ----------
+        x : tacs.TACS.Vec
+            Input vector
+        y : tacs.TACS.Vec
+            Output vector (will contain A^T * x)
+        """
+        self.ptr.multTranspose(x.ptr, y.ptr)
 
     def copyValues(self, Mat mat):
         """

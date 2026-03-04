@@ -11,7 +11,7 @@ namespace A2D {
 class Scalar {
  public:
   Scalar() {}
-  Scalar(const Scalar& a) { value = a.value; }
+  Scalar(const Scalar &a) { value = a.value; }
   Scalar(const TacsScalar a) { value = a; }
   TacsScalar value;
 };
@@ -25,15 +25,15 @@ class ADScalar {
     value = 0.0;
     valued = 0.0;
   }
-  ADScalar(const TacsScalar& a) {
+  ADScalar(const TacsScalar &a) {
     value = a;
     valued = 0.0;
   }
-  ADScalar(const TacsScalar& a, const TacsScalar& ad) {
+  ADScalar(const TacsScalar &a, const TacsScalar &ad) {
     value = a;
     valued = ad;
   }
-  ADScalar(const ADScalar& a) {
+  ADScalar(const ADScalar &a) {
     value = a.value;
     valued = a.valued;
   }
@@ -62,7 +62,7 @@ class Vec3 {
       x[i] = a[i];
     }
   }
-  Vec3(const Vec3& a) {
+  Vec3(const Vec3 &a) {
     for (int i = 0; i < 3; i++) {
       x[i] = a.x[i];
     }
@@ -114,7 +114,7 @@ class ADVec3 {
       }
     }
   }
-  ADVec3(const ADVec3& a) {
+  ADVec3(const ADVec3 &a) {
     for (int i = 0; i < 3; i++) {
       x[i] = a.x[i];
       xd[i] = a.xd[i];
@@ -139,7 +139,7 @@ class Symm3x3 {
       A[i] = a[i];
     }
   }
-  Symm3x3(const Symm3x3& a) {
+  Symm3x3(const Symm3x3 &a) {
     for (int i = 0; i < 6; i++) {
       A[i] = a.A[i];
     }
@@ -185,7 +185,7 @@ class ADSymm3x3 {
       }
     }
   }
-  ADSymm3x3(const ADSymm3x3& a) {
+  ADSymm3x3(const ADSymm3x3 &a) {
     for (int i = 0; i < 6; i++) {
       A[i] = a.A[i];
       Ad[i] = a.Ad[i];
@@ -210,7 +210,7 @@ class Mat3x2 {
       A[i] = a[i];
     }
   }
-  Mat3x2(const Mat3x2& a) {
+  Mat3x2(const Mat3x2 &a) {
     for (int i = 0; i < 6; i++) {
       A[i] = a.A[i];
     }
@@ -256,7 +256,7 @@ class ADMat3x2 {
       }
     }
   }
-  ADMat3x2(const ADMat3x2& a) {
+  ADMat3x2(const ADMat3x2 &a) {
     for (int i = 0; i < 6; i++) {
       A[i] = a.A[i];
       Ad[i] = a.Ad[i];
@@ -282,7 +282,7 @@ class Mat3x3 {
       A[i] = a[i];
     }
   }
-  Mat3x3(const Mat3x3& a) {
+  Mat3x3(const Mat3x3 &a) {
     for (int i = 0; i < 9; i++) {
       A[i] = a.A[i];
     }
@@ -328,7 +328,7 @@ class ADMat3x3 {
       }
     }
   }
-  ADMat3x3(const ADMat3x3& a) {
+  ADMat3x3(const ADMat3x3 &a) {
     for (int i = 0; i < 9; i++) {
       A[i] = a.A[i];
       Ad[i] = a.Ad[i];

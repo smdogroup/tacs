@@ -56,7 +56,9 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
             self.dh = 1e-50
         else:
             self.rtol = 1e-2
-            self.dh = 1e-8
+            self.atol = 1e-3
+            self.dh = 1e-6
+            self.fd_form = "central"
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -167,6 +169,27 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
                 tacs.mphys.utils.add_tacs_constraints(self.analysis)
                 self.add_constraint("analysis.ks_vmfailure", upper=1.0)
                 self.add_objective("analysis.mass")
+                # We will solve the TACS implicit component with a Newton solver, using OM's PETSc linear solver, but
+                # preconditioned with the TACS linear solver through solve_linear. Using the PETSc solver is necessary
+                # to test apply_linear since it will be used to compute the linear residual.
+                # This effectively tests the capabilities required for using TACS within coupled models solved using a
+                # monolithic Newton solver.
+                solverComp = self.analysis.coupling.solver
+                solverComp.nonlinear_solver = om.NewtonSolver(
+                    solve_subsystems=False,
+                    err_on_non_converge=False,
+                    iprint=2,
+                    maxiter=3,
+                    atol=1e-6,
+                )
+                petscSolver = om.PETScKrylov(iprint=2, maxiter=3)
+                solveLinear = om.LinearUserDefined()
+                # Can't use PETScKrylov solver in complex mode
+                if tacs.TACS.dtype == complex:
+                    solverComp.linear_solver = solveLinear
+                else:
+                    solverComp.linear_solver = petscSolver
+                    solverComp.linear_solver.precon = solveLinear
 
         prob = om.Problem()
         prob.model = Top()

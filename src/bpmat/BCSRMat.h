@@ -95,6 +95,8 @@ class BCSRMat : public TACSObject {
   void mult(TacsScalar *xvec, TacsScalar *yvec);
   void multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec);
   void multTranspose(TacsScalar *xvec, TacsScalar *yvec);
+  void multTransposeAdd(TacsScalar *inVec, TacsScalar *addVec,
+                        TacsScalar *outVec);
   void applyFactor(TacsScalar *xvec, TacsScalar *yvec);
   void applyFactor(TacsScalar *xvec);
   void applyUpper(TacsScalar *xvec, TacsScalar *yvec);
@@ -156,6 +158,8 @@ class BCSRMat : public TACSObject {
   void (*bmult)(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
   void (*bmultadd)(BCSRMatData *A, TacsScalar *x, TacsScalar *y, TacsScalar *z);
   void (*bmulttrans)(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
+  void (*bmulttransadd)(BCSRMatData *A, TacsScalar *inVec, TacsScalar *addVec,
+                        TacsScalar *outVec);
   void (*bfactor)(BCSRMatData *A);
   void (*applylower)(BCSRMatData *A, TacsScalar *x, TacsScalar *y);
   void (*applyupper)(BCSRMatData *A, TacsScalar *x, TacsScalar *y);

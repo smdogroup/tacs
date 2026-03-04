@@ -251,3 +251,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs.append(constraint)
 
         return tacs_probs, fea_assembler
+
+    def test_panel_length_constraint(self):
+        """
+        Test the panel length constraint
+        """
+        constraint = self.tacs_probs[-1]
+        self.assertFalse(
+            constraint.isLinear,
+            "Panel length constraint should not be linear wrt nodes",
+        )
