@@ -6,13 +6,13 @@
 
 class TACSMassInertialForce : public TACSElement {
  public:
-  TACSMassInertialForce(TACSGeneralMassConstitutive* _con,
-                        const TacsScalar* _inertiaVec);
+  TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
+                        const TacsScalar *_inertiaVec);
   ~TACSMassInertialForce();
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   int getNumQuadraturePoints() { return 1; }
@@ -75,7 +75,7 @@ class TACSMassInertialForce : public TACSElement {
   static const int NUM_NODES = 1;
   static const int NUM_VARIABLES = NUM_NODES * NUM_DISPS;
 
-  TACSGeneralMassConstitutive* con;
+  TACSGeneralMassConstitutive *con;
   TacsScalar inertiaVec[NUM_DISPS];
 };
 

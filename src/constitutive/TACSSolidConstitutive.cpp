@@ -18,21 +18,21 @@
 
 #include "TACSSolidConstitutive.h"
 
-const char* TACSSolidConstitutive::sName = "TACSSolidConstitutive";
+const char *TACSSolidConstitutive::sName = "TACSSolidConstitutive";
 
-const char* TACSSolidConstitutive::getObjectName() { return sName; }
+const char *TACSSolidConstitutive::getObjectName() { return sName; }
 
 /*
   Get the material properties object
 */
-TACSMaterialProperties* TACSSolidConstitutive::getMaterialProperties() {
+TACSMaterialProperties *TACSSolidConstitutive::getMaterialProperties() {
   return properties;
 }
 
 /*
   SolidStiffness member function definitions
 */
-TACSSolidConstitutive::TACSSolidConstitutive(TACSMaterialProperties* props,
+TACSSolidConstitutive::TACSSolidConstitutive(TACSMaterialProperties *props,
                                              TacsScalar _t, int _tNum,
                                              TacsScalar _tlb, TacsScalar _tub) {
   properties = props;

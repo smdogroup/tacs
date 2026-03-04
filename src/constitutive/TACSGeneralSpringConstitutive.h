@@ -48,7 +48,7 @@ class TACSGeneralSpringConstitutive : public TACSConstitutive {
   void evalTangentStiffness(int elemIndex, const double pt[],
                             const TacsScalar X[], TacsScalar Ct[]);
 
-  const char* constitutiveName();
+  const char *constitutiveName();
 
  protected:
   TACSGeneralSpringConstitutive();
@@ -60,7 +60,7 @@ class TACSGeneralSpringConstitutive : public TACSConstitutive {
                          TacsScalar s[]);
 
  private:
-  static const char* constName;
+  static const char *constName;
 };
 
 /*

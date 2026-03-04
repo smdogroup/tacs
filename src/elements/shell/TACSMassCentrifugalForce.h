@@ -6,14 +6,14 @@
 
 class TACSMassCentrifugalForce : public TACSElement {
  public:
-  TACSMassCentrifugalForce(TACSGeneralMassConstitutive* _con,
-                           const TacsScalar* _omegaVec,
-                           const TacsScalar* _rotCenter);
+  TACSMassCentrifugalForce(TACSGeneralMassConstitutive *_con,
+                           const TacsScalar *_omegaVec,
+                           const TacsScalar *_rotCenter);
   ~TACSMassCentrifugalForce();
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
+  const char *getObjectName();
   int getVarsPerNode();
   int getNumNodes();
   int getNumQuadraturePoints() { return 1; }
@@ -67,7 +67,7 @@ class TACSMassCentrifugalForce : public TACSElement {
   static const int NUM_NODES = 1;
   static const int NUM_VARIABLES = NUM_NODES * NUM_DISPS;
 
-  TACSGeneralMassConstitutive* con;
+  TACSGeneralMassConstitutive *con;
   TacsScalar omegaVec[3], rotCenter[3];
 };
 

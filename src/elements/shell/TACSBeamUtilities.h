@@ -13,7 +13,7 @@
   @param fn2 The second normal direction
 */
 template <class basis>
-void TacsBeamComputeNodeNormals(const TacsScalar Xpts[], const A2D::Vec3& axis,
+void TacsBeamComputeNodeNormals(const TacsScalar Xpts[], const A2D::Vec3 &axis,
                                 TacsScalar fn1[], TacsScalar fn2[]) {
   for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
@@ -63,7 +63,7 @@ void TacsBeamComputeNodeNormals(const TacsScalar Xpts[], const A2D::Vec3& axis,
   @param fn2 The second normal direction
 */
 template <class basis>
-void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3& axis,
+void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3 &axis,
                                 const TacsScalar dfn1[],
                                 const TacsScalar dfn2[], TacsScalar dXpts[]) {
   for (int i = 0; i < basis::NUM_NODES; i++) {

@@ -1679,6 +1679,29 @@ class StaticProblem(TACSProblem):
         else:
             prod[:] = prod + scale * self.res.getArray()
 
+    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
+        """
+        Adds product of Jacobian transpose and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
+
+        Parameters
+        ----------
+        phi : tacs.TACS.Vec or numpy.ndarray
+            Input vector to product with the transpose Jacobian.
+
+        prod : tacs.TACS.Vec or numpy.ndarray
+            Output vector to add Jacobian product to.
+
+        scale : float
+            Scalar used to scale Jacobian product by.
+        """
+        warnings.warn(
+            "addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. "
+            "Use addJacVecProduct(phi, prod, scale, transpose=True) instead.",
+            DeprecationWarning,
+        )
+        self.addJacVecProduct(phi, prod, scale, transpose=True)
+
     def zeroVariables(self):
         """
         Zero all the tacs solution b-vecs
