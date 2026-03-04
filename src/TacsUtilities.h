@@ -259,13 +259,6 @@ TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
 /**
  * @brief As above but with a precomputed maximum value passed in to avoid
  * redundant calculations
- *
- * @param f
- * @param maxVal
- * @param numVals
- * @param ksWeight
- * @param dKSdf
- * @return TacsScalar
  */
 TacsScalar ksAggregationSens(const TacsScalar f[], const TacsScalar maxVal,
                              const int numVals, const double ksWeight,
