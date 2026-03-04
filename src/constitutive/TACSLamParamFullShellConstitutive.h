@@ -40,7 +40,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  public:
   static const int MAX_NUM_FAIL_ANGLES = 12;
 
-  TACSLamParamFullShellConstitutive(TACSOrthotropicPly* _orthoPly,
+  TACSLamParamFullShellConstitutive(TACSOrthotropicPly *_orthoPly,
                                     TacsScalar _t, int _tNum, TacsScalar _tlb,
                                     TacsScalar _tub, int _lpNums[],
                                     TacsScalar _ksWeight);
@@ -138,7 +138,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   // Compute output quantities
   // -------------------------------------
   // Get the object name
-  const char* getObjectName() { return constName; }
+  const char *getObjectName() { return constName; }
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -147,7 +147,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  private:
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar* _max);
+                      TacsScalar *_max);
   void computeFailureStrainSens(const TacsScalar strain[],
                                 const TacsScalar weights[], TacsScalar sens[]);
   TacsScalar computeFailureDVSens(const TacsScalar strain[],
@@ -158,7 +158,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar* drill);
+                    TacsScalar As[], TacsScalar *drill);
 
   // The number of angles to check for failure < MAX_NUM_FAIL_ANGLES
   int numFailAngles;
@@ -173,7 +173,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TacsScalar U1, U2, U3, U4, U5;
   TacsScalar U6, U7;  // The invariants for shear
 
-  TACSOrthotropicPly* orthoPly;
+  TACSOrthotropicPly *orthoPly;
   TacsScalar ksWeight;
 
   // The thickness information
@@ -185,7 +185,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TacsScalar lp[6];  // The lamination parameters
   int lpNums[6];  // The design variable numbers for the lamination parameters
 
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif  // TACS_LAM_PARAM_FULL_SHELL_CONSTITUTIVE_H
