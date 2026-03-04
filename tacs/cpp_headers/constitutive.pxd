@@ -141,6 +141,7 @@ cdef extern from "TACSLamParamFullShellConstitutive.h":
             double, # ksWeight
         )
         void setLaminationParameters(TacsScalar[])
+        void setKSWeight(double ksWeight)
         void setNumFailAngles(int)
         TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
         void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])

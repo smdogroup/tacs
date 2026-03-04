@@ -50,7 +50,10 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
 
   // -------------------------------------
   // Set functions for non-default values
-  // --------------------------------------------
+  // -------------------------------------
+
+  // Set the weight used for aggregating the failure criteria
+  void setKSWeight(double _ksWeight) { ksWeight = _ksWeight; }
 
   // Set the lamination parameter values directly
   void setLaminationParameters(TacsScalar _lp[]);
@@ -175,7 +178,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TacsScalar U1, U2, U3, U4, U5;
   TacsScalar U6, U7;  // The invariants for shear
 
-  TACSOrthotropicPly* orthoPly;
+  TACSOrthotropicPly *orthoPly;
   double ksWeight;
 
   // The thickness information

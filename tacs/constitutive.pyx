@@ -2160,6 +2160,18 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         self.ptr.incref()
         self.customMatProps = None
 
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.lam_cptr:
+            self.lam_cptr.setKSWeight(ksWeight)
+
     def getThicknessProperties(self):
         """
         Helper function to gather thickness properties and density of the laminate based on the current design variable values.
