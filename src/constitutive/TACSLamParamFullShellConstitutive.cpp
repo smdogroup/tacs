@@ -79,7 +79,7 @@ TACSLamParamFullShellConstitutive::~TACSLamParamFullShellConstitutive() {
 // Set the lamination parameter values directly
 void TACSLamParamFullShellConstitutive::setLaminationParameters(
     TacsScalar _lp[]) {
-  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
+  for (int k = 0; k < NUM_LAM_PARAMS; k++) {
     lp[k] = _lp[k];
   }
 }
@@ -101,7 +101,7 @@ int TACSLamParamFullShellConstitutive::getDesignVarNums(int elemIndex,
       index++;
     }
 
-    for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
+    for (int k = 0; k < NUM_LAM_PARAMS; k++) {
       if (lpNums[k] >= 0) {
         dvNums[index] = lpNums[k];
         index++;
@@ -118,7 +118,7 @@ int TACSLamParamFullShellConstitutive::setDesignVars(int elemIndex, int dvLen,
     t = dvs[index];
     index++;
   }
-  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
+  for (int k = 0; k < NUM_LAM_PARAMS; k++) {
     if (lpNums[k] >= 0) {
       lp[k] = dvs[index];
       index++;
@@ -134,7 +134,7 @@ int TACSLamParamFullShellConstitutive::getDesignVars(int elemIndex, int dvLen,
     dvs[index] = t;
     index++;
   }
-  for (int k = 0; k < this->NUM_LAM_PARAMS; k++) {
+  for (int k = 0; k < NUM_LAM_PARAMS; k++) {
     if (lpNums[k] >= 0) {
       dvs[index] = lp[k];
       index++;
