@@ -84,8 +84,9 @@ class TACSBVec : public TACSVec {
   void copyValues(TACSVec *x);                     // Copy values from x to this
   void axpby(TacsScalar alpha, TacsScalar beta,
              TACSVec *x);  // y <- alpha*x + beta*y
-  void applyBCs(TACSBcMap *map, TACSVec *vec = NULL);
-  void setBCs(TACSBcMap *map);
+  void applyBCs(TACSBcMap *map, TACSVec *vec = NULL,
+                const TacsScalar lambda = 1.0);
+  void setBCs(TACSBcMap *map, const TacsScalar lambda = 1.0);
 
   // Get/set the vector elements
   // ---------------------------
