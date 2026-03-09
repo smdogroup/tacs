@@ -227,17 +227,16 @@ class TACSOrthotropicPly : public TACSObject {
   // determine the failure modes of the Cuntze failure criterion
   // as well as the global failure value.
   // -----------------------------------------------------------
-  TacsScalar CuntzeFailureModes(const TacsScalar e[], const TacsScalar s[],
-                                TacsScalar *eff_ff1, TacsScalar *eff_ff2,
-                                TacsScalar *eff_iff1, TacsScalar *eff_iff2,
-                                TacsScalar *eff_iff3);
+  TacsScalar CuntzeUD_FailureModes(const TacsScalar e[], const TacsScalar s[],
+                                   TacsScalar *eff_ff1, TacsScalar *eff_ff2,
+                                   TacsScalar *eff_iff1, TacsScalar *eff_iff2,
+                                   TacsScalar *eff_iff3);
 
-  TacsScalar CuntzeFailureModes(const TacsScalar e[], const TacsScalar s[],
-                                TacsScalar *eff_ff1, TacsScalar *eff_ff2,
-                                TacsScalar *eff_ff3, TacsScalar *eff_ff4,
-                                TacsScalar *eff_iff1, TacsScalar *eff_iff2,
-                                TacsScalar *eff_iff3, TacsScalar *eff_iff4,
-                                TacsScalar *eff_iff5);
+  TacsScalar CuntzeWoven_FailureModes(
+      const TacsScalar e[], const TacsScalar s[], TacsScalar *eff_ff1,
+      TacsScalar *eff_ff2, TacsScalar *eff_ff3, TacsScalar *eff_ff4,
+      TacsScalar *eff_iff1, TacsScalar *eff_iff2, TacsScalar *eff_iff3,
+      TacsScalar *eff_iff4, TacsScalar *eff_iff5);
 
   // Calculate the failure load fraction for given
   // constant and linear strain components

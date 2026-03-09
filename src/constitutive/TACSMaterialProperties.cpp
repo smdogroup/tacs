@@ -957,8 +957,8 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
     getPlyStress(e, s);
 
     TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
-                              &eff_iff3);
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
 
   } else if (useCuntzeCriterion_Woven) {
     TacsScalar s[3];  // Ply stress
@@ -966,9 +966,9 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
 
     TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
         eff_iff4, eff_iff5;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3, &eff_ff4,
-                              &eff_iff1, &eff_iff2, &eff_iff3, &eff_iff4,
-                              &eff_iff5);
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
 
   } else {
     // Calculate the values of each of the failure criteria
@@ -1061,8 +1061,8 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     getPlyStress(e, s);
 
     TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
-                              &eff_iff3);
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
 
     // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
     TacsScalar tmp;
@@ -1120,9 +1120,9 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
 
     TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
         eff_iff4, eff_iff5;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3, &eff_ff4,
-                              &eff_iff1, &eff_iff2, &eff_iff3, &eff_iff4,
-                              &eff_iff5);
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
 
     // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
     TacsScalar tmp;
@@ -1276,8 +1276,8 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     getPlyStress(se, ss);
 
     TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
-                              &eff_iff3);
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
 
     // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
     TacsScalar tmp;
@@ -1334,9 +1334,9 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
 
     TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
         eff_iff4, eff_iff5;
-    fail = CuntzeFailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3, &eff_ff4,
-                              &eff_iff1, &eff_iff2, &eff_iff3, &eff_iff4,
-                              &eff_iff5);
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
 
     // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
     TacsScalar tmp;
@@ -1433,7 +1433,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
 }
 
 // Cuntze criterion for UD plies
-TacsScalar TACSOrthotropicPly::CuntzeFailureModes(
+TacsScalar TACSOrthotropicPly::CuntzeUD_FailureModes(
     const TacsScalar e[], const TacsScalar s[], TacsScalar *eff_ff1,
     TacsScalar *eff_ff2, TacsScalar *eff_iff1, TacsScalar *eff_iff2,
     TacsScalar *eff_iff3) {
@@ -1469,7 +1469,7 @@ TacsScalar TACSOrthotropicPly::CuntzeFailureModes(
 }
 
 // Cuntze criterion for woven plies
-TacsScalar TACSOrthotropicPly::CuntzeFailureModes(
+TacsScalar TACSOrthotropicPly::CuntzeWoven_FailureModes(
     const TacsScalar e[], const TacsScalar s[], TacsScalar *eff_ff1,
     TacsScalar *eff_ff2, TacsScalar *eff_ff3, TacsScalar *eff_ff4,
     TacsScalar *eff_iff1, TacsScalar *eff_iff2, TacsScalar *eff_iff3,
