@@ -27,28 +27,28 @@ class ProblemTest(unittest.TestCase):
             "name": "cylinder",
             "bdf_file": os.path.join(base_dir, "./input_files/cylinder.bdf"),
             "xyz_scale": 1000.0,  # m to mm
-            "force_scale": 0.1,  # N to daN
+            "time_scale": 100.0,  # s to cs
             "mass_scale": 1000.0,  # kg to g
         },
         {
             "name": "plate",
             "bdf_file": os.path.join(base_dir, "./input_files/plate.bdf"),
             "xyz_scale": 1000.0,  # m to mm
-            "force_scale": 0.1,  # N to daN
+            "time_scale": 100.0,  # s to cs
             "mass_scale": 1.0,  # no mass scaling
         },
         {
             "name": "composite plate",
             "bdf_file": os.path.join(base_dir, "./input_files/comp_plate.bdf"),
             "xyz_scale": 1000.0,  # m to mm
-            "force_scale": 0.1,  # N to daN
+            "time_scale": 100.0,  # s to cs
             "mass_scale": 1.0,  # no mass scaling
         },
         {
             "name": "beam",
             "bdf_file": os.path.join(base_dir, "./input_files/beam_model.bdf"),
             "xyz_scale": 100.0,  # Different scaling
-            "force_scale": 0.01,
+            "time_scale": 100.0,  # s to cs
             "mass_scale": 1.0,  # no mass scaling
         },
     ]
@@ -102,8 +102,6 @@ class ProblemTest(unittest.TestCase):
                     test_case.get("xyz_scale", 1.0),
                     test_case.get("mass_scale", 1.0),
                     test_case.get("time_scale", 1.0),
-                    test_case.get("force_scale", 1.0),
-                    test_case.get("gravity_scale", 1.0),
                 )
 
     def _run_scaling_test(
@@ -112,8 +110,6 @@ class ProblemTest(unittest.TestCase):
         xyz_scale,
         mass_scale,
         time_scale,
-        force_scale,
-        gravity_scale,
     ):
         """Run scaling test for a single BDF file"""
         # Read in the original BDF, setup tacs and solver problems
@@ -129,8 +125,6 @@ class ProblemTest(unittest.TestCase):
             xyz_scale=xyz_scale,
             mass_scale=mass_scale,
             time_scale=time_scale,
-            force_scale=force_scale,
-            gravity_scale=gravity_scale,
         )
 
         # Only run the remaining comparison on root proc
@@ -146,7 +140,7 @@ class ProblemTest(unittest.TestCase):
 
         # Run all comparisons
         self._compare_nodes(new_bdf_info, scaled_bdf_info, xyz_scale)
-        self._compare_loads(new_bdf_info, scaled_bdf_info, xyz_scale, force_scale)
+        self._compare_loads(new_bdf_info, scaled_bdf_info, xyz_scale, mass_scale=mass_scale, time_scale=time_scale)
         self._compare_properties(new_bdf_info, scaled_bdf_info, xyz_scale)
         self._compare_materials(new_bdf_info, scaled_bdf_info, xyz_scale, mass_scale)
 
@@ -167,7 +161,7 @@ class ProblemTest(unittest.TestCase):
                 err_msg=f"Node {node_id} coordinates not scaled correctly",
             )
 
-    def _compare_loads(self, new_bdf, scaled_bdf, xyz_scale, force_scale):
+    def _compare_loads(self, new_bdf, scaled_bdf, xyz_scale, mass_scale, time_scale):
         """Compare forces and moments"""
         for load_id in new_bdf.loads:
             new_loads = new_bdf.loads[load_id]
@@ -175,6 +169,8 @@ class ProblemTest(unittest.TestCase):
 
             for new_load, scaled_load in zip(new_loads, scaled_loads):
                 if new_load.type == "FORCE":
+                    force_scale = mass_scale * xyz_scale / time_scale**2
+                    # Forces should scale as mass * length / time^2
                     expected = new_load.mag * force_scale
                     np.testing.assert_allclose(
                         scaled_load.mag,
@@ -184,7 +180,8 @@ class ProblemTest(unittest.TestCase):
                     )
                 elif new_load.type == "MOMENT":
                     # Moments should scale as force * length
-                    expected = new_load.mag * force_scale * xyz_scale
+                    moment_scale = (mass_scale * xyz_scale / time_scale**2) * xyz_scale
+                    expected = new_load.mag * moment_scale
                     np.testing.assert_allclose(
                         scaled_load.mag,
                         expected,
