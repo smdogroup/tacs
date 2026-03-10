@@ -140,7 +140,13 @@ class ProblemTest(unittest.TestCase):
 
         # Run all comparisons
         self._compare_nodes(new_bdf_info, scaled_bdf_info, xyz_scale)
-        self._compare_loads(new_bdf_info, scaled_bdf_info, xyz_scale, mass_scale=mass_scale, time_scale=time_scale)
+        self._compare_loads(
+            new_bdf_info,
+            scaled_bdf_info,
+            xyz_scale,
+            mass_scale=mass_scale,
+            time_scale=time_scale,
+        )
         self._compare_properties(new_bdf_info, scaled_bdf_info, xyz_scale)
         self._compare_materials(new_bdf_info, scaled_bdf_info, xyz_scale, mass_scale)
 
