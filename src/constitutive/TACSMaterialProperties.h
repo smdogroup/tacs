@@ -25,6 +25,7 @@
 */
 
 #include "TACSObject.h"
+#include "TacsUtilities.h"
 
 enum MaterialType { TACS_ISOTROPIC_MATERIAL, TACS_ANISOTROPIC_MATERIAL };
 
@@ -319,6 +320,8 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar b_tt, b_tl;
   TacsScalar muWF, mu3W, mu3F;
   TacsScalar m;
+
+  double Cuntze_IFF3_ksWeight;
 
   // The strain-based strength properties
   TacsScalar eXt, eXc;

@@ -22,8 +22,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_ks_CuntzeUD_failure": 5.72873482346406,
-        "VertShear_ks_CuntzeUD_failure": 0.2262589791639158,
+        "Tension_ks_CuntzeUD_failure": 5.728734823464061,
+        "VertShear_ks_CuntzeUD_failure": 0.23279998313382846,
     }
 
     def setup_tacs_problems(self, comm):
@@ -33,11 +33,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 1.5e-1
-            self.atol = 5e-5
+            self.rtol = 1e-6
+            self.atol = 1e-6
             self.dh = 1e-50
         else:
-            self.rtol = 1.5e-1
+            self.rtol = 1e-3
             self.atol = 1e-3
             self.dh = 1e-7
 

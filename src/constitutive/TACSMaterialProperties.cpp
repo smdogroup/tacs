@@ -593,6 +593,10 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
 
   // Set the default value of the KS penalty
   ksWeight = 100.0;
+
+  // Set the default value of the KS penalty for the IFF3 failure mode of the
+  // Cuntze failure criterion
+  Cuntze_IFF3_ksWeight = 100.0;
 }
 
 const char *TACSOrthotropicPly::name = "TACSOrthotropicPly";
@@ -1092,17 +1096,25 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
       tmp += pow(eff_iff2, m - 1.0) * deff_iff2_ds2;
     }
 
-    TacsScalar deff_iff3_ds2 =
-        b_tl * eff_iff3 / 2.0 / sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] =
+        s[2] *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * b_tl * tmp_eff_iff3[0] /
+                               2.0 /
+                               sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
 
     sens[1] = pow(fail, 1.0 - m) * tmp;
 
-    // Use the atan function to smooth the derivative around s[2] = 0. The
-    // function is adjusted such that its value corresponds to 99.99% of the
-    // correct derivative value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 =
-        atan(s[2] / S12 * 6366.2) * 2.0 / M_PI *
+        (dKSdf[0] - dKSdf[1]) *
         sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
              (S12 * S12 * S12));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
@@ -1142,7 +1154,15 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
       tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds1;
     }
 
-    TacsScalar deff_iff3_ds1 = eff_iff3 * muWF / (S12 - muWF * (s[0] + s[1]));
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds1 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds1;
 
     sens[0] = pow(fail, 1.0 - m) * tmp;
@@ -1163,16 +1183,14 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
       tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds2;
     }
 
-    TacsScalar deff_iff3_ds2 = eff_iff3 * muWF / (S12 - muWF * (s[0] + s[1]));
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
 
     sens[1] = pow(fail, 1.0 - m) * tmp;
 
-    // Use the atan function to smooth the derivative around s[2] = 0. The
-    // function is adjusted such that its value corresponds to 99.99% of the
-    // correct derivative value when s[2] reaches the shear strength S12.
     TacsScalar deff_iff3_ds6 =
-        atan(s[2] / S12 * 6366.2) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
+        (dKSdf[0] - dKSdf[1]) / (S12 - muWF * (s[0] + s[1]));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
 
     sens[2] = pow(fail, 1.0 - m) * tmp;
@@ -1308,15 +1326,26 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
       tmp += pow(eff_iff2, m - 1.0) * deff_iff2_ds2;
     }
 
-    TacsScalar deff_iff3_ds2 =
-        b_tl * eff_iff3 / 2.0 / sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] =
+        s[2] *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * b_tl * tmp_eff_iff3[0] /
+                               2.0 /
+                               sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
 
     // d(fail)/d(angle) = ... + d(fail)/d(s2) * d(s2)/d(angle) ...
     *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
 
     TacsScalar deff_iff3_ds6 =
-        atan(s[2] / S12 * 6366.2) * 2.0 / M_PI *
+        (dKSdf[0] - dKSdf[1]) *
         sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
              (S12 * S12 * S12));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
@@ -1356,7 +1385,15 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
       tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds1;
     }
 
-    TacsScalar deff_iff3_ds1 = eff_iff3 * muWF / (S12 - muWF * (s[0] + s[1]));
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds1 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds1;
 
     // d(fail)/d(angle) = d(fail)/d(s1) * d(s1)/d(angle) ...
@@ -1378,14 +1415,15 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
       tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds2;
     }
 
-    TacsScalar deff_iff3_ds2 = eff_iff3 * muWF / (S12 - muWF * (s[0] + s[1]));
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
     tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
 
     // d(fail)/d(angle) = ... + d(fail)/d(s2) * d(s2)/d(angle) ...
     *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
 
     TacsScalar deff_iff3_ds6 =
-        atan(s[2] / S12 * 6366.2) * 2.0 / M_PI / (S12 - muWF * (s[0] + s[1]));
+        (dKSdf[0] - dKSdf[1]) / (S12 - muWF * (s[0] + s[1]));
     tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
 
     // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
@@ -1458,9 +1496,15 @@ TacsScalar TACSOrthotropicPly::CuntzeUD_FailureModes(
     fail += pow(*eff_iff2, m);
   }
 
-  *eff_iff3 = sqrt(s[2] * s[2] *
-                   (b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
-                   (S12 * S12 * S12));
+  // Eff_IFF3 is an abs(x) function. It is replaced by a KS aggregation
+  // of x and -x to calculate derivatives that are defined at 0.0 and
+  // that change continuously.
+  TacsScalar tmp_eff_iff3[2];
+  tmp_eff_iff3[0] =
+      s[2] * sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+                  (S12 * S12 * S12));
+  tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+  *eff_iff3 = ksAggregation(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight);
   fail += pow(*eff_iff3, m);
 
   fail = pow(fail, 1.0 / m);
@@ -1498,7 +1542,13 @@ TacsScalar TACSOrthotropicPly::CuntzeWoven_FailureModes(
   *eff_iff1 = 0.0;
   *eff_iff2 = 0.0;
 
-  *eff_iff3 = fabs(s[2]) / (S12 - muWF * (s[0] + s[1]));
+  // Eff_IFF3 is an abs(x) function. It is replaced by a KS aggregation
+  // of x and -x to calculate derivatives that are defined at 0.0 and
+  // that change continuously.
+  TacsScalar tmp_eff_iff3[2];
+  tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+  tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+  *eff_iff3 = ksAggregation(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight);
   fail += pow(*eff_iff3, m);
 
   *eff_iff4 = 0.0;

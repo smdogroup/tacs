@@ -23,7 +23,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
     FUNC_REFS = {
         "Tension_ks_CuntzeWoven_failure": 1.481317572350182,
-        "VertShear_ks_CuntzeWoven_failure": 0.2260694823650116,
+        "VertShear_ks_CuntzeWoven_failure": 0.2327944624114962,
     }
 
     def setup_tacs_problems(self, comm):
@@ -33,11 +33,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 2e-1
-            self.atol = 4e-5
+            self.rtol = 1e-6
+            self.atol = 1e-6
             self.dh = 1e-50
         else:
-            self.rtol = 2e-1
+            self.rtol = 1e-3
             self.atol = 1e-3
             self.dh = 1e-7
 
