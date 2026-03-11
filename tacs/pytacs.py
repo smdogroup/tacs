@@ -1825,9 +1825,9 @@ class pyTACS(BaseUI):
         self,
         fileName,
         problems,
-        xyz_scale=1.0,
-        mass_scale=1.0,
-        time_scale=1.0,
+        xyzScale=1.0,
+        massScale=1.0,
+        timeScale=1.0,
     ):
         """
         Write NASTRAN BDF file from problem class.
@@ -1841,11 +1841,11 @@ class pyTACS(BaseUI):
             Name of file to write BDF file to.
         problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]
             List of pytacs Problem classes to write BDF file from.
-        xyz_scale: float, optional
+        xyzScale: float, optional
             Scale factor for nodal coordinates, by default 1.0
-        mass_scale: float, optional
+        massScale: float, optional
             Scale factor for mass, by default 1.0
-        time_scale: float, optional
+        timeScale: float, optional
             Scale factor for time, by default 1.0
         """
         # Make sure problems is in a list
@@ -2108,15 +2108,15 @@ class pyTACS(BaseUI):
         # Write out BDF file
         if self.comm.rank == 0:
             # Apply scaling factors to model if specified by the user
-            if xyz_scale != 1.0 or mass_scale != 1.0 or time_scale != 1.0:
+            if xyzScale != 1.0 or massScale != 1.0 or timeScale != 1.0:
                 # Calculate force and gravity scaling factors based on input length, mass, and time scaling factors
-                force_scale = mass_scale * xyz_scale / time_scale**2
-                gravity_scale = xyz_scale / time_scale**2
+                force_scale = massScale * xyzScale / timeScale**2
+                gravity_scale = xyzScale / timeScale**2
                 scale_model(
                     newBDFInfo,
-                    xyz_scale,
-                    mass_scale,
-                    time_scale,
+                    xyzScale,
+                    massScale,
+                    timeScale,
                     force_scale,
                     gravity_scale,
                 )

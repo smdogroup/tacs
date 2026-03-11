@@ -26,30 +26,30 @@ class ProblemTest(unittest.TestCase):
         {
             "name": "cylinder",
             "bdf_file": os.path.join(base_dir, "./input_files/cylinder.bdf"),
-            "xyz_scale": 1000.0,  # m to mm
-            "time_scale": 100.0,  # s to cs
-            "mass_scale": 1000.0,  # kg to g
+            "xyzScale": 1000.0,  # m to mm
+            "timeScale": 100.0,  # s to cs
+            "massScale": 1000.0,  # kg to g
         },
         {
             "name": "plate",
             "bdf_file": os.path.join(base_dir, "./input_files/plate.bdf"),
-            "xyz_scale": 1000.0,  # m to mm
-            "time_scale": 100.0,  # s to cs
-            "mass_scale": 1.0,  # no mass scaling
+            "xyzScale": 1000.0,  # m to mm
+            "timeScale": 100.0,  # s to cs
+            "massScale": 1.0,  # no mass scaling
         },
         {
             "name": "composite plate",
             "bdf_file": os.path.join(base_dir, "./input_files/comp_plate.bdf"),
-            "xyz_scale": 1000.0,  # m to mm
-            "time_scale": 100.0,  # s to cs
-            "mass_scale": 1.0,  # no mass scaling
+            "xyzScale": 1000.0,  # m to mm
+            "timeScale": 100.0,  # s to cs
+            "massScale": 1.0,  # no mass scaling
         },
         {
             "name": "beam",
             "bdf_file": os.path.join(base_dir, "./input_files/beam_model.bdf"),
-            "xyz_scale": 100.0,  # Different scaling
-            "time_scale": 100.0,  # s to cs
-            "mass_scale": 1.0,  # no mass scaling
+            "xyzScale": 100.0,  # Different scaling
+            "timeScale": 100.0,  # s to cs
+            "massScale": 1.0,  # no mass scaling
         },
     ]
 
@@ -99,17 +99,17 @@ class ProblemTest(unittest.TestCase):
             with self.subTest(bdf=test_case["name"]):
                 self._run_scaling_test(
                     test_case["bdf_file"],
-                    test_case.get("xyz_scale", 1.0),
-                    test_case.get("mass_scale", 1.0),
-                    test_case.get("time_scale", 1.0),
+                    test_case.get("xyzScale", 1.0),
+                    test_case.get("massScale", 1.0),
+                    test_case.get("timeScale", 1.0),
                 )
 
     def _run_scaling_test(
         self,
         orig_bdf_file,
-        xyz_scale,
-        mass_scale,
-        time_scale,
+        xyzScale,
+        massScale,
+        timeScale,
     ):
         """Run scaling test for a single BDF file"""
         # Read in the original BDF, setup tacs and solver problems
@@ -122,9 +122,9 @@ class ProblemTest(unittest.TestCase):
         self.fea_assembler.writeBDF(
             self.scaled_bdf_file,
             self.tacs_probs,
-            xyz_scale=xyz_scale,
-            mass_scale=mass_scale,
-            time_scale=time_scale,
+            xyzScale=xyzScale,
+            massScale=massScale,
+            timeScale=timeScale,
         )
 
         # Only run the remaining comparison on root proc
@@ -139,18 +139,18 @@ class ProblemTest(unittest.TestCase):
         scaled_bdf_info.read_bdf(self.scaled_bdf_file)
 
         # Run all comparisons
-        self._compare_nodes(new_bdf_info, scaled_bdf_info, xyz_scale)
+        self._compare_nodes(new_bdf_info, scaled_bdf_info, xyzScale)
         self._compare_loads(
             new_bdf_info,
             scaled_bdf_info,
-            xyz_scale,
-            mass_scale=mass_scale,
-            time_scale=time_scale,
+            xyzScale,
+            massScale=massScale,
+            timeScale=timeScale,
         )
-        self._compare_properties(new_bdf_info, scaled_bdf_info, xyz_scale)
-        self._compare_materials(new_bdf_info, scaled_bdf_info, xyz_scale, mass_scale)
+        self._compare_properties(new_bdf_info, scaled_bdf_info, xyzScale)
+        self._compare_materials(new_bdf_info, scaled_bdf_info, xyzScale, massScale)
 
-    def _compare_nodes(self, new_bdf, scaled_bdf, xyz_scale):
+    def _compare_nodes(self, new_bdf, scaled_bdf, xyzScale):
         """Compare nodal coordinates"""
         for node_id in new_bdf.nodes:
             new_node = new_bdf.nodes[node_id]
@@ -162,12 +162,12 @@ class ProblemTest(unittest.TestCase):
             # Verify scaling was applied correctly
             np.testing.assert_allclose(
                 scaled_xyz,
-                new_xyz * xyz_scale,
+                new_xyz * xyzScale,
                 rtol=1e-10,
                 err_msg=f"Node {node_id} coordinates not scaled correctly",
             )
 
-    def _compare_loads(self, new_bdf, scaled_bdf, xyz_scale, mass_scale, time_scale):
+    def _compare_loads(self, new_bdf, scaled_bdf, xyzScale, massScale, timeScale):
         """Compare forces and moments"""
         for load_id in new_bdf.loads:
             new_loads = new_bdf.loads[load_id]
@@ -175,7 +175,7 @@ class ProblemTest(unittest.TestCase):
 
             for new_load, scaled_load in zip(new_loads, scaled_loads):
                 if new_load.type == "FORCE":
-                    force_scale = mass_scale * xyz_scale / time_scale**2
+                    force_scale = massScale * xyzScale / timeScale**2
                     # Forces should scale as mass * length / time^2
                     expected = new_load.mag * force_scale
                     np.testing.assert_allclose(
@@ -186,7 +186,7 @@ class ProblemTest(unittest.TestCase):
                     )
                 elif new_load.type == "MOMENT":
                     # Moments should scale as force * length
-                    moment_scale = (mass_scale * xyz_scale / time_scale**2) * xyz_scale
+                    moment_scale = (massScale * xyzScale / timeScale**2) * xyzScale
                     expected = new_load.mag * moment_scale
                     np.testing.assert_allclose(
                         scaled_load.mag,
@@ -195,7 +195,7 @@ class ProblemTest(unittest.TestCase):
                         err_msg=f"Moment load {new_load} magnitude not scaled correctly",
                     )
 
-    def _compare_properties(self, new_bdf, scaled_bdf, xyz_scale):
+    def _compare_properties(self, new_bdf, scaled_bdf, xyzScale):
         """Compare shell thicknesses and composite ply thicknesses"""
         for prop_id in new_bdf.properties:
             new_prop = new_bdf.properties[prop_id]
@@ -205,7 +205,7 @@ class ProblemTest(unittest.TestCase):
                 if new_prop.t is not None:
                     np.testing.assert_allclose(
                         scaled_prop.t,
-                        new_prop.t * xyz_scale,
+                        new_prop.t * xyzScale,
                         rtol=1e-10,
                         err_msg=f"PSHELL {prop_id} thickness not scaled correctly",
                     )
@@ -216,17 +216,17 @@ class ProblemTest(unittest.TestCase):
                 ):
                     np.testing.assert_allclose(
                         scaled_t,
-                        new_t * xyz_scale,
+                        new_t * xyzScale,
                         rtol=1e-10,
                         err_msg=f"PCOMP {prop_id} ply {i} thickness not scaled correctly",
                     )
 
-    def _compare_materials(self, new_bdf, scaled_bdf, xyz_scale, mass_scale):
+    def _compare_materials(self, new_bdf, scaled_bdf, xyzScale, massScale):
         """
         Compare material densities.
 
         Density has units of mass/volume = mass/length^3
-        So when scaling: rho_scaled = rho * (mass_scale / xyz_scale^3)
+        So when scaling: rho_scaled = rho * (massScale / xyzScale^3)
         """
         for mat_id in new_bdf.materials:
             new_mat = new_bdf.materials[mat_id]
@@ -234,7 +234,7 @@ class ProblemTest(unittest.TestCase):
 
             if hasattr(new_mat, "rho") and new_mat.rho is not None:
                 # Density scales as: mass / length^3
-                expected_rho = new_mat.rho * mass_scale / (xyz_scale**3)
+                expected_rho = new_mat.rho * massScale / (xyzScale**3)
                 np.testing.assert_allclose(
                     scaled_mat.rho,
                     expected_rho,
