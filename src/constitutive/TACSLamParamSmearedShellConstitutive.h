@@ -18,8 +18,8 @@
   limitations under the License.
 */
 
-#ifndef TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
-#define TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
+#ifndef TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
+#define TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
@@ -37,18 +37,16 @@
   The failure index calculations are based on the maximum strain failure
   criteria imposed at 0, pm 45, 90 ply angles.
 */
-class TACSLamParamShellConstitutive : public TACSShellConstitutive {
+class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSLamParamShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
-                                int _t_num, TacsScalar _min_t,
-                                TacsScalar _max_t, TacsScalar _f0,
-                                TacsScalar _f45, TacsScalar _f90, int _f0_num,
-                                int _f45_num, int _f90_num, TacsScalar _min_f0,
-                                TacsScalar _min_f45, TacsScalar _min_f90,
-                                TacsScalar _W1, TacsScalar _W3, int _W1_num,
-                                int _W3_num, TacsScalar _ksWeight,
-                                TacsScalar _epsilon);
-  ~TACSLamParamShellConstitutive();
+  TACSLamParamSmearedShellConstitutive(
+      TACSOrthotropicPly *_orthoPly, TacsScalar _t, int _t_num,
+      TacsScalar _min_t, TacsScalar _max_t, TacsScalar _f0, TacsScalar _f45,
+      TacsScalar _f90, int _f0_num, int _f45_num, int _f90_num,
+      TacsScalar _min_f0, TacsScalar _min_f45, TacsScalar _min_f90,
+      TacsScalar _W1, TacsScalar _W3, int _W1_num, int _W3_num,
+      TacsScalar _ksWeight, TacsScalar _epsilon);
+  ~TACSLamParamSmearedShellConstitutive();
 
   // Retrieve the global design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -164,4 +162,4 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
   static const char *constName;
 };
 
-#endif  // TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
+#endif  // TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
