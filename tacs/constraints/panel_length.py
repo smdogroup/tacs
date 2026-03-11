@@ -60,7 +60,12 @@ def computePanelLength(points, direction):
                 edge = points[endInd] - points[startInd]
                 mat = np.stack((direction, -edge), axis=1)
                 rhs = points[startInd] - points[pointInd]
-                sol, res, _, _ = np.linalg.lstsq(mat, rhs)
+                sol, res, rank, _ = np.linalg.lstsq(mat, rhs)
+
+                # Check the rank since if the lines are parallel we won't get a good solution, in this case we just skip this edge
+                if rank < 2:
+                    continue
+
                 alpha = sol[0]
                 beta = sol[1]
                 # Only compute the length if the intersection occurs within the true bounds of the edge
@@ -70,7 +75,7 @@ def computePanelLength(points, direction):
                     newLength = np.sqrt(np.sum((alpha * direction) ** 2))
                     if (
                         np.real(newLength) > np.real(length)
-                        and np.real(newLength) > res
+                        and np.real(newLength) > res[0]
                     ):
                         length = newLength
     return length

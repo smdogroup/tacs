@@ -1825,11 +1825,9 @@ class pyTACS(BaseUI):
         self,
         fileName,
         problems,
-        xyz_scale=1.0,
-        mass_scale=1.0,
-        time_scale=1.0,
-        force_scale=1.0,
-        gravity_scale=1.0,
+        xyzScale=1.0,
+        massScale=1.0,
+        timeScale=1.0,
     ):
         """
         Write NASTRAN BDF file from problem class.
@@ -1843,16 +1841,12 @@ class pyTACS(BaseUI):
             Name of file to write BDF file to.
         problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]
             List of pytacs Problem classes to write BDF file from.
-        xyz_scale: float, optional
+        xyzScale: float, optional
             Scale factor for nodal coordinates, by default 1.0
-        mass_scale: float, optional
+        massScale: float, optional
             Scale factor for mass, by default 1.0
-        time_scale: float, optional
+        timeScale: float, optional
             Scale factor for time, by default 1.0
-        force_scale: float, optional
-            Scale factor for force, by default 1.0
-        gravity_scale: float, optional
-            Scale factor for gravity, by default 1.0
         """
         # Make sure problems is in a list
         if hasattr(problems, "__iter__") == False:
@@ -2111,19 +2105,22 @@ class pyTACS(BaseUI):
                 loadCase = i + 1
                 problem.writeLoadToBDF(newBDFInfo, loadCase)
 
-        # Apply any scaling factors to output BDF specified by the user
-        if self.comm.rank == 0:
-            scale_model(
-                newBDFInfo,
-                xyz_scale,
-                mass_scale,
-                time_scale,
-                force_scale,
-                gravity_scale,
-            )
-
         # Write out BDF file
         if self.comm.rank == 0:
+            # Apply scaling factors to model if specified by the user
+            if xyzScale != 1.0 or massScale != 1.0 or timeScale != 1.0:
+                # Calculate force and gravity scaling factors based on input length, mass, and time scaling factors
+                forceScale = massScale * xyzScale / timeScale**2
+                gravityScale = xyzScale / timeScale**2
+                scale_model(
+                    newBDFInfo,
+                    xyzScale,
+                    massScale,
+                    timeScale,
+                    forceScale,
+                    gravityScale,
+                )
+
             newBDFInfo.write_bdf(
                 fileName, size=16, is_double=True, write_header=False, enddata=True
             )
