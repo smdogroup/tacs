@@ -2110,15 +2110,15 @@ class pyTACS(BaseUI):
             # Apply scaling factors to model if specified by the user
             if xyzScale != 1.0 or massScale != 1.0 or timeScale != 1.0:
                 # Calculate force and gravity scaling factors based on input length, mass, and time scaling factors
-                force_scale = massScale * xyzScale / timeScale**2
-                gravity_scale = xyzScale / timeScale**2
+                forceScale = massScale * xyzScale / timeScale**2
+                gravityScale = xyzScale / timeScale**2
                 scale_model(
                     newBDFInfo,
                     xyzScale,
                     massScale,
                     timeScale,
-                    force_scale,
-                    gravity_scale,
+                    forceScale,
+                    gravityScale,
                 )
 
             newBDFInfo.write_bdf(

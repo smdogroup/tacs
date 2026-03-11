@@ -175,9 +175,9 @@ class ProblemTest(unittest.TestCase):
 
             for new_load, scaled_load in zip(new_loads, scaled_loads):
                 if new_load.type == "FORCE":
-                    force_scale = massScale * xyzScale / timeScale**2
+                    forceScale = massScale * xyzScale / timeScale**2
                     # Forces should scale as mass * length / time^2
-                    expected = new_load.mag * force_scale
+                    expected = new_load.mag * forceScale
                     np.testing.assert_allclose(
                         scaled_load.mag,
                         expected,
