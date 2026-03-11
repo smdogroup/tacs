@@ -10,7 +10,7 @@ The nominal case is a 1m x 1m flat plate under three load cases:
 a 10 kN point force at center, a 100kPa pressure applied to the surface, and a 100G gravity load. The
 perimeter of the plate is fixed in all 6 degrees of freedom. The plate comprises
 100 CQUAD4 elements and test KSFailure, StructuralMass, CenterOfMass, MomentOfInertia,
-and Compliance functions and sensitivities. Finally, a modal analysis is performed 
+and Compliance functions and sensitivities. Finally, a modal analysis is performed
 and the eigenvalues tested.
 """
 
@@ -36,6 +36,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "point_load_cgz": 0.0,
         "point_load_compliance": 683.857161165581,
         "point_load_ks_vmfailure": 0.5757488025917175,
+        "point_load_ks_vmfailure_discrete": 1.1748952573026419,
+        "point_load_ks_vmfailure_discrete_average": 1.0273708117815663,
         "point_load_mass": 12.5,
         "pressure_Ixx": 1.041692708333326,
         "pressure_Ixy": 4.884981308350689e-15,
@@ -48,6 +50,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "pressure_cgz": 0.0,
         "pressure_compliance": 4679.345460326935,
         "pressure_ks_vmfailure": 1.293862315687351,
+        "pressure_ks_vmfailure_discrete": 1.893008770400428,
+        "pressure_ks_vmfailure_discrete_average": 1.7458488121132871,
         "pressure_mass": 12.5,
         "gravity_Ixx": 1.041692708333326,
         "gravity_Ixy": 4.884981308350689e-15,
@@ -60,6 +64,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_cgz": 0.0,
         "gravity_compliance": 70.36280588359826,
         "gravity_ks_vmfailure": 0.1170732000975571,
+        "gravity_ks_vmfailure_discrete": 0.7162196548084768,
+        "gravity_ks_vmfailure_discrete_average": 0.577279286616528,
         "gravity_mass": 12.5,
         "modal_eigsm.0": 87437.50645902398,
         "modal_eigsm.1": 396969.8881660927,
@@ -139,6 +145,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
+            problem.addFunction("ks_vmfailure_discrete", functions.KSFailure, ksWeight=ksweight, ftype="discrete")
+            problem.addFunction("ks_vmfailure_discrete_average", functions.KSFailure, ksWeight=ksweight, ftype="discrete-average")
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
