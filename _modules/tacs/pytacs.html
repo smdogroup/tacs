@@ -68,6 +68,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.bdf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyNastran.bdf.mesh_utils.convert</span><span class="w"> </span><span class="kn">import</span> <span class="n">scale_model</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.constitutive</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tacs.constraints</span>
@@ -1957,7 +1958,14 @@
 <div class="viewcode-block" id="pyTACS.writeBDF">
 <a class="viewcode-back" href="../../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.writeBDF">[docs]</a>
     <span class="nd">@postinitialize_method</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">writeBDF</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileName</span><span class="p">,</span> <span class="n">problems</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">writeBDF</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fileName</span><span class="p">,</span>
+        <span class="n">problems</span><span class="p">,</span>
+        <span class="n">xyzScale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">massScale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">timeScale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Write NASTRAN BDF file from problem class.</span>
 <span class="sd">        Assumes all supplied Problems share the same nodal and design variable values.</span>
@@ -1970,6 +1978,12 @@
 <span class="sd">            Name of file to write BDF file to.</span>
 <span class="sd">        problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]</span>
 <span class="sd">            List of pytacs Problem classes to write BDF file from.</span>
+<span class="sd">        xyzScale: float, optional</span>
+<span class="sd">            Scale factor for nodal coordinates, by default 1.0</span>
+<span class="sd">        massScale: float, optional</span>
+<span class="sd">            Scale factor for mass, by default 1.0</span>
+<span class="sd">        timeScale: float, optional</span>
+<span class="sd">            Scale factor for time, by default 1.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Make sure problems is in a list</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
@@ -2230,6 +2244,20 @@
 
         <span class="c1"># Write out BDF file</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Apply scaling factors to model if specified by the user</span>
+            <span class="k">if</span> <span class="n">xyzScale</span> <span class="o">!=</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">massScale</span> <span class="o">!=</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">timeScale</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
+                <span class="c1"># Calculate force and gravity scaling factors based on input length, mass, and time scaling factors</span>
+                <span class="n">forceScale</span> <span class="o">=</span> <span class="n">massScale</span> <span class="o">*</span> <span class="n">xyzScale</span> <span class="o">/</span> <span class="n">timeScale</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">gravityScale</span> <span class="o">=</span> <span class="n">xyzScale</span> <span class="o">/</span> <span class="n">timeScale</span><span class="o">**</span><span class="mi">2</span>
+                <span class="n">scale_model</span><span class="p">(</span>
+                    <span class="n">newBDFInfo</span><span class="p">,</span>
+                    <span class="n">xyzScale</span><span class="p">,</span>
+                    <span class="n">massScale</span><span class="p">,</span>
+                    <span class="n">timeScale</span><span class="p">,</span>
+                    <span class="n">forceScale</span><span class="p">,</span>
+                    <span class="n">gravityScale</span><span class="p">,</span>
+                <span class="p">)</span>
+
             <span class="n">newBDFInfo</span><span class="o">.</span><span class="n">write_bdf</span><span class="p">(</span>
                 <span class="n">fileName</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">is_double</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">write_header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">enddata</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
