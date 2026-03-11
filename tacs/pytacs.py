@@ -31,6 +31,7 @@ from functools import wraps
 
 import numpy as np
 import pyNastran.bdf as pn
+from pyNastran.bdf.mesh_utils.convert import scale_model
 
 import tacs.constitutive
 import tacs.constraints
@@ -1820,7 +1821,14 @@ class pyTACS(BaseUI):
         return structProblems
 
     @postinitialize_method
-    def writeBDF(self, fileName, problems):
+    def writeBDF(
+        self,
+        fileName,
+        problems,
+        xyzScale=1.0,
+        massScale=1.0,
+        timeScale=1.0,
+    ):
         """
         Write NASTRAN BDF file from problem class.
         Assumes all supplied Problems share the same nodal and design variable values.
@@ -1833,6 +1841,12 @@ class pyTACS(BaseUI):
             Name of file to write BDF file to.
         problems: tacs.problems.TACSProblem or list[tacs.problems.TACSProblem]
             List of pytacs Problem classes to write BDF file from.
+        xyzScale: float, optional
+            Scale factor for nodal coordinates, by default 1.0
+        massScale: float, optional
+            Scale factor for mass, by default 1.0
+        timeScale: float, optional
+            Scale factor for time, by default 1.0
         """
         # Make sure problems is in a list
         if hasattr(problems, "__iter__") == False:
@@ -2093,6 +2107,20 @@ class pyTACS(BaseUI):
 
         # Write out BDF file
         if self.comm.rank == 0:
+            # Apply scaling factors to model if specified by the user
+            if xyzScale != 1.0 or massScale != 1.0 or timeScale != 1.0:
+                # Calculate force and gravity scaling factors based on input length, mass, and time scaling factors
+                forceScale = massScale * xyzScale / timeScale**2
+                gravityScale = xyzScale / timeScale**2
+                scale_model(
+                    newBDFInfo,
+                    xyzScale,
+                    massScale,
+                    timeScale,
+                    forceScale,
+                    gravityScale,
+                )
+
             newBDFInfo.write_bdf(
                 fileName, size=16, is_double=True, write_header=False, enddata=True
             )
