@@ -97,7 +97,12 @@
                 <span class="n">edge</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">endInd</span><span class="p">]</span> <span class="o">-</span> <span class="n">points</span><span class="p">[</span><span class="n">startInd</span><span class="p">]</span>
                 <span class="n">mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">direction</span><span class="p">,</span> <span class="o">-</span><span class="n">edge</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
                 <span class="n">rhs</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">startInd</span><span class="p">]</span> <span class="o">-</span> <span class="n">points</span><span class="p">[</span><span class="n">pointInd</span><span class="p">]</span>
-                <span class="n">sol</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+                <span class="n">sol</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">rhs</span><span class="p">)</span>
+
+                <span class="c1"># Check the rank since if the lines are parallel we won&#39;t get a good solution, in this case we just skip this edge</span>
+                <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
                 <span class="n">alpha</span> <span class="o">=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">beta</span> <span class="o">=</span> <span class="n">sol</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="c1"># Only compute the length if the intersection occurs within the true bounds of the edge</span>
@@ -107,7 +112,7 @@
                     <span class="n">newLength</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">direction</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
                     <span class="k">if</span> <span class="p">(</span>
                         <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">newLength</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">newLength</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">res</span>
+                        <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">newLength</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="p">):</span>
                         <span class="n">length</span> <span class="o">=</span> <span class="n">newLength</span>
     <span class="k">return</span> <span class="n">length</span>
