@@ -126,7 +126,7 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
                                     const TacsScalar vars[],
                                     const TacsScalar dvars[],
                                     const TacsScalar ddvars[]) {
-  int numQuadPoints = element->getNumQuadraturePoints();
+  const int numQuadPoints = element->getNumQuadraturePoints();
   TacsScalar avgFail = 0.0;
   for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
@@ -190,7 +190,7 @@ TacsScalar TACSKSFailure::computeAverageFailure(
     int elemIndex, TACSElement *element, double time, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[]) {
-  int numQuadPoints = element->getNumQuadraturePoints();
+  const int numQuadPoints = element->getNumQuadraturePoints();
   TacsScalar avgFail = 0.0;
 
   for (int i = 0; i < numQuadPoints; i++) {
@@ -221,7 +221,7 @@ void TACSKSFailure::getElementSVSens(
     TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
     const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdu[]) {
-  int numQuadPoints = element->getNumQuadraturePoints();
+  const int numQuadPoints = element->getNumQuadraturePoints();
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->getNumVariables();
@@ -288,7 +288,7 @@ void TACSKSFailure::getElementXptSens(
     int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
-  int numQuadPoints = element->getNumQuadraturePoints();
+  const int numQuadPoints = element->getNumQuadraturePoints();
   // Zero the derivative of the function w.r.t. the element node
   // locations
   int numNodes = element->getNumNodes();
@@ -358,7 +358,7 @@ void TACSKSFailure::addElementDVSens(
     int elemIndex, TACSElement *element, double time, TacsScalar scale,
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
-  int numQuadPoints = element->getNumQuadraturePoints();
+  const int numQuadPoints = element->getNumQuadraturePoints();
   TacsScalar avgFail = 0.0;
 
   if (ksType == DISCRETE_AVERAGE) {
