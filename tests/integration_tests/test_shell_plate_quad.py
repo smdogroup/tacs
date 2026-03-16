@@ -145,8 +145,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for problem in tacs_probs:
             problem.addFunction("mass", functions.StructuralMass)
             problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=ksweight)
-            problem.addFunction("ks_vmfailure_discrete", functions.KSFailure, ksWeight=ksweight, ftype="discrete")
-            problem.addFunction("ks_vmfailure_discrete_average", functions.KSFailure, ksWeight=ksweight, ftype="discrete-average")
+            problem.addFunction(
+                "ks_vmfailure_discrete",
+                functions.KSFailure,
+                ksWeight=ksweight,
+                ftype="discrete",
+            )
+            problem.addFunction(
+                "ks_vmfailure_discrete_average",
+                functions.KSFailure,
+                ksWeight=ksweight,
+                ftype="discrete-average",
+            )
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(
                 "cgx", functions.CenterOfMass, direction=[1.0, 0.0, 0.0]
