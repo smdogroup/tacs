@@ -143,7 +143,7 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
     fail *= safetyFactor;
 
     // Average the failure value over each quadrature points
-    avgFail += fail / numQuadPoints;
+    avgFail += fail / (double)numQuadPoints;
 
     // Check whether the quantity requested is defined or not
     if (count >= 1) {
@@ -206,7 +206,7 @@ TacsScalar TACSKSFailure::computeAverageFailure(
     fail *= safetyFactor;
 
     // Average the failure value over each quadrature points
-    avgFail += fail / numQuadPoints;
+    avgFail += fail / (double)numQuadPoints;
   }
 
   return avgFail;
@@ -267,7 +267,7 @@ void TACSKSFailure::getElementSVSens(
         dfdq *= weight * detXd;
       } else if (ksType == DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
-        dfdq /= numQuadPoints;
+        dfdq /= (double)numQuadPoints;
       }
 
       // Scale failure sens by safety factor
@@ -336,7 +336,7 @@ void TACSKSFailure::getElementXptSens(
         dfddetXd = fail * fpow * invPnorm * weight;
       } else if (ksType == DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
-        dfdq /= numQuadPoints;
+        dfdq /= (double)numQuadPoints;
       }
 
       // Scale failure sens by safety factor
@@ -398,7 +398,7 @@ void TACSKSFailure::addElementDVSens(
         dfdq = fail * fpow * invPnorm * weight * detXd;
       } else if (ksType == DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
-        dfdq /= numQuadPoints;
+        dfdq /= (double)numQuadPoints;
       }
 
       // Scale failure sens by safety factor
