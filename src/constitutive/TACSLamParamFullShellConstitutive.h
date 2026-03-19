@@ -56,7 +56,7 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   void setKSWeight(double _ksWeight) { ksWeight = _ksWeight; }
 
   // Set the lamination parameter values directly
-  void setLaminationParameters(TacsScalar _lp[]);
+  void setLaminationParameters(const TacsScalar _lp[]);
 
   // Set the number of fail angles to test
   // -------------------------------------
@@ -152,18 +152,19 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  private:
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar *_max);
+                      TacsScalar *_max) const;
   void computeFailureStrainSens(const TacsScalar strain[],
-                                const TacsScalar weights[], TacsScalar sens[]);
+                                const TacsScalar weights[],
+                                TacsScalar sens[]) const;
   TacsScalar computeFailureDVSens(const TacsScalar strain[],
-                                  const TacsScalar weights[]);
+                                  const TacsScalar weights[]) const;
 
   // Check that the matrix is positive definite (used for testing)
-  int checkDeterminant(const TacsScalar a[]);
+  static int checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar *drill);
+                    TacsScalar As[], TacsScalar *drill) const;
 
   // The number of angles to check for failure < MAX_NUM_FAIL_ANGLES
   int numFailAngles;
