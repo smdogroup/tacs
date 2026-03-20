@@ -1218,10 +1218,14 @@ class pyTACS(BaseUI):
                 k1 = propInfo.k1
                 k2 = propInfo.k2
                 nsm = propInfo.nsm
-                offsetYA = propInfo.n1a  # Y coordinate of neutral axis for end A
-                offsetZA = propInfo.n2a  # Z coordinate of neutral axis for end A
-                offsetYB = propInfo.n1b  # Y coordinate of neutral axis for end B
-                offsetZB = propInfo.n2b  # Z coordinate of neutral axis for end B
+                nsmYA = propInfo.n1a  # Y coordinate of non-structural mass for end A
+                nsmZA = propInfo.n2a  # Z coordinate of non-structural mass for end A
+                nsmYB = propInfo.n1b  # Y coordinate of non-structural mass for end B
+                nsmZB = propInfo.n2b  # Z coordinate of non-structural mass for end B
+                neutralAxisYA = propInfo.n1a  # Y coordinate of neutral axis for end A
+                neutralAxisZA = propInfo.n2a  # Z coordinate of neutral axis for end A
+                neutralAxisYB = propInfo.n1b  # Y coordinate of neutral axis for end B
+                neutralAxisZB = propInfo.n2b  # Z coordinate of neutral axis for end B
 
                 # pynastran defaults these values to 1e8,
                 # which can lead to scaling issues in the stiffness matrix
