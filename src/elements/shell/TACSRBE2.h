@@ -23,16 +23,16 @@ class TACSRBE2 : public TACSElement {
 
   // Info for BDF writer
   // -------------------
-  int const* const* getDependentDOFs() { return dof_constrained; }
+  int const *const *getDependentDOFs() { return dof_constrained; }
   int getNumDependentNodes() { return NUM_DEP_NODES; }
 
   // Get the element properties and names
   // ------------------------------------
-  const char* getObjectName();
-  const char* displacementName(int i);
-  const char* stressName(int i);
-  const char* strainName(int i);
-  const char* extraName(int i);
+  const char *getObjectName();
+  const char *displacementName(int i);
+  const char *stressName(int i);
+  const char *strainName(int i);
+  const char *extraName(int i);
   int getVarsPerNode();
   int getNumNodes();
   int numExtras();
@@ -87,12 +87,12 @@ class TACSRBE2 : public TACSElement {
   int NUM_VARIABLES;
   static const int NUM_EXTRAS = 6;
 
-  static const char* elemName;
-  static const char* dispNames[NUM_DISPS];
-  static const char* extraNames[NUM_EXTRAS];
+  static const char *elemName;
+  static const char *dispNames[NUM_DISPS];
+  static const char *extraNames[NUM_EXTRAS];
 
   // Flag which dependent dofs to include
-  int** dof_constrained;
+  int **dof_constrained;
 
   // constraint matrix scaling factor, see ref [2]
   static double C1;

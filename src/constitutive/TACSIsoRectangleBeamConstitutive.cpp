@@ -3,7 +3,7 @@
 constexpr TacsScalar TACSIsoRectangleBeamConstitutive::eps;
 
 TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
-    TACSMaterialProperties* properties, TacsScalar _width,
+    TACSMaterialProperties *properties, TacsScalar _width,
     TacsScalar _thickness, TacsScalar _buckle_length, int _width_num,
     int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
     TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
@@ -743,12 +743,12 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
-const char* TACSIsoRectangleBeamConstitutive::constName =
+const char *TACSIsoRectangleBeamConstitutive::constName =
     "TACSIsoRectangleBeamConstitutive";
 
 /*
   Return the constitutive name
 */
-const char* TACSIsoRectangleBeamConstitutive::getObjectName() {
+const char *TACSIsoRectangleBeamConstitutive::getObjectName() {
   return constName;
 }

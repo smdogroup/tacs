@@ -1973,9 +1973,13 @@ cdef class Assembler:
         self.ptr.applyBCs(mat.ptr)
         return
 
-    def setBCs(self, Vec vec, TacsScalar loadScale=1.0):
-        """Apply the Dirichlet boundary conditions to the state vector"""
-        self.ptr.setBCs(vec.getBVecPtr(), loadScale)
+    def setBCs(self, Vec vec, TacsScalar scale=1.0):
+        """Set the dirichlet BC values in a vector
+
+        vec: the vector to set the values in
+        scale: scaling factor to apply to the BC values
+        """
+        self.ptr.setBCs(vec.getBVecPtr(), scale)
         return
 
     def createSchurMat(self, OrderingType order_type=TACS_AMD_ORDER):
@@ -2248,6 +2252,17 @@ cdef class Assembler:
                          TacsScalar loadScale=1.0, bool applyBCs=True):
         """
         Assemble a combination of two matrices
+
+        A = scale1*matType1 + scale2*matType2
+
+        matType1:     the first matrix type
+        scale1:       the scaling factor for the first matrix type
+        matType2:     the second matrix type
+        scale2:       the scaling factor for the second matrix
+        A:            the matrix to store the result in
+        matOr:      the matrix orientation NORMAL or TRANSPOSE
+        loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
         cdef ElementMatrixType matTypes[2]
         cdef TacsScalar scale[2]

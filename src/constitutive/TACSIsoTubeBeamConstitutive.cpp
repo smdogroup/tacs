@@ -1,7 +1,7 @@
 #include "TACSIsoTubeBeamConstitutive.h"
 
 TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
-    TACSMaterialProperties* properties, TacsScalar inner_init,
+    TACSMaterialProperties *properties, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
     TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub) {
   props = properties;
@@ -350,10 +350,10 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
-const char* TACSIsoTubeBeamConstitutive::constName =
+const char *TACSIsoTubeBeamConstitutive::constName =
     "TACSIsoTubeBeamConstitutive";
 
 /*
   Return the constitutive name
 */
-const char* TACSIsoTubeBeamConstitutive::getObjectName() { return constName; }
+const char *TACSIsoTubeBeamConstitutive::getObjectName() { return constName; }

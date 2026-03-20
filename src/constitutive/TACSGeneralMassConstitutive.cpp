@@ -18,9 +18,9 @@
 
 #include "TACSGeneralMassConstitutive.h"
 
-const char* TACSGeneralMassConstitutive::name = "TACSGeneralMassConstitutive";
+const char *TACSGeneralMassConstitutive::name = "TACSGeneralMassConstitutive";
 
-const char* TACSGeneralMassConstitutive::getObjectName() { return name; }
+const char *TACSGeneralMassConstitutive::getObjectName() { return name; }
 
 /*
   GeneralMassConstitutive member function definitions

@@ -1,8 +1,8 @@
 #include "TACSPanelGPs.h"
 
-TACSPanelGPs::TACSPanelGPs(TACSBucklingGaussianProcessModel* axialGP,
-                           TACSBucklingGaussianProcessModel* shearGP,
-                           TACSBucklingGaussianProcessModel* cripplingGP,
+TACSPanelGPs::TACSPanelGPs(TACSBucklingGaussianProcessModel *axialGP,
+                           TACSBucklingGaussianProcessModel *shearGP,
+                           TACSBucklingGaussianProcessModel *cripplingGP,
                            bool saveData) {
   this->axialGP = axialGP;
   if (this->axialGP) {
@@ -68,7 +68,7 @@ void TACSPanelGPs::resetSavedData() {
 }
 
 TacsScalar TACSPanelGPs::predictMeanTestData(int predInd,
-                                             const TacsScalar* Xtest) {
+                                             const TacsScalar *Xtest) {
   // assume checking for input calling is in the other class for now
   // otherwise I would return garbage values..
   if (!savedForward[predInd] || !saveData) {
@@ -90,8 +90,8 @@ TacsScalar TACSPanelGPs::predictMeanTestData(int predInd,
 }
 
 void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
-                                           const TacsScalar* Xtest,
-                                           TacsScalar* Xtestsens) {
+                                           const TacsScalar *Xtest,
+                                           TacsScalar *Xtestsens) {
   // assume checking for input calling is in the other class for now
   // otherwise I would return garbage values..
 
@@ -99,7 +99,7 @@ void TACSPanelGPs::predictMeanTestDataSens(int predInd, const TacsScalar Ysens,
   // for backpropagation may not be the same
 
   // change this part with 4* to not be hardcoded later..
-  TacsScalar* localJacobian = &savedJacobians[4 * predInd];
+  TacsScalar *localJacobian = &savedJacobians[4 * predInd];
 
   if (!savedAdjoint[predInd] || !saveData) {
     // axial global or local options

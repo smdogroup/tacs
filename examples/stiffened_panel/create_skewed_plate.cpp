@@ -6,7 +6,7 @@
 /*
   Get the coordinates of the deformed plate
 */
-void get_coordinates(double* x, double* y, const double a, const double b,
+void get_coordinates(double *x, double *y, const double a, const double b,
                      const double beta, double u, double v) {
   double uvals[] = {0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0};
 
@@ -64,9 +64,9 @@ void get_coordinates(double* x, double* y, const double a, const double b,
   theta: the skew angle of the plate
 */
 
-void write_skewed_plate_file(const char* file_name, int Nx, int Ny, double a,
+void write_skewed_plate_file(const char *file_name, int Nx, int Ny, double a,
                              double b, double theta, double gamma,
-                             const char* bc_type) {
+                             const char *bc_type) {
   double beta = tan(theta);
 
   const int elem_order = 4;
@@ -76,9 +76,9 @@ void write_skewed_plate_file(const char* file_name, int Nx, int Ny, double a,
   int coord_id = 0;
   int coord_disp = 0;
   int seid = 0;
-  const char* spc = " ";
+  const char *spc = " ";
 
-  FILE* fp = fopen(file_name, "w");
+  FILE *fp = fopen(file_name, "w");
   fprintf(fp, "SOL 103\n");
   fprintf(fp, "CEND\n");
   fprintf(fp, "BEGIN BULK\n");
@@ -250,7 +250,7 @@ void write_skewed_plate_file(const char* file_name, int Nx, int Ny, double a,
   fclose(fp);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   int Nx = 16;
   int Ny = 16;
 

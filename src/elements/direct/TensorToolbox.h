@@ -152,7 +152,7 @@ inline ScalarType normalize2D(ScalarType A[]) {
 */
 template <class ScalarType>
 inline ScalarType normalize2DSens(ScalarType A[], ScalarType sA[],
-                                  ScalarType* sAnrm) {
+                                  ScalarType *sAnrm) {
   ScalarType Anrm = sqrt(A[0] * A[0] + A[1] * A[1]);
   ScalarType invAnrm = 1.0 / Anrm;
   *sAnrm = invAnrm * (A[0] * sA[0] + A[1] * sA[1]);
@@ -230,7 +230,7 @@ inline ScalarType normalize3D(ScalarType A[]) {
   Find the sensitivity of the normalized 3D vector
 */
 template <class ScalarType>
-inline ScalarType normalize3DSens(ScalarType* sAnrm, ScalarType A[],
+inline ScalarType normalize3DSens(ScalarType *sAnrm, ScalarType A[],
                                   ScalarType sA[]) {
   ScalarType Anrm = sqrt(A[0] * A[0] + A[1] * A[1] + A[2] * A[2]);
   ScalarType invAnrm = 1.0 / Anrm;

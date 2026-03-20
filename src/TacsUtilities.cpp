@@ -17,11 +17,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-int TacsIntegerComparator(const void* a, const void* b) {
-  return (*(int*)a - *(int*)b);
+int TacsIntegerComparator(const void *a, const void *b) {
+  return (*(int *)a - *(int *)b);
 }
 
-int TacsSort(int len, int* array) {
+int TacsSort(int len, int *array) {
   qsort(array, len, sizeof(int), TacsIntegerComparator);
   return len;
 }
@@ -29,14 +29,14 @@ int TacsSort(int len, int* array) {
 /*
   Data and comparison function for the argsort
 */
-static const TacsScalar* tacs_arg_sort_list = NULL;
+static const TacsScalar *tacs_arg_sort_list = NULL;
 
-static int TacsCompareArgSort(const void* a, const void* b) {
-  if (TacsRealPart(tacs_arg_sort_list[*(int*)a]) <
-      TacsRealPart(tacs_arg_sort_list[*(int*)b])) {
+static int TacsCompareArgSort(const void *a, const void *b) {
+  if (TacsRealPart(tacs_arg_sort_list[*(int *)a]) <
+      TacsRealPart(tacs_arg_sort_list[*(int *)b])) {
     return -1;
-  } else if (TacsRealPart(tacs_arg_sort_list[*(int*)a]) >
-             TacsRealPart(tacs_arg_sort_list[*(int*)b])) {
+  } else if (TacsRealPart(tacs_arg_sort_list[*(int *)a]) >
+             TacsRealPart(tacs_arg_sort_list[*(int *)b])) {
     return 1;
   }
   return 0;
@@ -45,7 +45,7 @@ static int TacsCompareArgSort(const void* a, const void* b) {
 /*
   Sort the values by argument
 */
-int TacsArgSort(int len, const TacsScalar* values, int* array) {
+int TacsArgSort(int len, const TacsScalar *values, int *array) {
   for (int i = 0; i < len; i++) {
     array[i] = i;
   }
@@ -73,7 +73,7 @@ int TacsArgSort(int len, const TacsScalar* values, int* array) {
   returns:
   the size of the unique list <= len
 */
-int TacsUniqueSort(int len, int* array) {
+int TacsUniqueSort(int len, int *array) {
   // Sort the array
   qsort(array, len, sizeof(int), TacsIntegerComparator);
 
@@ -107,7 +107,7 @@ int TacsUniqueSort(int len, int* array) {
   2. Run through the list backwards placing elements into a[]
   when appropriate.
 */
-int TacsMergeSortedArrays(int na, int* a, int nb, const int* b) {
+int TacsMergeSortedArrays(int na, int *a, int nb, const int *b) {
   int ndup = 0;
 
   int j = 0, i = 0;
@@ -249,9 +249,9 @@ void TacsMatchIntervals(int mpiSize, const int ownerRange[], int nvars,
 /*!
   Extend the length of an integer array to a new length of array
 */
-void TacsExtendArray(int** _array, int oldlen, int newlen) {
-  int* oldarray = *_array;
-  int* newarray = new int[newlen];
+void TacsExtendArray(int **_array, int oldlen, int newlen) {
+  int *oldarray = *_array;
+  int *newarray = new int[newlen];
   memcpy(newarray, oldarray, oldlen * sizeof(int));
   delete[] *_array;
   *_array = newarray;
@@ -260,9 +260,9 @@ void TacsExtendArray(int** _array, int oldlen, int newlen) {
 /*
   Extend the length of a TacsScalar array to a new length
 */
-void TacsExtendArray(TacsScalar** _array, int oldlen, int newlen) {
-  TacsScalar* oldarray = *_array;
-  TacsScalar* newarray = new TacsScalar[newlen];
+void TacsExtendArray(TacsScalar **_array, int oldlen, int newlen) {
+  TacsScalar *oldarray = *_array;
+  TacsScalar *newarray = new TacsScalar[newlen];
   memcpy(newarray, oldarray, oldlen * sizeof(TacsScalar));
   delete[] *_array;
   *_array = newarray;
@@ -277,7 +277,7 @@ void TacsExtendArray(TacsScalar** _array, int oldlen, int newlen) {
   values if required and skip the diagonal.  Note that the copy may
   be overlapping so memcpy cannot be used.
 */
-void TacsSortAndUniquifyCSR(int nvars, int* rowp, int* cols, int remove_diag) {
+void TacsSortAndUniquifyCSR(int nvars, int *rowp, int *cols, int remove_diag) {
   // Uniquify each column of the array
   int old_start = 0;
   int new_start = 0;
@@ -320,9 +320,9 @@ void TacsSortAndUniquifyCSR(int nvars, int* rowp, int* cols, int remove_diag) {
   Here levset is a unique, 0 to nvars array containing the level
   sets
 */
-static int TacsComputeRCMLevSetOrder(const int nvars, const int* rowp,
-                                     const int* cols, int* rcm_vars,
-                                     int* levset, int root) {
+static int TacsComputeRCMLevSetOrder(const int nvars, const int *rowp,
+                                     const int *cols, int *rcm_vars,
+                                     int *levset, int root) {
   int start = 0;  // The start of the current level
   int end = 0;    // The end of the current level
 
@@ -403,13 +403,13 @@ static int TacsComputeRCMLevSetOrder(const int nvars, const int* rowp,
 
   The number of variables ordered in this pass of the RCM reordering
 */
-int TacsComputeRCMOrder(const int nvars, const int* rowp, const int* cols,
-                        int* rcm_vars, int root, int n_rcm_iters) {
+int TacsComputeRCMOrder(const int nvars, const int *rowp, const int *cols,
+                        int *rcm_vars, int root, int n_rcm_iters) {
   if (n_rcm_iters < 1) {
     n_rcm_iters = 1;
   }
 
-  int* levset = new int[nvars];
+  int *levset = new int[nvars];
   int rvars = 0;
   for (int k = 0; k < n_rcm_iters; k++) {
     rvars =
@@ -427,10 +427,10 @@ int TacsComputeRCMOrder(const int nvars, const int* rowp, const int* cols,
 /*
   Multicolor code for a single process using a greedy algorithm
 */
-int TacsComputeSerialMultiColor(const int nvars, const int* rowp,
-                                const int* cols, int* colors, int* new_vars) {
+int TacsComputeSerialMultiColor(const int nvars, const int *rowp,
+                                const int *cols, int *colors, int *new_vars) {
   // Allocate a temporary array to store the
-  int* tmp = new int[nvars + 1];
+  int *tmp = new int[nvars + 1];
   for (int i = 0; i < nvars; i++) {
     tmp[i] = -1;
     colors[i] = -1;
@@ -545,8 +545,8 @@ TACSIndexHash::TACSIndexHash(int approx_size, int _increment_size) {
   }
 
   // Allocate the table and set the entries
-  table = new HashEntry*[table_size];
-  memset(table, 0, table_size * sizeof(HashEntry*));
+  table = new HashEntry *[table_size];
+  memset(table, 0, table_size * sizeof(HashEntry *));
 
   // Allocate the memory nodes
   mem = new MemNode();
@@ -560,7 +560,7 @@ TACSIndexHash::TACSIndexHash(int approx_size, int _increment_size) {
 TACSIndexHash::~TACSIndexHash() {
   while (mem_root) {
     delete[] mem_root->array;
-    MemNode* temp = mem_root;
+    MemNode *temp = mem_root;
     mem_root = mem_root->next;
     delete temp;
   }
@@ -587,7 +587,7 @@ int TACSIndexHash::addEntry(int i) {
 
     if (table[index]) {
       // Loop until finding the location where to insert the entry
-      HashEntry* ptr = table[index];
+      HashEntry *ptr = table[index];
       while (ptr) {
         // If the entry already exists, don't add it
         if (ptr->i == i) {
@@ -645,16 +645,16 @@ int TACSIndexHash::addEntry(int i) {
 /*
   Convert the hash table to an array
 */
-void TACSIndexHash::toArray(int* _size, int** _array) {
+void TACSIndexHash::toArray(int *_size, int **_array) {
   if (_size) {
     *_size = num_entries;
   }
   if (_array) {
-    int* array = new int[num_entries];
+    int *array = new int[num_entries];
     int i = 0;
 
     // Reset the locations for all the
-    MemNode* node = mem_root;
+    MemNode *node = mem_root;
     while (node) {
       for (int k = 0; k < node->current; k++, i++) {
         array[i] = node->array[k].i;
@@ -667,22 +667,22 @@ void TACSIndexHash::toArray(int* _size, int** _array) {
 
 void TACSIndexHash::reset(int new_table_size) {
   // Allocate the entries for the new table
-  HashEntry** new_table = new HashEntry*[new_table_size];
-  memset(new_table, 0, new_table_size * sizeof(HashEntry*));
+  HashEntry **new_table = new HashEntry *[new_table_size];
+  memset(new_table, 0, new_table_size * sizeof(HashEntry *));
 
   // Reset the locations for all the
-  MemNode* node = mem_root;
+  MemNode *node = mem_root;
   while (node) {
     for (int k = 0; k < node->current; k++) {
       // Reset the new entries
-      HashEntry* entry = &node->array[k];
+      HashEntry *entry = &node->array[k];
       entry->next = NULL;
 
       uint32_t index = TACSIndexHashFunction(entry->i);
       index = index % new_table_size;
 
       if (new_table[index]) {
-        HashEntry* ptr = new_table[index];
+        HashEntry *ptr = new_table[index];
         while (ptr->next) {
           ptr = ptr->next;
         }
@@ -729,8 +729,8 @@ TACSMatrixHash::TACSMatrixHash(int approx_num_nonzero, int _increment_size) {
   }
 
   // Allocate the table and set the entries
-  table = new HashEntry*[table_size];
-  memset(table, 0, table_size * sizeof(HashEntry*));
+  table = new HashEntry *[table_size];
+  memset(table, 0, table_size * sizeof(HashEntry *));
 
   // Allocate the memory nodes
   mem = new MemNode();
@@ -744,7 +744,7 @@ TACSMatrixHash::TACSMatrixHash(int approx_num_nonzero, int _increment_size) {
 TACSMatrixHash::~TACSMatrixHash() {
   while (mem_root) {
     delete[] mem_root->array;
-    MemNode* temp = mem_root;
+    MemNode *temp = mem_root;
     mem_root = mem_root->next;
     delete temp;
   }
@@ -772,7 +772,7 @@ int TACSMatrixHash::addEntry(int i, int j) {
 
     if (table[index]) {
       // Loop until finding the location where to insert the entry
-      HashEntry* ptr = table[index];
+      HashEntry *ptr = table[index];
       while (ptr) {
         // If the entry already exists, don't add it
         if (ptr->i == i && ptr->j == j) {
@@ -830,13 +830,13 @@ int TACSMatrixHash::addEntry(int i, int j) {
 /*
   Convert the hash table to a non-zero CSR pattern
 */
-void TACSMatrixHash::tocsr(int* _nrows, int** _rows, int** _rowp, int** _cols) {
+void TACSMatrixHash::tocsr(int *_nrows, int **_rows, int **_rowp, int **_cols) {
   // Add in all the rows
-  TACSIndexHash* row_hash = new TACSIndexHash(1 << 13);
+  TACSIndexHash *row_hash = new TACSIndexHash(1 << 13);
   row_hash->incref();
 
   // Find a unique list of rows
-  MemNode* node = mem_root;
+  MemNode *node = mem_root;
   while (node) {
     for (int k = 0; k < node->current; k++) {
       row_hash->addEntry(node->array[k].i);
@@ -853,14 +853,14 @@ void TACSMatrixHash::tocsr(int* _nrows, int** _rows, int** _rowp, int** _cols) {
   TacsUniqueSort(nrows, rows);
 
   // Allocate space for the row pointer array
-  int* rowp = new int[nrows + 1];
+  int *rowp = new int[nrows + 1];
   memset(rowp, 0, (nrows + 1) * sizeof(int));
 
   node = mem_root;
   while (node) {
     for (int k = 0; k < node->current; k++) {
       int row = node->array[k].i;
-      int* item = TacsSearchArray(row, nrows, rows);
+      int *item = TacsSearchArray(row, nrows, rows);
       if (item) {
         int index = item - rows;
         node->array[k].i = index;
@@ -883,7 +883,7 @@ void TACSMatrixHash::tocsr(int* _nrows, int** _rows, int** _rowp, int** _cols) {
   }
 
   // Allocate space to store the column indices
-  int* cols = new int[num_entries];
+  int *cols = new int[num_entries];
 
   node = mem_root;
   while (node) {
@@ -934,22 +934,22 @@ void TACSMatrixHash::tocsr(int* _nrows, int** _rows, int** _rowp, int** _cols) {
 
 void TACSMatrixHash::reset(int new_table_size) {
   // Allocate the entries for the new table
-  HashEntry** new_table = new HashEntry*[new_table_size];
-  memset(new_table, 0, new_table_size * sizeof(HashEntry*));
+  HashEntry **new_table = new HashEntry *[new_table_size];
+  memset(new_table, 0, new_table_size * sizeof(HashEntry *));
 
   // Reset the locations for all the
-  MemNode* node = mem_root;
+  MemNode *node = mem_root;
   while (node) {
     for (int k = 0; k < node->current; k++) {
       // Reset the new entries
-      HashEntry* entry = &node->array[k];
+      HashEntry *entry = &node->array[k];
       entry->next = NULL;
 
       uint32_t index = TACSMatIntegerPairHash(entry->i, entry->j);
       index = index % new_table_size;
 
       if (new_table[index]) {
-        HashEntry* ptr = new_table[index];
+        HashEntry *ptr = new_table[index];
         while (ptr->next) {
           ptr = ptr->next;
         }
@@ -1012,7 +1012,7 @@ TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
 
 TacsScalar ksAggregationSensProduct(const TacsScalar f[], const int numVals,
                                     const int numVars, const double ksWeight,
-                                    TacsScalar** dfdx, TacsScalar dKSdx[]) {
+                                    TacsScalar **dfdx, TacsScalar dKSdx[]) {
   TacsScalar maxVal = f[0];
   for (int ii = 1; ii < numVals; ii++) {
     if (TacsRealPart(f[ii]) > TacsRealPart(maxVal)) {
