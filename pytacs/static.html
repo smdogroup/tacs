@@ -495,13 +495,16 @@ to applied to RHS of the static problem, by default None</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.updateJacobian">
-<span class="sig-name descname"><span class="pre">updateJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updateJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updateJacobian" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">updateJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/problems/static.html#StaticProblem.updateJacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.problems.StaticProblem.updateJacobian" title="Link to this definition">¶</a></dt>
 <dd><p>Update the Jacobian (a.k.a stiffness) matrix</p>
 <p>The Jacobian will only actually be updated if the
 <code class="docutils literal notranslate"><span class="pre">_jacobianUpdateRequired</span></code> flag is set to True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>res</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- If provided, the residual is also computed and stored in this vector</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>res</strong> (<em>tacs.TACS.Vec</em><em>, </em><em>optional</em>) -- If provided, the residual is also computed and stored in this vector</p></li>
+<li><p><strong>applyBCs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Whether to apply boundary conditions to the jacobian, by default True</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

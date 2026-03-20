@@ -1119,7 +1119,7 @@
 
 <div class="viewcode-block" id="StaticProblem.updateJacobian">
 <a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.updateJacobian">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">updateJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">updateJacobian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">applyBCs</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the Jacobian (a.k.a stiffness) matrix</span>
 
 <span class="sd">        The Jacobian will only actually be updated if the</span>
@@ -1129,6 +1129,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        res : tacs.TACS.Vec, optional</span>
 <span class="sd">            If provided, the residual is also computed and stored in this vector</span>
+<span class="sd">        applyBCs : bool, optional</span>
+<span class="sd">            Whether to apply boundary conditions to the jacobian, by default True</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span><span class="p">:</span>
             <span class="c1"># Assemble residual and stiffness matrix (w/o artificial terms)</span>
@@ -1139,6 +1141,7 @@
                 <span class="n">res</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span>
                 <span class="n">loadScale</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loadScale</span><span class="p">,</span>
+                <span class="n">applyBCs</span><span class="o">=</span><span class="n">applyBCs</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_jacobianUpdateRequired</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_preconditionerUpdateRequired</span> <span class="o">=</span> <span class="kc">True</span></div>
@@ -1926,7 +1929,6 @@
 
         <span class="c1"># Solve Linear System</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
         <span class="c1"># Add bc terms back in</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">bcTerms</span><span class="p">)</span>
 
@@ -1972,7 +1974,6 @@
         <span class="c1"># Copy array values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="c1"># Set states to assembler</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">u</span><span class="p">)</span>
 
         <span class="c1"># If this is a nonlinear problem then changing the state will change the jacobian</span>

@@ -122,8 +122,11 @@ variables.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.addJacobianVecProduct">
-<span class="sig-name descname"><span class="pre">addJacobianVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addJacobianVecProduct" title="Link to this definition">¶</a></dt>
-<dd><p>Compute the Jacobian-vector product</p>
+<span class="sig-name descname"><span class="pre">addJacobianVecProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.addJacobianVecProduct" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the Jacobian-vector product, see <cite>assembleJacobian</cite></p>
+<p>x: The vector to multiply
+y: The vector to add the result of the multiplication to</p>
+<p>For the remining inputs, see <cite>assembleJacobian</cite></p>
 </dd></dl>
 
 <dl class="py method">
@@ -164,7 +167,7 @@ the node locations</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleJacobian">
-<span class="sig-name descname"><span class="pre">assembleJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleJacobian" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleJacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleJacobian" title="Link to this definition">¶</a></dt>
 <dd><p>Assemble the Jacobian matrix</p>
 <p>This function assembles the global Jacobian matrix and
 residual. This Jacobian includes the contributions from all
@@ -179,18 +182,28 @@ gamma:     coefficient on the second time derivative term
 residual:  the residual of the governing equations
 A:         the Jacobian matrix
 matOr:     the matrix orientation NORMAL or TRANSPOSE
-loadScale: Scaling factor for the aux element contributions, by default 1</p>
+loadScale: Scaling factor for the aux element contributions, by default 1
+applyBCs:   Whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleMatCombo">
-<span class="sig-name descname"><span class="pre">assembleMatCombo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matType2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatCombo" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleMatCombo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matType2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatCombo" title="Link to this definition">¶</a></dt>
 <dd><p>Assemble a combination of two matrices</p>
+<p>A = scale1*matType1 + scale2*matType2</p>
+<p>matType1:     the first matrix type
+scale1:       the scaling factor for the first matrix type
+matType2:     the second matrix type
+scale2:       the scaling factor for the second matrix
+A:            the matrix to store the result in
+matOr:      the matrix orientation NORMAL or TRANSPOSE
+loadScale: Scaling factor for the aux element contributions, by default 1
+applyBCs:   Whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleMatType">
-<span class="sig-name descname"><span class="pre">assembleMatType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatType" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleMatType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matOr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleMatType" title="Link to this definition">¶</a></dt>
 <dd><p>Assemble the Jacobian matrix</p>
 <p>This function assembles the global Jacobian matrix and
 residual. This Jacobian includes the contributions from all
@@ -206,12 +219,13 @@ beta:        coefficient on the time-derivative terms
 gamma:      coefficient on the second time derivative
 term
 matOr:      the matrix orientation NORMAL or TRANSPOSE
-loadScale: Scaling factor for the aux element contributions, by default 1</p>
+loadScale: Scaling factor for the aux element contributions, by default 1
+applyBCs:   Whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.assembleRes">
-<span class="sig-name descname"><span class="pre">assembleRes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleRes" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assembleRes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">residual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.assembleRes" title="Link to this definition">¶</a></dt>
 <dd><p>Assemble the residual associated with the input load case.</p>
 <p>This residual includes the contributions from element tractions
 set in the TACSSurfaceTraction class and any point loads. Note
@@ -219,7 +233,8 @@ that the vector entries are zeroed first, and that the Dirichlet
 boundary conditions are applied after the assembly of the
 residual is complete.</p>
 <p>rhs:        the residual output
-loadScale:  Scaling factor for the aux element contributions, by default 1</p>
+loadScale:  Scaling factor for the aux element contributions, by default 1
+applyBCs:   Whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
@@ -309,6 +324,18 @@ parallel layout.</p>
 <dt class="sig sig-object py" id="TACS.Assembler.evalFunctions">
 <span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funclist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalFunctions" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate a list of TACS function</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="TACS.Assembler.evalMatSVSensInnerProduct">
+<span class="sig-name descname"><span class="pre">evalMatSVSensInnerProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyBCs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.evalMatSVSensInnerProduct" title="Link to this definition">¶</a></dt>
+<dd><p>Add the derivative of the inner product of the specified
+matrix with the input vectors to the state variables.</p>
+<p>matType: the type of matrix to use
+psi:     the left hand vector in the inner product
+phi:     the right hand vector in the inner product
+res:     Vector to store the result in
+applyBCs: whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
@@ -468,8 +495,10 @@ given vector where the Dirichlet boundary conditions are imposed.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.setBCs">
-<span class="sig-name descname"><span class="pre">setBCs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCs" title="Link to this definition">¶</a></dt>
-<dd><p>Apply the Dirichlet boundary conditions to the state vector</p>
+<span class="sig-name descname"><span class="pre">setBCs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.setBCs" title="Link to this definition">¶</a></dt>
+<dd><p>Set the dirichlet BC values in a vector</p>
+<p>vec: the vector to set the values in
+scale: scaling factor to apply to the BC values</p>
 </dd></dl>
 
 <dl class="py method">
@@ -948,6 +977,7 @@ be slow and need to be in serial mode only</p>
 <li><a class="reference internal" href="#TACS.Assembler.createVec"><code class="docutils literal notranslate"><span class="pre">Assembler.createVec()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.evalEnergies"><code class="docutils literal notranslate"><span class="pre">Assembler.evalEnergies()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.evalFunctions"><code class="docutils literal notranslate"><span class="pre">Assembler.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.evalMatSVSensInnerProduct"><code class="docutils literal notranslate"><span class="pre">Assembler.evalMatSVSensInnerProduct()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.getBcMap"><code class="docutils literal notranslate"><span class="pre">Assembler.getBcMap()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">Assembler.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.getDesignVars"><code class="docutils literal notranslate"><span class="pre">Assembler.getDesignVars()</span></code></a></li>
