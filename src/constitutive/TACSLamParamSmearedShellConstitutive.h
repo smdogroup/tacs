@@ -18,8 +18,7 @@
   limitations under the License.
 */
 
-#ifndef TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
-#define TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H
+#pragma once
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
@@ -161,5 +160,3 @@ class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
 
   static const char *constName;
 };
-
-#endif  // TACS_LAM_PARAM_SMEARED_SHELL_CONSTITUTIVE_H

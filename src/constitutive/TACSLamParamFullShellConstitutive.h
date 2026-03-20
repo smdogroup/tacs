@@ -16,8 +16,7 @@
   http://www.apache.org/licenses/LICENSE-2.0
 */
 
-#ifndef TACS_LAM_PARAM_FULL_SHELL_CONSTITUTIVE_H
-#define TACS_LAM_PARAM_FULL_SHELL_CONSTITUTIVE_H
+#pragma once
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
@@ -194,5 +193,3 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
 
   static const char *constName;
 };
-
-#endif  // TACS_LAM_PARAM_FULL_SHELL_CONSTITUTIVE_H
