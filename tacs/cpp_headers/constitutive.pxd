@@ -95,7 +95,8 @@ cdef extern from "TACSLamParamSmearedShellConstitutive.h":
         TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, TacsScalar, int, int, int,
                                       TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
+                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar,
+                                      TacsScalar)
 
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
@@ -127,7 +128,8 @@ cdef extern from "TACSLamParamSmearedShellConstitutive.h":
         TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, TacsScalar, int, int, int,
                                       TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
+                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar,
+                                      TacsScalar)
 
 cdef extern from "TACSLamParamFullShellConstitutive.h":
     cdef cppclass TACSLamParamFullShellConstitutive(TACSShellConstitutive):
@@ -139,6 +141,7 @@ cdef extern from "TACSLamParamFullShellConstitutive.h":
             TacsScalar, # tub
             int[], # lpNums
             double, # ksWeight
+            TacsScalar, # kcorr
         )
         void setLaminationParameters(TacsScalar[])
         void setKSWeight(double ksWeight)

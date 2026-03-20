@@ -30,7 +30,8 @@ TACSLamParamSmearedShellConstitutive::TACSLamParamSmearedShellConstitutive(
     TacsScalar _max_t, TacsScalar _f0, TacsScalar _f45, TacsScalar _f90,
     int _f0_num, int _f45_num, int _f90_num, TacsScalar _min_f0,
     TacsScalar _min_f45, TacsScalar _min_f90, TacsScalar _W1, TacsScalar _W3,
-    int _W1_num, int _W3_num, TacsScalar _ksWeight, TacsScalar _epsilon) {
+    int _W1_num, int _W3_num, TacsScalar _ksWeight, TacsScalar _epsilon,
+    TacsScalar _kcorr) {
   orthoPly = _orthoPly;
   orthoPly->incref();
 
@@ -102,7 +103,7 @@ TACSLamParamSmearedShellConstitutive::TACSLamParamSmearedShellConstitutive(
     epsilon = 0.0;
   }
 
-  kcorr = 5.0 / 6.0;
+  kcorr = _kcorr;
 
   // Calculate the invariant properties of the laminate
   TacsScalar Q11, Q12, Q22, Q44, Q55, Q66;

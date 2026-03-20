@@ -2037,6 +2037,8 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
         Weight for the KS aggregation function. Default is 30.0.
     epsilon : float, optional
         Regularization parameter. Default is 0.0.
+    kcorr : float, optional
+        Shear correction factor. Default is 5.0/6.0.
     """
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         cdef TacsScalar t = 1.0
@@ -2058,6 +2060,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
         cdef int W3_num = -3
         cdef TacsScalar ksWeight = 100.0
         cdef TacsScalar epsilon = 0.0
+        cdef TacsScalar kcorr = 5.0 / 6.0
 
         if 't' in kwargs:
             t = kwargs['t']
@@ -2101,11 +2104,14 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
             ksWeight = kwargs['ksWeight']
         if 'epsilon' in kwargs:
             epsilon = kwargs['epsilon']
+        if 'kcorr' in kwargs:
+            kcorr = kwargs['kcorr']
 
         self.cptr = new TACSLamParamSmearedShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
                                                       f0, f45, f90, f0_num, f45_num, f90_num,
                                                       min_f0, min_f45, min_f90,
-                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon)
+                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon,
+                                                      kcorr)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -2132,6 +2138,8 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         Array of laminate parameter design variable numbers.
     ksWeight : float, optional
         The KS aggregation weight for constraints (default is 30.0).
+    kcorr : float, optional
+        Shear correction factor. Default is 5.0/6.0.
     """
 
     cdef TACSLamParamFullShellConstitutive* lam_cptr
@@ -2144,7 +2152,8 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
             TacsScalar tlb,
             TacsScalar tub,
             np.ndarray[int, ndim=1, mode="c"] lpNums,
-            double ksWeight = 100.0
+            double ksWeight = 100.0,
+            TacsScalar kcorr = 5.0 / 6.0
             ):
 
         self.lam_cptr = new TACSLamParamFullShellConstitutive(
@@ -2154,7 +2163,8 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
             tlb,
             tub,
             <int*>lpNums.data,
-            ksWeight
+            ksWeight,
+            kcorr
         )
         self.ptr = self.cptr = self.lam_cptr
         self.ptr.incref()

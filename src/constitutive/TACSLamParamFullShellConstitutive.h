@@ -44,7 +44,8 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   TACSLamParamFullShellConstitutive(TACSOrthotropicPly *_orthoPly,
                                     TacsScalar _t, int _tNum, TacsScalar _tlb,
                                     TacsScalar _tub, int _lpNums[],
-                                    double _ksWeight);
+                                    double _ksWeight,
+                                    TacsScalar _kcorr = 5.0 / 6.0);
   ~TACSLamParamFullShellConstitutive();
 
   // -------------------------------------

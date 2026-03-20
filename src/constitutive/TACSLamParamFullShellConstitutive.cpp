@@ -27,7 +27,7 @@ const char *TACSLamParamFullShellConstitutive::constName =
 
 TACSLamParamFullShellConstitutive::TACSLamParamFullShellConstitutive(
     TACSOrthotropicPly *_orthoPly, TacsScalar _t, int _tNum, TacsScalar _tlb,
-    TacsScalar _tub, int _lpNums[], double _ksWeight) {
+    TacsScalar _tub, int _lpNums[], double _ksWeight, TacsScalar _kcorr) {
   orthoPly = _orthoPly;
   orthoPly->incref();
 
@@ -52,7 +52,7 @@ TACSLamParamFullShellConstitutive::TACSLamParamFullShellConstitutive(
 
   ksWeight = _ksWeight;
 
-  kcorr = 5.0 / 6.0;
+  kcorr = _kcorr;
 
   numFailAngles = 4;
 
