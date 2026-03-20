@@ -54,7 +54,7 @@ TACSLamParamFullShellConstitutive::TACSLamParamFullShellConstitutive(
 
   kcorr = _kcorr;
 
-  numFailAngles = 4;
+  numFailAngles = MIN_NUM_FAIL_ANGLES;
 
   // Calculate the invariant properties of the laminate
   TacsScalar Q11, Q12, Q22, Q44, Q55, Q66;
@@ -86,7 +86,7 @@ void TACSLamParamFullShellConstitutive::setLaminationParameters(
 
 // Set the number of failure angles to set
 void TACSLamParamFullShellConstitutive::setNumFailAngles(int _numFailAngles) {
-  if (_numFailAngles >= 4 && _numFailAngles <= MAX_NUM_FAIL_ANGLES) {
+  if (_numFailAngles >= MIN_NUM_FAIL_ANGLES && _numFailAngles <= MAX_NUM_FAIL_ANGLES) {
     numFailAngles = _numFailAngles;
   }
 }

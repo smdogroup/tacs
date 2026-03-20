@@ -39,6 +39,7 @@
 class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
  public:
   static const int NUM_LAM_PARAMS = 6;
+  static const int MIN_NUM_FAIL_ANGLES = 4;
   static const int MAX_NUM_FAIL_ANGLES = 12;
 
   TACSLamParamFullShellConstitutive(TACSOrthotropicPly *_orthoPly,
