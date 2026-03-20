@@ -159,7 +159,7 @@ class LamParamFullConstraint(TACSConstraint):
             conObj = elemObj.getConstitutive()
             if not isinstance(conObj, LamParamFullShellConstitutive):
                 raise TypeError(
-                    f"Constitutive object for compID {compID} is not of type LamParamFullShellConstitutive"
+                    f"Constitutive object for compID {compID} is not of type 'LamParamFullShellConstitutive', got {type(conObj).__name__}"
                 )
 
         # If dvIndices not specified, use all available DVs
