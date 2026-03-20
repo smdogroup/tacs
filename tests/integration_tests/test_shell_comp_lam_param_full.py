@@ -91,6 +91,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         Yc = 173.0e6
         S12 = 71.0e6
 
+        kcorr = 5.0 / 6.0
+
         # Plate geometry
         tplate = 0.005
         tMin = 0.0001
@@ -123,7 +125,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             # Lamination parameter design variable numbers
             lpNums = np.arange(0, 6, dtype=np.intc) + dvNum + 1
             con = constitutive.LamParamFullShellConstitutive(
-                ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0
+                ortho_ply, tplate, dvNum, tMin, tMax, lpNums, 100.0, kcorr
             )
 
             # Set initial lamination parameters and number of failure angles

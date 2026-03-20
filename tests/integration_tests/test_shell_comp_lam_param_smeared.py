@@ -91,6 +91,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         Yc = 173.0e6
         S12 = 71.0e6
 
+        kcorr = 5.0 / 6.0
+
         # Plate geometry
         tplate = 0.005
         tMin = 0.0001
@@ -143,6 +145,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 W3_num=lpNums[1],
                 ksWeight=100,
                 epsilon=0.0,
+                kcorr=kcorr,
             )
 
             refAxis = np.array([1.0, 1.0, 0.0])
