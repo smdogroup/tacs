@@ -19,9 +19,9 @@
 */
 
 #include "TACSElement.h"
+#include "TACSElementTypes.h"
 #include "TACSGeneralSpringConstitutive.h"
 #include "TACSSpringElementTransform.h"
-#include "TACSElementTypes.h"
 
 class TACSSpringElement : public TACSElement {
  public:
