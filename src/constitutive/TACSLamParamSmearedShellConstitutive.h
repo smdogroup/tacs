@@ -126,7 +126,7 @@ class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
                                 const TacsScalar weights[], TacsScalar sens[]);
 
   // Check that the matrix is positive definite (used for testing)
-  int checkDeterminant(const TacsScalar a[]);
+  bool checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],

@@ -257,7 +257,10 @@ int TACSLamParamSmearedShellConstitutive::getDesignVarRange(int elemIndex,
   return numDesignVars;
 }
 
-/*
+/*!
+  Use Sylvester's criterion to check that the matrix is positive definite.
+  A matrix is positive definite if and only if all its leading principal minors are positive.
+
   Check the determinant of the symmetric 3x3 matrix
   stored in the following format:
 
@@ -265,33 +268,40 @@ int TACSLamParamSmearedShellConstitutive::getDesignVarRange(int elemIndex,
   [a[1], a[3], a[4]]
   [a[2], a[4], a[5]]
 
-  The determinant is:
+  The full matrix determinant is:
 
   a[0]*(a[3]*a[5] - a[4]*a[4]) -
   a[1]*(a[1]*a[5] - a[2]*a[4]) +
   a[2]*(a[1]*a[4] - a[2]*a[3])
+
+  The 2x2 top-left minor is:
+  a[0]*a[3] - a[1]*a[1]
+
+  The 2x2 bottom-right minor is:
+  a[3]*a[5] - a[4]*a[4]
+
 */
-int TACSLamParamSmearedShellConstitutive::checkDeterminant(
-    const TacsScalar a[]) {
-  TacsScalar d =
+
+bool TACSLamParamSmearedShellConstitutive::checkDeterminant(const TacsScalar a[]) {
+  const TacsScalar d =
       (a[0] * (a[3] * a[5] - a[4] * a[4]) - a[1] * (a[1] * a[5] - a[2] * a[4]) +
        a[2] * (a[1] * a[4] - a[2] * a[3]));
 
   if (TacsRealPart(d) <= 0.0) {
-    return 0;
+    return false;
   }
 
-  d = a[0] * a[3] - a[1] * a[1];
-  if (TacsRealPart(d) <= 0.0) {
-    return 0;
+  const TacsScalar d1 = a[0] * a[3] - a[1] * a[1];
+  if (TacsRealPart(d1) <= 0.0) {
+    return false;
   }
 
-  d = a[3] * a[5] - a[4] * a[4];
-  if (TacsRealPart(d) <= 0.0) {
-    return 0;
+  const TacsScalar d2 = a[3] * a[5] - a[4] * a[4];
+  if (TacsRealPart(d2) <= 0.0) {
+    return false;
   }
 
-  return 1;
+  return true;
 }
 
 // Evaluate the mass per unit area
