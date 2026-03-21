@@ -270,8 +270,9 @@ int main(int argc, char *argv[]) {
       // to the connectivity that's just the third node repeated
       // This way triangles can be treated as degenerate quads from Tecplot's
       // perspective
-      else if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
-          ltype == TACS_TRI_CUBIC_ELEMENT) {
+      else if (ltype == TACS_TRI_ELEMENT ||
+               ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+               ltype == TACS_TRI_CUBIC_ELEMENT) {
         nconn = nconn + ntypes;
       }
       // Plot higher order tetrahedral elements as a single linear element
@@ -323,8 +324,9 @@ int main(int argc, char *argv[]) {
         bconn[1] = conn[ptr[k]];
       }
       // Add our dummy nodes for triangular elements
-      else if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
-          ltype == TACS_TRI_CUBIC_ELEMENT) {
+      else if (ltype == TACS_TRI_ELEMENT ||
+               ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+               ltype == TACS_TRI_CUBIC_ELEMENT) {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
         int *tri_conn = new int[nconn];
         TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]], btypes, tri_conn);
@@ -464,7 +466,7 @@ int main(int argc, char *argv[]) {
       // than the actual number of points.
       npts--;
 
-      // Skip empty components (e.g. single-node rigid elements)
+      // Skip empty components
       if (nelems == 0 || npts == 0) {
         continue;
       }
@@ -481,7 +483,8 @@ int main(int argc, char *argv[]) {
         zone_type = FEBRICK;
       } else {
         fprintf(stderr,
-                "Component %d has unsupported element types for f5totec %d\n", k, zone_btype);
+                "Component %d has unsupported element types for f5totec %d\n",
+                k, zone_btype);
         return (1);
       }
 
