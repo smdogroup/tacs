@@ -71,6 +71,8 @@ cdef extern from "TACSElementTypes.h":
         TACS_PENTA_ELEMENT
         TACS_PENTA_QUADRATIC_ELEMENT
         TACS_PENTA_CUBIC_ELEMENT
+        TACS_RBE2_ELEMENT
+        TACS_RBE3_ELEMENT
 
     enum ElementMatrixType:
         TACS_STIFFNESS_MATRIX

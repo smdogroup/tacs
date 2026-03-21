@@ -260,11 +260,17 @@ int main(int argc, char *argv[]) {
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
       TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
+      // For point elements we add a 2nd dummy node (same as first) to form a
+      // degenerate line segment so the point appears in Tecplot visualization
+      if (ltype == TACS_POINT_ELEMENT) {
+        ntypes = 1;
+        nconn = 2;
+      }
       // For triangular elements we'll add a 4th dummy node
       // to the connectivity that's just the third node repeated
       // This way triangles can be treated as degenerate quads from Tecplot's
       // perspective
-      if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+      else if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
           ltype == TACS_TRI_CUBIC_ELEMENT) {
         nconn = nconn + ntypes;
       }
@@ -273,6 +279,24 @@ int main(int argc, char *argv[]) {
                ltype == TACS_TETRA_CUBIC_ELEMENT) {
         nconn = 4;
         ntypes = 1;
+      }
+      // RBE2: nodes are [1 indep | N dep | N multiplier]. Skip multipliers.
+      else if (ltype == TACS_RBE2_ELEMENT) {
+        int nnodes = ptr[k + 1] - ptr[k];
+        int nphys = (nnodes + 1) / 2;  // 1 indep + N dep
+        if (nphys > 1) {
+          ntypes = nphys - 1;  // one line segment per dep node
+          nconn = 2 * ntypes;
+        }
+      }
+      // RBE3: nodes are [1 dep | M indep | 1 multiplier]. Skip multiplier.
+      else if (ltype == TACS_RBE3_ELEMENT) {
+        int nnodes = ptr[k + 1] - ptr[k];
+        int nphys = nnodes - 1;  // 1 dep + M indep
+        if (nphys > 1) {
+          ntypes = nphys - 1;  // one line segment per indep node
+          nconn = 2 * ntypes;
+        }
       }
       num_basic_elements += ntypes;
       basic_conn_size += nconn;
@@ -290,8 +314,16 @@ int main(int argc, char *argv[]) {
     for (int k = 0; k < num_elements; k++) {
       int ntypes = 0, nconn = 0;
       ElementLayout ltype = (ElementLayout)ltypes[k];
+      // For point elements add a degenerate line segment with the node repeated
+      if (ltype == TACS_POINT_ELEMENT) {
+        ntypes = 1;
+        nconn = 2;
+        btypes[0] = TACS_LINE_ELEMENT;
+        bconn[0] = conn[ptr[k]];
+        bconn[1] = conn[ptr[k]];
+      }
       // Add our dummy nodes for triangular elements
-      if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
+      else if (ltype == TACS_TRI_ELEMENT || ltype == TACS_TRI_QUADRATIC_ELEMENT ||
           ltype == TACS_TRI_CUBIC_ELEMENT) {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
         int *tri_conn = new int[nconn];
@@ -314,6 +346,36 @@ int main(int argc, char *argv[]) {
         nconn = 4;
         ntypes = 1;
         btypes[0] = TACS_TETRA_ELEMENT;
+      }
+      // RBE2: skip trailing N multiplier nodes; connect indep to each dep node
+      else if (ltype == TACS_RBE2_ELEMENT) {
+        int nnodes = ptr[k + 1] - ptr[k];
+        int nphys = (nnodes + 1) / 2;  // 1 indep + N dep
+        if (nphys > 1) {
+          ntypes = nphys - 1;
+          nconn = 2 * ntypes;
+          int ref_node = conn[ptr[k]];
+          for (int ii = 0; ii < ntypes; ii++) {
+            bconn[2 * ii] = ref_node;
+            bconn[2 * ii + 1] = conn[ptr[k] + 1 + ii];
+            btypes[ii] = TACS_LINE_ELEMENT;
+          }
+        }
+      }
+      // RBE3: skip trailing 1 multiplier node; connect dep to each indep node
+      else if (ltype == TACS_RBE3_ELEMENT) {
+        int nnodes = ptr[k + 1] - ptr[k];
+        int nphys = nnodes - 1;  // 1 dep + M indep
+        if (nphys > 1) {
+          ntypes = nphys - 1;
+          nconn = 2 * ntypes;
+          int ref_node = conn[ptr[k]];
+          for (int ii = 0; ii < ntypes; ii++) {
+            bconn[2 * ii] = ref_node;
+            bconn[2 * ii + 1] = conn[ptr[k] + 1 + ii];
+            btypes[ii] = TACS_LINE_ELEMENT;
+          }
+        }
       } else {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
         TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]], btypes, bconn);
@@ -402,6 +464,11 @@ int main(int argc, char *argv[]) {
       // than the actual number of points.
       npts--;
 
+      // Skip empty components (e.g. single-node rigid elements)
+      if (nelems == 0 || npts == 0) {
+        continue;
+      }
+
       // Set the element type to use
       ZoneType zone_type;
       if (zone_btype == TACS_LINE_ELEMENT) {
@@ -414,7 +481,7 @@ int main(int argc, char *argv[]) {
         zone_type = FEBRICK;
       } else {
         fprintf(stderr,
-                "Component %d has unsupported element types for f5totec\n", k);
+                "Component %d has unsupported element types for f5totec %d\n", k, zone_btype);
         return (1);
       }
 
