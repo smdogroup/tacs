@@ -806,9 +806,7 @@ class pyMeshLoader(BaseUI):
         massFamilyID = maxFamilyID + 2
 
         # Append RBE elements to element list, these are not setup by the user
-        has_rbe = False
         for rbe in self.bdfInfo.rigid_elements.values():
-            has_rbe = True
             if rbe.type == "RBE2":
                 self._addTACSRBE2(rbe, varsPerNode, rbeFamilyID)
             elif rbe.type == "RBE3":
@@ -819,19 +817,10 @@ class pyMeshLoader(BaseUI):
                 )
 
         # Append point mass elements to element list, these are not setup by the user
-        has_mass = False
         for massInfo in self.bdfInfo.masses.values():
-            has_mass = True
             # Find the dv dict for this mass element, if not found return empty
             dvDict = massDVs.get(massInfo.eid, {})
             self._addTACSMassElement(massInfo, varsPerNode, dvDict, massFamilyID)
-
-        # Register component descriptors for the new RBE and mass component slots
-        # so that getComponentDescripts() returns meaningful names for these zones.
-        if has_rbe:
-            self.compDescripts.append("RBE Elements")
-        if has_mass:
-            self.compDescripts.append("Mass Elements")
 
         # Check for any nodes that aren't attached to at least one element
         self._unattachedNodeCheck()
