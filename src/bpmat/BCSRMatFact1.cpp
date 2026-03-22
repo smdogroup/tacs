@@ -27,13 +27,13 @@
   non-zero pattern. The entries are over-written and all operations
   are performed in place. This is for an arbitrary block size.
 */
-void BCSRMatFactor1(BCSRMatData* data) {
+void BCSRMatFactor1(BCSRMatData *data) {
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
-  TacsScalar* A = data->A;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
+  TacsScalar *A = data->A;
 
   for (int i = 0; i < nrows; i++) {
     // variable = i
@@ -58,8 +58,8 @@ for row %d\n",
       int k = j + 1;
       int p = diag[cj] + 1;
 
-      TacsScalar* a = &A[k];
-      TacsScalar* b = &A[p];
+      TacsScalar *a = &A[k];
+      TacsScalar *b = &A[p];
 
       // The final entry for row: cols[j]
       int end = rowp[cj + 1];
@@ -95,18 +95,18 @@ for row %d\n",
 /*!
   Compute x = L_{B}^{-1} E
 */
-void BCSRMatFactorLower1(BCSRMatData* data, BCSRMatData* Edata) {
+void BCSRMatFactorLower1(BCSRMatData *data, BCSRMatData *Edata) {
   // Retrieve the data required from the matrix
   const int nrows = data->nrows;
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
-  const TacsScalar* A = data->A;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
+  const TacsScalar *A = data->A;
 
   // Retrieve the data required from the matrix
-  const int* erowp = Edata->rowp;
-  const int* ecols = Edata->cols;
-  TacsScalar* E = Edata->A;
+  const int *erowp = Edata->rowp;
+  const int *ecols = Edata->cols;
+  TacsScalar *E = Edata->A;
 
   for (int i = 0; i < nrows; i++) {
     // Scan from the first entry in the current row, towards the diagonal
@@ -114,15 +114,15 @@ void BCSRMatFactorLower1(BCSRMatData* data, BCSRMatData* Edata) {
 
     for (int j = rowp[i]; j < j_end; j++) {
       int cj = cols[j];
-      const TacsScalar* d = &A[j];
+      const TacsScalar *d = &A[j];
 
       int k = erowp[i];
       int k_end = erowp[i + 1];
-      TacsScalar* a = &E[k];
+      TacsScalar *a = &E[k];
 
       int p = erowp[cj];
       int p_end = erowp[cj + 1];
-      TacsScalar* b = &E[p];
+      TacsScalar *b = &E[p];
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for (; (p < p_end) && (k < k_end); p++) {
@@ -144,26 +144,26 @@ void BCSRMatFactorLower1(BCSRMatData* data, BCSRMatData* Edata) {
 /*!
   Compute x = F U_{B}^{-1}
 */
-void BCSRMatFactorUpper1(BCSRMatData* data, BCSRMatData* Fdata) {
+void BCSRMatFactorUpper1(BCSRMatData *data, BCSRMatData *Fdata) {
   // Retrieve the data required from the matrix
-  const int* rowp = data->rowp;
-  const int* cols = data->cols;
-  const int* diag = data->diag;
-  const TacsScalar* A = data->A;
+  const int *rowp = data->rowp;
+  const int *cols = data->cols;
+  const int *diag = data->diag;
+  const TacsScalar *A = data->A;
 
   // Retrieve the data required from the matrix
   const int nrows_f = Fdata->nrows;
-  const int* frowp = Fdata->rowp;
-  const int* fcols = Fdata->cols;
-  TacsScalar* F = Fdata->A;
+  const int *frowp = Fdata->rowp;
+  const int *fcols = Fdata->cols;
+  TacsScalar *F = Fdata->A;
 
   for (int i = 0; i < nrows_f; i++) {
     int j_end = frowp[i + 1];
 
     for (int j = frowp[i]; j < j_end; j++) {
       int cj = fcols[j];
-      TacsScalar* a = &F[j];
-      const TacsScalar* b = &A[diag[cj]];
+      TacsScalar *a = &F[j];
+      const TacsScalar *b = &A[diag[cj]];
 
       // D = A[j] * A[diag[cj]]
       TacsScalar d11 = a[0] * b[0];

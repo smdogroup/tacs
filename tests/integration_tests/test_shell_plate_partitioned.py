@@ -165,11 +165,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     def test_adjacency(self):
         adjCon = self.tacs_probs[-1]
 
-        expectedAdjacency = [(0, 1), (0, 3), (1, 2), (2, 3)]
-        adjacencyAsExpected = None
-        if adjCon.comm.rank == 0:
-            adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
-                adjCon.adjacentComps
+        with self.subTest(name="is_linear"):
+            self.assertTrue(
+                adjCon.isLinear, "Adjacency constraint should be linear wrt dvs"
             )
-        adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
-        self.assertTrue(adjacencyAsExpected)
+
+        with self.subTest(name="adjacency_as_expected"):
+            expectedAdjacency = [(0, 1), (0, 3), (1, 2), (2, 3)]
+            adjacencyAsExpected = None
+            if adjCon.comm.rank == 0:
+                adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
+                    adjCon.adjacentComps
+                )
+            adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
+            self.assertTrue(adjacencyAsExpected)

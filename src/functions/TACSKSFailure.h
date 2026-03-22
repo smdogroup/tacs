@@ -54,7 +54,13 @@
 */
 class TACSKSFailure : public TACSFunction {
  public:
-  enum KSFailureType { DISCRETE, CONTINUOUS, PNORM_DISCRETE, PNORM_CONTINUOUS };
+  enum KSFailureType {
+    DISCRETE,
+    CONTINUOUS,
+    PNORM_DISCRETE,
+    PNORM_CONTINUOUS,
+    DISCRETE_AVERAGE
+  };
 
   TACSKSFailure(TACSAssembler *_assembler, double ksWeight, double alpha = 1.0,
                 double safetyFactor = 1.0);
@@ -151,6 +157,15 @@ class TACSKSFailure : public TACSFunction {
 
   // Used for the case when this is used to evaluate the p-norm
   TacsScalar invPnorm;
+
+  /**
+     Compute the average failure value over all quadrature points
+  */
+  TacsScalar computeAverageFailure(int elemIndex, TACSElement *element,
+                                   double time, const TacsScalar Xpts[],
+                                   const TacsScalar vars[],
+                                   const TacsScalar dvars[],
+                                   const TacsScalar ddvars[]);
 };
 
 #endif  // TACS_KS_FAILURE_H

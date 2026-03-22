@@ -543,7 +543,8 @@ TACSBVecDepNodes *TACSBVec::getBVecDepNodes() { return dep_nodes; }
 /*
   Apply the Dirichlet boundary conditions to the vector
 */
-void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
+void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec,
+                        const TacsScalar lambda) {
   TacsScalar *uvals = NULL;
   if (tvec) {
     TACSBVec *vec = dynamic_cast<TACSBVec *>(tvec);
@@ -572,7 +573,7 @@ void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
           for (int k = 0; k < bsize; k++) {
             if (vars[i] & (1 << k)) {
               // Scan through the rows to be zeroed
-              x[var + k] = uvals[var + k] - values[bsize * i + k];
+              x[var + k] = uvals[var + k] - lambda * values[bsize * i + k];
             }
           }
         }
@@ -597,7 +598,7 @@ void TACSBVec::applyBCs(TACSBcMap *bcmap, TACSVec *tvec) {
 /*
   Set the boundary conditions values (both zero and non-zero values)
 */
-void TACSBVec::setBCs(TACSBcMap *bcmap) {
+void TACSBVec::setBCs(TACSBcMap *bcmap, const TacsScalar lambda) {
   // apply the boundary conditions
   if (x) {
     int mpi_rank;
@@ -619,7 +620,7 @@ void TACSBVec::setBCs(TACSBcMap *bcmap) {
         // Scan through the rows to be set
         for (int k = 0; k < bsize; k++) {
           if (vars[i] & (1 << k)) {
-            x[var + k] = values[bsize * i + k];
+            x[var + k] = lambda * values[bsize * i + k];
           }
         }
       }
