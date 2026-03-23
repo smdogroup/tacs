@@ -153,11 +153,9 @@ class PyTACSTestCase:
                             prob.res, reactionsVec
                         )
 
-                        reactions = np.real(
-                            self.fea_assembler.localToGlobalArray(
-                                reactionsVec.getArray()
-                            ).reshape(-1, self.fea_assembler.varsPerNode)
-                        )
+                        reactions = self.fea_assembler.localToGlobalArray(
+                            reactionsVec.getArray()
+                        ).reshape(-1, self.fea_assembler.varsPerNode)
 
                         # Get applied forces and moments on non-constrained DOFs
                         appliedVec = self.fea_assembler.createVec(asBVec=True)
@@ -165,11 +163,9 @@ class PyTACSTestCase:
                         prob.getResidual(appliedVec)
                         self.fea_assembler.assembler.applyBCs(appliedVec)
 
-                        applied = np.real(
-                            self.fea_assembler.localToGlobalArray(
-                                appliedVec.getArray()
-                            ).reshape(-1, self.fea_assembler.varsPerNode)
-                        )
+                        applied = self.fea_assembler.localToGlobalArray(
+                            appliedVec.getArray()
+                        ).reshape(-1, self.fea_assembler.varsPerNode)
 
                         # Sum applied and reaction forces and moments
                         totalReaction = np.sum(reactions, axis=0)
@@ -183,8 +179,8 @@ class PyTACSTestCase:
                             )
 
                         np.testing.assert_allclose(
-                            totalReaction,
-                            -totalApplied,
+                            np.real(totalReaction),
+                            np.real(-totalApplied),
                             rtol=self.rtol,
                             atol=self.atol,
                             err_msg=f"Equilibrium check failed for problem {prob.name}, total reaction {totalReaction}, total applied {totalApplied}",
