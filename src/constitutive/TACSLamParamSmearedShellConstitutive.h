@@ -121,16 +121,16 @@ class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
 
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar *_max);
+                      TacsScalar *_max) const;
   void computeFailureStrainSens(const TacsScalar strain[],
-                                const TacsScalar weights[], TacsScalar sens[]);
+                                const TacsScalar weights[], TacsScalar sens[]) const;
 
   // Check that the matrix is positive definite (used for testing)
-  bool checkDeterminant(const TacsScalar a[]);
+  static bool checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar *drill);
+                    TacsScalar As[], TacsScalar *drill) const;
 
   // The number of design variables
   int numDesignVars;

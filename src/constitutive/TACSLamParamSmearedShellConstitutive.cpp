@@ -323,7 +323,7 @@ void TACSLamParamSmearedShellConstitutive::addDensityDVSens(
 void TACSLamParamSmearedShellConstitutive::evalMassMoments(
     int elemIndex, const double pt[], const TacsScalar X[],
     TacsScalar moments[]) {
-  TacsScalar rho = orthoPly->getDensity();
+  const TacsScalar rho = orthoPly->getDensity();
   moments[0] = rho * t;
   moments[1] = 0.0;
   moments[2] = rho * t * t * t / 12.0;
@@ -334,7 +334,7 @@ void TACSLamParamSmearedShellConstitutive::addMassMomentsDVSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   if (tNum >= 0) {
-    TacsScalar rho = orthoPly->getDensity();
+    const TacsScalar rho = orthoPly->getDensity();
     dfdx[0] += rho * (scale[0] + 0.25 * t * t * scale[2]);
   }
 }
@@ -350,11 +350,11 @@ void TACSLamParamSmearedShellConstitutive::getStiffness(TacsScalar A[],
                                                         TacsScalar B[],
                                                         TacsScalar D[],
                                                         TacsScalar As[],
-                                                        TacsScalar *drill) {
+                                                        TacsScalar *drill) const {
   // Calculate the in-plane stiffness using the lamination
   // parameters
-  TacsScalar V1 = f0 - f90;
-  TacsScalar V3 = f0 + f90 - f45;
+  const TacsScalar V1 = f0 - f90;
+  const TacsScalar V3 = f0 + f90 - f45;
 
   A[0] = t * (U1 + U2 * V1 + U3 * V3);
   A[1] = t * (U4 - U3 * V3);
@@ -371,7 +371,7 @@ void TACSLamParamSmearedShellConstitutive::getStiffness(TacsScalar A[],
 
   // Calculate the bending stiffness using the lamination
   // parameters
-  TacsScalar p = t * t * t / 12.0;
+  const TacsScalar p = t * t * t / 12.0;
   D[0] = p * (U1 + U2 * W1 + U3 * W3);
   D[1] = p * (U4 - U3 * W3);
   D[3] = p * (U1 - U2 * W1 + U3 * W3);
@@ -425,8 +425,8 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
   TacsScalar sA[6], sD[6];
 
   if (tNum >= 0) {
-    TacsScalar V1 = f0 - f90;
-    TacsScalar V3 = f0 + f90 - f45;
+    const TacsScalar V1 = f0 - f90;
+    const TacsScalar V3 = f0 + f90 - f45;
     sA[0] = (U1 + U2 * V1 + U3 * V3);
     sA[1] = (U4 - U3 * V3);
     sA[2] = 0.0;
@@ -435,15 +435,15 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
     sA[5] = (U5 - U3 * V3);
     dfdx[0] += scale * mat3x3SymmInner(sA, &psi[0], &e[0]);
 
-    TacsScalar sAs0 = kcorr * (U6 + U7 * V1);
-    TacsScalar sAs2 = kcorr * (U6 - U7 * V1);
+    const TacsScalar sAs0 = kcorr * (U6 + U7 * V1);
+    const TacsScalar sAs2 = kcorr * (U6 - U7 * V1);
     dfdx[0] +=
         scale * (sAs0 * psi[6] * e[6] + sAs2 * psi[7] * e[7] +
                  0.5 * DRILLING_REGULARIZATION * (sAs0 + sAs2) * psi[8] * e[8]);
 
     // Calculate the bending stiffness using the lamination
     // parameters
-    TacsScalar p = t * t / 4.0;
+    const TacsScalar p = t * t / 4.0;
     sD[0] = p * (U1 + U2 * W1 + U3 * W3);
     sD[1] = p * (U4 - U3 * W3);
     sD[2] = 0.0;
@@ -462,8 +462,8 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
     sA[5] = -t * U3;
     dfdx[0] += scale * mat3x3SymmInner(sA, &psi[0], &e[0]);
 
-    TacsScalar sAs0 = t * kcorr * U7;
-    TacsScalar sAs2 = -t * kcorr * U7;
+    const TacsScalar sAs0 = t * kcorr * U7;
+    const TacsScalar sAs2 = -t * kcorr * U7;
     dfdx[0] +=
         scale * (sAs0 * psi[6] * e[6] + sAs2 * psi[7] * e[7] +
                  0.5 * DRILLING_REGULARIZATION * (sAs0 + sAs2) * psi[8] * e[8]);
@@ -489,22 +489,22 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
     sA[5] = -t * U3;
     dfdx[0] += scale * mat3x3SymmInner(sA, &psi[0], &e[0]);
 
-    TacsScalar sAs0 = -t * kcorr * U7;
-    TacsScalar sAs2 = t * kcorr * U7;
+    const TacsScalar sAs0 = -t * kcorr * U7;
+    const TacsScalar sAs2 = t * kcorr * U7;
     dfdx[0] +=
         scale * (sAs0 * psi[6] * e[6] + sAs2 * psi[7] * e[7] +
                  0.5 * DRILLING_REGULARIZATION * (sAs0 + sAs2) * psi[8] * e[8]);
     dfdx++;
   }
   if (nW1 >= 0) {
-    TacsScalar p = t * t * t / 12.0;
+    const TacsScalar p = t * t * t / 12.0;
     sD[0] = p * U2;
     sD[3] = -p * U2;
     dfdx[0] += scale * (sD[0] * psi[3] * e[3] + sD[3] * psi[4] * e[4]);
     dfdx++;
   }
   if (nW3 >= 0) {
-    TacsScalar p = t * t * t / 12.0;
+    const TacsScalar p = t * t * t / 12.0;
     sD[0] = p * U3;
     sD[1] = -p * U3;
     sD[2] = 0.0;
@@ -527,7 +527,7 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
   Note that the calculations are performed using radians.
 */
 void TACSLamParamSmearedShellConstitutive::computeFailure(
-    const TacsScalar strain[], TacsScalar fvals[], TacsScalar *_max) {
+    const TacsScalar strain[], TacsScalar fvals[], TacsScalar *_max) const{
   TacsScalar max = 0.0;
   for (int k = 0; k < NUM_FAIL_ANGLES; k++) {
     TacsScalar angle = 0.0, factor = 1.0;
@@ -575,7 +575,7 @@ void TACSLamParamSmearedShellConstitutive::computeFailure(
   accumulate the weighted sensitivity into the array 'sens'
 */
 void TACSLamParamSmearedShellConstitutive::computeFailureStrainSens(
-    const TacsScalar strain[], const TacsScalar weights[], TacsScalar sens[]) {
+    const TacsScalar strain[], const TacsScalar weights[], TacsScalar sens[]) const {
   sens[0] = sens[1] = sens[2] = sens[3] = 0.0;
   sens[4] = sens[5] = sens[6] = sens[7] = 0.0;
   sens[8] = 0.0;
@@ -664,7 +664,7 @@ TacsScalar TACSLamParamSmearedShellConstitutive::evalFailureStrainSens(
     ks_sum += weights[k];
   }
 
-  TacsScalar inv_ks_sum = 1.0 / ks_sum;
+  const TacsScalar inv_ks_sum = 1.0 / ks_sum;
   for (int k = 0; k < 2 * NUM_FAIL_ANGLES; k++) {
     weights[k] *= inv_ks_sum;
   }
@@ -691,7 +691,7 @@ void TACSLamParamSmearedShellConstitutive::addFailureDVSens(
     ks_sum += weights[k];
   }
 
-  TacsScalar inv_ks_sum = 1.0 / ks_sum;
+  const TacsScalar inv_ks_sum = 1.0 / ks_sum;
   for (int k = 0; k < 2 * NUM_FAIL_ANGLES; k++) {
     weights[k] *= inv_ks_sum;
   }
@@ -743,19 +743,19 @@ void TACSLamParamSmearedShellConstitutive::addFailureDVSens(
       TacsScalar angle = 0.0, dfactor = 0.0;
       if (k == 0) {
         angle = 0.0;
-        TacsScalar d = 1.0 / (f0 + epsilon);
+        const TacsScalar d = 1.0 / (f0 + epsilon);
         dfactor = scale * epsilon * d * d;
       } else if (k == 1) {
         angle = 0.25 * M_PI;
-        TacsScalar d = 1.0 / (f45 + epsilon);
+        const TacsScalar d = 1.0 / (f45 + epsilon);
         dfactor = scale * epsilon * d * d;
       } else if (k == 2) {
         angle = -0.25 * M_PI;
-        TacsScalar d = 1.0 / (f45 + epsilon);
+        const TacsScalar d = 1.0 / (f45 + epsilon);
         dfactor = scale * epsilon * d * d;
       } else {
         angle = 0.5 * M_PI;
-        TacsScalar d = 1.0 / (f90 + epsilon);
+        const TacsScalar d = 1.0 / (f90 + epsilon);
         dfactor = scale * epsilon * d * d;
       }
 
