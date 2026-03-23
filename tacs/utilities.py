@@ -5,10 +5,41 @@ import time
 from typing import Any, Dict, List, Optional, Type, Iterable, Union
 import pickle
 import warnings
+from functools import wraps
 
 from mpi4py import MPI
 import numpy as np
 import tacs.TACS
+
+
+# Define decorator functions for methods that must be called before initialize
+def preinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is not None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a pre-initialize method. "
+                "It may only be called before the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
+
+
+# Define decorator functions for methods that must be called after initialize
+def postinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a post-initialize method. "
+                "It may only be called after the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
 
 
 class BaseUI:

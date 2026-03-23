@@ -28,7 +28,6 @@ import copy
 import numbers
 import time
 import warnings
-from functools import wraps
 
 import numpy as np
 import pyNastran.bdf as pn
@@ -42,39 +41,9 @@ import tacs.functions
 import tacs.problems
 import tacs.TACS
 from tacs.pymeshloader import pyMeshLoader
-from tacs.utilities import BaseUI
+from tacs.utilities import BaseUI, preinitialize_method, postinitialize_method
 
 warnings.simplefilter("default")
-
-
-# Define decorator functions for methods that must be called before initialize
-def preinitialize_method(method):
-    @wraps(method)
-    def wrapped_method(self, *args, **kwargs):
-        if self.assembler is not None:
-            raise self._TACSError(
-                f"`{method.__name__}` is a pre-initialize method. "
-                "It may only be called before the 'initialize' method has been called."
-            )
-        else:
-            return method(self, *args, **kwargs)
-
-    return wrapped_method
-
-
-# Define decorator functions for methods that must be called after initialize
-def postinitialize_method(method):
-    @wraps(method)
-    def wrapped_method(self, *args, **kwargs):
-        if self.assembler is None:
-            raise self._TACSError(
-                f"`{method.__name__}` is a post-initialize method. "
-                "It may only be called after the 'initialize' method has been called."
-            )
-        else:
-            return method(self, *args, **kwargs)
-
-    return wrapped_method
 
 
 class pyTACS(BaseUI):
