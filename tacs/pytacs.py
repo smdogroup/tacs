@@ -2402,6 +2402,10 @@ class pyTACS(BaseUI):
         for i in range(len(self.fam)):
             self.outputViewer.setComponentName(i, self.fam[i])
 
+        # Set asside last two components for RBE and mass element visualization
+        self.outputViewer.setComponentName(len(self.fam), "Rigid Body Elements")
+        self.outputViewer.setComponentName(len(self.fam) + 1, "Point Mass Elements")
+
     def _getCompIDs(self, op, *inList):
         """Internal method to return the component IDs mathing
         information in inList"""

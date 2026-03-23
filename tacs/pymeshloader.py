@@ -796,12 +796,21 @@ class pyMeshLoader(BaseUI):
         """
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
+        # Find the maximum component number currently assigned to any element object.
+        # This is set by pytacs via setComponentNum(compFam[i]).
+        maxFamilyID = max(
+            (elem.getComponentNum() for elem in self.elemObjects if elem is not None),
+            default=-1,
+        )
+        rbeFamilyID = maxFamilyID + 1
+        massFamilyID = maxFamilyID + 2
+
         # Append RBE elements to element list, these are not setup by the user
         for rbe in self.bdfInfo.rigid_elements.values():
             if rbe.type == "RBE2":
-                self._addTACSRBE2(rbe, varsPerNode)
+                self._addTACSRBE2(rbe, varsPerNode, rbeFamilyID)
             elif rbe.type == "RBE3":
-                self._addTACSRBE3(rbe, varsPerNode)
+                self._addTACSRBE3(rbe, varsPerNode, rbeFamilyID)
             else:
                 raise NotImplementedError(
                     f"Rigid element of type '{rbe.type}' is not supported"
@@ -811,7 +820,7 @@ class pyMeshLoader(BaseUI):
         for massInfo in self.bdfInfo.masses.values():
             # Find the dv dict for this mass element, if not found return empty
             dvDict = massDVs.get(massInfo.eid, {})
-            self._addTACSMassElement(massInfo, varsPerNode, dvDict)
+            self._addTACSMassElement(massInfo, varsPerNode, dvDict, massFamilyID)
 
         # Check for any nodes that aren't attached to at least one element
         self._unattachedNodeCheck()
@@ -943,7 +952,7 @@ class pyMeshLoader(BaseUI):
         else:
             return False
 
-    def _addTACSRBE2(self, rbeInfo, varsPerNode):
+    def _addTACSRBE2(self, rbeInfo, varsPerNode, familyID):
         """
         Method to automatically set up RBE2 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -955,6 +964,9 @@ class pyMeshLoader(BaseUI):
 
         varsPerNode : int
             Number of variables per node for the model.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         indepNode = rbeInfo.independent_nodes
         depNodes = []
@@ -989,11 +1001,12 @@ class pyMeshLoader(BaseUI):
         rbeObj = tacs.elements.RBE2(
             nTotalNodes, np.array(depConstrainedDOFs, dtype=np.intc)
         )
+        rbeObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
         return
 
-    def _addTACSRBE3(self, rbeInfo, varsPerNode):
+    def _addTACSRBE3(self, rbeInfo, varsPerNode, familyID):
         """
         Method to automatically set up RBE3 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -1005,6 +1018,9 @@ class pyMeshLoader(BaseUI):
 
         varsPerNode : int
             Number of variables per node for the model.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         depNode = rbeInfo.dependent_nodes
         depConstrainedDOFs = self.dofStringToList(rbeInfo.refc, varsPerNode)
@@ -1047,11 +1063,12 @@ class pyMeshLoader(BaseUI):
             np.array(indepWeights),
             np.array(indepConstrainedDOFs, dtype=np.intc),
         )
+        rbeObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
         return
 
-    def _addTACSMassElement(self, massInfo, varsPerNode, dvDict):
+    def _addTACSMassElement(self, massInfo, varsPerNode, dvDict, familyID):
         """
         Method to automatically set up TACS mass elements from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -1066,6 +1083,9 @@ class pyMeshLoader(BaseUI):
 
         dvDict : dict
             Dictionary holding dv info for point mass.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         if massInfo.type == "CONM2":
             m = massInfo.mass
@@ -1107,6 +1127,7 @@ class pyMeshLoader(BaseUI):
         self.elemConnectivityPointer.append(self.elemConnectivityPointer[-1] + 1)
         # Create tacs object for mass element
         massObj = tacs.elements.MassElement(con)
+        massObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(massObj)
         return
