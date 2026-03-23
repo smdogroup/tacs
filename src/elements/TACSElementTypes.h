@@ -93,7 +93,17 @@ enum ElementLayout {
 
   TACS_PENTA_ELEMENT = 21,
   TACS_PENTA_QUADRATIC_ELEMENT = 22,
-  TACS_PENTA_CUBIC_ELEMENT = 23
+  TACS_PENTA_CUBIC_ELEMENT = 23,
+
+  // RBE2: nodes are [1 indep | N dep | N multiplier].
+  // Visualized as line segments from the indep node to each dep node,
+  // excluding the trailing N multiplier nodes.
+  TACS_RBE2_ELEMENT = 24,
+
+  // RBE3: nodes are [1 dep | M indep | 1 multiplier].
+  // Visualized as line segments from the dep node to each indep node,
+  // excluding the trailing 1 multiplier node.
+  TACS_RBE3_ELEMENT = 25
 };
 
 /**

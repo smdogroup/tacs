@@ -37,6 +37,7 @@ class TACSRBE2 : public TACSElement {
   int getNumNodes();
   int numExtras();
   ElementType getElementType();
+  ElementLayout getLayoutType();
   int getDesignVarsPerNode() { return 0; }
   int getNumQuadraturePoints() { return 0; }
   double getQuadratureWeight(int n) { return 0.0; }

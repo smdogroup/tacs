@@ -100,6 +100,8 @@ int TACSRBE2::numExtras() { return NUM_EXTRAS; }
 
 ElementType TACSRBE2::getElementType() { return TACS_RIGID_ELEMENT; }
 
+ElementLayout TACSRBE2::getLayoutType() { return TACS_RBE2_ELEMENT; }
+
 /*
   Returns the multiplier index
 void TACSRBE2::getMultiplierIndex( int *multiplier ){
