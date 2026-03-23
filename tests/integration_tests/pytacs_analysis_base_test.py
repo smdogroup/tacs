@@ -153,9 +153,11 @@ class PyTACSTestCase:
                             prob.res, reactionsVec
                         )
 
-                        reactions = self.fea_assembler.localToGlobalArray(
-                            reactionsVec.getArray()
-                        ).reshape(-1, self.fea_assembler.varsPerNode)
+                        reactions = np.real(
+                            self.fea_assembler.localToGlobalArray(
+                                reactionsVec.getArray()
+                            ).reshape(-1, self.fea_assembler.varsPerNode)
+                        )
 
                         # Get applied forces and moments on non-constrained DOFs
                         appliedVec = self.fea_assembler.createVec(asBVec=True)
@@ -163,9 +165,11 @@ class PyTACSTestCase:
                         prob.getResidual(appliedVec)
                         self.fea_assembler.assembler.applyBCs(appliedVec)
 
-                        applied = self.fea_assembler.localToGlobalArray(
-                            appliedVec.getArray()
-                        ).reshape(-1, self.fea_assembler.varsPerNode)
+                        applied = np.real(
+                            self.fea_assembler.localToGlobalArray(
+                                appliedVec.getArray()
+                            ).reshape(-1, self.fea_assembler.varsPerNode)
+                        )
 
                         # Sum applied and reaction forces and moments
                         totalReaction = np.sum(reactions, axis=0)
