@@ -19,6 +19,7 @@
 */
 
 #include "TACSElement.h"
+#include "TACSElementTypes.h"
 #include "TACSGeneralSpringConstitutive.h"
 #include "TACSSpringElementTransform.h"
 
@@ -107,6 +108,8 @@ class TACSSpringElement : public TACSElement {
                                const TacsScalar dfdq[], TacsScalar dfdXpts[]) {
     return;
   }
+
+  ElementLayout getLayoutType() { return TACS_LINE_ELEMENT; }
 
  private:
   void transformVarsGlobalToLocal(const TacsScalar t[],
