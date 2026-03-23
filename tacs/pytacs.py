@@ -31,7 +31,6 @@ import warnings
 
 import numpy as np
 import pyNastran.bdf as pn
-from mpi4py import MPI
 from pyNastran.bdf.mesh_utils.convert import scale_model
 
 import tacs.constitutive
@@ -747,70 +746,16 @@ class pyTACS(BaseUI):
 
     def globalToLocalArray(self, globalArray):
         """
-        Given an array containing values for all nodes in the original
-        (global) ordering, return an array containing the values for the
-        nodes on this processor in the reordered (local) ordering.
-
-        Parameters
-        ----------
-        globalArray : numpy.ndarray
-            Array containing values for all nodes in the original ordering.
-            Can be 1-D with length ``numNodes * N`` or 2-D with shape
-            ``(numNodes, N)``.
-
-        Returns
-        -------
-        numpy.ndarray (1-D with length ``numLocalNodes * N``)
-            Array containing values for the nodes on this processor in the
-            reordered ordering.
+        See :meth:`pyMeshLoader.globalToLocalArray <tacs.pymeshloader.pyMeshLoader.globalToLocalArray>`.
         """
-        numNodes = self.meshLoader.getNumBDFNodes()
-        globalArray = np.asarray(globalArray).reshape((numNodes, -1))
-        varsPerNode = globalArray.shape[1]
-        globalToLocalMap = self.meshLoader.getGlobalToLocalNodeIDDict()
-        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
-        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
-        numLocalNodes = len(localIDs)
-        localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
-        localArray[localIDs, :] = globalArray[globalIDs, :]
-        return localArray.flatten()
+        return self.meshLoader.globalToLocalArray(globalArray)
 
     @postinitialize_method
     def localToGlobalArray(self, localArray):
         """
-        Given an array containing values for the nodes on this processor
-        in the reordered (local) ordering, return an array containing
-        values for all nodes in the original (global) ordering.
-
-        The results are summed across all processors via ``Allreduce`` so
-        that every rank holds the complete global array on return.
-
-        Parameters
-        ----------
-        localArray : numpy.ndarray
-            Array containing values for the nodes on this processor in the
-            reordered ordering.  Can be 1-D with length
-            ``numLocalNodes * N`` or 2-D with shape ``(numLocalNodes, N)``.
-
-        Returns
-        -------
-        numpy.ndarray (1-D with length ``numNodes * N``)
-            Array containing values for all nodes in the original ordering.
+        See :meth:`pyMeshLoader.localToGlobalArray <tacs.pymeshloader.pyMeshLoader.localToGlobalArray>`.
         """
-        numNodes = self.meshLoader.getNumBDFNodes()
-        numLocalNodes = self.assembler.getNumOwnedNodes()
-        localArray = np.asarray(localArray).reshape((numLocalNodes, -1))
-        varsPerNode = localArray.shape[1]
-        globalToLocalMap = self.meshLoader.getGlobalToLocalNodeIDDict()
-        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
-        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
-        globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
-        globalArray[globalIDs, :] = localArray[localIDs, :]
-
-        # Sum the arrays across all procs so that every proc has the full global array
-        self.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
-
-        return globalArray.flatten()
+        return self.meshLoader.localToGlobalArray(localArray)
 
     def initialize(self, elemCallBack=None):
         """

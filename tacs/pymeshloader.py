@@ -15,11 +15,12 @@ import itertools as it
 
 import numpy as np
 import pyNastran.bdf.bdf as pn
+from mpi4py import MPI
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
-from tacs.utilities import BaseUI
+from tacs.utilities import BaseUI, postinitialize_method
 
 
 class pyMeshLoader(BaseUI):
@@ -421,6 +422,73 @@ class pyMeshLoader(BaseUI):
             List holding description strings for each component.
         """
         return self.compDescripts
+
+    def globalToLocalArray(self, globalArray):
+        """
+        Given an array containing values for all nodes in the original
+        (global) ordering, return an array containing the values for the
+        nodes on this processor in the reordered (local) ordering.
+
+        Parameters
+        ----------
+        globalArray : numpy.ndarray
+            Array containing values for all nodes in the original ordering.
+            Can be 1-D with length ``numNodes * N`` or 2-D with shape
+            ``(numNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numLocalNodes * N``)
+            Array containing values for the nodes on this processor in the
+            reordered ordering.
+        """
+        numNodes = self.getNumBDFNodes()
+        globalArray = np.asarray(globalArray).reshape((numNodes, -1))
+        varsPerNode = globalArray.shape[1]
+        globalToLocalMap = self.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        numLocalNodes = len(localIDs)
+        localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
+        localArray[localIDs, :] = globalArray[globalIDs, :]
+        return localArray.flatten()
+
+    @postinitialize_method
+    def localToGlobalArray(self, localArray):
+        """
+        Given an array containing values for the nodes on this processor
+        in the reordered (local) ordering, return an array containing
+        values for all nodes in the original (global) ordering.
+
+        The results are summed across all processors via ``Allreduce`` so
+        that every rank holds the complete global array on return.
+
+        Parameters
+        ----------
+        localArray : numpy.ndarray
+            Array containing values for the nodes on this processor in the
+            reordered ordering.  Can be 1-D with length
+            ``numLocalNodes * N`` or 2-D with shape ``(numLocalNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numNodes * N``)
+            Array containing values for all nodes in the original ordering.
+        """
+        numNodes = self.getNumBDFNodes()
+        numLocalNodes = self.assembler.getNumOwnedNodes()
+        localArray = np.asarray(localArray).reshape((numLocalNodes, -1))
+        varsPerNode = localArray.shape[1]
+        globalToLocalMap = self.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
+        globalArray[globalIDs, :] = localArray[localIDs, :]
+
+        # Sum the arrays across all procs so that every proc has the full global array
+        self.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
+
+        return globalArray.flatten()
 
     def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
         """
