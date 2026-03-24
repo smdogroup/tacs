@@ -2190,7 +2190,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
         cdef TacsScalar W3 = 0.0
         cdef int W1_num = -1
         cdef int W3_num = -3
-        cdef TacsScalar ksWeight = 100.0
+        cdef double ksWeight = 100.0
         cdef TacsScalar epsilon = 0.0
         cdef TacsScalar kcorr = 5.0 / 6.0
 
