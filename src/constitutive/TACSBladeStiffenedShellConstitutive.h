@@ -397,6 +397,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // Get the object name
   const char *getObjectName() { return constName; }
 
+  // Get the shear correction factor
+  TacsScalar getShearCorrectionFactor() { return kcorr; }
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);

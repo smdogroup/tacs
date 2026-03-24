@@ -785,7 +785,7 @@ cdef class ShellConstitutive(Constitutive):
         As = C[18:21]  # Last entry 22 is the drill factor, which we are not using here
 
         t, tFact, rho = self.getThicknessProperties()
-        kcorr = 5.0 / 6.0  # Shear correction factor
+        kcorr = self.cptr.getShearCorrectionFactor()
         t1 = t * kcorr
         t2 = t**2
         t3 = t**3 * tFact
@@ -852,6 +852,7 @@ cdef class ShellConstitutive(Constitutive):
             pyNastran card holding property information.
         """
         t, tFact, rho = self.getThicknessProperties()
+        kcorr = self.cptr.getShearCorrectionFactor()
 
         card = nastran_cards.properties.shell.PSHELL(
             pid=self.nastranID,
@@ -860,7 +861,7 @@ cdef class ShellConstitutive(Constitutive):
             mid2=self.customMatProps[1].getNastranID(),
             twelveIt3=np.real(tFact),
             mid3=self.customMatProps[2].getNastranID(),
-            tst=5.0 / 6.0,
+            tst=np.real(kcorr),
             mid4=self.customMatProps[3].getNastranID(),
         )
         return card

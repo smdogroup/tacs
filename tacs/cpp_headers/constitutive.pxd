@@ -76,6 +76,7 @@ cdef extern from "TACSSolidConstitutive.h":
 cdef extern from "TACSShellConstitutive.h":
     cdef cppclass TACSShellConstitutive(TACSConstitutive):
         void setDrillingRegularization(double)
+        TacsScalar getShearCorrectionFactor()
         TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
         void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
         void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
