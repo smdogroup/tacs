@@ -94,14 +94,6 @@ cdef extern from "TACSCompositeShellConstitutive.h":
         void getPlyAngles(TacsScalar*);
         TacsScalar getThicknessOffset();
 
-cdef extern from "TACSLamParamSmearedShellConstitutive.h":
-    cdef cppclass TACSLamParamSmearedShellConstitutive(TACSShellConstitutive):
-        TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, TacsScalar, int, int, int,
-                                      TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar,
-                                      TacsScalar)
-
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
         TACSIsoShellConstitutive(TACSMaterialProperties*, TacsScalar, int,
@@ -132,7 +124,7 @@ cdef extern from "TACSLamParamSmearedShellConstitutive.h":
         TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, TacsScalar, int, int, int,
                                       TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar,
+                                      TacsScalar, TacsScalar, int, int, double, TacsScalar,
                                       TacsScalar)
 
 cdef extern from "TACSLamParamFullShellConstitutive.h":
