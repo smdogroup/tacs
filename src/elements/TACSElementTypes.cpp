@@ -695,6 +695,8 @@ void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int *ntypes,
 
   switch (ltype) {
     case TACS_POINT_ELEMENT:
+      *ntypes = 1;
+      *nconn = 1;
       break;
 
     case TACS_LINE_ELEMENT:
@@ -789,12 +791,16 @@ void TacsConvertVisLayoutToBasicCount(ElementLayout ltype, int *ntypes,
 */
 void TacsConvertVisLayoutToBasic(ElementLayout ltype, const int conn[],
                                  int basic_ltypes[], int basic_conn[]) {
-  if (ltype == TACS_LINE_ELEMENT || ltype == TACS_LINE_QUADRATIC_ELEMENT ||
-      ltype == TACS_LINE_CUBIC_ELEMENT) {
+  if (ltype == TACS_POINT_ELEMENT) {
+    basic_ltypes[0] = TACS_POINT_ELEMENT;
+    basic_conn[0] = conn[0];
+  } else if (ltype == TACS_LINE_ELEMENT ||
+             ltype == TACS_LINE_QUADRATIC_ELEMENT ||
+             ltype == TACS_LINE_CUBIC_ELEMENT) {
     int order = 2;
-    if (ltype == TACS_QUAD_QUADRATIC_ELEMENT) {
+    if (ltype == TACS_LINE_QUADRATIC_ELEMENT) {
       order = 3;
-    } else if (ltype == TACS_QUAD_CUBIC_ELEMENT) {
+    } else if (ltype == TACS_LINE_CUBIC_ELEMENT) {
       order = 4;
     }
 

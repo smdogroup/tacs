@@ -118,6 +118,8 @@ HEXA_QUINTIC_ELEMENT = TACS_HEXA_QUINTIC_ELEMENT
 PENTA_ELEMENT = TACS_PENTA_ELEMENT
 PENTA_QUADRATIC_ELEMENT = TACS_PENTA_QUADRATIC_ELEMENT
 PENTA_CUBIC_ELEMENT = TACS_PENTA_CUBIC_ELEMENT
+RBE2_ELEMENT = TACS_RBE2_ELEMENT
+RBE3_ELEMENT = TACS_RBE3_ELEMENT
 
 # Orthogonal type for SEP
 SEP_FULL = FULL
@@ -292,6 +294,11 @@ cdef class Element:
         if self.ptr:
             self.ptr.setComponentNum(comp_num)
         return
+
+    def getComponentNum(self):
+        if self.ptr:
+            return self.ptr.getComponentNum()
+        return -1
 
     @classmethod
     def setFiniteDifferenceOrder(cls, int order):
