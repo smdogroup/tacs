@@ -42,6 +42,9 @@ int TacsGetTotalOutputCount(ElementType etype, int flag) {
   if (flag & TACS_OUTPUT_COORDINATE_FRAME) {
     nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_COORDINATE_FRAME);
   }
+  if (flag & TACS_OUTPUT_REACTIONS) {
+    nvals += TacsGetOutputComponentCount(etype, TACS_OUTPUT_REACTIONS);
+  }
 
   return nvals;
 }
@@ -67,6 +70,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 4;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 1;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return 1;
     }
   } else if (etype == TACS_SCALAR_3D_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -79,6 +84,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 4;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 1;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return 1;
     }
   } else if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -90,6 +97,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 14;
     } else if (comp == TACS_OUTPUT_LOADS) {
+      return 6;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
       return 6;
     } else if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
       return 9;
@@ -105,6 +114,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 4;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 2;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return 2;
     }
   } else if (etype == TACS_SOLID_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -117,6 +128,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
       return 4;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 3;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return 3;
     }
   } else if (etype == TACS_PCM_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -128,6 +141,8 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_EXTRAS) {
       return 5;
     } else if (comp == TACS_OUTPUT_LOADS) {
+      return 1;
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
       return 1;
     }
   }
@@ -194,6 +209,8 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       }
     } else if (comp == TACS_OUTPUT_LOADS) {
       return "f";
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return "rf";
     }
   } else if (etype == TACS_SCALAR_3D_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -235,6 +252,8 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       }
     } else if (comp == TACS_OUTPUT_LOADS) {
       return "f";
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      return "rf";
     }
   } else if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -350,6 +369,23 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      switch (index) {
+        case 0:
+          return "rfx";
+        case 1:
+          return "rfy";
+        case 2:
+          return "rfz";
+        case 3:
+          return "rmx";
+        case 4:
+          return "rmy";
+        case 5:
+          return "rmz";
+        default:
+          return NULL;
+      }
     }
     if (comp == TACS_OUTPUT_COORDINATE_FRAME) {
       switch (index) {
@@ -429,6 +465,15 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      switch (index) {
+        case 0:
+          return "rfx";
+        case 1:
+          return "rfy";
+        default:
+          return NULL;
+      }
     }
   } else if (etype == TACS_SOLID_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -500,6 +545,17 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         default:
           return NULL;
       }
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      switch (index) {
+        case 0:
+          return "rfx";
+        case 1:
+          return "rfy";
+        case 2:
+          return "rfz";
+        default:
+          return NULL;
+      }
     }
   } else if (etype == TACS_PCM_ELEMENT) {
     if (comp == TACS_OUTPUT_DISPLACEMENTS) {
@@ -546,6 +602,13 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       switch (index) {
         case 0:
           return "Q";
+        default:
+          return NULL;
+      }
+    } else if (comp == TACS_OUTPUT_REACTIONS) {
+      switch (index) {
+        case 0:
+          return "rQ";
         default:
           return NULL;
       }

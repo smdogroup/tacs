@@ -3864,7 +3864,7 @@ void TACSAssembler::getInitConditions(TACSBVec *vars, TACSBVec *dvars,
     }
   }
 
-  // If the the initial conditions of vars is requested and the vars0 vector has
+  // If the initial conditions of vars is requested and the vars0 vector has
   // not been declared, then set the values of the tacs vector
   if (vars && !vars0) {
     vars->beginSetValues(TACS_INSERT_NONZERO_VALUES);
@@ -4239,6 +4239,34 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
   if (applyBCs) {
     residual->applyBCs(bcMap, varsVec, lambda);
   }
+}
+
+/**
+  Compute the reactions at constrained degrees of freedom.
+
+  This computes the difference between the residual with boundary
+  conditions applied and the residual without. The result is non-zero
+  only at constrained DOFs and represents the reactions (e.g. forces,
+  heat fluxes, etc. depending on the physics).
+
+  The residual vector is used as temporary workspace and will contain
+  the residual without BCs applied on return.
+
+  @param tmp Workspace vector (overwritten with residual without BCs)
+  @param reactions Output vector containing the reaction forces
+*/
+void TACSAssembler::computeReactions(TACSBVec *tmp, TACSBVec *reactions) {
+  // Compute the residual without external forces and without applying BCs, this
+  // gives us the internal forces
+  assembleRes(tmp, 0.0, false);
+
+  // Make a copy and zero the BC terms
+  reactions->copyValues(tmp);
+  applyBCs(reactions);
+
+  // Subtract the vectors to leave only the BC terms
+  reactions->axpy(-1.0, tmp);
+  reactions->scale(-1.0);
 }
 
 /**

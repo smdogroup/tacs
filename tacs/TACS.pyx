@@ -92,6 +92,7 @@ OUTPUT_STRESSES = TACS_OUTPUT_STRESSES
 OUTPUT_EXTRAS = TACS_OUTPUT_EXTRAS
 OUTPUT_LOADS = TACS_OUTPUT_LOADS
 OUTPUT_COORDINATE_FRAME = TACS_OUTPUT_COORDINATE_FRAME
+OUTPUT_REACTIONS = TACS_OUTPUT_REACTIONS
 
 LAYOUT_NONE = TACS_LAYOUT_NONE
 POINT_ELEMENT = TACS_POINT_ELEMENT
@@ -2173,6 +2174,22 @@ cdef class Assembler:
         applyBCs:   Whether to apply the boundary conditions, by default True
         """
         self.ptr.assembleRes(residual.getBVecPtr(), loadScale, applyBCs)
+        return
+
+    def computeReactions(self, Vec tmp, Vec reactions):
+        """
+        Compute the reactions at constrained degrees of freedom.
+
+        This computes the difference between the residual with boundary
+        conditions applied and the residual without. The result is non-zero
+        only at constrained DOFs and represents the reactions (e.g. forces,
+        heat fluxes, etc. depending on the physics).
+
+        Args:
+            tmp (Vec): Workspace vector (overwritten during computation)
+            reactions (Vec): Output vector containing the reactions
+        """
+        self.ptr.computeReactions(tmp.getBVecPtr(), reactions.getBVecPtr())
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
