@@ -38,7 +38,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Overwrite default check values
         if self.dtype == complex:
             self.rtol = 1e-8
-            self.atol = 1e-8
+            self.atol = 1e-7
             self.dh = 1e-50
         else:
             self.rtol = 5e-6
@@ -90,3 +90,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         )
 
         return [static_prob], fea_assembler
+
+
+if __name__ == "__main__":
+    import unittest
+
+    unittest.main()

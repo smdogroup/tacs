@@ -18,6 +18,7 @@ History:
     - v. 1.0 pyTACS initial implementation
     - v. 3.0 updated TACS 3.0 pyTACS implementation
 """
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -27,7 +28,6 @@ import copy
 import numbers
 import time
 import warnings
-from functools import wraps
 
 import numpy as np
 import pyNastran.bdf as pn
@@ -40,39 +40,9 @@ import tacs.functions
 import tacs.problems
 import tacs.TACS
 from tacs.pymeshloader import pyMeshLoader
-from tacs.utilities import BaseUI
+from tacs.utilities import BaseUI, preinitialize_method, postinitialize_method
 
 warnings.simplefilter("default")
-
-
-# Define decorator functions for methods that must be called before initialize
-def preinitialize_method(method):
-    @wraps(method)
-    def wrapped_method(self, *args, **kwargs):
-        if self.assembler is not None:
-            raise self._TACSError(
-                f"`{method.__name__}` is a pre-initialize method. "
-                "It may only be called before the 'initialize' method has been called."
-            )
-        else:
-            return method(self, *args, **kwargs)
-
-    return wrapped_method
-
-
-# Define decorator functions for methods that must be called after initialize
-def postinitialize_method(method):
-    @wraps(method)
-    def wrapped_method(self, *args, **kwargs):
-        if self.assembler is None:
-            raise self._TACSError(
-                f"`{method.__name__}` is a post-initialize method. "
-                "It may only be called after the 'initialize' method has been called."
-            )
-        else:
-            return method(self, *args, **kwargs)
-
-    return wrapped_method
 
 
 class pyTACS(BaseUI):
@@ -136,6 +106,11 @@ class pyTACS(BaseUI):
             bool,
             True,
             "Flag for whether to include external nodal loads in f5 file.",
+        ],
+        "writeReactions": [
+            bool,
+            True,
+            "Flag for whether to include reaction forces in f5 file.",
         ],
         "writeCoordinateFrame": [
             bool,
@@ -482,15 +457,15 @@ class pyTACS(BaseUI):
             selectCompIDs(include=[0, 4])
 
             # Select any component containing 'rib.00'
-            selectCompIDs(include='rib.00')
+            selectCompIDs(include="rib.00")
 
             # Select any components containing 'rib.00' and 'rib.10'
-            selectCompIDs(include=['rib.00', 'rib.10'])
+            selectCompIDs(include=["rib.00", "rib.10"])
 
             # Select any component containing 'rib.00', the 11th
             # component and any component containing 'spar'
             # (This is probably not advisable!)
-            selectCompIDs(include=['rib.00', 10, 'spar'])
+            selectCompIDs(include=["rib.00", 10, "spar"])
 
         2. Exclude, operates similarly to 'include'.
         The behaviour of exclude is identical to include above, except that
@@ -525,8 +500,7 @@ class pyTACS(BaseUI):
 
             # This will select upper skin components between the
             # leading and trailing edge spars and between ribs 1 and 4.
-            selectCompIDs(include='U_SKIN', includeBound=
-                ['LE_SPAR', 'TE_SPAR', 'RIB.01', 'RIB.04'])
+            selectCompIDs(include="U_SKIN", includeBound=["LE_SPAR", "TE_SPAR", "RIB.01", "RIB.04"])
 
         4. nGroup: The number of groups to divide the found components
         into.
@@ -769,6 +743,19 @@ class pyTACS(BaseUI):
         """
 
         return self.meshLoader.getLocalNodeIDsFromGlobal(globalIDs, nastranOrdering)
+
+    def globalToLocalArray(self, globalArray):
+        """
+        See :meth:`pyMeshLoader.globalToLocalArray <tacs.pymeshloader.pyMeshLoader.globalToLocalArray>`.
+        """
+        return self.meshLoader.globalToLocalArray(globalArray)
+
+    @postinitialize_method
+    def localToGlobalArray(self, localArray):
+        """
+        See :meth:`pyMeshLoader.localToGlobalArray <tacs.pymeshloader.pyMeshLoader.localToGlobalArray>`.
+        """
+        return self.meshLoader.localToGlobalArray(localArray)
 
     def initialize(self, elemCallBack=None):
         """
@@ -1298,8 +1285,7 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.SpringElement(transform, con)
                 else:
                     raise self._TACSError(
-                        "Unsupported element type "
-                        f"'{descript}' specified for property number {propertyID}."
+                        f"Unsupported element type '{descript}' specified for property number {propertyID}."
                     )
                 elemList.append(elem)
 
@@ -1765,8 +1751,7 @@ class pyTACS(BaseUI):
                 # If no time step info was included, we'll skip this case
                 else:
                     self._TACSWarning(
-                        f"No TSTEP entry found in control deck for subcase number {subCase.id}, "
-                        "skipping case."
+                        f"No TSTEP entry found in control deck for subcase number {subCase.id}, skipping case."
                     )
                     continue
                 problem = self.createTransientProblem(
@@ -2418,6 +2403,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
         if self.getOption("writeLoads"):
             write_flag |= tacs.TACS.OUTPUT_LOADS
+        if self.getOption("writeReactions"):
+            write_flag |= tacs.TACS.OUTPUT_REACTIONS
         if self.getOption("writeCoordinateFrame"):
             write_flag |= tacs.TACS.OUTPUT_COORDINATE_FRAME
 

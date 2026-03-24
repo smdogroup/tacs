@@ -6,7 +6,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """
-A 6 DOF spring element fixed at node 1 with a uniform force of 100 N applied in each direction. 
+A 6 DOF spring element fixed at node 1 with a uniform force of 100 N applied in each direction.
 
 The stiffness values for the spring are given below:
 kx = 1 N/m
@@ -51,6 +51,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             self.rtol = 2e-1
             self.atol = 1e-3
             self.dh = 1e-6
+
+        # Spring element doesn't satisfy moment equilibrium
+        self.skip_equilibrium_check = True
 
         # Instantiate FEA Assembler
         struct_options = {
@@ -99,3 +102,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         )
 
         return [problem], fea_assembler
+
+
+if __name__ == "__main__":
+    import unittest
+
+    unittest.main()
