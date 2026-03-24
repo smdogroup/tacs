@@ -43,6 +43,7 @@ cdef class SolidConstitutive(Constitutive):
 
 cdef class ShellConstitutive(Constitutive):
     cdef TACSShellConstitutive *cptr
+    cdef list customMatProps
 
 cdef class StiffenedShellConstitutive(ShellConstitutive):
     cdef TACSBladeStiffenedShellConstitutive *base_ptr

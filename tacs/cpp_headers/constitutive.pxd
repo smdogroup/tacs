@@ -76,6 +76,9 @@ cdef extern from "TACSSolidConstitutive.h":
 cdef extern from "TACSShellConstitutive.h":
     cdef cppclass TACSShellConstitutive(TACSConstitutive):
         void setDrillingRegularization(double)
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
+        void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
 
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
@@ -146,9 +149,6 @@ cdef extern from "TACSLamParamFullShellConstitutive.h":
         void setLaminationParameters(TacsScalar[])
         void setKSWeight(double ksWeight)
         void setNumFailAngles(int)
-        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
-        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
-        void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
 
 cdef extern from "TACSBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
