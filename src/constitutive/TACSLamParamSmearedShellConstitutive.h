@@ -22,6 +22,7 @@
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
+#include "TacsUtilities.h"
 
 /*
   This class implements a lamination parameter based parametrization of

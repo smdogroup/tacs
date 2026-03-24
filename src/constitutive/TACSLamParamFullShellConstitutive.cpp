@@ -579,7 +579,9 @@ TacsScalar TACSLamParamFullShellConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], TacsScalar sens[]) {
   TacsScalar fvals[2 * MAX_NUM_FAIL_ANGLES], weights[2 * MAX_NUM_FAIL_ANGLES];
-  TacsScalar max;
+  std::fill_n(fvals, 2 * MAX_NUM_FAIL_ANGLES, TacsScalar(0.0));
+  std::fill_n(weights, 2 * MAX_NUM_FAIL_ANGLES, TacsScalar(0.0));
+  TacsScalar max = 0.0;
 
   computeFailure(strain, fvals, &max);
 
@@ -601,7 +603,7 @@ void TACSLamParamFullShellConstitutive::addFailureDVSens(
   int index = 0;
   if (tNum >= 0) {
     TacsScalar fvals[2 * MAX_NUM_FAIL_ANGLES], weights[2 * MAX_NUM_FAIL_ANGLES];
-    TacsScalar max;
+    TacsScalar max = 0.0;
 
     computeFailure(strain, fvals, &max);
 
