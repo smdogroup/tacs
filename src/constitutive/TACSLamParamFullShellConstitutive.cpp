@@ -86,7 +86,8 @@ void TACSLamParamFullShellConstitutive::setLaminationParameters(
 
 // Set the number of failure angles to set
 void TACSLamParamFullShellConstitutive::setNumFailAngles(int _numFailAngles) {
-  if (_numFailAngles >= MIN_NUM_FAIL_ANGLES && _numFailAngles <= MAX_NUM_FAIL_ANGLES) {
+  if (_numFailAngles >= MIN_NUM_FAIL_ANGLES &&
+      _numFailAngles <= MAX_NUM_FAIL_ANGLES) {
     numFailAngles = _numFailAngles;
   }
 }
@@ -165,7 +166,8 @@ int TACSLamParamFullShellConstitutive::getDesignVarRange(int elemIndex,
 
 /*!
   Use Sylvester's criterion to check that the matrix is positive definite.
-  A matrix is positive definite if and only if all its leading principal minors are positive.
+  A matrix is positive definite if and only if all its leading principal minors
+  are positive.
 
   Check the determinant of the symmetric 3x3 matrix
   stored in the following format:

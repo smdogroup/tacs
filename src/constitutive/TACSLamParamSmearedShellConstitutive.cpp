@@ -259,7 +259,8 @@ int TACSLamParamSmearedShellConstitutive::getDesignVarRange(int elemIndex,
 
 /*!
   Use Sylvester's criterion to check that the matrix is positive definite.
-  A matrix is positive definite if and only if all its leading principal minors are positive.
+  A matrix is positive definite if and only if all its leading principal minors
+  are positive.
 
   Check the determinant of the symmetric 3x3 matrix
   stored in the following format:
@@ -282,7 +283,8 @@ int TACSLamParamSmearedShellConstitutive::getDesignVarRange(int elemIndex,
 
 */
 
-bool TACSLamParamSmearedShellConstitutive::checkDeterminant(const TacsScalar a[]) {
+bool TACSLamParamSmearedShellConstitutive::checkDeterminant(
+    const TacsScalar a[]) {
   const TacsScalar d =
       (a[0] * (a[3] * a[5] - a[4] * a[4]) - a[1] * (a[1] * a[5] - a[2] * a[4]) +
        a[2] * (a[1] * a[4] - a[2] * a[3]));
@@ -346,11 +348,9 @@ TacsScalar TACSLamParamSmearedShellConstitutive::evalSpecificHeat(
 }
 
 // Get the stiffness values
-void TACSLamParamSmearedShellConstitutive::getStiffness(TacsScalar A[],
-                                                        TacsScalar B[],
-                                                        TacsScalar D[],
-                                                        TacsScalar As[],
-                                                        TacsScalar *drill) const {
+void TACSLamParamSmearedShellConstitutive::getStiffness(
+    TacsScalar A[], TacsScalar B[], TacsScalar D[], TacsScalar As[],
+    TacsScalar *drill) const {
   // Calculate the in-plane stiffness using the lamination
   // parameters
   const TacsScalar V1 = f0 - f90;
@@ -527,7 +527,7 @@ void TACSLamParamSmearedShellConstitutive::addStressDVSens(
   Note that the calculations are performed using radians.
 */
 void TACSLamParamSmearedShellConstitutive::computeFailure(
-    const TacsScalar strain[], TacsScalar fvals[], TacsScalar *_max) const{
+    const TacsScalar strain[], TacsScalar fvals[], TacsScalar *_max) const {
   TacsScalar max = 0.0;
   for (int k = 0; k < NUM_FAIL_ANGLES; k++) {
     TacsScalar angle = 0.0, factor = 1.0;
@@ -575,7 +575,8 @@ void TACSLamParamSmearedShellConstitutive::computeFailure(
   accumulate the weighted sensitivity into the array 'sens'
 */
 void TACSLamParamSmearedShellConstitutive::computeFailureStrainSens(
-    const TacsScalar strain[], const TacsScalar weights[], TacsScalar sens[]) const {
+    const TacsScalar strain[], const TacsScalar weights[],
+    TacsScalar sens[]) const {
   sens[0] = sens[1] = sens[2] = sens[3] = 0.0;
   sens[4] = sens[5] = sens[6] = sens[7] = 0.0;
   sens[8] = 0.0;
@@ -658,7 +659,8 @@ TacsScalar TACSLamParamSmearedShellConstitutive::evalFailureStrainSens(
 
   computeFailure(strain, fvals, &max);
 
-  const TacsScalar ksFail = ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
+  const TacsScalar ksFail =
+      ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
 
   computeFailureStrainSens(strain, weights, sens);
 
@@ -679,7 +681,8 @@ void TACSLamParamSmearedShellConstitutive::addFailureDVSens(
 
   computeFailure(strain, fvals, &max);
 
-  const TacsScalar ksFail = ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
+  const TacsScalar ksFail =
+      ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
 
   int index = 0;
   if (tNum >= 0) {
