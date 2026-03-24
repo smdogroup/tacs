@@ -238,6 +238,24 @@ applyBCs:   Whether to apply the boundary conditions, by default True</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="TACS.Assembler.computeReactions">
+<span class="sig-name descname"><span class="pre">computeReactions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tmp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reactions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.computeReactions" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the reactions at constrained degrees of freedom.</p>
+<p>This computes the difference between the residual with boundary
+conditions applied and the residual without. The result is non-zero
+only at constrained DOFs and represents the reactions (e.g. forces,
+heat fluxes, etc. depending on the physics).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tmp</strong> (<em>Vec</em>) -- Workspace vector (overwritten during computation)</p></li>
+<li><p><strong>reactions</strong> (<em>Vec</em>) -- Output vector containing the reactions</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="TACS.Assembler.computeReordering">
 <span class="sig-name descname"><span class="pre">computeReordering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#TACS.Assembler.computeReordering" title="Link to this definition">¶</a></dt>
 <dd><p>Compute a reordering of the unknowns before initialize()</p>
@@ -967,6 +985,7 @@ be slow and need to be in serial mode only</p>
 <li><a class="reference internal" href="#TACS.Assembler.assembleMatCombo"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleMatCombo()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.assembleMatType"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleMatType()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.assembleRes"><code class="docutils literal notranslate"><span class="pre">Assembler.assembleRes()</span></code></a></li>
+<li><a class="reference internal" href="#TACS.Assembler.computeReactions"><code class="docutils literal notranslate"><span class="pre">Assembler.computeReactions()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.computeReordering"><code class="docutils literal notranslate"><span class="pre">Assembler.computeReordering()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.copyVariables"><code class="docutils literal notranslate"><span class="pre">Assembler.copyVariables()</span></code></a></li>
 <li><a class="reference internal" href="#TACS.Assembler.create"><code class="docutils literal notranslate"><span class="pre">Assembler.create()</span></code></a></li>

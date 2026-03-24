@@ -112,6 +112,8 @@ The following options, their default values and descriptions are listed below:</
 	 Flag for whether to include element extra variables in f5 file.
 &#39;writeLoads&#39;: True
 	 Flag for whether to include external nodal loads in f5 file.
+&#39;writeReactions&#39;: True
+	 Flag for whether to include reaction forces in f5 file.
 &#39;writeCoordinateFrame&#39;: False
 	 Flag for whether to include element coordinate frames in f5 file.
 &#39;familySeparator&#39;: &#39;/&#39;
@@ -463,15 +465,15 @@ name, or a list containing a combination of both.</p>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
 
 <span class="c1"># Select any component containing &#39;rib.00&#39;</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;rib.00&#39;</span><span class="p">)</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s2">&quot;rib.00&quot;</span><span class="p">)</span>
 
 <span class="c1"># Select any components containing &#39;rib.00&#39; and &#39;rib.10&#39;</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rib.00&#39;</span><span class="p">,</span> <span class="s1">&#39;rib.10&#39;</span><span class="p">])</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;rib.00&quot;</span><span class="p">,</span> <span class="s2">&quot;rib.10&quot;</span><span class="p">])</span>
 
 <span class="c1"># Select any component containing &#39;rib.00&#39;, the 11th</span>
 <span class="c1"># component and any component containing &#39;spar&#39;</span>
 <span class="c1"># (This is probably not advisable!)</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;rib.00&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;spar&#39;</span><span class="p">])</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;rib.00&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;spar&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>2. Exclude, operates similarly to 'include'.
@@ -504,8 +506,7 @@ Use multiple calls to selectCompIDs to accumulate multiple regions.</p>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># This will select upper skin components between the</span>
 <span class="c1"># leading and trailing edge spars and between ribs 1 and 4.</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;U_SKIN&#39;</span><span class="p">,</span> <span class="n">includeBound</span><span class="o">=</span>
-    <span class="p">[</span><span class="s1">&#39;LE_SPAR&#39;</span><span class="p">,</span> <span class="s1">&#39;TE_SPAR&#39;</span><span class="p">,</span> <span class="s1">&#39;RIB.01&#39;</span><span class="p">,</span> <span class="s1">&#39;RIB.04&#39;</span><span class="p">])</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s2">&quot;U_SKIN&quot;</span><span class="p">,</span> <span class="n">includeBound</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LE_SPAR&quot;</span><span class="p">,</span> <span class="s2">&quot;TE_SPAR&quot;</span><span class="p">,</span> <span class="s2">&quot;RIB.01&quot;</span><span class="p">,</span> <span class="s2">&quot;RIB.04&quot;</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>4. nGroup: The number of groups to divide the found components
@@ -643,6 +644,18 @@ If the node is not owned by this processor, its index is filled with a value of 
 <dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.globalToLocalArray">
+<span class="sig-name descname"><span class="pre">globalToLocalArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">globalArray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.globalToLocalArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.globalToLocalArray" title="Link to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyMeshLoader.globalToLocalArray</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.localToGlobalArray">
+<span class="sig-name descname"><span class="pre">localToGlobalArray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">localArray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.localToGlobalArray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.localToGlobalArray" title="Link to this definition">¶</a></dt>
+<dd><p>See <code class="xref py py-meth docutils literal notranslate"><span class="pre">pyMeshLoader.localToGlobalArray</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1333,6 +1346,8 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getGlobalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getGlobalNodeIDsForComps()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsForComps"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsForComps()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal"><code class="docutils literal notranslate"><span class="pre">pyTACS.getLocalNodeIDsFromGlobal()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.globalToLocalArray"><code class="docutils literal notranslate"><span class="pre">pyTACS.globalToLocalArray()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.localToGlobalArray"><code class="docutils literal notranslate"><span class="pre">pyTACS.localToGlobalArray()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.initialize"><code class="docutils literal notranslate"><span class="pre">pyTACS.initialize()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">pyTACS.getOrigDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">pyTACS.getDesignVarRange()</span></code></a></li>
