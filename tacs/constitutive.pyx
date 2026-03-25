@@ -914,6 +914,17 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             self.cptr = NULL
             self.props = None
 
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties object associated with this constitutive object.
+
+        Returns
+        -------
+        tacs.constitutive.MaterialProperties
+            Material property object associated with this constitutive.
+        """
+        return self.props
+
     def generateBDFCard(self):
         """
         Generate pyNASTRAN card class based on current design variable values.
@@ -979,6 +990,17 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         free(plys)
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties objects associated with each ply in this constitutive object.
+
+        Returns
+        -------
+        list[tacs.constitutive.MaterialProperties]
+            Material property objects for each ply in the layup.
+        """
+        return self.props
 
     def generateBDFCard(self):
         """
@@ -2079,6 +2101,17 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
         free(plys)
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties objects associated with each ply in this constitutive object.
+
+        Returns
+        -------
+        list[tacs.constitutive.MaterialProperties]
+            Material property objects for each ply in the layup.
+        """
+        return self.props
 
     def generateBDFCard(self):
         """
