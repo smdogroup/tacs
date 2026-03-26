@@ -198,7 +198,7 @@ class TACSOrthotropicPly : public TACSObject {
                          TacsScalar *_eYc, TacsScalar *_eS12);
   void getTsaiWu(TacsScalar *_F1, TacsScalar *_F2, TacsScalar *_F11,
                  TacsScalar *_F12, TacsScalar *_F22, TacsScalar *_F66);
-  void getCuntze(TacsScalar *_b_tl, TacsScalar *_muWF, TacsScalar *_m);
+  void getCuntzeConstants(TacsScalar *_b_tl, TacsScalar *_muWF, TacsScalar *_m);
   void getLaminateInvariants(TacsScalar *U1, TacsScalar *U2, TacsScalar *U3,
                              TacsScalar *U4, TacsScalar *U5, TacsScalar *U6);
 

@@ -721,8 +721,8 @@ void TACSOrthotropicPly::getTsaiWu(TacsScalar *_F1, TacsScalar *_F2,
 /*
   Get the Cuntze failure constants
 */
-void TACSOrthotropicPly::getCuntze(TacsScalar *_b_tl, TacsScalar *_muWF,
-                                   TacsScalar *_m) {
+void TACSOrthotropicPly::getCuntzeConstants(TacsScalar *_b_tl,
+                                            TacsScalar *_muWF, TacsScalar *_m) {
   *_b_tl = b_tl;
   *_muWF = muWF;
   *_m = m;
