@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
@@ -48,3 +49,23 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         self.assertFalse(
             constr.isLinear, "Volume constraint should not be linear wrt dvs"
         )
+
+    def test_write_visualization(self):
+        """
+        Test tecplot visualization writer.
+        """
+        # Create temporary directory to write f5 file to (only on root)
+        tmp_dir = None
+        tmp_dir_name = None
+        if self.comm.rank == 0:
+            tmp_dir = tempfile.TemporaryDirectory()
+            tmp_dir_name = tmp_dir.name
+        # Broadcast temp directory name to other procs
+        tmp_dir_name = self.comm.bcast(tmp_dir_name, root=0)
+        constr = self.tacs_probs[0]
+        f = {}
+        constr.evalConstraints(f)
+        constr.writeVisualization(outputDir=tmp_dir_name)
+        if self.comm.rank == 0:
+            # delete all files in temp dir
+            tmp_dir.cleanup()
