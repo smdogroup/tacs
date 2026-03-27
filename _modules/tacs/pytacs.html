@@ -1290,7 +1290,13 @@
                 <span class="n">k2</span> <span class="o">=</span> <span class="mf">0.0</span>
 
                 <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">BasicBeamConstitutive</span><span class="p">(</span>
-                    <span class="n">mat</span><span class="p">,</span> <span class="n">A</span><span class="o">=</span><span class="n">area</span><span class="p">,</span> <span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">,</span> <span class="n">ky</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span> <span class="n">kz</span><span class="o">=</span><span class="n">k2</span>
+                    <span class="n">mat</span><span class="p">,</span>
+                    <span class="n">A</span><span class="o">=</span><span class="n">area</span><span class="p">,</span>
+                    <span class="n">J</span><span class="o">=</span><span class="n">J</span><span class="p">,</span>
+                    <span class="n">ky</span><span class="o">=</span><span class="n">k1</span><span class="p">,</span>
+                    <span class="n">kz</span><span class="o">=</span><span class="n">k2</span><span class="p">,</span>
+                    <span class="n">Iy</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                    <span class="n">Iz</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
