@@ -49,11 +49,10 @@ class ConstitutiveTest(unittest.TestCase):
         A = 0.01
         Iy = Iz = 1e-3
         J = (Iy**2 + Iz**2) ** 0.5
-        kcorr = 5.0 / 6.0
 
         # Create stiffness (need class)
         self.con = constitutive.BasicBeamConstitutive(
-            self.props, A=A, J=J, Iy=Iy, Iz=Iz, kcorr=kcorr
+            self.props, A=A, J=J, Iy=Iy, Iz=Iz
         )
 
         # Seed random number generator in tacs for consistent test results

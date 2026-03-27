@@ -1219,7 +1219,7 @@ class pyTACS(BaseUI):
                 k2 = 0.0
 
                 con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, J=J, ky=k1, kz=k2
+                    mat, A=area, J=J, ky=k1, kz=k2, Iy=0.0, Iz=0.0,
                 )
 
             else:
