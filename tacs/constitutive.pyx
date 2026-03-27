@@ -12,7 +12,6 @@
 
 #distutils: language=c++
 
-import warnings
 import difflib
 
 # For the use of MPI
@@ -46,38 +45,42 @@ include "TacsDefs.pxi"
 cdef extern from "mpi-compat.h":
     pass
 
-def _check_constitutive_kwargs(class_name, kwargs, required_keys, valid_keys):
+def _check_constitutive_kwargs(self, cls, kwargs, required_keys, valid_keys):
     """
     Validate kwargs for TACS constitutive class constructors.
 
-    Issues a UserWarning if:
-    - A physically meaningful parameter (in required_keys) is absent and will use its default value.
+    Raises a ValueError if:
+    - A physically meaningful parameter (in required_keys) is absent.
     - An unrecognized kwarg is passed (possible misspelling); suggests the closest match.
+
+    The ``self`` and ``cls`` parameters are used to skip validation when this
+    method is invoked by a parent ``__cinit__`` on behalf of a subclass instance
+    (Cython calls all ancestor ``__cinit__`` methods with the same kwargs).
     """
+    if type(self) is not cls:
+        return
+
+    class_name = cls.__name__
     all_valid = list(required_keys) + [k for k in valid_keys if k not in required_keys]
 
     for key in kwargs:
         if key not in all_valid:
             close = difflib.get_close_matches(key, all_valid, n=1, cutoff=0.6)
             if close:
-                warnings.warn(
+                raise ValueError(
                     f"{class_name}: Unrecognized keyword argument '{key}'. "
-                    f"Did you mean '{close[0]}'? This argument will be ignored.",
-                    UserWarning, stacklevel=3,
+                    f"Did you mean '{close[0]}'?"
                 )
             else:
-                warnings.warn(
-                    f"{class_name}: Unrecognized keyword argument '{key}' will be ignored. "
-                    f"Valid arguments are: {all_valid}",
-                    UserWarning, stacklevel=3,
+                raise ValueError(
+                    f"{class_name}: Unrecognized keyword argument '{key}'. "
+                    f"Valid arguments are: {all_valid}"
                 )
 
     for key in required_keys:
         if key not in kwargs:
-            warnings.warn(
-                f"{class_name}: Physical parameter '{key}' was not specified "
-                f"and will use its default value. This may not be intended.",
-                UserWarning, stacklevel=3,
+            raise ValueError(
+                f"{class_name}: Required physical parameter '{key}' was not specified."
             )
 
 
@@ -570,7 +573,7 @@ cdef class PlaneStressConstitutive(Constitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "PlaneStressConstitutive", kwargs,
+            self, PlaneStressConstitutive, kwargs,
             required_keys=["t"],
             valid_keys=["tNum", "tlb", "tub"],
         )
@@ -617,7 +620,7 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "PhaseChangeMaterialConstitutive", kwargs,
+            self, PhaseChangeMaterialConstitutive, kwargs,
             required_keys=["lh", "Tm", "t"],
             valid_keys=["dT", "tNum", "tlb", "tub"],
         )
@@ -753,7 +756,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "IsoShellConstitutive", kwargs,
+            self, IsoShellConstitutive, kwargs,
             required_keys=["t"],
             valid_keys=["tNum", "tlb", "tub", "tOffset"],
         )
@@ -1988,7 +1991,7 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         _check_constitutive_kwargs(
-            "LamParamShellConstitutive", kwargs,
+            self, LamParamShellConstitutive, kwargs,
             required_keys=["t"],
             valid_keys=[
                 "t_num", "min_t", "max_t",
@@ -2092,7 +2095,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "BasicBeamConstitutive", kwargs,
+            self, BasicBeamConstitutive, kwargs,
             required_keys=["A", "J", "Iy", "Iz"],
             valid_keys=["Iyz", "ky", "kz"],
         )
@@ -2187,7 +2190,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "IsoTubeBeamConstitutive", kwargs,
+            self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
             valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
         )
@@ -2288,7 +2291,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
-            "IsoRectangleBeamConstitutive", kwargs,
+            self, IsoRectangleBeamConstitutive, kwargs,
             required_keys=["w", "t"],
             valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb"],
         )
@@ -2384,7 +2387,7 @@ cdef class GeneralMassConstitutive(Constitutive):
     """
     def __cinit__(self, **kwargs):
         _check_constitutive_kwargs(
-            "GeneralMassConstitutive", kwargs,
+            self, GeneralMassConstitutive, kwargs,
             required_keys=["M"],
             valid_keys=[],
         )
@@ -2464,7 +2467,7 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
     """
     def __cinit__(self, **kwargs):
         _check_constitutive_kwargs(
-            "PointMassConstitutive", kwargs,
+            self, PointMassConstitutive, kwargs,
             required_keys=["m"],
             valid_keys=[
                 "I11", "I22", "I33", "I12", "I13", "I23",
@@ -2584,7 +2587,7 @@ cdef class GeneralSpringConstitutive(Constitutive):
     """
     def __cinit__(self, **kwargs):
         _check_constitutive_kwargs(
-            "GeneralSpringConstitutive", kwargs,
+            self, GeneralSpringConstitutive, kwargs,
             required_keys=["K"],
             valid_keys=[],
         )
@@ -2613,7 +2616,7 @@ cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
     """
     def __cinit__(self, **kwargs):
         _check_constitutive_kwargs(
-            "DOFSpringConstitutive", kwargs,
+            self, DOFSpringConstitutive, kwargs,
             required_keys=["k"],
             valid_keys=[],
         )
