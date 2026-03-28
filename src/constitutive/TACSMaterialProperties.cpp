@@ -898,10 +898,10 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
 
   The Failure Mode Concept is suitable for 3D stress states,
   however, the equations for the plane stress state are shown here.
-  They are derived from the 3D stress state equations presented in 
-  E. Petersen, R. G. Cuntze, and C. Huehne, “Experimental determination of material 
-  parameters in Cuntze’s Failure-Mode-Concept-based UD strength failure conditions,” 
-  Compos. Sci. Technol., vol. 134, pp. 12–25, Oct. 2016, 
+  They are derived from the 3D stress state equations presented in
+  E. Petersen, R. G. Cuntze, and C. Huehne, “Experimental determination of
+  material parameters in Cuntze’s Failure-Mode-Concept-based UD strength failure
+  conditions,” Compos. Sci. Technol., vol. 134, pp. 12–25, Oct. 2016,
   doi: 10.1016/j.compscitech.2016.08.006.
 
   Eff = (Eff_FF1**m + Eff_FF2**m + Eff_IFF1**m + Eff_IFF2**m +
@@ -923,8 +923,7 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   2018.
 
   Eff = (Eff_FF1**m + Eff_FF2**m + Eff_FF3**m + Eff_FF4**m + Eff_IFF1**m +
-  Eff_IFF2**m
-        + Eff_IFF3**m + Eff_IFF4**m + Eff_IFF5**m)**(1/m) <= 1.0
+  Eff_IFF2**m + Eff_IFF3**m + Eff_IFF4**m + Eff_IFF5**m)**(1/m) <= 1.0
 
   with
   (if e[0] >= 0):   Eff_FF1 = e[0] * E1 / Xt
