@@ -898,6 +898,11 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
 
   The Failure Mode Concept is suitable for 3D stress states,
   however, the equations for the plane stress state are shown here.
+  They are derived from the 3D stress state equations presented in 
+  E. Petersen, R. G. Cuntze, and C. Huehne, “Experimental determination of material 
+  parameters in Cuntze’s Failure-Mode-Concept-based UD strength failure conditions,” 
+  Compos. Sci. Technol., vol. 134, pp. 12–25, Oct. 2016, 
+  doi: 10.1016/j.compscitech.2016.08.006.
 
   Eff = (Eff_FF1**m + Eff_FF2**m + Eff_IFF1**m + Eff_IFF2**m +
   Eff_IFF3**m)**(1/m) <= 1.0
@@ -912,7 +917,7 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
 
   2b. The Failure Mode Concept from Cuntze for woven plies:
 
-  According to J. Bold, "Vergleich des Impaktverhaltens von monolithischer und
+  Adapted from J. Bold, "Vergleich des Impaktverhaltens von monolithischer und
   hybrider CFK-Platte unter Verwendung eines neuen Werkstoffmodells," Dr.-Ing.
   dissertation, Technische Universitaet Braunschweig, Braunschweig, Germany,
   2018.
