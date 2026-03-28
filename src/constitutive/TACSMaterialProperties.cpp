@@ -69,7 +69,9 @@ TACSMaterialProperties::TACSMaterialProperties(
     TacsScalar _C1, TacsScalar _T2, TacsScalar _C2, TacsScalar _T3,
     TacsScalar _C3, TacsScalar _S12, TacsScalar _S13, TacsScalar _S23,
     TacsScalar _alpha1, TacsScalar _alpha2, TacsScalar _alpha3,
-    TacsScalar _kappa1, TacsScalar _kappa2, TacsScalar _kappa3) {
+    TacsScalar _kappa1, TacsScalar _kappa2, TacsScalar _kappa3,
+    TacsScalar _b_tt, TacsScalar _b_tl, TacsScalar _muWF, TacsScalar _mu3W,
+    TacsScalar _mu3F, TacsScalar _m) {
   mat_type = TACS_ANISOTROPIC_MATERIAL;
 
   rho = _rho;
@@ -98,6 +100,13 @@ TACSMaterialProperties::TACSMaterialProperties(
   S12 = _S12;
   S13 = _S13;
   S23 = _S23;
+
+  b_tt = _b_tt;
+  b_tl = _b_tl;
+  muWF = _muWF;
+  mu3W = _mu3W;
+  mu3F = _mu3F;
+  m = _m;
 
   // Ensure that the compressive strength values are negative
   if (TacsRealPart(C1) < 0.0) {
@@ -181,7 +190,8 @@ void TACSMaterialProperties::getOrthotropicProperties(
 void TACSMaterialProperties::getStrengthProperties(
     TacsScalar *_T1, TacsScalar *_C1, TacsScalar *_T2, TacsScalar *_C2,
     TacsScalar *_T3, TacsScalar *_C3, TacsScalar *_S12, TacsScalar *_S13,
-    TacsScalar *_S23) {
+    TacsScalar *_S23, TacsScalar *_b_tt, TacsScalar *_b_tl, TacsScalar *_muWF,
+    TacsScalar *_mu3W, TacsScalar *_mu3F, TacsScalar *_m) {
   if (_T1) {
     *_T1 = T1;
   }
@@ -208,6 +218,24 @@ void TACSMaterialProperties::getStrengthProperties(
   }
   if (_S23) {
     *_S23 = S23;
+  }
+  if (_b_tt) {
+    *_b_tt = b_tt;
+  }
+  if (_b_tl) {
+    *_b_tl = b_tl;
+  }
+  if (_muWF) {
+    *_muWF = muWF;
+  }
+  if (_mu3W) {
+    *_mu3W = mu3W;
+  }
+  if (_mu3F) {
+    *_mu3F = mu3F;
+  }
+  if (_m) {
+    *_m = m;
   }
 }
 
@@ -475,7 +503,8 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
 /*
   The OrthoPly material class.
 
-  This uses a Tsai-Wu tensor failure criteria.
+  This uses a Tsai-Wu tensor failure criteria (default),
+  a Cuntze failure criterion, or a Maximum Strain criterion.
 
   Inputs are:
   E1, E2, nu12, G12 = In-plane stiffness properties
@@ -485,6 +514,11 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
   Yt, Yc = Tensile and compressive off-axis failure loads
   S12 = In plane shear failure load
   C = Interaction strength such that sigma_1 = sigma_2 = C
+  b_tl = material friction parameter for the failure mode IFF3
+         in the Cuntze failure criterion for UD material
+  muWF = material friction value for the failure mode IFF_WF
+         in the Cuntze failure criterion for woven material
+  m = interaction exponent used in the Cuntze failure criterion
 */
 TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
                                        TACSMaterialProperties *_properties) {
@@ -514,7 +548,7 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
   // Record the failure data. If the coefficients
   // are negative, make them positive
   properties->getStrengthProperties(&Xt, &Xc, &Yt, &Yc, NULL, NULL, &S12, NULL,
-                                    NULL);
+                                    NULL, NULL, &b_tl, &muWF, NULL, NULL, &m);
   C = 0.0;
 
   // Determine the strain strength values based on the
@@ -528,6 +562,8 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
   // By default, use Tsai-Wu modified to return a strength ratio
   useTsaiWuCriterion = true;
   useModifiedTsaiWu = true;
+  useCuntzeCriterion_UD = false;
+  useCuntzeCriterion_Woven = false;
 
   // Compute the coefficients for the Tsai-Wu failure criteria
   F1 = (Xc - Xt) / (Xt * Xc);
@@ -557,6 +593,10 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
 
   // Set the default value of the KS penalty
   ksWeight = 100.0;
+
+  // Set the default value of the KS penalty for the IFF3 failure mode of the
+  // Cuntze failure criterion
+  Cuntze_IFF3_ksWeight = 100.0;
 }
 
 const char *TACSOrthotropicPly::name = "TACSOrthotropicPly";
@@ -573,12 +613,30 @@ void TACSOrthotropicPly::setKSWeight(TacsScalar _ksWeight) {
 */
 void TACSOrthotropicPly::setUseMaxStrainCriterion() {
   useTsaiWuCriterion = false;
+  useCuntzeCriterion_UD = false;
+  useCuntzeCriterion_Woven = false;
 }
 
-void TACSOrthotropicPly::setUseTsaiWuCriterion() { useTsaiWuCriterion = true; }
+void TACSOrthotropicPly::setUseTsaiWuCriterion() {
+  useTsaiWuCriterion = true;
+  useCuntzeCriterion_UD = false;
+  useCuntzeCriterion_Woven = false;
+}
 
 void TACSOrthotropicPly::setUseModifiedTsaiWu(bool _useModifiedTsaiWu) {
   useModifiedTsaiWu = _useModifiedTsaiWu;
+}
+
+void TACSOrthotropicPly::setUseCuntzeCriterion_UD() {
+  useTsaiWuCriterion = false;
+  useCuntzeCriterion_UD = true;
+  useCuntzeCriterion_Woven = false;
+}
+
+void TACSOrthotropicPly::setUseCuntzeCriterion_Woven() {
+  useTsaiWuCriterion = false;
+  useCuntzeCriterion_UD = false;
+  useCuntzeCriterion_Woven = true;
 }
 
 /*
@@ -658,6 +716,16 @@ void TACSOrthotropicPly::getTsaiWu(TacsScalar *_F1, TacsScalar *_F2,
   *_F12 = F12;
   *_F22 = F22;
   *_F66 = F66;
+}
+
+/*
+  Get the Cuntze failure constants
+*/
+void TACSOrthotropicPly::getCuntzeConstants(TacsScalar *_b_tl,
+                                            TacsScalar *_muWF, TacsScalar *_m) {
+  *_b_tl = b_tl;
+  *_muWF = muWF;
+  *_m = m;
 }
 
 /*
@@ -790,9 +858,9 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   fail <  1.0 ==> Okay
   fail >= 1.0 ==> Material failure
 
-  One of two failure criteria are used:
+  One of three failure criteria are used:
 
-  1. The Tsai-Wu failure criterion:
+  1a. The Tsai-Wu failure criterion:
 
   F(s) =
   F1*s[0] + F2*s[1]
@@ -802,7 +870,7 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   To enable this method, call `setUseTsaiWuCriterion()` and
   `setUseModifiedTsaiWu(false)`
 
-  2. The Tsai-Wu strength ratio:
+  1b. The Tsai-Wu strength ratio:
 
   This is similar to the Tsai-Wu criterion, except that the value
   returned is actually 1/2 * (b + sqrt(b^2 + 4a)) where "b"
@@ -815,6 +883,55 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   von-Mises criterion when the material properties are isotropic.
 
   This is the default method
+
+  2a. The Failure Mode Concept from Cuntze for UD plies:
+
+  The global material stressing effort Eff is equivalent to the
+  strength ratio, if the strength ratio is derived by factoring
+  each stress by 1/SR, except for the failure mode IFF3, where
+  only the failure driving shear stresses are factored.
+
+  If any failure mode reaches a material stressing effort Eff
+  of >=1, the material will fail according to this failure mode.
+  The interaction of multiple active failure modes is reflected
+  by the global material stressing effort.
+
+  The Failure Mode Concept is suitable for 3D stress states,
+  however, the equations for the plane stress state are shown here.
+  They are derived from the 3D stress state equations presented in
+  E. Petersen, R. G. Cuntze, and C. Huehne, “Experimental determination of
+  material parameters in Cuntze’s Failure-Mode-Concept-based UD strength failure
+  conditions,” Compos. Sci. Technol., vol. 134, pp. 12–25, Oct. 2016,
+  doi: 10.1016/j.compscitech.2016.08.006.
+
+  Eff = (Eff_FF1**m + Eff_FF2**m + Eff_IFF1**m + Eff_IFF2**m +
+  Eff_IFF3**m)**(1/m) <= 1.0
+
+  with
+  (if e[0] >= 0):   Eff_FF1 = e[0] * E1 / Xt
+  (if e[0] < 0):    Eff_FF2 = -e[0] * E1 / Xc
+  (if s[1] >= 0):   Eff_IFF1 = s[1] / Yt
+  (if s[1] < 0):    Eff_IFF2 = -s[1] / Yc
+  Eff_IFF3 = sqrt(s[2]**2 * (b_tl * s[1] + sqrt(b_tl**2 * s[1]**2 + S12**2)) /
+  S12**3)
+
+  2b. The Failure Mode Concept from Cuntze for woven plies:
+
+  Adapted from J. Bold, "Vergleich des Impaktverhaltens von monolithischer und
+  hybrider CFK-Platte unter Verwendung eines neuen Werkstoffmodells," Dr.-Ing.
+  dissertation, Technische Universitaet Braunschweig, Braunschweig, Germany,
+  2018.
+
+  Eff = (Eff_FF1**m + Eff_FF2**m + Eff_FF3**m + Eff_FF4**m + Eff_IFF1**m +
+  Eff_IFF2**m + Eff_IFF3**m + Eff_IFF4**m + Eff_IFF5**m)**(1/m) <= 1.0
+
+  with
+  (if e[0] >= 0):   Eff_FF1 = e[0] * E1 / Xt
+  (if e[0] < 0):    Eff_FF2 = -e[0] * E1 / Xc
+  (if e[1] >= 0):   Eff_FF3 = e[1] * E2 / Yt
+  (if e[1] < 0):    Eff_FF4 = -e[1] * E2 / Yc
+  Eff_IFF3 = abs(s[2]) / (S12 - muWF * (s[0] + s[1]))
+  Eff_IFF1 = Eff_IFF2 = Eff_IFF4 = Eff_IFF5 = 0 for plane stress state
 
   3. The maximum strain failure criteria:
 
@@ -843,6 +960,24 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
     } else {
       fail = linTerm + quadTerm;
     }
+  } else if (useCuntzeCriterion_UD) {
+    TacsScalar s[3];  // Ply stress
+    getPlyStress(e, s);
+
+    TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
+
+  } else if (useCuntzeCriterion_Woven) {
+    TacsScalar s[3];  // Ply stress
+    getPlyStress(e, s);
+
+    TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
+        eff_iff4, eff_iff5;
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
+
   } else {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6];
@@ -929,6 +1064,146 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     getPlyStress(sens, sSens);
 
     transformStressPly2Global(angle, sSens, sens);
+  } else if (useCuntzeCriterion_UD) {
+    TacsScalar s[3];  // Ply stress
+    getPlyStress(e, s);
+
+    TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
+
+    // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
+    TacsScalar tmp;
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds1 = 1.0 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds1;
+    } else {
+      TacsScalar deff_ff2_ds1 = -1.0 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds1;
+    }
+
+    sens[0] = pow(fail, 1.0 - m) * tmp;
+
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds2 = -1.0 * nu12 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds2;
+    } else {
+      TacsScalar deff_ff2_ds2 = nu12 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds2;
+    }
+
+    if (TacsRealPart(s[1]) >= 0.0) {
+      TacsScalar deff_iff1_ds2 = 1.0 / Yt;
+      tmp += pow(eff_iff1, m - 1.0) * deff_iff1_ds2;
+    } else {
+      TacsScalar deff_iff2_ds2 = -1.0 / Yc;
+      tmp += pow(eff_iff2, m - 1.0) * deff_iff2_ds2;
+    }
+
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] =
+        s[2] *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * b_tl * tmp_eff_iff3[0] /
+                               2.0 /
+                               sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
+
+    sens[1] = pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar deff_iff3_ds6 =
+        (dKSdf[0] - dKSdf[1]) *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
+
+    sens[2] = pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar sSens[3];
+    getPlyStress(sens, sSens);
+
+    transformStressPly2Global(angle, sSens, sens);
+
+  } else if (useCuntzeCriterion_Woven) {
+    TacsScalar s[3];  // Ply stress
+    getPlyStress(e, s);
+
+    TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
+        eff_iff4, eff_iff5;
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
+
+    // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
+    TacsScalar tmp;
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds1 = 1.0 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds1;
+    } else {
+      TacsScalar deff_ff2_ds1 = -1.0 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds1;
+    }
+
+    if (TacsRealPart(e[1]) >= 0.0) {
+      TacsScalar deff_ff3_ds1 = -1.0 * nu21 / Yt;
+      tmp += pow(eff_ff3, m - 1.0) * deff_ff3_ds1;
+    } else {
+      TacsScalar deff_ff4_ds1 = nu21 / Yc;
+      tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds1;
+    }
+
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds1 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds1;
+
+    sens[0] = pow(fail, 1.0 - m) * tmp;
+
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds2 = -1.0 * nu12 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds2;
+    } else {
+      TacsScalar deff_ff2_ds2 = nu12 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds2;
+    }
+
+    if (TacsRealPart(e[1]) >= 0.0) {
+      TacsScalar deff_ff3_ds2 = 1.0 / Yt;
+      tmp += pow(eff_ff3, m - 1.0) * deff_ff3_ds2;
+    } else {
+      TacsScalar deff_ff4_ds2 = -1.0 / Yc;
+      tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds2;
+    }
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
+
+    sens[1] = pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar deff_iff3_ds6 =
+        (dKSdf[0] - dKSdf[1]) / (S12 - muWF * (s[0] + s[1]));
+    tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
+
+    sens[2] = pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar sSens[3];
+    getPlyStress(sens, sSens);
+
+    transformStressPly2Global(angle, sSens, sens);
+
   } else {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6], fexp[6];
@@ -1014,6 +1289,150 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
            F1 * ss[0] + F2 * ss[1]);
     }
 
+  } else if (useCuntzeCriterion_UD) {
+    TacsScalar s[3];  // The ply stress
+    getPlyStress(e, s);
+
+    // Compute the sensitivity of the stress
+    TacsScalar ss[3];
+    getPlyStress(se, ss);
+
+    TacsScalar eff_ff1, eff_ff2, eff_iff1, eff_iff2, eff_iff3;
+    fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
+                                 &eff_iff3);
+
+    // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
+    TacsScalar tmp;
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds1 = 1.0 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds1;
+    } else {
+      TacsScalar deff_ff2_ds1 = -1.0 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds1;
+    }
+
+    // d(fail)/d(angle) = d(fail)/d(s1) * d(s1)/d(angle) ...
+    *failSens = ss[0] * pow(fail, 1.0 - m) * tmp;
+
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds2 = -1.0 * nu12 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds2;
+    } else {
+      TacsScalar deff_ff2_ds2 = nu12 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds2;
+    }
+
+    if (TacsRealPart(s[1]) >= 0.0) {
+      TacsScalar deff_iff1_ds2 = 1.0 / Yt;
+      tmp += pow(eff_iff1, m - 1.0) * deff_iff1_ds2;
+    } else {
+      TacsScalar deff_iff2_ds2 = -1.0 / Yc;
+      tmp += pow(eff_iff2, m - 1.0) * deff_iff2_ds2;
+    }
+
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] =
+        s[2] *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * b_tl * tmp_eff_iff3[0] /
+                               2.0 /
+                               sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12);
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
+
+    // d(fail)/d(angle) = ... + d(fail)/d(s2) * d(s2)/d(angle) ...
+    *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar deff_iff3_ds6 =
+        (dKSdf[0] - dKSdf[1]) *
+        sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+             (S12 * S12 * S12));
+    tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
+
+    // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
+    *failSens += ss[2] * pow(fail, 1.0 - m) * tmp;
+
+  } else if (useCuntzeCriterion_Woven) {
+    TacsScalar s[3];  // The ply stress
+    getPlyStress(e, s);
+
+    // Compute the sensitivity of the stress
+    TacsScalar ss[3];
+    getPlyStress(se, ss);
+
+    TacsScalar eff_ff1, eff_ff2, eff_ff3, eff_ff4, eff_iff1, eff_iff2, eff_iff3,
+        eff_iff4, eff_iff5;
+    fail = CuntzeWoven_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_ff3,
+                                    &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
+                                    &eff_iff4, &eff_iff5);
+
+    // Calculate the sensitivity of the failure criteria w.r.t the 3 stresses
+    TacsScalar tmp;
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds1 = 1.0 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds1;
+    } else {
+      TacsScalar deff_ff2_ds1 = -1.0 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds1;
+    }
+
+    if (TacsRealPart(e[1]) >= 0.0) {
+      TacsScalar deff_ff3_ds1 = -1.0 * nu21 / Yt;
+      tmp += pow(eff_ff3, m - 1.0) * deff_ff3_ds1;
+    } else {
+      TacsScalar deff_ff4_ds1 = nu21 / Yc;
+      tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds1;
+    }
+
+    TacsScalar tmp_eff_iff3[2];
+    tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+    tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+
+    TacsScalar dKSdf[2];
+    ksAggregationSens(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight, dKSdf);
+
+    TacsScalar deff_iff3_ds1 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds1;
+
+    // d(fail)/d(angle) = d(fail)/d(s1) * d(s1)/d(angle) ...
+    *failSens = ss[0] * pow(fail, 1.0 - m) * tmp;
+
+    if (TacsRealPart(e[0]) >= 0.0) {
+      TacsScalar deff_ff1_ds2 = -1.0 * nu12 / Xt;
+      tmp = pow(eff_ff1, m - 1.0) * deff_ff1_ds2;
+    } else {
+      TacsScalar deff_ff2_ds2 = nu12 / Xc;
+      tmp = pow(eff_ff2, m - 1.0) * deff_ff2_ds2;
+    }
+
+    if (TacsRealPart(e[1]) >= 0.0) {
+      TacsScalar deff_ff3_ds2 = 1.0 / Yt;
+      tmp += pow(eff_ff3, m - 1.0) * deff_ff3_ds2;
+    } else {
+      TacsScalar deff_ff4_ds2 = -1.0 / Yc;
+      tmp += pow(eff_ff4, m - 1.0) * deff_ff4_ds2;
+    }
+
+    TacsScalar deff_iff3_ds2 = (dKSdf[0] - dKSdf[1]) * tmp_eff_iff3[0] * muWF /
+                               (S12 - muWF * (s[0] + s[1]));
+    tmp += pow(eff_iff3, m - 1.0) * deff_iff3_ds2;
+
+    // d(fail)/d(angle) = ... + d(fail)/d(s2) * d(s2)/d(angle) ...
+    *failSens += ss[1] * pow(fail, 1.0 - m) * tmp;
+
+    TacsScalar deff_iff3_ds6 =
+        (dKSdf[0] - dKSdf[1]) / (S12 - muWF * (s[0] + s[1]));
+    tmp = pow(eff_iff3, m - 1.0) * deff_iff3_ds6;
+
+    // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
+    *failSens += ss[2] * pow(fail, 1.0 - m) * tmp;
+
   } else {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6], fs[6];
@@ -1051,6 +1470,95 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
 
     *failSens = fSens / ksSum;
   }
+
+  return fail;
+}
+
+// Cuntze criterion for UD plies
+TacsScalar TACSOrthotropicPly::CuntzeUD_FailureModes(
+    const TacsScalar e[], const TacsScalar s[], TacsScalar *eff_ff1,
+    TacsScalar *eff_ff2, TacsScalar *eff_iff1, TacsScalar *eff_iff2,
+    TacsScalar *eff_iff3) {
+  TacsScalar fail = 0.0;
+  if (TacsRealPart(e[0]) >= 0.0) {
+    *eff_ff1 = e[0] * E1 / Xt;
+    *eff_ff2 = 0.0;
+    fail += pow(*eff_ff1, m);
+  } else {
+    *eff_ff1 = 0.0;
+    *eff_ff2 = -1.0 * e[0] * E1 / Xc;
+    fail += pow(*eff_ff2, m);
+  }
+
+  if (TacsRealPart(s[1]) >= 0.0) {
+    *eff_iff1 = s[1] / Yt;
+    *eff_iff2 = 0.0;
+    fail += pow(*eff_iff1, m);
+  } else {
+    *eff_iff1 = 0.0;
+    *eff_iff2 = -1.0 * s[1] / Yc;
+    fail += pow(*eff_iff2, m);
+  }
+
+  // Eff_IFF3 is an abs(x) function. It is replaced by a KS aggregation
+  // of x and -x to calculate derivatives that are defined at 0.0 and
+  // that change continuously.
+  TacsScalar tmp_eff_iff3[2];
+  tmp_eff_iff3[0] =
+      s[2] * sqrt((b_tl * s[1] + sqrt(b_tl * b_tl * s[1] * s[1] + S12 * S12)) /
+                  (S12 * S12 * S12));
+  tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+  *eff_iff3 = ksAggregation(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight);
+  fail += pow(*eff_iff3, m);
+
+  fail = pow(fail, 1.0 / m);
+
+  return fail;
+}
+
+// Cuntze criterion for woven plies
+TacsScalar TACSOrthotropicPly::CuntzeWoven_FailureModes(
+    const TacsScalar e[], const TacsScalar s[], TacsScalar *eff_ff1,
+    TacsScalar *eff_ff2, TacsScalar *eff_ff3, TacsScalar *eff_ff4,
+    TacsScalar *eff_iff1, TacsScalar *eff_iff2, TacsScalar *eff_iff3,
+    TacsScalar *eff_iff4, TacsScalar *eff_iff5) {
+  TacsScalar fail = 0.0;
+  if (TacsRealPart(e[0]) >= 0.0) {
+    *eff_ff1 = e[0] * E1 / Xt;
+    *eff_ff2 = 0.0;
+    fail += pow(*eff_ff1, m);
+  } else {
+    *eff_ff1 = 0.0;
+    *eff_ff2 = -1.0 * e[0] * E1 / Xc;
+    fail += pow(*eff_ff2, m);
+  }
+
+  if (TacsRealPart(e[1]) >= 0.0) {
+    *eff_ff3 = e[1] * E2 / Yt;
+    *eff_ff4 = 0.0;
+    fail += pow(*eff_ff3, m);
+  } else {
+    *eff_ff3 = 0.0;
+    *eff_ff4 = -1.0 * e[1] * E2 / Yc;
+    fail += pow(*eff_ff4, m);
+  }
+
+  *eff_iff1 = 0.0;
+  *eff_iff2 = 0.0;
+
+  // Eff_IFF3 is an abs(x) function. It is replaced by a KS aggregation
+  // of x and -x to calculate derivatives that are defined at 0.0 and
+  // that change continuously.
+  TacsScalar tmp_eff_iff3[2];
+  tmp_eff_iff3[0] = s[2] / (S12 - muWF * (s[0] + s[1]));
+  tmp_eff_iff3[1] = -tmp_eff_iff3[0];
+  *eff_iff3 = ksAggregation(tmp_eff_iff3, 2, Cuntze_IFF3_ksWeight);
+  fail += pow(*eff_iff3, m);
+
+  *eff_iff4 = 0.0;
+  *eff_iff5 = 0.0;
+
+  fail = pow(fail, 1.0 / m);
 
   return fail;
 }
