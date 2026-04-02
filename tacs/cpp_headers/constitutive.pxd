@@ -31,6 +31,8 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar,
                                TacsScalar,
                                TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar, 
+                               TacsScalar, TacsScalar, TacsScalar, 
                                TacsScalar, TacsScalar, TacsScalar)
         void setDensity(TacsScalar)
         TacsScalar getDensity();
@@ -41,6 +43,8 @@ cdef extern from "TACSMaterialProperties.h":
                                       TacsScalar*, TacsScalar*, TacsScalar*)
         void getStrengthProperties(TacsScalar*, TacsScalar*, TacsScalar*,
                                    TacsScalar*, TacsScalar*, TacsScalar*,
+                                   TacsScalar*, TacsScalar*, TacsScalar*, 
+                                   TacsScalar*, TacsScalar*, TacsScalar*, 
                                    TacsScalar*, TacsScalar*, TacsScalar*)
         void getCoefThermalExpansion(TacsScalar*, TacsScalar*, TacsScalar*)
         void getThermalConductivity(TacsScalar*, TacsScalar*, TacsScalar*)
@@ -52,6 +56,8 @@ cdef extern from "TACSMaterialProperties.h":
         void setKSWeight(TacsScalar)
         void setUseMaxStrainCriterion()
         void setUseTsaiWuCriterion()
+        void setUseCuntzeCriterion_UD()
+        void setUseCuntzeCriterion_Woven()
 
 cdef extern from "TACSPlaneStressConstitutive.h":
     cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):

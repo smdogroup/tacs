@@ -211,6 +211,21 @@ cdef class MaterialProperties:
         S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
         S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
         S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
+    
+        b_tt (float or complex, optional): The material friction parameter for the failure mode IFF2 
+            (transverse - transverse stress plane) in the Cuntze failure criterion for UD material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        b_tl (float or complex, optional): The material friction parameter for the failure mode IFF3 
+            (transverse - longitudinal stress plane) in the Cuntze failure criterion for UD material (keyword argument).
+        muWF (float or complex, optional): The material friction value for the failure mode IFF_WF 
+            (Warp - Fill stress plane) in the Cuntze failure criterion for woven material (keyword argument).
+        mu3W (float or complex, optional): The material friction value for the failure mode IFF_3W 
+            (3 - Warp stress plane) in the Cuntze failure criterion for woven material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        mu3F (float or complex, optional): The material friction value for the failure mode IFF_3F 
+            (3 - Fill stress plane) in the Cuntze failure criterion for woven material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        m (float or complex, optional): The interaction exponent used in the Cuntze failure criterion (keyword argument).
     """
     def __cinit__(self, **kwargs):
         # Set the density and specific heat value
@@ -244,6 +259,14 @@ cdef class MaterialProperties:
         cdef TacsScalar S13 = 0.0
         cdef TacsScalar S23 = 0.0
 
+        # Material properties for the Cuntze failure criterion
+        cdef TacsScalar b_tt = 0.0
+        cdef TacsScalar b_tl = 0.0
+        cdef TacsScalar muWF = 0.0
+        cdef TacsScalar mu3W = 0.0
+        cdef TacsScalar mu3F = 0.0
+        cdef TacsScalar m = 0.0
+
         # Set the thermal coefficient of expansion
         cdef TacsScalar alpha = 24e-6
         cdef TacsScalar alpha1 = 24e-6
@@ -265,7 +288,9 @@ cdef class MaterialProperties:
                             "S12", "S13", "S23",
                             "Xt", "Yt", "Xc", "Yc", "S",
                             "alpha1", "alpha2", "alpha3",
-                            "kappa1", "kappa2", "kappa3"]
+                            "kappa1", "kappa2", "kappa3", 
+                            "b_tt", "b_tl", "muWF", 
+                            "mu3W", "mu3F", "m"]
         ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
 
         # Check for any invalid/misspelled inputs
@@ -364,6 +389,20 @@ cdef class MaterialProperties:
         if 'S23' in kwargs:
             S23 = kwargs['S23']
 
+        # Cuntze properties
+        if 'b_tt' in kwargs:
+            b_tt = kwargs['b_tt']
+        if 'b_tl' in kwargs:
+            b_tl = kwargs['b_tl']
+        if 'muWF' in kwargs:
+            muWF = kwargs['muWF']
+        if 'mu3W' in kwargs:
+            mu3W = kwargs['mu3W']
+        if 'mu3F' in kwargs:
+            mu3F = kwargs['mu3F']
+        if 'm' in kwargs:
+            m = kwargs['m']
+
         # Set the thermal coefficient of expansion
         if 'alpha1' in kwargs:
             alpha1 = kwargs['alpha1']
@@ -385,7 +424,8 @@ cdef class MaterialProperties:
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
                                                   alpha1, alpha2, alpha3,
-                                                  kappa1, kappa2, kappa3)
+                                                  kappa1, kappa2, kappa3, 
+                                                  b_tt, b_tl, muWF, mu3W, mu3F, m)
         else:
             self.ptr = new TACSMaterialProperties(rho, specific_heat,
                                                   E, nu, ys, alpha, kappa)
@@ -431,7 +471,8 @@ cdef class MaterialProperties:
 
         rho = self.ptr.getDensity()
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, NULL, NULL, 
+                                       NULL, NULL, NULL, NULL)
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
             self.ptr.getIsotropicProperties(&E1, &nu12)
@@ -456,13 +497,15 @@ cdef class MaterialProperties:
 
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
         cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar b_tt, b_tl, muWF, mu3W, mu3F, m
         cdef TacsScalar alpha1, alpha2, alpha3
         cdef TacsScalar kappa1, kappa2, kappa3
 
         rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, &b_tt, &b_tl, 
+                                       &muWF, &mu3W, &mu3F, &m)
         self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
 
@@ -487,6 +530,13 @@ cdef class MaterialProperties:
         mat['S12'] = S12
         mat['S13'] = S13
         mat['S23'] = S23
+
+        mat['b_tt'] = b_tt
+        mat['b_tl'] = b_tl
+        mat['muWF'] = muWF
+        mat['mu3W'] = mu3W
+        mat['mu3F'] = mu3F
+        mat['m'] = m
 
         mat['alpha1'] = alpha1
         mat['alpha2'] = alpha2
@@ -532,16 +582,28 @@ cdef class OrthotropicPly:
           ply_thickness (float or complex): The ply thickness.
           props (MaterialProperties): The ply material property.
           max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use max strength).
+            Defaults to False (i.e. use Tsai-Wu).
+          Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+            unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).
+          Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+            woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).
     """
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  max_strain_criterion=False):
+                  max_strain_criterion=False, Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
         self.ptr.incref()
+
+        if [max_strain_criterion, Cuntze_criterion_UD, Cuntze_criterion_Woven].count(True) > 1:
+            raise ValueError('Only one failure criterion can be specified.')
+
         if max_strain_criterion:
             self.ptr.setUseMaxStrainCriterion()
+        elif Cuntze_criterion_UD:
+            self.ptr.setUseCuntzeCriterion_UD()
+        elif Cuntze_criterion_Woven:
+            self.ptr.setUseCuntzeCriterion_Woven()
         else:
             self.ptr.setUseTsaiWuCriterion()
         self.props = props
