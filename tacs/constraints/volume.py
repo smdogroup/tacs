@@ -132,9 +132,9 @@ class VolumeConstraint(TACSConstraint):
                     # will be inconsistent
                     for i, iComp in enumerate(edgeToFace[edgeKey][:-1]):
                         for jComp in edgeToFace[edgeKey][i + 1 :]:
-                            self.adjacentOrientationMatch[iComp][jComp] = (
-                                self.adjacentOrientationMatch[jComp][iComp]
-                            ) = False
+                            self.adjacentOrientationMatch[iComp][
+                                jComp
+                            ] = self.adjacentOrientationMatch[jComp][iComp] = False
                 # If this component shares an edge with another component
                 # but the edge ordering is reversed, the normal orientations
                 # will be consistent
@@ -142,9 +142,9 @@ class VolumeConstraint(TACSConstraint):
                 if flippedEdgeKey in edgeToFace:
                     for iComp in edgeToFace[edgeKey]:
                         for jComp in edgeToFace[flippedEdgeKey]:
-                            self.adjacentOrientationMatch[iComp][jComp] = (
-                                self.adjacentOrientationMatch[jComp][iComp]
-                            ) = True
+                            self.adjacentOrientationMatch[iComp][
+                                jComp
+                            ] = self.adjacentOrientationMatch[jComp][iComp] = True
 
         else:
             self.adjacentOrientationMatch = None
@@ -367,7 +367,7 @@ class VolumeConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> volConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> volConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if VolumeConstraint has name of 'c1'):
         >>> # {'c1_wing': array([12354.10])}
@@ -402,7 +402,7 @@ class VolumeConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> volConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> volConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if VolumeConstraint has name of 'c1'):
         >>> # {'c1_wing':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}

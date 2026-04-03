@@ -37,9 +37,7 @@ class TestCaps2TacsSizing(unittest.TestCase):
             global_mesh_size=0.1,
             max_surf_offset=0.01,
             max_dihedral_angle=5,
-        ).register_to(
-            tacs_model
-        )
+        ).register_to(tacs_model)
         aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 
         # setup the thickness design variables + automatic shell properties

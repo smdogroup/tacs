@@ -236,9 +236,7 @@ caps_struct.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative
     global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
-).register_to(
-    tacs_aim
-)
+).register_to(tacs_aim)
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_aim)
 

@@ -476,7 +476,7 @@ class PanelLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> conBounds = {}
-        >>> tacsConstraint.getConstraintBounds(conBounds, 'LE_SPAR')
+        >>> tacsConstraint.getConstraintBounds(conBounds, "LE_SPAR")
         >>> conBounds
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
@@ -507,7 +507,7 @@ class PanelLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> conSizes = {}
-        >>> tacsConstraint.getConstraintSizes(conSizes, 'LE_SPAR')
+        >>> tacsConstraint.getConstraintSizes(conSizes, "LE_SPAR")
         >>> funconSizescs
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': 10}
@@ -541,7 +541,7 @@ class PanelLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> plConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> plConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if PanelLengthConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([1.325, 2.1983645, 3.1415926, ...])}
@@ -621,7 +621,7 @@ class PanelLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> adjConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> adjConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}

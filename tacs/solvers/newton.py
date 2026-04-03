@@ -454,7 +454,7 @@ class NewtonSolver(BaseSolver):
             uNorm = u.norm()
             if self.rank == 0 and PRINT_LINESEARCH_ITERS:
                 print(
-                    f"Line search iter {(iteration+1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew/f0): 11e}, uNorm = {uNorm: 11e}"
+                    f"Line search iter {(iteration + 1):2d}: alpha = {alpha: 11e}, f/f0 = {(fNew / f0): 11e}, uNorm = {uNorm: 11e}"
                 )
             u.axpy(-alpha, stepDir)
             fReduction = np.abs(fNew / f0)

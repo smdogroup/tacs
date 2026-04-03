@@ -56,7 +56,7 @@ class TestPlateCases(unittest.TestCase):
             f"\n\nVerification of case 1 - uniaxial compression,\n\tsimply supported plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )
@@ -91,7 +91,7 @@ class TestPlateCases(unittest.TestCase):
             f"\n\nVerification of case 2 - pure shear,\n\tclamped plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {pos_tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )
@@ -123,7 +123,7 @@ class TestPlateCases(unittest.TestCase):
             f"\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )

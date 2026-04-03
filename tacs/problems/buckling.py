@@ -284,7 +284,7 @@ class BucklingProblem(TACSProblem):
         --------
         >>> funcs = {}
         >>> bucklingProblem.solve()
-        >>> bucklingProblem.evalFunctions(funcs, 'eigsm.0')
+        >>> bucklingProblem.evalFunctions(funcs, "eigsm.0")
         >>> funcs
         >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':12354.10}
@@ -335,7 +335,7 @@ class BucklingProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> bucklingProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
+        >>> bucklingProblem.evalFunctionsSens(funcsSens, "eigsm.0")
         >>> funcsSens
         >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}

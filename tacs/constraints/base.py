@@ -109,7 +109,7 @@ class TACSConstraint(TACSSystem):
         Examples
         --------
         >>> conBounds = {}
-        >>> tacsConstraint.getConstraintBounds(conBounds, 'LE_SPAR')
+        >>> tacsConstraint.getConstraintBounds(conBounds, "LE_SPAR")
         >>> conBounds
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}
@@ -142,7 +142,7 @@ class TACSConstraint(TACSSystem):
         Examples
         --------
         >>> conSizes = {}
-        >>> tacsConstraint.getConstraintSizes(conSizes, 'LE_SPAR')
+        >>> tacsConstraint.getConstraintSizes(conSizes, "LE_SPAR")
         >>> funconSizescs
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': 10}
@@ -189,7 +189,7 @@ class TACSConstraint(TACSSystem):
         Examples
         --------
         >>> funcs = {}
-        >>> tacsConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> tacsConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12354.10])}
@@ -216,7 +216,7 @@ class TACSConstraint(TACSSystem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> tacsConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> tacsConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}

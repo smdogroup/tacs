@@ -40,9 +40,7 @@ class TestCaps2TacsShape(unittest.TestCase):
             global_mesh_size=0.1,
             max_surf_offset=0.01,
             max_dihedral_angle=5,
-        ).register_to(
-            tacs_model
-        )
+        ).register_to(tacs_model)
         aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 
         # setup the thickness design variables + automatic shell properties
@@ -96,9 +94,7 @@ class TestCaps2TacsShape(unittest.TestCase):
 
         # total derivative with finite difference
         h = 1.0e-4
-        for (
-            shape_var
-        ) in (
+        for shape_var in (
             tacs_model.shape_variables
         ):  # perturb the variables to affect update design
             shape_var.value += dxds[shape_var.name] * h

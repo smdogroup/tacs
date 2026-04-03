@@ -236,8 +236,7 @@ class StaticProblem(TACSProblem):
                 self.nonlinearSolver.setCallback(self._nonlinearCallback)
             else:
                 raise self._TACSError(
-                    "Unknown nonlinearSolver option. Valid options are "
-                    "'Continuation'"
+                    "Unknown nonlinearSolver option. Valid options are 'Continuation'"
                 )
 
     def _createVariables(self):
@@ -351,7 +350,7 @@ class StaticProblem(TACSProblem):
         #        opt('nRestarts'), opt('flexible'))
         else:
             raise self._TACSError(
-                "Unknown linearSolver option. Valid options are " "'GMRES' or 'GCROT'"
+                "Unknown linearSolver option. Valid options are 'GMRES' or 'GCROT'"
             )
 
         self.linearSolver.setTolerances(
@@ -1097,7 +1096,7 @@ class StaticProblem(TACSProblem):
         --------
         >>> funcs = {}
         >>> staticProblem.solve()
-        >>> staticProblem.evalFunctions(funcs, ['mass'])
+        >>> staticProblem.evalFunctions(funcs, ["mass"])
         >>> funcs
         >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'cl_mass':12354.10}
@@ -1183,7 +1182,7 @@ class StaticProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> staticProblem.evalFunctionsSens(funcsSens, ['mass'])
+        >>> staticProblem.evalFunctionsSens(funcsSens, ["mass"])
         >>> funcsSens
         >>> # Result will look like (if StaticProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
@@ -1207,7 +1206,7 @@ class StaticProblem(TACSProblem):
         for f in evalFuncs:
             if f not in self.functionList:
                 raise self._TACSError(
-                    "Supplied function has not been added " "using addFunction()"
+                    "Supplied function has not been added using addFunction()"
                 )
             else:
                 # Populate the lists with the tacs bvecs

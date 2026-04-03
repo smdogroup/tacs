@@ -500,7 +500,10 @@ class pyTACS(BaseUI):
 
             # This will select upper skin components between the
             # leading and trailing edge spars and between ribs 1 and 4.
-            selectCompIDs(include="U_SKIN", includeBound=["LE_SPAR", "TE_SPAR", "RIB.01", "RIB.04"])
+            selectCompIDs(
+                include="U_SKIN",
+                includeBound=["LE_SPAR", "TE_SPAR", "RIB.01", "RIB.04"],
+            )
 
         4. nGroup: The number of groups to divide the found components
         into.
