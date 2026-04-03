@@ -49,7 +49,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
 
         # Overwrite default tolerances from base class
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-11
             self.atol = 1e-6
             self.dh = 1e-50

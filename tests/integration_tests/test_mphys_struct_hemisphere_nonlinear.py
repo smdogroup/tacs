@@ -54,7 +54,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         """
 
         # Overwrite default tolerances
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-7
             self.dh = 1e-200
         else:

@@ -36,7 +36,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
 
         # Overwrite default check values
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-7
             self.atol = 1e-4
             self.dh = 1e-50

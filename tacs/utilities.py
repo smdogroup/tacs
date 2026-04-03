@@ -164,7 +164,7 @@ class BaseUI:
         self._pp("+----------------------------------------+")
         for name in self.options:
             if name != "defaults":
-                if self.options[name][0] == str:
+                if self.options[name][0] is str:
                     self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
                     self._pp(f"'{name}': {self.options[name][1]}")
@@ -198,7 +198,7 @@ class BaseUI:
         print("+----------------------------------------+")
         if hasattr(cls, "defaultOptions"):
             for name in cls.defaultOptions:
-                if cls.defaultOptions[name][0] == str:
+                if cls.defaultOptions[name][0] is str:
                     print(f"'{name}': '{cls.defaultOptions[name][1]}'")
                 else:
                     print(f"'{name}': {cls.defaultOptions[name][1]}")
