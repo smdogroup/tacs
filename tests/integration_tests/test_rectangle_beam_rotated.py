@@ -7,9 +7,9 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions, TACS
 
 """
-This is the same test cases as `test_rectangle_beam_tractions.py`, but the beam has been rotated 
-about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the beam solution 
-is invariant under trivial transformation: 
+This is the same test cases as `test_rectangle_beam_tractions.py`, but the beam has been rotated
+about the y-axis by 45 degrees, so that it lies in a slant in the xz plane. This test ensures that the beam solution
+is invariant under trivial transformation:
 
 6 noded beam model 1 meter long in x' direction.
 The cross-section is a solid rectangle with the following properties:

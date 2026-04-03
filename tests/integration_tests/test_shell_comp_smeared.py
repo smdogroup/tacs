@@ -8,7 +8,7 @@ from tacs import pytacs, elements, constitutive, functions
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is identical to test_shell_comp_unbalanced.py except since the laminate 
+This test is identical to test_shell_comp_unbalanced.py except since the laminate
 is smeared all stacking sequence dependence is neglected.
 tests KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions
 and sensitivities.

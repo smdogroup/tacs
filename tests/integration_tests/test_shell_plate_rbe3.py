@@ -5,9 +5,9 @@ from tacs import TACS, elements, constitutive, functions
 
 r"""
 Create a two separate cantilevered plates connected by an RBE3 element.
-Apply a load at the RBE3 center node and test KSFailure, StructuralMass, 
+Apply a load at the RBE3 center node and test KSFailure, StructuralMass,
 and Compliance functions and sensitivities
------------        ----------- 
+-----------        -----------
 |          |\    /|          |
 |          | \  / |          |
 | Plate 1  |__\/__| Plate 2  |

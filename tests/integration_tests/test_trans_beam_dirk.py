@@ -6,9 +6,9 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
 
 """
-The test case features a cantilevered beam with a time-varying out-of-plane tip load. 
+The test case features a cantilevered beam with a time-varying out-of-plane tip load.
 Varying the two trials are run on each case with varying time step refinement.
-The time integration is performed using 2nd-order DIRK in order to verify its 
+The time integration is performed using 2nd-order DIRK in order to verify its
 convergence behavior.
 """
 

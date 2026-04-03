@@ -12,8 +12,8 @@ from tacs import elements, constitutive, functions
 """
 This is a simple 1m by 2m plate made up of four quad shell elements.
 A point mass is added to the tip of the plate and is attached using a RBE2 element.
-The plate is structurally loaded under a 100G gravity load and a unit force, 
-"f_aero_struct", is applied on on every node. The mass and KSFailure of the plate 
+The plate is structurally loaded under a 100G gravity load and a unit force,
+"f_aero_struct", is applied on on every node. The mass and KSFailure of the plate
 are evaluated as outputs and have their partial and total sensitivities checked.
 """
 

@@ -5,7 +5,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs
 
 """
-A cylinder, of unit radius and height, constructed from quad shell elements is tested. 
+A cylinder, of unit radius and height, constructed from quad shell elements is tested.
 All of the faces have flipped normals (pointing inwards).
 This test verifies the robustness of the VolumeConstraint class for shell elements.
 """

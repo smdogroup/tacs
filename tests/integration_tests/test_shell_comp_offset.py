@@ -6,7 +6,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """
-This is the same geometry as `test_shell_plate_quad.py`, but the plate is offset 
+This is the same geometry as `test_shell_plate_quad.py`, but the plate is offset
 in the z direction, so that the shell plane no longer aligns with the nodes of the model.
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Agravity load in the x direction is applied.

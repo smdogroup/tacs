@@ -6,7 +6,7 @@ import unittest
 
 """"
 The nominal case is a 1m x 0.7m flat plate under a buckling analysis. The
-perimeter of the plate is pinned and loaded in combined axial and shear on its horizontal edges. 
+perimeter of the plate is pinned and loaded in combined axial and shear on its horizontal edges.
 This tests the eigenvalues and eigenvalue sensitivities
 """
 

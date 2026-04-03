@@ -6,7 +6,7 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs
 
 """
-A unit cube with each face constructed from a quad shell element is tested. 
+A unit cube with each face constructed from a quad shell element is tested.
 Two of the faces have flipped normals (pointing inwards).
 This test verifies the robustness of the VolumeConstraint class for shell elements.
 """

@@ -7,12 +7,12 @@ from tacs import pytacs, functions, TACS
 
 """
 6 noded beam model 1 meter long in x direction.
-The cross-section is a solid rectangle (defined by PBARL) with the 
+The cross-section is a solid rectangle (defined by PBARL) with the
 following properties:
     w = 0.1
     t = 0.05
 We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
 """
 
