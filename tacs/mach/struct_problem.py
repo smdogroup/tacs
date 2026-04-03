@@ -555,7 +555,7 @@ class StructProblem(BaseStructProblem):
         # Set load scale back
         self.staticProblem.setLoadScale(loadScale0)
 
-        return successFlag
+        return damp
 
     @updateDVGeo
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
