@@ -499,9 +499,6 @@ class StructProblem(BaseStructProblem):
 
         Parameters
         ----------
-        Fext : numpy.ndarray or tacs.TACS.Vec, optional
-            Distributed array containing additional loads (ex. aerodynamic forces for aerostructural coupling)
-            to applied to RHS of the static problem, by default None
         damp : float
             Value to use to damp the solution update.
         useAitkenAcceleration : bool
