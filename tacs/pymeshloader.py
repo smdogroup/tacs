@@ -252,19 +252,19 @@ class pyMeshLoader(BaseUI):
         # Create Node ID map
         nastranIDs = self.bdfInfo.node_ids
         tacsIDs = range(self.bdfInfo.nnodes)
-        nodeTuple = zip(nastranIDs, tacsIDs)
+        nodeTuple = zip(nastranIDs, tacsIDs, strict=True)
         self.nastranToTACSNodeIDDict = dict(nodeTuple)
 
         # Create Property/Component ID map
         nastranIDs = self.bdfInfo.property_ids
         tacsIDs = range(self.bdfInfo.nproperties)
-        propTuple = zip(nastranIDs, tacsIDs)
+        propTuple = zip(nastranIDs, tacsIDs, strict=True)
         self.nastranToTACSCompIDDict = dict(propTuple)
 
         # Create Element ID map
         nastranIDs = self.bdfInfo.element_ids
         tacsIDs = range(self.bdfInfo.nelements)
-        elemTuple = zip(nastranIDs, tacsIDs)
+        elemTuple = zip(nastranIDs, tacsIDs, strict=True)
         self.nastranToTACSElemIDDict = dict(elemTuple)
 
     def getBDFInfo(self):

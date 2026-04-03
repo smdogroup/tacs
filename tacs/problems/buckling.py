@@ -825,7 +825,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, xptSens in zip(indices, xptSensList):
+        for index, xptSens in zip(indices, xptSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(xptSens, np.ndarray):
                 xptSensBVec = self._arrayToNodeVec(xptSens)
@@ -862,7 +862,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, dvSens in zip(indices, dvSensList):
+        for index, dvSens in zip(indices, dvSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(dvSens, np.ndarray):
                 dvSensBVec = self._arrayToDesignVec(dvSens)
@@ -896,7 +896,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, svSens in zip(indices, svSensList):
+        for index, svSens in zip(indices, svSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(svSens, np.ndarray):
                 svSensBVec = self._arrayToVec(svSens)

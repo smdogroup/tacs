@@ -63,7 +63,7 @@ class TACSConstraint(TACSSystem):
         # Sum local dv ranges over each proc to get global dv ranges
         ownerRange[1:] = np.cumsum(nLocalDVsOnProc)
         self.globalToLocalDVNums = dict(
-            zip(range(ownerRange[rank], ownerRange[rank + 1]), range(nLocalDVs))
+            zip(range(ownerRange[rank], ownerRange[rank + 1]), range(nLocalDVs), strict=True)
         )
 
     ####### Eval constraint methods ########

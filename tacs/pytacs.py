@@ -1771,7 +1771,7 @@ class pyTACS(BaseUI):
                 if "DLOAD" in subCase:
                     dloadsID = subCase["DLOAD"][0]
                     dloadSet, dloadScale = self.bdfInfo.get_reduced_dloads(dloadsID)
-                    for dloadInfo, dscale in zip(dloadSet, dloadScale):
+                    for dloadInfo, dscale in zip(dloadSet, dloadScale, strict=True):
                         timeSteps = problem.getTimeSteps()
                         if dloadInfo.type in ["TLOAD1", "TLOAD2"]:
                             if dloadInfo.type == "TLOAD1":

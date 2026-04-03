@@ -1322,7 +1322,7 @@ class StaticProblem(TACSProblem):
 
         # Update from the BVec values, if the input was a numpy array
         if isinstance(svSensList[0], np.ndarray):
-            for svSensArray, svSensBVec in zip(svSensList, svSensBVecList):
+            for svSensArray, svSensBVec in zip(svSensList, svSensBVecList, strict=True):
                 svSensArray[:] = svSensBVec.getArray()
 
     def addDVSens(self, evalFuncs, dvSensList, scale=1.0):

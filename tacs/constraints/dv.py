@@ -174,7 +174,7 @@ class DVConstraint(TACSConstraint):
             # Get the dvs owned by this element
             globalDvNums = elemObj.getDesignVarNums(elemIndex)
             # Check if each specified dv num is owned by this proc
-            for dvIndex, dvWeight in zip(dvIndices, dvWeights):
+            for dvIndex, dvWeight in zip(dvIndices, dvWeights, strict=True):
                 if globalDvNums[dvIndex] in self.globalToLocalDVNums:
                     globalDVNum = globalDvNums[dvIndex]
                     localDVNum = self.globalToLocalDVNums[globalDVNum]

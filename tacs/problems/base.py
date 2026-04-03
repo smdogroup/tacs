@@ -746,7 +746,7 @@ class TACSProblem(TACSSystem):
         # Get loads and scalers for this load case ID
         loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadID)
         # Loop through every load in set and add it to problem
-        for loadInfo, scale in zip(loadSet, loadScale):
+        for loadInfo, scale in zip(loadSet, loadScale, strict=True):
             scale *= setScale
             # Add any point force or moment cards
             if loadInfo.type == "FORCE" or loadInfo.type == "MOMENT":

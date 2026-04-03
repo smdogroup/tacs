@@ -491,7 +491,7 @@ class VolumeConstraint(TACSConstraint):
             )
             # Pull the updated xyz values of each node from each proc
             nodeXYZDict = {}
-            for gID, lID in zip(allNodeIDsGlobal, allNodeIDsLocal):
+            for gID, lID in zip(allNodeIDsGlobal, allNodeIDsLocal, strict=True):
                 # Node is owned by this proc, add values to dict
                 if lID >= 0:
                     nodeXYZDict[gID] = localXpts[lID]
