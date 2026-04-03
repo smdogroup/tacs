@@ -620,7 +620,7 @@ class pyMeshLoader(BaseUI):
 
     def getLocalNodeIDsForComps(self, componentIDs):
         """
-        return the local (partitioned) node IDs belonging to a given list of component IDs
+        Return the local (partitioned) node IDs belonging to a given list of component IDs
 
         Parameters
         ----------
@@ -1236,7 +1236,9 @@ class pyMeshLoader(BaseUI):
     def dofStringToList(self, dofString, numDOFs):
         """
         Converts a dof string to a boolean list.
-        Examples:
+
+        Examples
+        --------
             '123' -> [1, 1, 1, 0, 0, 0]
             '1346' -> [1, 0, 1, 1, 0, 1]
 
@@ -1298,7 +1300,7 @@ class pyMeshLoader(BaseUI):
     @property
     def allLocalNodeIDs(self):
         """
-        get list of tacs_ids for each nastran node owned across all processors
+        Get list of tacs_ids for each nastran node owned across all processors
         nastran_node = array_idx + 1
         tacs_idx = output id
         nastran_node - 1 => tacs_idx owned by this proc
@@ -1319,7 +1321,7 @@ class pyMeshLoader(BaseUI):
 
     def _getLocalNodeIDs(self):
         """
-        get the local struct ids owned by this processor, full list when comm is None
+        Get the local struct ids owned by this processor, full list when comm is None
         -1 for each idx not owned by this processor
         """
         num_nodes = self.bdfInfo.nnodes
@@ -1328,7 +1330,7 @@ class pyMeshLoader(BaseUI):
 
     def _nastranToLocalNodeIDMap(self):
         """
-        write the map nastran_node - 1 => tacs_idx on each processor
+        Write the map nastran_node - 1 => tacs_idx on each processor
         """
         local_struct_ids = self._getLocalNodeIDs()
         id_map = []

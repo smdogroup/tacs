@@ -242,7 +242,7 @@ class PanelLengthConstraint(TACSConstraint):
 
     def externalClearUpToDate(self):
         """
-        clear UpToDate by FUNtoFEM which sets variables into
+        Clear UpToDate by FUNtoFEM which sets variables into
         TACS through a different interface
         """
         for key in self.constraintsUpToDate:
@@ -266,7 +266,7 @@ class PanelLengthConstraint(TACSConstraint):
 
     def computeRefAxis(self, refAxis: np.ndarray, comp_bndry_node_coords: np.ndarray):
         """
-        remove the panelNormal from the refAxis
+        Remove the panelNormal from the refAxis
 
         Parameters
         ----------
@@ -708,7 +708,7 @@ class PanelLengthConstraint(TACSConstraint):
             List of compIDs to find boundaries of.
 
         Returns
-        --------
+        -------
         dict[int, list[int]]
             Dictionary where dict[compID] = sorted list of nodeIDs on the
             boundary of the component

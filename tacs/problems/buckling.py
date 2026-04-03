@@ -252,7 +252,7 @@ class BucklingProblem(TACSProblem):
         Get the number of eigenvalues requested from solver for this problem.
 
         Returns
-        ----------
+        -------
         numEigs : int
             Number of eigenvalues.
         """
@@ -403,7 +403,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -418,7 +417,6 @@ class BucklingProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -446,7 +444,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         nodeIDs : list[int]
             The nodes IDs with added loads.
 
@@ -460,7 +457,6 @@ class BucklingProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -496,7 +492,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
@@ -511,7 +506,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -536,7 +530,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
@@ -565,7 +558,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -590,7 +582,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
 
@@ -631,7 +622,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         omegaVector : numpy.ndarray
             Rotational velocity vector (rad/s) used to define centrifugal load.
 
@@ -651,7 +641,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         loadID : int
             Load identification number of load set in BDF file user wishes to add to problem.
 
@@ -791,7 +780,7 @@ class BucklingProblem(TACSProblem):
             Place eigenvector for mode into this array (optional).
 
         Returns
-        --------
+        -------
         eigVal: float
             Eigenvalue for mode corresponds to buckling load factor
 

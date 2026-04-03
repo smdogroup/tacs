@@ -21,8 +21,6 @@ import os
 # External Python modules
 # ==============================================================================
 import numpy as np
-from mpi4py import MPI
-from pprint import pprint
 
 # ==============================================================================
 # Extension modules

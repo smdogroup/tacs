@@ -7,9 +7,7 @@ Based off of Alasdair Christison Gray's Mach wing blade stiffened example in TAC
 """
 
 from tacs import caps2tacs
-import openmdao.api as om
 from mpi4py import MPI
-import numpy as np
 
 from _blade_callback import blade_elemCallBack
 

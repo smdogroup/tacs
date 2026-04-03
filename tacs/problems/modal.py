@@ -238,7 +238,7 @@ class ModalProblem(TACSProblem):
         Get the number of eigenvalues requested from solver for this problem.
 
         Returns
-        ----------
+        -------
         numEigs : int
             Number of eigenvalues.
         """
@@ -436,7 +436,7 @@ class ModalProblem(TACSProblem):
             Place eigenvector for mode into this array (optional).
 
         Returns
-        --------
+        -------
         eigVal: float
             Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 

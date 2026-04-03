@@ -41,7 +41,7 @@ class Constraint:
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this constraint to TacsAim
+        Cascaded method to register this constraint to TacsAim
         """
         tacs_aim.register(self)
         return self

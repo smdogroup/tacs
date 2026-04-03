@@ -555,7 +555,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -570,7 +569,6 @@ class StaticProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -598,7 +596,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         nodeIDs : list[int]
             The nodes IDs with added loads.
 
@@ -612,7 +609,6 @@ class StaticProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -648,7 +644,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
@@ -663,7 +658,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -688,7 +682,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
@@ -717,7 +710,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -742,7 +734,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
 
@@ -783,7 +774,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         omegaVector : numpy.ndarray
             Rotational velocity vector (rad/s) used to define centrifugal load.
 
@@ -803,7 +793,6 @@ class StaticProblem(TACSProblem):
 
         Parameters
         ----------
-
         loadID : int
             Load identification number of load set in BDF file user wishes to add to problem.
 
@@ -1802,7 +1791,7 @@ class StaticProblem(TACSProblem):
             Vector to place current state variables into (optional)
 
         Returns
-        ----------
+        -------
         states : numpy.ndarray
             current state vector
         """

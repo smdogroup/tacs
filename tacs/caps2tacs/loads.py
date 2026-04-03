@@ -4,7 +4,7 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 
 __all__ = ["Load", "Pressure", "GridForce"]
 
-from typing import TYPE_CHECKING, List
+from typing import List
 
 
 class Load:
@@ -38,7 +38,7 @@ class Load:
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this load to TacsAim
+        Cascaded method to register this load to TacsAim
         """
         tacs_aim.register(self)
         return self

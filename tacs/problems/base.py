@@ -137,7 +137,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -155,7 +154,6 @@ class TACSProblem(TACSSystem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -230,7 +228,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -247,7 +244,6 @@ class TACSProblem(TACSSystem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -346,7 +342,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
@@ -374,7 +369,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -423,7 +417,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -521,7 +514,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -570,7 +562,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -666,7 +657,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -696,7 +686,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -736,7 +725,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -885,7 +873,7 @@ class TACSProblem(TACSSystem):
 
     def writeSensFile(self, evalFuncs, tacsAim, proc: int = 0, root=0):
         """
-        write an ESP/CAPS .sens file from the tacs aim
+        Write an ESP/CAPS .sens file from the tacs aim
         Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
 
         Parameters

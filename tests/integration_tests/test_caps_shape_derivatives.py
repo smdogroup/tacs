@@ -4,8 +4,11 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-import unittest, os, numpy as np, importlib
-from tacs import caps2tacs, TACS
+import unittest
+import os
+import numpy as np
+import importlib
+from tacs import caps2tacs
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
@@ -26,7 +29,7 @@ np.random.seed(1234567)
 class TestCaps2TacsShape(unittest.TestCase):
     def test_wing_shape_derivatives(self):
         """
-        test the shape derivatives from ESP/CAPS into TACS forward & adjoint analysis
+        Test the shape derivatives from ESP/CAPS into TACS forward & adjoint analysis
         """
 
         # build the tacs model with constraints, loads, properties, analysis functions, mesh, etc.

@@ -1305,7 +1305,7 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def getOrigDesignVars(self):
         """
-        get the original design variables that were specified with
+        Get the original design variables that were specified with
         during assembler creation.
 
         Returns
@@ -1319,7 +1319,7 @@ class pyTACS(BaseUI):
     @postinitialize_method
     def getDesignVarRange(self):
         """
-        get the lower/upper bounds for the design variables.
+        Get the lower/upper bounds for the design variables.
 
         Returns
         -------
@@ -2213,7 +2213,7 @@ class pyTACS(BaseUI):
             Class-specific options to pass to PanelLengthConstraint instance (case-insensitive).
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.PanelLengthConstraint
             PanelLengthConstraint object used for calculating constraints.
         """
@@ -2243,7 +2243,7 @@ class pyTACS(BaseUI):
             Class-specific options to pass to PanelWidthConstraint instance (case-insensitive).
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.{PanelWidthConstraint}
             PanelWidthConstraint object used for calculating constraints.
         """
@@ -2273,7 +2273,7 @@ class pyTACS(BaseUI):
             Class-specific options to pass to StiffenerLengthConstraint instance (case-insensitive).
 
         Returns
-        ----------
+        -------
         constraint : tacs.constraints.StiffenerLengthConstraint
             StiffenerLengthConstraint object used for calculating constraints.
         """
@@ -2341,7 +2341,8 @@ class pyTACS(BaseUI):
 
     def _createOutputGroups(self):
         """Automatically determine how to split out the output file
-        for easier viewing"""
+        for easier viewing
+        """
 
         self.fam = []
         for i in range(self.nComp):
@@ -2404,7 +2405,8 @@ class pyTACS(BaseUI):
 
     def _getCompIDs(self, op, *inList):
         """Internal method to return the component IDs mathing
-        information in inList"""
+        information in inList
+        """
 
         # First recursively flatten the inList in case it was nested:
         inList = self._flatten(inList)

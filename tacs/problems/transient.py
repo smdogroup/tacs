@@ -281,7 +281,7 @@ class TransientProblem(TACSProblem):
         Get the number of time steps used in time integration for this problem.
 
         Returns
-        ----------
+        -------
         numSteps : int
             Number of time steps.
         """
@@ -293,7 +293,7 @@ class TransientProblem(TACSProblem):
         Get the discrete time step slices used in time integration.
 
         Returns
-        ----------
+        -------
         timeSteps : numpy.ndarray[float]
             Discrete time step slices used in time integration.
         """
@@ -305,7 +305,7 @@ class TransientProblem(TACSProblem):
         Get the number of time stages used for multi-stage time integration for this problem.
 
         Returns
-        ----------
+        -------
         numStages : int
             Number of time stages.
         """
@@ -321,12 +321,11 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to get stage times for.
 
         Returns
-        ----------
+        -------
         timeStages : numpy.ndarray[float]
             Time step slices used to discretize this time step.
         """
@@ -358,7 +357,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -381,7 +379,6 @@ class TransientProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -421,7 +418,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -443,7 +439,6 @@ class TransientProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -490,7 +485,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -525,7 +519,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -576,7 +569,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -624,7 +616,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -675,7 +666,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -720,7 +710,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -752,7 +741,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -787,7 +775,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -1237,7 +1224,7 @@ class TransientProblem(TACSProblem):
             If ddstates is not None, place the second time derivative of the state variables into this array (optional).
 
         Returns
-        --------
+        -------
         time: float
             The time at specified time instance
 

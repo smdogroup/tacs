@@ -1,7 +1,7 @@
 import os
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, TACS
+from tacs import pytacs, elements, constitutive
 import unittest
 
 """"

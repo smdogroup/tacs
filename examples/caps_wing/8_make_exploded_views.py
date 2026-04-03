@@ -10,7 +10,8 @@ Run this with conda-mpirun -n 3 python 8_make_exploded_view.py
 
 from tacs import caps2tacs
 from mpi4py import MPI
-import os, shutil
+import os
+import shutil
 
 # run a steady elastic structural analysis in TACS using the tacsAIM wrapper caps2tacs submodule
 # -------------------------------------------------------------------------------------------------

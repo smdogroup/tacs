@@ -3,11 +3,8 @@ This script plots the printout file that contains the convergence history
 of the Jacobi-Davidson eigenvalue solver
 """
 
-import enum
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import argparse
 import re
 

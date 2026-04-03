@@ -1,9 +1,8 @@
 import os
 
-import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, functions
+from tacs import pytacs
 
 """
 A cylinder, of unit radius and height, constructed from quad shell elements is tested. 
