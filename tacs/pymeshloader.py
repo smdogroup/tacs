@@ -111,7 +111,7 @@ class pyMeshLoader(BaseUI):
             )
         # If this fails, the file may reference multiple coordinate systems
         # and will have to be cross-referenced to work
-        except:
+        except Exception:
             self.bdfInfo.cross_reference()
             self.bdfInfo.is_xrefed = True
             self.bdfXpts = self.bdfInfo.get_xyz_in_coord(

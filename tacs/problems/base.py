@@ -93,7 +93,7 @@ class TACSProblem(TACSSystem):
         try:
             # pass assembler an function-specific kwargs straight to tacs function
             self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
-        except:
+        except Exception:
             self._TACSWarning(
                 f"Function type {funcHandle} is not currently supported. "
                 "in pyTACS. Skipping function."
