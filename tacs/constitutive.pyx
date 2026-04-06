@@ -12,7 +12,6 @@
 
 #distutils: language=c++
 
-import warnings
 import difflib
 
 # For the use of MPI
@@ -45,6 +44,45 @@ include "TacsDefs.pxi"
 # Include the mpi4py header
 cdef extern from "mpi-compat.h":
     pass
+
+def _check_constitutive_kwargs(self, cls, kwargs, required_keys, valid_keys):
+    """
+    Validate kwargs for TACS constitutive class constructors.
+
+    Raises a ValueError if:
+    - A physically meaningful parameter (in required_keys) is absent.
+    - An unrecognized kwarg is passed (possible misspelling); suggests the closest match.
+
+    The ``self`` and ``cls`` parameters are used to skip validation when this
+    method is invoked by a parent ``__cinit__`` on behalf of a subclass instance
+    (Cython calls all ancestor ``__cinit__`` methods with the same kwargs).
+    """
+    if type(self) is not cls:
+        return
+
+    class_name = cls.__name__
+    all_valid = list(required_keys) + [k for k in valid_keys if k not in required_keys]
+
+    for key in kwargs:
+        if key not in all_valid:
+            close = difflib.get_close_matches(key, all_valid, n=1, cutoff=0.6)
+            if close:
+                raise ValueError(
+                    f"{class_name}: Unrecognized keyword argument '{key}'. "
+                    f"Did you mean '{close[0]}'?"
+                )
+            else:
+                raise ValueError(
+                    f"{class_name}: Unrecognized keyword argument '{key}'. "
+                    f"Valid arguments are: {all_valid}"
+                )
+
+    for key in required_keys:
+        if key not in kwargs:
+            raise ValueError(
+                f"{class_name}: Required physical parameter '{key}' was not specified."
+            )
+
 
 cdef class MaterialProperties:
     """
@@ -173,6 +211,21 @@ cdef class MaterialProperties:
         S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
         S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
         S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
+    
+        b_tt (float or complex, optional): The material friction parameter for the failure mode IFF2 
+            (transverse - transverse stress plane) in the Cuntze failure criterion for UD material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        b_tl (float or complex, optional): The material friction parameter for the failure mode IFF3 
+            (transverse - longitudinal stress plane) in the Cuntze failure criterion for UD material (keyword argument).
+        muWF (float or complex, optional): The material friction value for the failure mode IFF_WF 
+            (Warp - Fill stress plane) in the Cuntze failure criterion for woven material (keyword argument).
+        mu3W (float or complex, optional): The material friction value for the failure mode IFF_3W 
+            (3 - Warp stress plane) in the Cuntze failure criterion for woven material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        mu3F (float or complex, optional): The material friction value for the failure mode IFF_3F 
+            (3 - Fill stress plane) in the Cuntze failure criterion for woven material. 
+            Is not used for 2-dimensional stress states. (keyword argument)
+        m (float or complex, optional): The interaction exponent used in the Cuntze failure criterion (keyword argument).
     """
     def __cinit__(self, **kwargs):
         # Set the density and specific heat value
@@ -206,6 +259,14 @@ cdef class MaterialProperties:
         cdef TacsScalar S13 = 0.0
         cdef TacsScalar S23 = 0.0
 
+        # Material properties for the Cuntze failure criterion
+        cdef TacsScalar b_tt = 0.0
+        cdef TacsScalar b_tl = 0.0
+        cdef TacsScalar muWF = 0.0
+        cdef TacsScalar mu3W = 0.0
+        cdef TacsScalar mu3F = 0.0
+        cdef TacsScalar m = 0.0
+
         # Set the thermal coefficient of expansion
         cdef TacsScalar alpha = 24e-6
         cdef TacsScalar alpha1 = 24e-6
@@ -227,7 +288,9 @@ cdef class MaterialProperties:
                             "S12", "S13", "S23",
                             "Xt", "Yt", "Xc", "Yc", "S",
                             "alpha1", "alpha2", "alpha3",
-                            "kappa1", "kappa2", "kappa3"]
+                            "kappa1", "kappa2", "kappa3", 
+                            "b_tt", "b_tl", "muWF", 
+                            "mu3W", "mu3F", "m"]
         ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
 
         # Check for any invalid/misspelled inputs
@@ -326,6 +389,20 @@ cdef class MaterialProperties:
         if 'S23' in kwargs:
             S23 = kwargs['S23']
 
+        # Cuntze properties
+        if 'b_tt' in kwargs:
+            b_tt = kwargs['b_tt']
+        if 'b_tl' in kwargs:
+            b_tl = kwargs['b_tl']
+        if 'muWF' in kwargs:
+            muWF = kwargs['muWF']
+        if 'mu3W' in kwargs:
+            mu3W = kwargs['mu3W']
+        if 'mu3F' in kwargs:
+            mu3F = kwargs['mu3F']
+        if 'm' in kwargs:
+            m = kwargs['m']
+
         # Set the thermal coefficient of expansion
         if 'alpha1' in kwargs:
             alpha1 = kwargs['alpha1']
@@ -347,7 +424,8 @@ cdef class MaterialProperties:
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
                                                   alpha1, alpha2, alpha3,
-                                                  kappa1, kappa2, kappa3)
+                                                  kappa1, kappa2, kappa3, 
+                                                  b_tt, b_tl, muWF, mu3W, mu3F, m)
         else:
             self.ptr = new TACSMaterialProperties(rho, specific_heat,
                                                   E, nu, ys, alpha, kappa)
@@ -393,7 +471,8 @@ cdef class MaterialProperties:
 
         rho = self.ptr.getDensity()
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, NULL, NULL, 
+                                       NULL, NULL, NULL, NULL)
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
             self.ptr.getIsotropicProperties(&E1, &nu12)
@@ -418,13 +497,15 @@ cdef class MaterialProperties:
 
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
         cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar b_tt, b_tl, muWF, mu3W, mu3F, m
         cdef TacsScalar alpha1, alpha2, alpha3
         cdef TacsScalar kappa1, kappa2, kappa3
 
         rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, &b_tt, &b_tl, 
+                                       &muWF, &mu3W, &mu3F, &m)
         self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
 
@@ -449,6 +530,13 @@ cdef class MaterialProperties:
         mat['S12'] = S12
         mat['S13'] = S13
         mat['S23'] = S23
+
+        mat['b_tt'] = b_tt
+        mat['b_tl'] = b_tl
+        mat['muWF'] = muWF
+        mat['mu3W'] = mu3W
+        mat['mu3F'] = mu3F
+        mat['m'] = m
 
         mat['alpha1'] = alpha1
         mat['alpha2'] = alpha2
@@ -494,18 +582,30 @@ cdef class OrthotropicPly:
           ply_thickness (float or complex): The ply thickness.
           props (MaterialProperties): The ply material property.
           max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use max strength).
+            Defaults to False (i.e. use Tsai-Wu).
+          Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+            unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).
+          Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+            woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).
     """
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  max_strain_criterion=False):
+                  max_strain_criterion=False, Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
         self.ptr.incref()
+
+        if [max_strain_criterion, Cuntze_criterion_UD, Cuntze_criterion_Woven].count(True) > 1:
+            raise ValueError('Only one failure criterion can be specified.')
+
         if max_strain_criterion:
             self.ptr.setUseMaxStrainCriterion()
+        elif Cuntze_criterion_UD:
+            self.ptr.setUseCuntzeCriterion_UD()
+        elif Cuntze_criterion_Woven:
+            self.ptr.setUseCuntzeCriterion_Woven()
         else:
-            self.ptr.setUseTsaiWuCriterion()
+            self.ptr.setUseModifiedTsaiWuCriterion()
         self.props = props
 
     def __dealloc__(self):
@@ -534,6 +634,11 @@ cdef class PlaneStressConstitutive(Constitutive):
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, PlaneStressConstitutive, kwargs,
+            required_keys=["t"],
+            valid_keys=["tNum", "tlb", "tub"],
+        )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
@@ -576,6 +681,11 @@ cdef class PhaseChangeMaterialConstitutive(Constitutive):
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, PhaseChangeMaterialConstitutive, kwargs,
+            required_keys=["lh", "Tm", "t"],
+            valid_keys=["dT", "tNum", "tlb", "tub"],
+        )
         cdef TACSMaterialProperties *solid_props = NULL
         cdef TACSMaterialProperties *liquid_props = NULL
         cdef TacsScalar lh = 0.0
@@ -707,6 +817,11 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, IsoShellConstitutive, kwargs,
+            required_keys=["t"],
+            valid_keys=["tNum", "tlb", "tub", "tOffset"],
+        )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
@@ -1937,6 +2052,18 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 
 cdef class LamParamShellConstitutive(ShellConstitutive):
     def __cinit__(self, OrthotropicPly ply, **kwargs):
+        _check_constitutive_kwargs(
+            self, LamParamShellConstitutive, kwargs,
+            required_keys=["t"],
+            valid_keys=[
+                "t_num", "min_t", "max_t",
+                "f0", "f45", "f90",
+                "f0_num", "f45_num", "f90_num",
+                "min_f0", "min_f45", "min_f90",
+                "W1", "W3", "W1_num", "W3_num",
+                "ksWeight", "epsilon",
+            ],
+        )
         cdef TacsScalar t = 1.0
         cdef int t_num = -1
         cdef TacsScalar min_t = 1.0
@@ -2029,6 +2156,11 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, BasicBeamConstitutive, kwargs,
+            required_keys=["A", "J", "Iy", "Iz"],
+            valid_keys=["Iyz", "ky", "kz"],
+        )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar A = 0.0
         cdef TacsScalar J = 0.0
@@ -2119,6 +2251,11 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, IsoTubeBeamConstitutive, kwargs,
+            required_keys=["d", "t"],
+            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
+        )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
         cdef int dNum = -1
@@ -2215,6 +2352,11 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             If set to None buckling calculations will be skipped in failure check. Defaults to None.
     """
     def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, IsoRectangleBeamConstitutive, kwargs,
+            required_keys=["w", "t"],
+            valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb"],
+        )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar w = 1.0
         cdef int wNum = -1
@@ -2306,6 +2448,11 @@ cdef class GeneralMassConstitutive(Constitutive):
         M (array-like[float or complex]): Flattened array containing one side of symmetric mass matrix entries.
     """
     def __cinit__(self, **kwargs):
+        _check_constitutive_kwargs(
+            self, GeneralMassConstitutive, kwargs,
+            required_keys=["M"],
+            valid_keys=[],
+        )
         cdef TacsScalar M[21]
         if 'M' in kwargs:
             _M = kwargs['M']
@@ -2381,6 +2528,16 @@ cdef class PointMassConstitutive(GeneralMassConstitutive):
         I23ub (float or complex, optional): Upper bound on I23 (keyword argument). Defaults to 1e20.
     """
     def __cinit__(self, **kwargs):
+        _check_constitutive_kwargs(
+            self, PointMassConstitutive, kwargs,
+            required_keys=["m"],
+            valid_keys=[
+                "I11", "I22", "I33", "I12", "I13", "I23",
+                "mNum", "I11Num", "I22Num", "I33Num", "I12Num", "I13Num", "I23Num",
+                "mlb", "I11lb", "I22lb", "I33lb", "I12lb", "I13lb", "I23lb",
+                "mub", "I11ub", "I22ub", "I33ub", "I12ub", "I13ub", "I23ub",
+            ],
+        )
         cdef TacsScalar m = 0.0
         cdef TacsScalar I11 = 0.0
         cdef TacsScalar I22 = 0.0
@@ -2491,6 +2648,11 @@ cdef class GeneralSpringConstitutive(Constitutive):
         K (array-like[float or complex]): Flattened array containing one side of symmetric stiffness matrix entries.
     """
     def __cinit__(self, **kwargs):
+        _check_constitutive_kwargs(
+            self, GeneralSpringConstitutive, kwargs,
+            required_keys=["K"],
+            valid_keys=[],
+        )
         cdef TacsScalar K[21]
         if 'K' in kwargs:
             _K = kwargs['K']
@@ -2515,6 +2677,11 @@ cdef class DOFSpringConstitutive(GeneralSpringConstitutive):
         k (array-like[float or complex]): Stiffness values for all 6 dofs.
     """
     def __cinit__(self, **kwargs):
+        _check_constitutive_kwargs(
+            self, DOFSpringConstitutive, kwargs,
+            required_keys=["k"],
+            valid_keys=[],
+        )
         cdef TacsScalar k[6]
         if 'k' in kwargs:
             _k = kwargs['k']
