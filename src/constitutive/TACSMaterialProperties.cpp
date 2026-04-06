@@ -560,10 +560,7 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
   eS12 = S12 / G12;
 
   // By default, use Tsai-Wu modified to return a strength ratio
-  useTsaiWuCriterion = true;
-  useModifiedTsaiWu = true;
-  useCuntzeCriterion_UD = false;
-  useCuntzeCriterion_Woven = false;
+  failureCriterion = TSAI_WU_MODIFIED;
 
   // Compute the coefficients for the Tsai-Wu failure criteria
   F1 = (Xc - Xt) / (Xt * Xc);
@@ -612,31 +609,23 @@ void TACSOrthotropicPly::setKSWeight(TacsScalar _ksWeight) {
   Set the failure criteria to use
 */
 void TACSOrthotropicPly::setUseMaxStrainCriterion() {
-  useTsaiWuCriterion = false;
-  useCuntzeCriterion_UD = false;
-  useCuntzeCriterion_Woven = false;
+  failureCriterion = MAX_STRAIN;
 }
 
 void TACSOrthotropicPly::setUseTsaiWuCriterion() {
-  useTsaiWuCriterion = true;
-  useCuntzeCriterion_UD = false;
-  useCuntzeCriterion_Woven = false;
+  failureCriterion = TSAI_WU;
 }
 
-void TACSOrthotropicPly::setUseModifiedTsaiWu(bool _useModifiedTsaiWu) {
-  useModifiedTsaiWu = _useModifiedTsaiWu;
+void TACSOrthotropicPly::setUseModifiedTsaiWuCriterion() {
+  failureCriterion = TSAI_WU_MODIFIED;
 }
 
 void TACSOrthotropicPly::setUseCuntzeCriterion_UD() {
-  useTsaiWuCriterion = false;
-  useCuntzeCriterion_UD = true;
-  useCuntzeCriterion_Woven = false;
+  failureCriterion = CUNTZE_UD;
 }
 
 void TACSOrthotropicPly::setUseCuntzeCriterion_Woven() {
-  useTsaiWuCriterion = false;
-  useCuntzeCriterion_UD = false;
-  useCuntzeCriterion_Woven = true;
+  failureCriterion = CUNTZE_WOVEN;
 }
 
 /*
@@ -867,8 +856,7 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   F11*s[0]**2 + F22*s[1]**2 +
   2.0*F12*s[0]*s[1] + F66*s[2]**2 <= 1.0
 
-  To enable this method, call `setUseTsaiWuCriterion()` and
-  `setUseModifiedTsaiWu(false)`
+  To enable this method, call `setUseTsaiWuCriterion()`
 
   1b. The Tsai-Wu strength ratio:
 
@@ -947,7 +935,7 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
   transformStrainGlobal2Ply(angle, strain, e);
 
   TacsScalar fail = 0.0;
-  if (useTsaiWuCriterion) {
+  if (failureCriterion == TSAI_WU || failureCriterion == TSAI_WU_MODIFIED) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
 
@@ -955,12 +943,12 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
     linTerm = F1 * s[0] + F2 * s[1];
     quadTerm = F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
                F66 * s[2] * s[2];
-    if (useModifiedTsaiWu) {
+    if (failureCriterion == TSAI_WU_MODIFIED) {
       fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
     } else {
       fail = linTerm + quadTerm;
     }
-  } else if (useCuntzeCriterion_UD) {
+  } else if (failureCriterion == CUNTZE_UD) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
 
@@ -968,7 +956,7 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
     fail = CuntzeUD_FailureModes(e, s, &eff_ff1, &eff_ff2, &eff_iff1, &eff_iff2,
                                  &eff_iff3);
 
-  } else if (useCuntzeCriterion_Woven) {
+  } else if (failureCriterion == CUNTZE_WOVEN) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
 
@@ -978,7 +966,7 @@ TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
                                     &eff_ff4, &eff_iff1, &eff_iff2, &eff_iff3,
                                     &eff_iff4, &eff_iff5);
 
-  } else {
+  } else if (failureCriterion == MAX_STRAIN) {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6];
     f[0] = e[0] / eXt;
@@ -1012,7 +1000,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
   transformStrainGlobal2Ply(angle, strain, e);
 
   TacsScalar fail = 0.0;
-  if (useTsaiWuCriterion) {
+  if (failureCriterion == TSAI_WU || failureCriterion == TSAI_WU_MODIFIED) {
     TacsScalar s[3], s2[3];  // Ply stress
     getPlyStress(e, s);
     for (int ii = 0; ii < 3; ii++) {
@@ -1024,7 +1012,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     quadTerm = F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
                F66 * s[2] * s[2];
 
-    if (useModifiedTsaiWu) {
+    if (failureCriterion == TSAI_WU_MODIFIED) {
       if (TacsRealPart(s[0]) == 0.0 && TacsRealPart(s[1]) == 0.0 &&
           TacsRealPart(s[2]) == 0.0) {
         // If the stress is zero, set the sensitivity to its limit value
@@ -1064,7 +1052,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     getPlyStress(sens, sSens);
 
     transformStressPly2Global(angle, sSens, sens);
-  } else if (useCuntzeCriterion_UD) {
+  } else if (failureCriterion == CUNTZE_UD) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
 
@@ -1130,7 +1118,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
 
     transformStressPly2Global(angle, sSens, sens);
 
-  } else if (useCuntzeCriterion_Woven) {
+  } else if (failureCriterion == CUNTZE_WOVEN) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
 
@@ -1204,7 +1192,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
 
     transformStressPly2Global(angle, sSens, sens);
 
-  } else {
+  } else if (failureCriterion == MAX_STRAIN) {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6], fexp[6];
     f[0] = e[0] / eXt;
@@ -1250,7 +1238,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
   transformStrainGlobal2PlyAngleSens(angle, strain, se);
 
   TacsScalar fail = 0.0;
-  if (useTsaiWuCriterion) {
+  if (failureCriterion == TSAI_WU || failureCriterion == TSAI_WU_MODIFIED) {
     TacsScalar s[3], s2[3];  // The ply stress
     getPlyStress(e, s);
 
@@ -1263,7 +1251,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     quadTerm = F11 * s[0] * s[0] + F22 * s[1] * s[1] + 2.0 * F12 * s[0] * s[1] +
                F66 * s[2] * s[2];
 
-    if (useModifiedTsaiWu) {
+    if (failureCriterion == TSAI_WU_MODIFIED) {
       fail = 0.5 * (linTerm + sqrt(linTerm * linTerm + 4.0 * quadTerm));
       // ss = d(s)/d(e) * d(e)/d(angle) = d(s)/d(angle)
 
@@ -1289,7 +1277,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
            F1 * ss[0] + F2 * ss[1]);
     }
 
-  } else if (useCuntzeCriterion_UD) {
+  } else if (failureCriterion == CUNTZE_UD) {
     TacsScalar s[3];  // The ply stress
     getPlyStress(e, s);
 
@@ -1357,7 +1345,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
     *failSens += ss[2] * pow(fail, 1.0 - m) * tmp;
 
-  } else if (useCuntzeCriterion_Woven) {
+  } else if (failureCriterion == CUNTZE_WOVEN) {
     TacsScalar s[3];  // The ply stress
     getPlyStress(e, s);
 
@@ -1433,7 +1421,7 @@ TacsScalar TACSOrthotropicPly::failureAngleSens(TacsScalar angle,
     // d(fail)/d(angle) = ... + d(fail)/d(s6) * d(s6)/d(angle)
     *failSens += ss[2] * pow(fail, 1.0 - m) * tmp;
 
-  } else {
+  } else if (failureCriterion == MAX_STRAIN) {
     // Calculate the values of each of the failure criteria
     TacsScalar f[6], fs[6];
     f[0] = e[0] / eXt;
