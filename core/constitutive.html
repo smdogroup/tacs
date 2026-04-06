@@ -171,6 +171,20 @@ in the '3' direction (keyword argument).</p></li>
 <li><p><strong>S12</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material orthotropic shear strength in the '1-2' plane (keyword argument).</p></li>
 <li><p><strong>S13</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material orthotropic shear strength in the '1-3' plane (keyword argument).</p></li>
 <li><p><strong>S23</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material orthotropic shear strength in the '2-3' plane (keyword argument).</p></li>
+<li><p><strong>b_tt</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material friction parameter for the failure mode IFF2
+(transverse - transverse stress plane) in the Cuntze failure criterion for UD material.
+Is not used for 2-dimensional stress states. (keyword argument)</p></li>
+<li><p><strong>b_tl</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material friction parameter for the failure mode IFF3
+(transverse - longitudinal stress plane) in the Cuntze failure criterion for UD material (keyword argument).</p></li>
+<li><p><strong>muWF</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material friction value for the failure mode IFF_WF
+(Warp - Fill stress plane) in the Cuntze failure criterion for woven material (keyword argument).</p></li>
+<li><p><strong>mu3W</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material friction value for the failure mode IFF_3W
+(3 - Warp stress plane) in the Cuntze failure criterion for woven material.
+Is not used for 2-dimensional stress states. (keyword argument)</p></li>
+<li><p><strong>mu3F</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The material friction value for the failure mode IFF_3F
+(3 - Fill stress plane) in the Cuntze failure criterion for woven material.
+Is not used for 2-dimensional stress states. (keyword argument)</p></li>
+<li><p><strong>m</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>, </em><em>optional</em>) -- The interaction exponent used in the Cuntze failure criterion (keyword argument).</p></li>
 </ul>
 </dd>
 </dl>
@@ -270,7 +284,11 @@ acceptable bounds - these are tested during initialization.</p>
 <li><p><strong>ply_thickness</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) -- The ply thickness.</p></li>
 <li><p><strong>props</strong> (<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><em>MaterialProperties</em></a>) -- The ply material property.</p></li>
 <li><p><strong>max_strain_criterion</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to determine if max strain strength criterion is to be used.
-Defaults to False (i.e. use max strength).</p></li>
+Defaults to False (i.e. use Tsai-Wu).</p></li>
+<li><p><strong>Cuntze_criterion_UD</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to determine if Cuntze's Failure Mode Concept criterion for
+unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).</p></li>
+<li><p><strong>Cuntze_criterion_Woven</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to determine if Cuntze's Failure Mode Concept criterion for
+woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).</p></li>
 </ul>
 </dd>
 </dl>
