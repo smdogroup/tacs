@@ -1366,7 +1366,7 @@ class StaticProblem(TACSProblem):
 
         # Update the BVec values, if the input was a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList, strict=True):
                 # Copy values to numpy array
                 dvSensArray[:] = dvSensBVec.getArray()
 
@@ -1419,7 +1419,7 @@ class StaticProblem(TACSProblem):
 
         # Update the BVec values, if the input was a numpy array
         if isinstance(dvSensList[0], np.ndarray):
-            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList):
+            for dvSensArray, dvSensBVec in zip(dvSensList, dvSensBVecList, strict=True):
                 # Copy values to numpy array
                 dvSensArray[:] = dvSensBVec.getArray()
 
@@ -1464,7 +1464,7 @@ class StaticProblem(TACSProblem):
 
         # Update from the BVec values, if the input was a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList):
+            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList, strict=True):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
@@ -1518,7 +1518,7 @@ class StaticProblem(TACSProblem):
             xptSensBVec.endSetValues()
 
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList):
+            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList, strict=True):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
