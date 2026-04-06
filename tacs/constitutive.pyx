@@ -605,7 +605,7 @@ cdef class OrthotropicPly:
         elif Cuntze_criterion_Woven:
             self.ptr.setUseCuntzeCriterion_Woven()
         else:
-            self.ptr.setUseTsaiWuCriterion()
+            self.ptr.setUseModifiedTsaiWuCriterion()
         self.props = props
 
     def __dealloc__(self):
