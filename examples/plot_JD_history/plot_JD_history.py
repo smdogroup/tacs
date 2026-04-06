@@ -157,7 +157,7 @@ class JDHistoryPlotter:
         ax2.set_ylim(np.min(ritz_converged), np.max(ritz_converged))
 
         lns = l1 + l2 + l3 + l4 + l5
-        labs = [l.get_label() for l in lns]
+        labs = [line.get_label() for line in lns]
         ax.legend(lns, labs, loc="upper right")
 
         if not savefig:
