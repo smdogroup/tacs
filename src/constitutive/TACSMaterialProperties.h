@@ -175,11 +175,11 @@ class TACSOrthotropicPly : public TACSObject {
                      TACSMaterialProperties *_properties);
 
   enum FailureCriterion {
-    MAX_STRAIN,       // Smoothed max-strain criterion (KS)
-    TSAI_WU,          // Standard Tsai-Wu failure index
-    TSAI_WU_MODIFIED, // Modified Tsai-Wu returning a strength ratio (default)
-    CUNTZE_UD,        // Cuntze criterion for unidirectional plies
-    CUNTZE_WOVEN      // Cuntze criterion for woven plies
+    MAX_STRAIN,        // Smoothed max-strain criterion (KS)
+    TSAI_WU,           // Standard Tsai-Wu failure index
+    TSAI_WU_MODIFIED,  // Modified Tsai-Wu returning a strength ratio (default)
+    CUNTZE_UD,         // Cuntze criterion for unidirectional plies
+    CUNTZE_WOVEN       // Cuntze criterion for woven plies
   };
 
   void setKSWeight(TacsScalar _ksWeight);

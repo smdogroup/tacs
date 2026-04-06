@@ -612,9 +612,7 @@ void TACSOrthotropicPly::setUseMaxStrainCriterion() {
   failureCriterion = MAX_STRAIN;
 }
 
-void TACSOrthotropicPly::setUseTsaiWuCriterion() {
-  failureCriterion = TSAI_WU;
-}
+void TACSOrthotropicPly::setUseTsaiWuCriterion() { failureCriterion = TSAI_WU; }
 
 void TACSOrthotropicPly::setUseModifiedTsaiWuCriterion() {
   failureCriterion = TSAI_WU_MODIFIED;
