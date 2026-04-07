@@ -13,6 +13,7 @@
 #distutils: language=c++
 
 import difflib
+import warnings
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
@@ -211,19 +212,19 @@ cdef class MaterialProperties:
         S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
         S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
         S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
-    
-        b_tt (float or complex, optional): The material friction parameter for the failure mode IFF2 
-            (transverse - transverse stress plane) in the Cuntze failure criterion for UD material. 
+
+        b_tt (float or complex, optional): The material friction parameter for the failure mode IFF2
+            (transverse - transverse stress plane) in the Cuntze failure criterion for UD material.
             Is not used for 2-dimensional stress states. (keyword argument)
-        b_tl (float or complex, optional): The material friction parameter for the failure mode IFF3 
+        b_tl (float or complex, optional): The material friction parameter for the failure mode IFF3
             (transverse - longitudinal stress plane) in the Cuntze failure criterion for UD material (keyword argument).
-        muWF (float or complex, optional): The material friction value for the failure mode IFF_WF 
+        muWF (float or complex, optional): The material friction value for the failure mode IFF_WF
             (Warp - Fill stress plane) in the Cuntze failure criterion for woven material (keyword argument).
-        mu3W (float or complex, optional): The material friction value for the failure mode IFF_3W 
-            (3 - Warp stress plane) in the Cuntze failure criterion for woven material. 
+        mu3W (float or complex, optional): The material friction value for the failure mode IFF_3W
+            (3 - Warp stress plane) in the Cuntze failure criterion for woven material.
             Is not used for 2-dimensional stress states. (keyword argument)
-        mu3F (float or complex, optional): The material friction value for the failure mode IFF_3F 
-            (3 - Fill stress plane) in the Cuntze failure criterion for woven material. 
+        mu3F (float or complex, optional): The material friction value for the failure mode IFF_3F
+            (3 - Fill stress plane) in the Cuntze failure criterion for woven material.
             Is not used for 2-dimensional stress states. (keyword argument)
         m (float or complex, optional): The interaction exponent used in the Cuntze failure criterion (keyword argument).
     """
@@ -288,8 +289,8 @@ cdef class MaterialProperties:
                             "S12", "S13", "S23",
                             "Xt", "Yt", "Xc", "Yc", "S",
                             "alpha1", "alpha2", "alpha3",
-                            "kappa1", "kappa2", "kappa3", 
-                            "b_tt", "b_tl", "muWF", 
+                            "kappa1", "kappa2", "kappa3",
+                            "b_tt", "b_tl", "muWF",
                             "mu3W", "mu3F", "m"]
         ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
 
@@ -424,7 +425,7 @@ cdef class MaterialProperties:
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
                                                   alpha1, alpha2, alpha3,
-                                                  kappa1, kappa2, kappa3, 
+                                                  kappa1, kappa2, kappa3,
                                                   b_tt, b_tl, muWF, mu3W, mu3F, m)
         else:
             self.ptr = new TACSMaterialProperties(rho, specific_heat,
@@ -471,7 +472,7 @@ cdef class MaterialProperties:
 
         rho = self.ptr.getDensity()
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23, NULL, NULL, 
+                                       &S12, &S13, &S23, NULL, NULL,
                                        NULL, NULL, NULL, NULL)
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
@@ -504,7 +505,7 @@ cdef class MaterialProperties:
         rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23, &b_tt, &b_tl, 
+                                       &S12, &S13, &S23, &b_tt, &b_tl,
                                        &muWF, &mu3W, &mu3F, &m)
         self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
@@ -604,9 +605,9 @@ cdef class OrthotropicPly:
           props (MaterialProperties): The ply material property.
           max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
             Defaults to False (i.e. use Tsai-Wu).
-          Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+          Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
             unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).
-          Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for 
+          Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
             woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).
     """
     cdef TACSOrthotropicPly *ptr
@@ -653,16 +654,11 @@ cdef class OrthotropicPly:
         """
         self.ptr.setUseTsaiWuCriterion()
 
-    def setUseModifiedTsaiWu(self, bool useModifiedTsaiWu):
+    def setUseModifiedTsaiWuCriterion(self):
         """
         Set to use the modified Tsai-Wu failure criterion.
-
-        Parameters
-        ----------
-        useModifiedTsaiWu : bool
-            If true, use the modified Tsai-Wu criterion. Otherwise, use the standard Tsai-Wu criterion.
         """
-        self.ptr.setUseModifiedTsaiWu(useModifiedTsaiWu)
+        self.ptr.setUseModifiedTsaiWuCriterion()
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -2322,7 +2318,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     """
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         _check_constitutive_kwargs(
-            self, LamParamShellConstitutive, kwargs,
+            self, LamParamSmearedShellConstitutive, kwargs,
             required_keys=["t"],
             valid_keys=[
                 "t_num", "min_t", "max_t",
@@ -2330,7 +2326,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
                 "f0_num", "f45_num", "f90_num",
                 "min_f0", "min_f45", "min_f90",
                 "W1", "W3", "W1_num", "W3_num",
-                "ksWeight", "epsilon",
+                "ksWeight", "epsilon", "kcorr",
             ],
         )
         cdef TacsScalar t = 1.0

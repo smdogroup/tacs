@@ -106,7 +106,8 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
                     f"Setting to use Tsai-Wu failure criterion (modified: {useModifiedTsaiWu})"
                 )
             ortho_ply.setUseTsaiWuCriterion()
-            ortho_ply.setUseModifiedTsaiWu(useModifiedTsaiWu)
+            if useModifiedTsaiWu:
+                ortho_ply.setUseModifiedTsaiWuCriterion()
 
         if compLPModel == "LamParamSmeared":
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1
