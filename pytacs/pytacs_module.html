@@ -1195,6 +1195,29 @@ Defaults to None.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.pytacs.pyTACS.createLamParamFullConstraint">
+<span class="sig-name descname"><span class="pre">createLamParamFullConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.createLamParamFullConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.createLamParamFullConstraint" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new LamParamFullConstraint for constraining the full set of
+laminate parameters across a component.
+This constraint is used to ensure that the laminate parameters stay within a feasible region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name to assign constraint.</p></li>
+<li><p><strong>options</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Class-specific options to pass to LamParamFullConstraint instance (case-insensitive).
+Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>constraint</strong> -- LamParamFullConstraint object used for calculating constraints.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tacs.constraints.LamParamFullConstraint</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.pytacs.pyTACS.getNumComponents">
 <span class="sig-name descname"><span class="pre">getNumComponents</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/pytacs.html#pyTACS.getNumComponents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.pytacs.pyTACS.getNumComponents" title="Link to this definition">¶</a></dt>
 <dd><p>Return number of components (property) groups found in bdf.</p>
@@ -1375,6 +1398,7 @@ options to the stdout on the root processor</p>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createPanelWidthConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createPanelWidthConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createStiffenerLengthConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createStiffenerLengthConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.createVolumeConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createVolumeConstraint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.pytacs.pyTACS.createLamParamFullConstraint"><code class="docutils literal notranslate"><span class="pre">pyTACS.createLamParamFullConstraint()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.getNumComponents"><code class="docutils literal notranslate"><span class="pre">pyTACS.getNumComponents()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.copyFromTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.pytacs.pyTACS.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">pyTACS.copyToTACSVec()</span></code></a></li>

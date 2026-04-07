@@ -306,6 +306,24 @@ woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).</p></li>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly.setUseMaxStrainCriterion">
+<span class="sig-name descname"><span class="pre">setUseMaxStrainCriterion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.setUseMaxStrainCriterion" title="Link to this definition">¶</a></dt>
+<dd><p>Set to use the maximum strain failure criterion.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly.setUseModifiedTsaiWuCriterion">
+<span class="sig-name descname"><span class="pre">setUseModifiedTsaiWuCriterion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.setUseModifiedTsaiWuCriterion" title="Link to this definition">¶</a></dt>
+<dd><p>Set to use the modified Tsai-Wu failure criterion.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.OrthotropicPly.setUseTsaiWuCriterion">
+<span class="sig-name descname"><span class="pre">setUseTsaiWuCriterion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.OrthotropicPly.setUseTsaiWuCriterion" title="Link to this definition">¶</a></dt>
+<dd><p>Set to use the Tsai-Wu failure criterion.</p>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -489,6 +507,20 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.CompositeShellConstitutive.getMaterialProperties">
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.CompositeShellConstitutive.getMaterialProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Get the MaterialProperties objects associated with each ply in this constitutive object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Material property objects for each ply in the layup.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties">tacs.constitutive.MaterialProperties</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1037,6 +1069,20 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.IsoShellConstitutive.getMaterialProperties">
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.IsoShellConstitutive.getMaterialProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Get the MaterialProperties object associated with this constitutive object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Material property object associated with this constitutive.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties">tacs.constitutive.MaterialProperties</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1078,9 +1124,119 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tacs.constitutive.LamParamShellConstitutive">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamShellConstitutive" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tacs.constitutive.LamParamFullShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamFullShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamFullShellConstitutive" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<p>This constitutive class implements lamination parameter based parametrization of the shell stiffness and strength properties.
+There are six lamination parameters that define a symmetric balanced laminate.
+These must be combined with appropriate feasibility domain for the constraint on the values of the lamination parameters.
+The failure calculations are based on the maximum failure criteria taken from a set of set ply angles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ply</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>OrthotropicPly</em></a>) -- The orthotropic ply object containing material properties.</p></li>
+<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) -- The thickness of the ply.</p></li>
+<li><p><strong>tNum</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) -- The thickness design variable number.</p></li>
+<li><p><strong>tlb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) -- The lower bound for the thickness.</p></li>
+<li><p><strong>tub</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a>) -- The upper bound for the thickness.</p></li>
+<li><p><strong>lpNums</strong> (<em>np.ndarray</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) -- Array of laminate parameter design variable numbers.</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- The KS aggregation weight for constraints (default is 30.0).</p></li>
+<li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Shear correction factor. Default is 5.0/6.0.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.LamParamFullShellConstitutive.setKSWeight">
+<span class="sig-name descname"><span class="pre">setKSWeight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksWeight</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.LamParamFullShellConstitutive.setKSWeight" title="Link to this definition">¶</a></dt>
+<dd><p>Update the ks weight used for aggregating the different failure modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- KS aggregation weight</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.LamParamFullShellConstitutive.setLaminationParameters">
+<span class="sig-name descname"><span class="pre">setLaminationParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.LamParamFullShellConstitutive.setLaminationParameters" title="Link to this definition">¶</a></dt>
+<dd><p>Set the lamination parameters for the constitutive object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lp</strong> (<em>np.ndarray</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#complex" title="(in Python v3.14)"><em>complex</em></a><em>]</em>) -- A 1-dimensional numpy array containing the lamination parameters.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.LamParamFullShellConstitutive.setNumFailAngles">
+<span class="sig-name descname"><span class="pre">setNumFailAngles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">numFailAngles</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.LamParamFullShellConstitutive.setNumFailAngles" title="Link to this definition">¶</a></dt>
+<dd><p>Set the number of failure angles for the constitutive model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>numFailAngles</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) -- The number of failure angles to be used in the failure analysis.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.LamParamSmearedShellConstitutive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">LamParamSmearedShellConstitutive</span></span><a class="headerlink" href="#tacs.constitutive.LamParamSmearedShellConstitutive" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.ShellConstitutive" title="tacs.constitutive.ShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a></p>
+<p>This class implements a lamination parameter based parametrization of the shell stiffness and strength properties.
+The class is restricted to symmetric balanced laminates.
+The in-plane properties are parametrized in terms of laminate fractions at the angles 0, +/-45 and 90 degrees. The thickness is treated as a continuous design variable.
+Additional lamination parameters W1 and W3 are used for the bending stiffness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ply</strong> (<a class="reference internal" href="#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><em>OrthotropicPly</em></a>) -- The orthotropic ply object defining the material properties.</p></li>
+<li><p><strong>t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Shell thickness. Default is 1.0.</p></li>
+<li><p><strong>t_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for thickness. Default is -1 (inactive).</p></li>
+<li><p><strong>min_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Minimum allowable thickness. Default is 1.0.</p></li>
+<li><p><strong>max_t</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Maximum allowable thickness. Default is 1.0.</p></li>
+<li><p><strong>f0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Fraction of 0-degree plies. Default is 0.25.</p></li>
+<li><p><strong>f45</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Fraction of 45-degree plies. Default is 0.5.</p></li>
+<li><p><strong>f90</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Fraction of 90-degree plies. Default is 0.25.</p></li>
+<li><p><strong>f0_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for f0. Default is -1 (inactive).</p></li>
+<li><p><strong>f45_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for f45. Default is -1 (inactive).</p></li>
+<li><p><strong>f90_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for f90. Default is -1 (inactive).</p></li>
+<li><p><strong>min_f0</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Minimum allowable fraction for f0. Default is 0.125.</p></li>
+<li><p><strong>min_f45</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Minimum allowable fraction for f45. Default is 0.125.</p></li>
+<li><p><strong>min_f90</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Minimum allowable fraction for f90. Default is 0.125.</p></li>
+<li><p><strong>W1</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- First lamination parameter. Default is 0.0.</p></li>
+<li><p><strong>W3</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Third lamination parameter. Default is 0.0.</p></li>
+<li><p><strong>W1_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for W1. Default is -1 (inactive).</p></li>
+<li><p><strong>W3_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Design variable number for W3. Default is -3 (inactive).</p></li>
+<li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Weight for the KS aggregation function. Default is 30.0.</p></li>
+<li><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Regularization parameter. Default is 0.0.</p></li>
+<li><p><strong>kcorr</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Shear correction factor. Default is 5.0/6.0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.constitutive.MAT2MaterialProperties">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.constitutive.</span></span><span class="sig-name descname"><span class="pre">MAT2MaterialProperties</span></span><a class="headerlink" href="#tacs.constitutive.MAT2MaterialProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaterialProperties</span></code></a></p>
+<p>This class only exists so certain constitutive objects can return a TACS MaterialProperties
+instance that generates the necessary MAT2 nastran cards.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.MAT2MaterialProperties.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.MAT2MaterialProperties.generateBDFCard" title="Link to this definition">¶</a></dt>
+<dd><p>Generate pyNASTRAN card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyNastran card holding material information</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/pyNastran.bdf.cards.materials.html#pyNastran.bdf.cards.materials.MAT1" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.materials.MAT1</a> or <a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/pyNastran.bdf.cards.materials.html#pyNastran.bdf.cards.materials.MAT8" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.materials.MAT8</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -1239,6 +1395,52 @@ Assumes 6 dofs.</p>
 <p>This is the base class for the shell constitutive objects.
 All objects performing shell elastic analysis should utilize this class.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.generateBDFCard">
+<span class="sig-name descname"><span class="pre">generateBDFCard</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.generateBDFCard" title="Link to this definition">¶</a></dt>
+<dd><p>Generate pyNastran card class based on current design variable values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>card</strong> -- pyNastran card holding property information.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PSHELL" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.properties.shell.PSHELL</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.getMaterialProperties">
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.getMaterialProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Get the material properties objects associated with this constitutive object.</p>
+<p>The material properties are based directly on the A, B, D, and As matrices as MAT2 entries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Custom material property class associated with object. Order is [A, D, As, B].</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference internal" href="#tacs.constitutive.MAT2MaterialProperties" title="tacs.constitutive.MAT2MaterialProperties">tacs.constitutive.MAT2MaterialProperties</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.getThicknessProperties">
+<span class="sig-name descname"><span class="pre">getThicknessProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.getThicknessProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Helper function to gather thickness properties and density of the shell based on the current design variable values.
+These properties are needed to compute the equivalent MAT2 properties for the shell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>t</strong> (<em>float</em>) -- Thickness of the shell based on current design variable values.</p></li>
+<li><p><strong>tFact</strong> (<em>float</em>) -- Thickness factor to compute the equivalent bending stiffness for the MAT2 card.</p></li>
+<li><p><strong>rho</strong> (<em>float</em>) -- Density of the shell material.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.setDrillingRegularization">
 <span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Link to this definition">¶</a></dt>
 <dd><p>Update regularization parameter used to stiffen shell in drilling rotation dof.</p>
@@ -1296,6 +1498,20 @@ a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the 
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>card (<a class="reference external" href="https://pynastran-git.readthedocs.io/en/latest/reference/bdf/cards/properties/pyNastran.bdf.cards.properties.shell.html#pyNastran.bdf.cards.properties.shell.PCOMP" title="(in pyNastran 1.5-dev v1.5-dev)">pyNastran.bdf.cards.properties.shell.PCOMP</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.SmearedCompositeShellConstitutive.getMaterialProperties">
+<span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.SmearedCompositeShellConstitutive.getMaterialProperties" title="Link to this definition">¶</a></dt>
+<dd><p>Get the MaterialProperties objects associated with each ply in this constitutive object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Material property objects for each ply in the layup.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference internal" href="#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties">tacs.constitutive.MaterialProperties</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1498,6 +1714,9 @@ If any of the entries are None, they are not modified and will be included in th
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly.getMaterialProperties()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly.setUseMaxStrainCriterion"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly.setUseMaxStrainCriterion()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly.setUseModifiedTsaiWuCriterion"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly.setUseModifiedTsaiWuCriterion()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.OrthotropicPly.setUseTsaiWuCriterion"><code class="docutils literal notranslate"><span class="pre">OrthotropicPly.setUseTsaiWuCriterion()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -1514,6 +1733,7 @@ If any of the entries are None, they are not modified and will be included in th
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.CompositeShellConstitutive.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">CompositeShellConstitutive.getMaterialProperties()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.DOFSpringConstitutive"><code class="docutils literal notranslate"><span class="pre">DOFSpringConstitutive</span></code></a><ul>
@@ -1554,13 +1774,24 @@ If any of the entries are None, they are not modified and will be included in th
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.IsoShellConstitutive.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">IsoShellConstitutive.getMaterialProperties()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">IsoTubeBeamConstitutive.generateBDFCard()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tacs.constitutive.LamParamShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.LamParamFullShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamFullShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.LamParamFullShellConstitutive.setKSWeight"><code class="docutils literal notranslate"><span class="pre">LamParamFullShellConstitutive.setKSWeight()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.LamParamFullShellConstitutive.setLaminationParameters"><code class="docutils literal notranslate"><span class="pre">LamParamFullShellConstitutive.setLaminationParameters()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.LamParamFullShellConstitutive.setNumFailAngles"><code class="docutils literal notranslate"><span class="pre">LamParamFullShellConstitutive.setNumFailAngles()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.constitutive.LamParamSmearedShellConstitutive"><code class="docutils literal notranslate"><span class="pre">LamParamSmearedShellConstitutive</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.MAT2MaterialProperties"><code class="docutils literal notranslate"><span class="pre">MAT2MaterialProperties</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.MAT2MaterialProperties.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">MAT2MaterialProperties.generateBDFCard()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.constitutive.PanelGPs"><code class="docutils literal notranslate"><span class="pre">PanelGPs</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.PanelGPs.component_dict"><code class="docutils literal notranslate"><span class="pre">PanelGPs.component_dict()</span></code></a></li>
 </ul>
@@ -1569,11 +1800,15 @@ If any of the entries are None, they are not modified and will be included in th
 <li><a class="reference internal" href="#tacs.constitutive.PlaneStressConstitutive"><code class="docutils literal notranslate"><span class="pre">PlaneStressConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.PointMassConstitutive"><code class="docutils literal notranslate"><span class="pre">PointMassConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.getMaterialProperties()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.getThicknessProperties"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.getThicknessProperties()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.setDrillingRegularization()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.SmearedCompositeShellConstitutive"><code class="docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.SmearedCompositeShellConstitutive.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive.getMaterialProperties()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.constitutive.SolidConstitutive"><code class="docutils literal notranslate"><span class="pre">SolidConstitutive</span></code></a><ul>

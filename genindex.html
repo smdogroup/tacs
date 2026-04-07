@@ -376,6 +376,8 @@
       </ul></li>
       <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createDVConstraint">createDVConstraint() (tacs.pytacs.pyTACS method)</a>
 </li>
+      <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createLamParamFullConstraint">createLamParamFullConstraint() (tacs.pytacs.pyTACS method)</a>
+</li>
       <li><a href="core/TACS.html#TACS.Assembler.createMat">createMat() (TACS.Assembler method)</a>
 </li>
       <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createModalProblem">createModalProblem() (tacs.pytacs.pyTACS method)</a>
@@ -585,7 +587,11 @@
 </li>
         <li><a href="core/constitutive.html#tacs.constitutive.IsoTubeBeamConstitutive.generateBDFCard">(tacs.constitutive.IsoTubeBeamConstitutive method)</a>
 </li>
+        <li><a href="core/constitutive.html#tacs.constitutive.MAT2MaterialProperties.generateBDFCard">(tacs.constitutive.MAT2MaterialProperties method)</a>
+</li>
         <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.generateBDFCard">(tacs.constitutive.MaterialProperties method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.ShellConstitutive.generateBDFCard">(tacs.constitutive.ShellConstitutive method)</a>
 </li>
         <li><a href="core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive.generateBDFCard">(tacs.constitutive.SmearedCompositeShellConstitutive method)</a>
 </li>
@@ -776,10 +782,18 @@
 </li>
       <li><a href="pytacs/pytacs_module.html#tacs.pytacs.pyTACS.getLocalNodeIDsFromGlobal">getLocalNodeIDsFromGlobal() (tacs.pytacs.pyTACS method)</a>
 </li>
-      <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.getMaterialProperties">getMaterialProperties() (tacs.constitutive.MaterialProperties method)</a>
+      <li><a href="core/constitutive.html#tacs.constitutive.CompositeShellConstitutive.getMaterialProperties">getMaterialProperties() (tacs.constitutive.CompositeShellConstitutive method)</a>
 
       <ul>
+        <li><a href="core/constitutive.html#tacs.constitutive.IsoShellConstitutive.getMaterialProperties">(tacs.constitutive.IsoShellConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties.getMaterialProperties">(tacs.constitutive.MaterialProperties method)</a>
+</li>
         <li><a href="core/constitutive.html#tacs.constitutive.OrthotropicPly.getMaterialProperties">(tacs.constitutive.OrthotropicPly method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.ShellConstitutive.getMaterialProperties">(tacs.constitutive.ShellConstitutive method)</a>
+</li>
+        <li><a href="core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive.getMaterialProperties">(tacs.constitutive.SmearedCompositeShellConstitutive method)</a>
 </li>
       </ul></li>
       <li><a href="pytacs/buckling.html#tacs.problems.BucklingProblem.getModalError">getModalError() (tacs.problems.BucklingProblem method)</a>
@@ -996,6 +1010,8 @@
 </li>
       <li><a href="core/TACS.html#TACS.Integrator.getStates">getStates() (TACS.Integrator method)</a>
 </li>
+      <li><a href="core/constitutive.html#tacs.constitutive.ShellConstitutive.getThicknessProperties">getThicknessProperties() (tacs.constitutive.ShellConstitutive method)</a>
+</li>
       <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getTimeStages">getTimeStages() (tacs.problems.TransientProblem method)</a>
 </li>
       <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.getTimeSteps">getTimeSteps() (tacs.problems.TransientProblem method)</a>
@@ -1158,7 +1174,9 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="core/constitutive.html#tacs.constitutive.LamParamShellConstitutive">LamParamShellConstitutive (class in tacs.constitutive)</a>
+      <li><a href="core/constitutive.html#tacs.constitutive.LamParamFullShellConstitutive">LamParamFullShellConstitutive (class in tacs.constitutive)</a>
+</li>
+      <li><a href="core/constitutive.html#tacs.constitutive.LamParamSmearedShellConstitutive">LamParamSmearedShellConstitutive (class in tacs.constitutive)</a>
 </li>
       <li><a href="core/elements.html#tacs.elements.LinearElasticity2D">LinearElasticity2D (class in tacs.elements)</a>
 </li>
@@ -1168,10 +1186,10 @@
 </li>
       <li><a href="core/elements.html#tacs.elements.LinearQuadBasis">LinearQuadBasis (class in tacs.elements)</a>
 </li>
-      <li><a href="core/elements.html#tacs.elements.LinearTetrahedralBasis">LinearTetrahedralBasis (class in tacs.elements)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="core/elements.html#tacs.elements.LinearTetrahedralBasis">LinearTetrahedralBasis (class in tacs.elements)</a>
+</li>
       <li><a href="core/elements.html#tacs.elements.LinearThermoelasticity2D">LinearThermoelasticity2D (class in tacs.elements)</a>
 </li>
       <li><a href="core/elements.html#tacs.elements.LinearThermoelasticity3D">LinearThermoelasticity3D (class in tacs.elements)</a>
@@ -1191,6 +1209,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="core/elements.html#tacs.elements.MassElement">MassElement (class in tacs.elements)</a>
+</li>
+      <li><a href="core/constitutive.html#tacs.constitutive.MAT2MaterialProperties">MAT2MaterialProperties (class in tacs.constitutive)</a>
 </li>
       <li><a href="core/constitutive.html#tacs.constitutive.MaterialProperties">MaterialProperties (class in tacs.constitutive)</a>
 </li>
@@ -1563,7 +1583,13 @@
 </li>
       <li><a href="core/constitutive.html#tacs.constitutive.GaussianProcess.setKS">setKS() (tacs.constitutive.GaussianProcess method)</a>
 </li>
-      <li><a href="core/constitutive.html#tacs.constitutive.StiffenedShellConstitutive.setKSWeight">setKSWeight() (tacs.constitutive.StiffenedShellConstitutive method)</a>
+      <li><a href="core/constitutive.html#tacs.constitutive.LamParamFullShellConstitutive.setKSWeight">setKSWeight() (tacs.constitutive.LamParamFullShellConstitutive method)</a>
+
+      <ul>
+        <li><a href="core/constitutive.html#tacs.constitutive.StiffenedShellConstitutive.setKSWeight">(tacs.constitutive.StiffenedShellConstitutive method)</a>
+</li>
+      </ul></li>
+      <li><a href="core/constitutive.html#tacs.constitutive.LamParamFullShellConstitutive.setLaminationParameters">setLaminationParameters() (tacs.constitutive.LamParamFullShellConstitutive method)</a>
 </li>
       <li><a href="pytacs/static.html#tacs.problems.StaticProblem.setLoadScale">setLoadScale() (tacs.problems.StaticProblem method)</a>
 </li>
@@ -1595,6 +1621,8 @@
         <li><a href="pytacs/transient.html#tacs.problems.TransientProblem.setNodes">(tacs.problems.TransientProblem method)</a>
 </li>
       </ul></li>
+      <li><a href="core/constitutive.html#tacs.constitutive.LamParamFullShellConstitutive.setNumFailAngles">setNumFailAngles() (tacs.constitutive.LamParamFullShellConstitutive method)</a>
+</li>
       <li><a href="core/TACS.html#TACS.Assembler.setNumThreads">setNumThreads() (TACS.Assembler method)</a>
 </li>
       <li><a href="pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.setOption">setOption() (tacs.constraints.AdjacencyConstraint method)</a>
@@ -1703,7 +1731,13 @@
 </li>
       <li><a href="core/TACS.html#TACS.Integrator.setUseLapack">setUseLapack() (TACS.Integrator method)</a>
 </li>
+      <li><a href="core/constitutive.html#tacs.constitutive.OrthotropicPly.setUseMaxStrainCriterion">setUseMaxStrainCriterion() (tacs.constitutive.OrthotropicPly method)</a>
+</li>
+      <li><a href="core/constitutive.html#tacs.constitutive.OrthotropicPly.setUseModifiedTsaiWuCriterion">setUseModifiedTsaiWuCriterion() (tacs.constitutive.OrthotropicPly method)</a>
+</li>
       <li><a href="core/TACS.html#TACS.Integrator.setUseSchurMat">setUseSchurMat() (TACS.Integrator method)</a>
+</li>
+      <li><a href="core/constitutive.html#tacs.constitutive.OrthotropicPly.setUseTsaiWuCriterion">setUseTsaiWuCriterion() (tacs.constitutive.OrthotropicPly method)</a>
 </li>
       <li><a href="pytacs/buckling.html#tacs.problems.BucklingProblem.setValName">setValName() (tacs.problems.BucklingProblem method)</a>
 
