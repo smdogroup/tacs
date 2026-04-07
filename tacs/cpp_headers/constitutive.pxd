@@ -82,6 +82,10 @@ cdef extern from "TACSSolidConstitutive.h":
 cdef extern from "TACSShellConstitutive.h":
     cdef cppclass TACSShellConstitutive(TACSConstitutive):
         void setDrillingRegularization(double)
+        TacsScalar getShearCorrectionFactor()
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
+        void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
 
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
@@ -95,13 +99,6 @@ cdef extern from "TACSCompositeShellConstitutive.h":
         void getPlyThicknesses(TacsScalar*);
         void getPlyAngles(TacsScalar*);
         TacsScalar getThicknessOffset();
-
-cdef extern from "TACSLamParamShellConstitutive.h":
-    cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
-        TACSLamParamShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, TacsScalar, int, int, int,
-                                      TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
 
 cdef extern from "TACSIsoShellConstitutive.h":
     cdef cppclass TACSIsoShellConstitutive(TACSShellConstitutive):
@@ -128,12 +125,29 @@ cdef extern from "TACSSmearedCompositeShellConstitutive.h":
         void getPlyFractions(TacsScalar*);
         TacsScalar getThicknessOffset();
 
-cdef extern from "TACSLamParamShellConstitutive.h":
-    cdef cppclass TACSLamParamShellConstitutive(TACSShellConstitutive):
-        TACSLamParamShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
+cdef extern from "TACSLamParamSmearedShellConstitutive.h":
+    cdef cppclass TACSLamParamSmearedShellConstitutive(TACSShellConstitutive):
+        TACSLamParamSmearedShellConstitutive(TACSOrthotropicPly*, TacsScalar, int, TacsScalar, TacsScalar,
                                       TacsScalar, TacsScalar, TacsScalar, int, int, int,
                                       TacsScalar, TacsScalar, TacsScalar,
-                                      TacsScalar, TacsScalar, int, int, TacsScalar, TacsScalar)
+                                      TacsScalar, TacsScalar, int, int, double, TacsScalar,
+                                      TacsScalar)
+
+cdef extern from "TACSLamParamFullShellConstitutive.h":
+    cdef cppclass TACSLamParamFullShellConstitutive(TACSShellConstitutive):
+        TACSLamParamFullShellConstitutive(
+            TACSOrthotropicPly*,
+            TacsScalar, # t
+            int, # tNum
+            TacsScalar, # tlb
+            TacsScalar, # tub
+            int[], # lpNums
+            double, # ksWeight
+            TacsScalar, # kcorr
+        )
+        void setLaminationParameters(TacsScalar[])
+        void setKSWeight(double ksWeight)
+        void setNumFailAngles(int)
 
 cdef extern from "TACSBladeStiffenedShellConstitutive.h":
     cdef cppclass TACSBladeStiffenedShellConstitutive(TACSShellConstitutive):
