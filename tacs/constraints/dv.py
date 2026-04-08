@@ -1,4 +1,3 @@
-
 """
 The main purpose of this class is to place linear constraints on design variables within the same component.
 The constraints are of the form:
