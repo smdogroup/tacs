@@ -516,7 +516,7 @@ class VolumeConstraint(TACSConstraint):
                 )
 
                 # Create new zone
-                zoneInfo = Zone(tecInfo.log)
+                zoneInfo = tp.Zone(tecInfo.log)
 
                 # Setup header info
                 zoneInfo.title = constrName
@@ -554,14 +554,15 @@ class VolumeConstraint(TACSConstraint):
                     if "CQUAD" in elemInfo.type:
                         quadConn.append(newConn)
                     elif "CTRI" in elemInfo.type:
-                        triConn.append(newConn)
+                        newConn = [newConn[0], newConn[1], newConn[2], newConn[2]]
+                        quadConn.append(newConn)
                     elif "CHEXA" in elemInfo.type:
                         hexConn.append(newConn)
                     elif "CTETRA" in elemInfo.type:
                         tetConn.append(newConn)
 
                 # Set all node/connectivity info to zone
-                zoneInfo.xyz = np.array(nodeXYZ, dtype=float)
+                zoneInfo.zone_data = np.array(nodeXYZ, dtype=float)
                 zoneInfo.quad_elements = np.array(quadConn, dtype=np.intc)
                 zoneInfo.tri_elements = np.array(triConn, dtype=np.intc)
                 zoneInfo.hexa_elements = np.array(hexConn, dtype=np.intc)
