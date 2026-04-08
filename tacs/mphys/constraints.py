@@ -122,7 +122,9 @@ class ConstraintComponent(om.ExplicitComponent):
         # and we need to load this scenario's state back into TACS before doing derivatives
         self._update_internal(inputs)
         funcs_sens = {}
-        self.constr.evalConstraintsSens(funcs_sens)
+        self.constr.evalConstraintsSens(
+            funcs_sens, includeDVSens=True, includeXptSens=True
+        )
 
         for out_name in d_outputs:
             output_key = f"{self.constr.name}_{out_name}"

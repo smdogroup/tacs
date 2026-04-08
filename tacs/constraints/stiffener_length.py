@@ -295,7 +295,9 @@ class StiffenerLengthConstraint(TACSConstraint):
                 self.x.getArray(), self.Xpts.getArray()
             )
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
         corresponding to the strings in evalCons are evaluated and
@@ -314,6 +316,10 @@ class StiffenerLengthConstraint(TACSConstraint):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -334,8 +340,11 @@ class StiffenerLengthConstraint(TACSConstraint):
             xSens, XptSens = self.constraintList[conName].evalConSens(
                 self.x.getArray(), self.Xpts.getArray()
             )
-            # Get sparse Jacobian for dv sensitivity
-            funcsSens[key] = {self.varName: xSens, self.coordName: XptSens}
+            funcsSens[key] = {}
+            if includeDVSens:
+                funcsSens[key][self.varName] = xSens
+            if includeXptSens:
+                funcsSens[key][self.coordName] = XptSens
 
 
 class SparseLengthConstraint(object):

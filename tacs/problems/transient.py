@@ -1122,7 +1122,9 @@ class TransientProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1136,6 +1138,10 @@ class TransientProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1180,18 +1186,19 @@ class TransientProblem(TACSProblem):
         # Recast sensitivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Finalize sensitivity arrays across all procs
-            dvSens = self.integrator.getGradient(i)
-            dvSens.beginSetValues()
-            dvSens.endSetValues()
-            xptSens = self.integrator.getXptGradient(i)
-            xptSens.beginSetValues()
-            xptSens.endSetValues()
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSens.getArray().copy(),
-                self.coordName: xptSens.getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                # Finalize dv sensitivity arrays across all procs
+                dvSens = self.integrator.getGradient(i)
+                dvSens.beginSetValues()
+                dvSens.endSetValues()
+                funcsSens[key][self.varName] = dvSens.getArray().copy()
+            if includeXptSens:
+                # Finalize xpt sensitivity arrays across all procs
+                xptSens = self.integrator.getXptGradient(i)
+                xptSens.beginSetValues()
+                xptSens.endSetValues()
+                funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
         totalSensitivityTime = time.time()
 
