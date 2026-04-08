@@ -296,7 +296,9 @@ class LamParamFullConstraint(TACSConstraint):
 
             funcs[key] = self.constraintList[conName].evalCon(self.x.getArray())
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -314,6 +316,10 @@ class LamParamFullConstraint(TACSConstraint):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -327,17 +333,20 @@ class LamParamFullConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        # Get number of nodes coords on this proc
-        nCoords = self.getNumCoordinates()
+        if includeDVSens:
+            # Get number of nodes coords on this proc
+            nCoords = self.getNumCoordinates()
 
-        # Loop through each requested constraint set
-        for conName in evalCons:
-            key = f"{self.name}_{conName}"
-            # Get sparse Jacobian for dv sensitivity
-            funcsSens[key] = {}
-            funcsSens[key][self.varName] = (
-                self.constraintList[conName].evalConSens(self.x.getArray()).toarray()
-            )
+            # Loop through each requested constraint set
+            for conName in evalCons:
+                key = f"{self.name}_{conName}"
+                # Get sparse Jacobian for dv sensitivity
+                funcsSens[key] = {}
+                funcsSens[key][self.varName] = (
+                    self.constraintList[conName]
+                    .evalConSens(self.x.getArray())
+                    .toarray()
+                )
 
 
 class SparseLamParamFullConstraint(object):
