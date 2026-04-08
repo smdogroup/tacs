@@ -1226,7 +1226,9 @@
 
 <div class="viewcode-block" id="TransientProblem.evalFunctionsSens">
 <a class="viewcode-back" href="../../../pytacs/transient.html#tacs.problems.TransientProblem.evalFunctionsSens">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">includeDVSens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">includeXptSens</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -1240,6 +1242,10 @@
 <span class="sd">            Dictionary into which the derivatives are saved.</span>
 <span class="sd">        evalFuncs : iterable object containing strings</span>
 <span class="sd">            The functions the user wants returned</span>
+<span class="sd">        includeDVSens : bool, optional</span>
+<span class="sd">            Flag to include design variable sensitivities in output. Default is True.</span>
+<span class="sd">        includeXptSens : bool, optional</span>
+<span class="sd">            Flag to include node location sensitivities in output. Default is True.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -1284,18 +1290,19 @@
         <span class="c1"># Recast sensitivities into dict for user</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">):</span>
             <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">f</span>
-            <span class="c1"># Finalize sensitivity arrays across all procs</span>
-            <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-            <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
-            <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
-            <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getXptGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-            <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
-            <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
-            <span class="c1"># Return sensitivities as array in sens dict</span>
-            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">:</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">:</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
-            <span class="p">}</span>
+            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
+                <span class="c1"># Finalize dv sensitivity arrays across all procs</span>
+                <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+                <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">includeXptSens</span><span class="p">:</span>
+                <span class="c1"># Finalize xpt sensitivity arrays across all procs</span>
+                <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">integrator</span><span class="o">.</span><span class="n">getXptGradient</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+                <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="n">totalSensitivityTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 

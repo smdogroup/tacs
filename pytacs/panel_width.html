@@ -181,7 +181,7 @@ this option with caution.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelWidthConstraint.evalConstraintsSens">
-<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.evalConstraintsSens" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeDVSens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeXptSens</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelWidthConstraint.evalConstraintsSens" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main routine for returning useful (sensitivity)
 information from constraint. The derivatives of the constraints
 corresponding to the strings in evalCons are evaluated and
@@ -197,6 +197,8 @@ variables/node coordinates on this proc.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
 <li><p><strong>evalCons</strong> (<em>iterable object containing strings</em>) -- The constraints the user wants returned</p></li>
+<li><p><strong>includeDVSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to include design variable sensitivities in output. Default is True.</p></li>
+<li><p><strong>includeXptSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) -- Flag to include node location sensitivities in output. Default is True.</p></li>
 </ul>
 </dd>
 </dl>

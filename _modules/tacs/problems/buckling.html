@@ -373,7 +373,9 @@
 
 <div class="viewcode-block" id="BucklingProblem.evalFunctionsSens">
 <a class="viewcode-back" href="../../../pytacs/buckling.html#tacs.problems.BucklingProblem.evalFunctionsSens">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">includeDVSens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">includeXptSens</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
@@ -387,6 +389,10 @@
 <span class="sd">            Dictionary into which the derivatives are saved.</span>
 <span class="sd">        evalFuncs : iterable object containing strings</span>
 <span class="sd">            The functions the user wants returned</span>
+<span class="sd">        includeDVSens : bool, optional</span>
+<span class="sd">            Flag to include design variable sensitivities in output. Default is True.</span>
+<span class="sd">        includeXptSens : bool, optional</span>
+<span class="sd">            Flag to include node location sensitivities in output. Default is True.</span>
 
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
@@ -410,17 +416,16 @@
                 <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
                     <span class="n">evalFuncs</span><span class="p">[</span><span class="n">func</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="n">func</span><span class="p">]</span>
 
-        <span class="n">dvSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
-        <span class="n">xptSens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
-
         <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
         <span class="n">dvSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
         <span class="n">xptSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
         <span class="n">svSensList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
         <span class="n">adjointList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">addDVSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addDVSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">includeXptSens</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">evalSVSens</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
@@ -432,21 +437,25 @@
             <span class="n">adjoint</span> <span class="o">=</span> <span class="n">adjointList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="n">adjoint</span><span class="p">)</span>
 
-            <span class="c1"># Evaluate adjoint contribution to nodal sens</span>
-            <span class="n">xptSens</span> <span class="o">=</span> <span class="n">xptSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResXptSensProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">xptSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
-            <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
-            <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
-            <span class="c1"># Evaluate adjoint contribution to dv sens</span>
-            <span class="n">dvSens</span> <span class="o">=</span> <span class="n">dvSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">dvSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
-            <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
-            <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">includeXptSens</span><span class="p">:</span>
+                <span class="c1"># Evaluate adjoint contribution to nodal sens</span>
+                <span class="n">xptSens</span> <span class="o">=</span> <span class="n">xptSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResXptSensProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">xptSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">xptSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+                <span class="n">xptSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
+                <span class="c1"># Evaluate adjoint contribution to dv sens</span>
+                <span class="n">dvSens</span> <span class="o">=</span> <span class="n">dvSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">addAdjointResProducts</span><span class="p">([</span><span class="n">adjoint</span><span class="p">],</span> <span class="p">[</span><span class="n">dvSens</span><span class="p">],</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">dvSens</span><span class="o">.</span><span class="n">beginSetValues</span><span class="p">()</span>
+                <span class="n">dvSens</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
 
             <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">dvSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSens</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+            <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">varName</span><span class="p">]</span> <span class="o">=</span> <span class="n">dvSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">includeXptSens</span><span class="p">:</span>
+                <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">coordName</span><span class="p">]</span> <span class="o">=</span> <span class="n">xptSensList</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="BucklingProblem.addLoadToComponents">
