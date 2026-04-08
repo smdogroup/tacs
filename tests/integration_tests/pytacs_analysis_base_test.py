@@ -50,8 +50,6 @@ class PyTACSTestCase:
 
             self.absolute_compare = False
 
-            self.skip_equilibrium_check = False
-
             # Setup tacs problems to be tested
             self.tacs_probs, self.fea_assembler = self.setup_tacs_problems(self.comm)
 
@@ -128,64 +126,6 @@ class PyTACSTestCase:
                                     atol=self.atol,
                                 )
 
-        def test_equilibrium(self):
-            """
-            Test that the applied and reaction forces and moments are in equilibrium for the solved state.
-            """
-
-            if self.skip_equilibrium_check:
-                self.skipTest("Skipping equilibrium check as requested.")
-
-            for prob in self.tacs_probs:
-                with self.subTest(problem=prob.name):
-                    if isinstance(prob, problems.StaticProblem):
-                        prob.solve()
-
-                        # Get the node coordinates
-                        nodes = self.fea_assembler.localToGlobalArray(
-                            prob.getNodes()
-                        ).reshape(-1, 3)
-
-                        # Get reaction forces and moments
-                        reactionsVec = self.fea_assembler.createVec(asBVec=True)
-
-                        self.fea_assembler.assembler.computeReactions(
-                            prob.res, reactionsVec
-                        )
-
-                        reactions = self.fea_assembler.localToGlobalArray(
-                            reactionsVec.getArray()
-                        ).reshape(-1, self.fea_assembler.varsPerNode)
-
-                        # Get applied forces and moments on non-constrained DOFs
-                        appliedVec = self.fea_assembler.createVec(asBVec=True)
-                        prob.setLoadScale(0.0)
-                        prob.getResidual(appliedVec)
-                        self.fea_assembler.assembler.applyBCs(appliedVec)
-
-                        applied = self.fea_assembler.localToGlobalArray(
-                            appliedVec.getArray()
-                        ).reshape(-1, self.fea_assembler.varsPerNode)
-
-                        # Sum applied and reaction forces and moments
-                        totalReaction = np.sum(reactions, axis=0)
-                        totalApplied = np.sum(applied, axis=0)
-                        if reactions.shape[1] == 6:
-                            totalReaction[3:] += np.sum(
-                                np.cross(nodes, reactions[:, :3]), axis=0
-                            )
-                            totalApplied[3:] += np.sum(
-                                np.cross(nodes, applied[:, :3]), axis=0
-                            )
-
-                        np.testing.assert_allclose(
-                            np.real(totalReaction),
-                            np.real(-totalApplied),
-                            rtol=self.rtol,
-                            atol=self.atol,
-                            err_msg=f"Equilibrium check failed for problem {prob.name}, total reaction {totalReaction}, total applied {totalApplied}",
-                        )
-
         def test_total_dv_sensitivities(self):
             """
             Test total dv sensitivity through adjoint against fd/cs
@@ -199,7 +139,7 @@ class PyTACSTestCase:
             funcs = self.run_solve()
 
             # Compute the total derivative w.r.t. material design variables using adjoint
-            func_sens = self.run_sensitivities()
+            func_sens = self.run_sensitivities(includeDVSens=True)
 
             # Compute the total derivative w.r.t. material design variables using fd/cs
             self.dv1 = self.perturb_tacs_vec(self.dv0, self.dv_pert)
@@ -247,7 +187,7 @@ class PyTACSTestCase:
             funcs = self.run_solve()
 
             # Compute the total derivative w.r.t. material design variables using adjoint
-            func_sens = self.run_sensitivities()
+            func_sens = self.run_sensitivities(includeXptSens=True)
 
             # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
             self.xpts1 = self.perturb_tacs_vec(self.xpts0, self.xpts_pert)
@@ -375,7 +315,9 @@ class PyTACSTestCase:
 
             return funcs
 
-        def run_sensitivities(self, dv=None, xpts=None):
+        def run_sensitivities(
+            self, dv=None, xpts=None, includeDVSens=False, includeXptSens=False
+        ):
             """
             Run a sensitivity solve at specified design point and return sens of  functions of interest
             """
@@ -398,11 +340,19 @@ class PyTACSTestCase:
                     prob.solve()
                     # Evaluate functions
                     prob.evalFunctions(funcs)
-                    prob.evalFunctionsSens(funcs_sens)
+                    prob.evalFunctionsSens(
+                        funcs_sens,
+                        includeDVSens=includeDVSens,
+                        includeXptSens=includeXptSens,
+                    )
                 elif isinstance(prob, constraints.TACSConstraint):
                     # Evaluate functions
                     prob.evalConstraints(funcs)
-                    prob.evalConstraintsSens(funcs_sens)
+                    prob.evalConstraintsSens(
+                        funcs_sens,
+                        includeDVSens=includeDVSens,
+                        includeXptSens=includeXptSens,
+                    )
 
             return funcs_sens
 

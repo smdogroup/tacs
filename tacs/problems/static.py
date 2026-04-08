@@ -1027,7 +1027,7 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def updateJacobian(self, res=None, applyBCs=True):
+    def updateJacobian(self, res=None):
         """Update the Jacobian (a.k.a stiffness) matrix
 
         The Jacobian will only actually be updated if the
@@ -1037,8 +1037,6 @@ class StaticProblem(TACSProblem):
         ----------
         res : tacs.TACS.Vec, optional
             If provided, the residual is also computed and stored in this vector
-        applyBCs : bool, optional
-            Whether to apply boundary conditions to the jacobian, by default True
         """
         if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
@@ -1049,7 +1047,6 @@ class StaticProblem(TACSProblem):
                 res,
                 self.K,
                 loadScale=self._loadScale,
-                applyBCs=applyBCs,
             )
             self._jacobianUpdateRequired = False
             self._preconditionerUpdateRequired = True
@@ -1165,7 +1162,9 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1179,6 +1178,10 @@ class StaticProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1243,21 +1246,22 @@ class StaticProblem(TACSProblem):
             adjointEndTime[f] = time.time()
 
         adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
+        # Evaluate all the adjoint res products at the same time for efficiency:
+        if includeDVSens:
+            self.addDVSens(evalFuncs, dvSenses)
+            self.addAdjointResProducts(adjoints, dvSenses)
+        if includeXptSens:
+            self.addXptSens(evalFuncs, xptSenses)
+            self.addAdjointResXptSensProducts(adjoints, xptSenses)
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSenses[i].getArray().copy(),
-                self.coordName: xptSenses[i].getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                funcsSens[key][self.varName] = dvSenses[i].getArray().copy()
+            if includeXptSens:
+                funcsSens[key][self.coordName] = xptSenses[i].getArray().copy()
 
         totalSensitivityTime = time.time()
 
@@ -1786,6 +1790,7 @@ class StaticProblem(TACSProblem):
 
         # Solve Linear System
         self.linearSolver.solve(self.adjRHS, self.phi)
+        self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
 
@@ -1825,6 +1830,7 @@ class StaticProblem(TACSProblem):
         # Copy array values
         self.copyToTACSVec(states, self.u)
         # Set states to assembler
+        self.assembler.setBCs(self.u)
         self.assembler.setVariables(self.u)
 
         # If this is a nonlinear problem then changing the state will change the jacobian
