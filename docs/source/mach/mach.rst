@@ -1,7 +1,7 @@
 MACH
 ====
 
-The MACH interface provides a specialized wrapper for coupling TACS with MDOLab's MACH framework codes, particularly for aerostructural analysis and multidisciplinary optimization. It is built around the :class:`~tacs.mach.struct_problem.StructProblem` class, which adapts a TACS :class:`~tacs.problems.StaticProblem` to conform to the ``baseclasses.StructProblem`` interface expected by codes such as `pyAeroStructure <https://github.com/mdolab/pyaerostructure>`_.
+The MACH interface provides a specialized wrapper for coupling TACS with MDOLab's MACH framework codes, particularly for aerostructural analysis and multidisciplinary optimization. It is built around the :class:`~tacs.mach.struct_problem.StructProblem` class, which adapts a TACS :class:`~tacs.problems.StaticProblem` to conform to the ``baseclasses.StructProblem`` interface expected by MACH framework codes.
 
 Overview
 --------
