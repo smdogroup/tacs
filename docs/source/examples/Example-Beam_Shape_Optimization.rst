@@ -1,31 +1,42 @@
 2D Beam Shape Optimization with MACH
 ************************************
-.. note:: The script for this example can be found under the `examples/beam/` directory.
+.. note:: The script for this example can be found under the ``examples/beam/shape_opt.py`` file.
 
-This example demonstrates TACS structural optimization capabilities using the MACH interface.
+This example demonstrates TACS structural shape optimization using the
+:ref:`mach/mach:MACH` interface.
 The beam model is a rectangular beam, cantilevered, with a shear load applied at the tip.
-The beam is discretized using shell elements along its span and depth.
+The beam is discretized using 1001 shell elements along its span and depth.
 
-The optimization problem is as follows:
-Minimize the mass of the beam with respect to the depth of the cross-section along the span,
-subject to a maximum stress constraint dictated by the material's yield stress.
+The optimization problem is:
+
+  **Minimize** the mass of the beam with respect to the depth of the cross-section along the span,
+  subject to a maximum stress constraint dictated by the material's yield stress.
 
 In order to change the shape of the FEM, we use a free-form deformation (FFD) volume
-parameterization scheme provided by the pyGeo library.
+parameterization scheme provided by the ``pyGeo`` library.
 
-An approximate analytical solution can be derived from beam theory,
-by realizing that the stress at any spanwise cross-section in the beam
-can be found independently using:
-    sigma(x,y) = y*M(x)/I
-An analytical solution for this problem can be shown to be:
-    d(x) = sqrt(6*V*(L-x)/(t*sigma_y))
+The figure below shows the initial (unoptimized) beam with the von Mises failure contour and
+the FFD box with its control points encapsulating the structure:
 
-The optimization is setup using TACS' MACH module, which provides a wrapper
-for pyOptsparse optimization.
+.. image:: images/Beam_FFD.png
+   :width: 700
+   :alt: Initial beam failure contour with FFD volume box and control points
 
-.. image:: images/beam_shape_initial.png
-  :width: 600
-  :alt: Initial beam geometry and mesh
+Each spanwise control point section will be parameterized in such a way that the depth of the beam can be optimized at each station.
+
+An approximate analytical solution can be derived from beam theory.
+The bending stress at any spanwise cross-section is:
+
+.. math::
+    \sigma(x, y) = \frac{y \, M(x)}{I}
+
+The optimal depth profile that keeps stress at the yield limit everywhere is:
+
+.. math::
+    d(x) = \sqrt{\frac{6 V (L - x)}{t \, \sigma_y}}
+
+The optimization is driven by SNOPT via pyoptsparse, with gradients supplied by
+TACS' adjoint solver through the :class:`~tacs.mach.struct_problem.StructProblem` wrapper.
 
 First, import required libraries:
 
@@ -98,12 +109,8 @@ Set up the geometric design variables using pyGeo's DVGeometry:
       for i in range(nRefAxPts):
           geo.scale_y["centerline"].coef[i] = val[i]
 
-  DVGeo.addGlobalDV(dvName="depth", value=np.ones(nRefAxPts), func=depth, 
+  DVGeo.addGlobalDV(dvName="depth", value=np.ones(nRefAxPts), func=depth,
                     lower=1e-3, upper=10.0, scale=20.0)
-
-.. image:: images/beam_ffd_setup.png
-  :width: 600
-  :alt: FFD volume and control points for geometric parameterization
 
 Create the static problem and add functions of interest:
 
@@ -116,7 +123,9 @@ Create the static problem and add functions of interest:
   # Add forces to static problem
   staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
-Create the StructProblem using the MACH interface:
+Create the :class:`~tacs.mach.struct_problem.StructProblem` using the MACH interface.
+Passing ``DVGeo`` here registers the structural node coordinates with the FFD volume;
+nodes are updated automatically before each solve when design variables change:
 
 .. code-block:: python
 
@@ -140,7 +149,11 @@ Define the objective and constraint evaluation function:
 
       return funcs, False
 
-Define the sensitivity evaluation function:
+Define the sensitivity evaluation function.
+:meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens` folds in the DVGeo
+chain-rule term automatically, producing sensitivities keyed by the geometric DV name
+(``"depth"``).  The raw structural-node coordinate sensitivity (keyed ``"struct"``) is
+popped out because it is not a pyoptsparse design variable:
 
 .. code-block:: python
 
@@ -152,7 +165,11 @@ Define the sensitivity evaluation function:
           funcsSens[func].pop("struct")
       return funcsSens, False
 
-Set up the optimization problem using pyOptsparse:
+Set up the optimization problem using pyoptsparse.
+:meth:`~tacs.mach.struct_problem.StructProblem.addVariablesPyOpt` registers the TACS
+structural design variables (none in this case, since ``tNum=-1``), and
+``DVGeo.addVariablesPyOpt`` registers the FFD ``"depth"`` DV.
+The stress constraint is added as a nonlinear inequality on the KS failure index:
 
 .. code-block:: python
 
@@ -187,25 +204,26 @@ Finally, run the optimization:
   # Finally run the actual optimization
   sol = opt(optProb, sens=structSens, storeSens=False)
 
-.. image:: images/beam_shape_optimized.png
-  :width: 600
-  :alt: Optimized beam geometry showing depth variation along span
-
 Results
 -------
 
-The optimization successfully minimizes the beam mass while satisfying the stress constraint.
-The optimal depth profile follows the analytical solution, with the beam depth decreasing
-from the root to the tip to maintain constant stress along the span.
+The optimization minimizes the beam mass while keeping the KS failure index below 1.0.
+The converged depth profile decreases from root to tip, matching the analytical solution
+:math:`d(x) = \sqrt{6V(L-x)/(t\,\sigma_y)}`.
 
-Key features demonstrated in this example:
+.. image:: images/Beam_Shape_Opt.png
+   :width: 700
+   :alt: Optimized beam failure contours with the idealized analytic depth profile overlaid
 
-- **Geometric Design Variables**: Using pyGeo's DVGeometry for shape parameterization
-- **MACH Interface**: Integration with pyOptsparse for optimization
-- **Constraint Handling**: Stress constraints using KS failure criteria
-- **Sensitivity Analysis**: Adjoint-based gradient computation for optimization
-- **FFD Parameterization**: Free-form deformation for smooth shape changes
+Key features demonstrated:
 
-The MACH interface provides a clean separation between the structural analysis (TACS)
-and the optimization framework (pyOptsparse), making it easy to set up complex
-multidisciplinary optimization problems.
+- **Geometric DVs via FFD**: ``DVGeometry`` controls beam depth with ``nRefAxPts`` independent
+  control points along the span.  ``DVGeo.addGlobalDV`` maps the scalar depth values to
+  y-scaling of the FFD control points.
+- **MACH StructProblem**: :class:`~tacs.mach.struct_problem.StructProblem` bridges TACS
+  and pyoptsparse, handling node updates and DVGeo chain-rule terms automatically.
+- **Adjoint sensitivities**: :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens`
+  computes :math:`dI/dx_\text{geo}` via the adjoint method and the DVGeo total-sensitivity
+  chain rule.
+- **KS failure aggregation**: :class:`~tacs.functions.KSFailure` with ``ksWeight=100``
+  provides a smooth, differentiable envelope of the pointwise von Mises failure criterion.

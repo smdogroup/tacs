@@ -1,141 +1,71 @@
-MACH 
+MACH
 ====
 
-The MACH interface provides a specialized interface for coupling TACS with the MDOLab's MACH library codes, particularly for aerostructural analysis and other multidisciplinary optimization workflows. 
-This interface is built around the :class:`StructProblem` class, which serves as a bridge between TACS structural analysis capabilities and external solvers.
+The MACH interface provides a specialized wrapper for coupling TACS with MDOLab's MACH framework codes, particularly for aerostructural analysis and multidisciplinary optimization. It is built around the :class:`~tacs.mach.struct_problem.StructProblem` class, which adapts a TACS :class:`~tacs.problems.StaticProblem` to conform to the ``baseclasses.StructProblem`` interface expected by codes such as `pyAeroStructure <https://github.com/mdolab/pyaerostructure>`_.
 
 Overview
 --------
 
-The MACH interface is designed for scenarios where TACS needs to be integrated with external computational libraries, such as:
+The MACH interface is designed for scenarios where TACS is integrated with external computational libraries, such as:
 
-- The aerodynamic solver `ADflow <https://github.com/mdolab/adflow>`_ for aerostructural coupling
-- The geometric parametrization library `pyGeo <https://github.com/mdolab/pygeo>`_ for geometric design variables
-- The optimization library `pyoptsparse <https://github.com/mdolab/pyoptsparse>`_ for optimization
+- `ADflow <https://github.com/mdolab/adflow>`_ — aerodynamic solver for aerostructural coupling
+- `pyGeo <https://github.com/mdolab/pygeo>`_ — geometric parametrization and design variables
+- `pyoptsparse <https://github.com/mdolab/pyoptsparse>`_ — gradient-based optimization
+
+The typical workflow is:
+
+1. Create a :class:`~tacs.pytacs.pyTACS` assembler and a :class:`~tacs.problems.StaticProblem`.
+2. Set up any external forces on the :class:`~tacs.problems.StaticProblem`.
+3. Wrap the :class:`~tacs.problems.StaticProblem` with :class:`~tacs.mach.struct_problem.StructProblem`.
+4. Optionally attach a ``DVGeometry`` object for geometric design variables.
+5. At each optimization step: call :meth:`~tacs.mach.struct_problem.StructProblem.solve`, then call :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctions` / :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens`.
 
 Key Features
 ------------
 
-- **External Force Integration**: Seamless handling of forces from external solvers
-- **Adjoint Capabilities**: Full support for adjoint-based sensitivity analysis
-- **Design Variable Management**: Comprehensive design variable handling with geometric and material parameters
-- **Constraint Support**: Built-in support for structural constraints
+- **External Force Integration**: The :attr:`~tacs.mach.struct_problem.StructProblem.Fext` property holds the aerodynamic coupling force vector. It is automatically included in the residual during :meth:`~tacs.mach.struct_problem.StructProblem.solve`.
+- **Aitken Acceleration**: :meth:`~tacs.mach.struct_problem.StructProblem.solve` optionally applies Aitken relaxation to stabilize fixed-point iteration in aerostructural coupling loops.
+- **Adjoint Capabilities**: The class manages all adjoint state vectors needed for coupled sensitivity analysis, including :attr:`~tacs.mach.struct_problem.StructProblem.phi`, :attr:`~tacs.mach.struct_problem.StructProblem.pLoad`, :attr:`~tacs.mach.struct_problem.StructProblem.dSdu`, and :attr:`~tacs.mach.struct_problem.StructProblem.adjRHS`.
+- **Geometric Design Variables**: When a ``DVGeometry`` object is provided (via :meth:`~tacs.mach.struct_problem.StructProblem.setDVGeo`), node coordinates are automatically updated before each analysis call and geometric sensitivities are folded in by :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens`.
+- **pyoptsparse Integration**: :meth:`~tacs.mach.struct_problem.StructProblem.addVariablesPyOpt` and :meth:`~tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt` register structural design variables and constraints directly with a ``pyoptsparse`` optimization problem.
+- **Force File I/O**: External coupling forces can be saved to and loaded from BDF-format files for post-processing or restarting aerostructural analyses.
+
+Adjoint Vector Properties
+--------------------------
+
+During coupled adjoint computation the following state vectors are managed by ``StructProblem``:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 80
+
+   * - Property
+     - Description
+   * - ``Fext``
+     - External aerodynamic coupling force. Set by the aero solver before each :meth:`solve` call.
+   * - ``phi``
+     - Structural adjoint vector :math:`\phi`. Updated by :meth:`solveAdjoint`.
+   * - ``pLoad``
+     - Aerodynamic adjoint contribution to the structural adjoint RHS: :math:`[dA/du]^T \psi`. Supplied by the aero solver.
+   * - ``dSdu``
+     - Product :math:`[dS/du]^T \phi` from a coupled structural block. Supplied by the coupling layer.
+   * - ``adjRHS``
+     - Assembled adjoint RHS: :math:`dI/du - [dA/du]^T\psi - [dS/du]^T\phi`. Built by :meth:`assembleAdjointRHS`.
+   * - ``dIdu``
+     - Partial derivative of the objective with respect to state variables. Set by :meth:`setAdjointRHS` and BCs are applied automatically.
+   * - ``matVecRHS`` / ``matVecSolve``
+     - Scratch vectors used for matrix–vector products in the coupled direct/adjoint system.
 
 StructProblem Class
 -------------------
-
-The :class:`StructProblem` class is the core component of the MACH interface. It extends the base structural problem functionality to provide enhanced capabilities for external library integration.
-
-API Reference
--------------
 
 .. autoclass:: tacs.mach.struct_problem.StructProblem
    :members:
    :undoc-members:
 
-Usage Examples
---------------
-
-Basic Structural Analysis
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from tacs.mach import StructProblem
-   from tacs import pyTACS
-   from tacs import elements, constitutive, functions
-   
-   # Create pyTACS assembler
-   FEAAssembler = pyTACS('model.bdf')
-   
-   # Element callback function
-   def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
-       prop = constitutive.MaterialProperties(rho=2700.0, E=70e9, nu=0.3)
-       con = constitutive.IsoShellConstitutive(prop, t=0.01, tNum=dvNum)
-       transform = elements.ShellRefAxisTransform([1.0, 0.0, 0.0])
-       elem = elements.Quad4Shell(transform, con)
-       return elem
-   
-   # Initialize assembler
-   FEAAssembler.initialize(elemCallBack)
-   
-   # Create static problem
-   staticProblem = FEAAssembler.createStaticProblem('analysis')
-   staticProblem.addFunction('mass', functions.StructuralMass)
-   
-   # Create StructProblem for MACH interface
-   structProblem = StructProblem(staticProblem, FEAAssembler)
-   
-   # Solve problem
-   structProblem.solve()
-   
-   # Evaluate functions
-   funcs = {}
-   structProblem.evalFunctions(funcs)
-   print(f"Structural mass: {funcs['analysis_mass']}")
-
-Geometric Design Variables
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from pygeo import DVGeometry
-   
-   # Create DVGeometry object
-   DVGeo = DVGeometry('ffd.fmt')
-   
-   # Create StructProblem with geometric design variables
-   structProblem = StructProblem(staticProblem, FEAAssembler, DVGeo=DVGeo)
-   
-   # Set design variables
-   designVars = {'ffd': np.array([0.1, -0.05, 0.02])}
-   structProblem.setDesignVars(designVars)
-   
-   # Solve and evaluate sensitivities
-   structProblem.solve()
-   funcs = {}
-   funcsSens = {}
-   structProblem.evalFunctions(funcs)
-   structProblem.evalFunctionsSens(funcsSens)
-
-Constraint Handling
-~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   from tacs.constraints import AdjacencyConstraint, DVConstraint
-   
-   # Create StructProblem
-   structProblem = StructProblem(staticProblem, FEAAssembler)
-   
-   # Add adjacency constraint
-   adjCon = FEAAssembler.createAdjacencyConstraint("AdjCon")
-   adjCon.addConstraint(
-       conName="thicknessAdj",
-       compIDs=compIDs,
-       lower=-0.001,
-       upper=0.001,
-       dvIndex=0
-   )
-   structProblem.addConstraint(adjCon)
-   
-   # Add design variable constraint
-   dvCon = FEAAssembler.createDVConstraint("DVCon")
-   dvCon.addConstraint(
-       conName="thicknessRatio",
-       upper=0.0,
-       dvIndices=[0, 1],
-       dvWeights=[1.0, -2.0]
-   )
-   structProblem.addConstraint(dvCon)
-   
-   # Evaluate constraints
-   funcs = {}
-   structProblem.evalConstraints(funcs)
-
 Related Documentation
 ---------------------
 
-- `ADflow <https://mdolab-adflow.readthedocs-hosted.com/en/latest/>`_ - ADflow interface documentation
-- `pyGeo <https://mdolab-pygeo.readthedocs-hosted.com/en/latest/>`_ - pyGeo interface documentation
-- `pyoptsparse <https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/>`_ - pyoptsparse interface documentation
+- `ADflow <https://mdolab-adflow.readthedocs-hosted.com/en/latest/>`_ — ADflow documentation
+- `pyGeo <https://mdolab-pygeo.readthedocs-hosted.com/en/latest/>`_ — pyGeo documentation
+- `pyoptsparse <https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/>`_ — pyoptsparse documentation
