@@ -145,7 +145,14 @@ optOptions = {
     "Penalty parameter": 1e3,
 }
 
-opt = OPT("SLSQP", options={"MAXIT": 100, "IPRINT": 1, "IFILE": os.path.join(os.path.dirname(__file__), 'SLSQP.out')})
+opt = OPT(
+    "SLSQP",
+    options={
+        "MAXIT": 100,
+        "IPRINT": 1,
+        "IFILE": os.path.join(os.path.dirname(__file__), "SLSQP.out"),
+    },
+)
 
 # Finally run the actual optimization
 sol = opt(optProb, sens=structSens, storeSens=False)
