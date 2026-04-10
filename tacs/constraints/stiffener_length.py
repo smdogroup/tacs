@@ -278,7 +278,7 @@ class StiffenerLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> plConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> plConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if PanelLengthConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([1.325, 2.1983645, 3.1415926, ...])}
@@ -324,7 +324,7 @@ class StiffenerLengthConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> adjConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> adjConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if AdjacencyConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}
@@ -433,12 +433,13 @@ class SparseLengthConstraint(object):
         array_like
             Constraint values (difference between DV lengths and exact lengths)
         """
-        Lexact = self._computeExactLength(Xpts)
+        dX = self._computeStiffenerVectors(Xpts)
+        Lexact = np.sqrt(np.sum(dX * dX, axis=1))
         Ldv = self._getDVLengths(x)
         Ldiff = Ldv - Lexact
         return Ldiff
 
-    def _computeExactLength(self, Xpts):
+    def _computeStiffenerVectors(self, Xpts):
         """
         Compute the exact geometric length of each stiffener.
 
@@ -461,9 +462,7 @@ class SparseLengthConstraint(object):
                         3 * localNodeID : 3 * localNodeID + 3
                     ]
         stiffenerEndLocations = self.comm.allreduce(stiffenerEndLocations)
-        dX = stiffenerEndLocations[:, 1, :] - stiffenerEndLocations[:, 0, :]
-        Lexact = np.sqrt(np.sum(dX * dX, axis=1))
-        return Lexact
+        return stiffenerEndLocations[:, 1, :] - stiffenerEndLocations[:, 0, :]
 
     def _getDVLengths(self, x):
         """
@@ -509,17 +508,7 @@ class SparseLengthConstraint(object):
         coordJacVals = []
         coordJacRows = []
         coordJacCols = []
-        # Need end node positions to form dX for the sensitivity
-        stiffenerEndLocations = np.zeros([self.nCon, 2, 3], dtype=self.dtype)
-        for con_i in range(self.nCon):
-            for end_j in range(2):
-                if self.allEndNodeOwnerProc[con_i, end_j] == self.comm.rank:
-                    localNodeID = self.allEndNodeLocalIDs[con_i, end_j]
-                    stiffenerEndLocations[con_i, end_j, :] = Xpts[
-                        3 * localNodeID : 3 * localNodeID + 3
-                    ]
-        stiffenerEndLocations = self.comm.allreduce(stiffenerEndLocations)
-        dX = stiffenerEndLocations[:, 1, :] - stiffenerEndLocations[:, 0, :]
+        dX = self._computeStiffenerVectors(Xpts)
         Lexact = np.sqrt(np.sum(dX * dX, axis=1))
 
         for con_i in range(self.nCon):
