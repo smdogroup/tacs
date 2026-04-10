@@ -4,7 +4,11 @@
 
 This example demonstrates TACS structural shape optimization using the
 :ref:`mach/mach:MACH` interface.
-The beam model is a rectangular beam, cantilevered, with a shear load applied at the tip.
+It considers the same cantilevered beam with a tip shear load as the
+:ref:`examples/Example-Beam_Optimization:Beam optimization with MPhys` example, but differs
+in two key ways: the beam is modeled in 2D using shell elements rather than 1D beam elements,
+and the geometry is optimized by physically warping the finite-element mesh via an FFD volume
+rather than by adjusting 1D cross-sectional properties.
 The beam is discretized using 1001 shell elements along its span and depth.
 
 The optimization problem is:
@@ -35,7 +39,7 @@ The optimal depth profile that keeps stress at the yield limit everywhere is:
 .. math::
     d(x) = \sqrt{\frac{6 V (L - x)}{t \, \sigma_y}}
 
-The optimization is driven by SNOPT via pyoptsparse, with gradients supplied by
+The optimization is driven by SLSQP via pyoptsparse, with gradients supplied by
 TACS' adjoint solver through the :class:`~tacs.mach.struct_problem.StructProblem` wrapper.
 
 First, import required libraries:
@@ -46,7 +50,7 @@ First, import required libraries:
   import os
 
   from pygeo import DVGeometry
-  from pyoptsparse import Optimization, SNOPT
+  from pyoptsparse import Optimization, OPT
 
   from tacs.mach import StructProblem
   from tacs import pyTACS
@@ -182,20 +186,7 @@ The stress constraint is added as a nonlinear inequality on the KS failure index
 
   optProb.printSparsity()
 
-  optOptions = {
-      "Major feasibility tolerance": 1e-4,
-      "Major optimality tolerance": 1e-4,
-      "Major iterations limit": 200,
-      "Minor iterations limit": 150000,
-      "Iterations limit": 1000000,
-      "Major step limit": 0.1,
-      "Function precision": 1.0e-8,
-      "Problem Type": "Minimize",
-      "New superbasics limit": 500,
-      "Penalty parameter": 1e3,
-  }
-
-  opt = SNOPT(options=optOptions)
+  opt = OPT("SLSQP", options={"MAXIT": 100, "IPRINT": 1, "IFILE": os.path.join(os.path.dirname(__file__), 'SLSQP.out')})
 
 Finally, run the optimization:
 
