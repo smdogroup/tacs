@@ -322,7 +322,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
-<span class="sd">        &gt;&gt;&gt; plConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; plConstraint.evalConstraints(funcs, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
@@ -371,7 +371,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
@@ -482,12 +482,13 @@
 <span class="sd">        array_like</span>
 <span class="sd">            Constraint values (difference between DV lengths and exact lengths)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">Lexact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeExactLength</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="n">dX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeStiffenerVectors</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="n">Lexact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dX</span> <span class="o">*</span> <span class="n">dX</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">Ldv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getDVLengths</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">Ldiff</span> <span class="o">=</span> <span class="n">Ldv</span> <span class="o">-</span> <span class="n">Lexact</span>
         <span class="k">return</span> <span class="n">Ldiff</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_computeExactLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_computeStiffenerVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xpts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the exact geometric length of each stiffener.</span>
 
@@ -510,9 +511,7 @@
                         <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="o">+</span> <span class="mi">3</span>
                     <span class="p">]</span>
         <span class="n">stiffenerEndLocations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">stiffenerEndLocations</span><span class="p">)</span>
-        <span class="n">dX</span> <span class="o">=</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
-        <span class="n">Lexact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dX</span> <span class="o">*</span> <span class="n">dX</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">Lexact</span>
+        <span class="k">return</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">stiffenerEndLocations</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_getDVLengths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -558,7 +557,8 @@
         <span class="n">coordJacVals</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">coordJacRows</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">coordJacCols</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">Lexact</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeExactLength</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="n">dX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_computeStiffenerVectors</span><span class="p">(</span><span class="n">Xpts</span><span class="p">)</span>
+        <span class="n">Lexact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dX</span> <span class="o">*</span> <span class="n">dX</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">con_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nCon</span><span class="p">):</span>
             <span class="c1"># Sensitivity w.r.t. design variables (derivative = 1.0)</span>
@@ -568,13 +568,13 @@
                 <span class="n">dvJacCols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lengthLocalDVNums</span><span class="p">[</span><span class="n">con_i</span><span class="p">])</span>
 
             <span class="c1"># Sensitivity w.r.t. node coordinates</span>
+            <span class="c1"># d(Ldiff)/d(X_end1) = -dX/L,  d(Ldiff)/d(X_end0) = +dX/L</span>
             <span class="k">for</span> <span class="n">end_j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeOwnerProc</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span><span class="p">:</span>
                     <span class="n">localNodeID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allEndNodeLocalIDs</span><span class="p">[</span><span class="n">con_i</span><span class="p">,</span> <span class="n">end_j</span><span class="p">]</span>
-                    <span class="c1"># Derivative of length w.r.t. node coordinates</span>
-                    <span class="n">val</span> <span class="o">=</span> <span class="o">-</span><span class="n">Xpts</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="p">:</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">localNodeID</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="n">Lexact</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="o">-</span><span class="n">dX</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span> <span class="o">/</span> <span class="n">Lexact</span><span class="p">[</span><span class="n">con_i</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">end_j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">val</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+                        <span class="n">val</span> <span class="o">=</span> <span class="o">-</span><span class="n">val</span>
                     <span class="n">coordJacVals</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
                     <span class="n">coordJacRows</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">con_i</span><span class="p">,</span> <span class="n">con_i</span><span class="p">,</span> <span class="n">con_i</span><span class="p">])</span>
                     <span class="n">coordJacCols</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>

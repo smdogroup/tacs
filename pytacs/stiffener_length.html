@@ -111,7 +111,7 @@ this option with caution.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">plConstraint</span><span class="o">.</span><span class="n">evalConstraints</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plConstraint</span><span class="o">.</span><span class="n">evalConstraints</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
@@ -144,7 +144,7 @@ variables/node coordinates on this proc.</p>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraintsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s1">&#39;LE_SPAR&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraintsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
