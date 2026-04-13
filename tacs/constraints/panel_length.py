@@ -60,7 +60,12 @@ def computePanelLength(points, direction):
                 edge = points[endInd] - points[startInd]
                 mat = np.stack((direction, -edge), axis=1)
                 rhs = points[startInd] - points[pointInd]
-                sol, res, _, _ = np.linalg.lstsq(mat, rhs)
+                sol, res, rank, _ = np.linalg.lstsq(mat, rhs)
+
+                # Check the rank since if the lines are parallel we won't get a good solution, in this case we just skip this edge
+                if rank < 2:
+                    continue
+
                 alpha = sol[0]
                 beta = sol[1]
                 # Only compute the length if the intersection occurs within the true bounds of the edge
@@ -70,7 +75,7 @@ def computePanelLength(points, direction):
                     newLength = np.sqrt(np.sum((alpha * direction) ** 2))
                     if (
                         np.real(newLength) > np.real(length)
-                        and np.real(newLength) > res
+                        and np.real(newLength) > res[0]
                     ):
                         length = newLength
     return length
@@ -593,7 +598,9 @@ class PanelLengthConstraint(TACSConstraint):
                 self.funcs[key] = np.copy(funcs[key])
                 self.constraintsUpToDate[conName] = True
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
         corresponding to the strings in evalCons are evaluated and
@@ -612,6 +619,10 @@ class PanelLengthConstraint(TACSConstraint):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -632,64 +643,66 @@ class PanelLengthConstraint(TACSConstraint):
 
         nodes = None
 
-        # Get number of nodes coords on this proc
-        nCoords = self.getNumCoordinates()
-
         # Loop through each requested constraint set
         for conName in evalCons:
             key = f"{self.name}_{conName}"
             nCon = self.constraintList[conName]["nCon"]
             funcsSens[key] = {}
-            funcsSens[key][self.varName] = self.constraintList[conName]["dvJac"]
-            if self.constraintsSensUpToDate[conName]:
-                funcsSens[key][self.coordName] = self.funcsSens[key].copy()
-            else:
-                # Get all of the nodes on the root proc
-                if nodes is None:
-                    nodes = self.comm.gather(self.Xpts.getArray(), root=0)
-                    if self.rank == 0:
-                        for ii in range(self.comm.size):
-                            nodes[ii] = nodes[ii].reshape(-1, 3)
-                funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
-                    (nCon, nCoords), dtype=self.dtype
-                )
-                if self.rank == 0:
-                    coordJacVals = []
-                    for ii in range(self.comm.size):
-                        coordJacVals.append([])
-                    for ii in range(nCon):
-                        numPoints = len(
-                            self.constraintList[conName]["boundaryNodeGlobalInds"][ii]
-                        )
-                        boundaryPoints = np.zeros((numPoints, 3), dtype=self.dtype)
-
-                        for jj in range(numPoints):
-                            nodeProc = self.constraintList[conName][
-                                "boundaryNodeLocalProcs"
-                            ][ii][jj]
-                            localInd = self.constraintList[conName][
-                                "boundaryNodeLocalInds"
-                            ][ii][jj]
-                            boundaryPoints[jj] = nodes[nodeProc][localInd]
-                        refAxis = self.constraintList[conName]["refAxes"][ii]
-                        LSens = self.computePanelLengthSens(boundaryPoints, refAxis)
-                        for jj in range(numPoints):
-                            nodeProc = self.constraintList[conName][
-                                "boundaryNodeLocalProcs"
-                            ][ii][jj]
-                            coordJacVals[nodeProc] += LSens[jj].tolist()
+            if includeDVSens:
+                funcsSens[key][self.varName] = self.constraintList[conName]["dvJac"]
+            if includeXptSens:
+                nCoords = self.getNumCoordinates()
+                if self.constraintsSensUpToDate[conName]:
+                    funcsSens[key][self.coordName] = self.funcsSens[key].copy()
                 else:
-                    coordJacVals = None
-                coordJacVals = self.comm.scatter(coordJacVals, root=0)
-                coordJacRows = self.constraintList[conName]["coordJacRows"]
-                coordJacCols = self.constraintList[conName]["coordJacCols"]
-                self.funcsSens[key] = sp.sparse.csr_matrix(
-                    (coordJacVals, (coordJacRows, coordJacCols)),
-                    (nCon, nCoords),
-                    dtype=self.dtype,
-                )
-                funcsSens[key][self.coordName] = self.funcsSens[key].copy()
-                self.constraintsSensUpToDate[conName] = True
+                    # Get all of the nodes on the root proc
+                    if nodes is None:
+                        nodes = self.comm.gather(self.Xpts.getArray(), root=0)
+                        if self.rank == 0:
+                            for ii in range(self.comm.size):
+                                nodes[ii] = nodes[ii].reshape(-1, 3)
+                    funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
+                        (nCon, nCoords), dtype=self.dtype
+                    )
+                    if self.rank == 0:
+                        coordJacVals = []
+                        for ii in range(self.comm.size):
+                            coordJacVals.append([])
+                        for ii in range(nCon):
+                            numPoints = len(
+                                self.constraintList[conName]["boundaryNodeGlobalInds"][
+                                    ii
+                                ]
+                            )
+                            boundaryPoints = np.zeros((numPoints, 3), dtype=self.dtype)
+
+                            for jj in range(numPoints):
+                                nodeProc = self.constraintList[conName][
+                                    "boundaryNodeLocalProcs"
+                                ][ii][jj]
+                                localInd = self.constraintList[conName][
+                                    "boundaryNodeLocalInds"
+                                ][ii][jj]
+                                boundaryPoints[jj] = nodes[nodeProc][localInd]
+                            refAxis = self.constraintList[conName]["refAxes"][ii]
+                            LSens = self.computePanelLengthSens(boundaryPoints, refAxis)
+                            for jj in range(numPoints):
+                                nodeProc = self.constraintList[conName][
+                                    "boundaryNodeLocalProcs"
+                                ][ii][jj]
+                                coordJacVals[nodeProc] += LSens[jj].tolist()
+                    else:
+                        coordJacVals = None
+                    coordJacVals = self.comm.scatter(coordJacVals, root=0)
+                    coordJacRows = self.constraintList[conName]["coordJacRows"]
+                    coordJacCols = self.constraintList[conName]["coordJacCols"]
+                    self.funcsSens[key] = sp.sparse.csr_matrix(
+                        (coordJacVals, (coordJacRows, coordJacCols)),
+                        (nCon, nCoords),
+                        dtype=self.dtype,
+                    )
+                    funcsSens[key][self.coordName] = self.funcsSens[key].copy()
+                    self.constraintsSensUpToDate[conName] = True
 
     def _getComponentBoundaryNodes(self, compIDs):
         """For a given list of components, find the nodes on the boundaries of

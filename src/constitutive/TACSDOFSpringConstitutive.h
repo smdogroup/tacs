@@ -22,10 +22,10 @@ class TACSDOFSpringConstitutive : public TACSGeneralSpringConstitutive {
  public:
   TACSDOFSpringConstitutive(TacsScalar _k[]);
 
-  const char* constitutiveName();
+  const char *constitutiveName();
 
  private:
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif  // TACS_DOF_SPRING_CONSTITUTIVE_H

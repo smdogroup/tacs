@@ -1027,7 +1027,7 @@ class StaticProblem(TACSProblem):
                 baseName=f"{self.name}-{self.callCounter:03d}-NLIter", number=iteration
             )
 
-    def updateJacobian(self, res=None):
+    def updateJacobian(self, res=None, applyBCs=True):
         """Update the Jacobian (a.k.a stiffness) matrix
 
         The Jacobian will only actually be updated if the
@@ -1037,6 +1037,8 @@ class StaticProblem(TACSProblem):
         ----------
         res : tacs.TACS.Vec, optional
             If provided, the residual is also computed and stored in this vector
+        applyBCs : bool, optional
+            Whether to apply boundary conditions to the jacobian, by default True
         """
         if self._jacobianUpdateRequired:
             # Assemble residual and stiffness matrix (w/o artificial terms)
@@ -1047,6 +1049,7 @@ class StaticProblem(TACSProblem):
                 res,
                 self.K,
                 loadScale=self._loadScale,
+                applyBCs=applyBCs,
             )
             self._jacobianUpdateRequired = False
             self._preconditionerUpdateRequired = True
@@ -1162,7 +1165,9 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1176,6 +1181,10 @@ class StaticProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1240,21 +1249,22 @@ class StaticProblem(TACSProblem):
             adjointEndTime[f] = time.time()
 
         adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
+        # Evaluate all the adjoint res products at the same time for efficiency:
+        if includeDVSens:
+            self.addDVSens(evalFuncs, dvSenses)
+            self.addAdjointResProducts(adjoints, dvSenses)
+        if includeXptSens:
+            self.addXptSens(evalFuncs, xptSenses)
+            self.addAdjointResXptSensProducts(adjoints, xptSenses)
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSenses[i].getArray().copy(),
-                self.coordName: xptSenses[i].getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                funcsSens[key][self.varName] = dvSenses[i].getArray().copy()
+            if includeXptSens:
+                funcsSens[key][self.coordName] = xptSenses[i].getArray().copy()
 
         totalSensitivityTime = time.time()
 
@@ -1643,10 +1653,46 @@ class StaticProblem(TACSProblem):
         # Return copy of scipy mat
         return copy.deepcopy(self.K.getMat())
 
+    def addJacVecProduct(self, phi, prod, scale=1.0, transpose=False):
+        """
+        Adds product of Jacobian (or its transpose) and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
+
+        Parameters
+        ----------
+        phi : tacs.TACS.Vec or numpy.ndarray
+            Input vector to product with the transpose Jacobian.
+
+        prod : tacs.TACS.Vec or numpy.ndarray
+            Output vector to add Jacobian product to.
+
+        scale : float
+            Scalar used to scale Jacobian product by.
+
+        transpose : bool
+            Flag to indicate whether to use the transpose Jacobian.
+        """
+        # Create a tacs bvec copy of the input vector
+        self.copyToTACSVec(phi, self.phi)
+
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        if transpose:
+            self.K.multTranspose(self.phi, self.res)
+        else:
+            self.K.mult(self.phi, self.res)
+
+        # Output residual
+        if isinstance(prod, tacs.TACS.Vec):
+            prod.axpy(scale, self.res)
+        else:
+            prod[:] = prod + scale * self.res.getArray()
+
     def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
         """
-        Adds product of transpose Jacobian and input vector into output vector as shown below:
-        prod += scale * J^T . phi
+        Adds product of Jacobian transpose and input vector into output vector as shown below:
+        prod += scale * J(^T) . phi
 
         Parameters
         ----------
@@ -1659,22 +1705,12 @@ class StaticProblem(TACSProblem):
         scale : float
             Scalar used to scale Jacobian product by.
         """
-        # Create a tacs bvec copy of the adjoint vector
-        if isinstance(phi, tacs.TACS.Vec):
-            self.phi.copyValues(phi)
-        elif isinstance(phi, np.ndarray):
-            self.phi.getArray()[:] = phi
-
-        # Set problem vars to assembler
-        self._updateAssemblerVars()
-
-        self.K.multTranspose(self.phi, self.res)
-
-        # Output residual
-        if isinstance(prod, tacs.TACS.Vec):
-            prod.axpy(scale, self.res)
-        else:
-            prod[:] = prod + scale * self.res.getArray()
+        warnings.warn(
+            "addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. "
+            "Use addJacVecProduct(phi, prod, scale, transpose=True) instead.",
+            DeprecationWarning,
+        )
+        self.addJacVecProduct(phi, prod, scale, transpose=True)
 
     def zeroVariables(self):
         """
@@ -1691,6 +1727,40 @@ class StaticProblem(TACSProblem):
         """
         self.F.zeroEntries()
         self.auxElems = tacs.TACS.AuxElements()
+
+    def solveForward(self, rhs, psi):
+        """Solve a linear system using the structural Jacobian.
+
+        Computes psi by solving J * psi = rhs
+
+        Parameters
+        ----------
+        rhs : tacs.TACS.Vec or numpy.ndarray
+            right hand side vector for solve
+        psi : tacs.TACS.Vec or numpy.ndarray
+            BVec or numpy array into which the solution is saved, also treated as the initial guess for the solution
+        """
+        self.copyToTACSVec(rhs, self.rhs)
+        self.copyToTACSVec(psi, self.update)
+
+        # Set problem vars to assembler
+        self._updateAssemblerVars()
+
+        # Check if we need to initialize
+        self._initializeSolve()
+
+        # Check if the supplied initial guess is actually a good guess (i.e if norm(Ax-b) < norm(b))
+        # Store Ax-b in self.adjRHS
+        self.K.mult(self.update, self.adjRHS)
+        self.adjRHS.axpy(-1.0, self.rhs)
+
+        if np.real(self.adjRHS.norm()) > np.real(self.rhs.norm()):
+            self.update.zeroEntries()
+
+        self.linearSolver.solve(self.rhs, self.update)
+
+        # Copy output values back to user vectors
+        self.copyFromTACSVec(self.update, psi)
 
     def solveAdjoint(self, rhs, phi):
         """
@@ -1711,15 +1781,8 @@ class StaticProblem(TACSProblem):
         self._initializeSolve()
 
         # Create a copy of the adjoint/rhs guess
-        if isinstance(phi, tacs.TACS.Vec):
-            self.phi.copyValues(phi)
-        elif isinstance(phi, np.ndarray):
-            self.phi.getArray()[:] = phi
-
-        if isinstance(rhs, tacs.TACS.Vec):
-            self.adjRHS.copyValues(rhs)
-        elif isinstance(rhs, np.ndarray):
-            self.adjRHS.getArray()[:] = rhs
+        self.copyToTACSVec(phi, self.phi)
+        self.copyToTACSVec(rhs, self.adjRHS)
 
         # Tacs doesn't actually transpose the matrix here so keep track of
         # RHS entries that TACS zeros out for BCs.
@@ -1730,15 +1793,11 @@ class StaticProblem(TACSProblem):
 
         # Solve Linear System
         self.linearSolver.solve(self.adjRHS, self.phi)
-        self.assembler.applyBCs(self.phi)
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
 
         # Copy output values back to user vectors
-        if isinstance(phi, tacs.TACS.Vec):
-            phi.copyValues(self.phi)
-        elif isinstance(phi, np.ndarray):
-            phi[:] = self.phi.getArray()
+        self.copyFromTACSVec(self.phi, phi)
 
     def getVariables(self, states=None):
         """
@@ -1755,11 +1814,9 @@ class StaticProblem(TACSProblem):
         states : numpy.ndarray
             current state vector
         """
-
-        if isinstance(states, tacs.TACS.Vec):
-            states.copyValues(self.u)
-        elif isinstance(states, np.ndarray):
-            states[:] = self.u_array[:]
+        # Copy to user vector
+        if states is not None:
+            self.copyFromTACSVec(self.u, states)
 
         return self.u_array.copy()
 
@@ -1773,12 +1830,8 @@ class StaticProblem(TACSProblem):
             Values to set. Must be the size of getNumVariables()
         """
         # Copy array values
-        if isinstance(states, tacs.TACS.Vec):
-            self.u.copyValues(states)
-        elif isinstance(states, np.ndarray):
-            self.u_array[:] = states[:]
+        self.copyToTACSVec(states, self.u)
         # Set states to assembler
-        self.assembler.setBCs(self.u)
         self.assembler.setVariables(self.u)
 
         # If this is a nonlinear problem then changing the state will change the jacobian

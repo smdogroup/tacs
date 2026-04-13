@@ -34,7 +34,7 @@
 
   The aspect ratios of the elements are chosen to be approximately 1
 */
-void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
+void write_stiffened_panel_axial(const char *file_name, int Nx, int nrepeat,
                                  double Lx, double b, double wb, double hs,
                                  double angle, int write_shear_file) {
   // Check to make sure everything makes sense
@@ -48,7 +48,7 @@ void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
   }
 
   const int elem_order = 3;
-  FILE* fp = fopen(file_name, "w");
+  FILE *fp = fopen(file_name, "w");
 
   fprintf(fp, "SOL 103\n");
   fprintf(fp, "CEND\n");
@@ -85,13 +85,13 @@ void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
   int nhs = (elem_order - 1) * Nhs + 1;
 
   // Create lists of node numbers
-  int* surf_node_nums = new int[nx * ny];
-  int* stiff_node_nums = new int[nrepeat * nx * nhs];
+  int *surf_node_nums = new int[nx * ny];
+  int *stiff_node_nums = new int[nrepeat * nx * nhs];
 
   double beta = tan(angle);
-  double* Xpanel = new double[nx];
-  double* Ysurf = new double[ny];
-  double* Zstiff = new double[nhs];
+  double *Xpanel = new double[nx];
+  double *Ysurf = new double[ny];
+  double *Zstiff = new double[nhs];
 
   int nnodes = 1;
   // Order the nodes on the surface
@@ -154,7 +154,7 @@ void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
   int coord_id = 0;
   int coord_disp = 0;
   int seid = 0;
-  const char* spc = " ";
+  const char *spc = " ";
 
   for (int jj = 0, j = 0; jj < nrepeat; jj++) {
     // Write out the surface locations
@@ -334,8 +334,8 @@ void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
     }
 
     // Set simply supported boundary conditions along the edge
-    const char* left_spc = "345";
-    const char* right_spc = "345";
+    const char *left_spc = "345";
+    const char *right_spc = "345";
 
     for (int i = 0; i < nx; i++) {
       int node = surf_node_nums[ny * i];
@@ -352,7 +352,7 @@ void write_stiffened_panel_axial(const char* file_name, int Nx, int nrepeat,
   fclose(fp);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   int Nx = 45;
   int nrepeat = 4;
   double Lx = 450.0;

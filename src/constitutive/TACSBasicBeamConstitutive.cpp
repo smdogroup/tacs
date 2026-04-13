@@ -105,7 +105,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   moments of the cross-section.
 */
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
-    TACSMaterialProperties* properties, TacsScalar A, TacsScalar J,
+    TACSMaterialProperties *properties, TacsScalar A, TacsScalar J,
     TacsScalar Iy, TacsScalar Iz, TacsScalar Iyz, TacsScalar ky,
     TacsScalar kz) {
   props = properties;
@@ -142,9 +142,9 @@ TACSBasicBeamConstitutive::~TACSBasicBeamConstitutive() {
   }
 }
 
-const char* TACSBasicBeamConstitutive::constName = "TACSBasicBeamConstitutive";
+const char *TACSBasicBeamConstitutive::constName = "TACSBasicBeamConstitutive";
 
 /*
   Return the constitutive name
 */
-const char* TACSBasicBeamConstitutive::getObjectName() { return constName; }
+const char *TACSBasicBeamConstitutive::getObjectName() { return constName; }

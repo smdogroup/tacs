@@ -93,7 +93,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * the GP objects or None if using CF
    */
   TACSGPBladeStiffenedShellConstitutive(
-      TACSOrthotropicPly* panelPly, TACSOrthotropicPly* stiffenerPly,
+      TACSOrthotropicPly *panelPly, TACSOrthotropicPly *stiffenerPly,
       TacsScalar kcorr, TacsScalar panelLength, int panelLengthNum,
       TacsScalar stiffenerPitch, int stiffenerPitchNum, TacsScalar panelThick,
       int panelThickNum, int numPanelPlies, TacsScalar panelPlyAngles[],
@@ -103,7 +103,7 @@ class TACSGPBladeStiffenedShellConstitutive
       TacsScalar stiffenerPlyAngles[], TacsScalar stiffenerPlyFracs[],
       int stiffenerPlyFracNums[], TacsScalar panelWidth, int panelWidthNum,
       TacsScalar flangeFraction = 1.0, bool CPTstiffenerCrippling = false,
-      TACSPanelGPs* panelGPs = nullptr);
+      TACSPanelGPs *panelGPs = nullptr);
 
   ~TACSGPBladeStiffenedShellConstitutive();
 
@@ -175,21 +175,21 @@ class TACSGPBladeStiffenedShellConstitutive
   // ==============================================================================
 
   // get the three Gaussian Process model pointers
-  TACSBucklingGaussianProcessModel* getAxialGP() {
+  TACSBucklingGaussianProcessModel *getAxialGP() {
     if (this->panelGPs) {
       return this->panelGPs->getAxialGP();
     } else {
       return nullptr;
     }
   }
-  TACSBucklingGaussianProcessModel* getShearGP() {
+  TACSBucklingGaussianProcessModel *getShearGP() {
     if (this->panelGPs) {
       return this->panelGPs->getShearGP();
     } else {
       return nullptr;
     }
   }
-  TACSBucklingGaussianProcessModel* getCripplingGP() {
+  TACSBucklingGaussianProcessModel *getCripplingGP() {
     if (this->panelGPs) {
       return this->panelGPs->getCripplingGP();
     } else {
@@ -436,7 +436,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @return the stiffener in plane load N11,stiff
    */
   TacsScalar computeStiffenerInPlaneLoad(const TacsScalar stiffenerStrain[],
-                                         TacsScalar* A11s);
+                                         TacsScalar *A11s);
 
   /**
    * @brief compute the DV sensitivities of the stiffener in plane load
@@ -493,8 +493,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeAffineAspectRatioSens(
       const TacsScalar rho0sens, const TacsScalar D11, const TacsScalar D22,
-      const TacsScalar a, const TacsScalar b, TacsScalar* D11sens,
-      TacsScalar* D22sens, TacsScalar* asens, TacsScalar* bsens);
+      const TacsScalar a, const TacsScalar b, TacsScalar *D11sens,
+      TacsScalar *D22sens, TacsScalar *asens, TacsScalar *bsens);
 
   /**
    *
@@ -541,8 +541,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeLaminateIsotropySens(
       const TacsScalar xisens, const TacsScalar D11, const TacsScalar D22,
-      const TacsScalar D12, const TacsScalar D66, TacsScalar* D11sens,
-      TacsScalar* D22sens, TacsScalar* D12sens, TacsScalar* D66sens);
+      const TacsScalar D12, const TacsScalar D66, TacsScalar *D11sens,
+      TacsScalar *D22sens, TacsScalar *D12sens, TacsScalar *D66sens);
 
   /**
    *
@@ -582,8 +582,8 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeGeneralizedPoissonsRatioSens(const TacsScalar epssens,
                                                  const TacsScalar D12,
                                                  const TacsScalar D66,
-                                                 TacsScalar* D12sens,
-                                                 TacsScalar* D66sens);
+                                                 TacsScalar *D12sens,
+                                                 TacsScalar *D66sens);
 
   /**
    *
@@ -626,8 +626,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeStiffenerAreaRatioSens(
       const TacsScalar deltasens, const TacsScalar E1p, const TacsScalar E1s,
-      TacsScalar* sthickSens, TacsScalar* sheightSens, TacsScalar* spitchSens,
-      TacsScalar* pthickSens, TacsScalar* E1psens, TacsScalar* E1ssens);
+      TacsScalar *sthickSens, TacsScalar *sheightSens, TacsScalar *spitchSens,
+      TacsScalar *pthickSens, TacsScalar *E1psens, TacsScalar *E1ssens);
 
   /**
    *
@@ -671,9 +671,9 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeStiffenerStiffnessRatioSens(
       const TacsScalar gammaSens, const TacsScalar D11, const TacsScalar E1s,
-      const TacsScalar zn, TacsScalar* D11Sens, TacsScalar* sthickSens,
-      TacsScalar* sheightSens, TacsScalar* spitchSens, TacsScalar* E1sSens,
-      TacsScalar* znSens);
+      const TacsScalar zn, TacsScalar *D11Sens, TacsScalar *sthickSens,
+      TacsScalar *sheightSens, TacsScalar *spitchSens, TacsScalar *E1sSens,
+      TacsScalar *znSens);
 
   /**
    *
@@ -717,8 +717,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   TacsScalar computeTransverseShearParameterSens(
       const TacsScalar zetasens, const TacsScalar A66, const TacsScalar A11,
-      const TacsScalar b, const TacsScalar h, TacsScalar* A66sens,
-      TacsScalar* A11sens, TacsScalar* bsens, TacsScalar* hsens);
+      const TacsScalar b, const TacsScalar h, TacsScalar *A66sens,
+      TacsScalar *A11sens, TacsScalar *bsens, TacsScalar *hsens);
 
   /**
    *
@@ -760,11 +760,11 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeOverallCentroid(const TacsScalar E1p, const TacsScalar E1s);
 
   void computeOverallCentroidSens(const TacsScalar znSens, const TacsScalar E1p,
-                                  const TacsScalar E1s, TacsScalar* sthickSens,
-                                  TacsScalar* sheightSens,
-                                  TacsScalar* pthickSens,
-                                  TacsScalar* spitchSens, TacsScalar* E1pSens,
-                                  TacsScalar* E1sSens);
+                                  const TacsScalar E1s, TacsScalar *sthickSens,
+                                  TacsScalar *sheightSens,
+                                  TacsScalar *pthickSens,
+                                  TacsScalar *spitchSens, TacsScalar *E1pSens,
+                                  TacsScalar *E1sSens);
 
   /**
    * @brief Compute the sensitivities w.r.t. the critical axial load
@@ -795,9 +795,9 @@ class TACSGPBladeStiffenedShellConstitutive
       const TacsScalar N1sens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar b, const TacsScalar delta, const TacsScalar rho_0,
       const TacsScalar xi, const TacsScalar gamma, const TacsScalar zeta,
-      TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* bsens,
-      TacsScalar* deltasens, TacsScalar* rho_0sens, TacsScalar* xisens,
-      TacsScalar* gammasens, TacsScalar* zetasens);
+      TacsScalar *D11sens, TacsScalar *D22sens, TacsScalar *bsens,
+      TacsScalar *deltasens, TacsScalar *rho_0sens, TacsScalar *xisens,
+      TacsScalar *gammasens, TacsScalar *zetasens);
 
   /**
    *
@@ -884,8 +884,8 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeCriticalLocalAxialLoadSens(
       const TacsScalar N1sens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar rho_0, const TacsScalar xi, const TacsScalar zeta,
-      TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* spitchsens,
-      TacsScalar* rho_0sens, TacsScalar* xisens, TacsScalar* zetasens);
+      TacsScalar *D11sens, TacsScalar *D22sens, TacsScalar *spitchsens,
+      TacsScalar *rho_0sens, TacsScalar *xisens, TacsScalar *zetasens);
 
   /**
    *
@@ -945,9 +945,9 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeCriticalGlobalShearLoadSens(
       const TacsScalar N12sens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar b, const TacsScalar rho_0, const TacsScalar xi,
-      const TacsScalar gamma, const TacsScalar zeta, TacsScalar* D11sens,
-      TacsScalar* D22sens, TacsScalar* bsens, TacsScalar* rho_0sens,
-      TacsScalar* xisens, TacsScalar* gammasens, TacsScalar* zetasens);
+      const TacsScalar gamma, const TacsScalar zeta, TacsScalar *D11sens,
+      TacsScalar *D22sens, TacsScalar *bsens, TacsScalar *rho_0sens,
+      TacsScalar *xisens, TacsScalar *gammasens, TacsScalar *zetasens);
 
   /**
    *
@@ -1016,8 +1016,8 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeCriticalLocalShearLoadSens(
       const TacsScalar N12sens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar rho_0, const TacsScalar xi, const TacsScalar zeta,
-      TacsScalar* D11sens, TacsScalar* D22sens, TacsScalar* spitchsens,
-      TacsScalar* rho_0sens, TacsScalar* xisens, TacsScalar* zetasens);
+      TacsScalar *D11sens, TacsScalar *D22sens, TacsScalar *spitchsens,
+      TacsScalar *rho_0sens, TacsScalar *xisens, TacsScalar *zetasens);
 
   /**
    *
@@ -1054,7 +1054,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * shows up as squared
    */
   void nondimShearParams(const TacsScalar xi, const TacsScalar gamma,
-                         TacsScalar* lam1bar, TacsScalar* lam2bar);
+                         TacsScalar *lam1bar, TacsScalar *lam2bar);
 
   /**
    * @brief Compute the panel global buckling constant D11 adjusted for the
@@ -1066,7 +1066,7 @@ class TACSGPBladeStiffenedShellConstitutive
    * @return the overall centroid-adjusted D11 constant
    */
   void computePanelGlobalBucklingStiffness(const TacsScalar E1p,
-                                           const TacsScalar zn, TacsScalar* D1);
+                                           const TacsScalar zn, TacsScalar *D1);
 
   /**
    * @brief compute sensitivities of the overall centroid-adjusted D11 material
@@ -1085,8 +1085,8 @@ class TACSGPBladeStiffenedShellConstitutive
    */
   void computePanelGlobalBucklingStiffnessSens(
       const TacsScalar D1Sens, const TacsScalar E1p, const TacsScalar zn,
-      TacsScalar* spitchSens, TacsScalar* pthickSens, TacsScalar* E1pSens,
-      TacsScalar* znSens);
+      TacsScalar *spitchSens, TacsScalar *pthickSens, TacsScalar *E1pSens,
+      TacsScalar *znSens);
 
   /**
    * @brief Compute the derivatives of lam2sq  for the critical shear load
@@ -1103,9 +1103,9 @@ class TACSGPBladeStiffenedShellConstitutive
    * @param dl2gamma dlam2_bar/dgamma sens
    */
   void nondimShearParamsSens(const TacsScalar xi, const TacsScalar gamma,
-                             TacsScalar* lam1bar, TacsScalar* lam2bar,
-                             TacsScalar* dl1xi, TacsScalar* dl1gamma,
-                             TacsScalar* dl2xi, TacsScalar* dl2gamma);
+                             TacsScalar *lam1bar, TacsScalar *lam2bar,
+                             TacsScalar *dl1xi, TacsScalar *dl1gamma,
+                             TacsScalar *dl2xi, TacsScalar *dl2gamma);
 
   /**
    *
@@ -1201,16 +1201,16 @@ class TACSGPBladeStiffenedShellConstitutive
   TacsScalar computeStiffenerCripplingLoadSens(
       const TacsScalar N1sens, const TacsScalar D11, const TacsScalar D22,
       const TacsScalar xi, const TacsScalar rho_0, const TacsScalar genPoiss,
-      const TacsScalar zeta, TacsScalar* D11sens, TacsScalar* D22sens,
-      TacsScalar* sheightsens, TacsScalar* xisens, TacsScalar* rho_0sens,
-      TacsScalar* genPoiss_sens, TacsScalar* zetasens);
+      const TacsScalar zeta, TacsScalar *D11sens, TacsScalar *D22sens,
+      TacsScalar *sheightsens, TacsScalar *xisens, TacsScalar *rho_0sens,
+      TacsScalar *genPoiss_sens, TacsScalar *zetasens);
 
   // ==============================================================================
   // Attributes
   // ==============================================================================
 
   // Machine learning Gaussian Process models stored in panel GP class
-  TACSPanelGPs* panelGPs;
+  TACSPanelGPs *panelGPs;
 
   // --- Design variable values ---
   TacsScalar panelWidth;  ///< Panel width
@@ -1237,5 +1237,5 @@ class TACSGPBladeStiffenedShellConstitutive
  private:
   // private so that subclass constName for GP buckling constraints doesn't
   // conflict with superclass
-  static const char* constName;  ///< Constitutive model name
+  static const char *constName;  ///< Constitutive model name
 };

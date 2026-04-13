@@ -66,6 +66,7 @@ cdef extern from "TACSKSFailure.h":
         KS_FAILURE_CONTINUOUS"TACSKSFailure::CONTINUOUS"
         PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
         PNORM_FAILURE_CONTINUOUS"TACSKSFailure::PNORM_CONTINUOUS"
+        KS_FAILURE_DISCRETE_AVERAGE"TACSKSFailure::DISCRETE_AVERAGE"
 
     cdef cppclass TACSKSFailure(TACSFunction):
         TACSKSFailure(TACSAssembler*, double, double, double)

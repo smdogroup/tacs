@@ -92,6 +92,7 @@ OUTPUT_STRESSES = TACS_OUTPUT_STRESSES
 OUTPUT_EXTRAS = TACS_OUTPUT_EXTRAS
 OUTPUT_LOADS = TACS_OUTPUT_LOADS
 OUTPUT_COORDINATE_FRAME = TACS_OUTPUT_COORDINATE_FRAME
+OUTPUT_REACTIONS = TACS_OUTPUT_REACTIONS
 
 LAYOUT_NONE = TACS_LAYOUT_NONE
 POINT_ELEMENT = TACS_POINT_ELEMENT
@@ -117,6 +118,8 @@ HEXA_QUINTIC_ELEMENT = TACS_HEXA_QUINTIC_ELEMENT
 PENTA_ELEMENT = TACS_PENTA_ELEMENT
 PENTA_QUADRATIC_ELEMENT = TACS_PENTA_QUADRATIC_ELEMENT
 PENTA_CUBIC_ELEMENT = TACS_PENTA_CUBIC_ELEMENT
+RBE2_ELEMENT = TACS_RBE2_ELEMENT
+RBE3_ELEMENT = TACS_RBE3_ELEMENT
 
 # Orthogonal type for SEP
 SEP_FULL = FULL
@@ -291,6 +294,11 @@ cdef class Element:
         if self.ptr:
             self.ptr.setComponentNum(comp_num)
         return
+
+    def getComponentNum(self):
+        if self.ptr:
+            return self.ptr.getComponentNum()
+        return -1
 
     @classmethod
     def setFiniteDifferenceOrder(cls, int order):
@@ -1972,9 +1980,13 @@ cdef class Assembler:
         self.ptr.applyBCs(mat.ptr)
         return
 
-    def setBCs(self, Vec vec):
-        """Apply the Dirichlet boundary conditions to the state vector"""
-        self.ptr.setBCs(vec.getBVecPtr())
+    def setBCs(self, Vec vec, TacsScalar scale=1.0):
+        """Set the dirichlet BC values in a vector
+
+        vec: the vector to set the values in
+        scale: scaling factor to apply to the BC values
+        """
+        self.ptr.setBCs(vec.getBVecPtr(), scale)
         return
 
     def createSchurMat(self, OrderingType order_type=TACS_AMD_ORDER):
@@ -2147,7 +2159,7 @@ cdef class Assembler:
         self.ptr.evalEnergies(&Te, &Pe)
         return Te, Pe
 
-    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0):
+    def assembleRes(self, Vec residual, TacsScalar loadScale=1.0, bool applyBCs=True):
         """
         Assemble the residual associated with the input load case.
 
@@ -2159,14 +2171,32 @@ cdef class Assembler:
 
         rhs:        the residual output
         loadScale:  Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
-        self.ptr.assembleRes(residual.getBVecPtr(), loadScale)
+        self.ptr.assembleRes(residual.getBVecPtr(), loadScale, applyBCs)
+        return
+
+    def computeReactions(self, Vec tmp, Vec reactions):
+        """
+        Compute the reactions at constrained degrees of freedom.
+
+        This computes the difference between the residual with boundary
+        conditions applied and the residual without. The result is non-zero
+        only at constrained DOFs and represents the reactions (e.g. forces,
+        heat fluxes, etc. depending on the physics).
+
+        Args:
+            tmp (Vec): Workspace vector (overwritten during computation)
+            reactions (Vec): Output vector containing the reactions
+        """
+        self.ptr.computeReactions(tmp.getBVecPtr(), reactions.getBVecPtr())
         return
 
     def assembleJacobian(self, double alpha, double beta, double gamma,
                          Vec residual, Mat A,
                          MatrixOrientation matOr=TACS_MAT_NORMAL,
-                         TacsScalar loadScale=1.0):
+                         TacsScalar loadScale=1.0,
+                         bool applyBCs=True):
         """
         Assemble the Jacobian matrix
 
@@ -2185,18 +2215,19 @@ cdef class Assembler:
         A:         the Jacobian matrix
         matOr:     the matrix orientation NORMAL or TRANSPOSE
         loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
         cdef TACSBVec *res = NULL
         if residual is not None:
             res = residual.getBVecPtr()
 
         self.ptr.assembleJacobian(alpha, beta, gamma,
-                                  res, A.ptr, matOr, loadScale)
+                                  res, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def assembleMatType(self, ElementMatrixType matType,
                         Mat A, MatrixOrientation matOr=TACS_MAT_NORMAL,
-                        TacsScalar loadScale=1.0):
+                        TacsScalar loadScale=1.0, bool applyBCs=True):
 
         """
         Assemble the Jacobian matrix
@@ -2217,16 +2248,28 @@ cdef class Assembler:
         term
         matOr:      the matrix orientation NORMAL or TRANSPOSE
         loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
-        self.ptr.assembleMatType(matType, A.ptr, matOr, loadScale)
+        self.ptr.assembleMatType(matType, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def assembleMatCombo(self, ElementMatrixType matType1, double scale1,
                          ElementMatrixType matType2, double scale2, Mat A,
                          MatrixOrientation matOr=NORMAL,
-                         TacsScalar loadScale=1.0):
+                         TacsScalar loadScale=1.0, bool applyBCs=True):
         """
         Assemble a combination of two matrices
+
+        A = scale1*matType1 + scale2*matType2
+
+        matType1:     the first matrix type
+        scale1:       the scaling factor for the first matrix type
+        matType2:     the second matrix type
+        scale2:       the scaling factor for the second matrix
+        A:            the matrix to store the result in
+        matOr:      the matrix orientation NORMAL or TRANSPOSE
+        loadScale: Scaling factor for the aux element contributions, by default 1
+        applyBCs:   Whether to apply the boundary conditions, by default True
         """
         cdef ElementMatrixType matTypes[2]
         cdef TacsScalar scale[2]
@@ -2236,7 +2279,7 @@ cdef class Assembler:
         matTypes[1] = matType2
         scale[0] = scale1
         scale[1] = scale2
-        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr, loadScale)
+        self.ptr.assembleMatCombo(matTypes, scale, 2, A.ptr, matOr, loadScale, applyBCs)
         return
 
     def evalFunctions(self, funclist):
@@ -2452,20 +2495,35 @@ cdef class Assembler:
         return
 
     def evalMatSVSensInnerProduct(self, ElementMatrixType matType,
-                                  Vec psi, Vec phi, Vec res):
+                                  Vec psi, Vec phi, Vec res, bool applyBCs=True):
+        """
+        Add the derivative of the inner product of the specified
+        matrix with the input vectors to the state variables.
+
+        matType: the type of matrix to use
+        psi:     the left hand vector in the inner product
+        phi:     the right hand vector in the inner product
+        res:     Vector to store the result in
+        applyBCs: whether to apply the boundary conditions, by default True
+        """
         self.ptr.evalMatSVSensInnerProduct(matType,
-                                           psi.getBVecPtr(), phi.getBVecPtr(), res.getBVecPtr())
+                                           psi.getBVecPtr(), phi.getBVecPtr(), res.getBVecPtr(), applyBCs)
         return
 
     def addJacobianVecProduct(self, TacsScalar scale,
                               double alpha, double beta, double gamma,
                               Vec x, Vec y, MatrixOrientation matOr=TACS_MAT_NORMAL,
-                              TacsScalar loadScale=1.0):
+                              TacsScalar loadScale=1.0, bool applyBCs=True):
         """
-        Compute the Jacobian-vector product
+        Compute the Jacobian-vector product, see `assembleJacobian`
+
+        x: The vector to multiply
+        y: The vector to add the result of the multiplication to
+
+        For the remining inputs, see `assembleJacobian`
         """
         self.ptr.addJacobianVecProduct(scale, alpha, beta, gamma,
-                                       x.getBVecPtr(), y.getBVecPtr(), matOr, loadScale)
+                                       x.getBVecPtr(), y.getBVecPtr(), matOr, loadScale, applyBCs)
         return
 
     def testElement(self, int elemNum, int print_level,

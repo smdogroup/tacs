@@ -5,9 +5,41 @@ import time
 from typing import Any, Dict, List, Optional, Type, Iterable, Union
 import pickle
 import warnings
+from functools import wraps
 
 from mpi4py import MPI
+import numpy as np
 import tacs.TACS
+
+
+# Define decorator functions for methods that must be called before initialize
+def preinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is not None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a pre-initialize method. "
+                "It may only be called before the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
+
+
+# Define decorator functions for methods that must be called after initialize
+def postinitialize_method(method):
+    @wraps(method)
+    def wrapped_method(self, *args, **kwargs):
+        if self.assembler is None:
+            raise self._TACSError(
+                f"`{method.__name__}` is a post-initialize method. "
+                "It may only be called after the 'initialize' method has been called."
+            )
+        else:
+            return method(self, *args, **kwargs)
+
+    return wrapped_method
 
 
 class BaseUI:
@@ -176,6 +208,39 @@ class BaseUI:
     # ----------------------------------------------------------------------------
     #                      Utility Functions
     # ---------------------------------------------------------------------------
+
+    @staticmethod
+    def copyToTACSVec(src, dest):
+        """Copy values into a TACS Vec from either a TACS Vec or numpy array or scalar
+
+        Parameters
+        ----------
+        src : tacs.TACS.Vec or numpy.ndarray or scalar
+            Vector/array to copy values from
+        dest : tacs.TACS.Vec
+            Vector to copy into
+        """
+        if isinstance(src, tacs.TACS.Vec):
+            dest.copyValues(src)
+        else:
+            dest.getArray()[:] = src
+
+    @staticmethod
+    def copyFromTACSVec(src, dest):
+        """Copy values from a TACS Vec into either a TACS Vec or numpy array
+
+        Parameters
+        ----------
+        src : tacs.TACS.Vec
+            Vector to copy values from
+        dest : tacs.TACS.Vec or numpy.ndarray
+            Vector/array to copy values into
+        """
+        if isinstance(dest, tacs.TACS.Vec):
+            dest.copyValues(src)
+        elif isinstance(dest, np.ndarray):
+            dest[:] = src.getArray()
+
     def _pp(self, printStr):
         """Simple parallel print"""
         if self.comm.rank == 0:

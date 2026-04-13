@@ -115,6 +115,8 @@ int TACSRBE3::numExtras() { return NUM_EXTRAS; }
 
 ElementType TACSRBE3::getElementType() { return TACS_RIGID_ELEMENT; }
 
+ElementLayout TACSRBE3::getLayoutType() { return TACS_RBE3_ELEMENT; }
+
 /*
   Returns the multiplier index
 */

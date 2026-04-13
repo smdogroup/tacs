@@ -113,6 +113,9 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   // The name of the constitutive object
   const char *getObjectName();
 
+  // Get the shear correction factor
+  TacsScalar getShearCorrectionFactor() { return kcorr; }
+
   // Get ply angles, thicknesses, and fractions
   TacsScalar getLaminateThickness();
   void getPlyAngles(TacsScalar *_ply_angles);

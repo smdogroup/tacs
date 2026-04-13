@@ -831,34 +831,13 @@ class TransientProblem(TACSProblem):
         """
 
         if vars is not None:
-            if isinstance(vars, np.ndarray):
-                vars0Array = self.vars0.getArray()
-                vars0Array[:] = vars[:]
-            elif isinstance(vars, tacs.TACS.Vec):
-                self.vars0.copyValues(vars)
-            else:  # assume type=float
-                vars0Array = self.vars0.getArray()
-                vars0Array[:] = vars
+            self.copyToTACSVec(vars, self.vars0)
 
         if dvars is not None:
-            if isinstance(dvars, np.ndarray):
-                dvars0Array = self.dvars0.getArray()
-                dvars0Array[:] = dvars[:]
-            elif isinstance(dvars, tacs.TACS.Vec):
-                self.dvars0.copyValues(dvars)
-            else:  # assume type=float
-                dvars0Array = self.dvars0.getArray()
-                dvars0Array[:] = dvars
+            self.copyToTACSVec(dvars, self.dvars0)
 
         if ddvars is not None:
-            if isinstance(ddvars, np.ndarray):
-                ddvars0Array = self.ddvars0.getArray()
-                ddvars0Array[:] = ddvars[:]
-            elif isinstance(ddvars, tacs.TACS.Vec):
-                self.ddvars0.copyValues(ddvars)
-            else:  # assume type=float
-                ddvars0Array = self.ddvars0.getArray()
-                ddvars0Array[:] = ddvars
+            self.copyToTACSVec(ddvars, self.ddvars0)
 
     def _updateAssemblerVars(self):
         """
@@ -1143,7 +1122,9 @@ class TransientProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1157,6 +1138,10 @@ class TransientProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1201,18 +1186,19 @@ class TransientProblem(TACSProblem):
         # Recast sensitivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Finalize sensitivity arrays across all procs
-            dvSens = self.integrator.getGradient(i)
-            dvSens.beginSetValues()
-            dvSens.endSetValues()
-            xptSens = self.integrator.getXptGradient(i)
-            xptSens.beginSetValues()
-            xptSens.endSetValues()
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSens.getArray().copy(),
-                self.coordName: xptSens.getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                # Finalize dv sensitivity arrays across all procs
+                dvSens = self.integrator.getGradient(i)
+                dvSens.beginSetValues()
+                dvSens.endSetValues()
+                funcsSens[key][self.varName] = dvSens.getArray().copy()
+            if includeXptSens:
+                # Finalize xpt sensitivity arrays across all procs
+                xptSens = self.integrator.getXptGradient(i)
+                xptSens.beginSetValues()
+                xptSens.endSetValues()
+                funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
         totalSensitivityTime = time.time()
 
@@ -1289,20 +1275,14 @@ class TransientProblem(TACSProblem):
         qddotArray = qddot.getArray()
 
         # Inplace assignment if vectors were provided
-        if isinstance(states, tacs.TACS.Vec):
-            states.copyValues(q)
-        elif isinstance(states, np.ndarray):
-            states[:] = qArray
+        if states is not None:
+            self.copyFromTACSVec(q, states)
 
-        if isinstance(dstates, tacs.TACS.Vec):
-            dstates.copyValues(qdot)
-        elif isinstance(dstates, np.ndarray):
-            dstates[:] = qdotArray
+        if dstates is not None:
+            self.copyFromTACSVec(qdot, dstates)
 
-        if isinstance(ddstates, tacs.TACS.Vec):
-            ddstates.copyValues(qddot)
-        elif isinstance(ddstates, np.ndarray):
-            ddstates[:] = qddotArray
+        if ddstates is not None:
+            self.copyFromTACSVec(qddot, ddstates)
 
         # Return arrays
         return time, qArray, qdotArray, qddotArray

@@ -317,7 +317,9 @@ class BucklingProblem(TACSProblem):
             key = f"{self.name}_{funcName}"
             funcs[key], _ = self.getVariables(mode_i)
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -331,6 +333,10 @@ class BucklingProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -354,17 +360,16 @@ class BucklingProblem(TACSProblem):
                 if func in self.functionList:
                     evalFuncs[func] = self.functionList[func]
 
-        dvSens = self.assembler.createDesignVec()
-        xptSens = self.assembler.createNodeVec()
-
         indices = [evalFuncs[funcName] for funcName in evalFuncs]
         dvSensList = [self.assembler.createDesignVec() for funcName in evalFuncs]
         xptSensList = [self.assembler.createNodeVec() for funcName in evalFuncs]
         svSensList = [self.assembler.createVec() for funcName in evalFuncs]
         adjointList = [self.assembler.createVec() for funcName in evalFuncs]
 
-        self.addDVSens(indices, dvSensList, scale=1.0)
-        self.addXptSens(indices, xptSensList, scale=1.0)
+        if includeDVSens:
+            self.addDVSens(indices, dvSensList, scale=1.0)
+        if includeXptSens:
+            self.addXptSens(indices, xptSensList, scale=1.0)
         self.evalSVSens(indices, svSensList)
 
         self.aux.copyValues(self.K)
@@ -376,21 +381,25 @@ class BucklingProblem(TACSProblem):
             adjoint = adjointList[i]
             self.gmres.solve(rhs, adjoint)
 
-            # Evaluate adjoint contribution to nodal sens
-            xptSens = xptSensList[i]
-            self.assembler.addAdjointResXptSensProducts([adjoint], [xptSens], -1.0)
-            xptSens.beginSetValues()
-            xptSens.endSetValues()
-            # Evaluate adjoint contribution to dv sens
-            dvSens = dvSensList[i]
-            self.assembler.addAdjointResProducts([adjoint], [dvSens], -1.0)
-            dvSens.beginSetValues()
-            dvSens.endSetValues()
+            if includeXptSens:
+                # Evaluate adjoint contribution to nodal sens
+                xptSens = xptSensList[i]
+                self.assembler.addAdjointResXptSensProducts([adjoint], [xptSens], -1.0)
+                xptSens.beginSetValues()
+                xptSens.endSetValues()
+            if includeDVSens:
+                # Evaluate adjoint contribution to dv sens
+                dvSens = dvSensList[i]
+                self.assembler.addAdjointResProducts([adjoint], [dvSens], -1.0)
+                dvSens.beginSetValues()
+                dvSens.endSetValues()
 
             key = f"{self.name}_{funcName}"
             funcsSens[key] = {}
-            funcsSens[key][self.varName] = dvSens.getArray().copy()
-            funcsSens[key][self.coordName] = xptSens.getArray().copy()
+            if includeDVSens:
+                funcsSens[key][self.varName] = dvSensList[i].getArray().copy()
+            if includeXptSens:
+                funcsSens[key][self.coordName] = xptSensList[i].getArray().copy()
 
     def addLoadToComponents(self, compIDs, F, averageLoad=False):
         """
@@ -802,10 +811,8 @@ class BucklingProblem(TACSProblem):
         eigVector = self.assembler.createVec()
         self.buckleSolver.extractEigenvector(index, eigVector)
         # Inplace assignment if vectors were provided
-        if isinstance(states, tacs.TACS.Vec):
-            states.copyValues(eigVector)
-        elif isinstance(states, np.ndarray):
-            states[:] = eigVector.getArray()
+        if states is not None:
+            self.copyFromTACSVec(eigVector, states)
         return eigVal, eigVector.getArray()
 
     def getModalError(self, index):
