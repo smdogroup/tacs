@@ -32,7 +32,7 @@ class ConstitutiveTest(unittest.TestCase):
         kappa = 1.0  # Thermal conductivity W/(m⋅K)
         cp = 1.0  # Specific heat J/(kg⋅K)
         lh = 10.0  # Latent heat J/kg
-        mt = 0.0  # Melting temperature (relative) K
+        Tm = 0.0  # Melting temperature (relative) K
 
         solid_prop = constitutive.MaterialProperties(
             rho=rho, kappa=2.0 * kappa, specific_heat=cp
@@ -43,7 +43,7 @@ class ConstitutiveTest(unittest.TestCase):
 
         # Set one thickness value for every component
         self.con = constitutive.PhaseChangeMaterialConstitutive(
-            solid_prop, liquid_prop, lh=lh, mt=mt, t=0.1, tNum=-1
+            solid_prop, liquid_prop, lh=lh, Tm=Tm, t=0.1, tNum=-1
         )
 
         # Seed random number generator in tacs for consistent test results

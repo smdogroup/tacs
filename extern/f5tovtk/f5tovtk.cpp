@@ -113,6 +113,18 @@ int main(int argc, char *argv[]) {
       } else if (ltype == TACS_TETRA_QUADRATIC_ELEMENT) {
         ntypes = 1;
         nconn = 10;
+      } else if (ltype == TACS_RBE2_ELEMENT) {
+        // nodes: [1 indep | N dep | N multiplier], visualized as N lines
+        int conn_size = ptr[k + 1] - ptr[k];
+        int N_dep = (conn_size - 1) / 2;
+        ntypes = N_dep;
+        nconn = 2 * N_dep;
+      } else if (ltype == TACS_RBE3_ELEMENT) {
+        // nodes: [1 dep | M indep | 1 multiplier], visualized as M lines
+        int conn_size = ptr[k + 1] - ptr[k];
+        int M_indep = conn_size - 2;
+        ntypes = M_indep;
+        nconn = 2 * M_indep;
       } else {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
       }
@@ -138,6 +150,30 @@ int main(int argc, char *argv[]) {
         ntypes = 1;
         nconn = 10;
         memcpy(bconn, &conn[ptr[k]], 10 * sizeof(int));
+      } else if (ltype == TACS_RBE2_ELEMENT) {
+        // nodes: [1 indep | N dep | N multiplier], visualized as N lines
+        int conn_size = ptr[k + 1] - ptr[k];
+        int N_dep = (conn_size - 1) / 2;
+        int indep = conn[ptr[k]];
+        for (int i = 0; i < N_dep; i++) {
+          btypes[i] = TACS_LINE_ELEMENT;
+          bconn[2 * i] = indep;
+          bconn[2 * i + 1] = conn[ptr[k] + 1 + i];
+        }
+        ntypes = N_dep;
+        nconn = 2 * N_dep;
+      } else if (ltype == TACS_RBE3_ELEMENT) {
+        // nodes: [1 dep | M indep | 1 multiplier], visualized as M lines
+        int conn_size = ptr[k + 1] - ptr[k];
+        int M_indep = conn_size - 2;
+        int dep = conn[ptr[k]];
+        for (int i = 0; i < M_indep; i++) {
+          btypes[i] = TACS_LINE_ELEMENT;
+          bconn[2 * i] = dep;
+          bconn[2 * i + 1] = conn[ptr[k] + 1 + i];
+        }
+        ntypes = M_indep;
+        nconn = 2 * M_indep;
       } else {
         TacsConvertVisLayoutToBasicCount(ltype, &ntypes, &nconn);
         TacsConvertVisLayoutToBasic(ltype, &conn[ptr[k]], btypes, bconn);

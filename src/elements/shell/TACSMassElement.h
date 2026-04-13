@@ -18,6 +18,7 @@ class TACSMassElement : public TACSElement {
   int getNumQuadraturePoints() { return 1; }
   double getQuadratureWeight(int n) { return 1.0; }
   double getQuadraturePoint(int n, double pt[]) { return 1.0; }
+  ElementLayout getLayoutType() { return TACS_POINT_ELEMENT; }
   int getNumElementFaces() { return 0; }
   int getNumFaceQuadraturePoints(int face) { return 0; }
   double getFaceQuadraturePoint(int face, int n, double pt[],

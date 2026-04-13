@@ -15,11 +15,12 @@ import itertools as it
 
 import numpy as np
 import pyNastran.bdf.bdf as pn
+from mpi4py import MPI
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
-from tacs.utilities import BaseUI
+from tacs.utilities import BaseUI, postinitialize_method
 
 
 class pyMeshLoader(BaseUI):
@@ -422,6 +423,73 @@ class pyMeshLoader(BaseUI):
         """
         return self.compDescripts
 
+    def globalToLocalArray(self, globalArray):
+        """
+        Given an array containing values for all nodes in the original
+        (global) ordering, return an array containing the values for the
+        nodes on this processor in the reordered (local) ordering.
+
+        Parameters
+        ----------
+        globalArray : numpy.ndarray
+            Array containing values for all nodes in the original ordering.
+            Can be 1-D with length ``numNodes * N`` or 2-D with shape
+            ``(numNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numLocalNodes * N``)
+            Array containing values for the nodes on this processor in the
+            reordered ordering.
+        """
+        numNodes = self.getNumBDFNodes()
+        globalArray = np.asarray(globalArray).reshape((numNodes, -1))
+        varsPerNode = globalArray.shape[1]
+        globalToLocalMap = self.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        numLocalNodes = len(localIDs)
+        localArray = np.zeros((numLocalNodes, varsPerNode), dtype=globalArray.dtype)
+        localArray[localIDs, :] = globalArray[globalIDs, :]
+        return localArray.flatten()
+
+    @postinitialize_method
+    def localToGlobalArray(self, localArray):
+        """
+        Given an array containing values for the nodes on this processor
+        in the reordered (local) ordering, return an array containing
+        values for all nodes in the original (global) ordering.
+
+        The results are summed across all processors via ``Allreduce`` so
+        that every rank holds the complete global array on return.
+
+        Parameters
+        ----------
+        localArray : numpy.ndarray
+            Array containing values for the nodes on this processor in the
+            reordered ordering.  Can be 1-D with length
+            ``numLocalNodes * N`` or 2-D with shape ``(numLocalNodes, N)``.
+
+        Returns
+        -------
+        numpy.ndarray (1-D with length ``numNodes * N``)
+            Array containing values for all nodes in the original ordering.
+        """
+        numNodes = self.getNumBDFNodes()
+        numLocalNodes = self.assembler.getNumOwnedNodes()
+        localArray = np.asarray(localArray).reshape((numLocalNodes, -1))
+        varsPerNode = localArray.shape[1]
+        globalToLocalMap = self.getGlobalToLocalNodeIDDict()
+        globalIDs = np.array(list(globalToLocalMap.keys()), dtype=int)
+        localIDs = np.array(list(globalToLocalMap.values()), dtype=int)
+        globalArray = np.zeros((numNodes, varsPerNode), dtype=localArray.dtype)
+        globalArray[globalIDs, :] = localArray[localIDs, :]
+
+        # Sum the arrays across all procs so that every proc has the full global array
+        self.comm.Allreduce(MPI.IN_PLACE, globalArray, op=MPI.SUM)
+
+        return globalArray.flatten()
+
     def getLocalNodeIDsFromGlobal(self, globalIDs, nastranOrdering=False):
         """
         Given a list of node IDs in global (non-partitioned) ordering
@@ -796,12 +864,21 @@ class pyMeshLoader(BaseUI):
         """
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
+        # Find the maximum component number currently assigned to any element object.
+        # This is set by pytacs via setComponentNum(compFam[i]).
+        maxFamilyID = max(
+            (elem.getComponentNum() for elem in self.elemObjects if elem is not None),
+            default=-1,
+        )
+        rbeFamilyID = maxFamilyID + 1
+        massFamilyID = maxFamilyID + 2
+
         # Append RBE elements to element list, these are not setup by the user
         for rbe in self.bdfInfo.rigid_elements.values():
             if rbe.type == "RBE2":
-                self._addTACSRBE2(rbe, varsPerNode)
+                self._addTACSRBE2(rbe, varsPerNode, rbeFamilyID)
             elif rbe.type == "RBE3":
-                self._addTACSRBE3(rbe, varsPerNode)
+                self._addTACSRBE3(rbe, varsPerNode, rbeFamilyID)
             else:
                 raise NotImplementedError(
                     f"Rigid element of type '{rbe.type}' is not supported"
@@ -811,7 +888,7 @@ class pyMeshLoader(BaseUI):
         for massInfo in self.bdfInfo.masses.values():
             # Find the dv dict for this mass element, if not found return empty
             dvDict = massDVs.get(massInfo.eid, {})
-            self._addTACSMassElement(massInfo, varsPerNode, dvDict)
+            self._addTACSMassElement(massInfo, varsPerNode, dvDict, massFamilyID)
 
         # Check for any nodes that aren't attached to at least one element
         self._unattachedNodeCheck()
@@ -943,7 +1020,7 @@ class pyMeshLoader(BaseUI):
         else:
             return False
 
-    def _addTACSRBE2(self, rbeInfo, varsPerNode):
+    def _addTACSRBE2(self, rbeInfo, varsPerNode, familyID):
         """
         Method to automatically set up RBE2 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -955,6 +1032,9 @@ class pyMeshLoader(BaseUI):
 
         varsPerNode : int
             Number of variables per node for the model.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         indepNode = rbeInfo.independent_nodes
         depNodes = []
@@ -989,11 +1069,12 @@ class pyMeshLoader(BaseUI):
         rbeObj = tacs.elements.RBE2(
             nTotalNodes, np.array(depConstrainedDOFs, dtype=np.intc)
         )
+        rbeObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
         return
 
-    def _addTACSRBE3(self, rbeInfo, varsPerNode):
+    def _addTACSRBE3(self, rbeInfo, varsPerNode, familyID):
         """
         Method to automatically set up RBE3 element from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -1005,6 +1086,9 @@ class pyMeshLoader(BaseUI):
 
         varsPerNode : int
             Number of variables per node for the model.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         depNode = rbeInfo.dependent_nodes
         depConstrainedDOFs = self.dofStringToList(rbeInfo.refc, varsPerNode)
@@ -1047,11 +1131,12 @@ class pyMeshLoader(BaseUI):
             np.array(indepWeights),
             np.array(indepConstrainedDOFs, dtype=np.intc),
         )
+        rbeObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(rbeObj)
         return
 
-    def _addTACSMassElement(self, massInfo, varsPerNode, dvDict):
+    def _addTACSMassElement(self, massInfo, varsPerNode, dvDict, familyID):
         """
         Method to automatically set up TACS mass elements from bdf file for user.
         User should *NOT* set these up in their elemCallBack function.
@@ -1066,6 +1151,9 @@ class pyMeshLoader(BaseUI):
 
         dvDict : dict
             Dictionary holding dv info for point mass.
+
+        familyID : int
+            Family ID to assign to this element for f5 file visualization.
         """
         if massInfo.type == "CONM2":
             m = massInfo.mass
@@ -1107,6 +1195,7 @@ class pyMeshLoader(BaseUI):
         self.elemConnectivityPointer.append(self.elemConnectivityPointer[-1] + 1)
         # Create tacs object for mass element
         massObj = tacs.elements.MassElement(con)
+        massObj.setComponentNum(familyID)
         self.elemObjectNumByElem.append(len(self.elemObjects))
         self.elemObjects.append(massObj)
         return
