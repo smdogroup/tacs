@@ -1165,7 +1165,9 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1179,6 +1181,10 @@ class StaticProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1243,21 +1249,22 @@ class StaticProblem(TACSProblem):
             adjointEndTime[f] = time.time()
 
         adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
+        # Evaluate all the adjoint res products at the same time for efficiency:
+        if includeDVSens:
+            self.addDVSens(evalFuncs, dvSenses)
+            self.addAdjointResProducts(adjoints, dvSenses)
+        if includeXptSens:
+            self.addXptSens(evalFuncs, xptSenses)
+            self.addAdjointResXptSensProducts(adjoints, xptSenses)
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSenses[i].getArray().copy(),
-                self.coordName: xptSenses[i].getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                funcsSens[key][self.varName] = dvSenses[i].getArray().copy()
+            if includeXptSens:
+                funcsSens[key][self.coordName] = xptSenses[i].getArray().copy()
 
         totalSensitivityTime = time.time()
 

@@ -303,7 +303,9 @@ class ModalProblem(TACSProblem):
             key = f"{self.name}_{funcName}"
             funcs[key], _ = self.getVariables(mode_i)
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -317,6 +319,10 @@ class ModalProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -340,20 +346,24 @@ class ModalProblem(TACSProblem):
                 if func in self.functionList:
                     evalFuncs[func] = self.functionList[func]
 
-        dvSens = self.assembler.createDesignVec()
-        xptSens = self.assembler.createNodeVec()
+        if includeDVSens:
+            dvSens = self.assembler.createDesignVec()
+        if includeXptSens:
+            xptSens = self.assembler.createNodeVec()
 
         # Loop through each requested eigenvalue
         for funcName in evalFuncs:
             mode_i = evalFuncs[funcName]
             key = f"{self.name}_{funcName}"
             funcsSens[key] = {}
-            # Evaluate dv sens
-            self.freqSolver.evalEigenDVSens(mode_i, dvSens)
-            funcsSens[key][self.varName] = dvSens.getArray().copy()
-            # Evaluate nodal sens
-            self.freqSolver.evalEigenXptSens(mode_i, xptSens)
-            funcsSens[key][self.coordName] = xptSens.getArray().copy()
+            if includeDVSens:
+                # Evaluate dv sens
+                self.freqSolver.evalEigenDVSens(mode_i, dvSens)
+                funcsSens[key][self.varName] = dvSens.getArray().copy()
+            if includeXptSens:
+                # Evaluate nodal sens
+                self.freqSolver.evalEigenXptSens(mode_i, xptSens)
+                funcsSens[key][self.coordName] = xptSens.getArray().copy()
 
     ####### Modal solver methods ########
 

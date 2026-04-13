@@ -199,7 +199,7 @@ class PyTACSTestCase:
             funcs = self.run_solve()
 
             # Compute the total derivative w.r.t. material design variables using adjoint
-            func_sens = self.run_sensitivities()
+            func_sens = self.run_sensitivities(includeDVSens=True)
 
             # Compute the total derivative w.r.t. material design variables using fd/cs
             self.dv1 = self.perturb_tacs_vec(self.dv0, self.dv_pert)
@@ -247,7 +247,7 @@ class PyTACSTestCase:
             funcs = self.run_solve()
 
             # Compute the total derivative w.r.t. material design variables using adjoint
-            func_sens = self.run_sensitivities()
+            func_sens = self.run_sensitivities(includeXptSens=True)
 
             # Compute the total derivative w.r.t. nodal xpt locations using fd/cs
             self.xpts1 = self.perturb_tacs_vec(self.xpts0, self.xpts_pert)
@@ -375,7 +375,9 @@ class PyTACSTestCase:
 
             return funcs
 
-        def run_sensitivities(self, dv=None, xpts=None):
+        def run_sensitivities(
+            self, dv=None, xpts=None, includeDVSens=False, includeXptSens=False
+        ):
             """
             Run a sensitivity solve at specified design point and return sens of  functions of interest
             """
@@ -398,11 +400,19 @@ class PyTACSTestCase:
                     prob.solve()
                     # Evaluate functions
                     prob.evalFunctions(funcs)
-                    prob.evalFunctionsSens(funcs_sens)
+                    prob.evalFunctionsSens(
+                        funcs_sens,
+                        includeDVSens=includeDVSens,
+                        includeXptSens=includeXptSens,
+                    )
                 elif isinstance(prob, constraints.TACSConstraint):
                     # Evaluate functions
                     prob.evalConstraints(funcs)
-                    prob.evalConstraintsSens(funcs_sens)
+                    prob.evalConstraintsSens(
+                        funcs_sens,
+                        includeDVSens=includeDVSens,
+                        includeXptSens=includeXptSens,
+                    )
 
             return funcs_sens
 

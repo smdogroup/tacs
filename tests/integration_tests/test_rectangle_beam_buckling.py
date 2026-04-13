@@ -17,7 +17,7 @@ We also apply a constraint on the beam length using the stiffener length constra
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
+bdf_file = os.path.join(base_dir, "./input_files/beam_model_translated.bdf")
 
 ksweight = 10.0
 
