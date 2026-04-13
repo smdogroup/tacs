@@ -36,18 +36,18 @@ bdf_file = os.path.join(os.path.dirname(__file__), "Slender_Beam.bdf")
 ffd_file = os.path.join(os.path.dirname(__file__), "ffd_8_linear.fmt")
 
 # Beam thickness
-t = 0.01 # m
+t = 0.01  # m
 # Length of beam
-L = 1.0 # m
+L = 1.0  # m
 
 # Material properties
-rho = 2780.0 # kg /m^3
-E = 70.0e9 # Pa
+rho = 2780.0  # kg /m^3
+E = 70.0e9  # Pa
 nu = 0.0
 ys = 420.0e6
 
 # Shear force applied at tip
-V = 2.5E4 # N
+V = 2.5e4  # N
 
 
 # Callback function used to setup TACS element objects and DVs
