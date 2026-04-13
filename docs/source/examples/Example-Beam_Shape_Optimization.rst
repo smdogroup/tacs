@@ -7,7 +7,7 @@ This example demonstrates TACS structural shape optimization using the
 It considers the same cantilevered beam with a tip shear load as the
 :ref:`examples/Example-Beam_Optimization:Beam optimization with MPhys` example, but differs
 in two key ways: the beam is modeled in 2D using shell elements rather than 1D beam elements,
-and the geometry is optimized by physically warping the finite-element mesh via an FFD volume
+and the geometry is optimized by physically warping the finite-element mesh via a free-form deformation (FFD) volume
 rather than by adjusting 1D cross-sectional properties.
 The beam is discretized using 1001 shell elements along its span and depth.
 
@@ -16,8 +16,9 @@ The optimization problem is:
   **Minimize** the mass of the beam with respect to the depth of the cross-section along the span,
   subject to a maximum stress constraint dictated by the material's yield stress.
 
-In order to change the shape of the FEM, we use a free-form deformation (FFD) volume
-parameterization scheme provided by the ``pyGeo`` library.
+In order to change the shape of the FEM, we use a FFD volume
+parameterization scheme provided by the `pyGeo <https://github.com/mdolab/pygeo>`_ library.
+TACS :ref:`mach/mach:MACH` module is used to link the static problem with pyGeo's FFD volume parameterization.
 
 The figure below shows the initial (unoptimized) beam with the von Mises failure contour and
 the FFD box with its control points encapsulating the structure:
@@ -28,18 +29,12 @@ the FFD box with its control points encapsulating the structure:
 
 Each spanwise control point section will be parameterized in such a way that the depth of the beam can be optimized at each station.
 
-An approximate analytical solution can be derived from beam theory.
-The bending stress at any spanwise cross-section is:
-
-.. math::
-    \sigma(x, y) = \frac{y \, M(x)}{I}
-
-The optimal depth profile that keeps stress at the yield limit everywhere is:
+As was shown in :ref:`examples/Example-Beam_Optimization:Beam optimization with MPhys` example an analytic solution for the optimal spanwise depth profile can be derived and is given below:
 
 .. math::
     d(x) = \sqrt{\frac{6 V (L - x)}{t \, \sigma_y}}
 
-The optimization is driven by SLSQP via pyoptsparse, with gradients supplied by
+The optimization will be driven by SLSQP via pyoptsparse, with gradients supplied by
 TACS' adjoint solver through the :class:`~tacs.mach.struct_problem.StructProblem` wrapper.
 
 First, import required libraries:
@@ -64,18 +59,18 @@ Next, define the problem parameters and file paths:
   ffd_file = os.path.join(os.path.dirname(__file__), 'ffd_8_linear.fmt')
 
   # Beam thickness
-  t = 0.01            # m
+  t = 0.01 # m
   # Length of beam
-  L = 1.0
+  L = 1.0 # m
 
   # Material properties
   rho = 2780.0 # kg /m^3
-  E = 70.0e9
+  E = 70.0e9 # Pa
   nu = 0.0
   ys = 420.0e6
 
   # Shear force applied at tip
-  V = 2.5E4
+  V = 2.5E4 # N
 
 Now, define the element callback function used to setup TACS element objects and design variables:
 
@@ -100,7 +95,7 @@ Create and initialize the pyTACS assembler:
   FEAAssembler = pyTACS(bdf_file)
   FEAAssembler.initialize(element_callback)
 
-Set up the geometric design variables using pyGeo's DVGeometry:
+Set up the FFD and geometric design variables using `pyGeo <https://github.com/mdolab/pygeo>`_'s DVGeometry:
 
 .. code-block:: python
 
@@ -127,7 +122,7 @@ Create the static problem and add functions of interest:
   # Add forces to static problem
   staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
-Create the :class:`~tacs.mach.struct_problem.StructProblem` using the MACH interface.
+Wrap the static problem with the :class:`~tacs.mach.struct_problem.StructProblem` using the MACH interface.
 Passing ``DVGeo`` here registers the structural node coordinates with the FFD volume;
 nodes are updated automatically before each solve when design variables change:
 
@@ -156,8 +151,8 @@ Define the objective and constraint evaluation function:
 Define the sensitivity evaluation function.
 :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens` folds in the DVGeo
 chain-rule term automatically, producing sensitivities keyed by the geometric DV name
-(``"depth"``).  The raw structural-node coordinate sensitivity (keyed ``"struct"``) is
-popped out because it is not a pyoptsparse design variable:
+(``"depth"``).  The structural DV sensitivity (keyed ``"struct"``) is
+popped out because it is not used in the pyoptsparse optimization problem:
 
 .. code-block:: python
 
@@ -172,8 +167,8 @@ popped out because it is not a pyoptsparse design variable:
 Set up the optimization problem using pyoptsparse.
 :meth:`~tacs.mach.struct_problem.StructProblem.addVariablesPyOpt` registers the TACS
 structural design variables (none in this case, since ``tNum=-1``), and
-``DVGeo.addVariablesPyOpt`` registers the FFD ``"depth"`` DV.
-The stress constraint is added as a nonlinear inequality on the KS failure index:
+``DVGeo.addVariablesPyOpt`` registers the FFD ``"depth"`` DVs.
+The stress constraint is added as a nonlinear inequality using the KS failure aggregation:
 
 .. code-block:: python
 
@@ -205,16 +200,3 @@ The converged depth profile decreases from root to tip, matching the analytical 
 .. image:: images/Beam_Shape_Opt.png
    :width: 700
    :alt: Optimized beam failure contours with the idealized analytic depth profile overlaid
-
-Key features demonstrated:
-
-- **Geometric DVs via FFD**: ``DVGeometry`` controls beam depth with ``nRefAxPts`` independent
-  control points along the span.  ``DVGeo.addGlobalDV`` maps the scalar depth values to
-  y-scaling of the FFD control points.
-- **MACH StructProblem**: :class:`~tacs.mach.struct_problem.StructProblem` bridges TACS
-  and pyoptsparse, handling node updates and DVGeo chain-rule terms automatically.
-- **Adjoint sensitivities**: :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens`
-  computes :math:`dI/dx_\text{geo}` via the adjoint method and the DVGeo total-sensitivity
-  chain rule.
-- **KS failure aggregation**: :class:`~tacs.functions.KSFailure` with ``ksWeight=100``
-  provides a smooth, differentiable envelope of the pointwise von Mises failure criterion.
