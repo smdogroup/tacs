@@ -2510,24 +2510,20 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
         ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
         kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
-
-
-        EA               : axial stiffness
-        EI22, EI33, EI23 : bending stiffness
-        GJ               : torsional stiffness
-        kG22, kG33, kG23 : shearing stiffness
-        m00              : mass per unit span
-        m11, m22, m33    : moments of inertia such that m11 = m22 + m33
-        xm2, xm3         : cross sectional center of mass location
-        xc2, xc3         : cross sectional centroid
-        xk2, xk3         : cross sectional shear center
-        muS              : viscous damping coefficient
+        nsm (float or complex): Non-structural mass per unit length (keyword argument). Defaults to 0.0.
+        xm2 (float or complex): Cross-sectional center of mass location in y-direction (keyword argument). Defaults to 0.0.
+        xm3 (float or complex): Cross-sectional center of mass location in z-direction (keyword argument). Defaults to 0.0.
+        xc2 (float or complex): Cross-sectional centroid in y-direction (keyword argument). Defaults to 0.0.
+        xc3 (float or complex): Cross-sectional centroid in z-direction (keyword argument). Defaults to 0.0.
+        xk2 (float or complex): Cross-sectional shear center in y-direction (keyword argument). Defaults to 0.0.
+        xk3 (float or complex): Cross-sectional shear center in z-direction (keyword argument). Defaults to 0.0.
+        muS (float or complex): Viscous damping coefficient (keyword argument). Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, BasicBeamConstitutive, kwargs,
             required_keys=["A", "J", "Iy", "Iz"],
-            valid_keys=["Iyz", "ky", "kz"],
+            valid_keys=["Iyz", "ky", "kz", "nsm", "xm2", "xm3", "xc2", "xc3", "xk2", "xk3", "muS"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar A = 0.0
@@ -2537,6 +2533,14 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         cdef TacsScalar Iyz = 0.0
         cdef TacsScalar ky = 5.0/6.0
         cdef TacsScalar kz = 5.0/6.0
+        cdef TacsScalar nsm = 0.0
+        cdef TacsScalar xm2 = 0.0
+        cdef TacsScalar xm3 = 0.0
+        cdef TacsScalar xc2 = 0.0
+        cdef TacsScalar xc3 = 0.0
+        cdef TacsScalar xk2 = 0.0
+        cdef TacsScalar xk3 = 0.0
+        cdef TacsScalar muS = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2555,8 +2559,25 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
             ky = kwargs['ky']
         if 'kz' in kwargs:
             kz = kwargs['kz']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
+        if 'xm2' in kwargs:
+            xm2 = kwargs['xm2']
+        if 'xm3' in kwargs:
+            xm3 = kwargs['xm3']
+        if 'xc2' in kwargs:
+            xc2 = kwargs['xc2']
+        if 'xc3' in kwargs:
+            xc3 = kwargs['xc3']
+        if 'xk2' in kwargs:
+            xk2 = kwargs['xk2']
+        if 'xk3' in kwargs:
+            xk3 = kwargs['xk3']
+        if 'muS' in kwargs:
+            muS = kwargs['muS']
 
-        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz,
+                                                  nsm, xm2, xm3, xc2, xc3, xk2, xk3, muS)
         self.ptr = self.cptr
         self.ptr.incref()
 
