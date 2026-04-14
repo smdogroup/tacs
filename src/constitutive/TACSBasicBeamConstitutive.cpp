@@ -79,7 +79,7 @@ void TACSBasicBeamConstitutive::populateMats(
   rho[2] = xm3 * m00;
   rho[3] = m11;
   rho[4] = m22;
-  rho[5] = m33; // m00*xm2*xm3;
+  rho[5] = m33;  // m00*xm2*xm3;
 }
 
 /*
