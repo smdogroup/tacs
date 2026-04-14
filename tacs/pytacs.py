@@ -1257,10 +1257,10 @@ class pyTACS(BaseUI):
                     ky=k1,
                     kz=k2,
                     nsm=nsm,
-                    nsmY=nsmY,
-                    nsmZ=nsmZ,
-                    neutralAxisY=neutralAxisY,
-                    neutralAxisZ=neutralAxisZ,
+                    xm2=nsmY,
+                    xm3=nsmZ,
+                    xk2=neutralAxisY,
+                    xk3=neutralAxisZ,
                 )
 
             elif propInfo.type == "PBEAML":
