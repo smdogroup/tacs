@@ -222,26 +222,12 @@ class pyTACS(BaseUI):
             self._pp("|")
             self._pp("| TACS Init Times:")
             self._pp("|")
-            self._pp(
-                "| %-30s: %10.3f sec" % ("TACS Module Time", importTime - startTime)
-            )
-            self._pp(
-                "| %-30s: %10.3f sec"
-                % ("TACS Meshload Time", meshLoadTime - importTime)
-            )
-            self._pp(
-                "| %-30s: %10.3f sec"
-                % ("TACS DV Processing Time", DVPreprocTime - meshLoadTime)
-            )
-            self._pp(
-                "| %-30s: %10.3f sec"
-                % ("TACS Finalize Initialization Time", initFinishTime - DVPreprocTime)
-            )
+            self._pp("| %-30s: %10.3f sec" % ("TACS Module Time", importTime - startTime))
+            self._pp("| %-30s: %10.3f sec" % ("TACS Meshload Time", meshLoadTime - importTime))
+            self._pp("| %-30s: %10.3f sec" % ("TACS DV Processing Time", DVPreprocTime - meshLoadTime))
+            self._pp("| %-30s: %10.3f sec" % ("TACS Finalize Initialization Time", initFinishTime - DVPreprocTime))
             self._pp("|")
-            self._pp(
-                "| %-30s: %10.3f sec"
-                % ("TACS Total Initialization Time", initFinishTime - startTime)
-            )
+            self._pp("| %-30s: %10.3f sec" % ("TACS Total Initialization Time", initFinishTime - startTime))
             self._pp("+--------------------------------------------------+")
 
     @property
@@ -599,8 +585,7 @@ class pyTACS(BaseUI):
             def split_list(alist, wanted_parts=1):
                 length = len(alist)
                 return [
-                    alist[i * length // wanted_parts : (i + 1) * length // wanted_parts]
-                    for i in range(wanted_parts)
+                    alist[i * length // wanted_parts : (i + 1) * length // wanted_parts] for i in range(wanted_parts)
                 ]
 
             ind = split_list(ind, nGroup)
@@ -806,9 +791,7 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
-        self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs
-        )
+        self.assembler = self.meshLoader.createTACSAssembler(self.varsPerNode, self.massDVs)
         self._createOutputViewer()
 
         # Store original node locations read in from bdf file
@@ -872,9 +855,7 @@ class pyTACS(BaseUI):
         # Check if (res2-res0) - 2 * (res1 - res0) is zero (or very close to it)
         resNorm = np.real(res1.norm())
         res2.axpy(-2.0, res1)
-        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption(
-            "linearityTol"
-        ):
+        if resNorm == 0.0 or (np.real(res2.norm()) / resNorm) <= self.getOption("linearityTol"):
             return False  # not nonlinear case
         else:
             return True  # nonlinear case
@@ -981,10 +962,7 @@ class pyTACS(BaseUI):
                 C33 = matInfo.G33
                 rho = matInfo.rho
                 # See if this card features anisotropic coupling terms (which we don't support yet)
-                if (
-                    np.abs(C13) / (C11 + C22) >= 1e-8
-                    or np.abs(C23) / (C11 + C22) >= 1e-8
-                ):
+                if np.abs(C13) / (C11 + C22) >= 1e-8 or np.abs(C23) / (C11 + C22) >= 1e-8:
                     self._TACSWarning(
                         f"MAT2 card {matInfo.mid} has anisotropic stiffness components that are not currently supported. "
                         "These terms will be dropped and the material treated as orthotropic. "
@@ -996,20 +974,14 @@ class pyTACS(BaseUI):
                 E2 = C22 * (1 - nu12 * nu21)
                 G12 = G13 = G23 = C33
                 # TODO: add alpha
-                mat = tacs.constitutive.MaterialProperties(
-                    rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23
-                )
+                mat = tacs.constitutive.MaterialProperties(rho=rho, E1=E1, E2=E2, nu12=nu12, G12=G12, G13=G13, G23=G23)
 
             else:
-                raise self._TACSError(
-                    f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}."
-                )
+                raise self._TACSError(f"Unsupported material type '{matInfo.type}' for material number {matInfo.mid}.")
 
             return mat
 
-        def elemCallBack(
-            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
-        ):
+        def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
             # Initialize scale list for design variables we will add
             scaleList = []
 
@@ -1040,20 +1012,14 @@ class pyTACS(BaseUI):
                     minThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xlb
                     maxThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xub
                     name = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].label
-                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[
-                        0
-                    ]
+                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[0]
                 else:
                     thickness = propInfo.t
                     tNum = -1
                     minThickness = 0.0
                     maxThickness = 1e20
 
-                if (
-                    (propInfo.mid2 is not None)
-                    or (propInfo.mid3 is not None)
-                    or (propInfo.mid4 is not None)
-                ):
+                if (propInfo.mid2 is not None) or (propInfo.mid3 is not None) or (propInfo.mid4 is not None):
                     self._TACSWarning(
                         f"PSHELL property {propertyID} has defined multiple material IDs (MID2, MID3, or MID4). "
                         "Only the first material (MID1) will be used."
@@ -1079,9 +1045,7 @@ class pyTACS(BaseUI):
                 # Loop through plies and setup each entry in layup
                 for ply_i in plyIndices:
                     plyThicknesses.append(propInfo.thicknesses[ply_i])
-                    plyMat = tacs.constitutive.OrthotropicPly(
-                        plyThicknesses[ply_i], mat[ply_i]
-                    )
+                    plyMat = tacs.constitutive.OrthotropicPly(plyThicknesses[ply_i], mat[ply_i])
                     plyMats.append(plyMat)
                     plyAngles.append(np.deg2rad(propInfo.thetas[ply_i]))
 
@@ -1108,9 +1072,7 @@ class pyTACS(BaseUI):
 
                 # Need to add functionality to consider only membrane in TACS for type = MEM
                 else:
-                    raise self._TACSError(
-                        f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}."
-                    )
+                    raise self._TACSError(f"Unrecognized LAM type '{propInfo.lam}' for PCOMP number {propertyID}.")
 
             elif propInfo.type == "PSOLID":  # Nastran solid property
                 if "T" in elemDict[propertyID]["dvs"]:
@@ -1119,9 +1081,7 @@ class pyTACS(BaseUI):
                     minThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xlb
                     maxThickness = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].xub
                     name = elemDict[propertyID]["dvs"]["T"].dvids_ref[0].label
-                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[
-                        0
-                    ]
+                    self.scaleList[tNum - 1] = elemDict[propertyID]["dvs"]["T"].coeffs[0]
                 else:
                     thickness = 1.0
                     tNum = -1
@@ -1158,9 +1118,7 @@ class pyTACS(BaseUI):
                 if k2 is None or k2 > 1e3:
                     k2 = 1e3
 
-                con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
-                )
+                con = tacs.constitutive.BasicBeamConstitutive(mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2)
 
             elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
                 if propInfo.Type == "BAR":
@@ -1183,21 +1141,15 @@ class pyTACS(BaseUI):
                     r0 = propInfo.dim[1]
                     d_inner = 2 * r0
                     t_wall = r1 - r0
-                    con = tacs.constitutive.IsoTubeBeamConstitutive(
-                        mat, d=d_inner, t=t_wall
-                    )
+                    con = tacs.constitutive.IsoTubeBeamConstitutive(mat, d=d_inner, t=t_wall)
 
                 else:
                     # We use the pynastran API to get the area, moments of inertia, and torsional constant
                     # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
                     # this more general method
-                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
-                        "PBARL", propInfo.Type, propInfo.dim, propInfo
-                    )
+                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL("PBARL", propInfo.Type, propInfo.dim, propInfo)
                     J = propInfo.J()
-                    con = tacs.constitutive.BasicBeamConstitutive(
-                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
-                    )
+                    con = tacs.constitutive.BasicBeamConstitutive(mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12)
 
             elif propInfo.type == "PBEAM":
                 area = propInfo.A
@@ -1217,6 +1169,10 @@ class pyTACS(BaseUI):
                 neutralAxisZA = propInfo.n2a  # Z coordinate of neutral axis for end A
                 neutralAxisYB = propInfo.n1b  # Y coordinate of neutral axis for end B
                 neutralAxisZB = propInfo.n2b  # Z coordinate of neutral axis for end B
+                nsmY = (nsmYA + nsmYB) / 2
+                nsmZ = (nsmZA + nsmZB) / 2
+                neutralAxisY = (neutralAxisYA + neutralAxisYB) / 2
+                neutralAxisZ = (neutralAxisZA + neutralAxisZB) / 2
 
                 # pynastran defaults these values to 1e8,
                 # which can lead to scaling issues in the stiffness matrix
@@ -1244,7 +1200,19 @@ class pyTACS(BaseUI):
                     J = np.trapezoid(J, xStations)
                     nsm = np.trapezoid(nsm, xStations)
                 con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
+                    mat,
+                    A=area,
+                    Iy=I2,
+                    Iz=I1,
+                    Iyz=I12,
+                    J=J,
+                    ky=k1,
+                    kz=k2,
+                    nsm=nsm,
+                    nsmY=nsmY,
+                    nsmZ=nsmZ,
+                    neutralAxisY=neutralAxisY,
+                    neutralAxisZ=neutralAxisZ,
                 )
 
             elif propInfo.type == "PBEAML":
@@ -1300,9 +1268,7 @@ class pyTACS(BaseUI):
                 )
 
             else:
-                raise self._TACSError(
-                    f"Unsupported property type '{propInfo.type}' for property number {propertyID}. "
-                )
+                raise self._TACSError(f"Unsupported property type '{propInfo.type}' for property number {propertyID}. ")
 
             # Set up transform object which may be required for certain elements
             transform = None
@@ -1315,31 +1281,23 @@ class pyTACS(BaseUI):
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
-                refAxis = np.array(
-                    [1.0, -1.0, 1.0]
-                )  # dummy ref_axis, not really needed for rods
+                refAxis = np.array([1.0, -1.0, 1.0])  # dummy ref_axis, not really needed for rods
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PBUSH":
                 if elemDict[propertyID]["elements"][0].cid_ref:
                     refAxis_i = elemDict[propertyID]["elements"][0].cid_ref.i
                     refAxis_j = elemDict[propertyID]["elements"][0].cid_ref.j
-                    transform = tacs.elements.SpringRefFrameTransform(
-                        refAxis_i, refAxis_j
-                    )
+                    transform = tacs.elements.SpringRefFrameTransform(refAxis_i, refAxis_j)
                 elif elemDict[propertyID]["elements"][0].x[0]:
                     refAxis = (
                         np.array(elemDict[propertyID]["elements"][0].x)
-                        - elemDict[propertyID]["elements"][0]
-                        .nodes_ref[0]
-                        .get_position()
+                        - elemDict[propertyID]["elements"][0].nodes_ref[0].get_position()
                     )
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
                 elif elemDict[propertyID]["elements"][0].g0_ref:
                     refAxis = (
                         elemDict[propertyID]["elements"][0].g0_ref.get_position()
-                        - elemDict[propertyID]["elements"][0]
-                        .nodes_ref[0]
-                        .get_position()
+                        - elemDict[propertyID]["elements"][0].nodes_ref[0].get_position()
                     )
                     transform = tacs.elements.SpringRefAxisTransform(refAxis)
 
@@ -1362,9 +1320,7 @@ class pyTACS(BaseUI):
                     elif nnodes == 10:
                         basis = tacs.elements.QuadraticTetrahedralBasis()
                     else:
-                        raise self._TACSError(
-                            f"TACS does not currently support CTETRA elements with {nnodes} nodes."
-                        )
+                        raise self._TACSError(f"TACS does not currently support CTETRA elements with {nnodes} nodes.")
                     model = tacs.elements.LinearElasticity3D(con)
                     elem = tacs.elements.Element3D(model, basis)
                 elif descript in ["CHEXA8", "CHEXA"]:
@@ -1844,9 +1800,7 @@ class pyTACS(BaseUI):
                         f"No TSTEP entry found in control deck for subcase number {subCase.id}, skipping case."
                     )
                     continue
-                problem = self.createTransientProblem(
-                    name, tInit=0.0, tFinal=dt * nSteps, numSteps=nSteps
-                )
+                problem = self.createTransientProblem(name, tInit=0.0, tFinal=dt * nSteps, numSteps=nSteps)
 
                 # Find dynamic load specified for this subcase
                 if "DLOAD" in subCase:
@@ -1856,13 +1810,9 @@ class pyTACS(BaseUI):
                         timeSteps = problem.getTimeSteps()
                         if dloadInfo.type in ["TLOAD1", "TLOAD2"]:
                             if dloadInfo.type == "TLOAD1":
-                                loadScales = dloadInfo.get_load_at_time(
-                                    timeSteps, dscale
-                                )
+                                loadScales = dloadInfo.get_load_at_time(timeSteps, dscale)
                             elif dloadInfo.type == "TLOAD2":
-                                loadScales = dloadInfo.get_load_at_time(
-                                    timeSteps, dscale
-                                )
+                                loadScales = dloadInfo.get_load_at_time(timeSteps, dscale)
                             if dloadInfo.Type != "LOAD":
                                 self._TACSWarning(
                                     "Only 'LOAD' types are supported for "
@@ -2033,14 +1983,12 @@ class pyTACS(BaseUI):
                     propCard.comment = self.bdfInfo.properties[propID].comment[1:]
                     # Add property card to BDF
                     newBDFInfo.properties[propID] = propCard
-                elemIDs = self.meshLoader.getGlobalElementIDsForComps(
-                    [compID], nastranOrdering=True
-                )
+                elemIDs = self.meshLoader.getGlobalElementIDsForComps([compID], nastranOrdering=True)
                 # Convert any transform objects to nastran COORD2R cards, if necessary
                 transObj = transObjs.get(compID, None)
-                if isinstance(
-                    transObj, tacs.elements.ShellRefAxisTransform
-                ) or isinstance(transObj, tacs.elements.SpringRefFrameTransform):
+                if isinstance(transObj, tacs.elements.ShellRefAxisTransform) or isinstance(
+                    transObj, tacs.elements.SpringRefFrameTransform
+                ):
                     coordID = curCoordID
                     origin = np.zeros(3)
                     if isinstance(transObj, tacs.elements.SpringRefFrameTransform):
@@ -2060,9 +2008,9 @@ class pyTACS(BaseUI):
                     )
                     curCoordID += 1
                 # We just need the ref vector for these types
-                elif isinstance(
-                    transObj, tacs.elements.BeamRefAxisTransform
-                ) or isinstance(transObj, tacs.elements.SpringRefAxisTransform):
+                elif isinstance(transObj, tacs.elements.BeamRefAxisTransform) or isinstance(
+                    transObj, tacs.elements.SpringRefAxisTransform
+                ):
                     vec = transObj.getRefAxis()
                     vec = np.real(vec)
                 # Otherwise, there's no transform associated with this element, use default
@@ -2086,9 +2034,7 @@ class pyTACS(BaseUI):
                         newCard.g0 = None
                         if propCard.type != "PBEAM":
                             # TACS wrote out a PBAR card that we must convert
-                            newPropCard = (
-                                pn.cards.properties.beam.PBEAM_init_from_empty()
-                            )
+                            newPropCard = pn.cards.properties.beam.PBEAM_init_from_empty()
                             newPropCard.A[0] = propCard.Area()
                             newPropCard.i1[0] = propCard.I11()
                             newPropCard.i2[0] = propCard.I22()
@@ -2105,9 +2051,7 @@ class pyTACS(BaseUI):
                             J = propCard.J()
                         else:
                             J = propCard.j
-                        newPropCard = pn.cards.properties.rods.PROD(
-                            propCard.pid, propCard.mid, propCard.Area(), J
-                        )
+                        newPropCard = pn.cards.properties.rods.PROD(propCard.pid, propCard.mid, propCard.Area(), J)
                         newBDFInfo.properties[propID] = newPropCard
                         newPropCard.comment = propCard.comment
                         propCard = newPropCard
@@ -2126,9 +2070,7 @@ class pyTACS(BaseUI):
                 # We'll have to create a new CONM2 card in case the point mass is associated with tacs dvs
                 if massCard.type == "CONM2":
                     nodeID = massCard.nid
-                    elemObj = self.meshLoader.getElementObjectForElemID(
-                        elemID, nastranOrdering=True
-                    )
+                    elemObj = self.meshLoader.getElementObjectForElemID(elemID, nastranOrdering=True)
                     conObj = elemObj.getConstitutive()
                     M = conObj.evalMassMatrix()
                     mass = np.real(M[0])
@@ -2139,9 +2081,7 @@ class pyTACS(BaseUI):
                     I12 = -np.real(M[16])
                     I13 = -np.real(M[17])
                     I23 = -np.real(M[19])
-                    newBDFInfo.add_conm2(
-                        elemID, nodeID, mass, I=[I11, I12, I22, I13, I23, I33]
-                    )
+                    newBDFInfo.add_conm2(elemID, nodeID, mass, I=[I11, I12, I22, I13, I23, I33])
                 # CONM1's can't be updated by TACS, so we can just copy the original value
                 else:
                     newBDFInfo.masses[elemID] = copy.deepcopy(massCard)
@@ -2162,9 +2102,7 @@ class pyTACS(BaseUI):
                 "STRESS(PLOT,CORNER) = ALL",
                 "SPC = 1",
             ]
-            newBDFInfo.case_control_deck = pn.case_control_deck.CaseControlDeck(
-                caseConLines
-            )
+            newBDFInfo.case_control_deck = pn.case_control_deck.CaseControlDeck(caseConLines)
             # Set solution type to static (101)
             newBDFInfo.sol = 101
 
@@ -2196,9 +2134,7 @@ class pyTACS(BaseUI):
                     gravityScale,
                 )
 
-            newBDFInfo.write_bdf(
-                fileName, size=16, is_double=True, write_header=False, enddata=True
-            )
+            newBDFInfo.write_bdf(fileName, size=16, is_double=True, write_header=False, enddata=True)
 
         # All procs should wait for root
         self.comm.barrier()
