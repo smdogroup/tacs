@@ -933,6 +933,7 @@ cdef class ShellConstitutive(Constitutive):
         )
 
         # MAT2 entry for coupling stiffness (the B matrix)
+        # NASTRAN uses the opposite sign convention for the B matrix so we export the negative of the TACS B matrix
         matProps.append(MAT2MaterialProperties(
                 E1=-np.real(B[0] / t2),
                 G12=-np.real(B[1] / t2),
