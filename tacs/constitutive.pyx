@@ -934,12 +934,12 @@ cdef class ShellConstitutive(Constitutive):
 
         # MAT2 entry for coupling stiffness (the B matrix)
         matProps.append(MAT2MaterialProperties(
-                E1=np.real(B[0] / t2),
-                G12=np.real(B[1] / t2),
-                G13=np.real(B[2] / t2),
-                E2=np.real(B[3] / t2),
-                G23=np.real(B[4] / t2),
-                E3=np.real(B[5] / t2),
+                E1=-np.real(B[0] / t2),
+                G12=-np.real(B[1] / t2),
+                G13=-np.real(B[2] / t2),
+                E2=-np.real(B[3] / t2),
+                G23=-np.real(B[4] / t2),
+                E3=-np.real(B[5] / t2),
                 rho=np.real(rho)
             )
         )
