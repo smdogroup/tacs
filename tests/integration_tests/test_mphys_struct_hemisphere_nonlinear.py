@@ -37,7 +37,6 @@ from test_shell_hemisphere_nonlinear import (
     hemisphereProbRefFuncs,
 )
 
-
 # We need to rename the reference functions to match the names used in the TACS MPhys wrapper
 FUNC_REFS = {
     name.replace("_", "."): value for name, value in hemisphereProbRefFuncs.items()

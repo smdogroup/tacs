@@ -8,9 +8,7 @@ Create a cantilevered beam of linear quad shells under a tip shear load
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 """
 
-FUNC_REFS = np.array(
-    [8.47336988e+01, 2.57000000e+03, 1.70202700e+09, 2.99566737e+02]
-)
+FUNC_REFS = np.array([8.47336988e01, 2.57000000e03, 1.70202700e09, 2.99566737e02])
 
 # Length of plate in x/y direction
 Lx = 10.0

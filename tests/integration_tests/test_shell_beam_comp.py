@@ -9,7 +9,7 @@ unbalanced tip shear load on the right corner
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 """
 
-FUNC_REFS = np.array([5.81250000e+03, 6.39308626e+07, 1.22212460e+01, 2.33255295e+01])
+FUNC_REFS = np.array([5.81250000e03, 6.39308626e07, 1.22212460e01, 2.33255295e01])
 
 # Length of plate in x/y direction
 Lx = 10.0
