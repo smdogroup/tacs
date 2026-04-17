@@ -604,7 +604,9 @@ cdef class OrthotropicPly:
           ply_thickness (float or complex): The ply thickness.
           props (MaterialProperties): The ply material property.
           max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use Tsai-Wu).
+            Defaults to False (i.e. use modified Tsai-Wu).
+          tsai_wu_criterion (bool): Flag to determine if Tsai-Wu failure criterion is to be used.
+            Defaults to False (i.e. use modified Tsai-Wu).
           Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
             unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).
           Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
@@ -613,7 +615,8 @@ cdef class OrthotropicPly:
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
     def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  max_strain_criterion=False, Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
+                  max_strain_criterion=False, tsai_wu_criterion=False, 
+                  Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
         self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
         self.ptr.incref()
 
@@ -626,6 +629,8 @@ cdef class OrthotropicPly:
             self.ptr.setUseCuntzeCriterion_UD()
         elif Cuntze_criterion_Woven:
             self.ptr.setUseCuntzeCriterion_Woven()
+        elif tsai_wu_criterion:
+            self.ptr.setUseTsaiWuCriterion()
         else:
             self.ptr.setUseModifiedTsaiWuCriterion()
         self.props = props
@@ -659,6 +664,12 @@ cdef class OrthotropicPly:
         Set to use the modified Tsai-Wu failure criterion.
         """
         self.ptr.setUseModifiedTsaiWuCriterion()
+
+    def setUseTsaiWuCriterion(self):
+        """
+        Set to use the Tsai-Wu failure criterion.
+        """
+        self.ptr.setUseTsaiWuCriterion()
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
