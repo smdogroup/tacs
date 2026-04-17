@@ -56,7 +56,7 @@ void TACSShellConstitutive::extractTangentStiffness(
 /*
   Set the default drilling regularization value
 */
-double TACSShellConstitutive::DRILLING_REGULARIZATION = 10.0;
+double TACSShellConstitutive::DRILLING_REGULARIZATION = 0.1;
 
 /*
   Set the drilling stiffness regularization parameter
