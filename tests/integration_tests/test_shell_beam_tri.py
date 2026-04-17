@@ -9,7 +9,7 @@ and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 """
 
 FUNC_REFS = np.array(
-    [82.43693636249846, 2570.0, 1.6836449730480917e9, 298.3270790567411]
+    [8.24369361e+01, 2.57000000e+03, 1.68364495e+09, 2.98327078e+02]
 )
 
 # Length of plate in x/y direction

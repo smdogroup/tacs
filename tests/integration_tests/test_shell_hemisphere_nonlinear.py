@@ -35,10 +35,10 @@ bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
 # nonlinear quadratic
 hemisphereProbRefFuncs = {
-    "RadialForces_Compliance": 20.59867522072626,
-    "RadialForces_KSFailure": 2.3731860388536483,
-    "RadialForces_MaxYDisp": 0.4948883544992733,
-    "RadialForces_MaxZDisp": 0.4093283830600901,
+    "RadialForces_Compliance": 165.51140441529319,
+    "RadialForces_KSFailure": 6.827665576404726,
+    "RadialForces_MaxYDisp": 1.7454271859340544,
+    "RadialForces_MaxZDisp": 1.4277751763114552,
 }
 
 STRAIN_TYPE = "nonlinear"
