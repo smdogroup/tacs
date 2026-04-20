@@ -1269,6 +1269,18 @@ class pyTACS(BaseUI):
                 if sectionType == "BAR":
                     sectionProps["w"] = propInfo.dim[:, 0]
                     sectionProps["t"] = propInfo.dim[:, 1]
+                    elem0 = elemDict[propertyID]["elements"][0]
+                    # Get element axes and offset vectors
+                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
+                    # Take the average of the offset vectors at either end of bar
+                    offset_vector = (wa + wb) / 2.0
+                    # Project the offset vector onto the width and thickness axes
+                    sectionProps["wOffset"] = (
+                        -np.dot(khat, offset_vector) / sectionProps["w"]
+                    )
+                    sectionProps["tOffset"] = (
+                        -np.dot(jhat, offset_vector) / sectionProps["t"]
+                    )
                     conType = tacs.constitutive.IsoRectangleBeamConstitutive
                 elif propInfo.Type == "TUBE":
                     r1 = propInfo.dim[:, 0]
