@@ -77,6 +77,11 @@ void TACSMassInertialForce::addAdjResProduct(
   // DVs
   con->addInertiaDVSens(elemIndex, -scale, pt, Xpts, inertiaVec, psi, dvLen,
                         dfdx);
+
+  // We need to find out how many dvs are associated with the constitutive class
+  // and append any inertia dvs after those
+  int index = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
   // Add sensitivity w.r.t. inertia vector DVs.
   // res[i] -= f[i] where f = M * inertiaVec, so d(res)/d(inertiaVec[j]) =
   // -M[:,j]. The adjoint product is: -scale * psi^T * M[:,j] = -scale * (M *
@@ -85,7 +90,8 @@ void TACSMassInertialForce::addAdjResProduct(
   con->evalInertia(elemIndex, pt, Xpts, psi, g);
   for (int i = 0; i < 3; i++) {
     if (inertiaVecDVNums[i] >= 0 && inertiaVecDVNums[i] < dvLen) {
-      dfdx[inertiaVecDVNums[i]] += -scale * g[i];
+      dfdx[index] += -scale * g[i];
+      index++;
     }
   }
 }
