@@ -2606,12 +2606,19 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+        Lb (float or complex, optional): Beam length used to compute Euler column buckling critical load.
+            This should be the total geometric length of the beam from end to end. Defaults to 1.0.
+        LbNum (int, optional): Design variable number to assign to buckling length. Defaults to -1
+            (i.e. no design variable).
+        Kb (float or complex, optional): Effective buckling length factor: P_cr = pi^2*E*I/(Kb*Lb)^2.
+            Depends on end conditions: pinned-pinned (1.0), fixed-fixed (0.5), fixed-free (2.0).
+            If set to None buckling calculations will be skipped in failure check. Defaults to None.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
-            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
+            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub", "Lb", "LbNum", "Kb"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
@@ -2622,6 +2629,9 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar Lb = 1.0
+        cdef int LbNum = -1
+        cdef TacsScalar Kb = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2642,10 +2652,17 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'Lb' in kwargs:
+            Lb = kwargs['Lb']
+        if 'LbNum' in kwargs:
+            LbNum = kwargs['LbNum']
+        if 'Kb' in kwargs and kwargs['Kb'] is not None:
+            Kb = kwargs['Kb']
 
         if props is not NULL:
             self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
-                                                        dlb, dub, tlb, tub)
+                                                        dlb, dub, tlb, tub,
+                                                        Lb, LbNum, Kb)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

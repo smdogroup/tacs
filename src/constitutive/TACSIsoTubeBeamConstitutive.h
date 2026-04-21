@@ -28,7 +28,10 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
                               TacsScalar inner_init, TacsScalar wall_init,
                               int inner_dv, int wall_dv, TacsScalar inner_lb,
                               TacsScalar inner_ub, TacsScalar wall_lb,
-                              TacsScalar wall_ub);
+                              TacsScalar wall_ub,
+                              TacsScalar buckle_length = 1.0,
+                              int buckle_length_dv = -1,
+                              TacsScalar buckle_length_factor = 0.0);
   ~TACSIsoTubeBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -105,6 +108,10 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
   int innerDV, wallDV;
   TacsScalar innerLb, innerUb;
   TacsScalar wallLb, wallUb;
+  TacsScalar buckleLength, buckleLengthFactor;
+  int buckleLengthDV;
+  TacsScalar buckleLengthLb, buckleLengthUb;
+  TacsScalar ks_weight;
   // The object name
   static const char *constName;
 };

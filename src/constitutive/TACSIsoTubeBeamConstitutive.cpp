@@ -3,7 +3,9 @@
 TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
     TACSMaterialProperties *properties, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
-    TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub) {
+    TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
+    TacsScalar buckle_length, int buckle_length_dv,
+    TacsScalar buckle_length_factor) {
   props = properties;
   props->incref();
 
@@ -15,6 +17,12 @@ TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
   innerUb = inner_ub;
   wallLb = wall_lb;
   wallUb = wall_ub;
+  buckleLength = buckle_length;
+  buckleLengthDV = buckle_length_dv;
+  buckleLengthFactor = buckle_length_factor;
+  buckleLengthLb = 1e-20;
+  buckleLengthUb = 1e20;
+  ks_weight = 100.0;
 }
 
 TACSIsoTubeBeamConstitutive::~TACSIsoTubeBeamConstitutive() { props->decref(); }
@@ -34,6 +42,12 @@ int TACSIsoTubeBeamConstitutive::getDesignVarNums(int elemIndex, int dvLen,
     }
     index++;
   }
+  if (buckleLengthDV >= 0) {
+    if (dvNums && dvLen > index) {
+      dvNums[index] = buckleLengthDV;
+    }
+    index++;
+  }
   return index;
 }
 
@@ -48,6 +62,10 @@ int TACSIsoTubeBeamConstitutive::setDesignVars(int elemIndex, int dvLen,
     wall = dvs[index];
     index++;
   }
+  if (buckleLengthDV >= 0) {
+    buckleLength = dvs[index];
+    index++;
+  }
   return index;
 }
 
@@ -60,6 +78,10 @@ int TACSIsoTubeBeamConstitutive::getDesignVars(int elemIndex, int dvLen,
   }
   if (wallDV >= 0) {
     dvs[index] = wall;
+    index++;
+  }
+  if (buckleLengthDV >= 0) {
+    dvs[index] = buckleLength;
     index++;
   }
   return index;
@@ -77,6 +99,11 @@ int TACSIsoTubeBeamConstitutive::getDesignVarRange(int elemIndex, int dvLen,
   if (wallDV >= 0) {
     lb[index] = wallLb;
     ub[index] = wallUb;
+    index++;
+  }
+  if (buckleLengthDV >= 0) {
+    lb[index] = buckleLengthLb;
+    ub[index] = buckleLengthUb;
     index++;
   }
   return index;
@@ -250,92 +277,190 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailure(int elemIndex,
                                                     const double pt[],
                                                     const TacsScalar X[],
                                                     const TacsScalar e[]) {
-  // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
   TacsScalar e0[6], s0[6];
   TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar fail_checks[2];
+  TacsScalar max_fail = -1e20, ks_sum = 0.0;
+  int count = 1;
 
-  e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
+  // Von Mises failure at outer fibre
+  e0[0] = e[0] + r0 * e[2] + r0 * e[3];
   e0[1] = 0.0;
   e0[2] = 0.0;
   e0[3] = r0 * e[1];
   e0[4] = e[5];
   e0[5] = e[4];
-
-  // Compute the stress
   props->evalStress3D(e0, s0);
+  fail_checks[0] = props->vonMisesFailure3D(s0);
+  if (TacsRealPart(fail_checks[0]) > TacsRealPart(max_fail)) {
+    max_fail = fail_checks[0];
+  }
 
-  // Compute the von Mises stress
-  return props->vonMisesFailure3D(s0);
+  // Euler column buckling (pin-pin, E cancels in Nx/Pcr)
+  if (TacsRealPart(buckleLengthFactor) != 0.0) {
+    TacsScalar d0 = inner + wall;
+    TacsScalar d1 = inner;
+    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar Leff = buckleLengthFactor * buckleLength;
+    TacsScalar Nx = -A * e[0];
+    TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+    fail_checks[1] = Nx / Pcr;
+    if (TacsRealPart(fail_checks[1]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[1];
+    }
+    count = 2;
+  }
+
+  for (int i = 0; i < count; i++) {
+    ks_sum += exp(ks_weight * (fail_checks[i] - max_fail));
+  }
+  return max_fail + log(ks_sum) / ks_weight;
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[], TacsScalar sens[]) {
-  // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
-  TacsScalar e0[6], s0[6];
+  TacsScalar e0[6], s0[6], s0d[6], e0d[6];
   TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar fail_checks[2];
+  TacsScalar fail_checks_sens[2][6];
+  TacsScalar max_fail = -1e20, ks_sum = 0.0;
+  int count = 1;
 
-  e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
+  memset(sens, 0, 6 * sizeof(TacsScalar));
+  memset(fail_checks_sens, 0, 2 * 6 * sizeof(TacsScalar));
+
+  // Von Mises failure at outer fibre
+  e0[0] = e[0] + r0 * e[2] + r0 * e[3];
   e0[1] = 0.0;
   e0[2] = 0.0;
   e0[3] = r0 * e[1];
   e0[4] = e[5];
   e0[5] = e[4];
-
-  // Compute the stress
   props->evalStress3D(e0, s0);
-
-  // Compute the von Mises stress
-  TacsScalar s0d[6];
-  TacsScalar fail = props->vonMisesFailure3DStressSens(s0, s0d);
-
-  TacsScalar e0d[6];
+  fail_checks[0] = props->vonMisesFailure3DStressSens(s0, s0d);
   props->evalStress3D(s0d, e0d);
+  fail_checks_sens[0][0] = e0d[0];
+  fail_checks_sens[0][2] = r0 * e0d[0];
+  fail_checks_sens[0][3] = r0 * e0d[0];
+  fail_checks_sens[0][1] = r0 * e0d[3];
+  fail_checks_sens[0][5] = e0d[4];
+  fail_checks_sens[0][4] = e0d[5];
+  if (TacsRealPart(fail_checks[0]) > TacsRealPart(max_fail)) {
+    max_fail = fail_checks[0];
+  }
 
-  sens[0] = e0d[0];
-  sens[2] = r0 * e0d[0];
-  sens[3] = r0 * e0d[0];
-  sens[1] = r0 * e0d[3];
-  sens[5] = e0d[4];
-  sens[4] = e0d[5];
+  // Euler column buckling strain sensitivity: only e[0] (axial) contributes
+  if (TacsRealPart(buckleLengthFactor) != 0.0) {
+    TacsScalar d0 = inner + wall;
+    TacsScalar d1 = inner;
+    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar Leff = buckleLengthFactor * buckleLength;
+    TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+    TacsScalar Nx = -A * e[0];
+    fail_checks[1] = Nx / Pcr;
+    fail_checks_sens[1][0] = -A / Pcr;
+    // fail_checks_sens[1][1..5] = 0 (already zero)
+    if (TacsRealPart(fail_checks[1]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[1];
+    }
+    count = 2;
+  }
 
-  return fail;
+  for (int ii = 0; ii < count; ii++) {
+    TacsScalar val = exp(ks_weight * (fail_checks[ii] - max_fail));
+    ks_sum += val;
+    for (int kk = 0; kk < NUM_STRESSES; kk++) {
+      sens[kk] += val * fail_checks_sens[ii][kk];
+    }
+  }
+  for (int kk = 0; kk < NUM_STRESSES; kk++) {
+    sens[kk] /= ks_sum;
+  }
+
+  return max_fail + log(ks_sum) / ks_weight;
 }
 
 void TACSIsoTubeBeamConstitutive::addFailureDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], int dvLen, TacsScalar dfdx[]) {
-  // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
-  TacsScalar e0[6], s0[6];
-  TacsScalar r0 = 0.5 * inner + wall;
-
-  e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
-  e0[1] = 0.0;
-  e0[2] = 0.0;
-  e0[3] = r0 * e[1];
-  e0[4] = e[5];
-  e0[5] = e[4];
-
-  // Compute the stress
-  props->evalStress3D(e0, s0);
-
-  // Compute the von Mises stress
-  TacsScalar s0d[6];
-  props->vonMisesFailure3DStressSens(s0, s0d);
-
-  TacsScalar e0d[6];
-  props->evalStress3D(s0d, e0d);
-
+  int dvNums[3];
+  dvNums[0] = innerDV;
+  dvNums[1] = wallDV;
+  dvNums[2] = buckleLengthDV;
   int index = 0;
-  if (innerDV >= 0) {
-    TacsScalar dr0 = 0.5;
-    dfdx[index] += scale * (e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1]);
-    index++;
-  }
-  if (wallDV >= 0) {
-    TacsScalar dr0 = 1.0;
-    dfdx[index] += scale * (e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1]);
 
+  for (int dv_index = 0; dv_index < 3; dv_index++) {
+    int dvNum = dvNums[dv_index];
+    if (dvNum < 0) {
+      continue;
+    }
+
+    TacsScalar e0[6], s0[6], s0d[6], e0d[6];
+    TacsScalar fail_checks[2];
+    TacsScalar fail_checks_sens[2];
+    TacsScalar max_fail = -1e20, ks_sum = 0.0;
+    int count = 1;
+
+    TacsScalar dinner = (dvNum == innerDV) ? 1.0 : 0.0;
+    TacsScalar dwall = (dvNum == wallDV) ? 1.0 : 0.0;
+    TacsScalar r0 = 0.5 * inner + wall;
+    TacsScalar dr0 = 0.5 * dinner + dwall;
+
+    // Von Mises DV sensitivity
+    e0[0] = e[0] + r0 * e[2] + r0 * e[3];
+    e0[1] = 0.0;
+    e0[2] = 0.0;
+    e0[3] = r0 * e[1];
+    e0[4] = e[5];
+    e0[5] = e[4];
+    props->evalStress3D(e0, s0);
+    fail_checks[0] = props->vonMisesFailure3DStressSens(s0, s0d);
+    props->evalStress3D(s0d, e0d);
+    fail_checks_sens[0] =
+        e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1];
+    if (TacsRealPart(fail_checks[0]) > TacsRealPart(max_fail)) {
+      max_fail = fail_checks[0];
+    }
+
+    // Euler buckling DV sensitivity
+    if (TacsRealPart(buckleLengthFactor) != 0.0) {
+      TacsScalar d0 = inner + wall;
+      TacsScalar d1 = inner;
+      TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+      TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+      // dA/d(inner)=pi*wall/2, dA/d(wall)=pi*d0/2
+      TacsScalar dA = M_PI * (wall * dinner + d0 * dwall) / 2.0;
+      // dIa/d(inner)=pi*(d0^3-d1^3)/16, dIa/d(wall)=pi*d0^3/16
+      TacsScalar dIa =
+          M_PI / 16.0 * ((d0 * d0 * d0 - d1 * d1 * d1) * dinner +
+                         d0 * d0 * d0 * dwall);
+      TacsScalar dL = (dvNum == buckleLengthDV) ? 1.0 : 0.0;
+      TacsScalar Leff = buckleLengthFactor * buckleLength;
+      TacsScalar dLeff = buckleLengthFactor * dL;
+      TacsScalar Nx = -A * e[0];
+      TacsScalar dNx = -dA * e[0];
+      TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+      TacsScalar dPcr =
+          M_PI * M_PI *
+          (dIa / (Leff * Leff) - 2.0 * Ia * dLeff / (Leff * Leff * Leff));
+      fail_checks[1] = Nx / Pcr;
+      fail_checks_sens[1] = dNx / Pcr - Nx * dPcr / (Pcr * Pcr);
+      if (TacsRealPart(fail_checks[1]) > TacsRealPart(max_fail)) {
+        max_fail = fail_checks[1];
+      }
+      count = 2;
+    }
+
+    for (int i = 0; i < count; i++) {
+      ks_sum += exp(ks_weight * (fail_checks[i] - max_fail));
+    }
+    for (int i = 0; i < count; i++) {
+      dfdx[index] += scale * exp(ks_weight * (fail_checks[i] - max_fail)) *
+                     fail_checks_sens[i] / ks_sum;
+    }
     index++;
   }
 }
@@ -346,6 +471,8 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalDesignFieldValue(
     return inner;
   } else if (index == 1) {
     return wall;
+  } else if (index == 2) {
+    return buckleLength;
   }
   return 0.0;
 }
