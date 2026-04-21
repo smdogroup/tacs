@@ -2691,6 +2691,93 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
         return con
 
+cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko beam constitutive for a hollow circular composite tube.
+
+    Uses Classical Lamination Theory (CLT) to compute smeared effective axial
+    modulus E_eff and shear modulus G_eff from ply angles and orthotropic ply
+    properties.  All plies are assumed equal thickness.
+
+    DV convention (same as IsoTubeBeamConstitutive):
+      d  — inner diameter [m]
+      tw — diametric wall thickness = OD - ID [m]
+
+    Failure modes aggregated in KS (ks_weight = 100):
+      1. Fiber-direction compression at the outer fibre: -E11*eps1 / X_c
+      2. Fiber-direction tension at the outer fibre: +E11*eps1 / X_t
+         (skipped when X_t <= 0, default)
+      3. Euler column buckling (skipped when Kb is None or 0)
+
+    Args:
+        E11 (float): Ply longitudinal (fibre-direction) modulus [Pa].
+        E22 (float): Ply transverse modulus [Pa].
+        G12 (float): Ply in-plane shear modulus [Pa].
+        nu12 (float): Ply major Poisson ratio.
+        rho (float): Ply density [kg/m^3].
+        X_c (float): Fibre-direction compressive strength [Pa].
+        X_t (float, optional): Fibre-direction tensile strength [Pa].
+            Pass 0 (default) to skip the tensile failure check.
+        layup_angles (list of float): Ply angles in degrees. Length sets
+            the number of plies; all plies are assumed equal thickness.
+        d (float): Initial inner diameter [m].
+        tw (float): Initial diametric wall thickness (OD - ID) [m].
+        dNum (int, optional): DV index for inner diameter. Defaults to -1.
+        dlb (float, optional): Lower bound on d. Defaults to 0.
+        dub (float, optional): Upper bound on d. Defaults to 10.
+        twNum (int, optional): DV index for wall thickness. Defaults to -1.
+        twlb (float, optional): Lower bound on tw. Defaults to 0.
+        twub (float, optional): Upper bound on tw. Defaults to 10.
+        Lb (float, optional): Member length for Euler buckling [m]. Defaults to 1.0.
+        Kb (float or None, optional): Effective length factor for Euler buckling.
+            None or 0 disables the buckling check. Defaults to None.
+    """
+    def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, CompositeTubeBeamConstitutive, kwargs,
+            required_keys=["E11", "E22", "G12", "nu12", "rho", "X_c",
+                            "layup_angles", "d", "tw"],
+            valid_keys=["X_t", "dNum", "dlb", "dub",
+                        "twNum", "twlb", "twub", "Lb", "Kb"],
+        )
+        cdef TacsScalar E11 = kwargs['E11']
+        cdef TacsScalar E22 = kwargs['E22']
+        cdef TacsScalar G12 = kwargs['G12']
+        cdef TacsScalar nu12 = kwargs['nu12']
+        cdef TacsScalar rho = kwargs['rho']
+        cdef TacsScalar X_c = kwargs['X_c']
+        cdef TacsScalar X_t = kwargs.get('X_t', 0.0)
+        cdef TacsScalar d = kwargs['d']
+        cdef TacsScalar tw = kwargs['tw']
+        cdef int dNum = kwargs.get('dNum', -1)
+        cdef TacsScalar dlb = kwargs.get('dlb', 0.0)
+        cdef TacsScalar dub = kwargs.get('dub', 10.0)
+        cdef int twNum = kwargs.get('twNum', -1)
+        cdef TacsScalar twlb = kwargs.get('twlb', 0.0)
+        cdef TacsScalar twub = kwargs.get('twub', 10.0)
+        cdef TacsScalar Lb = kwargs.get('Lb', 1.0)
+        cdef TacsScalar Kb = 0.0
+        if 'Kb' in kwargs and kwargs['Kb'] is not None:
+            Kb = kwargs['Kb']
+
+        # Convert layup angles (degrees) to radians as a TacsScalar C array.
+        # Use real dtype for real TACS, complex dtype for complex TACS.
+        _tacs_dtype = np.double if TACS_NPY_SCALAR == np.NPY_DOUBLE else complex
+        cdef np.ndarray angles_arr = np.ascontiguousarray(
+            np.deg2rad(kwargs['layup_angles']), dtype=_tacs_dtype)
+        cdef int n_plies = len(angles_arr)
+        cdef TacsScalar *angles_ptr = <TacsScalar*>angles_arr.data
+
+        self.cptr = <TACSBeamConstitutive*>new TACSCompositeTubeBeamConstitutive(
+            E11, E22, G12, nu12, rho, X_c, X_t,
+            angles_ptr, n_plies,
+            d, tw,
+            dNum, twNum,
+            dlb, dub, twlb, twub,
+            Lb, Kb)
+        self.ptr = self.cptr
+        self.ptr.incref()
+
 cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
     """
     Timoshenko theory based constitutive object for a solid rectangular beam.

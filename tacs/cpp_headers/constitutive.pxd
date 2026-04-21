@@ -285,6 +285,17 @@ cdef extern from "TACSIsoTubeBeamConstitutive.h":
                                     int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
                                     TacsScalar, int, TacsScalar)
 
+cdef extern from "TACSCompositeTubeBeamConstitutive.h":
+    cdef cppclass TACSCompositeTubeBeamConstitutive(TACSBeamConstitutive):
+        TACSCompositeTubeBeamConstitutive(
+            TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+            TacsScalar, TacsScalar, TacsScalar,
+            const TacsScalar*, int,
+            TacsScalar, TacsScalar,
+            int, int,
+            TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+            TacsScalar, TacsScalar)
+
 cdef extern from "TACSIsoRectangleBeamConstitutive.h":
     cdef cppclass TACSIsoRectangleBeamConstitutive(TACSBeamConstitutive):
         TACSIsoRectangleBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar, TacsScalar,
