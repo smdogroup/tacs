@@ -57,10 +57,11 @@ TACSElement *TACSElement3D::createElementPressure(int faceIndex, TacsScalar p) {
 }
 
 TACSElement *TACSElement3D::createElementInertialForce(
-    const TacsScalar inertiaVec[]) {
+    const TacsScalar inertiaVec[], const int *inertiaVecDVNums) {
   int varsPerNode = getVarsPerNode();
   TACSConstitutive *con = model->getConstitutive();
-  return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec);
+  return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec,
+                                 inertiaVecDVNums);
 }
 
 TACSElement *TACSElement3D::createElementCentrifugalForce(

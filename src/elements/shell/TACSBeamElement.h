@@ -195,9 +195,10 @@ class TACSBeamElement : public TACSElement {
     return new TACSBeamTraction<vars_per_node, quadrature, basis>(t);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]) {
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
+                                          const int *inertiaVecDVNums = NULL) {
     return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(
-        transform, con, inertiaVec);
+        transform, con, inertiaVec, inertiaVecDVNums);
   }
 
   TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],

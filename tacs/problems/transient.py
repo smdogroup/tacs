@@ -712,7 +712,9 @@ class TransientProblem(TACSProblem):
             self.auxElems[timeIndex], elemIDs, pressures, faceIndex, nastranOrdering
         )
 
-    def addInertialLoad(self, timeStep, inertiaVector, timeStage=None):
+    def addInertialLoad(
+        self, timeStep, inertiaVector, timeStage=None, inertiaVecDVNums=None
+    ):
         """
         This method is used to add a fixed inertial load at a specified time step
         due to a uniform acceleration over the entire model.
@@ -731,6 +733,11 @@ class TransientProblem(TACSProblem):
             Time stage index to apply load to. Default is None, which is applicable only for
             multi-step methods like BDF. For multi-stage methods like DIRK, this index must
             be specified.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use -1
+            for components that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -742,7 +749,7 @@ class TransientProblem(TACSProblem):
             )
             timeIndex = timeStep * self.numStages + timeStage
 
-        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
+        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector, inertiaVecDVNums)
 
     def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter, timeStage=None):
         """

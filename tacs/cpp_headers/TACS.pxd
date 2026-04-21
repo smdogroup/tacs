@@ -281,7 +281,7 @@ cdef extern from "TACSElement.h":
         ElementType getElementType()
         TACSElement* createElementTraction(int, const TacsScalar*)
         TACSElement* createElementPressure(int, TacsScalar)
-        TACSElement* createElementInertialForce(const TacsScalar*)
+        TACSElement* createElementInertialForce(const TacsScalar*, const int*)
         TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool)
 
 cdef extern from "TACSFunction.h":
@@ -329,6 +329,7 @@ cdef extern from "TACSAssembler.h":
                               double *depNodeWeights)
         void setDesignNodeMap(int _designVarsPerNode,
                               TACSNodeMap *_designVarMap)
+        int getDesignVarsPerNode()
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)
         void addInitBCs(int nnodes, int *nodes,
@@ -564,6 +565,8 @@ cdef extern from "TACSCreator.h":
                                int *_dep_node_ptr,
                                int *_dep_node_conn,
                                double *_dep_node_weights )
+        void setDesignNodeMap(int _designVarsPerNode,
+                              TACSNodeMap *_designVarMap)
         void setElements(int _num_elems, TACSElement **_elements)
         void setNodes(TacsScalar *_Xpts)
         void setReorderingType(OrderingType _order_type,

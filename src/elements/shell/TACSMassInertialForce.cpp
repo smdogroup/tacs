@@ -15,11 +15,17 @@
 #include "TACSMassInertialForce.h"
 
 TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
-                                             const TacsScalar _inertiaVec[]) {
+                                             const TacsScalar _inertiaVec[],
+                                             const int *_inertiaVecDVNums) {
   con = _con;
   con->incref();
   memset(inertiaVec, 0, NUM_DISPS * sizeof(TacsScalar));
   memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  if (_inertiaVecDVNums) {
+    memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+  } else {
+    inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
+  }
 }
 
 TACSMassInertialForce::~TACSMassInertialForce() { con->decref(); }
@@ -67,7 +73,18 @@ void TACSMassInertialForce::addAdjResProduct(
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
   double pt[3] = {0.0, 0.0, 0.0};
-  // Add the product of the derivative of the inertial force
+  // Add the product of the derivative of the inertial force w.r.t. constitutive DVs
   con->addInertiaDVSens(elemIndex, -scale, pt, Xpts, inertiaVec, psi, dvLen,
                         dfdx);
+  // Add sensitivity w.r.t. inertia vector DVs.
+  // res[i] -= f[i] where f = M * inertiaVec, so d(res)/d(inertiaVec[j]) = -M[:,j].
+  // The adjoint product is: -scale * psi^T * M[:,j] = -scale * (M * psi)[j],
+  // which equals -scale * evalInertia(psi)[j] by symmetry of M.
+  TacsScalar g[NUM_DISPS];
+  con->evalInertia(elemIndex, pt, Xpts, psi, g);
+  for (int i = 0; i < 3; i++) {
+    if (inertiaVecDVNums[i] >= 0 && inertiaVecDVNums[i] < dvLen) {
+      dfdx[inertiaVecDVNums[i]] += -scale * g[i];
+    }
+  }
 }

@@ -275,6 +275,11 @@ class pyTACS(BaseUI):
             Upper bound. This may be None for unbounded
         scale : float
             Scale factor for variable
+
+        Returns
+        -------
+        int
+            The design variable number assigned to the global design variable.
         """
         self.globalDVs[descript] = {
             "num": self.dvNum,
@@ -285,6 +290,7 @@ class pyTACS(BaseUI):
         }
         self.dvNum += 1
         self.scaleList.append(scale)
+        return self.globalDVs[descript]["num"]
 
     def getGlobalDVs(self):
         """
@@ -575,10 +581,8 @@ class pyTACS(BaseUI):
             # First check that nGroup <= len(compIDs), print warning
             # and clip if not
             if nGroup > len(compIDs):
-                self._TACSWarning(
-                    f"nGroup={nGroup} is larger than the number of\
-                selected components={len(compIDs)}. nGroup will be clipped to {nGroup}"
-                )
+                self._TACSWarning(f"nGroup={nGroup} is larger than the number of\
+                selected components={len(compIDs)}. nGroup will be clipped to {nGroup}")
                 nGroup = len(compIDs)
 
             # Pluck out the component descriptions again and we will
@@ -807,7 +811,7 @@ class pyTACS(BaseUI):
         self._createElements(elemCallBack)
 
         self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs
+            self.varsPerNode, self.massDVs, self.dvNum
         )
         self._createOutputViewer()
 
@@ -818,16 +822,51 @@ class pyTACS(BaseUI):
         # Store initial design variable values
         self.x0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x0)
+        # Overwrite with any global DV initial values specified by the user
+        global_dv_nums = []
+        global_dv_vals = []
+        for dv_info in self.globalDVs.values():
+            if dv_info["value"] is not None:
+                global_dv_nums.append(dv_info["num"])
+                global_dv_vals.append(dv_info["value"])
+        self._setGlobalDVValues(self.x0, global_dv_nums, global_dv_vals)
 
         # Store design variable upper/lower-bounds
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+        # Overwrite with any global DV bounds specified by the user
+        global_dv_nums_ub = []
+        global_dv_vals_ub = []
+        global_dv_nums_lb = []
+        global_dv_vals_lb = []
+        for dv_info in self.globalDVs.values():
+            if dv_info["upperBound"] is not None:
+                global_dv_nums_ub.append(dv_info["num"])
+                global_dv_vals_ub.append(dv_info["upperBound"])
+            if dv_info["lowerBound"] is not None:
+                global_dv_nums_lb.append(dv_info["num"])
+                global_dv_vals_lb.append(dv_info["lowerBound"])
+        self._setGlobalDVValues(self.xub, global_dv_nums_ub, global_dv_vals_ub)
+        self._setGlobalDVValues(self.xlb, global_dv_nums_lb, global_dv_vals_lb)
 
         self._isNonlinear = self._checkNonlinearity()
 
         # Vector used to store temporarily store state variables
         self.tempVec = self.assembler.createVec()
+
+    def _setGlobalDVValues(self, vec, dv_nums, dv_vals):
+        """Insert global DV values into a distributed design vec."""
+        if not dv_nums:
+            return
+        vec.setValues(
+            np.array(dv_nums, dtype=np.intc),
+            np.array(dv_vals, dtype=self.dtype),
+            op=tacs.TACS.INSERT_VALUES,
+        )
+        vec.beginSetValues(op=tacs.TACS.INSERT_VALUES)
+        vec.endSetValues(op=tacs.TACS.INSERT_VALUES)
+        vec.distributeValues()
 
     @postinitialize_method
     def _checkNonlinearity(self) -> bool:
@@ -2450,10 +2489,8 @@ class pyTACS(BaseUI):
                 if item >= 0 and item < self.nComp:
                     compIDs[-1].append(item)
                 else:
-                    self._TACSWarning(
-                        f"Trying to add component ID of {item}, which\
-                    is out of the range 0 <= compID < {self.nComp}"
-                    )
+                    self._TACSWarning(f"Trying to add component ID of {item}, which\
+                    is out of the range 0 <= compID < {self.nComp}")
 
             elif isinstance(item, str):
                 # This is a little inefficient here; loop over
@@ -2464,11 +2501,9 @@ class pyTACS(BaseUI):
                     if item in self.compDescripts[i].upper():
                         compIDs[-1].append(i)
             else:
-                self._TACSWarning(
-                    f"Unidentifiable information given for 'include'\
+                self._TACSWarning(f"Unidentifiable information given for 'include'\
                 or 'exclude'. Valid data are integers 0 <= i < {self.nComp}, or \
-                strings."
-                )
+                strings.")
 
         if op == "and":
             # First convert each entry to a set:
@@ -2541,17 +2576,14 @@ class pyTACS(BaseUI):
                 else:
                     print(result[1])
                     # Don't know what it is:
-                    self._TACSWarning(
-                        "Could not identify objects returned \
+                    self._TACSWarning("Could not identify objects returned \
                     from elemCallBack. Valid return objects are: \
                     A list of TACS element objects (required, first), \
                     an iterable object \
                     (eg, list or array) containing the scaling parameters \
                     for the added design variables (optional, second). The \
                     string representation of the offending object is: \
-                    '%s'"
-                        % repr(result[1])
-                    )
+                    '%s'" % repr(result[1]))
 
             else:
                 elemObjects = result

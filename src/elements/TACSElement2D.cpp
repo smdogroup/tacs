@@ -64,10 +64,11 @@ TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p) {
 }
 
 TACSElement *TACSElement2D::createElementInertialForce(
-    const TacsScalar inertiaVec[]) {
+    const TacsScalar inertiaVec[], const int *inertiaVecDVNums) {
   int varsPerNode = getVarsPerNode();
   TACSConstitutive *con = model->getConstitutive();
-  return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec);
+  return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec,
+                                 inertiaVecDVNums);
 }
 
 int TACSElement2D::getNumQuadraturePoints() {

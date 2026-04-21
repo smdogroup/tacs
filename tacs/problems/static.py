@@ -763,7 +763,7 @@ class StaticProblem(TACSProblem):
             self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
         )
 
-    def addInertialLoad(self, inertiaVector):
+    def addInertialLoad(self, inertiaVector, inertiaVecDVNums=None):
         """
         This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
@@ -773,8 +773,13 @@ class StaticProblem(TACSProblem):
         ----------
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use -1
+            for components that should not be treated as design variables.
         """
-        self._addInertialLoad(self.auxElems, inertiaVector)
+        self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
 
     def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
         """

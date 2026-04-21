@@ -79,6 +79,10 @@ class TACSCreator : public TACSObject {
   // ------------------
   void partitionMesh(int split_size = 0, const int *part = NULL);
 
+  // Set the design variable map
+  // ---------------------------
+  void setDesignNodeMap(int _designVarsPerNode, TACSNodeMap *_designVarMap);
+
   // Set the elements into TACS creator
   // ----------------------------------
   void setElements(int _num_elems, TACSElement **_elements);
@@ -142,6 +146,10 @@ class TACSCreator : public TACSObject {
 
   // The node locations
   TacsScalar *Xpts;
+
+  // Design variable map
+  int designVarsPerNode;
+  TACSNodeMap *designVarMap;
 
   // Elements and the corresponding element id numbers
   int num_elem_ids;

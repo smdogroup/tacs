@@ -972,6 +972,7 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
     auxElements->decref();
   }
   auxElements = auxElems;
+  bool maxDVsUpdated = false;
 
   // Check whether the auxiliary elements match
   if (auxElements) {
@@ -987,6 +988,23 @@ void TACSAssembler::setAuxElements(TACSAuxElements *auxElems) {
                  aux[k].elem->getNumVariables()) {
         fprintf(stderr, "[%d] Auxiliary element sizes do not match\n", mpiRank);
       }
+
+      // Update the maximum number of element design variables
+      int numDVs = aux[k].elem->getDesignVarNums(aux[k].num, 0, NULL);
+      if (numDVs > maxElementDesignVars) {
+        maxElementDesignVars = numDVs;
+        maxDVsUpdated = true;
+      }
+    }
+
+    // If the buffers have already been allocated and the new max exceeds their
+    // current size, reallocate them so downstream code doesn't overflow.
+    if (maxDVsUpdated && elementSensData && elementSensIData) {
+      delete[] elementSensData;
+      delete[] elementSensIData;
+      elementSensData =
+          new TacsScalar[designVarsPerNode * maxElementDesignVars];
+      elementSensIData = new int[maxElementDesignVars];
     }
   }
 }

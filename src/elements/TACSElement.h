@@ -223,7 +223,8 @@ class TACSElement : public TACSObject {
     @return The TACSElement inertial force class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement *createElementInertialForce(const TacsScalar g[]) {
+  virtual TACSElement *createElementInertialForce(
+      const TacsScalar g[], const int *inertiaVecDVNums = NULL) {
     return NULL;
   }
 

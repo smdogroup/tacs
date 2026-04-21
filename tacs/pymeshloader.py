@@ -7,6 +7,7 @@ c-layer of TACS. This module uses the pyNastran library for its bdf parsing
 functionality.
 
 """
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -850,7 +851,7 @@ class pyMeshLoader(BaseUI):
         elemObj = self.elemObjects[elemObjNum]
         return elemObj
 
-    def createTACSAssembler(self, varsPerNode, massDVs):
+    def createTACSAssembler(self, varsPerNode, massDVs, numDVs):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
 
@@ -861,6 +862,9 @@ class pyMeshLoader(BaseUI):
 
         massDVs : dict
             Dictionary holding dv info for point masses.
+
+        numDVs : int
+            Total number of design variables for the model.
         """
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
@@ -976,6 +980,13 @@ class pyMeshLoader(BaseUI):
 
         # Set the elements for each component
         self.creator.setElements(self.elemObjects)
+
+        # Specify design variable distribution across procs
+        # Root always gets all DVs, the rest get none
+        ownedNumDVs = numDVs if self.comm.rank == 0 else 0
+        designVarsPerNode = 1
+        nodeMap = tacs.TACS.NodeMap(self.comm, ownedNumDVs)
+        self.creator.setDesignNodeMap(designVarsPerNode, nodeMap)
 
         self.assembler = self.creator.createTACS()
 

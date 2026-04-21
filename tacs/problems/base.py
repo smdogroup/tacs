@@ -656,7 +656,7 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
-    def _addInertialLoad(self, auxElems, inertiaVector):
+    def _addInertialLoad(self, auxElems, inertiaVector, inertiaVecDVNums=None):
         """
         This is an internal helper function for doing the addInertialLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -672,15 +672,24 @@ class TACSProblem(TACSSystem):
 
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use -1
+            for components that should not be treated as design variables.
         """
         # Make sure vector is right type
         inertiaVector = np.atleast_1d(inertiaVector).astype(self.dtype)
+        if inertiaVecDVNums is not None:
+            inertiaVecDVNums = np.atleast_1d(inertiaVecDVNums).astype(np.intc)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply inertial load
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate inertial force object for this element type
-            inertiaObj = elemObj.createElementInertialForce(inertiaVector)
+            inertiaObj = elemObj.createElementInertialForce(
+                inertiaVector, inertiaVecDVNums
+            )
             # Inertial force is implemented for element
             if inertiaObj is not None:
                 # Add new inertial force to auxiliary element object

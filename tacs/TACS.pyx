@@ -361,10 +361,19 @@ cdef class Element:
                 return _init_Element(pressElem)
         return None
 
-    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec):
+    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec,
+                                   np.ndarray[int, ndim=1, mode='c'] inertiaVecDVNums=None):
         cdef TACSElement *inertiaElem = NULL
+        cdef int *dvNums = NULL
+        if inertiaVecDVNums is not None:
+            if len(inertiaVecDVNums) != len(inertiaVec):
+                raise ValueError(
+                    f"inertiaVecDVNums length ({len(inertiaVecDVNums)}) must match "
+                    f"inertiaVec length ({len(inertiaVec)})"
+                )
+            dvNums = <int*>inertiaVecDVNums.data
         if self.ptr:
-            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data)
+            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data, dvNums)
             if inertiaElem != NULL:
                 return _init_Element(inertiaElem)
         return None
@@ -1878,6 +1887,34 @@ cdef class Assembler:
         self.ptr.setDesignVars(x.getBVecPtr())
         return
 
+    def setDesignNodeMap(self, int designVarsPerNode, NodeMap nmap=None):
+        """
+        Set the design variable mapping.
+
+        Must be called before initialize(). Indicates the number of
+        design variables per node and optionally the NodeMap describing
+        ownership of design variable nodes across processes.
+
+        Args:
+            designVarsPerNode: Number of design variables per design node.
+            nmap: TACSNodeMap describing the design variable distribution
+                  (optional, defaults to None).
+        """
+        cdef TACSNodeMap *nmap_ptr = NULL
+        if nmap is not None:
+            nmap_ptr = nmap.ptr
+        self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
+        return
+
+    def getDesignVarsPerNode(self):
+        """
+        Get the number of design variables per design node.
+
+        Returns:
+            int: Number of design variables at each design node.
+        """
+        return self.ptr.getDesignVarsPerNode()
+
     def getDesignVarRange(self, Vec lb, Vec ub):
         """
         Retrieve the design variable range.
@@ -2964,6 +3001,23 @@ cdef class Creator:
     def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
                           np.ndarray[int, ndim=1, mode='c'] dep_conn,
                           np.ndarray[double, ndim=1, mode='c'] dep_weights):
+        return
+
+    def setDesignNodeMap(self, int designVarsPerNode, NodeMap nmap=None):
+        """
+        Set the design variable map for the assembler.
+
+        Must be called before createTACS().
+
+        Args:
+            designVarsPerNode: Number of design variables per design node.
+            nmap: NodeMap describing the design variable distribution
+                  (optional, defaults to None).
+        """
+        cdef TACSNodeMap *nmap_ptr = NULL
+        if nmap is not None:
+            nmap_ptr = nmap.ptr
+        self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
         return
 
     def setElements(self, elements):
