@@ -826,9 +826,9 @@ class StaticProblem(TACSProblem):
         the input variables associated with this problem
         """
 
+        self.assembler.setAuxElements(self.auxElems)
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
-        self.assembler.setAuxElements(self.auxElems)
         # Set state variables
         self.assembler.setVariables(self.u)
         # Zero any time derivative terms

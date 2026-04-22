@@ -300,9 +300,14 @@ cdef extern from "TACSConstitutive.h":
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
 
 cdef extern from "TACSAuxElements.h":
+    cdef cppclass TACSAuxElem:
+        TACSElement *elem
+        int num
+
     cdef cppclass TACSAuxElements(TACSObject):
         TACSAuxElements(int)
         void addElement(int, TACSElement*)
+        int getAuxElements(TACSAuxElem **elems)
 
 cdef extern from "TACSAssembler.h":
     enum OrderingType"TACSAssembler::OrderingType":

@@ -933,6 +933,24 @@ cdef class AuxElements:
         self.ptr.addElement(num, elem.ptr)
         return
 
+    def getAuxElements(self):
+        """Return a list of Element objects for all auxiliary elements."""
+        cdef TACSAuxElem *aux_elems = NULL
+        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
+        elems = []
+        for i in range(num_elems):
+            elems.append(_init_Element(aux_elems[i].elem))
+        return elems
+
+    def getAuxElementNums(self):
+        """Return a list of component numbers corresponding to each auxiliary element."""
+        cdef TACSAuxElem *aux_elems = NULL
+        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
+        nums = []
+        for i in range(num_elems):
+            nums.append(aux_elems[i].num)
+        return nums
+
 cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
     cdef int bsize = 0
     cdef int nrows = 0

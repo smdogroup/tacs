@@ -862,6 +862,15 @@ class TransientProblem(TACSProblem):
         c2 = self.getOption("RBEArtificialStiffness")
         tacs.elements.RBE2.setScalingParameters(c1, c2)
         tacs.elements.RBE3.setScalingParameters(c1, c2)
+        # Update design variables on all auxiliary elements
+        for auxElemObj in self.auxElems:
+            elems = auxElemObj.getAuxElements()
+            nums = auxElemObj.getAuxElementNums()
+            for elem, compNum in zip(elems, nums):
+                dvNums = elem.getDesignVarNums(compNum)
+                if len(dvNums) > 0:
+                    dvVals = self.x.getValues(dvNums)
+                    elem.setDesignVars(compNum, dvVals)
 
     def solve(self):
         """
