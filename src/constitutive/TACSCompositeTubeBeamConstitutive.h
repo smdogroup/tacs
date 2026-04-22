@@ -69,7 +69,10 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
       TacsScalar inner_lb, TacsScalar inner_ub,
       TacsScalar wall_lb, TacsScalar wall_ub,
       TacsScalar buckle_length = 1.0,
-      TacsScalar buckle_length_factor = 0.0);
+      TacsScalar buckle_length_factor = 0.0,
+      int x_dv = -1,
+      TacsScalar p_penalty = 3.0,
+      TacsScalar eps_m = 1e-9);
   ~TACSCompositeTubeBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -162,6 +165,10 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar buckleLength, buckleLengthFactor;
 
   TacsScalar ks_weight;
+
+  // SIMP topology variables
+  int xDV;
+  TacsScalar x_val, p_penalty, eps_m;
 
   static const char *constName;
 };
