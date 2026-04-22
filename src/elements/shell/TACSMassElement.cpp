@@ -133,6 +133,17 @@ void TACSMassElement::addAdjResProduct(
   con->addInertiaDVSens(elemIndex, scale, pt, Xpts, ddvars, psi, dvLen, dfdx);
 }
 
+void TACSMassElement::addMatDVSensInnerProduct(
+    ElementMatrixType matType, int elemIndex, double time, TacsScalar scale,
+    const TacsScalar psi[], const TacsScalar phi[], const TacsScalar Xpts[],
+    const TacsScalar vars[], int dvLen, TacsScalar dfdx[]) {
+  if (matType == TACS_MASS_MATRIX) {
+    double pt[3] = {0.0, 0.0, 0.0};
+    con->addMassMatrixDVSensInnerProduct(elemIndex, scale, pt, Xpts, psi, phi,
+                                        dvLen, dfdx);
+  }
+}
+
 int TACSMassElement::evalPointQuantity(
     int elemIndex, int quantityType, double time, int n, double pt[],
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
