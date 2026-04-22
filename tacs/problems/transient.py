@@ -736,7 +736,7 @@ class TransientProblem(TACSProblem):
 
         inertiaVecDVNums : numpy.ndarray or None
             Optional array of global design variable numbers (length must match
-            inertiaVector) controlling each entry of the inertia vector. Use -1
+            inertiaVector) controlling each entry of the inertia vector. Use negative values
             for components that should not be treated as design variables.
         """
         timeIndex = 0

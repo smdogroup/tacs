@@ -656,6 +656,33 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
+    def _checkDVNums(self, dvNums):
+        """
+        Check that all design variable numbers passed to auxiliary elements do not
+        exceed the number of design variables added during initialization of the assembler.
+        Raises a TACSError if any DV number exceeds number of registered design variables.
+
+        Parameters
+        ----------
+        dvNums : numpy.ndarray
+            Array of global design variable numbers to validate. Negative entries are ignored.
+        """
+        if dvNums is not None:
+            dvNums = np.atleast_1d(dvNums).astype(np.intc)
+            active = dvNums[dvNums >= 0]
+            if active.size == 0:
+                return
+            total_dvs = self.comm.allreduce(self.getNumDesignVars(), op=MPI.SUM)
+            bad = active[active >= total_dvs]
+            if bad.size > 0:
+                raise self._TACSError(
+                    "Design variable numbers {} exceed the maximum valid DV number ({}) "
+                    "setup during initialization of pyTACS assembler (total DVs = {}).".format(
+                        bad.tolist(), total_dvs - 1, total_dvs
+                    )
+                )
+        return dvNums
+
     def _addInertialLoad(self, auxElems, inertiaVector, inertiaVecDVNums=None):
         """
         This is an internal helper function for doing the addInertialLoad method for
@@ -675,13 +702,13 @@ class TACSProblem(TACSSystem):
 
         inertiaVecDVNums : numpy.ndarray or None
             Optional array of global design variable numbers (length must match
-            inertiaVector) controlling each entry of the inertia vector. Use -1
+            inertiaVector) controlling each entry of the inertia vector. Use negative values
             for components that should not be treated as design variables.
         """
         # Make sure vector is right type
         inertiaVector = np.atleast_1d(inertiaVector).astype(self.dtype)
-        if inertiaVecDVNums is not None:
-            inertiaVecDVNums = np.atleast_1d(inertiaVecDVNums).astype(np.intc)
+        # Make sure design variable numbers are valid
+        inertiaVecDVNums = self._checkDVNums(inertiaVecDVNums)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply inertial load
