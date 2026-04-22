@@ -136,10 +136,13 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   const TacsScalar kG22 = ky * G * A;
   const TacsScalar kG33 = kz * G * A;
   const TacsScalar kG23 = 0.0;
+  // NSM sits at (xm2, xm3) — same location as structural CoM.
+  // Full parallel-axis contributions are baked into rho[] here so that
+  // evalMassMoments can return rho[] directly without runtime NSM logic.
   const TacsScalar m00 = density * A + nsm;
-  const TacsScalar m11 = density * Iz;
-  const TacsScalar m22 = density * Iy;
-  const TacsScalar m33 = -density * Iyz;
+  const TacsScalar m11 = density * Iz + nsm * xm2 * xm2;
+  const TacsScalar m22 = density * Iy + nsm * xm3 * xm3;
+  const TacsScalar m33 = -density * Iyz + nsm * xm2 * xm3;
 
   populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m11, m22, m33,
                xm2, xm3, xc2, xc3, xk2, xk3, muS);

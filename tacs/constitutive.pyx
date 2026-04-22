@@ -2490,6 +2490,30 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         """
         self.lam_cptr.setNumFailAngles(numFailAngles)
 
+cdef class BeamConstitutive(Constitutive):
+    def evalDensity(self, int elemIndex,
+                    np.ndarray[double, ndim=1, mode='c'] pt,
+                    np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """Evaluate the mass per unit length at the given point, including nonstructural mass."""
+        return self.cptr.evalDensity(elemIndex, <double*>pt.data, <TacsScalar*>x.data)
+
+    def evalMassMoments(self, int elemIndex,
+                        np.ndarray[double, ndim=1, mode='c'] pt,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """
+        Evaluate the six cross-sectional mass moments at the given point.
+
+        Returns
+        -------
+        np.ndarray of shape (6,)
+            moments = [rho*A, cz1, cz2, Iz1z1, Iz2z2, Iz1z2], including
+            any nonstructural mass with full parallel-axis contributions.
+        """
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] moments = np.zeros(6, dtype=dtype)
+        self.cptr.evalMassMoments(elemIndex, <double*>pt.data, <TacsScalar*>x.data,
+                                  <TacsScalar*>moments.data)
+        return moments
+
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
     Timoshenko theory based constitutive object for an general beam.
@@ -2638,12 +2662,14 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+        nsm (float or complex, optional): Nonstructural mass per unit length added to the first mass moment.
+            Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
-            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
+            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub", "nsm"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
@@ -2654,6 +2680,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar nsm = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2674,10 +2701,12 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
 
         if props is not NULL:
             self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
-                                                        dlb, dub, tlb, tub)
+                                                        dlb, dub, tlb, tub, nsm)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -2739,12 +2768,14 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         Kb (float or complex, optional): Effective buckling length factor used to compute the critical axial buckling load in the following equation: pi^2*E*I/(Kb * Lb)^2.
             The value depends on the boundary conditions of the beams attached end: pinned-pinned (1.0), fixed-fixed (0.5), fixed-free (2.0).
             If set to None buckling calculations will be skipped in failure check. Defaults to None.
+        nsm (float or complex, optional): Nonstructural mass per unit length added to the first mass moment.
+            Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoRectangleBeamConstitutive, kwargs,
             required_keys=["w", "t"],
-            valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb"],
+            valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb", "nsm"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar w = 1.0
@@ -2760,6 +2791,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         cdef TacsScalar Kb = 0.0
         cdef TacsScalar wOffset = 0.0
         cdef TacsScalar tOffset = 0.0
+        cdef TacsScalar nsm = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2790,10 +2822,12 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             tOffset = kwargs['tOffset']
         if 'Kb' in kwargs and kwargs['Kb'] is not None:
             Kb = kwargs['Kb']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
 
         if props is not NULL:
             self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, Lb, wNum, tNum, LbNum,
-                                                             wlb, wub, tlb, tub, wOffset, tOffset, Kb)
+                                                             wlb, wub, tlb, tub, wOffset, tOffset, Kb, nsm)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

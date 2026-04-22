@@ -75,6 +75,7 @@ def addBeamPropertyCard(
     depth1: float,
     width2: float,
     depth2: float,
+    nsm: float = 0.0,
 ) -> None:
     """Create the property card for a tapered beam element
 
@@ -96,6 +97,8 @@ def addBeamPropertyCard(
         Rectangular section width at end 2
     depth2 : float
         Rectangular section depth at end 2
+    nsm : float
+        Nonstructural mass per unit length (constant along element). Defaults to 0.0.
     """
     stations = [0.0, 1.0]  # Stations along the beam element length
     if propType.upper() == "PBEAML":
@@ -110,6 +113,7 @@ def addBeamPropertyCard(
             beam_type=beamType,
             xxb=stations,
             dims=[dimsA, dimsB],
+            nsm=[nsm, nsm],
         )
 
     elif propType.upper() == "PBEAM":
@@ -135,10 +139,13 @@ def addBeamPropertyCard(
             i12=[0.0] * len(areas),
             j=js,
             xxb=stations,
+            nsm=[nsm, nsm],
         )
 
 
-def generateTaperedBeamBdf(numElements: int, propType: str, output: str) -> None:
+def generateTaperedBeamBdf(
+    numElements: int, propType: str, output: str, nsm: float = 0.0
+) -> None:
     """
     Generates the NASTRAN BDF file for the tapered beam analysis.
 
@@ -146,6 +153,7 @@ def generateTaperedBeamBdf(numElements: int, propType: str, output: str) -> None
         numElements (int): The number of CBEAM elements to create.
         propType (str): The property card type to use ('PBEAM' or 'PBEAML').
         output (str): The path to write the output BDF file.
+        nsm (float): Nonstructural mass per unit length applied uniformly to all elements. Defaults to 0.0.
     """
     if numElements <= 0:
         raise ValueError("Number of elements must be a positive integer.")
@@ -216,6 +224,7 @@ def generateTaperedBeamBdf(numElements: int, propType: str, output: str) -> None
             depth1=depths[i],
             width2=widths[i + 1],
             depth2=depths[i + 1],
+            nsm=nsm,
         )
 
         # Create element card
@@ -296,7 +305,16 @@ if __name__ == "__main__":
         default="tapered_beam.bdf",
         help="Path for the output BDF file.",
     )
+    parser.add_argument(
+        "--nsm",
+        type=float,
+        default=1e1,
+        help="Nonstructural mass per unit length (kg/m) applied uniformly to all elements.",
+    )
     args = parser.parse_args()
     generateTaperedBeamBdf(
-        numElements=args.num_elements, propType=args.prop_type, output=args.output
+        numElements=args.num_elements,
+        propType=args.prop_type,
+        output=args.output,
+        nsm=args.nsm,
     )

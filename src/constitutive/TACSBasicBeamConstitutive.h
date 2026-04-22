@@ -46,17 +46,7 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
 
   ~TACSBasicBeamConstitutive();
 
-  /**
-    Get the cross-sectional mass per unit area and the second moments
-    of mass for the cross section
-
-    moments = [ rho * A, Iz1z1, Iz2z2, Iz1z2 ]
-
-    @param elemIndex The local element index
-    @param pt The parametric location
-    @param X The point location
-    @return The moments of the mass
-  */
+  // NSM is fully baked into rho[0..5] at construction (material-props ctor).
   void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
                        TacsScalar moments[]) {
     moments[0] = rho[0];
@@ -82,9 +72,6 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                                     const TacsScalar scale[], int dvLen,
                                     TacsScalar dfdx[]) {}
 
-  /**
-    Evaluate the mass per unit length of the beam
-  */
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]) {
     return rho[0];

@@ -1148,6 +1148,7 @@ class pyTACS(BaseUI):
                 J = propInfo.j
                 k1 = propInfo.k1
                 k2 = propInfo.k2
+                nsm = propInfo.nsm
 
                 # pynastran defaults these values to 1e8,
                 # which can lead to scaling issues in the stiffness matrix
@@ -1159,10 +1160,11 @@ class pyTACS(BaseUI):
                     k2 = 1e3
 
                 con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
+                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2, nsm=nsm
                 )
 
             elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
+                nsm = propInfo.nsm
                 if propInfo.Type == "BAR":
                     w = propInfo.dim[0]
                     t = propInfo.dim[1]
@@ -1175,7 +1177,7 @@ class pyTACS(BaseUI):
                     wOffset = -np.dot(khat, offset_vector) / w
                     tOffset = -np.dot(jhat, offset_vector) / t
                     con = tacs.constitutive.IsoRectangleBeamConstitutive(
-                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset
+                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
                     )
 
                 elif propInfo.Type == "TUBE":
@@ -1184,7 +1186,7 @@ class pyTACS(BaseUI):
                     d_inner = 2 * r0
                     t_wall = r1 - r0
                     con = tacs.constitutive.IsoTubeBeamConstitutive(
-                        mat, d=d_inner, t=t_wall
+                        mat, d=d_inner, t=t_wall, nsm=nsm
                     )
 
                 else:
@@ -1196,7 +1198,7 @@ class pyTACS(BaseUI):
                     )
                     J = propInfo.J()
                     con = tacs.constitutive.BasicBeamConstitutive(
-                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
+                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12, nsm=nsm
                     )
 
             elif propInfo.type == "PBEAM":
@@ -1269,6 +1271,7 @@ class pyTACS(BaseUI):
                 if sectionType == "BAR":
                     sectionProps["w"] = propInfo.dim[:, 0]
                     sectionProps["t"] = propInfo.dim[:, 1]
+                    sectionProps["nsm"] = propInfo.nsm
                     elem0 = elemDict[propertyID]["elements"][0]
                     # Get element axes and offset vectors
                     _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
@@ -1287,6 +1290,7 @@ class pyTACS(BaseUI):
                     r0 = propInfo.dim[:, 1]
                     sectionProps["d"] = 2 * r0
                     sectionProps["t"] = r1 - r0
+                    sectionProps["nsm"] = propInfo.nsm
                     conType = tacs.constitutive.IsoTubeBeamConstitutive
                 else:
                     # Section shape that doesn't have a corresponding TACS
@@ -1297,6 +1301,7 @@ class pyTACS(BaseUI):
                     sectionProps["Iz"] = propInfo.I1()
                     sectionProps["Iy"] = propInfo.I2()
                     sectionProps["Iyz"] = -propInfo.I12()
+                    sectionProps["nsm"] = propInfo.nsm
                     conType = tacs.constitutive.BasicBeamConstitutive
 
                 # Whatever properties we're going to pass to the TACS

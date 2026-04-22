@@ -24,7 +24,7 @@ from tacs import pyTACS
 
 parser = argparse.ArgumentParser(description="Tapered Beam Analysis")
 parser.add_argument(
-    "-i", "--input", type=str, default="tapered_beam_pbeam.bdf", help="Input BDF file"
+    "-i", "--input", type=str, default="tapered_beam_pbeaml.bdf", help="Input BDF file"
 )
 args = parser.parse_args()
 baseName = args.input.split(".bdf")[0]
