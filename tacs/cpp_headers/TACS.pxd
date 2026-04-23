@@ -335,6 +335,7 @@ cdef extern from "TACSAssembler.h":
         void setDesignNodeMap(int _designVarsPerNode,
                               TACSNodeMap *_designVarMap)
         void setGlobalDVIndices(int n, const int *dvNums)
+        int getGlobalDVIndices(const int **dvNums)
         int getDesignVarsPerNode()
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)

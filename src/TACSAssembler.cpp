@@ -3127,6 +3127,22 @@ void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
 }
 
 /**
+  Retrieve the global DV indices previously registered via setGlobalDVIndices().
+
+  Sets *dvNums to point to the internal array (do not free or modify).
+
+  @param dvNums Output pointer to the internal array of global DV indices
+  @return The number of global DV indices (same as n passed to
+  setGlobalDVIndices)
+*/
+int TACSAssembler::getGlobalDVIndices(const int **dvNums) {
+  if (dvNums) {
+    *dvNums = globalDVNums;
+  }
+  return numGlobalDVs;
+}
+
+/**
   Set the dependent design variable information
 
   @param numDepDesignVars The number of dependent design variables

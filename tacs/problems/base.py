@@ -53,6 +53,10 @@ class TACSProblem(TACSSystem):
         # Set attributes and options
         TACSSystem.__init__(self, assembler, comm, options, outputViewer, meshLoader)
 
+        # Save global DV indices registered with the assembler so that
+        # _checkDVNums can verify auxiliary-element DVs against this list.
+        self.globalDVNums = set(assembler.getGlobalDVIndices().tolist())
+
         # List of functions
         self.functionList = OrderedDict()
 
@@ -658,9 +662,9 @@ class TACSProblem(TACSSystem):
 
     def _checkDVNums(self, dvNums):
         """
-        Check that all design variable numbers passed to auxiliary elements do not
-        exceed the number of design variables added during initialization of the assembler.
-        Raises a TACSError if any DV number exceeds number of registered design variables.
+        Check that all design variable numbers passed to auxiliary elements are
+        valid global DV nums registered in pyTACS.addGlobalDV method before initialization.
+        Raises a TACSError if any DV number is not in the registered list.
 
         Parameters
         ----------
@@ -671,14 +675,14 @@ class TACSProblem(TACSSystem):
             dvNums = np.atleast_1d(dvNums).astype(np.intc)
             active = dvNums[dvNums >= 0]
             if active.size == 0:
-                return
-            total_dvs = self.comm.allreduce(self.getNumDesignVars(), op=MPI.SUM)
-            bad = active[active >= total_dvs]
+                return dvNums
+            # Check all dvs belong to the global dv nums
+            bad = active[np.array([v not in self.globalDVNums for v in active])]
             if bad.size > 0:
                 raise self._TACSError(
-                    "Design variable numbers {} exceed the maximum valid DV number ({}) "
-                    "setup during initialization of pyTACS assembler (total DVs = {}).".format(
-                        bad.tolist(), total_dvs - 1, total_dvs
+                    "Design variable numbers {} were not added as global DVs. "
+                    "Global DV nums registered within the assembler: {}.".format(
+                        bad.tolist(), sorted(self.globalDVNums)
                     )
                 )
         return dvNums

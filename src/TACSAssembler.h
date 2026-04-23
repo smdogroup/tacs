@@ -105,6 +105,7 @@ class TACSAssembler : public TACSObject {
   // These are added to designExtDist during initialize() so that aux
   // elements added after initialize() can always access them.
   void setGlobalDVIndices(int n, const int *dvNums);
+  int getGlobalDVIndices(const int **dvNums);
   int setDesignDependentNodes(int numDepDesignVars, const int *_depNodePtr,
                               const int *_depNodes,
                               const double *_depNodeWeights);

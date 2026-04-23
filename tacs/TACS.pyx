@@ -1938,6 +1938,21 @@ cdef class Assembler:
         self.ptr.setGlobalDVIndices(dv_nums.shape[0], <int*>dv_nums.data)
         return
 
+    def getGlobalDVIndices(self):
+        """
+        Retrieve the global DV indices previously registered via setGlobalDVIndices().
+
+        Returns:
+            numpy.ndarray: 1-D integer array of registered global DV indices.
+                           Empty array if setGlobalDVIndices was never called.
+        """
+        cdef const int *dv_nums = NULL
+        n = self.ptr.getGlobalDVIndices(&dv_nums)
+        result = np.zeros(n, dtype=np.intc)
+        for i in range(n):
+            result[i] = dv_nums[i]
+        return result
+
     def getDesignVarsPerNode(self):
         """
         Get the number of design variables per design node.
