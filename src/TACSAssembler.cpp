@@ -2644,7 +2644,8 @@ int TACSAssembler::initialize() {
     int numDVs = getNumDesignVars();
 
     // Extend to cover any global DV indices not referenced by regular elements
-    // (e.g. DVs that will only be used by aux elements added after initialize())
+    // (e.g. DVs that will only be used by aux elements added after
+    // initialize())
     for (int i = 0; i < numGlobalDVs; i++) {
       if (globalDVNums[i] + 1 > numDVs) {
         numDVs = globalDVNums[i] + 1;
