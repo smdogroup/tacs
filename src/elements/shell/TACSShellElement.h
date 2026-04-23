@@ -125,8 +125,8 @@ class TACSShellElement : public TACSElement {
 
   TACSElement *createElementPressure(int faceIndex, TacsScalar p,
                                      int pressureDVNum = -1) {
-    return new TACSShellPressure<vars_per_node, quadrature, basis>(p,
-                                                                   pressureDVNum);
+    return new TACSShellPressure<vars_per_node, quadrature, basis>(
+        p, pressureDVNum);
   }
 
   TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],

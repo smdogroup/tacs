@@ -75,7 +75,7 @@ int TACSPressure2D::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
 }
 
 int TACSPressure2D::setDesignVars(int elemIndex, int dvLen,
-                                   const TacsScalar dvs[]) {
+                                  const TacsScalar dvs[]) {
   int num = 0;
   if (pressureDVNum >= 0) {
     if (num < dvLen) {
