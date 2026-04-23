@@ -58,9 +58,10 @@ TACSElement *TACSElement2D::createElementTraction(int faceIndex,
   return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
 }
 
-TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p) {
+TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p,
+                                                  int pressureDVNum) {
   int varsPerNode = getVarsPerNode();
-  return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
+  return new TACSPressure2D(varsPerNode, faceIndex, basis, p, pressureDVNum);
 }
 
 TACSElement *TACSElement2D::createElementInertialForce(

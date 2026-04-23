@@ -213,7 +213,8 @@ class TACSElement : public TACSObject {
     @return The TACSElement pressure class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement *createElementPressure(int faceIndex, TacsScalar p) {
+  virtual TACSElement *createElementPressure(int faceIndex, TacsScalar p,
+                                             int pressureDVNum = -1) {
     return NULL;
   }
 

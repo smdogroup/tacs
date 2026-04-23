@@ -368,6 +368,33 @@ class TACSProblem(TACSSystem):
             rhsArray = Frhs.getArray()
             rhsArray[:] = rhsArray[:] + Fapplied[:]
 
+    def _checkDVNums(self, dvNums):
+        """
+        Check that all design variable numbers passed to auxiliary elements are
+        valid global DV nums registered in pyTACS.addGlobalDV method before initialization.
+        Raises a TACSError if any DV number is not in the registered list.
+
+        Parameters
+        ----------
+        dvNums : numpy.ndarray
+            Array of global design variable numbers to validate. Negative entries are ignored.
+        """
+        if dvNums is not None:
+            dvNums = np.atleast_1d(dvNums).astype(np.intc)
+            active = dvNums[dvNums >= 0]
+            if active.size == 0:
+                return dvNums
+            # Check all dvs belong to the global dv nums
+            bad = active[np.array([v not in self.globalDVNums for v in active])]
+            if bad.size > 0:
+                raise self._TACSError(
+                    "Design variable numbers {} were not added as global DVs. "
+                    "Global DV nums registered within the assembler: {}.".format(
+                        bad.tolist(), sorted(self.globalDVNums)
+                    )
+                )
+        return dvNums
+
     def _addTractionToComponents(self, auxElems, compIDs, tractions, faceIndex=0):
         """
         This is an internal helper function for doing the addTractionToComponents method for
@@ -514,7 +541,9 @@ class TACSProblem(TACSSystem):
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
 
-    def _addPressureToComponents(self, auxElems, compIDs, pressures, faceIndex=0):
+    def _addPressureToComponents(
+        self, auxElems, compIDs, pressures, faceIndex=0, pressureDVNums=None
+    ):
         """
         This is an internal helper function for doing the addPressureToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -539,6 +568,10 @@ class TACSProblem(TACSSystem):
         faceIndex : int
             Indicates which face (side) of the element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Use None if the pressure should not be a design variable.
         """
         # Make sure compIDs is flat and unique
         compIDs = set(self._flatten(compIDs))
@@ -550,7 +583,12 @@ class TACSProblem(TACSSystem):
         )
         # Add pressure element by element
         self._addPressureToElements(
-            auxElems, elemIDs, pressures, faceIndex, nastranOrdering=False
+            auxElems,
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering=False,
+            pressureDVNums=pressureDVNums,
         )
 
         # Write out a message of what we did:
@@ -563,7 +601,13 @@ class TACSProblem(TACSSystem):
         )
 
     def _addPressureToElements(
-        self, auxElems, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+        self,
+        auxElems,
+        elemIDs,
+        pressures,
+        faceIndex=0,
+        nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This is an internal helper function for doing the addPressureToElements method for
@@ -591,11 +635,17 @@ class TACSProblem(TACSSystem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
-        """
 
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Use None if the pressure should not be a design variable.
+        """
         # Make sure the inputs are the correct shape
         elemIDs = np.atleast_1d(elemIDs)
         pressures = np.atleast_1d(pressures)
+        pressureDVNums = np.atleast_1d(
+            -1 if pressureDVNums is None else pressureDVNums
+        ).astype(np.intc)
 
         numElems = len(elemIDs)
 
@@ -611,6 +661,20 @@ class TACSProblem(TACSSystem):
                     pressures.shape[0], numElems
                 )
             )
+
+        # Apply the same broadcast logic to DV nums as to pressures
+        if pressureDVNums.shape[0] == 1:
+            pressureDVNums = np.repeat(pressureDVNums, [numElems], axis=0)
+        elif pressureDVNums.shape[0] != numElems:
+            raise self._TACSError(
+                "Number of pressureDVNums must match number of elements,"
+                " {} DV nums were specified for {} element IDs".format(
+                    pressureDVNums.shape[0], numElems
+                )
+            )
+
+        # Validate all active (non-negative) DV nums
+        self._checkDVNums(pressureDVNums)
 
         # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
@@ -630,7 +694,9 @@ class TACSProblem(TACSSystem):
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
                 # Create appropriate pressure object for this element type
-                pressObj = elemObj.createElementPressure(faceIndex, pressures[i])
+                pressObj = elemObj.createElementPressure(
+                    faceIndex, pressures[i], int(pressureDVNums[i])
+                )
                 # Pressure not implemented for element
                 if pressObj is None:
                     self._TACSWarning(
@@ -659,33 +725,6 @@ class TACSProblem(TACSSystem):
                     "Can't add pressure to element ID {} ({} ordering), element not found in model. "
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
-
-    def _checkDVNums(self, dvNums):
-        """
-        Check that all design variable numbers passed to auxiliary elements are
-        valid global DV nums registered in pyTACS.addGlobalDV method before initialization.
-        Raises a TACSError if any DV number is not in the registered list.
-
-        Parameters
-        ----------
-        dvNums : numpy.ndarray
-            Array of global design variable numbers to validate. Negative entries are ignored.
-        """
-        if dvNums is not None:
-            dvNums = np.atleast_1d(dvNums).astype(np.intc)
-            active = dvNums[dvNums >= 0]
-            if active.size == 0:
-                return dvNums
-            # Check all dvs belong to the global dv nums
-            bad = active[np.array([v not in self.globalDVNums for v in active])]
-            if bad.size > 0:
-                raise self._TACSError(
-                    "Design variable numbers {} were not added as global DVs. "
-                    "Global DV nums registered within the assembler: {}.".format(
-                        bad.tolist(), sorted(self.globalDVNums)
-                    )
-                )
-        return dvNums
 
     def _addInertialLoad(self, auxElems, inertiaVector, inertiaVecDVNums=None):
         """

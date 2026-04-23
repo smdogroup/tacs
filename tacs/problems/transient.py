@@ -614,7 +614,13 @@ class TransientProblem(TACSProblem):
         )
 
     def addPressureToComponents(
-        self, timeStep, compIDs, pressures, timeStage=None, faceIndex=0
+        self,
+        timeStep,
+        compIDs,
+        pressures,
+        timeStage=None,
+        faceIndex=0,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
@@ -643,6 +649,11 @@ class TransientProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -655,7 +666,7 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addPressureToComponents(
-            self.auxElems[timeIndex], compIDs, pressures, faceIndex
+            self.auxElems[timeIndex], compIDs, pressures, faceIndex, pressureDVNums
         )
 
     def addPressureToElements(
@@ -666,6 +677,7 @@ class TransientProblem(TACSProblem):
         timeStage=None,
         faceIndex=0,
         nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a fixed presure to the
@@ -697,6 +709,11 @@ class TransientProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -709,7 +726,12 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addPressureToElements(
-            self.auxElems[timeIndex], elemIDs, pressures, faceIndex, nastranOrdering
+            self.auxElems[timeIndex],
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering,
+            pressureDVNums,
         )
 
     def addInertialLoad(

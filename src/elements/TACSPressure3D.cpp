@@ -17,12 +17,14 @@
 #include "TACSElementAlgebra.h"
 
 TACSPressure3D::TACSPressure3D(int _varsPerNode, int _faceIndex,
-                               TACSElementBasis *_basis, TacsScalar _p) {
+                               TACSElementBasis *_basis, TacsScalar _p,
+                               int _pressureDVNum) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
   basis->incref();
   p = _p;
+  pressureDVNum = _pressureDVNum;
 }
 
 TACSPressure3D::~TACSPressure3D() { basis->decref(); }
@@ -59,6 +61,53 @@ int TACSPressure3D::getNumFaceQuadraturePoints(int face) {
 double TACSPressure3D::getFaceQuadraturePoint(int face, int n, double pt[],
                                               double tangent[]) {
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
+}
+
+int TACSPressure3D::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+  int num = 0;
+  if (pressureDVNum >= 0) {
+    if (dvNums && num < dvLen) {
+      dvNums[num] = pressureDVNum;
+    }
+    num++;
+  }
+  return num;
+}
+
+int TACSPressure3D::setDesignVars(int elemIndex, int dvLen,
+                                   const TacsScalar dvs[]) {
+  int num = 0;
+  if (pressureDVNum >= 0) {
+    if (num < dvLen) {
+      p = dvs[num];
+    }
+    num++;
+  }
+  return num;
+}
+
+int TACSPressure3D::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+  int num = 0;
+  if (pressureDVNum >= 0) {
+    if (dvs && num < dvLen) {
+      dvs[num] = p;
+    }
+    num++;
+  }
+  return num;
+}
+
+int TACSPressure3D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                                      TacsScalar ub[]) {
+  int num = 0;
+  if (pressureDVNum >= 0) {
+    if (num < dvLen) {
+      lb[num] = -1e20;
+      ub[num] = 1e20;
+    }
+    num++;
+  }
+  return num;
 }
 
 /*

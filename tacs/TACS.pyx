@@ -353,10 +353,11 @@ cdef class Element:
                 return _init_Element(tracElem)
         return None
 
-    def createElementPressure(self, int faceIndex, TacsScalar p):
+    def createElementPressure(self, int faceIndex, TacsScalar p,
+                              int pressureDVNum=-1):
         cdef TACSElement *pressElem = NULL
         if self.ptr:
-            pressElem = self.ptr.createElementPressure(faceIndex, p)
+            pressElem = self.ptr.createElementPressure(faceIndex, p, pressureDVNum)
             if pressElem != NULL:
                 return _init_Element(pressElem)
         return None
