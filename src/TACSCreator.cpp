@@ -103,6 +103,10 @@ TACSCreator::TACSCreator(MPI_Comm _comm, int _vars_per_node) {
   designVarsPerNode = 0;
   designVarMap = NULL;
 
+  // No global DVs registered yet
+  numGlobalDVs = 0;
+  globalDVNums = NULL;
+
   // Set the elements array to NULL
   elements = NULL;
   element_creator = NULL;
@@ -168,6 +172,9 @@ TACSCreator::~TACSCreator() {
 
   if (designVarMap) {
     designVarMap->decref();
+  }
+  if (globalDVNums) {
+    delete[] globalDVNums;
   }
 
   if (elements) {
@@ -312,6 +319,16 @@ void TACSCreator::setDesignNodeMap(int _designVarsPerNode,
     designVarMap->decref();
   }
   designVarMap = _designVarMap;
+}
+
+/*
+  Store the global DV indices so they get included in designExtDist on all procs
+*/
+void TACSCreator::setGlobalDVIndices(int n, const int *dvNums) {
+  delete[] globalDVNums;
+  numGlobalDVs = n;
+  globalDVNums = new int[n];
+  memcpy(globalDVNums, dvNums, n * sizeof(int));
 }
 
 /*
@@ -899,6 +916,11 @@ TACSAssembler *TACSCreator::createTACS() {
   // Set the design variable map if one has been provided
   if (designVarMap) {
     tacs->setDesignNodeMap(designVarsPerNode, designVarMap);
+  }
+
+  // Pass global DV indices so they appear in designExtDist on all procs
+  if (numGlobalDVs > 0) {
+    tacs->setGlobalDVIndices(numGlobalDVs, globalDVNums);
   }
 
   // Use the reordering if the flag has been set in the

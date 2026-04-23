@@ -83,6 +83,10 @@ class TACSCreator : public TACSObject {
   // ---------------------------
   void setDesignNodeMap(int _designVarsPerNode, TACSNodeMap *_designVarMap);
 
+  // Set global DV indices to distribute to all procs
+  // -------------------------------------------------
+  void setGlobalDVIndices(int n, const int *dvNums);
+
   // Set the elements into TACS creator
   // ----------------------------------
   void setElements(int _num_elems, TACSElement **_elements);
@@ -150,6 +154,10 @@ class TACSCreator : public TACSObject {
   // Design variable map
   int designVarsPerNode;
   TACSNodeMap *designVarMap;
+
+  // Global DV indices to force into designExtDist on all procs
+  int numGlobalDVs;
+  int *globalDVNums;
 
   // Elements and the corresponding element id numbers
   int num_elem_ids;

@@ -160,6 +160,8 @@ TACSAssembler::TACSAssembler(MPI_Comm _tacs_comm, int _varsPerNode,
   designNodeMap = NULL;
   designExtDist = NULL;
   designDepNodes = NULL;
+  numGlobalDVs = 0;
+  globalDVNums = NULL;
 
   // Set the local element data to NULL
   elementData = NULL;
@@ -280,6 +282,9 @@ TACSAssembler::~TACSAssembler() {
   }
   if (elementSensIData) {
     delete[] elementSensIData;
+  }
+  if (globalDVNums) {
+    delete[] globalDVNums;
   }
 
   // Delete initial condition vectors
@@ -2635,8 +2640,16 @@ int TACSAssembler::initialize() {
 
   // Create the design variable node mapping
   if (!designNodeMap) {
-    // Get the number of design variables
+    // Get the number of design variables from element scan
     int numDVs = getNumDesignVars();
+
+    // Extend to cover any global DV indices not referenced by regular elements
+    // (e.g. DVs that will only be used by aux elements added after initialize())
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] + 1 > numDVs) {
+        numDVs = globalDVNums[i] + 1;
+      }
+    }
 
     if (mpiRank > 0) {
       numDVs = 0;
@@ -2690,6 +2703,13 @@ int TACSAssembler::initialize() {
       }
     }
 
+    // Count Python-level global DV indices not locally owned
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] < lower || globalDVNums[i] >= upper) {
+        dvLen++;
+      }
+    }
+
     // Allocate space for absolutely everything!
     int *allDVs = new int[dvLen];
 
@@ -2726,6 +2746,14 @@ int TACSAssembler::initialize() {
           allDVs[dvLen] = dep_conn[j];
           dvLen++;
         }
+      }
+    }
+
+    // Add any global DV indices not locally owned
+    for (int i = 0; i < numGlobalDVs; i++) {
+      if (globalDVNums[i] < lower || globalDVNums[i] >= upper) {
+        allDVs[dvLen] = globalDVNums[i];
+        dvLen++;
       }
     }
 
@@ -3078,6 +3106,23 @@ void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
     designNodeMap->decref();
   }
   designNodeMap = _designNodeMap;
+}
+
+/**
+  Store the global DV indices that must be distributed to all procs.
+
+  These indices are appended to the external DV distribution during
+  initialize(), ensuring that aux elements added after initialize() can
+  always access them via dvs->getValues().
+
+  @param n Number of global DV indices
+  @param dvNums Array of global DV indices (length n)
+*/
+void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
+  delete[] globalDVNums;
+  numGlobalDVs = n;
+  globalDVNums = new int[n];
+  memcpy(globalDVNums, dvNums, n * sizeof(int));
 }
 
 /**

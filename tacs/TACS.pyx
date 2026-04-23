@@ -1924,6 +1924,20 @@ cdef class Assembler:
         self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
         return
 
+    def setGlobalDVIndices(self, np.ndarray[int, ndim=1, mode='c'] dv_nums):
+        """
+        Register global design variable indices that must be available on all
+        MPI ranks, regardless of which elements reference them.
+
+        Must be called before initialize(). Typically used for DVs attached to
+        auxiliary elements (e.g. gravity loads) that are added after initialize().
+
+        Args:
+            dv_nums: 1-D integer array of global DV indices.
+        """
+        self.ptr.setGlobalDVIndices(dv_nums.shape[0], <int*>dv_nums.data)
+        return
+
     def getDesignVarsPerNode(self):
         """
         Get the number of design variables per design node.
@@ -3036,6 +3050,21 @@ cdef class Creator:
         if nmap is not None:
             nmap_ptr = nmap.ptr
         self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
+        return
+
+    def setGlobalDVIndices(self, np.ndarray[int, ndim=1, mode='c'] dv_nums):
+        """
+        Register global design variable indices that must be available on all
+        MPI ranks, regardless of which elements reference them.
+
+        Call before createTACS(). Typically used for design variables that are
+        attached to auxiliary elements (e.g. gravity loads) added after
+        TACSAssembler.initialize().
+
+        Args:
+            dv_nums: 1-D integer array of global DV indices.
+        """
+        self.ptr.setGlobalDVIndices(dv_nums.shape[0], <int*>dv_nums.data)
         return
 
     def setElements(self, elements):

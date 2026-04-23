@@ -334,6 +334,7 @@ cdef extern from "TACSAssembler.h":
                               double *depNodeWeights)
         void setDesignNodeMap(int _designVarsPerNode,
                               TACSNodeMap *_designVarMap)
+        void setGlobalDVIndices(int n, const int *dvNums)
         int getDesignVarsPerNode()
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)
@@ -576,6 +577,7 @@ cdef extern from "TACSCreator.h":
         void setNodes(TacsScalar *_Xpts)
         void setReorderingType(OrderingType _order_type,
                                MatrixOrderingType _mat_type)
+        void setGlobalDVIndices(int n, const int *dvNums)
         void partitionMesh(int split_size, int *part)
         int getElementPartition(const int **)
         TACSAssembler *createTACS()

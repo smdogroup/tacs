@@ -812,8 +812,9 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
+        global_dv_nums = [dv_info["num"] for dv_info in self.globalDVs.values()]
         self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs, self.dvNum
+            self.varsPerNode, self.massDVs, self.dvNum, globalDVNums=global_dv_nums
         )
         self._createOutputViewer()
 
@@ -864,10 +865,10 @@ class pyTACS(BaseUI):
         vec.setValues(
             np.array(dv_nums, dtype=np.intc),
             np.array(dv_vals, dtype=self.dtype),
-            op=tacs.TACS.INSERT_VALUES,
+            op=tacs.TACS.INSERT_NONZERO_VALUES,
         )
-        vec.beginSetValues(op=tacs.TACS.INSERT_VALUES)
-        vec.endSetValues(op=tacs.TACS.INSERT_VALUES)
+        vec.beginSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
+        vec.endSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
         vec.distributeValues()
 
     @postinitialize_method
