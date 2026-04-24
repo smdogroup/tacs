@@ -433,7 +433,9 @@ class SparseLamParamFullConstraint(object):
         # row_nnz is length nComps * nLP
         rowNnz = np.diff(self.A_lp.indptr)
         # Get a boolean array of shape (nComps, nLP) indicating presence
-        self.present = rowNnz.reshape(self.nComps, self.nLP) > 0
+        # Allreduce so that ranks owning no DVs still know which LP slots are
+        # globally occupied.
+        self.present = comm.allreduce(rowNnz.reshape(self.nComps, self.nLP)) > 0
 
         # Save bound information (apply to each constraint)
         if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
