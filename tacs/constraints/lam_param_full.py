@@ -333,19 +333,25 @@ class LamParamFullConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        if includeDVSens:
-            # Get number of nodes coords on this proc
-            nCoords = self.getNumCoordinates()
-
-            # Loop through each requested constraint set
-            for conName in evalCons:
-                key = f"{self.name}_{conName}"
+        # Loop through each requested constraint set
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            funcsSens[key] = {}
+            if includeDVSens:
                 # Get sparse Jacobian for dv sensitivity
-                funcsSens[key] = {}
                 funcsSens[key][self.varName] = (
                     self.constraintList[conName]
                     .evalConSens(self.x.getArray())
                     .toarray()
+                )
+
+            if includeXptSens:
+                # Nodal sensitivities are always zero for this constraint.
+                # Add an empty sparse matrix
+                nCoords = self.getNumCoordinates()
+                nCon = self.constraintList[conName].nCon
+                funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
+                    (nCon, nCoords), dtype=self.dtype
                 )
 
 
