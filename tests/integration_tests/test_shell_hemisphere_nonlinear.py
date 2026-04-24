@@ -43,6 +43,7 @@ hemisphereProbRefFuncs = {
 
 STRAIN_TYPE = "nonlinear"
 ROTATION_TYPE = "quadratic"
+DRILLING_REGULARIZATION = 10.0
 
 elementType = None
 if STRAIN_TYPE == "linear":
@@ -78,6 +79,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
         tlb=1e-2 * THICKNESS,
         tub=1e2 * THICKNESS,
     )
+    con.setDrillingRegularization(DRILLING_REGULARIZATION)
     transform = None
     element = elementType(transform, con)
     tScale = [50.0]

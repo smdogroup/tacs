@@ -12,7 +12,7 @@ example_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(example_path)
 
 # Reference values for eval functions
-FUNC_REF = [1.070354064387641]
+FUNC_REF = [1.18946094]
 
 
 class ExampleBenchmark(unittest.TestCase):

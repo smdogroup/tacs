@@ -17,9 +17,7 @@ and Compliance functions and sensitivities
 ------------       -----------
 """
 
-FUNC_REFS = np.array(
-    [1.2600980396870352, 51400.0, 3767896.1409673616, 2.912191091671254]
-)
+FUNC_REFS = np.array([1.26266703e00, 5.14000000e04, 3.79714078e06, 2.91222813e00])
 
 # Length of plate in x/y direction
 Lx = 10.0
