@@ -57,6 +57,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "pressure_x_disp": 6.661338147750938e-17,
         "pressure_y_disp": 6.661338147750938e-17,
         "pressure_z_disp": 0.17668717737170658,
+        "lam_param_con_full_ALL": np.array([0.12, 0.72, 1.296]),
     }
 
     def setup_tacs_problems(self, comm):

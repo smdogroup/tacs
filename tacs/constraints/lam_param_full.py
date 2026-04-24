@@ -333,19 +333,25 @@ class LamParamFullConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        if includeDVSens:
-            # Get number of nodes coords on this proc
-            nCoords = self.getNumCoordinates()
-
-            # Loop through each requested constraint set
-            for conName in evalCons:
-                key = f"{self.name}_{conName}"
+        # Loop through each requested constraint set
+        for conName in evalCons:
+            key = f"{self.name}_{conName}"
+            funcsSens[key] = {}
+            if includeDVSens:
                 # Get sparse Jacobian for dv sensitivity
-                funcsSens[key] = {}
                 funcsSens[key][self.varName] = (
                     self.constraintList[conName]
                     .evalConSens(self.x.getArray())
                     .toarray()
+                )
+
+            if includeXptSens:
+                # Nodal sensitivities are always zero for this constraint.
+                # Add an empty sparse matrix
+                nCoords = self.getNumCoordinates()
+                nCon = self.constraintList[conName].nCon
+                funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
+                    (nCon, nCoords), dtype=self.dtype
                 )
 
 
@@ -433,7 +439,9 @@ class SparseLamParamFullConstraint(object):
         # row_nnz is length nComps * nLP
         rowNnz = np.diff(self.A_lp.indptr)
         # Get a boolean array of shape (nComps, nLP) indicating presence
-        self.present = rowNnz.reshape(self.nComps, self.nLP) > 0
+        # Allreduce so that ranks owning no DVs still know which LP slots are
+        # globally occupied.
+        self.present = comm.allreduce(rowNnz.reshape(self.nComps, self.nLP)) > 0
 
         # Save bound information (apply to each constraint)
         if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
