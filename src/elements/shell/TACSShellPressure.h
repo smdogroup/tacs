@@ -8,18 +8,20 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSShellPressure : public TACSElement {
  public:
-  TACSShellPressure(const TacsScalar _p[]) {
+  TACSShellPressure(const TacsScalar _p[], int _pressureDVNum = -1) {
     // Traction varies across element
     for (int i = 0; i < basis::NUM_NODES; i++) {
       p[i] = _p[i];
     }
+    pressureDVNum = _pressureDVNum;
   }
 
-  TACSShellPressure(const TacsScalar _p) {
+  TACSShellPressure(const TacsScalar _p, int _pressureDVNum = -1) {
     // Traction is constant across element
     for (int i = 0; i < basis::NUM_NODES; i++) {
       p[i] = _p;
     }
+    pressureDVNum = _pressureDVNum;
   }
 
   const char *getObjectName() { return "TACSShellPressure"; }
@@ -46,6 +48,55 @@ class TACSShellPressure : public TACSElement {
   double getFaceQuadraturePoint(int face, int n, double pt[],
                                 double tangent[]) {
     return quadrature::getFaceQuadraturePoint(face, n, pt, tangent);
+  }
+
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+    int num = 0;
+    if (pressureDVNum >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = pressureDVNum;
+      }
+      num++;
+    }
+    return num;
+  }
+
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
+    int num = 0;
+    if (pressureDVNum >= 0) {
+      if (num < dvLen) {
+        TacsScalar pval = dvs[num];
+        for (int i = 0; i < basis::NUM_NODES; i++) {
+          p[i] = pval;
+        }
+      }
+      num++;
+    }
+    return num;
+  }
+
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+    int num = 0;
+    if (pressureDVNum >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = p[0];
+      }
+      num++;
+    }
+    return num;
+  }
+
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]) {
+    int num = 0;
+    if (pressureDVNum >= 0) {
+      if (num < dvLen) {
+        lb[num] = -1e20;
+        ub[num] = 1e20;
+      }
+      num++;
+    }
+    return num;
   }
 
   void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
@@ -92,6 +143,7 @@ class TACSShellPressure : public TACSElement {
 
  private:
   TacsScalar p[basis::NUM_NODES];
+  int pressureDVNum;
 };
 
 #endif  // TACS_SHELL_PRESSURE_H

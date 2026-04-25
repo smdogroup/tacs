@@ -27,6 +27,12 @@ We also add an adjacency constraint to all four domains to compute the delta acr
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/partitioned_plate.bdf")
 
+# Force vector
+F = np.array([0.0, 0.0, 1e6, 0.0, 0.0, 0.0])
+# Pressure magnitude
+P = 100e5
+# Traction vector
+trac = [1e6, 1e6, 1e6]  # N/m^2
 
 # KS function weight
 ksweight = 10.0
@@ -99,6 +105,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             scale = [100.0]
             return elem, scale
 
+        # Register global DV for pressure magnitude before initializing assembler
+        pressure_dv_num = fea_assembler.addGlobalDV("pressure", P)
+
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
@@ -106,21 +115,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Distribute point force over all nodes in bottom left quadrant of plate
         sp = fea_assembler.createStaticProblem(name="load")
-        F = np.array([0.0, 0.0, 1e6, 0.0, 0.0, 0.0])
         compIDs = fea_assembler.selectCompIDs(include="PLATE.00")
         sp.addLoadToComponents(compIDs, F)
         tacs_probs.append(sp)
 
         # Add pressure to bottom right quadrant of plate
         sp = fea_assembler.createStaticProblem(name="pressure")
-        P = 100e5  # Pa
         compIDs = fea_assembler.selectCompIDs(include="PLATE.01")
-        sp.addPressureToComponents(compIDs, P)
+        sp.addPressureToComponents(compIDs, P, pressureDVNums=pressure_dv_num)
         tacs_probs.append(sp)
 
         # Add traction to upper right quadrant of plate
         sp = fea_assembler.createStaticProblem(name="traction")
-        trac = [1e6, 1e6, 1e6]  # N/m^2
         compIDs = fea_assembler.selectCompIDs(include="PLATE.02")
         sp.addTractionToComponents(compIDs, trac)
         tacs_probs.append(sp)
