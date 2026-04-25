@@ -28,7 +28,7 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
                               TacsScalar inner_init, TacsScalar wall_init,
                               int inner_dv, int wall_dv, TacsScalar inner_lb,
                               TacsScalar inner_ub, TacsScalar wall_lb,
-                              TacsScalar wall_ub);
+                              TacsScalar wall_ub, TacsScalar _nsm = 0.0);
   ~TACSIsoTubeBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -52,7 +52,7 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
   void addDensityDVSens(int elemIndex, TacsScalar scale, const double pt[],
                         const TacsScalar X[], int dvLen, TacsScalar dfdx[]);
 
-  // Evaluate the mass moments
+  // Evaluate the mass moments; NSM (no offset for tube) is added to moments[0]
   void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
                        TacsScalar moments[]);
 

@@ -41,7 +41,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
       int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
       TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
       TacsScalar _w_offset = 0.0, TacsScalar _t_offset = 0.0,
-      TacsScalar _buckle_length_factor = 0.0);
+      TacsScalar _buckle_length_factor = 0.0, TacsScalar _nsm = 0.0);
   ~TACSIsoRectangleBeamConstitutive();
 
   // Retrieve the global design variable numbers
@@ -65,7 +65,7 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   void addDensityDVSens(int elemIndex, TacsScalar scale, const double pt[],
                         const TacsScalar X[], int dvLen, TacsScalar dfdx[]);
 
-  // Evaluate the mass moments
+  // Evaluate the mass moments; NSM parallel-axis terms use (delta_y, delta_z)
   void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
                        TacsScalar moments[]);
 
