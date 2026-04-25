@@ -138,7 +138,12 @@ problem.addLoadToNodes(
 # ==============================================================================
 
 # KS approximation of the maximum failure value
-problem.addFunction("KSFailure", functions.KSFailure, ksWeight=80.0, ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE)
+problem.addFunction(
+    "KSFailure",
+    functions.KSFailure,
+    ksWeight=80.0,
+    ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
+)
 
 # Maximum displacement in the z-direction (KS with a very large weight to get a true max)
 problem.addFunction(
