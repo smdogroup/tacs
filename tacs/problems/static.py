@@ -688,7 +688,12 @@ class StaticProblem(TACSProblem):
         )
 
     def addTractionToElements(
-        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False, tractionDVNums=None
+        self,
+        elemIDs,
+        tractions,
+        faceIndex=0,
+        nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a fixed traction to the
@@ -720,7 +725,12 @@ class StaticProblem(TACSProblem):
         """
 
         self._addTractionToElements(
-            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering, tractionDVNums
+            self.auxElems,
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering,
+            tractionDVNums,
         )
 
     def addPressureToComponents(

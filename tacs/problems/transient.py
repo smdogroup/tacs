@@ -516,7 +516,13 @@ class TransientProblem(TACSProblem):
         self._addLoadToRHS(self.F[timeIndex], Fapplied)
 
     def addTractionToComponents(
-        self, timeStep, compIDs, tractions, timeStage=None, faceIndex=0, tractionDVNums=None
+        self,
+        timeStep,
+        compIDs,
+        tractions,
+        timeStage=None,
+        faceIndex=0,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
