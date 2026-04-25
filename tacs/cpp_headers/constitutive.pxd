@@ -59,6 +59,19 @@ cdef extern from "TACSMaterialProperties.h":
         void setUseModifiedTsaiWuCriterion()
         void setUseCuntzeCriterion_UD()
         void setUseCuntzeCriterion_Woven()
+        enum FailureCriterion:
+            MAX_STRAIN
+            TSAI_WU
+            TSAI_WU_MODIFIED
+            CUNTZE_UD
+            CUNTZE_WOVEN
+
+    # Expose nested enum values at module scope for use in Python IntEnum
+    int _COMPOSITE_FC_MAX_STRAIN "TACSOrthotropicPly::MAX_STRAIN"
+    int _COMPOSITE_FC_TSAI_WU "TACSOrthotropicPly::TSAI_WU"
+    int _COMPOSITE_FC_TSAI_WU_MODIFIED "TACSOrthotropicPly::TSAI_WU_MODIFIED"
+    int _COMPOSITE_FC_CUNTZE_UD "TACSOrthotropicPly::CUNTZE_UD"
+    int _COMPOSITE_FC_CUNTZE_WOVEN "TACSOrthotropicPly::CUNTZE_WOVEN"
 
 cdef extern from "TACSPlaneStressConstitutive.h":
     cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):

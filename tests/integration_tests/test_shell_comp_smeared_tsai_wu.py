@@ -8,8 +8,8 @@ from tacs import pytacs, elements, constitutive, functions
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is based on test_shell_comp_smeared.py and tests KSFailure and 
-sensitivities with the Cuntze failure criterion.
+This test is based on test_shell_comp_smeared.py and tests KSFailure and
+sensitivities with the Tsai-Wu failure criterion.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,8 +22,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_ks_CuntzeUD_failure": 5.728734823464061,
-        "VertShear_ks_CuntzeUD_failure": 0.23279998313382846,
+        "Tension_ks_failure": 12.111717393097713,
+        "VertShear_ks_failure": 0.017919266042811466,
     }
 
     def setup_tacs_problems(self, comm):
@@ -86,7 +86,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ortho_ply = constitutive.OrthotropicPly(
             ply_thickness,
             ortho_prop,
-            failure_criterion=constitutive.OrthotropicPly.CompositeFailureCriterion.CUNTZE_UD,
+            failure_criterion=constitutive.OrthotropicPly.CompositeFailureCriterion.TSAI_WU,
         )
 
         # Shell thickness
@@ -147,10 +147,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add Functions
         for problem in tacs_probs:
             problem.addFunction(
-                "ks_CuntzeUD_failure",
+                "ks_failure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
             )
 
         tacs_probs = list(tacs_probs)

@@ -47,7 +47,7 @@ cdef extern from "TACSAverageTemperature.h":
         TACSAverageTemperature(TACSAssembler*, TacsScalar)
 
 cdef extern from "TACSKSTemperature.h":
-    enum KSTemperatureType"TACSKTemperature::KSTemperatureType":
+    enum KSTemperatureType"TACSKSTemperature::KSTemperatureType":
         KS_TEMPERATURE_DISCRETE"TACSKSTemperature::DISCRETE"
         KS_TEMPERATURE_CONTINUOUS"TACSKSTemperature::CONTINUOUS"
         PNORM_TEMPERATURE_DISCRETE"TACSKSTemperature::PNORM_DISCRETE"
@@ -61,7 +61,7 @@ cdef extern from "TACSKSTemperature.h":
         void setMaxFailOffset(TacsScalar)
 
 cdef extern from "TACSKSFailure.h":
-    enum KSFailureType"TACSKFailure::KSFailureType":
+    enum KSFailureType"TACSKSFailure::KSFailureType":
         KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"
         KS_FAILURE_CONTINUOUS"TACSKSFailure::CONTINUOUS"
         PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
@@ -76,7 +76,7 @@ cdef extern from "TACSKSFailure.h":
         void setMaxFailOffset(TacsScalar)
 
 cdef extern from "TACSKSDisplacement.h":
-    enum KSDisplacementType"TACSKDisplacement::KSDisplacementType":
+    enum KSDisplacementType"TACSKSDisplacement::KSDisplacementType":
         KS_DISPLACEMENT_DISCRETE"TACSKSDisplacement::DISCRETE"
         KS_DISPLACEMENT_CONTINUOUS"TACSKSDisplacement::CONTINUOUS"
         PNORM_DISPLACEMENT_DISCRETE"TACSKSDisplacement::PNORM_DISCRETE"

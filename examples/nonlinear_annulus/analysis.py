@@ -156,7 +156,12 @@ problem.addLoadToNodes(loadPointNodeIDs, nodalForces, nastranOrdering=True)
 # ==============================================================================
 
 # KS approximation of the maximum failure value
-problem.addFunction("KSFailure", functions.KSFailure, ksWeight=80.0, ftype="discrete")
+problem.addFunction(
+    "KSFailure",
+    functions.KSFailure,
+    ksWeight=80.0,
+    ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
+)
 
 # Maximum displacement in the z-direction (KS with a very large weight to get a true max)
 problem.addFunction(
@@ -164,7 +169,7 @@ problem.addFunction(
     functions.KSDisplacement,
     direction=np.array([0.0, 0.0, 1.0]),
     ksWeight=1e20,
-    ftype="discrete",
+    ks_aggregation_type=functions.KSDisplacement.KSAggregationType.DISCRETE,
 )
 
 # Compliance

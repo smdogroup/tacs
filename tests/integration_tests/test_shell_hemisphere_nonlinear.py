@@ -139,7 +139,10 @@ def setupHemisphereProblem(FEAAssembler, problem):
 
     # KS approximation of the maximum failure value
     problem.addFunction(
-        "KSFailure", functions.KSFailure, ksWeight=10.0, ftype="discrete"
+        "KSFailure",
+        functions.KSFailure,
+        ksWeight=10.0,
+        ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
     )
 
     # Maximum displacement in the y and z-directions (KS with a very large weight to get a true max)
@@ -148,7 +151,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         functions.KSDisplacement,
         direction=np.array([0.0, 1.0, 0.0]),
         ksWeight=10.0,
-        ftype="discrete",
+        ks_aggregation_type=functions.KSDisplacement.KSAggregationType.DISCRETE,
     )
 
     problem.addFunction(
@@ -156,7 +159,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         functions.KSDisplacement,
         direction=np.array([0.0, 0.0, 1.0]),
         ksWeight=10.0,
-        ftype="discrete",
+        ks_aggregation_type=functions.KSDisplacement.KSAggregationType.DISCRETE,
     )
 
     # Compliance
