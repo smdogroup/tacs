@@ -152,7 +152,7 @@ void TACSInertialForce2D::addResidual(
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar X[3], Xd[6], J[4];
     basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 
@@ -197,7 +197,7 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], J[4];
+    TacsScalar X[3], Xd[6], J[4];
     basis->interpFields(n, pt, 3, Xpts, 1, X);
     TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
 

@@ -127,7 +127,7 @@ void TACSPressure2D::addResidual(int elemIndex, double time,
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar X[3], Xd[6], normal[3];
     TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
 
     // Compute the inverse of the transformation
