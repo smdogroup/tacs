@@ -99,10 +99,6 @@ TACSCreator::TACSCreator(MPI_Comm _comm, int _vars_per_node) {
   owned_elements = NULL;
   owned_nodes = NULL;
 
-  // Set the design variable map to NULL
-  designVarsPerNode = 0;
-  designVarMap = NULL;
-
   // No global DVs registered yet
   numGlobalDVs = 0;
   globalDVNums = NULL;
@@ -170,9 +166,6 @@ TACSCreator::~TACSCreator() {
     delete[] local_elem_id_nums;
   }
 
-  if (designVarMap) {
-    designVarMap->decref();
-  }
   if (globalDVNums) {
     delete[] globalDVNums;
   }
@@ -304,21 +297,6 @@ void TACSCreator::setElements(int _num_elem_ids, TACSElement **_elements) {
 */
 void TACSCreator::setElementCreator(TACSElement *(*func)(int, int)) {
   element_creator = func;
-}
-
-/*
-  Set the design variable map
-*/
-void TACSCreator::setDesignNodeMap(int _designVarsPerNode,
-                                   TACSNodeMap *_designVarMap) {
-  designVarsPerNode = _designVarsPerNode;
-  if (_designVarMap) {
-    _designVarMap->incref();
-  }
-  if (designVarMap) {
-    designVarMap->decref();
-  }
-  designVarMap = _designVarMap;
 }
 
 /*
@@ -912,11 +890,6 @@ TACSAssembler *TACSCreator::createTACS() {
   bc_vars = NULL;
   delete[] bc_vals;
   bc_vals = NULL;
-
-  // Set the design variable map if one has been provided
-  if (designVarMap) {
-    tacs->setDesignNodeMap(designVarsPerNode, designVarMap);
-  }
 
   // Pass global DV indices so they appear in designExtDist on all procs
   if (numGlobalDVs > 0) {

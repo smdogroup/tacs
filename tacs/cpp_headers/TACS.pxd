@@ -572,8 +572,6 @@ cdef extern from "TACSCreator.h":
                                int *_dep_node_ptr,
                                int *_dep_node_conn,
                                double *_dep_node_weights )
-        void setDesignNodeMap(int _designVarsPerNode,
-                              TACSNodeMap *_designVarMap)
         void setElements(int _num_elems, TACSElement **_elements)
         void setNodes(TacsScalar *_Xpts)
         void setReorderingType(OrderingType _order_type,

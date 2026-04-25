@@ -79,10 +79,6 @@ class TACSCreator : public TACSObject {
   // ------------------
   void partitionMesh(int split_size = 0, const int *part = NULL);
 
-  // Set the design variable map
-  // ---------------------------
-  void setDesignNodeMap(int _designVarsPerNode, TACSNodeMap *_designVarMap);
-
   // Set global DV indices to distribute to all procs
   // -------------------------------------------------
   void setGlobalDVIndices(int n, const int *dvNums);
@@ -150,10 +146,6 @@ class TACSCreator : public TACSObject {
 
   // The node locations
   TacsScalar *Xpts;
-
-  // Design variable map
-  int designVarsPerNode;
-  TACSNodeMap *designVarMap;
 
   // Global DV indices to force into designExtDist on all procs
   int numGlobalDVs;

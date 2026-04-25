@@ -3060,23 +3060,6 @@ cdef class Creator:
                           np.ndarray[double, ndim=1, mode='c'] dep_weights):
         return
 
-    def setDesignNodeMap(self, int designVarsPerNode, NodeMap nmap=None):
-        """
-        Set the design variable map for the assembler.
-
-        Must be called before createTACS().
-
-        Args:
-            designVarsPerNode: Number of design variables per design node.
-            nmap: NodeMap describing the design variable distribution
-                  (optional, defaults to None).
-        """
-        cdef TACSNodeMap *nmap_ptr = NULL
-        if nmap is not None:
-            nmap_ptr = nmap.ptr
-        self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
-        return
-
     def setGlobalDVIndices(self, np.ndarray[int, ndim=1, mode='c'] dv_nums):
         """
         Register global design variable indices that must be available on all
