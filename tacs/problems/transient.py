@@ -516,7 +516,7 @@ class TransientProblem(TACSProblem):
         self._addLoadToRHS(self.F[timeIndex], Fapplied)
 
     def addTractionToComponents(
-        self, timeStep, compIDs, tractions, timeStage=None, faceIndex=0
+        self, timeStep, compIDs, tractions, timeStage=None, faceIndex=0, tractionDVNums=None
     ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
@@ -544,6 +544,11 @@ class TransientProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -556,7 +561,7 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addTractionToComponents(
-            self.auxElems[timeIndex], compIDs, tractions, faceIndex
+            self.auxElems[timeIndex], compIDs, tractions, faceIndex, tractionDVNums
         )
 
     def addTractionToElements(
@@ -567,6 +572,7 @@ class TransientProblem(TACSProblem):
         timeStage=None,
         faceIndex=0,
         nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a fixed traction to the
@@ -598,6 +604,11 @@ class TransientProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -610,7 +621,12 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addTractionToElements(
-            self.auxElems[timeIndex], elemIDs, tractions, faceIndex, nastranOrdering
+            self.auxElems[timeIndex],
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering,
+            tractionDVNums,
         )
 
     def addPressureToComponents(

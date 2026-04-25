@@ -395,7 +395,9 @@ class TACSProblem(TACSSystem):
                 )
         return dvNums
 
-    def _addTractionToComponents(self, auxElems, compIDs, tractions, faceIndex=0):
+    def _addTractionToComponents(
+        self, auxElems, compIDs, tractions, faceIndex=0, tractionDVNums=None
+    ):
         """
         This is an internal helper function for doing the addTractionToComponents method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -419,6 +421,13 @@ class TACSProblem(TACSSystem):
         faceIndex : int
             Indicates which face (side) of the element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Shape should be (tracLen,) for a
+            uniform assignment or (numElems, tracLen) for per-element assignment.
+            Use negative values for components that should not be treated as
+            design variables.
         """
         # Make sure compIDs is flat and unique
         compIDs = set(self._flatten(compIDs))
@@ -430,7 +439,12 @@ class TACSProblem(TACSSystem):
         )
         # Add tractions element by element
         self._addTractionToElements(
-            auxElems, elemIDs, tractions, faceIndex, nastranOrdering=False
+            auxElems,
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering=False,
+            tractionDVNums=tractionDVNums,
         )
 
         # Write out a message of what we did:
@@ -443,7 +457,13 @@ class TACSProblem(TACSSystem):
         )
 
     def _addTractionToElements(
-        self, auxElems, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+        self,
+        auxElems,
+        elemIDs,
+        tractions,
+        faceIndex=0,
+        nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This is an internal helper function for doing the addTractionToElements method for
@@ -471,6 +491,13 @@ class TACSProblem(TACSSystem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Shape should be (tracLen,) for a
+            uniform assignment or (numElems, tracLen) for per-element assignment.
+            Use negative values for components that should not be treated as
+            design variables.
         """
 
         # Make sure the inputs are the correct shape
@@ -478,6 +505,7 @@ class TACSProblem(TACSSystem):
         tractions = np.atleast_2d(tractions).astype(dtype=self.dtype)
 
         numElems = len(elemIDs)
+        tracLen = tractions.shape[1]
 
         # If the user only specified one traction vector,
         # we assume the force should be the same for each element
@@ -491,6 +519,22 @@ class TACSProblem(TACSSystem):
                     tractions.shape[0], numElems
                 )
             )
+
+        # Handle tractionDVNums broadcast (same shape semantics as tractions)
+        if tractionDVNums is None:
+            tractionDVNums = np.full((1, tracLen), -1, dtype=np.intc)
+        else:
+            tractionDVNums = np.atleast_2d(tractionDVNums).astype(np.intc)
+        if tractionDVNums.shape[0] == 1:
+            tractionDVNums = np.repeat(tractionDVNums, [numElems], axis=0)
+        elif tractionDVNums.shape[0] != numElems:
+            raise self._TACSError(
+                "Number of tractionDVNums rows must match number of elements,"
+                " {} rows were specified for {} element IDs".format(
+                    tractionDVNums.shape[0], numElems
+                )
+            )
+        self._checkDVNums(tractionDVNums.ravel())
 
         # First find the corresponding local element ID on each processor
         localElemIDs = self.meshLoader.getLocalElementIDsFromGlobal(
@@ -511,7 +555,11 @@ class TACSProblem(TACSSystem):
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
                 # Create an appropriate traction object for this element type
-                tracObj = elemObj.createElementTraction(faceIndex, tractions[i])
+                tracObj = elemObj.createElementTraction(
+                    faceIndex,
+                    tractions[i],
+                    np.ascontiguousarray(tractionDVNums[i]),
+                )
                 # Traction not implemented for this element
                 if tracObj is None:
                     self._TACSWarning(

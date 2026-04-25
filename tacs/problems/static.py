@@ -656,7 +656,9 @@ class StaticProblem(TACSProblem):
         """
         self._addLoadToRHS(self.F, Fapplied)
 
-    def addTractionToComponents(self, compIDs, tractions, faceIndex=0):
+    def addTractionToComponents(
+        self, compIDs, tractions, faceIndex=0, tractionDVNums=None
+    ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
@@ -675,11 +677,18 @@ class StaticProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
-        self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
+        self._addTractionToComponents(
+            self.auxElems, compIDs, tractions, faceIndex, tractionDVNums
+        )
 
     def addTractionToElements(
-        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False, tractionDVNums=None
     ):
         """
         This method is used to add a fixed traction to the
@@ -703,10 +712,15 @@ class StaticProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
 
         self._addTractionToElements(
-            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering
+            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering, tractionDVNums
         )
 
     def addPressureToComponents(

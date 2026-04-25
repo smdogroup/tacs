@@ -345,10 +345,19 @@ cdef class Element:
             return self.ptr.getElementType()
         return ELEMENT_NONE
 
-    def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac):
+    def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac,
+                              np.ndarray[int, ndim=1, mode='c'] tracDVNums=None):
         cdef TACSElement *tracElem = NULL
+        cdef int *dvNums = NULL
+        if tracDVNums is not None:
+            if len(tracDVNums) != len(trac):
+                raise ValueError(
+                    f"tracDVNums length ({len(tracDVNums)}) must match "
+                    f"trac length ({len(trac)})"
+                )
+            dvNums = <int*>tracDVNums.data
         if self.ptr:
-            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data)
+            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data, dvNums)
             if tracElem != NULL:
                 return _init_Element(tracElem)
         return None

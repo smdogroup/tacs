@@ -279,7 +279,7 @@ cdef extern from "TACSElement.h":
         TACSElementBasis* getElementBasis()
         TACSElementModel* getElementModel()
         ElementType getElementType()
-        TACSElement* createElementTraction(int, const TacsScalar*)
+        TACSElement* createElementTraction(int, const TacsScalar*, const int*)
         TACSElement* createElementPressure(int, TacsScalar, int)
         TACSElement* createElementInertialForce(const TacsScalar*, const int*)
         TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool)

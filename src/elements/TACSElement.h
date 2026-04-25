@@ -202,8 +202,8 @@ class TACSElement : public TACSObject {
     @return The TACSElement traction class associated with this element.
     Possibly NULL.
   */
-  virtual TACSElement *createElementTraction(int faceIndex,
-                                             const TacsScalar t[]) {
+  virtual TACSElement *createElementTraction(int faceIndex, const TacsScalar t[],
+                                             const int *tracDVNums = NULL) {
     return NULL;
   }
 

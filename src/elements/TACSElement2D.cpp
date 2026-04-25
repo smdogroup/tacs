@@ -53,9 +53,10 @@ TACSElementBasis *TACSElement2D::getElementBasis() { return basis; }
 TACSElementModel *TACSElement2D::getElementModel() { return model; }
 
 TACSElement *TACSElement2D::createElementTraction(int faceIndex,
-                                                  const TacsScalar t[]) {
+                                                  const TacsScalar t[],
+                                                  const int *tracDVNums) {
   int varsPerNode = getVarsPerNode();
-  return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
+  return new TACSTraction2D(varsPerNode, faceIndex, basis, t, 1, tracDVNums);
 }
 
 TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p,
