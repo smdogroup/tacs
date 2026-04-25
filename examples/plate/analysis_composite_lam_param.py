@@ -92,9 +92,7 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
             S12=S12,
         )
 
-        ortho_ply = constitutive.OrthotropicPly(
-            tply, ortho_prop, max_strain_criterion=useVMFailure
-        )
+        ortho_ply = constitutive.OrthotropicPly(tply, ortho_prop)
 
         if useVMFailure:
             if comm.rank == 0:

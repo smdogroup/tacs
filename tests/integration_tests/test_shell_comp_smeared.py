@@ -173,7 +173,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_TsaiWufailure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ftype="discrete",
+                ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
             )
             problem.addFunction(
                 "x_disp",

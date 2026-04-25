@@ -267,5 +267,5 @@ class ProblemTest(StaticTestCase.StaticTest):
                 assembler, ksWeight=ksweight, direction=[1e3, 1e3]
             ),
         ]
-        func_list[0].setKSFailureType("continuous")
+        func_list[0].setKSAggregationType(functions.KSFailure.KSAggregationType.CONTINUOUS)
         return func_list, FUNC_REFS
