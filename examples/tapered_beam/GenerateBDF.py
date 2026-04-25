@@ -5,32 +5,36 @@
 @File    :   GenerateBDF.py
 @Date    :   2025/09/29
 @Author  :   Alasdair Christison Gray
-@Description : This script generates a NASTRAN input file (.bdf) for a tapered
+@Description : This script generates NASTRAN input files for a tapered
 cantilever beam analysis using pyNastran.
 
 The file models a 1m long beam made of Aluminium 7075. The
 rectangular cross-section tapers linearly from the fixed end to the
 free end.
 
-Then we define a modal analysis (SOL 103) to find the first 10 natural frequencies.
+The script writes three files:
+1. A shared bulk-data include file containing the model definition.
+2. A SOL 101 static-analysis driver with a vertical 1 kN tip load.
+3. A SOL 103 modal-analysis driver for the first 10 modes.
 
 Command-Line Usage:
-    # Generate a model with 30 elements using PBEAM cards
-    python generate_tapered_beam.py --num-elements 10 --prop-type PBEAM --output beam_pbeam.bdf
+    # Generate a model with 10 elements using PBEAM cards
+    python GenerateBDF.py --num-elements 10 --prop-type PBEAM --output tapered_beam_pbeam.bdf
 
-    # Generate a model with 30 elements using PBEAML cards
-    python generate_tapered_beam.py --num-elements 20 --prop-type PBEAML --output beam_pbeaml.bdf
+    # Generate a model with 20 elements using PBEAML cards
+    python GenerateBDF.py --num-elements 20 --prop-type PBEAML --output tapered_beam_pbeaml.bdf
 """
 
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-from typing import List, Tuple
+from pathlib import Path
+from typing import Tuple
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
-from pyNastran.bdf.bdf import BDF, CaseControlDeck
+from pyNastran.bdf.bdf import BDF
 import numpy as np
 
 # ==============================================================================
@@ -113,7 +117,7 @@ def addBeamPropertyCard(
             beam_type=beamType,
             xxb=stations,
             dims=[dimsA, dimsB],
-            nsm=[nsm, nsm],
+            nsm=[nsm] * len(stations),
         )
 
     elif propType.upper() == "PBEAM":
@@ -139,21 +143,41 @@ def addBeamPropertyCard(
             i12=[0.0] * len(areas),
             j=js,
             xxb=stations,
-            nsm=[nsm, nsm],
+            nsm=[nsm] * len(stations),
         )
 
 
-def generateTaperedBeamBdf(
-    numElements: int, propType: str, output: str, nsm: float = 0.0
+def writeDriverFile(
+    outputPath: Path,
+    sol: int,
+    title: str,
+    includeFilename: str,
+    caseControlLines: list[str],
+    extraBulkLines: list[str],
 ) -> None:
+    """Write a Nastran driver file that includes a shared bulk-data file."""
+    lines = [
+        f"SOL {sol}",
+        "CEND",
+        f"TITLE = {title}",
+        *caseControlLines,
+        "BEGIN BULK",
+        f"INCLUDE '{includeFilename}'",
+        *extraBulkLines,
+        "ENDDATA",
+        "",
+    ]
+    outputPath.write_text("\n".join(lines), encoding="utf-8")
+
+
+def generateTaperedBeamBdf(numElements: int, propType: str, output: str) -> None:
     """
-    Generates the NASTRAN BDF file for the tapered beam analysis.
+    Generates a shared bulk-data include file and separate SOL 101/103 driver files.
 
     Args:
         numElements (int): The number of CBEAM elements to create.
         propType (str): The property card type to use ('PBEAM' or 'PBEAML').
-        output (str): The path to write the output BDF file.
-        nsm (float): Nonstructural mass per unit length applied uniformly to all elements. Defaults to 0.0.
+        output (str): Base path used to name output files.
     """
     if numElements <= 0:
         raise ValueError("Number of elements must be a positive integer.")
@@ -179,7 +203,6 @@ def generateTaperedBeamBdf(
     spcId = 1 + SPCOffset
     gravLoadId = 1 + loadOffset
     eigrlId = 1
-    coordId = 0  # Basic coordinate system
 
     # --- Beam Geometry ---
     beamLength = 1.0  # meters
@@ -187,6 +210,10 @@ def generateTaperedBeamBdf(
     width1, depth1 = 0.20, 0.05
     # Dimensions at the free end (x=L)
     width2, depth2 = 0.10, 0.02
+
+    offset = (
+        np.array([0.0, width1, depth1]) + np.array([0.0, width2, depth2])
+    ) / 2.0  # Offset to align the beam's neutral axis with the z-axis
 
     widths = np.linspace(width1, width2, numElements + 1)
     depths = np.linspace(depth1, depth2, numElements + 1)
@@ -197,6 +224,9 @@ def generateTaperedBeamBdf(
     G = E / (2 * (1 + nu))  # Shear Modulus in N/m^2
     rho = 2810.0  # Density in kg/m^3
     model.add_mat1(mid=materialId, E=E, G=G, nu=nu, rho=rho, comment="Aluminium 7075")
+
+    # Make non-structural mass of similar magnitude to beam section mass so that it has a significant effect on the modal frequencies.
+    nsm = rho * width1 * depth1
 
     # --- Nodes and Elements ---
     xNodes = np.linspace(0.0, beamLength, numElements + 1)
@@ -211,8 +241,6 @@ def generateTaperedBeamBdf(
     # The z axis is vertical (depth direction), y axis is width direction
     orientationVector = [0.0, 0.0, 1.0]
     componentPrefix = "Elements and Element Properties for region :"
-    for ii in range(numElements):
-        elementId
     for i in range(numElements):
         # Create property card
         addBeamPropertyCard(
@@ -235,7 +263,10 @@ def generateTaperedBeamBdf(
             propertyId,
             [nodeA, nodeB],
             orientationVector,
-            comment=f"{componentPrefix} Element {elementId-elementOffset}",
+            g0=None,
+            wa=offset,
+            wb=offset,
+            comment=f"{componentPrefix} Element {elementId - elementOffset}",
         )
         elementId += 1
         propertyId += 1
@@ -252,42 +283,77 @@ def generateTaperedBeamBdf(
     gravityVector = [0.0, 0.0, -1.0]
     model.add_grav(gravLoadId, g, gravityVector)
 
-    # --- Analysis Case Control ---
-    # Just do the modal analysis for now
-    eigrl = model.add_eigrl(42, nd=10)
-
-    model.sol = 103  # start=103
-    cc = CaseControlDeck(
-        [
-            "SUBCASE 1",
-            "  LABEL = Modal Analysis",
-            "  METHOD = 42",  # TODO: remove
-            "  SPC = %s" % spcId,
-            "  DISP(PLOT) = ALL",
-        ]
+    tipLoadId = gravLoadId + 1
+    tipNodeId = nodeIds[-1]
+    model.add_force(
+        tipLoadId,
+        tipNodeId,
+        1000.0,
+        [0.0, 0.0, 1.0],
+        comment="Vertical tip load of 1kN",
     )
-    # print(cc)
-    model.case_control_deck = cc
-    model.validate()
 
-    # --- Write BDF File ---
-    # Set PARAM POST 1 to output an op2 file
+    # Keep the modal extraction card with the common bulk data.
+    model.add_eigrl(eigrlId, nd=10)
+
+    # --- Write shared Bulk Data and analysis drivers ---
     model.add_param("POST", 1)
-    model.write_bdf(output, enddata=True)
+
+    outputPath = Path(output)
+    outputStem = outputPath.with_suffix("")
+    bulkPath = outputStem.with_name(f"{outputStem.name}_{propType.lower()}_bulk.dat")
+    sol101Path = outputStem.with_name(
+        f"{outputStem.name}_{propType.lower()}_sol101.bdf"
+    )
+    sol103Path = outputStem.with_name(
+        f"{outputStem.name}_{propType.lower()}_sol103.bdf"
+    )
+
+    with bulkPath.open("w", encoding="utf-8") as bulkFile:
+        model.write_bulk_data(bulkFile, interspersed=False, enddata=False, close=False)
+
+    includeFilename = bulkPath.name
+
+    writeDriverFile(
+        outputPath=sol101Path,
+        sol=101,
+        title="Linear Static Analysis",
+        includeFilename=includeFilename,
+        caseControlLines=[
+            f"SPC = {spcId}",
+            f"LOAD = {tipLoadId}",
+            "DISP = ALL",
+            "STRESS = ALL",
+        ],
+        extraBulkLines=[],
+    )
+
+    writeDriverFile(
+        outputPath=sol103Path,
+        sol=103,
+        title="Normal Modes Analysis",
+        includeFilename=includeFilename,
+        caseControlLines=[
+            f"SPC = {spcId}",
+            f"METHOD = {eigrlId}",
+            "DISP = ALL",
+        ],
+        extraBulkLines=[],
+    )
 
 
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Generate a NASTRAN BDF file for a tapered cantilever beam analysis.",
+        description="Generate shared bulk data and SOL 101/103 NASTRAN input files for a tapered cantilever beam.",
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "-n",
         "--num-elements",
         type=int,
-        default=10,
+        default=30,
         help="Number of CBEAM elements to use along the beam length.",
     )
     parser.add_argument(
@@ -302,8 +368,8 @@ if __name__ == "__main__":
         "-o",
         "--output",
         type=str,
-        default="tapered_beam.bdf",
-        help="Path for the output BDF file.",
+        default="tapered_beam",
+        help="Base filename used to create *_bulk.dat, *_sol101.bdf, and *_sol103.bdf.",
     )
     parser.add_argument(
         "--nsm",
@@ -313,8 +379,5 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     generateTaperedBeamBdf(
-        numElements=args.num_elements,
-        propType=args.prop_type,
-        output=args.output,
-        nsm=args.nsm,
+        numElements=args.num_elements, propType=args.prop_type, output=args.output
     )
