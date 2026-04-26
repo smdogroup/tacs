@@ -238,7 +238,7 @@ class ModalProblem(TACSProblem):
         Get the number of eigenvalues requested from solver for this problem.
 
         Returns
-        ----------
+        -------
         numEigs : int
             Number of eigenvalues.
         """
@@ -270,7 +270,7 @@ class ModalProblem(TACSProblem):
         --------
         >>> funcs = {}
         >>> modalProblem.solve()
-        >>> modalProblem.evalFunctions(funcs, 'eigsm.0')
+        >>> modalProblem.evalFunctions(funcs, "eigsm.0")
         >>> funcs
         >>> # Result will look like (if ModalProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':12354.10}
@@ -327,7 +327,7 @@ class ModalProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> modalProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
+        >>> modalProblem.evalFunctionsSens(funcsSens, "eigsm.0")
         >>> funcsSens
         >>> # Result will look like (if ModalProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
@@ -446,7 +446,7 @@ class ModalProblem(TACSProblem):
             Place eigenvector for mode into this array (optional).
 
         Returns
-        --------
+        -------
         eigVal: float
             Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)
 

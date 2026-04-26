@@ -11,7 +11,7 @@ The cross-section is a solid rectangle with the following properties:
     w = 0.1
     t = 0.05
 We apply a compression load case and test various functions including:
-KSDisplacement, StructuralMass, MomentOfInertia, Compliance, and KSFailure 
+KSDisplacement, StructuralMass, MomentOfInertia, Compliance, and KSFailure
 functions and their sensitivities.
 We also apply a constraint on the beam length using the stiffener length constraint.
 """

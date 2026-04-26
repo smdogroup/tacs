@@ -29,7 +29,7 @@ class AflrAim:
 
     @property
     def aim(self):
-        """surface mesher aim aka aflr4 aim"""
+        """Surface mesher aim aka aflr4 aim"""
         return self._aim
 
     @property
@@ -96,7 +96,7 @@ class AflrAim:
 
     def register_to(self, tacs_aim):
         """
-        cascade method to register the egads aim to the tacs aim wrapper class
+        Cascade method to register the egads aim to the tacs aim wrapper class
         """
         tacs_aim.register(self)
         return self
