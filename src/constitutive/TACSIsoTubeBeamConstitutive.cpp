@@ -1,12 +1,36 @@
 #include "TACSIsoTubeBeamConstitutive.h"
 
+namespace {
+// Finite SIMP stiffness floor for numerical regularization so near-void
+// members do not create near-singular stiffness matrices. This improves
+// conditioning for eigenvalue solves and parallel runs.
+inline TacsScalar simp_stiffness_scale(int xDV, TacsScalar x_val,
+                                       TacsScalar p_penalty,
+                                       TacsScalar k_floor) {
+  if (xDV < 0) {
+    return 1.0;
+  }
+  return k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
+}
+
+inline TacsScalar simp_stiffness_scale_derivative(int xDV, TacsScalar x_val,
+                                                  TacsScalar p_penalty,
+                                                  TacsScalar k_floor) {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  return (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
+}
+}  // namespace
+
 TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
     TACSMaterialProperties *properties, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
     TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
     TacsScalar buckle_length, int buckle_length_dv,
     TacsScalar buckle_length_factor,
-    int x_dv, TacsScalar p_penalty_in, TacsScalar eps_m_in) {
+    int x_dv, TacsScalar p_penalty_in, TacsScalar k_floor_in,
+    TacsScalar eps_m_in) {
   props = properties;
   props->incref();
 
@@ -27,6 +51,7 @@ TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
   xDV = x_dv;
   x_val = 1.0;
   p_penalty = p_penalty_in;
+  k_floor = k_floor_in;
   eps_m = eps_m_in;
 }
 
@@ -238,8 +263,9 @@ void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  E *= xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  E *= stiffness_scale;
   TacsScalar G = 0.5 * E / (1.0 + nu);
   TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
   TacsScalar d0 = inner + wall;
@@ -262,8 +288,9 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness(int elemIndex,
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  E *= xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  E *= stiffness_scale;
   TacsScalar G = 0.5 * E / (1.0 + nu);
   TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
   TacsScalar d0 = inner + wall;
@@ -288,8 +315,9 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  TacsScalar Ep = E * xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  TacsScalar Ep = E * stiffness_scale;
   TacsScalar Gp = 0.5 * Ep / (1.0 + nu);
   TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
   TacsScalar d0 = inner + wall;
@@ -323,8 +351,9 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (xDV >= 0) {
-    TacsScalar dxp = p_penalty * pow(x_val, p_penalty - 1.0);
-    TacsScalar dEp = E * dxp;
+    TacsScalar dstiffness_scale =
+        simp_stiffness_scale_derivative(xDV, x_val, p_penalty, k_floor);
+    TacsScalar dEp = E * dstiffness_scale;
     TacsScalar dGp = 0.5 * dEp / (1.0 + nu);
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;

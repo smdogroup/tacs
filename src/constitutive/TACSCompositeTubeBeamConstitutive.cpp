@@ -3,6 +3,29 @@
 #include <math.h>
 #include <string.h>
 
+namespace {
+// Finite SIMP stiffness floor for numerical regularization so near-void
+// members do not create near-singular stiffness matrices. This improves
+// conditioning for eigenvalue solves and parallel runs.
+inline TacsScalar simp_stiffness_scale(int xDV, TacsScalar x_val,
+                                       TacsScalar p_penalty,
+                                       TacsScalar k_floor) {
+  if (xDV < 0) {
+    return 1.0;
+  }
+  return k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
+}
+
+inline TacsScalar simp_stiffness_scale_derivative(int xDV, TacsScalar x_val,
+                                                  TacsScalar p_penalty,
+                                                  TacsScalar k_floor) {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  return (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
+}
+}  // namespace
+
 TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
     TacsScalar E11_in, TacsScalar E22, TacsScalar G12, TacsScalar nu12,
     TacsScalar rho_in, TacsScalar X_c_in, TacsScalar X_t_in,
@@ -13,7 +36,8 @@ TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
     TacsScalar wall_lb, TacsScalar wall_ub,
     TacsScalar buckle_length,
     TacsScalar buckle_length_factor,
-    int x_dv, TacsScalar p_penalty_in, TacsScalar eps_m_in) {
+    int x_dv, TacsScalar p_penalty_in, TacsScalar k_floor_in,
+    TacsScalar eps_m_in) {
   // Store ply-level material properties
   E11 = E11_in;
   rho = rho_in;
@@ -74,6 +98,7 @@ TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
   xDV = x_dv;
   x_val = 1.0;
   p_penalty = p_penalty_in;
+  k_floor = k_floor_in;
   eps_m = eps_m_in;
 }
 
@@ -251,9 +276,10 @@ void TACSCompositeTubeBeamConstitutive::evalStress(int elemIndex,
                                                    const TacsScalar X[],
                                                    const TacsScalar e[],
                                                    TacsScalar s[]) {
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  TacsScalar Ep = E_eff * xp;
-  TacsScalar Gp = G_eff * xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  TacsScalar Ep = E_eff * stiffness_scale;
+  TacsScalar Gp = G_eff * stiffness_scale;
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -270,9 +296,10 @@ void TACSCompositeTubeBeamConstitutive::evalStress(int elemIndex,
 
 void TACSCompositeTubeBeamConstitutive::evalTangentStiffness(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[]) {
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  TacsScalar Ep = E_eff * xp;
-  TacsScalar Gp = G_eff * xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  TacsScalar Ep = E_eff * stiffness_scale;
+  TacsScalar Gp = G_eff * stiffness_scale;
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -293,9 +320,10 @@ void TACSCompositeTubeBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar xp = (xDV >= 0) ? pow(x_val, p_penalty) : 1.0;
-  TacsScalar Ep = E_eff * xp;
-  TacsScalar Gp = G_eff * xp;
+  TacsScalar stiffness_scale =
+      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
+  TacsScalar Ep = E_eff * stiffness_scale;
+  TacsScalar Gp = G_eff * stiffness_scale;
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -321,9 +349,10 @@ void TACSCompositeTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (xDV >= 0) {
-    TacsScalar dxp = p_penalty * pow(x_val, p_penalty - 1.0);
-    TacsScalar dEp = E_eff * dxp;
-    TacsScalar dGp = G_eff * dxp;
+    TacsScalar dstiffness_scale =
+        simp_stiffness_scale_derivative(xDV, x_val, p_penalty, k_floor);
+    TacsScalar dEp = E_eff * dstiffness_scale;
+    TacsScalar dGp = G_eff * dstiffness_scale;
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
     dfdx[index] +=

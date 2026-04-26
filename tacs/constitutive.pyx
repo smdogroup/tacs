@@ -2619,7 +2619,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
             valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub", "Lb", "LbNum", "Kb",
-                         "xNum", "p_penalty", "eps_m"],
+                         "xNum", "p_penalty", "k_floor", "eps_m"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
@@ -2635,6 +2635,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         cdef TacsScalar Kb = 0.0
         cdef int xNum = -1
         cdef TacsScalar p_penalty = 3.0
+        cdef TacsScalar k_floor = 0.0
         cdef TacsScalar eps_m_val = 1e-9
 
         if len(args) >= 1:
@@ -2666,6 +2667,8 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             xNum = kwargs['xNum']
         if 'p_penalty' in kwargs:
             p_penalty = kwargs['p_penalty']
+        if 'k_floor' in kwargs:
+            k_floor = kwargs['k_floor']
         if 'eps_m' in kwargs:
             eps_m_val = kwargs['eps_m']
 
@@ -2673,7 +2676,8 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
                                                         dlb, dub, tlb, tub,
                                                         Lb, LbNum, Kb,
-                                                        xNum, p_penalty, eps_m_val)
+                                                        xNum, p_penalty, k_floor,
+                                                        eps_m_val)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -2750,7 +2754,7 @@ cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
                             "layup_angles", "d", "tw"],
             valid_keys=["X_t", "dNum", "dlb", "dub",
                         "twNum", "twlb", "twub", "Lb", "Kb",
-                        "xNum", "p_penalty", "eps_m"],
+                        "xNum", "p_penalty", "k_floor", "eps_m"],
         )
         cdef TacsScalar E11 = kwargs['E11']
         cdef TacsScalar E22 = kwargs['E22']
@@ -2773,6 +2777,7 @@ cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
             Kb = kwargs['Kb']
         cdef int xNum = kwargs.get('xNum', -1)
         cdef TacsScalar p_penalty = kwargs.get('p_penalty', 3.0)
+        cdef TacsScalar k_floor = kwargs.get('k_floor', 0.0)
         cdef TacsScalar eps_m_val = kwargs.get('eps_m', 1e-9)
 
         # Convert layup angles (degrees) to radians as a TacsScalar C array.
@@ -2790,7 +2795,7 @@ cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
             dNum, twNum,
             dlb, dub, twlb, twub,
             Lb, Kb,
-            xNum, p_penalty, eps_m_val)
+            xNum, p_penalty, k_floor, eps_m_val)
         self.ptr = self.cptr
         self.ptr.incref()
 

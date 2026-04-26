@@ -72,6 +72,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
       TacsScalar buckle_length_factor = 0.0,
       int x_dv = -1,
       TacsScalar p_penalty = 3.0,
+      TacsScalar k_floor = 0.0,
       TacsScalar eps_m = 1e-9);
   ~TACSCompositeTubeBeamConstitutive();
 
@@ -168,7 +169,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
 
   // SIMP topology variables
   int xDV;
-  TacsScalar x_val, p_penalty, eps_m;
+  TacsScalar x_val, p_penalty, k_floor, eps_m;
 
   static const char *constName;
 };
