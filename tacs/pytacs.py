@@ -1139,182 +1139,238 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
-            elif propInfo.type == "PBAR":  # Nastran bar
-                area = propInfo.A
-                I1 = propInfo.i1
-                I2 = propInfo.i2
-                # Nastran uses negative convention for POI's
-                I12 = -propInfo.i12
-                J = propInfo.j
-                k1 = propInfo.k1
-                k2 = propInfo.k2
-                nsm = propInfo.nsm
+            elif propInfo.type in ["PBAR", "PBARL", "PBEAM", "PBEAML"]:
+                # Get shear center offset from the associated element card
+                elem0 = elemDict[propertyID]["elements"][0]
+                # Get element axes and offset vectors
+                _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
+                # Take the average of the offset vectors at either end of bar
+                offset_vector = (wa + wb) / 2.0
+                # Project the offset vector onto the local section axes
+                jOffset = np.dot(jhat, offset_vector)
+                kOffset = np.dot(khat, offset_vector)
 
-                # pynastran defaults these values to 1e8,
-                # which can lead to scaling issues in the stiffness matrix
-                # We truncate this value to 1e3 to prevent this
-                if k1 is None or k1 > 1e3:
-                    k1 = 1e3
+                if propInfo.type == "PBAR":  # Nastran bar
+                    area = propInfo.A
+                    I1 = propInfo.i1
+                    I2 = propInfo.i2
+                    # Nastran uses negative convention for POI's
+                    I12 = -propInfo.i12
+                    J = propInfo.j
+                    k1 = propInfo.k1
+                    k2 = propInfo.k2
+                    nsm = propInfo.nsm
 
-                if k2 is None or k2 > 1e3:
-                    k2 = 1e3
+                    # pynastran defaults these values to 1e8,
+                    # which can lead to scaling issues in the stiffness matrix
+                    # We truncate this value to 1e3 to prevent this
+                    if k1 is None or k1 > 1e3:
+                        k1 = 1e3
 
-                con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2, nsm=nsm
-                )
-
-            elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
-                nsm = propInfo.nsm
-                if propInfo.Type == "BAR":
-                    w = propInfo.dim[0]
-                    t = propInfo.dim[1]
-                    elem0 = elemDict[propertyID]["elements"][0]
-                    # Get element axes and offset vectors
-                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
-                    # Take the average of the offset vectors at either end of bar
-                    offset_vector = (wa + wb) / 2.0
-                    # Project the offset vector onto the width and thickness axes
-                    wOffset = -np.dot(khat, offset_vector) / w
-                    tOffset = -np.dot(jhat, offset_vector) / t
-                    con = tacs.constitutive.IsoRectangleBeamConstitutive(
-                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
-                    )
-
-                elif propInfo.Type == "TUBE":
-                    r1 = propInfo.dim[0]
-                    r0 = propInfo.dim[1]
-                    d_inner = 2 * r0
-                    t_wall = r1 - r0
-                    con = tacs.constitutive.IsoTubeBeamConstitutive(
-                        mat, d=d_inner, t=t_wall, nsm=nsm
-                    )
-
-                else:
-                    # We use the pynastran API to get the area, moments of inertia, and torsional constant
-                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
-                    # this more general method
-                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
-                        "PBARL", propInfo.Type, propInfo.dim, propInfo
-                    )
-                    J = propInfo.J()
+                    if k2 is None or k2 > 1e3:
+                        k2 = 1e3
+                    # For a bar we assume that the shear center, neutral axis, and center of mass all coincide, with the defined offset from the nodes
                     con = tacs.constitutive.BasicBeamConstitutive(
-                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12, nsm=nsm
+                        mat,
+                        A=area,
+                        Iy=I2,
+                        Iz=I1,
+                        Iyz=I12,
+                        J=J,
+                        ky=k1,
+                        kz=k2,
+                        nsm=nsm,
+                        xm2=jOffset,
+                        xm3=kOffset,
+                        xc2=jOffset,
+                        xc3=kOffset,
+                        xk2=jOffset,
+                        xk3=kOffset,
                     )
 
-            elif propInfo.type == "PBEAM":
-                area = propInfo.A
-                I1 = propInfo.i1
-                I2 = propInfo.i2
-                # Nastran uses negative convention for POI's
-                I12 = -propInfo.i12
-                J = propInfo.j
-                k1 = propInfo.k1
-                k2 = propInfo.k2
-                nsm = propInfo.nsm
-                nsmYA = propInfo.n1a  # Y coordinate of non-structural mass for end A
-                nsmZA = propInfo.n2a  # Z coordinate of non-structural mass for end A
-                nsmYB = propInfo.n1b  # Y coordinate of non-structural mass for end B
-                nsmZB = propInfo.n2b  # Z coordinate of non-structural mass for end B
-                neutralAxisYA = propInfo.n1a  # Y coordinate of neutral axis for end A
-                neutralAxisZA = propInfo.n2a  # Z coordinate of neutral axis for end A
-                neutralAxisYB = propInfo.n1b  # Y coordinate of neutral axis for end B
-                neutralAxisZB = propInfo.n2b  # Z coordinate of neutral axis for end B
-                nsmY = (nsmYA + nsmYB) / 2
-                nsmZ = (nsmZA + nsmZB) / 2
-                neutralAxisY = (neutralAxisYA + neutralAxisYB) / 2
-                neutralAxisZ = (neutralAxisZA + neutralAxisZB) / 2
+                elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
+                    nsm = propInfo.nsm
+                    if propInfo.Type == "BAR":
+                        w = propInfo.dim[0]
+                        t = propInfo.dim[1]
+                        # Normalize the offsets by the section dimensions to get non-dimensional offsets for TACS
+                        wOffset = -kOffset / w
+                        tOffset = -jOffset / t
+                        con = tacs.constitutive.IsoRectangleBeamConstitutive(
+                            mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
+                        )
 
-                # pynastran defaults these values to 1e8,
-                # which can lead to scaling issues in the stiffness matrix
-                # We truncate this value to 1e3 to prevent this
-                if k1 is None or k1 > 1e3:
-                    k1 = 1e3
+                    elif propInfo.Type == "TUBE" and (
+                        kOffset == 0.0 and jOffset == 0.0
+                    ):
+                        r1 = propInfo.dim[0]
+                        r0 = propInfo.dim[1]
+                        d_inner = 2 * r0
+                        t_wall = r1 - r0
+                        con = tacs.constitutive.IsoTubeBeamConstitutive(
+                            mat, d=d_inner, t=t_wall, nsm=nsm
+                        )
 
-                if k2 is None or k2 > 1e3:
-                    k2 = 1e3
+                    else:
+                        # We use the pynastran API to get the area, moments of inertia, and torsional constant
+                        # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
+                        # this more general method
+                        A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
+                            "PBARL", propInfo.Type, propInfo.dim, propInfo
+                        )
+                        J = propInfo.J()
+                        # For a bar we assume that the shear center, neutral axis, and center of mass all coincide, with the defined offset from the nodes
+                        con = tacs.constitutive.BasicBeamConstitutive(
+                            mat,
+                            A=A,
+                            J=J,
+                            Iy=I2,
+                            Iz=I1,
+                            Iyz=-I12,
+                            nsm=nsm,
+                            xm2=jOffset,
+                            xm3=kOffset,
+                            xc2=jOffset,
+                            xc3=kOffset,
+                            xk2=jOffset,
+                            xk3=kOffset,
+                        )
 
-                numPropStations = len(area)
-                if numPropStations == 1:
-                    area = area[0]
-                    I1 = I1[0]
-                    I2 = I2[0]
-                    I12 = I12[0]
-                    J = J[0]
-                    nsm = nsm[0]
-                else:
+                elif propInfo.type == "PBEAM":
+                    area = propInfo.A
+                    I1 = propInfo.i1
+                    I2 = propInfo.i2
+                    # Nastran uses negative convention for POI's
+                    I12 = -propInfo.i12
+                    J = propInfo.j
+                    k1 = propInfo.k1
+                    k2 = propInfo.k2
+                    nsm = propInfo.nsm
+                    # Offsets relative to shear center
+                    nsmYA = (
+                        propInfo.m1a
+                    )  # Y coordinate of non-structural mass for end A
+                    nsmZA = (
+                        propInfo.m2a
+                    )  # Z coordinate of non-structural mass for end A
+                    nsmYB = (
+                        propInfo.m1b
+                    )  # Y coordinate of non-structural mass for end B
+                    nsmZB = (
+                        propInfo.m2b
+                    )  # Z coordinate of non-structural mass for end B
+                    neutralAxisYA = (
+                        propInfo.n1a
+                    )  # Y coordinate of neutral axis for end A
+                    neutralAxisZA = (
+                        propInfo.n2a
+                    )  # Z coordinate of neutral axis for end A
+                    neutralAxisYB = (
+                        propInfo.n1b
+                    )  # Y coordinate of neutral axis for end B
+                    neutralAxisZB = (
+                        propInfo.n2b
+                    )  # Z coordinate of neutral axis for end B
+                    nsmY = (nsmYA + nsmYB) / 2
+                    nsmZ = (nsmZA + nsmZB) / 2
+                    neutralAxisY = (neutralAxisYA + neutralAxisYB) / 2
+                    neutralAxisZ = (neutralAxisZA + neutralAxisZB) / 2
+
+                    # pynastran defaults these values to 1e8,
+                    # which can lead to scaling issues in the stiffness matrix
+                    # We truncate this value to 1e3 to prevent this
+                    if k1 is None or k1 > 1e3:
+                        k1 = 1e3
+
+                    if k2 is None or k2 > 1e3:
+                        k2 = 1e3
+
+                    numPropStations = len(area)
+                    if numPropStations == 1:
+                        area = area[0]
+                        I1 = I1[0]
+                        I2 = I2[0]
+                        I12 = I12[0]
+                        J = J[0]
+                        nsm = nsm[0]
+                    else:
+                        xStations = propInfo.xxb
+                        area = np.trapezoid(area, xStations)
+                        I1 = np.trapezoid(I1, xStations)
+                        I2 = np.trapezoid(I2, xStations)
+                        I12 = np.trapezoid(I12, xStations)
+                        J = np.trapezoid(J, xStations)
+                        nsm = np.trapezoid(nsm, xStations)
+                    # TACS BasicBeamConstitutive assumes structural and nonstructural masses have same COM, so we need to compute the average center of mass.
+                    rho = mat.getMaterialProperties()["rho"]
+                    nsmRatio = nsm / (rho * area + nsm)
+                    xm2 = nsmRatio * nsmY
+                    xm3 = nsmRatio * nsmZ
+                    con = tacs.constitutive.BasicBeamConstitutive(
+                        mat,
+                        A=area,
+                        Iy=I2,
+                        Iz=I1,
+                        Iyz=I12,
+                        J=J,
+                        ky=k1,
+                        kz=k2,
+                        nsm=nsm,
+                        xc2=jOffset,
+                        xc3=kOffset,
+                        xm2=xm2 + jOffset,
+                        xm3=xm3 + kOffset,
+                        xk2=neutralAxisY + jOffset,
+                        xk3=neutralAxisZ + kOffset,
+                    )
+
+                elif propInfo.type == "PBEAML":
+                    sectionType = propInfo.beam_type
+                    sectionProps = {}
+                    if sectionType == "BAR":
+                        sectionProps["w"] = propInfo.dim[:, 0]
+                        sectionProps["t"] = propInfo.dim[:, 1]
+                        sectionProps["nsm"] = propInfo.nsm
+                        # Project the offset vector onto the width and thickness axes
+                        sectionProps["wOffset"] = (
+                            -np.dot(khat, offset_vector) / sectionProps["w"]
+                        )
+                        sectionProps["tOffset"] = (
+                            -np.dot(jhat, offset_vector) / sectionProps["t"]
+                        )
+                        conType = tacs.constitutive.IsoRectangleBeamConstitutive
+                    elif propInfo.Type == "TUBE" and (
+                        kOffset == 0.0 and jOffset == 0.0
+                    ):
+                        r1 = propInfo.dim[:, 0]
+                        r0 = propInfo.dim[:, 1]
+                        sectionProps["d"] = 2 * r0
+                        sectionProps["t"] = r1 - r0
+                        sectionProps["nsm"] = propInfo.nsm
+                        conType = tacs.constitutive.IsoTubeBeamConstitutive
+                    else:
+                        # Section shape that doesn't have a corresponding TACS
+                        # constitutive class, so we just compute the section properties
+                        # and use BasicBeamConstitutive
+                        sectionProps["A"] = propInfo.Area()
+                        sectionProps["J"] = propInfo.J()
+                        sectionProps["Iz"] = propInfo.I1()
+                        sectionProps["Iy"] = propInfo.I2()
+                        sectionProps["Iyz"] = -propInfo.I12()
+                        sectionProps["nsm"] = propInfo.nsm
+                        conType = tacs.constitutive.BasicBeamConstitutive
+
+                    # Whatever properties we're going to pass to the TACS
+                    # constitutive model, average them along the element
                     xStations = propInfo.xxb
-                    area = np.trapezoid(area, xStations)
-                    I1 = np.trapezoid(I1, xStations)
-                    I2 = np.trapezoid(I2, xStations)
-                    I12 = np.trapezoid(I12, xStations)
-                    J = np.trapezoid(J, xStations)
-                    nsm = np.trapezoid(nsm, xStations)
-                con = tacs.constitutive.BasicBeamConstitutive(
-                    mat,
-                    A=area,
-                    Iy=I2,
-                    Iz=I1,
-                    Iyz=I12,
-                    J=J,
-                    ky=k1,
-                    kz=k2,
-                    nsm=nsm,
-                    xm2=nsmY,
-                    xm3=nsmZ,
-                    xk2=neutralAxisY,
-                    xk3=neutralAxisZ,
-                )
+                    if len(xStations) == 1:
+                        for key, value in sectionProps.items():
+                            sectionProps[key] = value[0]
+                    else:
+                        for key, value in sectionProps.items():
+                            sectionProps[key] = np.trapezoid(value, xStations)
 
-            elif propInfo.type == "PBEAML":
-                sectionType = propInfo.beam_type
-                sectionProps = {}
-                if sectionType == "BAR":
-                    sectionProps["w"] = propInfo.dim[:, 0]
-                    sectionProps["t"] = propInfo.dim[:, 1]
-                    sectionProps["nsm"] = propInfo.nsm
-                    elem0 = elemDict[propertyID]["elements"][0]
-                    # Get element axes and offset vectors
-                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
-                    # Take the average of the offset vectors at either end of bar
-                    offset_vector = (wa + wb) / 2.0
-                    # Project the offset vector onto the width and thickness axes
-                    sectionProps["wOffset"] = (
-                        -np.dot(khat, offset_vector) / sectionProps["w"]
-                    )
-                    sectionProps["tOffset"] = (
-                        -np.dot(jhat, offset_vector) / sectionProps["t"]
-                    )
-                    conType = tacs.constitutive.IsoRectangleBeamConstitutive
-                elif propInfo.Type == "TUBE":
-                    r1 = propInfo.dim[:, 0]
-                    r0 = propInfo.dim[:, 1]
-                    sectionProps["d"] = 2 * r0
-                    sectionProps["t"] = r1 - r0
-                    sectionProps["nsm"] = propInfo.nsm
-                    conType = tacs.constitutive.IsoTubeBeamConstitutive
-                else:
-                    # Section shape that doesn't have a corresponding TACS
-                    # constitutive class, so we just compute the section properties
-                    # and use BasicBeamConstitutive
-                    sectionProps["A"] = propInfo.Area()
-                    sectionProps["J"] = propInfo.J()
-                    sectionProps["Iz"] = propInfo.I1()
-                    sectionProps["Iy"] = propInfo.I2()
-                    sectionProps["Iyz"] = -propInfo.I12()
-                    sectionProps["nsm"] = propInfo.nsm
-                    conType = tacs.constitutive.BasicBeamConstitutive
-
-                # Whatever properties we're going to pass to the TACS
-                # constitutive model, average them along the element
-                xStations = propInfo.xxb
-                if len(xStations) == 1:
-                    for key, value in sectionProps.items():
-                        sectionProps[key] = value[0]
-                else:
-                    for key, value in sectionProps.items():
-                        sectionProps[key] = np.trapezoid(value, xStations)
-
-                con = conType(mat, **sectionProps)
+                    con = conType(mat, **sectionProps)
 
             elif propInfo.type == "PROD":  # Nastran rod
                 area = propInfo.A
