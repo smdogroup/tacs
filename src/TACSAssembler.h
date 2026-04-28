@@ -100,6 +100,12 @@ class TACSAssembler : public TACSObject {
   // --------------------------------------------------
   void setDesignNodeMap(int _designVarsPerNode,
                         TACSNodeMap *_designVarMap = NULL);
+
+  // Register global DV indices that must be distributed to all procs.
+  // These are added to designExtDist during initialize() so that aux
+  // elements added after initialize() can always access them.
+  void setGlobalDVIndices(int n, const int *dvNums);
+  int getGlobalDVIndices(const int **dvNums);
   int setDesignDependentNodes(int numDepDesignVars, const int *_depNodePtr,
                               const int *_depNodes,
                               const double *_depNodeWeights);
@@ -406,6 +412,8 @@ class TACSAssembler : public TACSObject {
   int numDependentNodes;   // number of dependent nodes
   int numMultiplierNodes;  // number of multiplier nodes/elements
   int designVarsPerNode;   // number of design variables at each design "node"
+  int numGlobalDVs;        // number of Python-level global DV indices
+  int *globalDVNums;       // the global DV indices
 
   // Maximum element information
   int maxElementDesignVars;  // maximum number of design variable

@@ -512,7 +512,9 @@ class BucklingProblem(TACSProblem):
         """
         self._addLoadToRHS(self.F, Fapplied)
 
-    def addTractionToComponents(self, compIDs, tractions, faceIndex=0):
+    def addTractionToComponents(
+        self, compIDs, tractions, faceIndex=0, tractionDVNums=None
+    ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
@@ -531,11 +533,23 @@ class BucklingProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
-        self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
+        self._addTractionToComponents(
+            self.auxElems, compIDs, tractions, faceIndex, tractionDVNums
+        )
 
     def addTractionToElements(
-        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+        self,
+        elemIDs,
+        tractions,
+        faceIndex=0,
+        nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a fixed traction to the
@@ -559,10 +573,20 @@ class BucklingProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
 
         self._addTractionToElements(
-            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering
+            self.auxElems,
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering,
+            tractionDVNums,
         )
 
     def addPressureToComponents(self, compIDs, pressures, faceIndex=0):
@@ -619,7 +643,7 @@ class BucklingProblem(TACSProblem):
             self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
         )
 
-    def addInertialLoad(self, inertiaVector):
+    def addInertialLoad(self, inertiaVector, inertiaVecDVNums=None):
         """
         This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
@@ -629,8 +653,13 @@ class BucklingProblem(TACSProblem):
         ----------
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            for components that should not be treated as design variables.
         """
-        self._addInertialLoad(self.auxElems, inertiaVector)
+        self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
 
     def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
         """

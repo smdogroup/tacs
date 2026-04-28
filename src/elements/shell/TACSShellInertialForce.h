@@ -10,10 +10,16 @@ template <int vars_per_node, class quadrature, class basis>
 class TACSShellInertialForce : public TACSElement {
  public:
   TACSShellInertialForce(TACSShellConstitutive *_con,
-                         const TacsScalar _inertiaVec[]) {
+                         const TacsScalar _inertiaVec[],
+                         const int *_inertiaVecDVNums = NULL) {
     con = _con;
     con->incref();
     memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+    if (_inertiaVecDVNums) {
+      memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+    } else {
+      inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
+    }
   }
 
   ~TACSShellInertialForce() {
@@ -51,20 +57,57 @@ class TACSShellInertialForce : public TACSElement {
   }
 
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
-    return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+    int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
+    for (int i = 0; i < 3; i++) {
+      if (inertiaVecDVNums[i] >= 0) {
+        if (dvNums && num < dvLen) {
+          dvNums[num] = inertiaVecDVNums[i];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
-    return con->setDesignVars(elemIndex, dvLen, dvs);
+    int num = con->setDesignVars(elemIndex, dvLen, dvs);
+    for (int i = 0; i < 3; i++) {
+      if (inertiaVecDVNums[i] >= 0) {
+        if (num < dvLen) {
+          inertiaVec[i] = dvs[num];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
-    return con->getDesignVars(elemIndex, dvLen, dvs);
+    int num = con->getDesignVars(elemIndex, dvLen, dvs);
+    for (int i = 0; i < 3; i++) {
+      if (inertiaVecDVNums[i] >= 0) {
+        if (dvs && num < dvLen) {
+          dvs[num] = inertiaVec[i];
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]) {
-    return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+    int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+    for (int i = 0; i < 3; i++) {
+      if (inertiaVecDVNums[i] >= 0) {
+        if (num < dvLen) {
+          lb[num] = -1e20;
+          ub[num] = 1e20;
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
@@ -115,6 +158,7 @@ class TACSShellInertialForce : public TACSElement {
 
  private:
   TacsScalar inertiaVec[3];
+  int inertiaVecDVNums[3];
   TACSShellConstitutive *con;
 };
 
