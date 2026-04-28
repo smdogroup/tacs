@@ -1,14 +1,13 @@
 """
 ==============================================================================
-Analysis of the MACH tutorial wing with blade stiffened constitutive model
+Analysis of the Simple Transonic Wing with blade stiffened constitutive model
 ==============================================================================
-@Date    :   2023/06/27
 @Author  :   Alasdair Christison Gray
-@Description : This file performs a basic structural analysis of the MACH
-tutorial wing's wingbox using the blade stiffened shell constitutive model and
-a composite material. This case is based on the setup used in the paper:
-"Geometrically Nonlinear High-fidelity Aerostructural Optimization Including
-Geometric Design Variables" (https://doi.org/10.2514/6.2023-3316)
+@Description : This file performs a basic structural analysis of the Simple Transonic
+wing's wingbox using the blade stiffened shell constitutive model and
+a composite material. This case is based on the Simple Transonic Wing Benchmark setup used in the paper.
+"A Proposed Benchmark Model for Practical Aeroelastic Optimization of Aircraft Wings"
+(https://doi.org/10.2514/6.2024-2775)
 """
 
 # ==============================================================================
@@ -21,12 +20,16 @@ from pprint import pprint
 # External Python modules
 # ==============================================================================
 import numpy as np
+import pandas as pd
 from tacs import elements, constitutive, functions, pyTACS, TACS
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
 
 dtype = TACS.dtype
+
+# Whether to use the design variables defined in the StructDVs.csv file or to use the default values.
+USE_DVS_FROM_FILE = True
 
 # ==============================================================================
 # Composite properties
@@ -54,42 +57,47 @@ skinPlyFracs = np.array([44.41, 22.2, 22.2, 11.19], dtype=dtype) / 100.0
 sparRibPlyAngles = np.deg2rad(np.array([0.0, -45.0, 45.0, 90.0])).astype(dtype)
 sparRibPlyFracs = np.array([10.0, 35.0, 35.0, 20.0], dtype=dtype) / 100.0
 
+kcorr = 5.0 / 6.0  # shear correction factor
+
 # ==============================================================================
-# Design variable values, bounds, and scaling factors
+# Default design variable values, bounds, and scaling factors
 # ==============================================================================
+# The design variable values defined here are those specified for use in the benchmark STW structural and aeroelastic analyses.
+flangeFraction = 1.0
 # Panel length
-panelLengthMax = np.inf
-panelLengthMin = 0.0
-panelLengthScale = 1.0
+defaultPanelLength = 0.5
+defaultPanelLengthMax = np.inf
+defaultPanelLengthMin = 0.0
+defaultPanelLengthScale = 1.0
 
 # Stiffener pitch
-stiffenerPitch = dtype(0.15)  # m
-stiffenerPitchMax = 0.5  # m
-stiffenerPitchMin = 0.05  # m
-stiffenerPitchScale = 1.0
+defaultStiffenerPitch = 0.15  # m
+defaultStiffenerPitchMax = 0.5  # m
+defaultStiffenerPitchMin = 0.15  # m
+defaultStiffenerPitchScale = 1.0
 
 # Panel thickness
-panelThickness = dtype(0.02)  # m
-panelThicknessMax = 0.0065  # m
-panelThicknessMin = 0.002  # m
-panelThicknessScale = 100.0
+defaultPanelThickness = 0.0065  # m
+defaultPanelThicknessMax = 0.1  # m
+defaultPanelThicknessMin = 0.6e-3  # m
+defaultPanelThicknessScale = 100.0
 
 # ply fraction bounds
-plyFractionMax = 1.0
-plyFractionMin = 0.1
-plyFractionScale = 1.0
+defaultPlyFractionMax = 1.0
+defaultPlyFractionMin = 0.1
+defaultPlyFractionScale = 1.0
 
 # Stiffener height
-stiffenerHeight = dtype(0.05)  # m
-stiffenerHeightMax = 0.1  # m
-stiffenerHeightMin = 0.002  # m
-stiffenerHeightScale = 10.0
+defaultStiffenerHeight = 0.05  # m
+defaultStiffenerHeightMax = 0.15 / flangeFraction  # m
+defaultStiffenerHeightMin = max(25e-3 * flangeFraction, 18e-3)  # m
+defaultStiffenerHeightScale = 10.0
 
 # Stiffener thickness
-stiffenerThickness = dtype(0.006)  # m
-stiffenerThicknessMax = 0.1  # m
-stiffenerThicknessMin = 0.002  # m
-stiffenerThicknessScale = 100.0
+defaultStiffenerThickness = 0.006  # m
+defaultStiffenerThicknessMax = 0.1  # m
+defaultStiffenerThicknessMin = 0.6e-3  # m
+defaultStiffenerThicknessScale = 100.0
 
 # --- Stiffener axis directions ---
 TESparDirection = np.array([0.34968083, 0.93686889, 0.0])
@@ -107,11 +115,28 @@ structOptions = {
 bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
 FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
+# These sizing values are taken from the Case 1 aeroelastic optimization results presented in
+# "Aerostructural Optimization of the Simple Transonic Wing Using MPhys, ADflow, and TACS"
+# (https://doi.org/10.2514/6.2025-2813)
+structDVs = pd.read_csv(
+    os.path.join(os.path.dirname(__file__), "StructDVs.csv"), index_col=0
+)
+
 
 # ==============================================================================
 # Element callback function
 # ==============================================================================
-def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+def element_callback(
+    dvNum,
+    compID,
+    compDescript,
+    elemDescripts,
+    globalDVs,
+    **kwargs,
+):
+    # Get the design variable values for this component from the CSV file/dataframe
+    dvValues = structDVs.loc[compDescript]
+
     prop = constitutive.MaterialProperties(
         rho=compositeProperties["rho"],
         E1=compositeProperties["E11"],
@@ -131,28 +156,21 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
     # Use a 0-deg biased layup for the skin and a +-45-deg biased layup spars and ribs.
     # Align the stiffeners in the skins with the trailing edge spar, and the stiffeners
     # in the spars and ribs vertically.
-    # The panel length values I set here are approximate, to get the real values, you'd
-    # need to run an optimization with panel length design variables and constraints.
     if "SKIN" in compDescript:
         isInboard = any(
             [name in compDescript for name in ["SKIN.000", "SKIN.001", "SKIN.002"]]
         )
         if isInboard:
             refAxis = SpanwiseDirection
-            panelLength = 0.37475
         else:
             refAxis = TESparDirection
         plyAngles = skinPlyAngles
         panelPlyFractions = skinPlyFracs
-        panelLength = 0.735
     else:
         plyAngles = sparRibPlyAngles
         panelPlyFractions = sparRibPlyFracs
         refAxis = VerticalDirection
-        if "RIB" in compDescript:
-            panelLength = 0.38
-        elif "SPAR" in compDescript:
-            panelLength = 0.36
+    panelLength = dvValues.panelLength
 
     # Always use the 0-deg biased layup for the stiffeners
     stiffenerPlyFractions = skinPlyFracs
@@ -162,74 +180,173 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
 
     # The ordering of the DVs used by the BladeStiffenedShell model is:
     # - panel length
-    # - stiffener pitch
+    # - stiffener pitch (not used asa DV in this case)
     # - panel thickness
-    # - panel ply fractions (not used in this case)
+    # - panel ply fractions (not used asa DV in this case)
     # - stiffener height
     # - stiffener thickness
-    # - stiffener ply fractions (not used in this case)
-    currDVNum = dvNum
+    # - stiffener ply fractions (not used asa DV in this case)
+    currentDVNum = dvNum
     DVScales = []
 
-    panelLengthNum = currDVNum
-    DVScales.append(panelLengthScale)
-    currDVNum += 1
+    panelLength = dvValues.panelLength
+    panelLengthNum = currentDVNum
+    DVScales.append(defaultPanelLengthScale)
+    currentDVNum += 1
 
-    stiffenerPitchNum = currDVNum
-    DVScales.append(stiffenerPitchScale)
-    currDVNum += 1
+    stiffenerPitch = (
+        dvValues.stiffenerPitch if USE_DVS_FROM_FILE else defaultStiffenerPitch
+    )
 
-    panelThicknessNum = currDVNum
-    DVScales.append(panelThicknessScale)
-    currDVNum += 1
+    panelThickness = (
+        dvValues.panelThickness if USE_DVS_FROM_FILE else defaultPanelThickness
+    )
+    panelThicknessNum = currentDVNum
+    DVScales.append(defaultPanelThicknessScale)
+    currentDVNum += 1
 
-    stiffenerHeightNum = currDVNum
-    DVScales.append(stiffenerHeightScale)
-    currDVNum += 1
+    stiffenerHeight = (
+        dvValues.stiffenerHeight if USE_DVS_FROM_FILE else defaultStiffenerHeight
+    )
+    stiffenerHeightNum = currentDVNum
+    DVScales.append(defaultStiffenerHeightScale)
+    currentDVNum += 1
 
-    stiffenerThicknessNum = currDVNum
-    DVScales.append(stiffenerThicknessScale)
-    currDVNum += 1
+    stiffenerThickness = (
+        dvValues.stiffenerThickness if USE_DVS_FROM_FILE else defaultStiffenerThickness
+    )
+    stiffenerThicknessNum = currentDVNum
+    DVScales.append(defaultStiffenerThicknessScale)
+    currentDVNum += 1
 
     con = constitutive.BladeStiffenedShellConstitutive(
         panelPly=ply,
         stiffenerPly=ply,
-        panelLength=panelLength,
-        stiffenerPitch=stiffenerPitch,
-        panelThick=panelThickness,
-        panelPlyAngles=plyAngles,
-        panelPlyFracs=panelPlyFractions,
-        stiffenerHeight=stiffenerHeight,
-        stiffenerThick=stiffenerThickness,
-        stiffenerPlyAngles=plyAngles,
-        stiffenerPlyFracs=stiffenerPlyFractions,
+        kcorr=kcorr,
+        panelLength=dtype(panelLength),
         panelLengthNum=panelLengthNum,
-        stiffenerPitchNum=stiffenerPitchNum,
+        stiffenerPitch=dtype(stiffenerPitch),
+        panelThick=dtype(panelThickness),
         panelThickNum=panelThicknessNum,
+        panelPlyAngles=plyAngles.astype(dtype),
+        panelPlyFracs=panelPlyFractions.astype(dtype),
+        stiffenerHeight=dtype(stiffenerHeight),
         stiffenerHeightNum=stiffenerHeightNum,
+        stiffenerThick=dtype(stiffenerThickness),
         stiffenerThickNum=stiffenerThicknessNum,
+        stiffenerPlyAngles=plyAngles.astype(dtype),
+        stiffenerPlyFracs=stiffenerPlyFractions.astype(dtype),
+        flangeFraction=flangeFraction,
     )
-    con.setStiffenerPitchBounds(stiffenerPitchMin, stiffenerPitchMax)
-    con.setPanelThicknessBounds(panelThicknessMin, panelThicknessMax)
-    con.setStiffenerHeightBounds(stiffenerHeightMin, stiffenerHeightMax)
-    con.setStiffenerThicknessBounds(stiffenerThicknessMin, stiffenerThicknessMax)
+    con.setPanelThicknessBounds(defaultPanelThicknessMin, defaultPanelThicknessMax)
+    con.setStiffenerHeightBounds(defaultStiffenerHeightMin, defaultStiffenerHeightMax)
+    con.setStiffenerThicknessBounds(
+        defaultStiffenerThicknessMin, defaultStiffenerThicknessMax
+    )
 
     # --- Create reference axis transform to define the stiffener direction ---
     transform = elements.ShellRefAxisTransform(refAxis)
 
     # --- Create the element object ---
-    if elemDescripts[0] == "CQUAD4":
-        elem = elements.Quad4Shell(transform, con)
-    elif elemDescripts[0] == "CQUAD9":
-        elem = elements.Quad9Shell(transform, con)
-    elif elemDescripts[0] == "CQUAD16":
-        elem = elements.Quad16Shell(transform, con)
+    elem = elements.Quad4Shell(transform, con)
 
     return elem, DVScales
 
 
 # Set up elements and TACS assembler
-FEAAssembler.initialize(elemCallBack)
+FEAAssembler.initialize(element_callback)
+
+# ==============================================================================
+# Setup constraints
+# ==============================================================================
+# From the benchmark problem specification:
+"""Adjacency constraints are enforced to avoid abrupt changes in panel sizing. The change in panel and stiffener
+thicknesses between adjacent skin and spar panels is limited to 2.5 mm
+and the change in stiffener height to 10 mm. Some basic structural sizing rules suggested by Kassapoglou should be used
+on all panels:
+
+- The skin and stiffener thicknesses should be at least 0.6 mm
+- The stiffener heights should be at least 18 mm
+- The stiffener flange widths should be at least 25.4 mm (This and the above are satisfied by the stiffener height lower bound in this case.)
+- The aspect-ratio of the stiffener web (ℎ/t) should be between 5 and 30.
+- The thickness of the stiffener flanges on a panel should be no more than 15 times the panel thickness.
+- The stiffener flange width should be less than the stiffener pitch to avoid overlapping flanges. (This is covered by the stiffener height upper bound in this case)
+"""
+thicknessAdjCon = 2.5e-3
+heightAdjCon = 10e-3
+stiffAspectMax = 5.0
+stiffAspectMin = 30.0
+
+constraints = []
+compIDs = {}
+for group in ["SPAR", "U_SKIN", "L_SKIN", "RIB"]:
+    compIDs[group] = FEAAssembler.selectCompIDs(include=group.upper())
+
+localPanelLengthInd = 0
+localPanelThicknessInd = 1
+localstiffenerHeightInd = 2
+localStiffenerThicknessInd = 3
+
+# --- Adjacency constraints ---
+adjCon = FEAAssembler.createAdjacencyConstraint("AdjCon")
+for group in ["SPAR", "U_SKIN", "L_SKIN"]:
+    adjCon.addConstraint(
+        conName=group + "_panelThicknessAdj",
+        compIDs=compIDs[group],
+        lower=-thicknessAdjCon,
+        upper=thicknessAdjCon,
+        dvIndex=localPanelThicknessInd,
+    )
+    adjCon.addConstraint(
+        conName=group + "_stiffenerThicknessAdj",
+        compIDs=compIDs[group],
+        lower=-thicknessAdjCon,
+        upper=thicknessAdjCon,
+        dvIndex=localStiffenerThicknessInd,
+    )
+    adjCon.addConstraint(
+        conName=group + "_stiffenerHeightAdj",
+        compIDs=compIDs[group],
+        lower=-heightAdjCon,
+        upper=heightAdjCon,
+        dvIndex=localstiffenerHeightInd,
+    )
+constraints.append(adjCon)
+
+# --- Arbitrary linear DV constraints ---
+dvCon = FEAAssembler.createDVConstraint("DVCon")
+
+# Flange thickness should be no more than 15x skin thickness
+# stiffenerThickness - 15 * panelThickness <= 0
+dvCon.addConstraint(
+    conName="flangeThicknessMax",
+    upper=0.0,
+    dvIndices=[localPanelThicknessInd, localStiffenerThicknessInd],
+    dvWeights=[-15.0, 1.0],
+)
+
+# Limit the aspect ratio of the stiffener
+# stiffenerHeight - stiffAspectMax * stiffenerThickness <= 0
+dvCon.addConstraint(
+    conName="stiffenerAspectMax",
+    upper=0.0,
+    dvIndices=[localstiffenerHeightInd, localStiffenerThicknessInd],
+    dvWeights=[1.0, -stiffAspectMax],
+)
+# stiffenerHeight - stiffAspectMin * stiffenerThickness >= 0
+dvCon.addConstraint(
+    conName="stiffenerAspectMin",
+    lower=0.0,
+    dvIndices=[localstiffenerHeightInd, localStiffenerThicknessInd],
+    dvWeights=[1.0, -stiffAspectMin],
+)
+constraints.append(dvCon)
+
+# --- Panel length constraints ---
+# These are what keep the panel length DVs consistent with the true panel lengths
+panelLengthCon = FEAAssembler.createPanelLengthConstraint("PanelLengthCon")
+panelLengthCon.addConstraint("PanelLength", dvIndex=localPanelLengthInd)
+constraints.append(panelLengthCon)
 
 # ==============================================================================
 # Setup static problem
@@ -259,107 +376,15 @@ if failureGroups is not None:
 problem.addFunction("compliance", functions.Compliance)
 
 # Add gravity load
+LOAD_FACTOR = 2.5
 g = np.zeros(3)
 g[-1] = -9.81
-problem.addInertialLoad(2.5 * g)
+problem.addInertialLoad(LOAD_FACTOR * g)
 
-# Add simple distributed vertical load over the skins
-totalForce = 0.5 * 2.5 * 55e3 * 9.81
-F = np.zeros(6)
-F[2] = totalForce
-skinCompIDs = FEAAssembler.selectCompIDs("SKIN")
-problem.addLoadToComponents(skinCompIDs, F, averageLoad=True)
-
-# ==============================================================================
-# Setup constraints
-# ==============================================================================
-
-thicknessAdjCon = 2.5e-3  # 2.5mm
-heightAdjCon = 1e-2  # 1cm
-pitchAdjCon = 5e-2  # 5cm
-thickDiffMax = (
-    2.5e-3  # 2.5mm, Max allowable thickness difference between skin and stiffener
-)
-stiffAspectMax = 30.0  # Maximum allowable stiffener aspect ratio (height/thickness)
-stiffAspectMin = 5.0  # Minimum allowable stiffener aspect ratio (height/thickness)
-
-compIDs = {}
-for group in ["SPAR", "U_SKIN", "L_SKIN", "RIB"]:
-    compIDs[group] = FEAAssembler.selectCompIDs(include=group.upper())
-
-constraints = []
-
-# Add adjacency constraints on panel thickness, stiffener thickness and stiffener height to everything but the ribs
-adjCon = FEAAssembler.createAdjacencyConstraint("AdjCon")
-for group in ["SPAR", "U_SKIN", "L_SKIN"]:
-    adjCon.addConstraint(
-        conName=group + "_panelThicknessAdj",
-        compIDs=compIDs[group],
-        lower=-thicknessAdjCon,
-        upper=thicknessAdjCon,
-        dvIndex=2,
-    )
-    adjCon.addConstraint(
-        conName=group + "_stiffenerThicknessAdj",
-        compIDs=compIDs[group],
-        lower=-thicknessAdjCon,
-        upper=thicknessAdjCon,
-        dvIndex=4,
-    )
-    adjCon.addConstraint(
-        conName=group + "_stiffenerHeightAdj",
-        compIDs=compIDs[group],
-        lower=-heightAdjCon,
-        upper=heightAdjCon,
-        dvIndex=3,
-    )
-    adjCon.addConstraint(
-        conName=group + "_stiffenerPitchAdj",
-        compIDs=compIDs[group],
-        lower=-pitchAdjCon,
-        upper=pitchAdjCon,
-        dvIndex=1,
-    )
-constraints.append(adjCon)
-
-# Add constraints between the DV's on each panel
-dvCon = FEAAssembler.createDVConstraint("DVCon")
-# Flange thickness should be no more than 15x skin thickness
-dvCon.addConstraint(
-    conName="flangeThicknessMax",
-    upper=0.0,
-    dvIndices=[2, 4],
-    dvWeights=[-15.0, 1.0],
-)
-
-# Limit the aspect ratio of the stiffener
-# stiffenerHeight - stiffAspectMax * stiffenerThickness <= 0
-dvCon.addConstraint(
-    conName="stiffenerAspectMax",
-    upper=0.0,
-    dvIndices=[3, 4],
-    dvWeights=[1.0, -stiffAspectMax],
-)
-# stiffenerHeight - stiffAspectMin * stiffenerThickness >= 0
-dvCon.addConstraint(
-    conName="stiffenerAspectMin",
-    lower=0.0,
-    dvIndices=[3, 4],
-    dvWeights=[1.0, -stiffAspectMin],
-)
-# Spacing between stiffeners should be greater than stiffener flange width to avoid overlapping stiffeners
-# flangeFraction*stiffenerHeight - stiffenerPitch <= 0
-dvCon.addConstraint(
-    conName="stiffSpacingMin",
-    upper=0.0,
-    dvIndices=[3, 2],
-    dvWeights=[1.0, -1.0],
-)
-constraints.append(dvCon)
-
-panelLengthCon = FEAAssembler.createPanelLengthConstraint("PanelLengthCon")
-panelLengthCon.addConstraint("PanelLength", dvIndex=0)
-constraints.append(panelLengthCon)
+# Apply a uniform pressure over the lower skin, 30 kPa is roughly the right value to get a vertical
+# load equivalent to 2.5g
+lSkinCompIDs = FEAAssembler.selectCompIDs("L_SKIN")
+problem.addPressureToComponents(lSkinCompIDs, -LOAD_FACTOR * 30e3 / 2.5)
 
 # ==============================================================================
 # Solve static problem
@@ -381,8 +406,6 @@ funcsSens = {}
 problem.evalFunctionsSens(funcsSens)
 for constraint in constraints:
     constraint.evalConstraintsSens(funcsSens)
-# if comm.rank == 0:
-#     pprint(funcsSens)
 
 # Write out solution
 problem.writeSolution(outputDir=os.path.dirname(__file__))
