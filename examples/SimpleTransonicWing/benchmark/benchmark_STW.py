@@ -13,19 +13,6 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "AdjCon_L_SKIN_panelThicknessAdj": np.zeros(21),
-    "AdjCon_L_SKIN_stiffenerHeightAdj": np.zeros(21),
-    "AdjCon_L_SKIN_stiffenerThicknessAdj": np.zeros(21),
-    "AdjCon_SPAR_panelThicknessAdj": np.zeros(42),
-    "AdjCon_SPAR_stiffenerHeightAdj": np.zeros(42),
-    "AdjCon_SPAR_stiffenerThicknessAdj": np.zeros(42),
-    "AdjCon_U_SKIN_panelThicknessAdj": np.zeros(21),
-    "AdjCon_U_SKIN_stiffenerHeightAdj": np.zeros(21),
-    "AdjCon_U_SKIN_stiffenerThicknessAdj": np.zeros(21),
-    "DVCon_flangeThicknessMax": -0.091 * np.ones(111),
-    "DVCon_stiffenerAspectMax": 0.02 * np.ones(111),
-    "DVCon_stiffenerAspectMin": -0.13 * np.ones(111),
-    "PanelLengthCon_PanelLength": np.zeros(111),
     "StructAnalysis_compliance": np.float64(267676.5038258135),
     "StructAnalysis_l_skin_ksFailure": np.float64(1.3711772904083315),
     "StructAnalysis_l_skin_mass": np.float64(369.8464611079735),
@@ -36,6 +23,21 @@ FUNC_REF = {
     "StructAnalysis_spar_mass": np.float64(140.02329928258945),
     "StructAnalysis_u_skin_ksFailure": np.float64(2.2588423985957515),
     "StructAnalysis_u_skin_mass": np.float64(368.8548043135387),
+    "tipZDisp": np.float64(1.595477046804791),
+    "tipTwist": np.float64(3.9322637893010506),
+    "AdjCon_L_SKIN_panelThicknessAdj": np.zeros(21),
+    "AdjCon_L_SKIN_stiffenerHeightAdj": np.zeros(21),
+    "AdjCon_L_SKIN_stiffenerThicknessAdj": np.zeros(21),
+    "AdjCon_SPAR_panelThicknessAdj": np.zeros(42),
+    "AdjCon_SPAR_stiffenerHeightAdj": np.zeros(42),
+    "AdjCon_SPAR_stiffenerThicknessAdj": np.zeros(42),
+    "AdjCon_U_SKIN_panelThicknessAdj": np.zeros(21),
+    "AdjCon_U_SKIN_stiffenerHeightAdj": np.zeros(21),
+    "AdjCon_U_SKIN_stiffenerThicknessAdj": np.zeros(21),
+    "DVCon_flangeThicknessMax": -0.0915 * np.ones(111),
+    "DVCon_stiffenerAspectMax": 0.02 * np.ones(111),
+    "DVCon_stiffenerAspectMin": -0.13 * np.ones(111),
+    "PanelLengthCon_PanelLength": np.zeros(111),
 }
 
 
@@ -60,3 +62,7 @@ class ExampleBenchmark(unittest.TestCase):
                 np.testing.assert_allclose(
                     func_dict[func_name], FUNC_REF[func_name], rtol=1e-6, atol=1e-6
                 )
+
+
+if __name__ == "__main__":
+    unittest.main(defaultTest="ExampleBenchmark.benchmark_funcs")
