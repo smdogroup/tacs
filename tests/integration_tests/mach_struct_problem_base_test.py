@@ -190,15 +190,18 @@ class MACHStructProblemTestCase:
                                     atol=self.atol,
                                 )
 
-        def test_total_mass_dv_sensitivities(self):
+        def test_total_promoted_dv_sensitivities(self):
             """
-            Test total mass DV sensitivity through adjoint against fd/cs
+            Test total promoted global DV sensitivity through adjoint against fd/cs.
+            Covers all DVs returned by getPromotedDVNames(), which includes mass DVs,
+            aux DVs (e.g. load-factor variables), and any other global DVs the user
+            chose to promote to problem level.
             """
-            # Skip if no mass DVs across all problems
-            total_mass_dvs = sum(
-                len(prob.getMassDVNames()) for prob in self.struct_probs
+            # Skip if no promoted DVs across all problems
+            total_promoted_dvs = sum(
+                len(prob.getPromotedDVNames()) for prob in self.struct_probs
             )
-            if total_mass_dvs == 0:
+            if total_promoted_dvs == 0:
                 return
 
             # Initial solve
@@ -207,13 +210,13 @@ class MACHStructProblemTestCase:
             # Compute sensitivities using adjoint
             func_sens = self.run_sensitivities()
 
-            # Perturb only mass DV keys; leave struct DV keys at original values
+            # Perturb only promoted DV keys; leave struct DV keys at original values
             dv1 = deepcopy(self.dv0)
             for prob in self.struct_probs:
-                for mass_key in prob.getMassDVNames():
-                    if mass_key in self.dv_pert:
-                        dv1[mass_key] = self.perturb_struct_vec(
-                            self.dv0[mass_key], self.dv_pert[mass_key]
+                for promoted_key in prob.getPromotedDVNames():
+                    if promoted_key in self.dv_pert:
+                        dv1[promoted_key] = self.perturb_struct_vec(
+                            self.dv0[promoted_key], self.dv_pert[promoted_key]
                         )
 
             # Run perturbed solution
@@ -222,18 +225,18 @@ class MACHStructProblemTestCase:
             # Tests cs/fd against sensitivity from adjoint
             for prob in self.struct_probs:
                 with self.subTest(problem=prob.name):
-                    mass_keys = prob.getMassDVNames()
+                    promoted_keys = prob.getPromotedDVNames()
                     func_list = prob.evalFuncs
                     for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
-                                # Sum projected sens over all mass DVs for this problem
+                                # Sum projected sens over all promoted DVs for this problem
                                 dfddv_proj = sum(
-                                    func_sens[func_key][mass_key]
-                                    * self.dv_pert[mass_key]
-                                    for mass_key in mass_keys
-                                    if mass_key in func_sens[func_key]
+                                    func_sens[func_key][promoted_key]
+                                    * self.dv_pert[promoted_key]
+                                    for promoted_key in promoted_keys
+                                    if promoted_key in func_sens[func_key]
                                 )
                                 # Compute approximate sens
                                 fdv_sens_approx = self.compute_fdcs_approx(

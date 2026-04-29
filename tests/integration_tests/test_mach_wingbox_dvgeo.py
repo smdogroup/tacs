@@ -397,7 +397,9 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # ==============================================================================
         # Create MACH StructProblem
         # ==============================================================================
-        structProb = StructProblem(staticProblem, FEAAssembler, DVGeo=DVGeo)
+        structProb = StructProblem(
+            staticProblem, FEAAssembler, DVGeo=DVGeo, promotedGlobalDVs=["fuelMass"]
+        )
         structProb.addConstraint(panelLengthCon)
 
         return [structProb]

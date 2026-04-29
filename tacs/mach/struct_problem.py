@@ -44,6 +44,7 @@ class StructProblem(BaseStructProblem):
         FEAAssembler,
         DVGeo=None,
         loadFile=None,
+        promotedGlobalDVs=None,
     ):
         """
         Initialize the StructProblem.
@@ -63,6 +64,19 @@ class StructProblem(BaseStructProblem):
         loadFile : str, optional
             Filename of the (static) external load file. Should be
             generated from pyAerostructure.
+
+        promotedGlobalDVs : list of str or None, optional
+            Names of global DVs (registered via ``pyTACS.addGlobalDV``) that
+            should be promoted to the problem level.  Each promoted DV is
+            exposed to the optimizer as a separate scalar variable keyed
+            ``"{problemName}_{dvName}"`` so that multiple StructProblems can
+            carry independent values (e.g. fuel mass, load factor) without
+            key collisions.  All remaining DVs — element-level sizing
+            variables and any non-promoted global DVs — are grouped together
+            under ``self.varName`` (``"struct"``), the shared structural DV
+            block.
+
+            Pass ``None`` or ``[]`` (default) to promote nothing.
         """
 
         self.staticProblem = staticProblem
@@ -78,33 +92,46 @@ class StructProblem(BaseStructProblem):
         # underlying StaticProblem).
         self.varName = self.staticProblem.varName
 
-        # --- Split the flat TACS DV vector into mass DVs and structural DVs ---
+        # --- Split the flat TACS DV vector into promoted DVs and structural DVs ---
         #
         # globalDVs is a dict of {dvName: {"num": int, "isMassDV": bool, ...}}
         # where "num" is the index of that DV in the flat TACS design vector.
         #
-        # massDVDict collects every global DV that was registered via
-        # pyTACS.assignMassDV() (i.e. controls a CONM2 point-mass element).
-        # Keys are namespaced as "{problemName}_{dvName}" so that multiple
-        # StructProblems can coexist in the same optimisation without key collisions.
+        # promotedDVDict collects every global DV that should be promoted to
+        # the problem level.  Keys are namespaced as "{problemName}_{dvName}"
+        # so that multiple StructProblems can coexist in the same optimisation
+        # without key collisions.  This covers both classic mass DVs
+        # (isMassDV=True) and auxiliary DVs such as load-factor variables
+        # wired to addInertialLoad via inertiaVecDVNums.
         globalDVs = self.FEAAssembler.getGlobalDVs()
-        self.massDVDict = {}
-        for dvName in globalDVs:
-            if globalDVs[dvName]["isMassDV"]:
-                self.massDVDict[f"{self.name}_{dvName}"] = globalDVs[dvName]
 
-        # structDVList holds the flat-vector indices of every DV that is NOT a
-        # mass DV.  These are the element-level sizing variables (thicknesses, etc.)
-        # that will be grouped together under a single optimizer variable group.
-        structDVList = np.arange(FEAAssembler.getTotalNumDesignVars())
-        for dv_name in self.massDVDict:
-            structDVList = np.delete(structDVList, self.massDVDict[dv_name]["num"])
-        self.structDVList = structDVList.tolist()
+        namesToPromote = list(promotedGlobalDVs) if promotedGlobalDVs else []
+        invalid = [n for n in namesToPromote if n not in globalDVs]
+        if invalid:
+            raise ValueError(
+                f"The following names in promotedGlobalDVs are not registered "
+                f"global DVs: {invalid}. Available global DVs: {list(globalDVs.keys())}"
+            )
 
-        # Override the StaticProblem's varName so that structural DVs are keyed
-        # as "mass_struct" in the dv dict, distinguishing them from the
-        # split mass and struct dv keys.
-        self.staticProblem.setVarName("mass_struct")
+        self.promotedDVDict = {
+            f"{self.name}_{dvName}": globalDVs[dvName] for dvName in namesToPromote
+        }
+
+        # structDVList holds the flat-vector indices of every DV that is NOT
+        # promoted.  Use set-subtraction so the result is correct regardless
+        # of how many DVs are promoted or where they sit in the flat vector.
+        promoted_nums = {info["num"] for info in self.promotedDVDict.values()}
+        self.structDVList = [
+            i
+            for i in range(FEAAssembler.getTotalNumDesignVars())
+            if i not in promoted_nums
+        ]
+
+        # Override the StaticProblem's varName with an internal key that will
+        # never collide with any optimizer-visible key.  The flat sensitivity
+        # vector returned under this key is later remapped by
+        # convertDesignVecToDict into the correct promoted/struct split.
+        self.staticProblem.setVarName(f"_{self.varName}_flat")
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
             raise RuntimeError(
@@ -360,10 +387,10 @@ class StructProblem(BaseStructProblem):
 
         The optimizer sees two groups of variables:
 
-        * One scalar entry per mass DV, keyed ``"{problemName}_{dvName}"``
-          (ex. "cruise_fuelMass").
+        * One scalar entry per promoted global DV, keyed
+          ``"{problemName}_{dvName}"`` (e.g. ``"cruise_fuelMass"``).
         * A single array of structural DVs, keyed ``self.varName``
-          (ex. ``"struct"``).
+          (e.g. ``"struct"``).
 
         This method writes each group back into the correct positions of the flat
         TACS design vector so it can be forwarded to
@@ -385,10 +412,10 @@ class StructProblem(BaseStructProblem):
         # dvDict are left at their existing values rather than zeroed out.
         xnew = self.staticProblem.getDesignVars()
         if self.comm.rank == 0:
-            # Write each mass DV scalar into its reserved index in the flat vector.
-            for dvName in self.massDVDict:
+            # Write each promoted DV scalar into its reserved index.
+            for dvName in self.promotedDVDict:
                 if dvName in dvDict:
-                    xnew[self.massDVDict[dvName]["num"]] = dvDict[dvName]
+                    xnew[self.promotedDVDict[dvName]["num"]] = dvDict[dvName]
             # Write the structural DV block into the remaining indices.
             if self.varName in dvDict:
                 xnew[self.structDVList] = dvDict[self.varName]
@@ -401,10 +428,10 @@ class StructProblem(BaseStructProblem):
         This is the inverse of :meth:`_convertDesignDictToVec`.  The flat vector
         is split into:
 
-        * One scalar entry per mass DV, keyed ``"{problemName}_{dvName}"``
-          (ex. "cruise_fuelMass").
+        * One scalar entry per promoted global DV, keyed
+          ``"{problemName}_{dvName}"`` (e.g. ``"cruise_fuelMass"``).
         * A single array of structural DVs, keyed ``self.varName``
-          (ex. ``"struct"``).
+          (e.g. ``"struct"``).
 
         Parameters
         ----------
@@ -422,9 +449,9 @@ class StructProblem(BaseStructProblem):
 
         dvDict = {}
         if self.comm.rank == 0:
-            # Extract each mass DV scalar from its reserved index.
-            for dvName in self.massDVDict:
-                dvDict[dvName] = dvVec[..., self.massDVDict[dvName]["num"]]
+            # Extract each promoted DV scalar from its reserved index.
+            for dvName in self.promotedDVDict:
+                dvDict[dvName] = dvVec[..., self.promotedDVDict[dvName]["num"]]
             # Extract the structural DV block from the remaining indices.
             dvDict[self.varName] = dvVec[..., self.structDVList]
         return self.comm.bcast(dvDict, root=0)
@@ -441,17 +468,17 @@ class StructProblem(BaseStructProblem):
         """
         return self.varName
 
-    def getMassDVNames(self):
+    def getPromotedDVNames(self):
         """
-        Get name for the mass design variables in pyOpt. Only needed
-        if more than 1 pytacs object is used in an optimization
+        Get the optimizer-level keys for all promoted global DVs.
 
         Returns
-        ----------
-        massDVNames : list[str]
-            Name of the design variables used in setDesignVars() dict.
+        -------
+        list of str
+            Keys of the form ``"{problemName}_{dvName}"`` for every DV that
+            was promoted to the problem level at construction time.
         """
-        return list(self.massDVDict.keys())
+        return list(self.promotedDVDict.keys())
 
     def setDVGeo(self, DVGeo, pointSetKwargs=None):
         """
@@ -574,9 +601,9 @@ class StructProblem(BaseStructProblem):
         lbDict, ubDict = self.getDesignVarRange()
         scaleDict = self.getDesignVarScales()
 
-        # Register each mass DV as its own scalar variable group so it can be
-        # identified and shared with other disciplines in a coupled optimisation.
-        for dvName in self.massDVDict:
+        # Register each promoted DV as its own scalar variable group so it can
+        # be identified and shared with other disciplines in a coupled optimisation.
+        for dvName in self.promotedDVDict:
             if dvName not in excludeDVs:
                 optProb.addVarGroup(
                     dvName,
@@ -835,7 +862,7 @@ class StructProblem(BaseStructProblem):
                     )
                     funcsSens[funcKey].update(dIdx)
 
-        # Convert old variable names to seperate mass/struct dv keys
+        # Remap the flat sensitivity vector into the promoted/struct split.
         oldVarName = self.staticProblem.varName
         for funcName in evalFuncs:
             funcKey = f"{self.name}_{funcName}"
