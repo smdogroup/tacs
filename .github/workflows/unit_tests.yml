@@ -90,16 +90,13 @@ jobs:
           channels: conda-forge
           python-version: "3.10"
           conda-remove-defaults: true
-          conda-install: pip
 
       - name: Install TACS
         run: |
-          echo ${PATH};
-          which python;
-          which pip;
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           conda install -c conda-forge mamba -q -y;
+          mamba install -c conda-forge pip;
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
             mamba install -c conda-forge sysroot_linux-64=2.17 -q -y;
             mamba install -c conda-forge openblas -q -y;
