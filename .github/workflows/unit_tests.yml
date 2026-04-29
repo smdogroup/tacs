@@ -90,6 +90,7 @@ jobs:
           channels: conda-forge
           python-version: "3.10"
           conda-remove-defaults: true
+          conda-install: pip
 
       - name: Install TACS
         run: |
