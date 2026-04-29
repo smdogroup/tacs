@@ -26,21 +26,6 @@ from mpi4py import MPI
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Run the STW structural analysis example.")
-parser.add_argument(
-    "--output",
-    type=str,
-    default=os.path.join(os.path.dirname(__file__), "output"),
-    help="Directory to write output files to.",
-)
-parser.add_argument(
-    "--useDVFile",
-    action="store_true",
-    default=False,
-    help="Whether to use the design variable values from the StructDVs.csv file or to use the default values defined in the script.",
-)
-args = parser.parse_args()
-os.makedirs(args.output, exist_ok=True)
 np.set_printoptions(linewidth=200, precision=3, suppress=True)
 
 comm = MPI.COMM_WORLD
@@ -395,134 +380,157 @@ def setupProblem(FEAAssembler):
     return problem
 
 
-# ==============================================================================
-# Create pyTACS assembler
-# ==============================================================================
-structOptions = {
-    "printtiming": True,
-    "writeCoordinateFrame": True,
-}
+def run_analysis(output=None, useDVFile=False):
+    if output is None:
+        output = os.path.join(os.path.dirname(__file__), "output")
+    os.makedirs(output, exist_ok=True)
 
-bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
-FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
-
-
-def element_callback_wrapper(
-    dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
-):
-    return element_callback(
-        dvNum,
-        compID,
-        compDescript,
-        elemDescripts,
-        globalDVs,
-        **kwargs,
-        useDVsFromFile=args.useDVFile,
-    )
-
-
-FEAAssembler.initialize(element_callback_wrapper)
-problem = setupProblem(FEAAssembler)
-problem.setOptions(
-    {
-        "outputDir": args.output,
-        "useMonitor": True,
-        "monitorFrequency": 1,
+    # ==============================================================================
+    # Create pyTACS assembler
+    # ==============================================================================
+    structOptions = {
+        "printtiming": True,
+        "writeCoordinateFrame": True,
     }
-)
-constraints = setupConstraints(FEAAssembler)
 
-# Solve structural problem
-problem.solve()
+    bdfFile = os.path.join(os.path.dirname(__file__), "wingbox-L2-Order2.bdf")
+    FEAAssembler = pyTACS(bdfFile, options=structOptions, comm=comm)
 
-# Evaluate functions
-funcs = {}
-problem.evalFunctions(funcs)
-for constraint in constraints:
-    constraint.evalConstraints(funcs)
+    def element_callback_wrapper(
+        dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+    ):
+        return element_callback(
+            dvNum,
+            compID,
+            compDescript,
+            elemDescripts,
+            globalDVs,
+            **kwargs,
+            useDVsFromFile=useDVFile,
+        )
 
+    FEAAssembler.initialize(element_callback_wrapper)
+    problem = setupProblem(FEAAssembler)
+    problem.setOptions(
+        {
+            "outputDir": output,
+            "useMonitor": True,
+            "monitorFrequency": 1,
+        }
+    )
+    constraints = setupConstraints(FEAAssembler)
 
-# ==============================================================================
-# Extract tip displacement and twist
-# ==============================================================================
-components = ["SPAR.00", "SPAR.01", "RIB.22", "U_SKIN", "L_SKIN"]
-nodes = {}
-for comp in components:
-    compIDs = FEAAssembler.selectCompIDs(include=comp)
-    nodes[comp] = set(
-        FEAAssembler.getGlobalNodeIDsForComps(compIDs, nastranOrdering=False)
+    # Solve structural problem
+    problem.solve()
+
+    # Evaluate functions
+    funcs = {}
+    problem.evalFunctions(funcs)
+    for constraint in constraints:
+        constraint.evalConstraints(funcs)
+
+    # ==============================================================================
+    # Extract tip displacement and twist
+    # ==============================================================================
+    components = ["SPAR.00", "SPAR.01", "RIB.22", "U_SKIN", "L_SKIN"]
+    nodes = {}
+    for comp in components:
+        compIDs = FEAAssembler.selectCompIDs(include=comp)
+        nodes[comp] = set(
+            FEAAssembler.getGlobalNodeIDsForComps(compIDs, nastranOrdering=False)
+        )
+
+    # The node at the front upper corner of the tip rib is the one node that is common to the upper skin, the front spar and the tip rib
+    frontUpperNodeGlobalID = list(
+        nodes["U_SKIN"].intersection(nodes["RIB.22"]).intersection(nodes["SPAR.00"])
+    )[0]
+
+    # Similarly, the node at the rear upper corner of the tip rib is the one node that is common to the upper skin, the rear spar and the tip rib
+    rearUpperNodeGlobalID = list(
+        nodes["U_SKIN"].intersection(nodes["RIB.22"]).intersection(nodes["SPAR.01"])
+    )[0]
+
+    frontUpperNodeLocalID = FEAAssembler.meshLoader.getLocalNodeIDsFromGlobal(
+        frontUpperNodeGlobalID, nastranOrdering=False
+    )[0]
+    rearUpperNodeLocalID = FEAAssembler.meshLoader.getLocalNodeIDsFromGlobal(
+        rearUpperNodeGlobalID, nastranOrdering=False
+    )[0]
+
+    # To compute the tip rotation we need the node coordinates
+    frontUpperCoord = FEAAssembler.meshLoader.getBDFNodes(
+        frontUpperNodeGlobalID, nastranOrdering=False
+    )
+    rearUpperCoord = FEAAssembler.meshLoader.getBDFNodes(
+        rearUpperNodeGlobalID, nastranOrdering=False
     )
 
-# The node at the front upper corner of the tip rib is the one node that is common to the upper skin, the front spar and the tip rib
-frontUpperNodeGlobalID = list(
-    nodes["U_SKIN"].intersection(nodes["RIB.22"]).intersection(nodes["SPAR.00"])
-)[0]
+    # Now retrieve the displacements at these nodes and compute the overall tip displacement and rotation
+    disp = problem.getVariables()
+    frontUpperDisp = None
+    rearUpperDisp = None
+    if frontUpperNodeLocalID != -1:
+        frontUpperDisp = disp[6 * frontUpperNodeLocalID : 6 * frontUpperNodeLocalID + 3]
+    if rearUpperNodeLocalID != -1:
+        rearUpperDisp = disp[6 * rearUpperNodeLocalID : 6 * rearUpperNodeLocalID + 3]
 
-# Similarly, the node at the rear upper corner of the tip rib is the one node that is common to the upper skin, the rear spar and the tip rib
-rearUpperNodeGlobalID = list(
-    nodes["U_SKIN"].intersection(nodes["RIB.22"]).intersection(nodes["SPAR.01"])
-)[0]
+    # broadcast front and rear upper displacements to all procs
+    hasFrontDisp = comm.allgather(frontUpperDisp is not None)
+    hasRearDisp = comm.allgather(rearUpperDisp is not None)
+    frontUpperDisp = comm.bcast(frontUpperDisp, root=np.argmax(hasFrontDisp))
+    rearUpperDisp = comm.bcast(rearUpperDisp, root=np.argmax(hasRearDisp))
 
-frontUpperNodeLocalID = FEAAssembler.meshLoader.getLocalNodeIDsFromGlobal(
-    frontUpperNodeGlobalID, nastranOrdering=False
-)[0]
-rearUpperNodeLocalID = FEAAssembler.meshLoader.getLocalNodeIDsFromGlobal(
-    rearUpperNodeGlobalID, nastranOrdering=False
-)[0]
+    # Compute the tip twist as the change in the angle of the line in the XZ plane between the front and rear upper nodes
+    x1 = frontUpperCoord[0]
+    z1 = frontUpperCoord[2]
+    dx1 = frontUpperDisp[0]
+    dz1 = frontUpperDisp[2]
+    x2 = rearUpperCoord[0]
+    z2 = rearUpperCoord[2]
+    dx2 = rearUpperDisp[0]
+    dz2 = rearUpperDisp[2]
 
-# To compute the tip rotation we need the node coordinates
-frontUpperCoord = FEAAssembler.meshLoader.getBDFNodes(
-    frontUpperNodeGlobalID, nastranOrdering=False
-)
-rearUpperCoord = FEAAssembler.meshLoader.getBDFNodes(
-    rearUpperNodeGlobalID, nastranOrdering=False
-)
+    tipZDisp = (dz1 + dz2) / 2
 
-# Now retrieve the displacements at these nodes and compute the overall tip displacement and rotation
-disp = problem.getVariables()
-frontUpperDisp = None
-rearUpperDisp = None
-if frontUpperNodeLocalID != -1:
-    frontUpperDisp = disp[6 * frontUpperNodeLocalID : 6 * frontUpperNodeLocalID + 3]
-if rearUpperNodeLocalID != -1:
-    rearUpperDisp = disp[6 * rearUpperNodeLocalID : 6 * rearUpperNodeLocalID + 3]
+    tipTwist = np.rad2deg(
+        np.arctan2((z2 + dz2) - (z1 + dz1), (x2 + dx2) - (x1 + dx1))
+        - np.arctan2(z2 - z1, x2 - x1)
+    )
+    funcs["tipZDisp"] = tipZDisp
+    funcs["tipTwist"] = tipTwist
 
-# broadcast front and rear upper displacements to all procs
-hasFrontDisp = comm.allgather(frontUpperDisp is not None)
-hasRearDisp = comm.allgather(rearUpperDisp is not None)
-frontUpperDisp = comm.bcast(frontUpperDisp, root=np.argmax(hasFrontDisp))
-rearUpperDisp = comm.bcast(rearUpperDisp, root=np.argmax(hasRearDisp))
+    if comm.rank == 0:
+        pprint(funcs)
 
-# Compute the tip twist as the change in the angle of the line in the XZ plane between the front and rear upper nodes
-x1 = frontUpperCoord[0]
-z1 = frontUpperCoord[2]
-dx1 = frontUpperDisp[0]
-dz1 = frontUpperDisp[2]
-x2 = rearUpperCoord[0]
-z2 = rearUpperCoord[2]
-dx2 = rearUpperDisp[0]
-dz2 = rearUpperDisp[2]
+    # ==============================================================================
+    # Solve adjoints and evaluate function sensitivities
+    # ==============================================================================
+    funcsSens = {}
+    problem.evalFunctionsSens(funcsSens)
+    for constraint in constraints:
+        constraint.evalConstraintsSens(funcsSens)
+    if comm.rank == 0:
+        pprint(funcsSens)
 
-tipZDisp = (dz1 + dz2) / 2
+    problem.writeSolution()
+    return funcs, funcsSens
 
-tipTwist = np.rad2deg(
-    np.arctan2((z2 + dz2) - (z1 + dz1), (x2 + dx2) - (x1 + dx1))
-    - np.arctan2(z2 - z1, x2 - x1)
-)
-funcs["tipZDisp"] = tipZDisp
-funcs["tipTwist"] = tipTwist
 
-if comm.rank == 0:
-    pprint(funcs)
-
-# ==============================================================================
-# Solve adjoints and evaluate function sensitivities
-# ==============================================================================
-funcsSens = {}
-problem.evalFunctionsSens(funcsSens)
-for constraint in constraints:
-    constraint.evalConstraintsSens(funcsSens)
-if comm.rank == 0:
-    pprint(funcsSens)
-
-problem.writeSolution()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run the STW structural analysis example."
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=os.path.join(os.path.dirname(__file__), "output"),
+        help="Directory to write output files to.",
+    )
+    parser.add_argument(
+        "--useDVFile",
+        action="store_true",
+        default=False,
+        help="Whether to use the design variable values from the StructDVs.csv file or to use the default values defined in the script.",
+    )
+    args = parser.parse_args()
+    run_analysis(output=args.output, useDVFile=args.useDVFile)
