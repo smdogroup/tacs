@@ -16,34 +16,34 @@ nonlinear analysis of shells" by Sze et al
 # Standard Python modules
 # ==============================================================================
 import os
+import unittest
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
 import numpy as np
-from mpi4py import MPI
-from pprint import pprint
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import pyTACS, constitutive, elements, functions
+from tacs import pyTACS, constitutive, elements, functions, TACS
 from pytacs_analysis_base_test import PyTACSTestCase
+
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
 # nonlinear quadratic
 hemisphereProbRefFuncs = {
-    "RadialForces_Compliance": 20.59867522072626,
-    "RadialForces_KSFailure": 2.3731860388536483,
-    "RadialForces_MaxYDisp": 0.4948883544992733,
-    "RadialForces_MaxZDisp": 0.4093283830600901,
+    "RadialForces_Compliance": 165.51140441529395,
+    "RadialForces_KSFailure": 6.827665576404779,
+    "RadialForces_MaxYDisp": 1.7454271859340547,
+    "RadialForces_MaxZDisp": 1.4277751763114546,
 }
 
 STRAIN_TYPE = "nonlinear"
 ROTATION_TYPE = "quadratic"
-DRILLING_REGULARIZATION = 10.0
 
 elementType = None
 if STRAIN_TYPE == "linear":
@@ -79,7 +79,6 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwarg
         tlb=1e-2 * THICKNESS,
         tub=1e2 * THICKNESS,
     )
-    con.setDrillingRegularization(DRILLING_REGULARIZATION)
     transform = None
     element = elementType(transform, con)
     tScale = [50.0]
@@ -201,6 +200,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         setupHemisphereProblem(FEAAssembler, problem)
 
         return [problem], FEAAssembler
+
+    # Skip the derivative tests in real mode because the FD sensistivities for this problem are bad
+    @unittest.skipIf(
+        not TACS_IS_COMPLEX,
+        "Skipping total derivative checks in real mode, compile TACS in complex mode to run this test",
+    )
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(
+        not TACS_IS_COMPLEX,
+        "Skipping total derivative checks in real mode, compile TACS in complex mode to run this test",
+    )
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()
 
 
 if __name__ == "__main__":
