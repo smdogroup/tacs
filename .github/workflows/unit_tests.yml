@@ -94,6 +94,7 @@ jobs:
       - name: Install TACS
         run: |
           echo ${PATH};
+          which python;
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           conda install -c conda-forge mamba -q -y;
