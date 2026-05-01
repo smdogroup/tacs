@@ -80,6 +80,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.initialize(elem_call_back)
 
         modal_options = {"subSpaceSize": 20}
-        modal_prob = fea_assembler.createModalProblem("modal", 1.0e6, 10, options=modal_options)
+        modal_prob = fea_assembler.createModalProblem(
+            "modal", 1.0e6, 10, options=modal_options
+        )
 
         return [modal_prob], fea_assembler
