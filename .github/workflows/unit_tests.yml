@@ -84,7 +84,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
       - uses: actions/checkout@v6
       - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           auto-update-conda: true
           channels: conda-forge
@@ -96,6 +96,7 @@ jobs:
           export TACS_DIR=${GITHUB_WORKSPACE};
           echo "TACS_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
           conda install -c conda-forge mamba -q -y;
+          mamba install -c conda-forge pip;
           if [[ ${{ matrix.OS }} == 'ubuntu-latest' ]]; then
             mamba install -c conda-forge sysroot_linux-64=2.17 -q -y;
             mamba install -c conda-forge openblas -q -y;
