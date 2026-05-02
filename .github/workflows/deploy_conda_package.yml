@@ -71,7 +71,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Setup miniconda
         if: ${{ matrix.TARGET != 'osx-arm64' }}
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniconda-version: "latest"
           auto-update-conda: true
@@ -80,7 +80,7 @@ jobs:
 
       - name: Setup miniconda (macos-latest)
         if: ${{ matrix.TARGET == 'osx-arm64' }}
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@v4
         with:
           miniconda-version: "latest"
           auto-update-conda: true
