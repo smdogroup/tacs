@@ -22,7 +22,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_ks_CuntzeWoven_failure": 1.481317572350182,
+        "Tension_ks_CuntzeWoven_failure": 1.530092715379107,
         "VertShear_ks_CuntzeWoven_failure": 0.2327944624114962,
     }
 

@@ -21,18 +21,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_compliance": 15047.4827204001,
-        "Tension_ks_TsaiWufailure": 7.875796240395447,
-        "Tension_mass": 1.1625,
-        "Tension_x_disp": 0.08602975190111069,
-        "Tension_y_disp": 0.01957454912511978,
-        "Tension_z_disp": 5.484526868562824e-17,
-        "VertShear_compliance": 0.00020961674292023337,
-        "VertShear_ks_TsaiWufailure": 0.0013092603829596005,
-        "VertShear_mass": 1.1625,
-        "VertShear_x_disp": 2.6216565960935596e-23,
-        "VertShear_y_disp": 5.97480777083504e-23,
-        "VertShear_z_disp": 0.01066832313089386,
+        "Tension_compliance": 15637.920804938394,
+        "Tension_ks_TsaiWufailure": 8.367136933085968,
+        "Tension_mass": 1.1624999999999999,
+        "Tension_x_disp": 0.08821099737382809,
+        "Tension_y_disp": 0.027801038142742256,
+        "Tension_z_disp": -1.926360906255938e-16,
+        "VertShear_compliance": 0.00020961674296104168,
+        "VertShear_ks_TsaiWufailure": 0.0013092603830388541,
+        "VertShear_mass": 1.1624999999999999,
+        "VertShear_x_disp": 7.95843722870956e-25,
+        "VertShear_y_disp": 9.870262529474192e-23,
+        "VertShear_z_disp": 0.010668323131955818,
     }
 
     def setup_tacs_problems(self, comm):

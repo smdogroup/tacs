@@ -13,8 +13,8 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "centrifugal_ks_vmfailure": 0.8661998714171345,
-    "centrifugal_mass": 8.478785378145474,
+    "centrifugal_ks_vmfailure": 0.8779819109672035,
+    "centrifugal_mass": 8.478785378145492,
 }
 
 

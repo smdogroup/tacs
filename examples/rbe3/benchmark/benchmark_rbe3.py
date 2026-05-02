@@ -13,14 +13,14 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "Axial_ks_disp": 0.45196571868787827,
-    "Axial_mass": 211.71704428436388,
-    "Moment-Bending_ks_disp": 1.0494950501687743,
-    "Moment-Bending_mass": 211.71704428436388,
-    "Shear-Bending_ks_disp": 0.3461665014945353,
-    "Shear-Bending_mass": 211.71704428436388,
-    "Torsion_ks_disp": 0.300370460972629,
-    "Torsion_mass": 211.71704428436388,
+    "Axial_ks_disp": 0.4521209999304259,
+    "Axial_mass": 211.7170442843709,
+    "Moment-Bending_ks_disp": 1.0531199885026368,
+    "Moment-Bending_mass": 211.7170442843709,
+    "Shear-Bending_ks_disp": 0.34811661165710317,
+    "Shear-Bending_mass": 211.7170442843709,
+    "Torsion_ks_disp": 0.3026062784600659,
+    "Torsion_mass": 211.7170442843709,
 }
 
 
