@@ -99,6 +99,10 @@ TACSCreator::TACSCreator(MPI_Comm _comm, int _vars_per_node) {
   owned_elements = NULL;
   owned_nodes = NULL;
 
+  // No global DVs registered yet
+  numGlobalDVs = 0;
+  globalDVNums = NULL;
+
   // Set the elements array to NULL
   elements = NULL;
   element_creator = NULL;
@@ -160,6 +164,10 @@ TACSCreator::~TACSCreator() {
   }
   if (local_elem_id_nums) {
     delete[] local_elem_id_nums;
+  }
+
+  if (globalDVNums) {
+    delete[] globalDVNums;
   }
 
   if (elements) {
@@ -289,6 +297,16 @@ void TACSCreator::setElements(int _num_elem_ids, TACSElement **_elements) {
 */
 void TACSCreator::setElementCreator(TACSElement *(*func)(int, int)) {
   element_creator = func;
+}
+
+/*
+  Store the global DV indices so they get included in designExtDist on all procs
+*/
+void TACSCreator::setGlobalDVIndices(int n, const int *dvNums) {
+  delete[] globalDVNums;
+  numGlobalDVs = n;
+  globalDVNums = new int[n];
+  memcpy(globalDVNums, dvNums, n * sizeof(int));
 }
 
 /*
@@ -872,6 +890,11 @@ TACSAssembler *TACSCreator::createTACS() {
   bc_vars = NULL;
   delete[] bc_vals;
   bc_vals = NULL;
+
+  // Pass global DV indices so they appear in designExtDist on all procs
+  if (numGlobalDVs > 0) {
+    tacs->setGlobalDVIndices(numGlobalDVs, globalDVNums);
+  }
 
   // Use the reordering if the flag has been set in the
   // TACSCreator object

@@ -275,6 +275,11 @@ class pyTACS(BaseUI):
             Upper bound. This may be None for unbounded
         scale : float
             Scale factor for variable
+
+        Returns
+        -------
+        int
+            The design variable number assigned to the global design variable.
         """
         self.globalDVs[descript] = {
             "num": self.dvNum,
@@ -285,6 +290,7 @@ class pyTACS(BaseUI):
         }
         self.dvNum += 1
         self.scaleList.append(scale)
+        return self.globalDVs[descript]["num"]
 
     def getGlobalDVs(self):
         """
@@ -806,8 +812,9 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
+        global_dv_nums = [dv_info["num"] for dv_info in self.globalDVs.values()]
         self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs
+            self.varsPerNode, self.massDVs, self.dvNum, globalDVNums=global_dv_nums
         )
         self._createOutputViewer()
 
@@ -818,16 +825,51 @@ class pyTACS(BaseUI):
         # Store initial design variable values
         self.x0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x0)
+        # Overwrite with any global DV initial values specified by the user
+        global_dv_nums = []
+        global_dv_vals = []
+        for dv_info in self.globalDVs.values():
+            if dv_info["value"] is not None:
+                global_dv_nums.append(dv_info["num"])
+                global_dv_vals.append(dv_info["value"])
+        self._setGlobalDVValues(self.x0, global_dv_nums, global_dv_vals)
 
         # Store design variable upper/lower-bounds
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+        # Overwrite with any global DV bounds specified by the user
+        global_dv_nums_ub = []
+        global_dv_vals_ub = []
+        global_dv_nums_lb = []
+        global_dv_vals_lb = []
+        for dv_info in self.globalDVs.values():
+            if dv_info["upperBound"] is not None:
+                global_dv_nums_ub.append(dv_info["num"])
+                global_dv_vals_ub.append(dv_info["upperBound"])
+            if dv_info["lowerBound"] is not None:
+                global_dv_nums_lb.append(dv_info["num"])
+                global_dv_vals_lb.append(dv_info["lowerBound"])
+        self._setGlobalDVValues(self.xub, global_dv_nums_ub, global_dv_vals_ub)
+        self._setGlobalDVValues(self.xlb, global_dv_nums_lb, global_dv_vals_lb)
 
         self._isNonlinear = self._checkNonlinearity()
 
         # Vector used to store temporarily store state variables
         self.tempVec = self.assembler.createVec()
+
+    def _setGlobalDVValues(self, vec, dv_nums, dv_vals):
+        """Insert global DV values into a distributed design vec."""
+        if not dv_nums:
+            return
+        vec.setValues(
+            np.array(dv_nums, dtype=np.intc),
+            np.array(dv_vals, dtype=self.dtype),
+            op=tacs.TACS.INSERT_NONZERO_VALUES,
+        )
+        vec.beginSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
+        vec.endSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
+        vec.distributeValues()
 
     @postinitialize_method
     def _checkNonlinearity(self) -> bool:

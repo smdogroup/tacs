@@ -28,6 +28,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/two_beam.bdf")
 
 ksweight = 10.0
+g_vec = [-10.0, 3.0, 5.0]
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
@@ -96,11 +97,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        # Add global dvs from gravity components
+        gxDV = fea_assembler.addGlobalDV("gx", g_vec[0])
+        gyDV = fea_assembler.addGlobalDV("gy", g_vec[1])
+        gzDV = fea_assembler.addGlobalDV("gz", g_vec[2])
+
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
         grav_prob = fea_assembler.createStaticProblem("gravity")
-        grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
+        grav_prob.addInertialLoad(g_vec, inertiaVecDVNums=[gxDV, gyDV, gzDV])
+        K = grav_prob.getJacobian()
 
         tacs_probs = [grav_prob]
 
