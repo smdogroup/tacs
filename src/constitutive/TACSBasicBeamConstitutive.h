@@ -38,21 +38,15 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   TACSBasicBeamConstitutive(TACSMaterialProperties *properties, TacsScalar A,
                             TacsScalar J, TacsScalar Iy, TacsScalar Iz,
                             TacsScalar Iyz, TacsScalar ky = 5.0 / 6.0,
-                            TacsScalar kz = 5.0 / 6.0);
+                            TacsScalar kz = 5.0 / 6.0, TacsScalar nsm = 0.0,
+                            TacsScalar xm2 = 0.0, TacsScalar xm3 = 0.0,
+                            TacsScalar xc2 = 0.0, TacsScalar xc3 = 0.0,
+                            TacsScalar xk2 = 0.0, TacsScalar xk3 = 0.0,
+                            TacsScalar muS = 0.0);
 
   ~TACSBasicBeamConstitutive();
 
-  /**
-    Get the cross-sectional mass per unit area and the second moments
-    of mass for the cross section
-
-    moments = [rho * A, Iz1z1, Iz2z2, Iz1z2 ]
-
-    @param elemIndex The local element index
-    @param pt The parametric location
-    @param X The point location
-    @return The moments of the mass
-  */
+  // NSM is fully baked into rho[0..5] at construction (material-props ctor).
   void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[],
                        TacsScalar moments[]) {
     moments[0] = rho[0];
@@ -78,9 +72,6 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                                     const TacsScalar scale[], int dvLen,
                                     TacsScalar dfdx[]) {}
 
-  /**
-    Evaluate the mass per unit length of the beam
-  */
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]) {
     return rho[0];
@@ -114,6 +105,15 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   const char *getObjectName();
 
  private:
+  // Helper to initialize C and rho
+  void populateMats(TacsScalar EA, TacsScalar EI22, TacsScalar EI33,
+                    TacsScalar EI23, TacsScalar GJ, TacsScalar kG22,
+                    TacsScalar kG33, TacsScalar kG23, TacsScalar m00,
+                    TacsScalar m11, TacsScalar m22, TacsScalar m33,
+                    TacsScalar xm2, TacsScalar xm3, TacsScalar xc2,
+                    TacsScalar xc3, TacsScalar xk2, TacsScalar xk3,
+                    TacsScalar muS);
+
   // The constitutive matrix
   TacsScalar C[36];
 

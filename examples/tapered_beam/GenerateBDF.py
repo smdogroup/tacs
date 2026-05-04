@@ -1,0 +1,383 @@
+"""
+==============================================================================
+
+==============================================================================
+@File    :   GenerateBDF.py
+@Date    :   2025/09/29
+@Author  :   Alasdair Christison Gray
+@Description : This script generates NASTRAN input files for a tapered
+cantilever beam analysis using pyNastran.
+
+The file models a 1m long beam made of Aluminium 7075. The
+rectangular cross-section tapers linearly from the fixed end to the
+free end.
+
+The script writes three files:
+1. A shared bulk-data include file containing the model definition.
+2. A SOL 101 static-analysis driver with a vertical 1 kN tip load.
+3. A SOL 103 modal-analysis driver for the first 10 modes.
+
+Command-Line Usage:
+    # Generate a model with 10 elements using PBEAM cards
+    python GenerateBDF.py --num-elements 10 --prop-type PBEAM --output tapered_beam_pbeam.bdf
+
+    # Generate a model with 20 elements using PBEAML cards
+    python GenerateBDF.py --num-elements 20 --prop-type PBEAML --output tapered_beam_pbeaml.bdf
+"""
+
+# ==============================================================================
+# Standard Python modules
+# ==============================================================================
+from pathlib import Path
+from typing import Tuple
+
+# ==============================================================================
+# External Python modules
+# ==============================================================================
+from pyNastran.bdf.bdf import BDF
+import numpy as np
+
+# ==============================================================================
+# Extension modules
+# ==============================================================================
+
+
+def getBeamSectionProperties(
+    width: float, depth: float
+) -> Tuple[float, float, float, float]:
+    """
+    Calculates the cross-sectional properties for a rectangular section.
+
+    Args:
+        width (float): The width of the rectangle.
+        depth (float): The depth (height) of the rectangle.
+
+    Returns:
+        tuple: A tuple containing:
+            - area (float): Cross-sectional area.
+            - i1 (float): Moment of inertia about the local y-axis.
+            - i2 (float): Moment of inertia about the local z-axis.
+            - j (float): Torsional constant.
+    """
+    area = width * depth
+    i1 = width * depth**3 / 12.0
+    i2 = depth * width**3 / 12.0
+
+    # Torsional constant J using Roark's formula for a solid rectangular bar
+    a = 0.5 * max(width, depth)
+    b = 0.5 * min(width, depth)
+    j = (a * b**3) * (16.0 / 3.0 - 3.36 * (b / a) * (1.0 - (b**4) / (12.0 * a**4)))
+    return area, i1, i2, j
+
+
+def addBeamPropertyCard(
+    model: BDF,
+    propType: str,
+    propertyId: int,
+    materialId: int,
+    width1: float,
+    depth1: float,
+    width2: float,
+    depth2: float,
+    nsm: float = 0.0,
+) -> None:
+    """Create the property card for a tapered beam element
+
+    Parameters
+    ----------
+    model : BDF
+        pyNastran BDF model object
+    propType : str
+        Property card type ('PBEAM' or 'PBEAML')
+    propertyId : int
+        ID for the property card
+    materialId : int
+        Material ID to link to the property
+    width1 : float
+        Rectangular section width at end 1
+    depth1 : float
+        Rectangular section depth at end 1
+    width2 : float
+        Rectangular section width at end 2
+    depth2 : float
+        Rectangular section depth at end 2
+    nsm : float
+        Nonstructural mass per unit length (constant along element). Defaults to 0.0.
+    """
+    stations = [0.0, 1.0]  # Stations along the beam element length
+    if propType.upper() == "PBEAML":
+        # PBEAML is ideal for linearly tapered beams.
+        # We define the dimensions at the start (A) and end (B) of the beam.
+        beamType = "BAR"
+        dimsA = [width1, depth1]  # Dimensions at End A
+        dimsB = [width2, depth2]  # Dimensions at End B
+        model.add_pbeaml(
+            pid=propertyId,
+            mid=materialId,
+            beam_type=beamType,
+            xxb=stations,
+            dims=[dimsA, dimsB],
+            nsm=[nsm] * len(stations),
+        )
+
+    elif propType.upper() == "PBEAM":
+        # PBEAM requires explicit calculation of section properties at stations.
+        # We will define properties at each end of the single property region.
+        areas, i1s, i2s, js = [], [], [], []
+
+        # Calculate properties at the two ends of the full beam length
+        for width, depth in [(width1, depth1), (width2, depth2)]:
+            area, i1, i2, j = getBeamSectionProperties(width, depth)
+            areas.append(area)
+            i1s.append(i1)
+            i2s.append(i2)
+            js.append(j)
+
+        model.add_pbeam(
+            propertyId,
+            materialId,
+            so="NO",
+            area=areas,
+            i1=i1s,
+            i2=i2s,
+            i12=[0.0] * len(areas),
+            j=js,
+            xxb=stations,
+            nsm=[nsm] * len(stations),
+        )
+
+
+def writeDriverFile(
+    outputPath: Path,
+    sol: int,
+    title: str,
+    includeFilename: str,
+    caseControlLines: list[str],
+    extraBulkLines: list[str],
+) -> None:
+    """Write a Nastran driver file that includes a shared bulk-data file."""
+    lines = [
+        f"SOL {sol}",
+        "CEND",
+        f"TITLE = {title}",
+        *caseControlLines,
+        "BEGIN BULK",
+        f"INCLUDE '{includeFilename}'",
+        *extraBulkLines,
+        "ENDDATA",
+        "",
+    ]
+    outputPath.write_text("\n".join(lines), encoding="utf-8")
+
+
+def generateTaperedBeamBdf(numElements: int, propType: str, output: str) -> None:
+    """
+    Generates a shared bulk-data include file and separate SOL 101/103 driver files.
+
+    Args:
+        numElements (int): The number of CBEAM elements to create.
+        propType (str): The property card type to use ('PBEAM' or 'PBEAML').
+        output (str): Base path used to name output files.
+    """
+    if numElements <= 0:
+        raise ValueError("Number of elements must be a positive integer.")
+    if propType.upper() not in ["PBEAM", "PBEAML"]:
+        raise ValueError("Property type must be either 'PBEAM' or 'PBEAML'.")
+
+    # --- Model Definition ---
+    model = BDF(debug=False)
+
+    # --- Define offsets for ID numbers ---
+    gridOffset = 1000
+    materialOffset = 2000
+    propertyOffset = 3000
+    elementOffset = 4000
+    SPCOffset = 5000
+    loadOffset = 6000
+
+    # --- Initial IDs ---
+    nodeId = 1 + gridOffset
+    elementId = 1 + elementOffset
+    materialId = 1 + materialOffset
+    propertyId = 1 + propertyOffset
+    spcId = 1 + SPCOffset
+    gravLoadId = 1 + loadOffset
+    eigrlId = 1
+
+    # --- Beam Geometry ---
+    beamLength = 1.0  # meters
+    # Dimensions at the fixed end (x=0)
+    width1, depth1 = 0.20, 0.05
+    # Dimensions at the free end (x=L)
+    width2, depth2 = 0.10, 0.02
+
+    offset = (
+        np.array([0.0, width1, depth1]) + np.array([0.0, width2, depth2])
+    ) / 2.0  # Offset to align the beam's neutral axis with the z-axis
+
+    widths = np.linspace(width1, width2, numElements + 1)
+    depths = np.linspace(depth1, depth2, numElements + 1)
+
+    # --- Material Properties (Aluminium 7075) ---
+    E = 71.7e9  # Young's Modulus in N/m^2
+    nu = 0.33
+    G = E / (2 * (1 + nu))  # Shear Modulus in N/m^2
+    rho = 2810.0  # Density in kg/m^3
+    model.add_mat1(mid=materialId, E=E, G=G, nu=nu, rho=rho, comment="Aluminium 7075")
+
+    # Make non-structural mass of similar magnitude to beam section mass so that it has a significant effect on the modal frequencies.
+    nsm = rho * width1 * depth1
+
+    # --- Nodes and Elements ---
+    xNodes = np.linspace(0.0, beamLength, numElements + 1)
+    nodeIds = []
+    # Create GRID cards along the beam's length (x-axis)
+    for xNode in xNodes:
+        model.add_grid(nodeId, [xNode, 0.0, 0.0])
+        nodeIds.append(nodeId)
+        nodeId += 1
+
+    # Create CBEAM elements connecting the nodes and corresponding properties
+    # The z axis is vertical (depth direction), y axis is width direction
+    orientationVector = [0.0, 0.0, 1.0]
+    componentPrefix = "Elements and Element Properties for region :"
+    for i in range(numElements):
+        # Create property card
+        addBeamPropertyCard(
+            model=model,
+            propType=propType,
+            propertyId=propertyId,
+            materialId=materialId,
+            width1=widths[i],
+            depth1=depths[i],
+            width2=widths[i + 1],
+            depth2=depths[i + 1],
+            nsm=nsm,
+        )
+
+        # Create element card
+        nodeA = nodeIds[i]
+        nodeB = nodeIds[i + 1]
+        model.add_cbeam(
+            elementId,
+            propertyId,
+            [nodeA, nodeB],
+            orientationVector,
+            g0=None,
+            wa=offset,
+            wb=offset,
+            comment=f"{componentPrefix} Element {elementId - elementOffset}",
+        )
+        elementId += 1
+        propertyId += 1
+
+    # --- Boundary Conditions ---
+    # Fix the root of the cantilever beam (node 1) in all 6 DOFs
+    fixedNodeId = nodeIds[0]
+    constrainedDofs = "123456"
+    model.add_spc1(spcId, constrainedDofs, [fixedNodeId])
+
+    # --- Loads ---
+    # Apply standard gravity (9.81 m/s^2) in the negative Z direction
+    g = 9.81
+    gravityVector = [0.0, 0.0, -1.0]
+    model.add_grav(gravLoadId, g, gravityVector)
+
+    tipLoadId = gravLoadId + 1
+    tipNodeId = nodeIds[-1]
+    model.add_force(
+        tipLoadId,
+        tipNodeId,
+        1000.0,
+        [0.0, 0.0, 1.0],
+        comment="Vertical tip load of 1kN",
+    )
+
+    # Keep the modal extraction card with the common bulk data.
+    model.add_eigrl(eigrlId, nd=10)
+
+    # --- Write shared Bulk Data and analysis drivers ---
+    model.add_param("POST", 1)
+
+    outputPath = Path(output)
+    outputStem = outputPath.with_suffix("")
+    bulkPath = outputStem.with_name(f"{outputStem.name}_{propType.lower()}_bulk.dat")
+    sol101Path = outputStem.with_name(
+        f"{outputStem.name}_{propType.lower()}_sol101.bdf"
+    )
+    sol103Path = outputStem.with_name(
+        f"{outputStem.name}_{propType.lower()}_sol103.bdf"
+    )
+
+    with bulkPath.open("w", encoding="utf-8") as bulkFile:
+        model.write_bulk_data(bulkFile, interspersed=False, enddata=False, close=False)
+
+    includeFilename = bulkPath.name
+
+    writeDriverFile(
+        outputPath=sol101Path,
+        sol=101,
+        title="Linear Static Analysis",
+        includeFilename=includeFilename,
+        caseControlLines=[
+            f"SPC = {spcId}",
+            f"LOAD = {tipLoadId}",
+            "DISP = ALL",
+            "STRESS = ALL",
+        ],
+        extraBulkLines=[],
+    )
+
+    writeDriverFile(
+        outputPath=sol103Path,
+        sol=103,
+        title="Normal Modes Analysis",
+        includeFilename=includeFilename,
+        caseControlLines=[
+            f"SPC = {spcId}",
+            f"METHOD = {eigrlId}",
+            "DISP = ALL",
+        ],
+        extraBulkLines=[],
+    )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Generate shared bulk data and SOL 101/103 NASTRAN input files for a tapered cantilever beam.",
+        formatter_class=argparse.RawTextHelpFormatter,
+    )
+    parser.add_argument(
+        "-n",
+        "--num-elements",
+        type=int,
+        default=30,
+        help="Number of CBEAM elements to use along the beam length.",
+    )
+    parser.add_argument(
+        "-p",
+        "--prop-type",
+        type=str,
+        default="PBEAM",
+        choices=["PBEAM", "PBEAML"],
+        help="The type of beam property card to use.",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="tapered_beam",
+        help="Base filename used to create *_bulk.dat, *_sol101.bdf, and *_sol103.bdf.",
+    )
+    parser.add_argument(
+        "--nsm",
+        type=float,
+        default=1e1,
+        help="Nonstructural mass per unit length (kg/m) applied uniformly to all elements.",
+    )
+    args = parser.parse_args()
+    generateTaperedBeamBdf(
+        numElements=args.num_elements, propType=args.prop_type, output=args.output
+    )
