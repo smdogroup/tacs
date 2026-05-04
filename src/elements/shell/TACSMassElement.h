@@ -87,6 +87,12 @@ class TACSMassElement : public TACSElement {
                         const TacsScalar ddvars[], int dvLen,
                         TacsScalar dfdx[]);
 
+  void addMatDVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                double time, TacsScalar scale,
+                                const TacsScalar psi[], const TacsScalar phi[],
+                                const TacsScalar Xpts[], const TacsScalar vars[],
+                                int dvLen, TacsScalar dfdx[]);
+
   void addAdjResXptProduct(int elemIndex, double time, TacsScalar scale,
                            const TacsScalar psi[], const TacsScalar Xpts[],
                            const TacsScalar vars[], const TacsScalar dvars[],

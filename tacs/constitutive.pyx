@@ -2606,12 +2606,20 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+        Lb (float or complex, optional): Beam length used to compute Euler column buckling critical load.
+            This should be the total geometric length of the beam from end to end. Defaults to 1.0.
+        LbNum (int, optional): Design variable number to assign to buckling length. Defaults to -1
+            (i.e. no design variable).
+        Kb (float or complex, optional): Effective buckling length factor: P_cr = pi^2*E*I/(Kb*Lb)^2.
+            Depends on end conditions: pinned-pinned (1.0), fixed-fixed (0.5), fixed-free (2.0).
+            If set to None buckling calculations will be skipped in failure check. Defaults to None.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
-            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
+            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub", "Lb", "LbNum", "Kb",
+                         "xNum", "p_penalty", "k_floor", "eps_m"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
@@ -2622,6 +2630,13 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar Lb = 1.0
+        cdef int LbNum = -1
+        cdef TacsScalar Kb = 0.0
+        cdef int xNum = -1
+        cdef TacsScalar p_penalty = 3.0
+        cdef TacsScalar k_floor = 0.0
+        cdef TacsScalar eps_m_val = 1e-9
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2642,10 +2657,27 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'Lb' in kwargs:
+            Lb = kwargs['Lb']
+        if 'LbNum' in kwargs:
+            LbNum = kwargs['LbNum']
+        if 'Kb' in kwargs and kwargs['Kb'] is not None:
+            Kb = kwargs['Kb']
+        if 'xNum' in kwargs:
+            xNum = kwargs['xNum']
+        if 'p_penalty' in kwargs:
+            p_penalty = kwargs['p_penalty']
+        if 'k_floor' in kwargs:
+            k_floor = kwargs['k_floor']
+        if 'eps_m' in kwargs:
+            eps_m_val = kwargs['eps_m']
 
         if props is not NULL:
             self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
-                                                        dlb, dub, tlb, tub)
+                                                        dlb, dub, tlb, tub,
+                                                        Lb, LbNum, Kb,
+                                                        xNum, p_penalty, k_floor,
+                                                        eps_m_val)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -2673,6 +2705,99 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         mat_id = self.props.getNastranID()
         con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "TUBE", [ro, ri])
         return con
+
+cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
+    """
+    Timoshenko beam constitutive for a hollow circular composite tube.
+
+    Uses Classical Lamination Theory (CLT) to compute smeared effective axial
+    modulus E_eff and shear modulus G_eff from ply angles and orthotropic ply
+    properties.  All plies are assumed equal thickness.
+
+    DV convention (same as IsoTubeBeamConstitutive):
+      d  — inner diameter [m]
+      tw — diametric wall thickness = OD - ID [m]
+
+    Failure modes aggregated in KS (ks_weight = 100):
+      1. Fiber-direction compression at the outer fibre: -E11*eps1 / X_c
+      2. Fiber-direction tension at the outer fibre: +E11*eps1 / X_t
+         (skipped when X_t <= 0, default)
+      3. Euler column buckling (skipped when Kb is None or 0)
+
+    Args:
+        E11 (float): Ply longitudinal (fibre-direction) modulus [Pa].
+        E22 (float): Ply transverse modulus [Pa].
+        G12 (float): Ply in-plane shear modulus [Pa].
+        nu12 (float): Ply major Poisson ratio.
+        rho (float): Ply density [kg/m^3].
+        X_c (float): Fibre-direction compressive strength [Pa].
+        X_t (float, optional): Fibre-direction tensile strength [Pa].
+            Pass 0 (default) to skip the tensile failure check.
+        layup_angles (list of float): Ply angles in degrees. Length sets
+            the number of plies; all plies are assumed equal thickness.
+        d (float): Initial inner diameter [m].
+        tw (float): Initial diametric wall thickness (OD - ID) [m].
+        dNum (int, optional): DV index for inner diameter. Defaults to -1.
+        dlb (float, optional): Lower bound on d. Defaults to 0.
+        dub (float, optional): Upper bound on d. Defaults to 10.
+        twNum (int, optional): DV index for wall thickness. Defaults to -1.
+        twlb (float, optional): Lower bound on tw. Defaults to 0.
+        twub (float, optional): Upper bound on tw. Defaults to 10.
+        Lb (float, optional): Member length for Euler buckling [m]. Defaults to 1.0.
+        Kb (float or None, optional): Effective length factor for Euler buckling.
+            None or 0 disables the buckling check. Defaults to None.
+    """
+    def __cinit__(self, *args, **kwargs):
+        _check_constitutive_kwargs(
+            self, CompositeTubeBeamConstitutive, kwargs,
+            required_keys=["E11", "E22", "G12", "nu12", "rho", "X_c",
+                            "layup_angles", "d", "tw"],
+            valid_keys=["X_t", "dNum", "dlb", "dub",
+                        "twNum", "twlb", "twub", "Lb", "Kb",
+                        "xNum", "p_penalty", "k_floor", "eps_m"],
+        )
+        cdef TacsScalar E11 = kwargs['E11']
+        cdef TacsScalar E22 = kwargs['E22']
+        cdef TacsScalar G12 = kwargs['G12']
+        cdef TacsScalar nu12 = kwargs['nu12']
+        cdef TacsScalar rho = kwargs['rho']
+        cdef TacsScalar X_c = kwargs['X_c']
+        cdef TacsScalar X_t = kwargs.get('X_t', 0.0)
+        cdef TacsScalar d = kwargs['d']
+        cdef TacsScalar tw = kwargs['tw']
+        cdef int dNum = kwargs.get('dNum', -1)
+        cdef TacsScalar dlb = kwargs.get('dlb', 0.0)
+        cdef TacsScalar dub = kwargs.get('dub', 10.0)
+        cdef int twNum = kwargs.get('twNum', -1)
+        cdef TacsScalar twlb = kwargs.get('twlb', 0.0)
+        cdef TacsScalar twub = kwargs.get('twub', 10.0)
+        cdef TacsScalar Lb = kwargs.get('Lb', 1.0)
+        cdef TacsScalar Kb = 0.0
+        if 'Kb' in kwargs and kwargs['Kb'] is not None:
+            Kb = kwargs['Kb']
+        cdef int xNum = kwargs.get('xNum', -1)
+        cdef TacsScalar p_penalty = kwargs.get('p_penalty', 3.0)
+        cdef TacsScalar k_floor = kwargs.get('k_floor', 0.0)
+        cdef TacsScalar eps_m_val = kwargs.get('eps_m', 1e-9)
+
+        # Convert layup angles (degrees) to radians as a TacsScalar C array.
+        # Use real dtype for real TACS, complex dtype for complex TACS.
+        _tacs_dtype = np.double if TACS_NPY_SCALAR == np.NPY_DOUBLE else complex
+        cdef np.ndarray angles_arr = np.ascontiguousarray(
+            np.deg2rad(kwargs['layup_angles']), dtype=_tacs_dtype)
+        cdef int n_plies = len(angles_arr)
+        cdef TacsScalar *angles_ptr = <TacsScalar*>angles_arr.data
+
+        self.cptr = <TACSBeamConstitutive*>new TACSCompositeTubeBeamConstitutive(
+            E11, E22, G12, nu12, rho, X_c, X_t,
+            angles_ptr, n_plies,
+            d, tw,
+            dNum, twNum,
+            dlb, dub, twlb, twub,
+            Lb, Kb,
+            xNum, p_penalty, k_floor, eps_m_val)
+        self.ptr = self.cptr
+        self.ptr.incref()
 
 cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
     """
