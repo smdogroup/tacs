@@ -5,11 +5,11 @@ from tacs import pytacs, functions
 
 """
 9 noded beam model 1 meter long in x direction.
-The cross-section is a rectangle (defined by PBARL) with the 
+The cross-section is a rectangle (defined by PBARL) with the
 following properties:
     w = 0.1
     t = 0.01
-We apply apply a torsion tip load case and test KSDisplacement, KSFailure, 
+We apply apply a torsion tip load case and test KSDisplacement, KSFailure,
 StructuralMass, and Compliance functions and sensitivities.
 """
 

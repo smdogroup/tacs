@@ -164,7 +164,7 @@ class BaseUI:
         self._pp("+----------------------------------------+")
         for name in self.options:
             if name != "defaults":
-                if self.options[name][0] == str:
+                if self.options[name][0] is str:
                     self._pp(f"'{name}': '{self.options[name][1]}'")
                 else:
                     self._pp(f"'{name}': {self.options[name][1]}")
@@ -198,7 +198,7 @@ class BaseUI:
         print("+----------------------------------------+")
         if hasattr(cls, "defaultOptions"):
             for name in cls.defaultOptions:
-                if cls.defaultOptions[name][0] == str:
+                if cls.defaultOptions[name][0] is str:
                     print(f"'{name}': '{cls.defaultOptions[name][1]}'")
                 else:
                     print(f"'{name}': {cls.defaultOptions[name][1]}")
@@ -302,20 +302,35 @@ class BaseUI:
                 )
 
     # Misc Functions
-    def _flatten(self, l, ltypes=(list, tuple)):
-        ltype = type(l)
-        l = list(l)
+    def _flatten(self, nestedSeq, ltypes=(list, tuple)):
+        """
+        Recursively flatten a nested list or tuple into a flat sequence.
+
+        Parameters
+        ----------
+        nestedSeq : list or tuple
+            A potentially nested sequence to flatten.
+        ltypes : tuple of types, optional
+            The types considered as nested containers. Defaults to (list, tuple).
+
+        Returns
+        -------
+        list or tuple
+            A flat sequence of the same type as ``nestedSeq``.
+        """
+        seqType = type(nestedSeq)
+        seq = list(nestedSeq)
         i = 0
-        while i < len(l):
-            while isinstance(l[i], ltypes):
-                if not l[i]:
-                    l.pop(i)
+        while i < len(seq):
+            while isinstance(seq[i], ltypes):
+                if not seq[i]:
+                    seq.pop(i)
                     i -= 1
                     break
                 else:
-                    l[i : i + 1] = l[i]
+                    seq[i : i + 1] = seq[i]
             i += 1
-        return ltype(l)
+        return seqType(seq)
 
     def _TACSWarning(self, message):
         """

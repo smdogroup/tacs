@@ -134,7 +134,7 @@ class ElementTest(unittest.TestCase):
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
-                    if not (element_handle in self.thermal_elements):
+                    if element_handle not in self.thermal_elements:
                         with self.subTest(element=element_handle):
                             element = element_handle(transform, self.con)
                             fail = elements.TestElementResidual(

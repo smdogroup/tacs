@@ -116,29 +116,29 @@ class TacsBuilder(Builder):
         --------
         assembler_setup:
             >>>  def assembler_setup(fea_assembler):
-            >>>      # Assign dvs for point mass elements 10401 and 10402
-            >>>      # to vary mass values during optimization
+            >>> # Assign dvs for point mass elements 10401 and 10402
+            >>> # to vary mass values during optimization
             >>>      fea_assembler.assignMassDV("engine_mass", 10401)
             >>>      fea_assembler.assignMassDV("fuel_mass", 10402)
         element_callback:
             >>>  def elem_callback(dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs):
-            >>>      # Material properties
+            >>> # Material properties
             >>>      rho = 2500.0        # density kg/m^3
             >>>      E = 70e9            # Young's modulus (Pa)
             >>>      nu = 0.3            # Poisson's ratio
             >>>      ys = 464.0e6        # yield stress
             >>>
-            >>>      # Plate geometry
+            >>> # Plate geometry
             >>>      tplate = 0.005    # 5 mm
             >>>
-            >>>      # Set up material properties
+            >>> # Set up material properties
             >>>      prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-            >>>      # Set up constitutive model
+            >>> # Set up constitutive model
             >>>      con = constitutive.IsoShellConstitutive(prop, t=tplate, tNum=dv_num)
-            >>>      # Set the transform used to define shell stresses, None defaults to NaturalShellTransform
+            >>> # Set the transform used to define shell stresses, None defaults to NaturalShellTransform
             >>>      transform = None
-            >>>      # Set up tacs element for every entry in elem_descripts
-            >>>      # According to the bdf file, elem_descripts should always be ["CQUAD4"]
+            >>> # Set up tacs element for every entry in elem_descripts
+            >>> # According to the bdf file, elem_descripts should always be ["CQUAD4"]
             >>>      elem_list = []
             >>>      for descript in elem_descripts:
             >>>          if descript == 'CQUAD4':
@@ -148,36 +148,36 @@ class TacsBuilder(Builder):
             >>>      return elem_list
         problem_setup:
             >>> def problem_setup(scenario_name, fea_assembler, problem):
-            >>>     # Set scenario to its own output directory
+            >>> # Set scenario to its own output directory
             >>>     problem.setOption('outputDir', scenario_name)
             >>>
-            >>>     # Only include mass from elements that belong to pytacs components (i.e. skip concentrated masses)
+            >>> # Only include mass from elements that belong to pytacs components (i.e. skip concentrated masses)
             >>>     comp_ids = fea_assembler.selectCompIDs(nGroup=-1)
             >>>     problem.addFunction('struct_mass', functions.StructuralMass, comp_ids=comp_ids)
             >>>     problem.addFunction('ks_vmfailure', functions.KSFailure,
             >>>                         safetyFactor=1.5, ksWeight=100.0)
             >>>
-            >>>     # load factor
+            >>> # load factor
             >>>     if scenario_name == "maneuver_2_5g":
             >>>       n = 2.5
             >>>     elif scenario_name == "maneuver_m1g":
             >>>       n = -1.0
             >>>     else:
             >>>       n = 1.0
-            >>>     # Add gravity load
+            >>> # Add gravity load
             >>>     g = n * np.array([0.0, 0.0, -9.81])  # m/s^2
             >>>     problem.addInertialLoad(g)
 
         constraint_setup:
             >>> def constraint_setup(scenario_name, fea_assembler, constraints):
-            >>>     # Add constraint on enclosed volume of structure
+            >>> # Add constraint on enclosed volume of structure
             >>>     constr = fea_assembler.createVolumeConstraint("constraints")
             >>>     constr.addConstraint("volume")
             >>>     constraints.append(constr)
 
         buckling_setup:
             >>> def buckling_setup(scenario_name, fea_assembler):
-            >>>     # Add buckling analysis only to 2.5g maneuver scenario
+            >>> # Add buckling analysis only to 2.5g maneuver scenario
             >>>     if scenario_name == "maneuver_2_5g":
             >>>         problem = fea_assembler.createBucklingProblem(
             >>>             "buckling", sigma=1.0, numEigs=2

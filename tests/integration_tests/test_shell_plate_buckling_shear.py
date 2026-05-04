@@ -8,7 +8,7 @@ complex_mode = TACS.dtype == complex
 
 """"
 The nominal case is a 1m x 0.7m flat plate under a buckling analysis. The
-perimeter of the plate is clamped and loaded in shear on its horizontal edges. 
+perimeter of the plate is clamped and loaded in shear on its horizontal edges.
 This tests the eigenvalues and eigenvalue sensitivities.
 This analysis was verified against Abaqus and closed-form solution with a finer mesh.
     However, this test is scaled down to a 5x5 mesh to make sure the analysis result is identical.

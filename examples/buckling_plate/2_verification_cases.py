@@ -53,10 +53,10 @@ class TestPlateCases(unittest.TestCase):
         rel_error = (tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
 
         print(
-            f"\n\nVerification of case 1 - uniaxial compression,\n\tsimply supported plate buckling modes\n"
+            "\n\nVerification of case 1 - uniaxial compression,\n\tsimply supported plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )
@@ -88,10 +88,10 @@ class TestPlateCases(unittest.TestCase):
         rel_error = (pos_tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
 
         print(
-            f"\n\nVerification of case 2 - pure shear,\n\tclamped plate buckling modes\n"
+            "\n\nVerification of case 2 - pure shear,\n\tclamped plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {pos_tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )
@@ -120,10 +120,10 @@ class TestPlateCases(unittest.TestCase):
         rel_error = (tacs_eigvals[:6] - abaqus_eigvals) / abaqus_eigvals
 
         print(
-            f"\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n"
+            "\n\nVerification of case 3 - mixed compression + shear,\n\tclamped plate buckling modes\n"
         )
         for i in range(6):
-            print(f"mode {i+1} eigenvalues:")
+            print(f"mode {i + 1} eigenvalues:")
             print(
                 f"\ttacs = {tacs_eigvals[i]:.4f}, abaqus = {abaqus_eigvals[i]:.4f}, rel err = {rel_error[i]:.4f}"
             )
@@ -170,7 +170,7 @@ class TestPlateCases(unittest.TestCase):
         kx_0_exact = 2.5 + 2.0 * flat_plate.Dstar
         rel_err = (kx_0 - kx_0_exact) / kx_0_exact
 
-        print(f"Case 4 - Compare affine curve simply supported uniaxial compression..")
+        print("Case 4 - Compare affine curve simply supported uniaxial compression..")
         print(
             f"\tDstar = {flat_plate.Dstar}, b/h = {flat_plate.slenderness} (near thin plate limit)"
         )

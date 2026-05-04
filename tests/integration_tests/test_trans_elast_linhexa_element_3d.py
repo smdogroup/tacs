@@ -46,7 +46,7 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
 
         # Overwrite default tolerances from base class
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-11
             self.atol = 1e-8
             self.dh = 1e-50
@@ -154,7 +154,7 @@ class ProblemTest(TransientTestCase.TransientTest):
 
         # Loop through the force vector for every time step and set the time-dependent load
         time_history = np.linspace(tinit, tfinal, num_steps + 1)
-        for t, force_vec in zip(time_history, force_history):
+        for t, force_vec in zip(time_history, force_history, strict=True):
             # Create force vector
             f_array = force_vec.getArray()
 
