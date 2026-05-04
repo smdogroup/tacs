@@ -115,9 +115,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             S12=S12,
         )
 
-        ortho_ply = constitutive.OrthotropicPly(
-            ply_thickness, ortho_prop, max_strain_criterion=False
-        )
+        ortho_ply = constitutive.OrthotropicPly(ply_thickness, ortho_prop)
 
         def elemCallBack(
             dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs
