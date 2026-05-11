@@ -123,14 +123,14 @@ class ModalProblem(TACSProblem):
         # Problem name
         self.name = name
 
+        # Set eigenvalue parameters
+        self.sigma = sigma
+        self.numEigs = numEigs
+
         # Default setup for common problem class objects, sets up comm and options
         TACSProblem.__init__(
             self, assembler, comm, options, outputViewer, meshLoader, isNonlinear
         )
-
-        # Set time eigenvalue parameters
-        self.sigma = sigma
-        self.numEigs = numEigs
 
         # String name used in evalFunctions
         self.valName = "eigsm"
