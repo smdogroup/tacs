@@ -29,7 +29,7 @@ inline TacsScalar simp_stiffness_scale_derivative(int xDV, TacsScalar x_val,
 TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
     TacsScalar E11_in, TacsScalar E22, TacsScalar G12, TacsScalar nu12,
     TacsScalar rho_in, TacsScalar X_c_in, TacsScalar X_t_in,
-    const TacsScalar* layup_angles, int n_plies, TacsScalar inner_init,
+    const TacsScalar *layup_angles, int n_plies, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
     TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
     TacsScalar buckle_length, TacsScalar buckle_length_factor, int x_dv,
@@ -600,9 +600,9 @@ TacsScalar TACSCompositeTubeBeamConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
-const char* TACSCompositeTubeBeamConstitutive::constName =
+const char *TACSCompositeTubeBeamConstitutive::constName =
     "TACSCompositeTubeBeamConstitutive";
 
-const char* TACSCompositeTubeBeamConstitutive::getObjectName() {
+const char *TACSCompositeTubeBeamConstitutive::getObjectName() {
   return constName;
 }

@@ -129,9 +129,9 @@ Testflo can be run by calling the following command from TACS' root directory:
    testflo ./tests
    ```
 3. Add unit/integration tests that include coverage for any features that have been added to TACS' test [library](https://github.com/smdogroup/tacs/tree/master/tests).
-4. Run formatting checks on any modified C++ source/header code using [clang-format](https://clang.llvm.org/docs/ClangFormat.html). We use version 20 with a Google format style.
+4. Run formatting checks on any modified C++ source/header code using [clang-format](https://clang.llvm.org/docs/ClangFormat.html). We use version 20 with the repository's `.clang-format` file (based on Google style with local overrides).
    ```
-   clang-format --style=Google -i filename.cpp
+   clang-format --style=file -i filename.cpp
    ```
 5. Run formatting checks on any modified Python code using [Black](https://black.readthedocs.io/en/stable/). We use version 24.
    ```

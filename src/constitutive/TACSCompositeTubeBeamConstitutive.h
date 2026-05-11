@@ -64,7 +64,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   TACSCompositeTubeBeamConstitutive(
       TacsScalar E11, TacsScalar E22, TacsScalar G12, TacsScalar nu12,
       TacsScalar rho, TacsScalar X_c, TacsScalar X_t,
-      const TacsScalar* layup_angles, int n_plies, TacsScalar inner_init,
+      const TacsScalar *layup_angles, int n_plies, TacsScalar inner_init,
       TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
       TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
       TacsScalar buckle_length = 1.0, TacsScalar buckle_length_factor = 0.0,
@@ -134,7 +134,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
                         int dvLen, TacsScalar dfdx[]);
 
   // The name of the constitutive object
-  const char* getObjectName();
+  const char *getObjectName();
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -167,7 +167,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   int xDV;
   TacsScalar x_val, p_penalty, k_floor, eps_m;
 
-  static const char* constName;
+  static const char *constName;
 };
 
 #endif  // TACS_COMPOSITE_TUBE_BEAM_CONSTITUTIVE_H
