@@ -34,8 +34,8 @@
     1. Fiber-direction compression at the outer fibre: -E11*eps_1 / X_c
     2. Fiber-direction tension  at the outer fibre:  +E11*eps_1 / X_t
        (skipped when X_t <= 0)
-    3. Euler column buckling: Nx / Pcr, where Pcr = pi^2 * E_eff * Ia / (Kb*Lb)^2
-       (skipped when buckleLengthFactor == 0, i.e. Kb == 0)
+    3. Euler column buckling: Nx / Pcr, where Pcr = pi^2 * E_eff * Ia /
+  (Kb*Lb)^2 (skipped when buckleLengthFactor == 0, i.e. Kb == 0)
 
   Analytic adjoints are provided for all strain and DV sensitivities.
 */
@@ -52,27 +52,23 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
     n_plies      — number of plies (all equal thickness)
 
     Geometry DVs:
-    inner_init, wall_init — initial inner diameter and diametric wall thickness [m]
-    inner_dv, wall_dv     — global DV indices (-1 = fixed)
-    inner_lb/ub, wall_lb/ub — DV bounds
+    inner_init, wall_init — initial inner diameter and diametric wall thickness
+    [m] inner_dv, wall_dv     — global DV indices (-1 = fixed) inner_lb/ub,
+    wall_lb/ub — DV bounds
 
     Buckling:
     buckle_length        — member length Lb [m]
-    buckle_length_factor — effective length factor Kb (0 = disable buckling check)
+    buckle_length_factor — effective length factor Kb (0 = disable buckling
+    check)
   */
   TACSCompositeTubeBeamConstitutive(
       TacsScalar E11, TacsScalar E22, TacsScalar G12, TacsScalar nu12,
       TacsScalar rho, TacsScalar X_c, TacsScalar X_t,
-      const TacsScalar *layup_angles, int n_plies,
-      TacsScalar inner_init, TacsScalar wall_init,
-      int inner_dv, int wall_dv,
-      TacsScalar inner_lb, TacsScalar inner_ub,
-      TacsScalar wall_lb, TacsScalar wall_ub,
-      TacsScalar buckle_length = 1.0,
-      TacsScalar buckle_length_factor = 0.0,
-      int x_dv = -1,
-      TacsScalar p_penalty = 3.0,
-      TacsScalar k_floor = 0.0,
+      const TacsScalar* layup_angles, int n_plies, TacsScalar inner_init,
+      TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
+      TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
+      TacsScalar buckle_length = 1.0, TacsScalar buckle_length_factor = 0.0,
+      int x_dv = -1, TacsScalar p_penalty = 3.0, TacsScalar k_floor = 0.0,
       TacsScalar eps_m = 1e-9);
   ~TACSCompositeTubeBeamConstitutive();
 
@@ -138,7 +134,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
                         int dvLen, TacsScalar dfdx[]);
 
   // The name of the constitutive object
-  const char *getObjectName();
+  const char* getObjectName();
 
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
@@ -151,10 +147,10 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar nu_eff;  // effective Poisson ratio
 
   // Ply-level strength properties
-  TacsScalar E11;   // fibre-direction modulus [Pa] (used in failure criterion)
-  TacsScalar rho;   // ply density [kg/m^3]
-  TacsScalar X_c;   // fibre-direction compressive strength [Pa]
-  TacsScalar X_t;   // fibre-direction tensile strength [Pa] (0 = disabled)
+  TacsScalar E11;  // fibre-direction modulus [Pa] (used in failure criterion)
+  TacsScalar rho;  // ply density [kg/m^3]
+  TacsScalar X_c;  // fibre-direction compressive strength [Pa]
+  TacsScalar X_t;  // fibre-direction tensile strength [Pa] (0 = disabled)
 
   // Geometry DVs (same convention as TACSIsoTubeBeamConstitutive)
   TacsScalar inner, wall;  // inner diameter, diametric wall thickness [m]
@@ -171,7 +167,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   int xDV;
   TacsScalar x_val, p_penalty, k_floor, eps_m;
 
-  static const char *constName;
+  static const char* constName;
 };
 
 #endif  // TACS_COMPOSITE_TUBE_BEAM_CONSTITUTIVE_H
