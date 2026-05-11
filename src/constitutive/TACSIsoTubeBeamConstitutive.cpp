@@ -24,13 +24,12 @@ inline TacsScalar simp_stiffness_scale_derivative(int xDV, TacsScalar x_val,
 }  // namespace
 
 TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
-    TACSMaterialProperties *properties, TacsScalar inner_init,
+    TACSMaterialProperties* properties, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
     TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
     TacsScalar buckle_length, int buckle_length_dv,
-    TacsScalar buckle_length_factor,
-    int x_dv, TacsScalar p_penalty_in, TacsScalar k_floor_in,
-    TacsScalar eps_m_in) {
+    TacsScalar buckle_length_factor, int x_dv, TacsScalar p_penalty_in,
+    TacsScalar k_floor_in, TacsScalar eps_m_in) {
   props = properties;
   props->incref();
 
@@ -190,21 +189,23 @@ void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens(
     TacsScalar dA = M_PI * wall / 2.0;
     TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
 
-    dfdx[index] += rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    dfdx[index] +=
+        rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (wallDV >= 0) {
     TacsScalar dA = M_PI * d0 / 2.0;
     TacsScalar dIa = M_PI * (d0 * d0 * d0) / 16.0;
 
-    dfdx[index] += rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    dfdx[index] +=
+        rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (xDV >= 0) {
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-    dfdx[index] += (1.0 - eps_m) * rho *
-                   (scale[0] * A + scale[3] * Ia + scale[4] * Ia);
+    dfdx[index] +=
+        (1.0 - eps_m) * rho * (scale[0] * A + scale[3] * Ia + scale[4] * Ia);
     index++;
   }
 }
@@ -518,8 +519,7 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
     props->evalStress3D(e0, s0);
     fail_checks[0] = props->vonMisesFailure3DStressSens(s0, s0d);
     props->evalStress3D(s0d, e0d);
-    fail_checks_sens[0] =
-        e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1];
+    fail_checks_sens[0] = e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1];
     if (TacsRealPart(fail_checks[0]) > TacsRealPart(max_fail)) {
       max_fail = fail_checks[0];
     }
@@ -532,8 +532,8 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
       TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
       TacsScalar dA = M_PI * (wall * dinner + d0 * dwall) / 2.0;
       TacsScalar dIa =
-          M_PI / 16.0 * ((d0 * d0 * d0 - d1 * d1 * d1) * dinner +
-                         d0 * d0 * d0 * dwall);
+          M_PI / 16.0 *
+          ((d0 * d0 * d0 - d1 * d1 * d1) * dinner + d0 * d0 * d0 * dwall);
       TacsScalar dL = (dvNum == buckleLengthDV) ? 1.0 : 0.0;
       TacsScalar Leff = buckleLengthFactor * buckleLength;
       TacsScalar dLeff = buckleLengthFactor * dL;
@@ -583,10 +583,10 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
-const char *TACSIsoTubeBeamConstitutive::constName =
+const char* TACSIsoTubeBeamConstitutive::constName =
     "TACSIsoTubeBeamConstitutive";
 
 /*
   Return the constitutive name
 */
-const char *TACSIsoTubeBeamConstitutive::getObjectName() { return constName; }
+const char* TACSIsoTubeBeamConstitutive::getObjectName() { return constName; }
