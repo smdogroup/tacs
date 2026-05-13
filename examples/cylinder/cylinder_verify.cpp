@@ -875,10 +875,10 @@ void meshStudy(const char *file_name, double P, TACSShellTransform *transform,
 
     // Evaluate the KS functionals
     TacsScalar dks_tacs, ks_tacs;
-    ks_func->setKSFailureType(TACSKSFailure::DISCRETE);
+    ks_func->setKSAggregationType(KS_DISCRETE);
     assembler->evalFunctions(1, &ks, &dks_tacs);
 
-    ks_func->setKSFailureType(TACSKSFailure::CONTINUOUS);
+    ks_func->setKSAggregationType(KS_CONTINUOUS);
     assembler->evalFunctions(1, &ks, &ks_tacs);
 
     // Evaluate the induced norms
@@ -1192,10 +1192,10 @@ int main(int argc, char *argv[]) {
 
   // Evaluate the KS functionals
   TacsScalar dks_tacs, ks_tacs;
-  ks_func->setKSFailureType(TACSKSFailure::DISCRETE);
+  ks_func->setKSAggregationType(KS_DISCRETE);
   assembler->evalFunctions(1, &ks, &dks_tacs);
 
-  ks_func->setKSFailureType(TACSKSFailure::CONTINUOUS);
+  ks_func->setKSAggregationType(KS_CONTINUOUS);
   assembler->evalFunctions(1, &ks, &ks_tacs);
 
   // Evaluate the induced norms

@@ -448,7 +448,7 @@ int main(int argc, char *argv[]) {
   // over all the elements in the mesh
   double ksRho = 10.0;
   TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
-  ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
+  ksfunc->setKSAggregationType(KS_CONTINUOUS);
   TACSFunction *func = ksfunc;
   func->incref();
 

@@ -97,15 +97,22 @@ def setup(compLPModel="LamParamFull", useVMFailure=False, useModifiedTsaiWu=Fals
         if useVMFailure:
             if comm.rank == 0:
                 print("Setting to use von Mises failure criterion")
-            ortho_ply.setUseMaxStrainCriterion()
+            ortho_ply.setFailureCriterion(
+                constitutive.CompositeFailureCriterion.MAX_STRAIN
+            )
         else:
             if comm.rank == 0:
                 print(
                     f"Setting to use Tsai-Wu failure criterion (modified: {useModifiedTsaiWu})"
                 )
-            ortho_ply.setUseTsaiWuCriterion()
             if useModifiedTsaiWu:
-                ortho_ply.setUseModifiedTsaiWuCriterion()
+                ortho_ply.setFailureCriterion(
+                    constitutive.CompositeFailureCriterion.TSAI_WU_MODIFIED
+                )
+            else:
+                ortho_ply.setFailureCriterion(
+                    constitutive.CompositeFailureCriterion.TSAI_WU
+                )
 
         if compLPModel == "LamParamSmeared":
             pfNums = np.arange(0, 3, dtype=np.intc) + dvNum + 1

@@ -21,6 +21,22 @@ cdef extern from "TACSFunction.h":
         SUB_DOMAIN
         NO_DOMAIN
 
+    # Declare the C++ enum under a private Cython name to avoid conflicting with
+    # the Python IntEnum class also named KSAggregationType.
+    enum _CKSAggregationType "KSAggregationType":
+        _CKSAGG_DISCRETE "KS_DISCRETE"
+        _CKSAGG_CONTINUOUS "KS_CONTINUOUS"
+        _CKSAGG_PNORM_DISCRETE "PNORM_DISCRETE"
+        _CKSAGG_PNORM_CONTINUOUS "PNORM_CONTINUOUS"
+        _CKSAGG_DISCRETE_AVERAGE "KS_DISCRETE_AVERAGE"
+
+    # Integer aliases for populating the Python IntEnum
+    int _KSAGG_DISCRETE "KS_DISCRETE"
+    int _KSAGG_CONTINUOUS "KS_CONTINUOUS"
+    int _KSAGG_PNORM_DISCRETE "PNORM_DISCRETE"
+    int _KSAGG_PNORM_CONTINUOUS "PNORM_CONTINUOUS"
+    int _KSAGG_DISCRETE_AVERAGE "KS_DISCRETE_AVERAGE"
+
 cdef extern from "TACSStructuralMass.h":
     cdef cppclass TACSStructuralMass(TACSFunction):
         TACSStructuralMass(TACSAssembler*)
@@ -47,58 +63,39 @@ cdef extern from "TACSAverageTemperature.h":
         TACSAverageTemperature(TACSAssembler*, TacsScalar)
 
 cdef extern from "TACSKSTemperature.h":
-    enum KSTemperatureType"TACSKSTemperature::KSTemperatureType":
-        KS_TEMPERATURE_DISCRETE"TACSKSTemperature::DISCRETE"
-        KS_TEMPERATURE_CONTINUOUS"TACSKSTemperature::CONTINUOUS"
-        PNORM_TEMPERATURE_DISCRETE"TACSKSTemperature::PNORM_DISCRETE"
-        PNORM_TEMPERATURE_CONTINUOUS"TACSKSTemperature::PNORM_CONTINUOUS"
-
     cdef cppclass TACSKSTemperature(TACSFunction):
         TACSKSTemperature(TACSAssembler*, double, double)
-        void setKSTemperatureType(KSTemperatureType ftype)
+        void setKSAggregationType(_CKSAggregationType ftype)
         double getParameter()
         void setParameter(double)
         void setMaxFailOffset(TacsScalar)
 
 cdef extern from "TACSKSFailure.h":
-    enum KSFailureType"TACSKSFailure::KSFailureType":
-        KS_FAILURE_DISCRETE"TACSKSFailure::DISCRETE"
-        KS_FAILURE_CONTINUOUS"TACSKSFailure::CONTINUOUS"
-        PNORM_FAILURE_DISCRETE"TACSKSFailure::PNORM_DISCRETE"
-        PNORM_FAILURE_CONTINUOUS"TACSKSFailure::PNORM_CONTINUOUS"
-        KS_FAILURE_DISCRETE_AVERAGE"TACSKSFailure::DISCRETE_AVERAGE"
-
     cdef cppclass TACSKSFailure(TACSFunction):
         TACSKSFailure(TACSAssembler*, double, double, double)
-        void setKSFailureType(KSFailureType ftype)
+        void setKSAggregationType(_CKSAggregationType ftype)
         double getParameter()
         void setParameter(double)
         void setMaxFailOffset(TacsScalar)
 
 cdef extern from "TACSKSDisplacement.h":
-    enum KSDisplacementType"TACSKSDisplacement::KSDisplacementType":
-        KS_DISPLACEMENT_DISCRETE"TACSKSDisplacement::DISCRETE"
-        KS_DISPLACEMENT_CONTINUOUS"TACSKSDisplacement::CONTINUOUS"
-        PNORM_DISPLACEMENT_DISCRETE"TACSKSDisplacement::PNORM_DISCRETE"
-        PNORM_DISPLACEMENT_CONTINUOUS"TACSKSDisplacement::PNORM_CONTINUOUS"
-
     cdef cppclass TACSKSDisplacement(TACSFunction):
         TACSKSDisplacement(TACSAssembler*, double, const double*, double)
-        void setKSDisplacementType(KSDisplacementType ftype)
+        void setKSAggregationType(_CKSAggregationType ftype)
         double getParameter()
         void setParameter(double)
         void setMaxDispOffset(TacsScalar)
 
 cdef extern from "TACSInducedFailure.h":
-    enum InducedNormType"TACSInducedFailure::InducedNormType":
-        INDUCED_EXPONENTIAL"TACSInducedFailure::EXPONENTIAL"
-        INDUCED_POWER"TACSInducedFailure::POWER"
-        INDUCED_EXPONENTIAL_SQUARED"TACSInducedFailure::EXPONENTIAL_SQUARED"
-        INDUCED_POWER_SQUARED"TACSInducedFailure::POWER_SQUARED"
-        INDUCED_DISCRETE_EXPONENTIAL"TACSInducedFailure::DISCRETE_EXPONENTIAL"
-        INDUCED_DISCRETE_POWER"TACSInducedFailure::DISCRETE_POWER"
-        INDUCED_DISCRETE_EXPONENTIAL_SQUARED"TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED"
-        INDUCED_DISCRETE_POWER_SQUARED"TACSInducedFailure::DISCRETE_POWER_SQUARED"
+    enum InducedNormType"InducedNormType":
+        INDUCED_EXPONENTIAL"EXPONENTIAL"
+        INDUCED_POWER"POWER"
+        INDUCED_EXPONENTIAL_SQUARED"EXPONENTIAL_SQUARED"
+        INDUCED_POWER_SQUARED"POWER_SQUARED"
+        INDUCED_DISCRETE_EXPONENTIAL"DISCRETE_EXPONENTIAL"
+        INDUCED_DISCRETE_POWER"DISCRETE_POWER"
+        INDUCED_DISCRETE_EXPONENTIAL_SQUARED"DISCRETE_EXPONENTIAL_SQUARED"
+        INDUCED_DISCRETE_POWER_SQUARED"DISCRETE_POWER_SQUARED"
 
     cdef cppclass TACSInducedFailure(TACSFunction):
         TACSInducedFailure(TACSAssembler*, double)

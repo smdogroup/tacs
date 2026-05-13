@@ -30,7 +30,7 @@ TACSKSFailure::TACSKSFailure(TACSAssembler *_assembler, double _ksWeight,
   ksWeight = _ksWeight;
   alpha = _alpha;
   safetyFactor = _safetyFactor;
-  ksType = CONTINUOUS;
+  ksType = KS_CONTINUOUS;
 
   // Initialize the maximum failure value and KS sum to default values
   // that will be overwritten later.
@@ -49,7 +49,9 @@ const char *TACSKSFailure::funcName = "TACSKSFailure";
 /*
   Set the KS aggregation type
 */
-void TACSKSFailure::setKSFailureType(enum KSFailureType type) { ksType = type; }
+void TACSKSFailure::setKSAggregationType(KSAggregationType type) {
+  ksType = type;
+}
 
 /*
   Retrieve the KS aggregation weight
@@ -147,17 +149,17 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
 
     // Check whether the quantity requested is defined or not
     if (count >= 1) {
-      if (ftype == TACSFunction::INITIALIZE && ksType != DISCRETE_AVERAGE) {
+      if (ftype == TACSFunction::INITIALIZE && ksType != KS_DISCRETE_AVERAGE) {
         // Set the maximum failure load
         if (TacsRealPart(fail) > TacsRealPart(maxFail)) {
           maxFail = fail;
         }
       } else {
         // Add the failure load to the sum
-        if (ksType == DISCRETE) {
+        if (ksType == KS_DISCRETE) {
           TacsScalar fexp = exp(ksWeight * (fail - maxFail));
           ksFailSum += scale * fexp;
-        } else if (ksType == CONTINUOUS) {
+        } else if (ksType == KS_CONTINUOUS) {
           TacsScalar fexp = exp(ksWeight * (fail - maxFail));
           ksFailSum += scale * weight * detXd * fexp;
         } else if (ksType == PNORM_DISCRETE) {
@@ -171,7 +173,7 @@ void TACSKSFailure::elementWiseEval(EvaluationType ftype, int elemIndex,
     }
   }
 
-  if (ksType == DISCRETE_AVERAGE) {
+  if (ksType == KS_DISCRETE_AVERAGE) {
     if (ftype == TACSFunction::INITIALIZE) {
       if (TacsRealPart(avgFail) > TacsRealPart(maxFail)) {
         maxFail = avgFail;
@@ -229,7 +231,7 @@ void TACSKSFailure::getElementSVSens(
 
   TacsScalar avgFail = 0.0;
 
-  if (ksType == DISCRETE_AVERAGE) {
+  if (ksType == KS_DISCRETE_AVERAGE) {
     avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
                                     ddvars);
   }
@@ -249,10 +251,10 @@ void TACSKSFailure::getElementSVSens(
     if (count >= 1) {
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
         dfdq = exp(ksWeight * (fail - maxFail)) / ksFailSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         dfdq = exp(ksWeight * (fail - maxFail)) / ksFailSum;
         dfdq *= weight * detXd;
       } else if (ksType == PNORM_DISCRETE) {
@@ -265,7 +267,7 @@ void TACSKSFailure::getElementSVSens(
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm;
         dfdq *= weight * detXd;
-      } else if (ksType == DISCRETE_AVERAGE) {
+      } else if (ksType == KS_DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
         dfdq /= (double)numQuadPoints;
       }
@@ -296,7 +298,7 @@ void TACSKSFailure::getElementXptSens(
 
   TacsScalar avgFail = 0.0;
 
-  if (ksType == DISCRETE_AVERAGE) {
+  if (ksType == KS_DISCRETE_AVERAGE) {
     avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
                                     ddvars);
   }
@@ -317,10 +319,10 @@ void TACSKSFailure::getElementXptSens(
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
       TacsScalar dfddetXd = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
         dfdq = exp(ksWeight * (fail - maxFail)) / ksFailSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         TacsScalar expfact = exp(ksWeight * (fail - maxFail)) / ksFailSum;
         dfddetXd = weight * expfact / ksWeight;
         dfdq = weight * detXd * expfact;
@@ -334,7 +336,7 @@ void TACSKSFailure::getElementXptSens(
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm * weight * detXd;
         dfddetXd = fail * fpow * invPnorm * weight;
-      } else if (ksType == DISCRETE_AVERAGE) {
+      } else if (ksType == KS_DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
         dfdq /= (double)numQuadPoints;
       }
@@ -361,7 +363,7 @@ void TACSKSFailure::addElementDVSens(
   const int numQuadPoints = element->getNumQuadraturePoints();
   TacsScalar avgFail = 0.0;
 
-  if (ksType == DISCRETE_AVERAGE) {
+  if (ksType == KS_DISCRETE_AVERAGE) {
     avgFail = computeAverageFailure(elemIndex, element, time, Xpts, vars, dvars,
                                     ddvars);
   }
@@ -381,10 +383,10 @@ void TACSKSFailure::addElementDVSens(
     if (count >= 1) {
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksFailSum))/dx = 1/(ksFailSum)*d(fail)/dx
         dfdq = exp(ksWeight * (fail - maxFail)) / ksFailSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         TacsScalar expfact = exp(ksWeight * (fail - maxFail)) / ksFailSum;
         dfdq = weight * detXd * expfact;
       } else if (ksType == PNORM_DISCRETE) {
@@ -396,7 +398,7 @@ void TACSKSFailure::addElementDVSens(
         TacsScalar fpow =
             pow(fabs(TacsRealPart(fail / maxFail)), ksWeight - 2.0);
         dfdq = fail * fpow * invPnorm * weight * detXd;
-      } else if (ksType == DISCRETE_AVERAGE) {
+      } else if (ksType == KS_DISCRETE_AVERAGE) {
         dfdq = exp(ksWeight * (avgFail - maxFail)) / ksFailSum;
         dfdq /= (double)numQuadPoints;
       }

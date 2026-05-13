@@ -88,7 +88,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ortho_ply = constitutive.OrthotropicPly(
             ply_thickness,
             ortho_prop,
-            failure_criterion=constitutive.OrthotropicPly.CompositeFailureCriterion.CUNTZE_WOVEN,
+            failure_criterion=constitutive.CompositeFailureCriterion.CUNTZE_WOVEN,
         )
 
         # Shell thickness
@@ -152,7 +152,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_CuntzeWoven_failure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSFailure.KSAggregationType.DISCRETE,
+                ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
             )
 
         tacs_probs = list(tacs_probs)

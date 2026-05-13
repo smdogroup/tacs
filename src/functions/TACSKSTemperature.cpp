@@ -29,7 +29,7 @@ TACSKSTemperature::TACSKSTemperature(TACSAssembler *_assembler,
                    TACSFunction::TWO_STAGE, 0) {
   ksWeight = _ksWeight;
   alpha = _alpha;
-  ksType = CONTINUOUS;
+  ksType = KS_CONTINUOUS;
 
   // Initialize the maximum temperature value and KS sum to default values
   // that will be overwritten later.
@@ -48,7 +48,13 @@ const char *TACSKSTemperature::funcName = "TACSKSTemperature";
 /*
   Set the KS aggregation type
 */
-void TACSKSTemperature::setKSTemperatureType(enum KSTemperatureType type) {
+void TACSKSTemperature::setKSAggregationType(KSAggregationType type) {
+  if (type == KS_DISCRETE_AVERAGE) {
+    fprintf(stderr,
+            "TACSKSTemperature: KS_DISCRETE_AVERAGE aggregation is not "
+            "supported.\n");
+    return;
+  }
   ksType = type;
 }
 
@@ -145,10 +151,10 @@ void TACSKSTemperature::elementWiseEval(
         }
       } else {
         // Add the temperature to the sum
-        if (ksType == DISCRETE) {
+        if (ksType == KS_DISCRETE) {
           TacsScalar fexp = exp(ksWeight * (temperature - maxTemp));
           ksTempSum += scale * fexp;
-        } else if (ksType == CONTINUOUS) {
+        } else if (ksType == KS_CONTINUOUS) {
           TacsScalar fexp = exp(ksWeight * (temperature - maxTemp));
           ksTempSum += scale * weight * detXd * fexp;
         } else if (ksType == PNORM_DISCRETE) {
@@ -191,10 +197,10 @@ void TACSKSTemperature::getElementSVSens(
     if (count >= 1) {
       // Compute the sensitivity contribution
       TacsScalar ksPtWeight = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
         ksPtWeight = exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         ksPtWeight = exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
         ksPtWeight *= weight * detXd;
       } else if (ksType == PNORM_DISCRETE) {
@@ -243,10 +249,10 @@ void TACSKSTemperature::getElementXptSens(
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
       TacsScalar dfddetXd = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
         dfdq = exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         TacsScalar expfact =
             exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
         dfddetXd = weight * expfact / ksWeight;
@@ -291,10 +297,10 @@ void TACSKSTemperature::addElementDVSens(
     if (count >= 1) {
       // Compute the sensitivity contribution
       TacsScalar dfdq = 0.0;
-      if (ksType == DISCRETE) {
+      if (ksType == KS_DISCRETE) {
         // d(log(ksTempSum))/dx = 1/(ksTempSum)*d(temperature)/dx
         dfdq = exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
-      } else if (ksType == CONTINUOUS) {
+      } else if (ksType == KS_CONTINUOUS) {
         TacsScalar expfact =
             exp(ksWeight * (temperature - maxTemp)) / ksTempSum;
         dfdq = weight * detXd * expfact;
