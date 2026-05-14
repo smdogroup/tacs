@@ -71,7 +71,9 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
             elem = elements.Quad4Shell(transform, con)
         elif descript == "CROD":
             # Shear corrections and bending stiffness are zero for pure axial members
-            con = constitutive.BasicBeamConstitutive(prop, A=A, J=0.0, Iy=0.0, Iz=0.0, ky=0.0, kz=0.0)
+            con = constitutive.BasicBeamConstitutive(
+                prop, A=A, J=0.0, Iy=0.0, Iz=0.0, ky=0.0, kz=0.0
+            )
             refAxis = np.array([0.0, 0.0, 1.0])
             transform = elements.BeamRefAxisTransform(refAxis)
             elem = elements.Beam2(transform, con)
