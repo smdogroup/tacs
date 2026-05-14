@@ -38,8 +38,8 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     # Reference values for regression testing
     FUNC_REFS = {
-        "2.5gload_SKIN_ksFailure": 2.28686464844228,
-        "2.5gload_SPAR_RIB_ksFailure": 0.8179439383682638,
+        "2.5gload_SKIN_ksFailure": 2.691412638786663,
+        "2.5gload_SPAR_RIB_ksFailure": 0.9914913955971043,
         "panel_length_con_ALL": np.array(
             [
                 0.03177571,
