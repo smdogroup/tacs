@@ -1409,6 +1409,20 @@ All objects performing shell elastic analysis should utilize this class.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.getDrillingRegularization">
+<span class="sig-name descname"><span class="pre">getDrillingRegularization</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.getDrillingRegularization" title="Link to this definition">¶</a></dt>
+<dd><p>Get the regularization parameter used to stiffen shell in drilling rotation dof.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Drilling regularization parameter.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>kpenalty (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.getMaterialProperties">
 <span class="sig-name descname"><span class="pre">getMaterialProperties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.getMaterialProperties" title="Link to this definition">¶</a></dt>
 <dd><p>Get the material properties objects associated with this constitutive object.</p>
@@ -1442,11 +1456,11 @@ These properties are needed to compute the equivalent MAT2 properties for the sh
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constitutive.ShellConstitutive.setDrillingRegularization">
-<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">setDrillingRegularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kpenalty</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization" title="Link to this definition">¶</a></dt>
 <dd><p>Update regularization parameter used to stiffen shell in drilling rotation dof.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>kpenalty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Drilling regularization parameter. Defaults to 10.0.</p>
+<dd class="field-odd"><p><strong>kpenalty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Drilling regularization parameter. Defaults to 0.1.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1801,6 +1815,7 @@ If any of the entries are None, they are not modified and will be included in th
 <li><a class="reference internal" href="#tacs.constitutive.PointMassConstitutive"><code class="docutils literal notranslate"><span class="pre">PointMassConstitutive</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive</span></code></a><ul>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.generateBDFCard"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.generateBDFCard()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.getDrillingRegularization"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.getDrillingRegularization()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.getMaterialProperties"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.getMaterialProperties()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.getThicknessProperties"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.getThicknessProperties()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constitutive.ShellConstitutive.setDrillingRegularization"><code class="docutils literal notranslate"><span class="pre">ShellConstitutive.setDrillingRegularization()</span></code></a></li>
