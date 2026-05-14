@@ -80,9 +80,6 @@ Now, define the element callback function used to setup TACS element objects and
       # Setup (isotropic) property and constitutive objects
       prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
       con = constitutive.IsoShellConstitutive(prop, t=t, tNum=-1)
-      # TACS shells are sometimes a little overly-rigid in shear
-      # We can reduce this effect by decreasing the drilling regularization
-      con.setDrillingRegularization(0.1)
       refAxis = np.array([1.0, 0.0, 0.0])
       transform = elements.ShellRefAxisTransform(refAxis)
       elem = elements.Quad4Shell(transform, con)
