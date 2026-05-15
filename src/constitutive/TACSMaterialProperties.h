@@ -263,50 +263,49 @@ class TACSOrthotropicPly : public TACSObject {
 
   // Transform the stress and strain between global/local frames
   // -----------------------------------------------------------
-/*
-  For a ply at an angle t, the stress in the local ply frame is computed from
-  the stress in the global frame as:
+  /*
+    For a ply at an angle t, the stress in the local ply frame is computed from
+    the stress in the global frame as:
 
-  s_local = T(t) * s_global
+    s_local = T(t) * s_global
 
-  where T is the transformation matrix:
+    where T is the transformation matrix:
 
-  T(t) =
-      [c^2  s^2        2*s*c ]
-      [s^2  c^2        -2*s*c]
-      [s*c (c^2 - s^2) s*c   ]
+    T(t) =
+        [c^2  s^2        2*s*c ]
+        [s^2  c^2        -2*s*c]
+        [s*c (c^2 - s^2) s*c   ]
 
-  where c = cos(t) and s = sin(t)
+    where c = cos(t) and s = sin(t)
 
-  The strain in the local ply frame is computed from the transposed
-  transformation matrix (because we use engineering shear strain rather than
-  tensorial shear strain):
+    The strain in the local ply frame is computed from the transposed
+    transformation matrix (because we use engineering shear strain rather than
+    tensorial shear strain):
 
-  e_local = T(t)^T * e_global
+    e_local = T(t)^T * e_global
 
-  The transformation from the local ply frame to the global frame can be
-  computed by simply replacing t with -t in the transformation matrix:
+    The transformation from the local ply frame to the global frame can be
+    computed by simply replacing t with -t in the transformation matrix:
 
-  s_global = T(-t) * s_local
+    s_global = T(-t) * s_local
 
-  e_global = T(-t)^T * e_local
+    e_global = T(-t)^T * e_local
 
-  Sensitivities w.r.t local or global stresses and strains can be transformed
-  using the transpose of the relevant transformation matrix, e.g:
+    Sensitivities w.r.t local or global stresses and strains can be transformed
+    using the transpose of the relevant transformation matrix, e.g:
 
-  e_local = T(t)^T * e_global
-  e_global = T(-t)^T * e_local
-  df/de_local = T(t) * df/de_global
-  df/de_global = T(-t) * df/de_local
-*/
+    e_local = T(t)^T * e_global
+    e_global = T(-t)^T * e_local
+    df/de_local = T(t) * df/de_global
+    df/de_global = T(-t) * df/de_local
+  */
 
   // Generic transformations
   // -----------------------
   /**
-   * @brief Compute out = T(angle) * in, where T is the transformation matrix
-   * described in the class docstring
+   * @brief Compute out = T(angle) * in
    *
-   * @param angle Angle between ply and global frame in radians
+   * @param angle Transformation angle
    * @param in 3-component input vector
    * @param out 3-component output vector
    */
@@ -314,10 +313,9 @@ class TACSOrthotropicPly : public TACSObject {
                              TacsScalar out[]);
 
   /**
-   * @brief Compute out = T(angle)^T * in, where T is the transformation matrix
-   * described in the class docstring
+   * @brief Compute out = T(angle)^T * in
    *
-   * @param angle Angle between ply and global frame in radians
+   * @param angle Transformation angle
    * @param in 3-component input vector
    * @param out 3-component output vector
    */
@@ -439,9 +437,8 @@ class TACSOrthotropicPly : public TACSObject {
   // Strain sensitivity transformations
   // ----------------------------------
   /**
-   * @brief Given the sensitivity of a function with respect to the strain in
-   * the global frame, determine the sensitivity with respect to the strain in
-   * the local ply frame
+   * @brief Transform a sensitivity w.r.t the global strain to a sensitivity
+   * w.r.t the ply strain
    *
    * @param angle Angle between ply and global frame in radians
    * @param globalStrainSens Sensitivity w.r.t. strain in the global frame
@@ -456,9 +453,8 @@ class TACSOrthotropicPly : public TACSObject {
   }
 
   /**
-   * @brief Given the sensitivity of a function with respect to the strain in
-   * the local ply frame, determine the sensitivity with respect to the strain
-   * in the global frame
+   * @brief Transform a sensitivity w.r.t the ply strain to a sensitivity w.r.t
+   * the global strain
    *
    * @param angle Angle between ply and global frame in radians
    * @param plyStrainSens Sensitivity w.r.t. strain in the local ply frame
