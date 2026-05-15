@@ -1049,7 +1049,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     TacsScalar sSens[3];
     getPlyStress(sens, sSens);
 
-    transformStressPly2Global(angle, sSens, sens);
+    transformStrainSensPly2Global(angle, sSens, sens);
   } else if (failureCriterion == CUNTZE_UD) {
     TacsScalar s[3];  // Ply stress
     getPlyStress(e, s);
@@ -1114,7 +1114,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     TacsScalar sSens[3];
     getPlyStress(sens, sSens);
 
-    transformStressPly2Global(angle, sSens, sens);
+    transformStrainSensPly2Global(angle, sSens, sens);
 
   } else if (failureCriterion == CUNTZE_WOVEN) {
     TacsScalar s[3];  // Ply stress
@@ -1188,7 +1188,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     TacsScalar sSens[3];
     getPlyStress(sens, sSens);
 
-    transformStressPly2Global(angle, sSens, sens);
+    transformStrainSensPly2Global(angle, sSens, sens);
 
   } else if (failureCriterion == MAX_STRAIN) {
     // Calculate the values of each of the failure criteria
@@ -1220,7 +1220,7 @@ TacsScalar TACSOrthotropicPly::failureStrainSens(TacsScalar angle,
     sSens[1] = (fexp[2] * eYc - fexp[3] * eYt) / (ksSum * eYt * eYc);
     sSens[2] = (fexp[4] - fexp[5]) / (ksSum * eS12);
 
-    transformStressPly2Global(angle, sSens, sens);
+    transformStrainSensPly2Global(angle, sSens, sens);
   }
 
   return fail;
@@ -1691,8 +1691,8 @@ TacsScalar TACSOrthotropicPly::calculateFailLoadStrainSens(
   getPlyStress(cSens, cstrSens);
   getPlyStress(lSens, lstrSens);
 
-  transformStressPly2Global(angle, cstrSens, cSens);
-  transformStressPly2Global(angle, lstrSens, lSens);
+  transformStrainSensPly2Global(angle, cstrSens, cSens);
+  transformStrainSensPly2Global(angle, lstrSens, lSens);
 
   return pos;
 }
