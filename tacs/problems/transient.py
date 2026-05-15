@@ -516,7 +516,13 @@ class TransientProblem(TACSProblem):
         self._addLoadToRHS(self.F[timeIndex], Fapplied)
 
     def addTractionToComponents(
-        self, timeStep, compIDs, tractions, timeStage=None, faceIndex=0
+        self,
+        timeStep,
+        compIDs,
+        tractions,
+        timeStage=None,
+        faceIndex=0,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
@@ -544,6 +550,11 @@ class TransientProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -556,7 +567,7 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addTractionToComponents(
-            self.auxElems[timeIndex], compIDs, tractions, faceIndex
+            self.auxElems[timeIndex], compIDs, tractions, faceIndex, tractionDVNums
         )
 
     def addTractionToElements(
@@ -567,6 +578,7 @@ class TransientProblem(TACSProblem):
         timeStage=None,
         faceIndex=0,
         nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a fixed traction to the
@@ -598,6 +610,11 @@ class TransientProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -610,11 +627,22 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addTractionToElements(
-            self.auxElems[timeIndex], elemIDs, tractions, faceIndex, nastranOrdering
+            self.auxElems[timeIndex],
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering,
+            tractionDVNums,
         )
 
     def addPressureToComponents(
-        self, timeStep, compIDs, pressures, timeStage=None, faceIndex=0
+        self,
+        timeStep,
+        compIDs,
+        pressures,
+        timeStage=None,
+        faceIndex=0,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
@@ -643,6 +671,11 @@ class TransientProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -655,7 +688,7 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addPressureToComponents(
-            self.auxElems[timeIndex], compIDs, pressures, faceIndex
+            self.auxElems[timeIndex], compIDs, pressures, faceIndex, pressureDVNums
         )
 
     def addPressureToElements(
@@ -666,6 +699,7 @@ class TransientProblem(TACSProblem):
         timeStage=None,
         faceIndex=0,
         nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a fixed presure to the
@@ -697,6 +731,11 @@ class TransientProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -709,10 +748,17 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep * self.numStages + timeStage
 
         self._addPressureToElements(
-            self.auxElems[timeIndex], elemIDs, pressures, faceIndex, nastranOrdering
+            self.auxElems[timeIndex],
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering,
+            pressureDVNums,
         )
 
-    def addInertialLoad(self, timeStep, inertiaVector, timeStage=None):
+    def addInertialLoad(
+        self, timeStep, inertiaVector, timeStage=None, inertiaVecDVNums=None
+    ):
         """
         This method is used to add a fixed inertial load at a specified time step
         due to a uniform acceleration over the entire model.
@@ -731,6 +777,11 @@ class TransientProblem(TACSProblem):
             Time stage index to apply load to. Default is None, which is applicable only for
             multi-step methods like BDF. For multi-stage methods like DIRK, this index must
             be specified.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            for components that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -742,7 +793,7 @@ class TransientProblem(TACSProblem):
             )
             timeIndex = timeStep * self.numStages + timeStage
 
-        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector)
+        self._addInertialLoad(self.auxElems[timeIndex], inertiaVector, inertiaVecDVNums)
 
     def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter, timeStage=None):
         """
@@ -855,6 +906,15 @@ class TransientProblem(TACSProblem):
         c2 = self.getOption("RBEArtificialStiffness")
         tacs.elements.RBE2.setScalingParameters(c1, c2)
         tacs.elements.RBE3.setScalingParameters(c1, c2)
+        # Update design variables on all auxiliary elements
+        for auxElemObj in self.auxElems:
+            elems = auxElemObj.getAuxElements()
+            nums = auxElemObj.getAuxElementNums()
+            for elem, compNum in zip(elems, nums):
+                dvNums = elem.getDesignVarNums(compNum)
+                if len(dvNums) > 0:
+                    dvVals = self.x.getValues(dvNums)
+                    elem.setDesignVars(compNum, dvVals)
 
     def solve(self):
         """

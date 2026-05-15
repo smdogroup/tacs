@@ -46,21 +46,24 @@ int TACSElement3D::getDesignVarsPerNode() {
 }
 
 TACSElement *TACSElement3D::createElementTraction(int faceIndex,
-                                                  const TacsScalar t[]) {
+                                                  const TacsScalar t[],
+                                                  const int *tracDVNums) {
   int varsPerNode = getVarsPerNode();
-  return new TACSTraction3D(varsPerNode, faceIndex, basis, t);
+  return new TACSTraction3D(varsPerNode, faceIndex, basis, t, 1, tracDVNums);
 }
 
-TACSElement *TACSElement3D::createElementPressure(int faceIndex, TacsScalar p) {
+TACSElement *TACSElement3D::createElementPressure(int faceIndex, TacsScalar p,
+                                                  int pressureDVNum) {
   int varsPerNode = getVarsPerNode();
-  return new TACSPressure3D(varsPerNode, faceIndex, basis, p);
+  return new TACSPressure3D(varsPerNode, faceIndex, basis, p, pressureDVNum);
 }
 
 TACSElement *TACSElement3D::createElementInertialForce(
-    const TacsScalar inertiaVec[]) {
+    const TacsScalar inertiaVec[], const int *inertiaVecDVNums) {
   int varsPerNode = getVarsPerNode();
   TACSConstitutive *con = model->getConstitutive();
-  return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec);
+  return new TACSInertialForce3D(varsPerNode, con, basis, inertiaVec,
+                                 inertiaVecDVNums);
 }
 
 TACSElement *TACSElement3D::createElementCentrifugalForce(

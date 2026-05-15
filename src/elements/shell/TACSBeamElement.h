@@ -191,13 +191,16 @@ class TACSBeamElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]) {
-    return new TACSBeamTraction<vars_per_node, quadrature, basis>(t);
+  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[],
+                                     const int *tracDVNums = NULL) {
+    return new TACSBeamTraction<vars_per_node, quadrature, basis>(t, 1,
+                                                                  tracDVNums);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]) {
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
+                                          const int *inertiaVecDVNums = NULL) {
     return new TACSBeamInertialForce<vars_per_node, quadrature, basis>(
-        transform, con, inertiaVec);
+        transform, con, inertiaVec, inertiaVecDVNums);
   }
 
   TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],

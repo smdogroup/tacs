@@ -119,17 +119,22 @@ class TACSShellElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
-  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]) {
-    return new TACSShellTraction<vars_per_node, quadrature, basis>(t);
+  TACSElement *createElementTraction(int faceIndex, const TacsScalar t[],
+                                     const int *tracDVNums = NULL) {
+    return new TACSShellTraction<vars_per_node, quadrature, basis>(t, 1,
+                                                                   tracDVNums);
   }
 
-  TACSElement *createElementPressure(int faceIndex, TacsScalar p) {
-    return new TACSShellPressure<vars_per_node, quadrature, basis>(p);
+  TACSElement *createElementPressure(int faceIndex, TacsScalar p,
+                                     int pressureDVNum = -1) {
+    return new TACSShellPressure<vars_per_node, quadrature, basis>(
+        p, pressureDVNum);
   }
 
-  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]) {
+  TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
+                                          const int *inertiaVecDVNums = NULL) {
     return new TACSShellInertialForce<vars_per_node, quadrature, basis>(
-        con, inertiaVec);
+        con, inertiaVec, inertiaVecDVNums);
   }
 
   TACSElement *createElementCentrifugalForce(const TacsScalar omega[],

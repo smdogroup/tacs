@@ -40,6 +40,7 @@ class ElementTest(unittest.TestCase):
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.trac_vec = np.random.rand(max_vars_per_nodes).astype(self.dtype)
         self.faceIndex = 0
+        self.tracDVNums = np.arange(1, max_vars_per_nodes + 1, dtype=np.intc)
 
         # Create the isotropic material
         rho = 2700.0
@@ -102,7 +103,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element2D(model, basis)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         fail = elements.TestElementJacobian(
                             traction,
@@ -133,7 +134,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element2D(model, basis)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         dvs = traction.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
@@ -165,7 +166,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element2D(model, basis)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         fail = elements.TestAdjResXptProduct(
                             traction,
@@ -190,7 +191,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         dvs = traction.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
@@ -223,7 +224,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(basis=basis):
                         element = elements.Element2D(model, basis)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         if self.print_level > 0:
                             print(

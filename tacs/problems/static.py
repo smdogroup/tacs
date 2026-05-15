@@ -656,7 +656,9 @@ class StaticProblem(TACSProblem):
         """
         self._addLoadToRHS(self.F, Fapplied)
 
-    def addTractionToComponents(self, compIDs, tractions, faceIndex=0):
+    def addTractionToComponents(
+        self, compIDs, tractions, faceIndex=0, tractionDVNums=None
+    ):
         """
         This method is used to add a *FIXED TOTAL TRACTION* on one or more
         components, defined by COMPIDs. The purpose of this routine is
@@ -675,11 +677,23 @@ class StaticProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply traction to.
             Note: not required for certain elements (i.e. shells)
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
-        self._addTractionToComponents(self.auxElems, compIDs, tractions, faceIndex)
+        self._addTractionToComponents(
+            self.auxElems, compIDs, tractions, faceIndex, tractionDVNums
+        )
 
     def addTractionToElements(
-        self, elemIDs, tractions, faceIndex=0, nastranOrdering=False
+        self,
+        elemIDs,
+        tractions,
+        faceIndex=0,
+        nastranOrdering=False,
+        tractionDVNums=None,
     ):
         """
         This method is used to add a fixed traction to the
@@ -703,13 +717,25 @@ class StaticProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        tractionDVNums : numpy.ndarray or None
+            Optional 1d or 2d array of global design variable numbers controlling
+            each entry of the traction vector. Use negative values for components
+            that should not be treated as design variables.
         """
 
         self._addTractionToElements(
-            self.auxElems, elemIDs, tractions, faceIndex, nastranOrdering
+            self.auxElems,
+            elemIDs,
+            tractions,
+            faceIndex,
+            nastranOrdering,
+            tractionDVNums,
         )
 
-    def addPressureToComponents(self, compIDs, pressures, faceIndex=0):
+    def addPressureToComponents(
+        self, compIDs, pressures, faceIndex=0, pressureDVNums=None
+    ):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIds. The purpose of this routine is
@@ -729,11 +755,23 @@ class StaticProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
-        self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
+        self._addPressureToComponents(
+            self.auxElems, compIDs, pressures, faceIndex, pressureDVNums
+        )
 
     def addPressureToElements(
-        self, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+        self,
+        elemIDs,
+        pressures,
+        faceIndex=0,
+        nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a fixed presure to the
@@ -757,13 +795,23 @@ class StaticProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
 
         self._addPressureToElements(
-            self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
+            self.auxElems,
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering,
+            pressureDVNums,
         )
 
-    def addInertialLoad(self, inertiaVector):
+    def addInertialLoad(self, inertiaVector, inertiaVecDVNums=None):
         """
         This method is used to add a fixed inertial load due to
         a uniform acceleration over the entire model.
@@ -773,8 +821,13 @@ class StaticProblem(TACSProblem):
         ----------
         inertiaVector : numpy.ndarray
             Acceleration vector used to define inertial load.
+
+        inertiaVecDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            inertiaVector) controlling each entry of the inertia vector. Use negative values
+            for components that should not be treated as design variables.
         """
-        self._addInertialLoad(self.auxElems, inertiaVector)
+        self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
 
     def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
         """
@@ -821,9 +874,9 @@ class StaticProblem(TACSProblem):
         the input variables associated with this problem
         """
 
+        self.assembler.setAuxElements(self.auxElems)
         self.assembler.setDesignVars(self.x)
         self.assembler.setNodes(self.Xpts)
-        self.assembler.setAuxElements(self.auxElems)
         # Set state variables
         self.assembler.setVariables(self.u)
         # Zero any time derivative terms
