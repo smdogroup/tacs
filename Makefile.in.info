@@ -9,7 +9,6 @@ TACS_DIR = ${HOME}/git/tacs
 CXX = mpicxx
 RM = rm -f
 PYTHON = python
-PIP = pip
 
 # Set up for parallel make
 MAKE = make -j 8

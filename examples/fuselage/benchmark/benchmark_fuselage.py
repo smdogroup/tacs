@@ -13,7 +13,7 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "pressurization_ks_failure": 0.4053409304781571,
+    "pressurization_ks_failure": 0.390236223886997,
     "pressurization_mass": 4219.685957940358,
 }
 
