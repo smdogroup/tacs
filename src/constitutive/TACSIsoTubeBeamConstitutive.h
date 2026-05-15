@@ -111,6 +111,7 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar getYoungsModulusDVSens() const;
 
   TACSMaterialProperties *props;
+  TacsScalar rho0, E0, nu0;
   TacsScalar inner, wall;
   int innerDV, wallDV;
   TacsScalar innerLb, innerUb;

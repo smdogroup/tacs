@@ -9,6 +9,8 @@ TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
     TacsScalar k_floor_in, TacsScalar eps_m_in) {
   props = properties;
   props->incref();
+  rho0 = props->getDensity();
+  props->getIsotropicProperties(&E0, &nu0);
 
   inner = inner_init;
   wall = wall_init;
@@ -34,18 +36,17 @@ TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
 TACSIsoTubeBeamConstitutive::~TACSIsoTubeBeamConstitutive() { props->decref(); }
 
 TacsScalar TACSIsoTubeBeamConstitutive::getMaterialDensity() const {
-  TacsScalar rho = props->getDensity();
   if (xDV < 0) {
-    return rho;
+    return rho0;
   }
-  return (eps_m + (1.0 - eps_m) * x_val) * rho;
+  return (eps_m + (1.0 - eps_m) * x_val) * rho0;
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::getMaterialDensityDVSens() const {
   if (xDV < 0) {
     return 0.0;
   }
-  return (1.0 - eps_m) * props->getDensity();
+  return (1.0 - eps_m) * rho0;
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::getTopologyValue() const {
@@ -63,27 +64,21 @@ TacsScalar TACSIsoTubeBeamConstitutive::getTopologyValueDVSens() const {
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::getYoungsModulus() const {
-  TacsScalar E, nu;
-  props->getIsotropicProperties(&E, &nu);
-  (void)nu;
   if (xDV < 0) {
-    return E;
+    return E0;
   }
   TacsScalar stiffness_scale =
       k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
-  return stiffness_scale * E;
+  return stiffness_scale * E0;
 }
 
 TacsScalar TACSIsoTubeBeamConstitutive::getYoungsModulusDVSens() const {
   if (xDV < 0) {
     return 0.0;
   }
-  TacsScalar E, nu;
-  props->getIsotropicProperties(&E, &nu);
-  (void)nu;
   TacsScalar dstiffness_scale =
       (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
-  return dstiffness_scale * E;
+  return dstiffness_scale * E0;
 }
 
 int TACSIsoTubeBeamConstitutive::getDesignVarNums(int elemIndex, int dvLen,
@@ -285,11 +280,8 @@ void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
                                              const TacsScalar e[],
                                              TacsScalar s[]) {
   TacsScalar E = getYoungsModulus();
-  TacsScalar E0, nu;
-  props->getIsotropicProperties(&E0, &nu);
-  (void)E0;
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar G = 0.5 * E / (1.0 + nu0);
+  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
@@ -308,11 +300,8 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness(int elemIndex,
                                                        const TacsScalar X[],
                                                        TacsScalar C[]) {
   TacsScalar E = getYoungsModulus();
-  TacsScalar E0, nu;
-  props->getIsotropicProperties(&E0, &nu);
-  (void)E0;
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar G = 0.5 * E / (1.0 + nu0);
+  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
@@ -332,12 +321,9 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar E0, nu;
-  props->getIsotropicProperties(&E0, &nu);
-  (void)E0;
   TacsScalar Ep = getYoungsModulus();
-  TacsScalar Gp = 0.5 * Ep / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar Gp = 0.5 * Ep / (1.0 + nu0);
+  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
 
@@ -370,7 +356,7 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
   }
   if (xDV >= 0) {
     TacsScalar dEp = getYoungsModulusDVSens();
-    TacsScalar dGp = 0.5 * dEp / (1.0 + nu);
+    TacsScalar dGp = 0.5 * dEp / (1.0 + nu0);
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
