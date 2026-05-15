@@ -141,6 +141,15 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
                                   const TacsScalar X[], int index);
 
  private:
+  TacsScalar getMaterialDensity() const;
+  TacsScalar getMaterialDensityDVSens() const;
+  TacsScalar getTopologyValue() const;
+  TacsScalar getTopologyValueDVSens() const;
+  TacsScalar getYoungsModulus() const;
+  TacsScalar getYoungsModulusDVSens() const;
+  TacsScalar getShearModulus() const;
+  TacsScalar getShearModulusDVSens() const;
+
   // CLT-smeared effective properties (precomputed at construction, const)
   TacsScalar E_eff;   // axial modulus [Pa]
   TacsScalar G_eff;   // shear modulus [Pa]

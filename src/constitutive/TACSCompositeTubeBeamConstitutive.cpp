@@ -3,29 +3,6 @@
 #include <math.h>
 #include <string.h>
 
-namespace {
-// Finite SIMP stiffness floor for numerical regularization so near-void
-// members do not create near-singular stiffness matrices. This improves
-// conditioning for eigenvalue solves and parallel runs.
-inline TacsScalar simp_stiffness_scale(int xDV, TacsScalar x_val,
-                                       TacsScalar p_penalty,
-                                       TacsScalar k_floor) {
-  if (xDV < 0) {
-    return 1.0;
-  }
-  return k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
-}
-
-inline TacsScalar simp_stiffness_scale_derivative(int xDV, TacsScalar x_val,
-                                                  TacsScalar p_penalty,
-                                                  TacsScalar k_floor) {
-  if (xDV < 0) {
-    return 0.0;
-  }
-  return (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
-}
-}  // namespace
-
 TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
     TacsScalar E11_in, TacsScalar E22, TacsScalar G12, TacsScalar nu12,
     TacsScalar rho_in, TacsScalar X_c_in, TacsScalar X_t_in,
@@ -99,6 +76,70 @@ TACSCompositeTubeBeamConstitutive::TACSCompositeTubeBeamConstitutive(
 }
 
 TACSCompositeTubeBeamConstitutive::~TACSCompositeTubeBeamConstitutive() {}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getMaterialDensity() const {
+  if (xDV < 0) {
+    return rho;
+  }
+  return (eps_m + (1.0 - eps_m) * x_val) * rho;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getMaterialDensityDVSens() const {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  return (1.0 - eps_m) * rho;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getTopologyValue() const {
+  if (xDV < 0) {
+    return 1.0;
+  }
+  return x_val;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getTopologyValueDVSens() const {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  return 1.0;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getYoungsModulus() const {
+  if (xDV < 0) {
+    return E_eff;
+  }
+  TacsScalar stiffness_scale =
+      k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
+  return stiffness_scale * E_eff;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getYoungsModulusDVSens() const {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  TacsScalar dstiffness_scale =
+      (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
+  return dstiffness_scale * E_eff;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getShearModulus() const {
+  if (xDV < 0) {
+    return G_eff;
+  }
+  TacsScalar stiffness_scale =
+      k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
+  return stiffness_scale * G_eff;
+}
+
+TacsScalar TACSCompositeTubeBeamConstitutive::getShearModulusDVSens() const {
+  if (xDV < 0) {
+    return 0.0;
+  }
+  TacsScalar dstiffness_scale =
+      (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
+  return dstiffness_scale * G_eff;
+}
 
 int TACSCompositeTubeBeamConstitutive::getDesignVarNums(int elemIndex,
                                                         int dvLen,
@@ -189,8 +230,7 @@ TacsScalar TACSCompositeTubeBeamConstitutive::evalDensity(
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar rho_scale = (xDV >= 0) ? (eps_m + (1.0 - eps_m) * x_val) : 1.0;
-  return rho_scale * rho * A;
+  return getMaterialDensity() * A;
 }
 
 void TACSCompositeTubeBeamConstitutive::addDensityDVSens(
@@ -198,21 +238,21 @@ void TACSCompositeTubeBeamConstitutive::addDensityDVSens(
     int dvLen, TacsScalar dfdx[]) {
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
-  TacsScalar rho_scale = (xDV >= 0) ? (eps_m + (1.0 - eps_m) * x_val) : 1.0;
+  TacsScalar density = getMaterialDensity();
   int index = 0;
   if (innerDV >= 0) {
     TacsScalar dA = M_PI * wall / 2.0;
-    dfdx[index] += scale * rho_scale * rho * dA;
+    dfdx[index] += scale * density * dA;
     index++;
   }
   if (wallDV >= 0) {
     TacsScalar dA = M_PI * d0 / 2.0;
-    dfdx[index] += scale * rho_scale * rho * dA;
+    dfdx[index] += scale * density * dA;
     index++;
   }
   if (xDV >= 0) {
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-    dfdx[index] += scale * (1.0 - eps_m) * rho * A;
+    dfdx[index] += scale * getMaterialDensityDVSens() * A;
     index++;
   }
 }
@@ -225,13 +265,13 @@ void TACSCompositeTubeBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar d1 = inner;
   TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
   TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-  TacsScalar rho_scale = (xDV >= 0) ? (eps_m + (1.0 - eps_m) * x_val) : 1.0;
+  TacsScalar density = getMaterialDensity();
 
-  moments[0] = rho_scale * rho * A;
+  moments[0] = density * A;
   moments[1] = 0.0;
   moments[2] = 0.0;
-  moments[3] = rho_scale * rho * Ia;
-  moments[4] = rho_scale * rho * Ia;
+  moments[3] = density * Ia;
+  moments[4] = density * Ia;
   moments[5] = 0.0;
 }
 
@@ -240,27 +280,25 @@ void TACSCompositeTubeBeamConstitutive::addMassMomentsDVSens(
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
-  TacsScalar rho_scale = (xDV >= 0) ? (eps_m + (1.0 - eps_m) * x_val) : 1.0;
+  TacsScalar density = getMaterialDensity();
   int index = 0;
   if (innerDV >= 0) {
     TacsScalar dA = M_PI * wall / 2.0;
     TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
-    dfdx[index] +=
-        rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    dfdx[index] += density * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (wallDV >= 0) {
     TacsScalar dA = M_PI * d0 / 2.0;
     TacsScalar dIa = M_PI * (d0 * d0 * d0) / 16.0;
-    dfdx[index] +=
-        rho_scale * rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
+    dfdx[index] += density * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (xDV >= 0) {
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-    dfdx[index] +=
-        (1.0 - eps_m) * rho * (scale[0] * A + scale[3] * Ia + scale[4] * Ia);
+    dfdx[index] += getMaterialDensityDVSens() *
+                   (scale[0] * A + scale[3] * Ia + scale[4] * Ia);
     index++;
   }
 }
@@ -275,10 +313,8 @@ void TACSCompositeTubeBeamConstitutive::evalStress(int elemIndex,
                                                    const TacsScalar X[],
                                                    const TacsScalar e[],
                                                    TacsScalar s[]) {
-  TacsScalar stiffness_scale =
-      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
-  TacsScalar Ep = E_eff * stiffness_scale;
-  TacsScalar Gp = G_eff * stiffness_scale;
+  TacsScalar Ep = getYoungsModulus();
+  TacsScalar Gp = getShearModulus();
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -295,10 +331,8 @@ void TACSCompositeTubeBeamConstitutive::evalStress(int elemIndex,
 
 void TACSCompositeTubeBeamConstitutive::evalTangentStiffness(
     int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[]) {
-  TacsScalar stiffness_scale =
-      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
-  TacsScalar Ep = E_eff * stiffness_scale;
-  TacsScalar Gp = G_eff * stiffness_scale;
+  TacsScalar Ep = getYoungsModulus();
+  TacsScalar Gp = getShearModulus();
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -319,10 +353,8 @@ void TACSCompositeTubeBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar stiffness_scale =
-      simp_stiffness_scale(xDV, x_val, p_penalty, k_floor);
-  TacsScalar Ep = E_eff * stiffness_scale;
-  TacsScalar Gp = G_eff * stiffness_scale;
+  TacsScalar Ep = getYoungsModulus();
+  TacsScalar Gp = getShearModulus();
   TacsScalar kcorr = 2.0 * (1.0 + nu_eff) / (4.0 + 3.0 * nu_eff);
   TacsScalar d0 = inner + wall;
   TacsScalar d1 = inner;
@@ -348,10 +380,8 @@ void TACSCompositeTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (xDV >= 0) {
-    TacsScalar dstiffness_scale =
-        simp_stiffness_scale_derivative(xDV, x_val, p_penalty, k_floor);
-    TacsScalar dEp = E_eff * dstiffness_scale;
-    TacsScalar dGp = G_eff * dstiffness_scale;
+    TacsScalar dEp = getYoungsModulusDVSens();
+    TacsScalar dGp = getShearModulusDVSens();
     TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
     dfdx[index] +=
@@ -409,7 +439,7 @@ TacsScalar TACSCompositeTubeBeamConstitutive::evalFailure(
     TacsScalar Nx = -A * e[0];
     TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
     TacsScalar buckle_ratio = Nx / Pcr;
-    fail_checks[count] = (xDV >= 0) ? x_val * buckle_ratio : buckle_ratio;
+    fail_checks[count] = getTopologyValue() * buckle_ratio;
     if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
       max_fail = fail_checks[count];
     }
@@ -474,10 +504,10 @@ TacsScalar TACSCompositeTubeBeamConstitutive::evalFailureStrainSens(
     TacsScalar Leff = buckleLengthFactor * buckleLength;
     TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
     TacsScalar Nx = -A * e[0];
-    TacsScalar x_relax = (xDV >= 0) ? x_val : 1.0;
     TacsScalar buckle_ratio = Nx / Pcr;
-    fail_checks[count] = x_relax * buckle_ratio;
-    fail_checks_sens[count][0] = x_relax * (-A / Pcr);
+    TacsScalar x_eff = getTopologyValue();
+    fail_checks[count] = x_eff * buckle_ratio;
+    fail_checks_sens[count][0] = x_eff * (-A / Pcr);
     if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
       max_fail = fail_checks[count];
     }
@@ -506,8 +536,6 @@ void TACSCompositeTubeBeamConstitutive::addFailureDVSens(
   dvNums[1] = wallDV;
   dvNums[2] = xDV;
   int index = 0;
-
-  TacsScalar x_relax = (xDV >= 0) ? x_val : 1.0;
 
   for (int dv_index = 0; dv_index < 3; dv_index++) {
     int dvNum = dvNums[dv_index];
@@ -563,12 +591,13 @@ void TACSCompositeTubeBeamConstitutive::addFailureDVSens(
       TacsScalar dPcr = M_PI * M_PI * dIa / (Leff * Leff);
       TacsScalar buckle_ratio = Nx / Pcr;
       TacsScalar dbuckle_ratio = dNx / Pcr - Nx * dPcr / (Pcr * Pcr);
+      TacsScalar x_eff = getTopologyValue();
 
-      fail_checks[count] = x_relax * buckle_ratio;
+      fail_checks[count] = x_eff * buckle_ratio;
       if (dvNum == xDV) {
-        fail_checks_dsens[count] = buckle_ratio;
+        fail_checks_dsens[count] = getTopologyValueDVSens() * buckle_ratio;
       } else {
-        fail_checks_dsens[count] = x_relax * dbuckle_ratio;
+        fail_checks_dsens[count] = x_eff * dbuckle_ratio;
       }
       if (TacsRealPart(fail_checks[count]) > TacsRealPart(max_fail)) {
         max_fail = fail_checks[count];

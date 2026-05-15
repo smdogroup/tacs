@@ -103,6 +103,13 @@ class TACSIsoTubeBeamConstitutive : public TACSBeamConstitutive {
                                   const TacsScalar X[], int index);
 
  private:
+  TacsScalar getMaterialDensity() const;
+  TacsScalar getMaterialDensityDVSens() const;
+  TacsScalar getTopologyValue() const;
+  TacsScalar getTopologyValueDVSens() const;
+  TacsScalar getYoungsModulus() const;
+  TacsScalar getYoungsModulusDVSens() const;
+
   TACSMaterialProperties *props;
   TacsScalar inner, wall;
   int innerDV, wallDV;
