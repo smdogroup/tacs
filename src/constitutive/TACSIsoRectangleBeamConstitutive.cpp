@@ -8,7 +8,7 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
     int _thickness_num, int _buckle_length_num, TacsScalar _lb_width,
     TacsScalar _ub_width, TacsScalar _lb_thickness, TacsScalar _ub_thickness,
     TacsScalar _w_offset, TacsScalar _t_offset,
-    TacsScalar _buckle_length_factor) {
+    TacsScalar _buckle_length_factor, TacsScalar _nsm) {
   props = properties;
   props->incref();
 
@@ -34,6 +34,7 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
 
   ks_weight = 100.0;
+  setNonStructuralMass(_nsm);
 }
 
 TACSIsoRectangleBeamConstitutive::~TACSIsoRectangleBeamConstitutive() {
@@ -135,12 +136,15 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
 
-  moments[0] = rho * A;
-  moments[1] = rho * delta_y * A;  // centroid offset y?
-  moments[2] = rho * delta_z * A;  // centroid offset z?
-  moments[3] = rho * Iz;
-  moments[4] = rho * Iy;
-  moments[5] = -rho * Iyz;  // -rho * Iyz
+  // NSM sits at (delta_y, delta_z) — same location as the cross-section
+  // centroid. Full parallel-axis contributions are added for all six moment
+  // entries.
+  moments[0] = rho * A + nsm;
+  moments[1] = rho * delta_y * A + nsm * delta_y;
+  moments[2] = rho * delta_z * A + nsm * delta_z;
+  moments[3] = rho * Iz + nsm * delta_y * delta_y;
+  moments[4] = rho * Iy + nsm * delta_z * delta_z;
+  moments[5] = -rho * Iyz + nsm * delta_y * delta_z;
 }
 
 void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
@@ -167,6 +171,9 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
 
     dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
+    // NSM at (delta_y, delta_z): d/d(width) terms (only delta_z varies)
+    dfdx[index] += nsm * w_offset *
+                   (scale[2] + 2.0 * delta_z * scale[4] + delta_y * scale[5]);
     index++;
   }
   if (thickness_num >= 0) {
@@ -179,6 +186,9 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
 
     dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
+    // NSM at (delta_y, delta_z): d/d(thickness) terms (only delta_y varies)
+    dfdx[index] += nsm * t_offset *
+                   (scale[1] + 2.0 * delta_y * scale[3] + delta_z * scale[5]);
     index++;
   }
 }
@@ -197,7 +207,7 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalDensity(int elemIndex,
   TacsScalar rho = props->getDensity();
   TacsScalar A = evalArea();
 
-  return rho * A;
+  return rho * A + nsm;
 }
 
 void TACSIsoRectangleBeamConstitutive::addDensityDVSens(
