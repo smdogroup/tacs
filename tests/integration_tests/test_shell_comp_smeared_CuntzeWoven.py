@@ -8,7 +8,7 @@ from tacs import pytacs, elements, constitutive, functions
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is based on test_shell_comp_smeared.py and tests KSFailure and 
+This test is based on test_shell_comp_smeared.py and tests KSFailure and
 sensitivities with the Cuntze failure criterion.
 """
 
@@ -152,7 +152,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_CuntzeWoven_failure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
             )
 
         tacs_probs = list(tacs_probs)

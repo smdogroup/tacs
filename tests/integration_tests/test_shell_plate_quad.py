@@ -149,13 +149,13 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_vmfailure_discrete",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
             )
             problem.addFunction(
                 "ks_vmfailure_discrete_average",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE_AVERAGE,
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE_AVERAGE,
             )
             problem.addFunction("compliance", functions.Compliance)
             problem.addFunction(

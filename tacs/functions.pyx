@@ -242,9 +242,9 @@ cdef class KSTemperature(Function):
     Args:
         assembler (Assembler): TACS Assembler object that will evaluating this function.
         ksWeight (float, optional): The ks weight used in the calculation (keyword argument). Defaults to 80.0.
-        ks_aggregation_type (functions.KSAggregationType, optional): The type of KS aggregation to be used.
+        ksAggregationType (functions.KSAggregationType, optional): The type of KS aggregation to be used.
             Defaults to ``functions.KSAggregationType.KS_CONTINUOUS``. ``DISCRETE_AVERAGE`` is not supported.
-        ftype (str, optional): Deprecated. Use ``ks_aggregation_type=functions.KSAggregationType.<VALUE>`` instead.
+        ftype (str, optional): Deprecated. Use ``ksAggregationType=functions.KSAggregationType.<VALUE>`` instead.
     """
 
     cdef TACSKSTemperature *kstptr
@@ -265,32 +265,32 @@ cdef class KSTemperature(Function):
         if 'ftype' in kwargs:
             warnings.warn(
                 "The 'ftype' string kwarg is deprecated. "
-                "Use 'ks_aggregation_type=functions.KSAggregationType.<VALUE>' instead.",
+                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if 'ks_aggregation_type' in kwargs:
+            if 'ksAggregationType' in kwargs:
                 raise ValueError(
-                    "Cannot specify both 'ks_aggregation_type' and deprecated 'ftype' kwarg."
+                    "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
             self.setKSAggregationType(kwargs['ftype'])
         else:
-            ks_aggregation_type = kwargs.get('ks_aggregation_type', KSAggregationType.KS_CONTINUOUS)
-            self.setKSAggregationType(ks_aggregation_type)
+            ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
+            self.setKSAggregationType(ksAggregationType)
 
-    def setKSAggregationType(self, ks_aggregation_type):
+    def setKSAggregationType(self, ksAggregationType):
         """
         Set the type of KS aggregation.
 
         Args:
-            ks_aggregation_type (functions.KSAggregationType or str): The aggregation type.
+            ksAggregationType (functions.KSAggregationType or str): The aggregation type.
                 String values are deprecated; use ``functions.KSAggregationType`` instead.
                 ``DISCRETE_AVERAGE`` is not supported for this function.
 
         Raises:
-            ValueError: If ``ks_aggregation_type`` is ``KSAggregationType.KS_DISCRETE_AVERAGE``.
+            ValueError: If ``ksAggregationType`` is ``KSAggregationType.KS_DISCRETE_AVERAGE``.
         """
-        if isinstance(ks_aggregation_type, str):
+        if isinstance(ksAggregationType, str):
             warnings.warn(
                 "Passing a string to setKSAggregationType is deprecated. "
                 "Use a functions.KSAggregationType enum value instead.",
@@ -303,14 +303,14 @@ cdef class KSTemperature(Function):
                 'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
             }
-            ks_aggregation_type = _str_map[ks_aggregation_type.lower()]
+            ksAggregationType = _str_map[ksAggregationType.lower()]
 
-        ks_aggregation_type = KSAggregationType(ks_aggregation_type)
-        if ks_aggregation_type == KSAggregationType.KS_DISCRETE_AVERAGE:
+        ksAggregationType = KSAggregationType(ksAggregationType)
+        if ksAggregationType == KSAggregationType.KS_DISCRETE_AVERAGE:
             raise ValueError(
                 "KSAggregationType.KS_DISCRETE_AVERAGE is only valid for KSFailure, not KSTemperature."
             )
-        self.kstptr.setKSAggregationType(<_CKSAggregationType><int>ks_aggregation_type)
+        self.kstptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
 
     def setParameter(self, double ksparam):
         self.kstptr.setParameter(ksparam)
@@ -337,9 +337,9 @@ cdef class KSFailure(Function):
         ksWeight (float, optional): The ks weight used in the calculation (keyword argument). Defaults to 80.0.
         safetyFactor (float, optional):
             The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.
-        ks_aggregation_type (functions.KSAggregationType, optional): The type of KS aggregation to be used.
+        ksAggregationType (functions.KSAggregationType, optional): The type of KS aggregation to be used.
             Defaults to ``functions.KSAggregationType.KS_CONTINUOUS``.
-        ftype (str, optional): Deprecated. Use ``ks_aggregation_type=functions.KSAggregationType.<VALUE>`` instead.
+        ftype (str, optional): Deprecated. Use ``ksAggregationType=functions.KSAggregationType.<VALUE>`` instead.
     """
 
     cdef TACSKSFailure *ksptr
@@ -364,28 +364,28 @@ cdef class KSFailure(Function):
         if 'ftype' in kwargs:
             warnings.warn(
                 "The 'ftype' string kwarg is deprecated. "
-                "Use 'ks_aggregation_type=functions.KSAggregationType.<VALUE>' instead.",
+                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if 'ks_aggregation_type' in kwargs:
+            if 'ksAggregationType' in kwargs:
                 raise ValueError(
-                    "Cannot specify both 'ks_aggregation_type' and deprecated 'ftype' kwarg."
+                    "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
             self.setKSAggregationType(kwargs['ftype'])
         else:
-            ks_aggregation_type = kwargs.get('ks_aggregation_type', KSAggregationType.KS_CONTINUOUS)
-            self.setKSAggregationType(ks_aggregation_type)
+            ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
+            self.setKSAggregationType(ksAggregationType)
 
-    def setKSAggregationType(self, ks_aggregation_type):
+    def setKSAggregationType(self, ksAggregationType):
         """
         Set the type of KS aggregation.
 
         Args:
-            ks_aggregation_type (functions.KSAggregationType or str): The aggregation type.
+            ksAggregationType (functions.KSAggregationType or str): The aggregation type.
                 String values are deprecated; use ``functions.KSAggregationType`` instead.
         """
-        if isinstance(ks_aggregation_type, str):
+        if isinstance(ksAggregationType, str):
             warnings.warn(
                 "Passing a string to setKSAggregationType is deprecated. "
                 "Use a functions.KSAggregationType enum value instead.",
@@ -399,10 +399,10 @@ cdef class KSFailure(Function):
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
                 'discrete-average': KSAggregationType.KS_DISCRETE_AVERAGE,
             }
-            ks_aggregation_type = _str_map[ks_aggregation_type.lower()]
+            ksAggregationType = _str_map[ksAggregationType.lower()]
 
-        ks_aggregation_type = KSAggregationType(ks_aggregation_type)
-        self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ks_aggregation_type)
+        ksAggregationType = KSAggregationType(ksAggregationType)
+        self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
 
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
@@ -422,9 +422,9 @@ cdef class KSDisplacement(Function):
         direction (array-like[double], optional):
           3d vector specifying which direction to project displacements in for KS aggregation (keyword argument).
           Defaults to [0.0, 0.0, 0.0].
-        ks_aggregation_type (functions.KSAggregationType, optional): The type of KS aggregation to be used.
+        ksAggregationType (functions.KSAggregationType, optional): The type of KS aggregation to be used.
           Defaults to ``functions.KSAggregationType.KS_CONTINUOUS``. ``DISCRETE_AVERAGE`` is not supported.
-        ftype (str, optional): Deprecated. Use ``ks_aggregation_type=functions.KSAggregationType.<VALUE>`` instead.
+        ftype (str, optional): Deprecated. Use ``ksAggregationType=functions.KSAggregationType.<VALUE>`` instead.
     """
 
     cdef TACSKSDisplacement *ksptr
@@ -455,32 +455,32 @@ cdef class KSDisplacement(Function):
         if 'ftype' in kwargs:
             warnings.warn(
                 "The 'ftype' string kwarg is deprecated. "
-                "Use 'ks_aggregation_type=functions.KSAggregationType.<VALUE>' instead.",
+                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
-            if 'ks_aggregation_type' in kwargs:
+            if 'ksAggregationType' in kwargs:
                 raise ValueError(
-                    "Cannot specify both 'ks_aggregation_type' and deprecated 'ftype' kwarg."
+                    "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
             self.setKSAggregationType(kwargs['ftype'])
         else:
-            ks_aggregation_type = kwargs.get('ks_aggregation_type', KSAggregationType.KS_CONTINUOUS)
-            self.setKSAggregationType(ks_aggregation_type)
+            ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
+            self.setKSAggregationType(ksAggregationType)
 
-    def setKSAggregationType(self, ks_aggregation_type):
+    def setKSAggregationType(self, ksAggregationType):
         """
         Set the type of KS aggregation.
 
         Args:
-            ks_aggregation_type (functions.KSAggregationType or str): The aggregation type.
+            ksAggregationType (functions.KSAggregationType or str): The aggregation type.
                 String values are deprecated; use ``functions.KSAggregationType`` instead.
                 ``DISCRETE_AVERAGE`` is not supported for this function.
 
         Raises:
-            ValueError: If ``ks_aggregation_type`` is ``KSAggregationType.KS_DISCRETE_AVERAGE``.
+            ValueError: If ``ksAggregationType`` is ``KSAggregationType.KS_DISCRETE_AVERAGE``.
         """
-        if isinstance(ks_aggregation_type, str):
+        if isinstance(ksAggregationType, str):
             warnings.warn(
                 "Passing a string to setKSAggregationType is deprecated. "
                 "Use a functions.KSAggregationType enum value instead.",
@@ -493,14 +493,14 @@ cdef class KSDisplacement(Function):
                 'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
             }
-            ks_aggregation_type = _str_map[ks_aggregation_type.lower()]
+            ksAggregationType = _str_map[ksAggregationType.lower()]
 
-        ks_aggregation_type = KSAggregationType(ks_aggregation_type)
-        if ks_aggregation_type == KSAggregationType.KS_DISCRETE_AVERAGE:
+        ksAggregationType = KSAggregationType(ksAggregationType)
+        if ksAggregationType == KSAggregationType.KS_DISCRETE_AVERAGE:
             raise ValueError(
                 "KSAggregationType.KS_DISCRETE_AVERAGE is only valid for KSFailure, not KSDisplacement."
             )
-        self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ks_aggregation_type)
+        self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
 
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)

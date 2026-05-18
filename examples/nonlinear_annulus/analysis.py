@@ -160,7 +160,7 @@ problem.addFunction(
     "KSFailure",
     functions.KSFailure,
     ksWeight=80.0,
-    ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
+    ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
 )
 
 # Maximum displacement in the z-direction (KS with a very large weight to get a true max)
@@ -169,7 +169,7 @@ problem.addFunction(
     functions.KSDisplacement,
     direction=np.array([0.0, 0.0, 1.0]),
     ksWeight=1e20,
-    ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
+    ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
 )
 
 # Compliance

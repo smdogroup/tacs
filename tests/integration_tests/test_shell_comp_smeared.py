@@ -8,7 +8,7 @@ from tacs import pytacs, elements, constitutive, functions
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is identical to test_shell_comp_unbalanced.py except since the laminate 
+This test is identical to test_shell_comp_unbalanced.py except since the laminate
 is smeared all stacking sequence dependence is neglected.
 tests KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions
 and sensitivities.
@@ -173,7 +173,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_TsaiWufailure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ks_aggregation_type=functions.KSAggregationType.KS_DISCRETE,
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
             )
             problem.addFunction(
                 "x_disp",
