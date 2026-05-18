@@ -852,15 +852,26 @@ cdef class ShellConstitutive(Constitutive):
     All objects performing shell elastic analysis should utilize this class.
     """
 
-    def setDrillingRegularization(self, double kpenalty=10.0):
+    def setDrillingRegularization(self, double kpenalty=0.1):
         """
         Update regularization parameter used to stiffen shell in drilling rotation dof.
 
         Args:
-            kpenalty (float): Drilling regularization parameter. Defaults to 10.0.
+            kpenalty (float): Drilling regularization parameter. Defaults to 0.1.
         """
         if self.cptr:
             self.cptr.setDrillingRegularization(kpenalty)
+
+    def getDrillingRegularization(self):
+        """
+        Get the regularization parameter used to stiffen shell in drilling rotation dof.
+
+        Returns:
+            kpenalty (float): Drilling regularization parameter.
+        """
+        if self.cptr:
+            return self.cptr.getDrillingRegularization()
+        return None
 
     def getThicknessProperties(self):
         """
@@ -955,13 +966,14 @@ cdef class ShellConstitutive(Constitutive):
         )
 
         # MAT2 entry for coupling stiffness (the B matrix)
+        # NASTRAN uses the opposite sign convention for the B matrix so we export the negative of the TACS B matrix
         matProps.append(MAT2MaterialProperties(
-                E1=np.real(B[0] / t2),
-                G12=np.real(B[1] / t2),
-                G13=np.real(B[2] / t2),
-                E2=np.real(B[3] / t2),
-                G23=np.real(B[4] / t2),
-                E3=np.real(B[5] / t2),
+                E1=-np.real(B[0] / t2),
+                G12=-np.real(B[1] / t2),
+                G13=-np.real(B[2] / t2),
+                E2=-np.real(B[3] / t2),
+                G23=-np.real(B[4] / t2),
+                E3=-np.real(B[5] / t2),
                 rho=np.real(rho)
             )
         )

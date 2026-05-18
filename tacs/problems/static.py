@@ -872,6 +872,14 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
+        # Compute the internal and external force components of the residual at the current point
+        self.getForces(
+            externalForceVec=self.externalForce,
+            internalForceVec=self.internalForce,
+            Fext=Fext,
+        )
+        self.initNorm = np.real(self.externalForce.norm())
+
         if self.isNonlinear:
             hasConverged = self._solveNonlinear(Fext)
         else:
@@ -925,13 +933,6 @@ class StaticProblem(TACSProblem):
         # Get current residual
         self.getResidual(self.res, Fext=Fext)
 
-        # Get rhs vector
-        self.K.mult(self.u, self.rhs)
-        self.rhs.axpy(-1.0, self.res)
-
-        # Set initnorm as the norm of rhs
-        self.initNorm = np.real(self.rhs.norm())
-
         # Starting Norm for this computation
         self.startNorm = np.real(self.res.norm())
 
@@ -970,14 +971,6 @@ class StaticProblem(TACSProblem):
         bool
             Flag indicating whether the solver converged
         """
-        # Compute the internal and external force components of the residual at the current point
-        self.getForces(
-            externalForceVec=self.externalForce,
-            internalForceVec=self.internalForce,
-            Fext=Fext,
-        )
-        self.initNorm = np.real(self.externalForce.norm())
-
         if self.getOption("writeNLIterSolutions"):
             self.writeSolution(baseName=f"{self.name}-000-NLIter", number=0)
 
@@ -1939,7 +1932,7 @@ class StaticProblem(TACSProblem):
         """
 
         # Grab RHS vector from previous solve
-        F = self.rhs
+        F = self.externalForce
         F_array = np.real(F.getArray())
 
         # Get local force info for each processor
