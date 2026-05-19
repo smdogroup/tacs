@@ -263,9 +263,10 @@ cdef class KSTemperature(Function):
         self.ptr.incref()
 
         if 'ftype' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
             warnings.warn(
-                "The 'ftype' string kwarg is deprecated. "
-                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
+                "The 'ftype' string kwarg is deprecated as of v3.12 and will be removed "
+                "in v3.14. Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -280,7 +281,13 @@ cdef class KSTemperature(Function):
                 'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
             }
-            ksAggregationType = _str_map[kwargs['ftype'].lower()]
+            ftype = kwargs['ftype']
+            try:
+                ksAggregationType = _str_map[ftype.lower()]
+            except KeyError:
+                raise ValueError(
+                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
+                ) from None
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)
@@ -354,9 +361,10 @@ cdef class KSFailure(Function):
         self.ptr.incref()
 
         if 'ftype' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
             warnings.warn(
-                "The 'ftype' string kwarg is deprecated. "
-                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
+                "The 'ftype' string kwarg is deprecated as of v3.12 and will be removed "
+                "in v3.14. Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -372,7 +380,13 @@ cdef class KSFailure(Function):
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
                 'discrete-average': KSAggregationType.KS_DISCRETE_AVERAGE,
             }
-            ksAggregationType = _str_map[kwargs['ftype'].lower()]
+            ftype = kwargs['ftype']
+            try:
+                ksAggregationType = _str_map[ftype.lower()]
+            except KeyError:
+                raise ValueError(
+                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
+                ) from None
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)
@@ -437,9 +451,10 @@ cdef class KSDisplacement(Function):
         self.ptr.incref()
 
         if 'ftype' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
             warnings.warn(
-                "The 'ftype' string kwarg is deprecated. "
-                "Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
+                "The 'ftype' string kwarg is deprecated as of v3.12 and will be removed "
+                "in v3.14. Use 'ksAggregationType=functions.KSAggregationType.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
@@ -454,7 +469,13 @@ cdef class KSDisplacement(Function):
                 'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
                 'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
             }
-            ksAggregationType = _str_map[kwargs['ftype'].lower()]
+            ftype = kwargs['ftype']
+            try:
+                ksAggregationType = _str_map[ftype.lower()]
+            except KeyError:
+                raise ValueError(
+                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
+                ) from None
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)

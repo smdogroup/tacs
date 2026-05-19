@@ -640,8 +640,10 @@ cdef class OrthotropicPly:
         }
         _deprecated_used = [(k, v[1]) for k, v in _deprecated.items() if v[0]]
         if _deprecated_used:
+            # Deprecated in v3.12, remove in v3.14
             warnings.warn(
-                f"Boolean failure criterion kwargs ({', '.join(k for k, _ in _deprecated_used)}) are deprecated. "
+                f"Boolean failure criterion kwargs ({', '.join(k for k, _ in _deprecated_used)}) are deprecated "
+                "as of v3.12 and will be removed in v3.14. "
                 "Use 'failure_criterion=constitutive.CompositeFailureCriterion.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
