@@ -1142,7 +1142,7 @@ class StructProblem(BaseStructProblem):
         for f in evalFuncs:
             f_mangled = self.name + "_%s" % f
             self.staticProblem.addDVSens(
-                [evalFuncs], [prodDV], scale=vecT[f_mangled][0]
+                [f], [prodDV], scale=vecT[f_mangled][0]
             )
 
         # Convert result back into a dictionary
@@ -1153,7 +1153,7 @@ class StructProblem(BaseStructProblem):
             for f in evalFuncs:
                 f_mangled = self.name + "_%s" % f
                 self.staticProblem.addXptSens(
-                    [evalFuncs], [prodXpt], scale=vecT[f_mangled][0]
+                    [f], [prodXpt], scale=vecT[f_mangled][0]
                 )
             xArray = prodXpt.getArray()
             xdot = self.DVGeo.totalSensitivity(
@@ -1300,7 +1300,7 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.finalNorm = np.real(res.norm())
 
     def getdRdXptPhi(self, objectives):
-        """
+        r"""
         Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the objectives in the objective list.
 
         This is the total sensitivity calculation.
@@ -1322,7 +1322,7 @@ class StructProblem(BaseStructProblem):
         return products
 
     def getdRdXdvPhi(self, objectives):
-        """
+        r"""
         Get the result of :math:`[dR/dX_{dv}]^T \phi` for the total sensitivity calculation.
 
         Parameters
