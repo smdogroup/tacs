@@ -69,5 +69,74 @@ class TestDiscreteAverageRejection(unittest.TestCase):
         func.setKSAggregationType(functions.KSAggregationType.KS_DISCRETE_AVERAGE)
 
 
+class TestDeprecatedFtypeKwarg(unittest.TestCase):
+    """Verify backward-compat behaviour of the deprecated ftype= string kwarg."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.assembler = _make_assembler()
+
+    # ------------------------------------------------------------------
+    # DeprecationWarning cases
+    # ------------------------------------------------------------------
+
+    def test_ks_temperature_ftype_warns(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            func = functions.KSTemperature(self.assembler, ftype="discrete")
+        self.assertIsNotNone(func)
+
+    def test_ks_failure_ftype_warns(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            func = functions.KSFailure(self.assembler, ftype="discrete-average")
+        self.assertIsNotNone(func)
+
+    def test_ks_displacement_ftype_warns(self):
+        with self.assertWarns(DeprecationWarning) as cm:
+            func = functions.KSDisplacement(self.assembler, ftype="continuous")
+        self.assertIsNotNone(func)
+
+    # ------------------------------------------------------------------
+    # ValueError for mixed old + new kwargs
+    # ------------------------------------------------------------------
+
+    def test_ks_temperature_mixed_kwargs_raises(self):
+        with self.assertRaises(ValueError):
+            functions.KSTemperature(
+                self.assembler,
+                ftype="continuous",
+                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
+            )
+
+    def test_ks_failure_mixed_kwargs_raises(self):
+        with self.assertRaises(ValueError):
+            functions.KSFailure(
+                self.assembler,
+                ftype="continuous",
+                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
+            )
+
+    def test_ks_displacement_mixed_kwargs_raises(self):
+        with self.assertRaises(ValueError):
+            functions.KSDisplacement(
+                self.assembler,
+                ftype="continuous",
+                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
+            )
+
+    # ------------------------------------------------------------------
+    # ValueError for unrecognised or disallowed ftype strings
+    # ------------------------------------------------------------------
+
+    def test_unknown_ftype_raises_value_error(self):
+        """An unrecognised ftype string must raise ValueError."""
+        with self.assertRaises(ValueError):
+            functions.KSTemperature(self.assembler, ftype="bogus")
+
+    def test_ftype_discrete_average_raises_for_temperature(self):
+        """'discrete-average' is not in the KSTemperature ftype map and must raise ValueError."""
+        with self.assertRaises(ValueError):
+            functions.KSTemperature(self.assembler, ftype="discrete-average")
+
+
 if __name__ == "__main__":
     unittest.main()
