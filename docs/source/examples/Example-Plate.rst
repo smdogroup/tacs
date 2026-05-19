@@ -151,3 +151,8 @@ or
 
   $ f5totec point_force_000.f5
 
+The figure below shows what the failure contour mapped over the deformed plate looks as visualized in Tecplot.
+
+.. image:: images/point_force_def.png
+  :width: 800
+  :alt: Plate solution
