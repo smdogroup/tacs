@@ -181,9 +181,8 @@ class MACHStructProblemTestCase:
             """
             Test total geometric design variable sensitivity through adjoint against fd/cs
             """
-            # Skip this check if no dvs were added to model
-            total_geo_dvs = self.dv_geo.getNDV()
-            if total_geo_dvs == 0:
+            # Skip this check if no dvgeo was set or no dvs were added to model
+            if self.dv_geo is None or self.dv_geo.getNDV() == 0:
                 return
 
             # Initial solve
