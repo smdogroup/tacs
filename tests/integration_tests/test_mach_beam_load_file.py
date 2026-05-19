@@ -4,7 +4,8 @@ The beam model that we will be using for this problem is a rectangular beam,
 cantilevered, with a shear load applied at the tip. The beam is discretized using
 160 shell elements along it's span and depth.
 
-This tests the MACH StructProblem object's DVGeo and design variable sensitivities.
+This tests the MACH StructProblem object's ability to load forces from a file.
+The problem is identical to test_mach_beam_dvgeo, so reference values should match that test.
 """
 
 import os
@@ -25,12 +26,11 @@ except ImportError:
 # Get file paths
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/coarse_beam.bdf")
-ffd_file = os.path.join(base_dir, "./input_files/ffd_8_linear.fmt")
+load_file = os.path.join(base_dir, "./input_files/beam_load.dat")
 
-ksweight = 10.0
+from test_mach_beam_dvgeo import ksweight, TestMACHBeamExample as TMBE
 
 
-@unittest.skipIf(DVGeometry is None, "pygeo is not installed")
 class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
     """
     Test case for MACH StructProblem using the beam shape optimization example.
@@ -38,11 +38,8 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     N_PROCS = 2
 
-    # Reference values for regression testing
-    FUNC_REFS = {
-        "tip_shear_ks_vmfailure": 2.492124644882399,
-        "tip_shear_mass": 2.7799999999999963,
-    }
+    # Set reference functions to match unrotated case
+    FUNC_REFS = TMBE.FUNC_REFS
 
     def setup_struct_problems(self, comm):
         """
@@ -57,9 +54,6 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         E = 70.0e9
         nu = 0.0
         ys = 420.0e6
-
-        # Shear force applied at tip
-        V = 2.5e4
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -77,25 +71,6 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         FEAAssembler = pyTACS(bdf_file)
         FEAAssembler.initialize(element_callback)
 
-        # Create DVGeometry
-        DVGeo = DVGeometry(fileName=ffd_file, isComplex=self.dtype == complex)
-        # Create reference axis
-        nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex="i", yFraction=0.5)
-
-        # Set up global design variables
-        def depth(val, geo):
-            for i in range(nRefAxPts):
-                geo.scale_y["centerline"].coef[i] = val[i]
-
-        DVGeo.addGlobalDV(
-            dvName="depth",
-            value=np.ones(nRefAxPts),
-            func=depth,
-            lower=1e-3,
-            upper=10.0,
-            scale=20.0,
-        )
-
         # Create static problem
         staticProb = FEAAssembler.createStaticProblem("tip_shear")
         # Add TACS Functions
@@ -103,15 +78,11 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         staticProb.addFunction(
             "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=ksweight
         )
-        # Add forces to static problem
-        staticProb.addLoadToNodes(
-            206, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True
-        )
         # Set convergence to be tight for test
         staticProb.setOption("L2Convergence", 1e-20)
         staticProb.setOption("L2ConvergenceRel", 1e-20)
 
         # Create MACH StructProblem
-        structProb = StructProblem(staticProb, FEAAssembler, DVGeo=DVGeo)
+        structProb = StructProblem(staticProb, FEAAssembler, loadFile=load_file)
 
         return [structProb]
