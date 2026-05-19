@@ -30,10 +30,10 @@ Key Features
 - **pyoptsparse Integration**: :meth:`~tacs.mach.struct_problem.StructProblem.addVariablesPyOpt` and :meth:`~tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt` register structural design variables and constraints directly with a ``pyoptsparse`` optimization problem.
 - **Force File I/O**: External coupling forces can be saved to and loaded from BDF-format files for post-processing or restarting aerostructural analyses.
 
-Managed State Properties
-------------------------
+Managed State Vectors
+---------------------
 
-During coupled adjoint computation the following state vectors are managed by ``StructProblem``:
+During coupled computation, both in forward and reverse mode, the following state vectors are managed by ``StructProblem``:
 
 .. list-table::
    :header-rows: 1
