@@ -29,7 +29,7 @@ TACSKSTemperature::TACSKSTemperature(TACSAssembler *_assembler,
                    TACSFunction::TWO_STAGE, 0) {
   ksWeight = _ksWeight;
   alpha = _alpha;
-  ksType = KS_CONTINUOUS;
+  setKSAggregationType(KS_CONTINUOUS);
 
   // Initialize the maximum temperature value and KS sum to default values
   // that will be overwritten later.
@@ -53,7 +53,7 @@ void TACSKSTemperature::setKSAggregationType(KSAggregationType type) {
     fprintf(stderr,
             "TACSKSTemperature: KS_DISCRETE_AVERAGE aggregation is not "
             "supported.\n");
-    return;
+    MPI_Abort(assembler->getMPIComm(), 1);
   }
   ksType = type;
 }

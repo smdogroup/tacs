@@ -33,7 +33,7 @@ TACSKSDisplacement::TACSKSDisplacement(TACSAssembler *_assembler,
   dir[1] = _dir[1];
   dir[2] = _dir[2];
   alpha = _alpha;
-  ksType = KS_CONTINUOUS;
+  setKSAggregationType(KS_CONTINUOUS);
 
   // Initialize the maximum displacement value and KS sum to default values
   // that will be overwritten later.
@@ -57,7 +57,7 @@ void TACSKSDisplacement::setKSAggregationType(KSAggregationType type) {
     fprintf(stderr,
             "TACSKSDisplacement: KS_DISCRETE_AVERAGE aggregation is not "
             "supported.\n");
-    return;
+    MPI_Abort(assembler->getMPIComm(), 1);
   }
   ksType = type;
 }

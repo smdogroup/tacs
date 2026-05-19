@@ -30,7 +30,7 @@ TACSKSFailure::TACSKSFailure(TACSAssembler *_assembler, double _ksWeight,
   ksWeight = _ksWeight;
   alpha = _alpha;
   safetyFactor = _safetyFactor;
-  ksType = KS_CONTINUOUS;
+  setKSAggregationType(KS_CONTINUOUS);
 
   // Initialize the maximum failure value and KS sum to default values
   // that will be overwritten later.
