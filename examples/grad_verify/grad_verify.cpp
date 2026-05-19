@@ -163,11 +163,11 @@ int main(int argc, char *argv[]) {
 
   // Set the discrete and continuous KS functions
   TACSKSFailure *func = new TACSKSFailure(assembler, 20.0);
-  func->setKSFailureType(TACSKSFailure::DISCRETE);
+  func->setKSAggregationType(KS_DISCRETE);
   funcs[2] = func;
 
   func = new TACSKSFailure(assembler, 20.0);
-  func->setKSFailureType(TACSKSFailure::CONTINUOUS);
+  func->setKSAggregationType(KS_CONTINUOUS);
   funcs[3] = func;
 
   // Set the induced norm failure types
