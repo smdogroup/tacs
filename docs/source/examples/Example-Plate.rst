@@ -155,4 +155,4 @@ The figure below shows what the failure contour mapped over the deformed plate l
 
 .. image:: images/point_force_def.png
   :width: 800
-  :alt: Plate problem
+  :alt: Plate solution
