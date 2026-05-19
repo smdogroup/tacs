@@ -10,6 +10,6 @@ These methods are documented below.
 
   core/TACS
   pytacs/pytacs
-  mphys/mphy
+  mphys/mphys
   mach/mach
   caps2tacs/caps2tacs

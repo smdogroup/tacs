@@ -217,11 +217,11 @@ intersphinx_mapping = {
         "https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/",
         None,
     ),
-    "mach": ("https://mdolab-mach-aero.readthedocs-hosted.com/", None),
+    "mach": ("https://mdolab-mach-aero.readthedocs-hosted.com/en/latest/", None),
     "adflow": ("https://mdolab-adflow.readthedocs-hosted.com/en/latest/", None),
 }
 
-autodoc_mock_imports = ["mphys"]
+autodoc_mock_imports = ["mphys", "pygeo", "pyoptsparse"]
 
 # -----------------------------------------------------------------------------
 # Document both class docstring and init docstring
