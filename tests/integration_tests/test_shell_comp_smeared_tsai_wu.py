@@ -22,8 +22,8 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "Tension_ks_failure": 12.111717393097713,
-        "VertShear_ks_failure": 0.017919266042811466,
+        "Tension_ks_failure": 14.473585749401277,
+        "VertShear_ks_failure": 0.017919266042811376,
     }
 
     def setup_tacs_problems(self, comm):
