@@ -36,29 +36,23 @@ class TestDiscreteAverageRejection(unittest.TestCase):
     def setUpClass(cls):
         cls.assembler = _make_assembler()
 
-    def test_ks_temperature_constructor_rejects_discrete_average(self):
-        with self.assertRaises(ValueError):
-            functions.KSTemperature(
-                self.assembler,
-                ksAggregationType=functions.KSAggregationType.KS_DISCRETE_AVERAGE,
-            )
+    def test_constructor_rejects_discrete_average(self):
+        for cls in (functions.KSTemperature, functions.KSDisplacement):
+            with self.subTest(cls=cls.__name__):
+                with self.assertRaises(ValueError):
+                    cls(
+                        self.assembler,
+                        ksAggregationType=functions.KSAggregationType.KS_DISCRETE_AVERAGE,
+                    )
 
-    def test_ks_temperature_setter_rejects_discrete_average(self):
-        func = functions.KSTemperature(self.assembler)
-        with self.assertRaises(ValueError):
-            func.setKSAggregationType(functions.KSAggregationType.KS_DISCRETE_AVERAGE)
-
-    def test_ks_displacement_constructor_rejects_discrete_average(self):
-        with self.assertRaises(ValueError):
-            functions.KSDisplacement(
-                self.assembler,
-                ksAggregationType=functions.KSAggregationType.KS_DISCRETE_AVERAGE,
-            )
-
-    def test_ks_displacement_setter_rejects_discrete_average(self):
-        func = functions.KSDisplacement(self.assembler)
-        with self.assertRaises(ValueError):
-            func.setKSAggregationType(functions.KSAggregationType.KS_DISCRETE_AVERAGE)
+    def test_setter_rejects_discrete_average(self):
+        for cls in (functions.KSTemperature, functions.KSDisplacement):
+            with self.subTest(cls=cls.__name__):
+                func = cls(self.assembler)
+                with self.assertRaises(ValueError):
+                    func.setKSAggregationType(
+                        functions.KSAggregationType.KS_DISCRETE_AVERAGE
+                    )
 
     def test_ks_failure_accepts_discrete_average(self):
         """DISCRETE_AVERAGE must not be rejected for KSFailure."""
@@ -80,48 +74,35 @@ class TestDeprecatedFtypeKwarg(unittest.TestCase):
     # DeprecationWarning cases
     # ------------------------------------------------------------------
 
-    def test_ks_temperature_ftype_warns(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            func = functions.KSTemperature(self.assembler, ftype="discrete")
-        self.assertIsNotNone(func)
-
-    def test_ks_failure_ftype_warns(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            func = functions.KSFailure(self.assembler, ftype="discrete-average")
-        self.assertIsNotNone(func)
-
-    def test_ks_displacement_ftype_warns(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            func = functions.KSDisplacement(self.assembler, ftype="continuous")
-        self.assertIsNotNone(func)
+    def test_ftype_warns(self):
+        cases = [
+            (functions.KSTemperature, "discrete"),
+            (functions.KSFailure, "discrete-average"),
+            (functions.KSDisplacement, "continuous"),
+        ]
+        for cls, ftype in cases:
+            with self.subTest(cls=cls.__name__, ftype=ftype):
+                with self.assertWarns(DeprecationWarning):
+                    func = cls(self.assembler, ftype=ftype)
+                self.assertIsNotNone(func)
 
     # ------------------------------------------------------------------
     # ValueError for mixed old + new kwargs
     # ------------------------------------------------------------------
 
-    def test_ks_temperature_mixed_kwargs_raises(self):
-        with self.assertRaises(ValueError):
-            functions.KSTemperature(
-                self.assembler,
-                ftype="continuous",
-                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
-            )
-
-    def test_ks_failure_mixed_kwargs_raises(self):
-        with self.assertRaises(ValueError):
-            functions.KSFailure(
-                self.assembler,
-                ftype="continuous",
-                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
-            )
-
-    def test_ks_displacement_mixed_kwargs_raises(self):
-        with self.assertRaises(ValueError):
-            functions.KSDisplacement(
-                self.assembler,
-                ftype="continuous",
-                ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
-            )
+    def test_mixed_kwargs_raises(self):
+        for cls in (
+            functions.KSTemperature,
+            functions.KSFailure,
+            functions.KSDisplacement,
+        ):
+            with self.subTest(cls=cls.__name__):
+                with self.assertRaises(ValueError):
+                    cls(
+                        self.assembler,
+                        ftype="continuous",
+                        ksAggregationType=functions.KSAggregationType.KS_CONTINUOUS,
+                    )
 
     # ------------------------------------------------------------------
     # ValueError for unrecognised or disallowed ftype strings
