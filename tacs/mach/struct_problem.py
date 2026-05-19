@@ -1141,9 +1141,7 @@ class StructProblem(BaseStructProblem):
         prodDV = self.FEAAssembler.createDesignVec(asBVec=True)
         for f in evalFuncs:
             f_mangled = self.name + "_%s" % f
-            self.staticProblem.addDVSens(
-                [f], [prodDV], scale=vecT[f_mangled][0]
-            )
+            self.staticProblem.addDVSens([f], [prodDV], scale=vecT[f_mangled][0])
 
         # Convert result back into a dictionary
         prodDict = self.convertDesignVecToDict(prodDV.getArray())
@@ -1152,9 +1150,7 @@ class StructProblem(BaseStructProblem):
             prodXpt = self.FEAAssembler.createNodeVec(asBVec=True)
             for f in evalFuncs:
                 f_mangled = self.name + "_%s" % f
-                self.staticProblem.addXptSens(
-                    [f], [prodXpt], scale=vecT[f_mangled][0]
-                )
+                self.staticProblem.addXptSens([f], [prodXpt], scale=vecT[f_mangled][0])
             xArray = prodXpt.getArray()
             xdot = self.DVGeo.totalSensitivity(
                 xArray.reshape(-1, 3), self.ptSetName, comm=self.comm, config=self.name
