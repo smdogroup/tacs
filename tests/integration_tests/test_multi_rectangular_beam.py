@@ -6,7 +6,7 @@ import numpy as np
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions, TACS
 
-"""
+r"""
 |---------o---------o---------      | g    ---------o---------o---------|
   CompID 0| CompID 1| CompID 2      \/      CompID 2| CompID 1| CompID 0
 
