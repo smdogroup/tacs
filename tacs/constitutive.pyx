@@ -2322,7 +2322,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     W3_num : int, optional
         Design variable number for W3. Default is -3 (inactive).
     ksWeight : float, optional
-        Weight for the KS aggregation function. Default is 30.0.
+        Weight for the KS aggregation function. Default is 100.0.
     epsilon : float, optional
         Regularization parameter. Default is 0.0.
     kcorr : float, optional
@@ -2437,7 +2437,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
     lpNums : np.ndarray[int]
         Array of laminate parameter design variable numbers.
     ksWeight : float, optional
-        The KS aggregation weight for constraints (default is 30.0).
+        The KS aggregation weight for constraints (default is 100.0).
     kcorr : float, optional
         Shear correction factor. Default is 5.0/6.0.
     """
