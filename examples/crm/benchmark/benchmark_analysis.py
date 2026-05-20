@@ -13,7 +13,7 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "cruise_ks_vmfailure": 0.38342812669095927,
+    "cruise_ks_vmfailure": 0.4344684344074263,
     "cruise_mass": 10467.30248511103,
 }
 
