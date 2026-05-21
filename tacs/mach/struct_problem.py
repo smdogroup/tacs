@@ -249,7 +249,7 @@ class StructProblem(BaseStructProblem):
     @property
     def dIdu(self):
         """
-        Get the derivative of objective function with respect to state variables.
+        Get the derivative of the function with respect to state variables.
 
         Returns
         -------
@@ -262,7 +262,7 @@ class StructProblem(BaseStructProblem):
     @dIdu.setter
     def dIdu(self, value):
         """
-        Set the derivative of objective function with respect to state variables.
+        Set the derivative of the function with respect to state variables.
 
         Parameters
         ----------
@@ -941,27 +941,27 @@ class StructProblem(BaseStructProblem):
         """
         return list(self.staticProblem.getFunctionKeys())
 
-    def getAdjoint(self, objective):
+    def getAdjoint(self, func):
         """
-        Return the adjoint values for objective if they exist. Otherwise just return zeros.
+        Return the adjoint values for func if they exist. Otherwise just return zeros.
 
         Parameters
         ----------
-        objective : str
-            Name of the objective function.
+        func : str
+            Name of the function.
 
         Returns
         -------
         numpy.ndarray
-            Adjoint values for the specified objective.
+            Adjoint values for the specified function.
         """
-        if objective in self.adjoints:
-            vals = self.adjoints[objective].getArray().copy()
+        if func in self.adjoints:
+            vals = self.adjoints[func].getArray().copy()
         else:
             vals = self.FEAAssembler.createVec()
         return vals
 
-    def setAdjoint(self, adjoint, objective=None):
+    def setAdjoint(self, adjoint, func=None):
         """
         Set externally supplied adjoint values.
 
@@ -970,14 +970,14 @@ class StructProblem(BaseStructProblem):
         adjoint : float, numpy array
             An array of size getStateSize() to
             be copied to the structural adjoint variables
-        objective : str
-            Name of objective to set adjoint for
+        func : str
+            Name of function to set adjoint for
         """
         self.phi[:] = adjoint
-        if objective is not None:
-            if objective not in self.adjoints:
-                self.adjoints[objective] = self.FEAAssembler.createVec(asBVec=True)
-            self.adjoints[objective].getArray()[:] = adjoint[:]
+        if func is not None:
+            if func not in self.adjoints:
+                self.adjoints[func] = self.FEAAssembler.createVec(asBVec=True)
+            self.adjoints[func].getArray()[:] = adjoint[:]
 
     def setAdjointRHS(self, func):
         """
@@ -1040,7 +1040,7 @@ class StructProblem(BaseStructProblem):
 
     def getdIdXpt(self, func):
         """
-        Get the (partial) derivative of the structural objective
+        Get the (partial) derivative of the structural function
         with respect to all structural nodes for the current
         structProblem.
 
@@ -1063,7 +1063,7 @@ class StructProblem(BaseStructProblem):
 
     def getdIdXdv(self, func):
         """
-        Get the (partial) derivative of the structural objective
+        Get the (partial) derivative of the structural function
         with respect to all structural design variables.
 
         Parameters
@@ -1295,44 +1295,44 @@ class StructProblem(BaseStructProblem):
         res.axpy(-1.0, self._adjRHS)  # Add the RHS
         self.staticProblem.finalNorm = np.real(res.norm())
 
-    def getdRdXptPhi(self, objectives):
+    def getdRdXptPhi(self, funcs):
         r"""
-        Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the objectives in the objective list.
+        Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the functions in the function list.
 
         This is the total sensitivity calculation.
 
         Parameters
         ----------
-        objectives : list of str
-            List of objective function names.
+        funcs : list of str
+            List of function names.
 
         Returns
         -------
         list of tacs.TACS.Vec
-            List of sensitivity products for each objective.
+            List of sensitivity products for each function.
         """
-        products = [self.FEAAssembler.createNodeVec() for obj in objectives]
-        phiList = [self.getAdjoint(obj) for obj in objectives]
+        products = [self.FEAAssembler.createNodeVec() for obj in funcs]
+        phiList = [self.getAdjoint(obj) for obj in funcs]
         self.staticProblem.addAdjointResXptSensProducts(phiList, products, scale=1.0)
 
         return products
 
-    def getdRdXdvPhi(self, objectives):
+    def getdRdXdvPhi(self, funcs):
         r"""
         Get the result of :math:`[dR/dX_{dv}]^T \phi` for the total sensitivity calculation.
 
         Parameters
         ----------
-        objectives : list of str
-            List of objective function names.
+        funcs : list of str
+            List of function names.
 
         Returns
         -------
         list of tacs.TACS.Vec
-            List of sensitivity products for each objective.
+            List of sensitivity products for each function.
         """
-        products = [self.FEAAssembler.createDesignVec() for obj in objectives]
-        phiList = [self.getAdjoint(obj) for obj in objectives]
+        products = [self.FEAAssembler.createDesignVec() for obj in funcs]
+        phiList = [self.getAdjoint(obj) for obj in funcs]
         self.staticProblem.addAdjointResProducts(phiList, products, scale=1.0)
         dvVals = [self.comm.bcast(dvVec, root=0) for dvVec in products]
 
