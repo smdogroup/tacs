@@ -87,9 +87,7 @@ DVGeo.addGlobalDV(
 staticProb = FEAAssembler.createStaticProblem("tip_shear")
 # Add TACS Functions
 staticProb.addFunction("mass", functions.StructuralMass)
-staticProb.addFunction(
-    "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=100.0
-)
+staticProb.addFunction("ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=100.0)
 # Add forces to static problem
 staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 
@@ -128,19 +126,6 @@ DVGeo.addVariablesPyOpt(optProb)
 optProb.addCon("tip_shear_ks_vmfailure", upper=1.0)
 
 optProb.printSparsity()
-
-optOptions = {
-    "Major feasibility tolerance": 1e-4,
-    "Major optimality tolerance": 1e-4,
-    "Major iterations limit": 200,
-    "Minor iterations limit": 150000,
-    "Iterations limit": 1000000,
-    "Major step limit": 0.1,
-    "Function precision": 1.0e-8,
-    "Problem Type": "Minimize",
-    "New superbasics limit": 500,
-    "Penalty parameter": 1e3,
-}
 
 opt = OPT(
     "SLSQP",
