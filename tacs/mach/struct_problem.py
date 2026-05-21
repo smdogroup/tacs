@@ -1091,7 +1091,7 @@ class StructProblem(BaseStructProblem):
         Perform the transpose matvec of the getdIduProd function and
         return a TACS vector. The result is stored locally.
 
-        We assume that structProblem is set and that evalFuncs is valid.
+        We assume that evalFuncs is valid.
 
         Parameters
         ----------
@@ -1414,8 +1414,8 @@ class StructProblem(BaseStructProblem):
 
     def writeExternalForceFile(self, outputDir=None, baseName=None, number=None):
         """
-        This function writes the external loads to a file.
-        This is typically used to save loads from an aerostructural run.
+        This function writes the external coupling loads stored in Fext to a file.
+        This is typically used to save aero loads from an aerostructural run.
 
         Parameters
         ----------
