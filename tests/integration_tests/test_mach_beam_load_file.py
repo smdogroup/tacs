@@ -18,11 +18,6 @@ from tacs import elements, constitutive, functions
 from tacs.mach import StructProblem
 from mach_struct_problem_base_test import MACHStructProblemTestCase
 
-try:
-    from pygeo import DVGeometry
-except ImportError:
-    DVGeometry = None
-
 # Get file paths
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/coarse_beam.bdf")
