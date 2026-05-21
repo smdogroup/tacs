@@ -22,6 +22,7 @@ The optimization is setup using TACS' MACH module, which acts as a wrapper
 for MDOLab's MACH library.
 """
 
+# [docs:imports-start]
 import numpy as np
 import os
 
@@ -32,6 +33,9 @@ from tacs.mach import StructProblem
 from tacs import pyTACS
 from tacs import elements, constitutive, functions
 
+# [docs:imports-end]
+
+# [docs:parameters-start]
 bdf_file = os.path.join(os.path.dirname(__file__), "Slender_Beam.bdf")
 ffd_file = os.path.join(os.path.dirname(__file__), "ffd_8_linear.fmt")
 
@@ -48,9 +52,11 @@ ys = 420.0e6
 
 # Shear force applied at tip
 V = 2.5e4  # N
+# [docs:parameters-end]
 
 
 # Callback function used to setup TACS element objects and DVs
+# [docs:element-callback-start]
 def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
@@ -61,9 +67,15 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **k
     return elem
 
 
+# [docs:element-callback-end]
+
+
+# [docs:pytacs-init-start]
 FEAAssembler = pyTACS(bdf_file)
 FEAAssembler.initialize(element_callback)
+# [docs:pytacs-init-end]
 
+# [docs:dvgeo-setup-start]
 DVGeo = DVGeometry(fileName=ffd_file)
 # Create reference axis
 nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex="i", yFraction=0.5)
@@ -83,7 +95,9 @@ DVGeo.addGlobalDV(
     upper=10.0,
     scale=20.0,
 )
+# [docs:dvgeo-setup-end]
 
+# [docs:static-problem-start]
 staticProb = FEAAssembler.createStaticProblem("tip_shear")
 # Add TACS Functions
 staticProb.addFunction("mass", functions.StructuralMass)
@@ -92,10 +106,14 @@ staticProb.addFunction(
 )
 # Add forces to static problem
 staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
+# [docs:static-problem-end]
 
+# [docs:struct-problem-start]
 structProb = StructProblem(staticProb, FEAAssembler, DVGeo=DVGeo)
+# [docs:struct-problem-end]
 
 
+# [docs:struct-obj-start]
 def structObj(x):
     """Evaluate the objective and constraints"""
     funcs = {}
@@ -111,6 +129,10 @@ def structObj(x):
     return funcs, False
 
 
+# [docs:struct-obj-end]
+
+
+# [docs:struct-sens-start]
 def structSens(x, funcs):
     """Evaluate the objective and constraint sensitivities"""
     funcsSens = {}
@@ -120,6 +142,10 @@ def structSens(x, funcs):
     return funcsSens, False
 
 
+# [docs:struct-sens-end]
+
+
+# [docs:opt-setup-start]
 # Now we create the structural optimization problem:
 optProb = Optimization("Mass min", structObj)
 optProb.addObj("tip_shear_mass")
@@ -129,19 +155,6 @@ optProb.addCon("tip_shear_ks_vmfailure", upper=1.0)
 
 optProb.printSparsity()
 
-optOptions = {
-    "Major feasibility tolerance": 1e-4,
-    "Major optimality tolerance": 1e-4,
-    "Major iterations limit": 200,
-    "Minor iterations limit": 150000,
-    "Iterations limit": 1000000,
-    "Major step limit": 0.1,
-    "Function precision": 1.0e-8,
-    "Problem Type": "Minimize",
-    "New superbasics limit": 500,
-    "Penalty parameter": 1e3,
-}
-
 opt = OPT(
     "SLSQP",
     options={
@@ -150,6 +163,9 @@ opt = OPT(
         "IFILE": os.path.join(os.path.dirname(__file__), "SLSQP.out"),
     },
 )
+# [docs:opt-setup-end]
 
+# [docs:run-opt-start]
 # Finally run the actual optimization
 sol = opt(optProb, sens=structSens, storeSens=False)
+# [docs:run-opt-end]
