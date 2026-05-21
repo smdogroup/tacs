@@ -101,7 +101,9 @@ DVGeo.addGlobalDV(
 staticProb = FEAAssembler.createStaticProblem("tip_shear")
 # Add TACS Functions
 staticProb.addFunction("mass", functions.StructuralMass)
-staticProb.addFunction("ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=100.0)
+staticProb.addFunction(
+    "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=100.0
+)
 # Add forces to static problem
 staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
 # [docs:static-problem-end]
