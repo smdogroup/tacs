@@ -1680,7 +1680,9 @@ cdef class BucklingGP(GaussianProcess):
 
         This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
         The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
-        and is the following::
+        and is the following:
+
+        .. code-block:: python
 
             axial_gp = BucklingGP.from_csv(
                 csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
