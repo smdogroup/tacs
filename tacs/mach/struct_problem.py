@@ -1432,16 +1432,21 @@ class StructProblem(BaseStructProblem):
         fileName = (
             self.staticProblem.getOutputFileName(outputDir, baseName, number) + ".dat"
         )
-        # We want to isolate only the external loads in the rhs before writing the loads out
-        rhs = self.staticProblem.rhs
-        # Save a copy of the rhs vector holding the full loads
-        self.temp0.copyValues(rhs)
+        # We want to isolate only the external loads in the F vector before writing the loads out
+        F = self.staticProblem.F
+        # Save aux element loads (gravity, pressure, etc.)
+        aux = self.staticProblem.auxElems
+        # Save a copy of the F vector holding the full loads
+        self.temp0.copyValues(F)
         # Replace vector with only external loads
-        rhs.copyValues(self._Fext)
+        F.copyValues(self._Fext)
+        self.staticProblem.auxElems = tacs.TACS.AuxElements()
         # Write external loads to bdf
         self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
-        # Reset rhs back to full loads
-        rhs.copyValues(self.temp0)
+        # Reset F back to full loads
+        F.copyValues(self.temp0)
+        # Restore aux element loads
+        self.staticProblem.auxElems = aux
 
     def readExternalForceFile(self, fileName):
         """
