@@ -1438,7 +1438,9 @@ class StructProblem(BaseStructProblem):
         aux = self.staticProblem.auxElems
         # Save a copy of the F vector holding the full loads
         self.temp0.copyValues(F)
-        self.staticProblem.auxElems = tacs.TACS.AuxElements()
+        # Zero out the loads
+        self.staticProblem.zeroLoads()
+        # Get forces
         self.staticProblem.getForces(self.staticProblem.externalForce, self.staticProblem.internalForce, Fext=self._Fext)
         # Write external aero loads to bdf
         self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
