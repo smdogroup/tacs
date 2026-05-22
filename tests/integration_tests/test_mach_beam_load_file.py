@@ -33,8 +33,11 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     N_PROCS = 2
 
-    # Set reference functions to match unrotated case
-    FUNC_REFS = TMBE.FUNC_REFS
+    # Reference values for regression testing
+    FUNC_REFS = {
+        "tip_shear_ks_vmfailure": 2.492124644887184,
+        "tip_shear_mass": 2.7799999999999963,
+    }
 
     def setup_struct_problems(self, comm):
         """

@@ -7,10 +7,15 @@ cantilevered, with a shear load applied at the tip. The beam is discretized usin
 This tests the MACH StructProblem object's DVGeo and design variable sensitivities.
 """
 
+import glob
 import os
+import shutil
+import tempfile
 import numpy as np
 from mpi4py import MPI
 import unittest
+
+import pyNastran.bdf as pn
 
 from tacs import pyTACS
 from tacs import elements, constitutive, functions
@@ -158,3 +163,45 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         combinedStructProblem.readExternalForceFile(load_file)
 
         return structProblems
+
+    def test_write_external_force_file(self):
+        """
+        Test that writeExternalForceFile writes only the external (aero) loads,
+        not the internal structural loads (shear, pressure, gravity). The combined
+        problem has an axial force of 2.5e4 in the x direction set as its external
+        force via readExternalForceFile. The written file should contain exactly one
+        FORCE card with that value.
+        """
+        combined_prob = self.struct_probs[-1]
+
+        # Create temp dir on rank 0 and broadcast so all MPI ranks share the same path
+        if self.comm.rank == 0:
+            tmpdir = tempfile.mkdtemp()
+        else:
+            tmpdir = None
+        tmpdir = self.comm.bcast(tmpdir, root=0)
+
+        try:
+            combined_prob.writeExternalForceFile(outputDir=tmpdir)
+
+            # Only rank 0 writes the file, so only rank 0 reads and validates it
+            if self.comm.rank == 0:
+                dat_files = glob.glob(os.path.join(tmpdir, "*.dat"))
+                self.assertEqual(len(dat_files), 1)
+
+                bdf = pn.bdf.read_bdf(
+                    dat_files[0], validate=False, xref=False, debug=False, punch=True
+                )
+
+                all_forces = [card for cards in bdf.loads.values() for card in cards]
+                self.assertEqual(len(all_forces), 1)
+
+                force = all_forces[0]
+                self.assertAlmostEqual(force.mag * force.xyz[0], 2.5e4, places=1)
+                self.assertAlmostEqual(force.mag * force.xyz[1], 0.0, places=1)
+                self.assertAlmostEqual(force.mag * force.xyz[2], 0.0, places=1)
+        finally:
+            # Barrier ensures all ranks finish before rank 0 deletes the temp dir
+            self.comm.barrier()
+            if self.comm.rank == 0:
+                shutil.rmtree(tmpdir)
