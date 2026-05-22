@@ -1441,7 +1441,11 @@ class StructProblem(BaseStructProblem):
         # Zero out the loads
         self.staticProblem.zeroLoads()
         # Get forces
-        self.staticProblem.getForces(self.staticProblem.externalForce, self.staticProblem.internalForce, Fext=self._Fext)
+        self.staticProblem.getForces(
+            self.staticProblem.externalForce,
+            self.staticProblem.internalForce,
+            Fext=self._Fext,
+        )
         # Write external aero loads to bdf
         self.staticProblem.writeLoadToBDF(fileName, loadCaseID=0)
         # Reset F back to full loads
@@ -1449,7 +1453,11 @@ class StructProblem(BaseStructProblem):
         # Restore aux element loads
         self.staticProblem.auxElems = aux
         # Reset external/internal forces
-        self.staticProblem.getForces(self.staticProblem.externalForce, self.staticProblem.internalForce, Fext=self._Fext)
+        self.staticProblem.getForces(
+            self.staticProblem.externalForce,
+            self.staticProblem.internalForce,
+            Fext=self._Fext,
+        )
 
     def readExternalForceFile(self, fileName):
         """
