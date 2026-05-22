@@ -98,7 +98,6 @@ class StructProblem(BaseStructProblem):
             for funcName in self.evalFuncs
         }
 
-        self.callCounter = 0
         self.doDamp = False
 
         if self.loadFile:
@@ -115,6 +114,18 @@ class StructProblem(BaseStructProblem):
             Name of the structural problem.
         """
         return self.staticProblem.name
+
+    @property
+    def callCounter(self) -> int:
+        """
+        Get the call counter for the underlying static problem.
+
+        Returns
+        -------
+        int
+            Number of times the static problem's solve method has been called.
+        """
+        return self.staticProblem.callCounter
 
     @property
     def Fext(self):
