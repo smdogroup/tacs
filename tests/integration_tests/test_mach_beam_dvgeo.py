@@ -197,7 +197,7 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
                 self.assertEqual(len(all_forces), 1)
 
                 force = all_forces[0]
-                self.assertAlmostEqual(force.mag * force.xyz[0], 2.5e4, places=1)
+                self.assertAlmostEqual(force.mag * force.xyz[0], V, places=1)
                 self.assertAlmostEqual(force.mag * force.xyz[1], 0.0, places=1)
                 self.assertAlmostEqual(force.mag * force.xyz[2], 0.0, places=1)
         finally:
