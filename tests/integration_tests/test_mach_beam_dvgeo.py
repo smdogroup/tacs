@@ -26,8 +26,15 @@ except ImportError:
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/coarse_beam.bdf")
 ffd_file = os.path.join(base_dir, "./input_files/ffd_8_linear.fmt")
+load_file = os.path.join(base_dir, "./input_files/beam_load_axial.dat")
 
 ksweight = 10.0
+# Shear force applied at tip
+V = 2.5e4
+# Pressure applied on face of beam
+P = 1e5
+# Gravity vector
+G = np.array([0.0, -9.81, 0.0]) * 1000
 
 
 @unittest.skipIf(DVGeometry is None, "pygeo is not installed")
@@ -40,8 +47,14 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     # Reference values for regression testing
     FUNC_REFS = {
-        "tip_shear_ks_vmfailure": 2.492124644882399,
+        "tip_shear_ks_vmfailure": 2.492124644887184,
         "tip_shear_mass": 2.7799999999999963,
+        "pressure_ks_vmfailure": 6.37743474872165,
+        "pressure_mass": 2.7799999999999963,
+        "gravity_ks_vmfailure": 1.037787648560678,
+        "gravity_mass": 2.7799999999999963,
+        "combined_ks_vmfailure": 7.702671860961564,
+        "combined_mass": 2.7799999999999963,
     }
 
     def setup_struct_problems(self, comm):
@@ -57,9 +70,6 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         E = 70.0e9
         nu = 0.0
         ys = 420.0e6
-
-        # Shear force applied at tip
-        V = 2.5e4
 
         # Callback function used to setup TACS element objects and DVs
         def element_callback(
@@ -96,22 +106,55 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
             scale=20.0,
         )
 
+        staticProblems = []
+        structProblems = []
+
         # Create static problem
-        staticProb = FEAAssembler.createStaticProblem("tip_shear")
-        # Add TACS Functions
-        staticProb.addFunction("mass", functions.StructuralMass)
-        staticProb.addFunction(
-            "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=ksweight
-        )
+        tipShear = FEAAssembler.createStaticProblem("tip_shear")
         # Add forces to static problem
-        staticProb.addLoadToNodes(
-            206, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True
-        )
+        tipShear.addLoadToNodes(206, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
+        staticProblems.append(tipShear)
+
+        # Create static problem
+        pressure = FEAAssembler.createStaticProblem("pressure")
+        # Add pressure to static problem
+        allCompIDs = FEAAssembler.selectCompIDs()
+        pressure.addPressureToComponents(allCompIDs, P)
+        staticProblems.append(pressure)
+
+        # Create static problem
+        gravity = FEAAssembler.createStaticProblem("gravity")
+        # Add gravity to static problem
+        gravity.addInertialLoad(G)
+        staticProblems.append(gravity)
+
+        # Create static problem
+        combined = FEAAssembler.createStaticProblem("combined")
+        # Add forces to static problem
+        combined.addLoadToNodes(206, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
+        # Add pressure to static problem
+        combined.addPressureToComponents(allCompIDs, P)
+        # Add gravity to static problem
+        combined.addInertialLoad(G)
+        staticProblems.append(combined)
+
         # Set convergence to be tight for test
-        staticProb.setOption("L2Convergence", 1e-20)
-        staticProb.setOption("L2ConvergenceRel", 1e-20)
+        for problem in staticProblems:
+            # Add TACS Functions
+            problem.addFunction("mass", functions.StructuralMass)
+            problem.addFunction(
+                "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=ksweight
+            )
 
-        # Create MACH StructProblem
-        structProb = StructProblem(staticProb, FEAAssembler, DVGeo=DVGeo)
+            problem.setOption("L2Convergence", 1e-20)
+            problem.setOption("L2ConvergenceRel", 1e-20)
 
-        return [structProb]
+            # Create MACH StructProblem
+            structProblems.append(StructProblem(problem, FEAAssembler, DVGeo=DVGeo))
+
+        # Add external force file to combined problem that mimics aero load
+        # should contain an axial force at tip in this case
+        combinedStructProblem = structProblems[-1]
+        combinedStructProblem.readExternalForceFile(load_file)
+
+        return structProblems
