@@ -23,7 +23,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/coarse_beam.bdf")
 load_file = os.path.join(base_dir, "./input_files/beam_load.dat")
 
-from test_mach_beam_dvgeo import ksweight, TestMACHBeamExample as TMBE
+ksweight = 10.0
 
 
 class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
