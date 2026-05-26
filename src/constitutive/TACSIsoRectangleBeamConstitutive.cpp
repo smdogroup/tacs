@@ -290,51 +290,77 @@ void TACSIsoRectangleBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar A = evalArea();
-  TacsScalar delta_y = t_offset * thickness;
-  TacsScalar delta_z = w_offset * width;
+  const TacsScalar A = evalArea();
+  const TacsScalar delta_y = t_offset * thickness;
+  const TacsScalar delta_z = w_offset * width;
+  const TacsScalar kGA = kcorr * G * A;
 
   int index = 0;
   if (width_num >= 0) {
-    TacsScalar ddelta_z = w_offset;
-    TacsScalar dA = evalAreaSens(width_num);
+    const TacsScalar ddelta_z = w_offset;  // d(delta_z)/d(width)
+    const TacsScalar dA = evalAreaSens(width_num);
+    const TacsScalar dkGA = kcorr * G * dA;
     TacsScalar sI[3];
     evalMomentsOfInertiaSens(width_num, sI);
-    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
-    TacsScalar dJ = evalTorsionalConstantSens(width_num);
+    const TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    const TacsScalar dJ = evalTorsionalConstantSens(width_num);
 
-    dfdx[index] +=
-        scale *
-        (E *
-             (dA * e[0] - delta_y * dA * e[2] -
-              (delta_z * dA + ddelta_z * A) * e[3]) *
-             psi[0] +
-         G * dJ * e[1] * psi[1] +
-         E * (dIz * e[2] - dIyz * e[3] - delta_y * dA * e[0]) * psi[2] +
-         E * (dIy * e[3] - dIyz * e[2] - (delta_z * dA + ddelta_z * A) * e[0]) *
-             psi[3] +
-         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
+    // d s[0] / d(width)
+    const TacsScalar ds0 = E * (dA * e[0] - delta_y * dA * e[2] -
+                                (delta_z * dA + ddelta_z * A) * e[3]);
+    // d s[1] / d(width): torsion + shear-coupling parallel-axis terms
+    const TacsScalar ds1 =
+        (G * dJ + dkGA * (delta_y * delta_y + delta_z * delta_z) +
+         2.0 * delta_z * ddelta_z * kGA) *
+            e[1] +
+        (ddelta_z * kGA + delta_z * dkGA) * e[4] - delta_y * dkGA * e[5];
+    // d s[2] / d(width)
+    const TacsScalar ds2 = E * (dIz * e[2] - delta_y * dA * e[0] - dIyz * e[3]);
+    // d s[3] / d(width)
+    const TacsScalar ds3 =
+        E * (dIy * e[3] - (delta_z * dA + ddelta_z * A) * e[0] - dIyz * e[2]);
+    // d s[4] / d(width): shear-torsion coupling
+    const TacsScalar ds4 =
+        dkGA * e[4] + (dkGA * delta_z + kGA * ddelta_z) * e[1];
+    // d s[5] / d(width): shear-torsion coupling (no ddelta_y term)
+    const TacsScalar ds5 = dkGA * e[5] - delta_y * dkGA * e[1];
+
+    dfdx[index] += scale * (ds0 * psi[0] + ds1 * psi[1] + ds2 * psi[2] +
+                            ds3 * psi[3] + ds4 * psi[4] + ds5 * psi[5]);
     index++;
   }
   if (thickness_num >= 0) {
-    TacsScalar ddelta_y = t_offset;
-    TacsScalar dA = evalAreaSens(thickness_num);
+    const TacsScalar ddelta_y = t_offset;  // d(delta_y)/d(thickness)
+    const TacsScalar dA = evalAreaSens(thickness_num);
+    const TacsScalar dkGA = kcorr * G * dA;
     TacsScalar sI[3];
     evalMomentsOfInertiaSens(thickness_num, sI);
-    TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
-    TacsScalar dJ = evalTorsionalConstantSens(thickness_num);
+    const TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
+    const TacsScalar dJ = evalTorsionalConstantSens(thickness_num);
 
-    dfdx[index] +=
-        scale *
-        (E *
-             (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] -
-              delta_z * dA * e[3]) *
-             psi[0] +
-         G * dJ * e[1] * psi[1] +
-         E * (dIz * e[2] - dIyz * e[3] - (delta_y * dA + ddelta_y * A) * e[0]) *
-             psi[2] +
-         E * (dIy * e[3] - dIyz * e[2] - delta_z * dA * e[0]) * psi[3] +
-         kcorr * G * dA * e[4] * psi[4] + kcorr * G * dA * e[5] * psi[5]);
+    // d s[0] / d(thickness)
+    const TacsScalar ds0 =
+        E * (dA * e[0] - (delta_y * dA + ddelta_y * A) * e[2] -
+             delta_z * dA * e[3]);
+    // d s[1] / d(thickness): torsion + shear-coupling parallel-axis terms
+    const TacsScalar ds1 =
+        (G * dJ + dkGA * (delta_y * delta_y + delta_z * delta_z) +
+         2.0 * delta_y * ddelta_y * kGA) *
+            e[1] +
+        delta_z * dkGA * e[4] + (-ddelta_y * kGA - delta_y * dkGA) * e[5];
+    // d s[2] / d(thickness)
+    const TacsScalar ds2 =
+        E * (dIz * e[2] - (delta_y * dA + ddelta_y * A) * e[0] - dIyz * e[3]);
+    // d s[3] / d(thickness)
+    const TacsScalar ds3 = E * (dIy * e[3] - delta_z * dA * e[0] - dIyz * e[2]);
+    // d s[4] / d(thickness): shear-torsion coupling (no ddelta_z term)
+    const TacsScalar ds4 = dkGA * e[4] + delta_z * dkGA * e[1];
+    // d s[5] / d(thickness): shear-torsion coupling
+    const TacsScalar ds5 =
+        dkGA * e[5] - (delta_y * dkGA + ddelta_y * kGA) * e[1];
+
+    dfdx[index] += scale * (ds0 * psi[0] + ds1 * psi[1] + ds2 * psi[2] +
+                            ds3 * psi[3] + ds4 * psi[4] + ds5 * psi[5]);
     index++;
   }
 }
