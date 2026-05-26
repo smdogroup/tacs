@@ -282,7 +282,8 @@ cdef extern from "TACSBasicBeamConstitutive.h":
         TACSBasicBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar, TacsScalar,
                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar)
         TACSBasicBeamConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,
                                   TacsScalar, TacsScalar, TacsScalar, TacsScalar,

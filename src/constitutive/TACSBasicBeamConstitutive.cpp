@@ -22,10 +22,10 @@
   GJ               : torsional stiffness
   kG22, kG33, kG23 : shearing stiffness
   m00              : mass per unit span
-  m11, m22, m33    : moments of inertia such that m11 = m22 + m33
-  xm2, xm3         : cross sectional center of mass location
-  xc2, xc3         : cross sectional centroid
-  xk2, xk3         : cross sectional shear center
+  m11, m22, m33    : second mass moments of inertia (m11 = m22 + m33)
+  xm2, xm3         : combined center of mass (positive geometric y, z)
+  xc2, xc3         : structural centroid (xc2 = -z_centroid, xc3 = +y_centroid)
+  xk2, xk3         : shear center
   muS              : viscous damping coefficient
 */
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
@@ -36,15 +36,15 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
     TacsScalar xk2, TacsScalar xk3, TacsScalar muS) {
   props = NULL;
 
-  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m11, m22, m33,
-               xm2, xm3, xc2, xc3, xk2, xk3, muS);
+  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, xm2 * m00,
+               xm3 * m00, m11, m22, m33, xc2, xc3, xk2, xk3, muS);
 }
 
 void TACSBasicBeamConstitutive::populateMats(
     TacsScalar EA, TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
     TacsScalar GJ, TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
-    TacsScalar m00, TacsScalar m11, TacsScalar m22, TacsScalar m33,
-    TacsScalar xm2, TacsScalar xm3, TacsScalar xc2, TacsScalar xc3,
+    TacsScalar m00, TacsScalar m1, TacsScalar m2, TacsScalar m11,
+    TacsScalar m22, TacsScalar m33, TacsScalar xc2, TacsScalar xc3,
     TacsScalar xk2, TacsScalar xk3, TacsScalar muS) {
   // Set the entries of the stiffness matrix
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
@@ -75,11 +75,11 @@ void TACSBasicBeamConstitutive::populateMats(
 
   // Set the entries of the density matrix
   rho[0] = m00;
-  rho[1] = xm2 * m00;
-  rho[2] = xm3 * m00;
+  rho[1] = m1;
+  rho[2] = m2;
   rho[3] = m11;
   rho[4] = m22;
-  rho[5] = m33;  // m00*xm2*xm3;
+  rho[5] = m33;
 }
 
 /*
@@ -117,8 +117,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
     TACSMaterialProperties *properties, TacsScalar A, TacsScalar J,
     TacsScalar Iy, TacsScalar Iz, TacsScalar Iyz, TacsScalar ky, TacsScalar kz,
-    TacsScalar nsm, TacsScalar xm2, TacsScalar xm3, TacsScalar xc2,
-    TacsScalar xc3, TacsScalar xk2, TacsScalar xk3, TacsScalar muS) {
+    TacsScalar nsm, TacsScalar xm2, TacsScalar xm3, TacsScalar xnsm2,
+    TacsScalar xnsm3, TacsScalar xc2, TacsScalar xc3, TacsScalar xk2,
+    TacsScalar xk3, TacsScalar muS) {
   props = properties;
   props->incref();
 
@@ -136,29 +137,24 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   const TacsScalar kG22 = ky * G * A;
   const TacsScalar kG33 = kz * G * A;
   const TacsScalar kG23 = 0.0;
-  // Compute full parallel-axis second mass moments about the grid reference
-  // axis. xm2 = -(y_combined centroid), xm3 = -(z_combined centroid), xc3 =
-  // y_struct centroid, xc2 = -(z_struct centroid). Recover NSM centroid from
-  // the combined centroid and structural centroid:
-  //   y_nsm = (-xm2*m00 - density*A*xc3) / nsm
-  //   z_nsm = (-xm3*m00 + density*A*xc2) / nsm  [+xc2 because xc2 = -z_struct]
-  const TacsScalar m00 = density * A + nsm;
-  TacsScalar y_nsm = 0.0, z_nsm = 0.0;
-  if (nsm > 0.0) {
-    y_nsm = (-xm2 * m00 - density * A * xc3) / nsm;
-    z_nsm = (-xm3 * m00 + density * A * xc2) / nsm;
-  }
-  // Second moments include structural PA (density*xc^2*A) and NSM PA
-  // (nsm*centroid^2)
-  const TacsScalar m11 =
-      density * Iz + density * xc3 * xc3 * A + nsm * y_nsm * y_nsm;
-  const TacsScalar m22 =
-      density * Iy + density * xc2 * xc2 * A + nsm * z_nsm * z_nsm;
-  const TacsScalar m33 =
-      -density * Iyz - density * xc3 * xc2 * A + nsm * y_nsm * z_nsm;
 
-  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m11, m22, m33,
-               xm2, xm3, xc2, xc3, xk2, xk3, muS);
+  // xm2, xm3   : structural CoM (positive geometric y, z)
+  // xnsm2, xnsm3 : NSM CoM (positive geometric y, z); default 0 = at reference
+  // axis
+  const TacsScalar m00 = density * A + nsm;
+  // First mass moments: structural + NSM contributions combined
+  const TacsScalar m1 = density * A * xm2 + nsm * xnsm2;
+  const TacsScalar m2 = density * A * xm3 + nsm * xnsm3;
+  // Second mass moments about the reference axis (parallel-axis for each piece)
+  const TacsScalar m11 =
+      density * Iz + density * A * xm2 * xm2 + nsm * xnsm2 * xnsm2;
+  const TacsScalar m22 =
+      density * Iy + density * A * xm3 * xm3 + nsm * xnsm3 * xnsm3;
+  const TacsScalar m33 =
+      -density * Iyz + density * A * xm2 * xm3 + nsm * xnsm2 * xnsm3;
+
+  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m1, m2, m11,
+               m22, m33, xc2, xc3, xk2, xk3, muS);
 }
 
 TACSBasicBeamConstitutive::~TACSBasicBeamConstitutive() {

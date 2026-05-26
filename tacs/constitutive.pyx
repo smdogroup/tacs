@@ -2547,8 +2547,10 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
         kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
         nsm (float or complex): Non-structural mass per unit length (keyword argument). Defaults to 0.0.
-        xm2 (float or complex): Cross-sectional center of mass location in y-direction (keyword argument). Defaults to 0.0.
-        xm3 (float or complex): Cross-sectional center of mass location in z-direction (keyword argument). Defaults to 0.0.
+        xm2 (float or complex): Structural center of mass location in y-direction (keyword argument). Defaults to 0.0.
+        xm3 (float or complex): Structural center of mass location in z-direction (keyword argument). Defaults to 0.0.
+        xnsm2 (float or complex): Non-structural mass center of mass location in y-direction (keyword argument). Defaults to 0.0.
+        xnsm3 (float or complex): Non-structural mass center of mass location in z-direction (keyword argument). Defaults to 0.0.
         xc2 (float or complex): Cross-sectional centroid in y-direction (keyword argument). Defaults to 0.0.
         xc3 (float or complex): Cross-sectional centroid in z-direction (keyword argument). Defaults to 0.0.
         xk2 (float or complex): Cross-sectional shear center in y-direction (keyword argument). Defaults to 0.0.
@@ -2559,7 +2561,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         _check_constitutive_kwargs(
             self, BasicBeamConstitutive, kwargs,
             required_keys=["A", "J", "Iy", "Iz"],
-            valid_keys=["Iyz", "ky", "kz", "nsm", "xm2", "xm3", "xc2", "xc3", "xk2", "xk3", "muS"],
+            valid_keys=["Iyz", "ky", "kz", "nsm", "xm2", "xm3", "xnsm2", "xnsm3",
+                        "xc2", "xc3", "xk2", "xk3", "muS"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar A = 0.0
@@ -2572,6 +2575,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         cdef TacsScalar nsm = 0.0
         cdef TacsScalar xm2 = 0.0
         cdef TacsScalar xm3 = 0.0
+        cdef TacsScalar xnsm2 = 0.0
+        cdef TacsScalar xnsm3 = 0.0
         cdef TacsScalar xc2 = 0.0
         cdef TacsScalar xc3 = 0.0
         cdef TacsScalar xk2 = 0.0
@@ -2601,6 +2606,10 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
             xm2 = kwargs['xm2']
         if 'xm3' in kwargs:
             xm3 = kwargs['xm3']
+        if 'xnsm2' in kwargs:
+            xnsm2 = kwargs['xnsm2']
+        if 'xnsm3' in kwargs:
+            xnsm3 = kwargs['xnsm3']
         if 'xc2' in kwargs:
             xc2 = kwargs['xc2']
         if 'xc3' in kwargs:
@@ -2613,7 +2622,8 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
             muS = kwargs['muS']
 
         self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz,
-                                                  nsm, xm2, xm3, xc2, xc3, xk2, xk3, muS)
+                                                  nsm, xm2, xm3, xnsm2, xnsm3,
+                                                  xc2, xc3, xk2, xk3, muS)
         self.ptr = self.cptr
         self.ptr.incref()
 

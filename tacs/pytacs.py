@@ -1300,11 +1300,6 @@ class pyTACS(BaseUI):
                         I12 = np.trapezoid(I12, xStations)
                         J = np.trapezoid(J, xStations)
                         nsm = np.trapezoid(nsm, xStations)
-                    # Compute the combined (structural + NSM) center of mass.
-                    # TODO: Include effect of NSM
-                    rho = mat.getMaterialProperties()["rho"]
-                    m_struct = rho * area
-                    m_total = m_struct
                     con = tacs.constitutive.BasicBeamConstitutive(
                         mat,
                         A=area,
@@ -1319,6 +1314,8 @@ class pyTACS(BaseUI):
                         xc3=neutralAxisOffsetY,
                         xm2=neutralAxisOffsetY,
                         xm3=neutralAxisOffsetZ,
+                        xnsm2=nsmOffsetY,
+                        xnsm3=nsmOffsetZ,
                         xk2=shearCenterYOffset,
                         xk3=shearCenterZOffset,
                     )

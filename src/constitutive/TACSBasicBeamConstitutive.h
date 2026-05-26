@@ -16,7 +16,13 @@
 #define TACS_BASIC_BEAM_CONSTITUTIVE_H
 
 /*
-  Base class for the Timoshenko beam constitutive object
+  Timoshenko beam constitutive object with precomputed or material-derived
+  properties.
+
+  xm2, xm3   : structural center of mass (positive geometric y, z)
+  xnsm2, xnsm3 : non-structural mass center of mass (positive geometric y, z;
+  default 0) xc2, xc3   : structural centroid (xc2 = -z_centroid, xc3 =
+  +y_centroid) xk2, xk3   : shear center
 */
 
 #include "TACSBeamConstitutive.h"
@@ -40,6 +46,7 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
                             TacsScalar Iyz, TacsScalar ky = 5.0 / 6.0,
                             TacsScalar kz = 5.0 / 6.0, TacsScalar nsm = 0.0,
                             TacsScalar xm2 = 0.0, TacsScalar xm3 = 0.0,
+                            TacsScalar xnsm2 = 0.0, TacsScalar xnsm3 = 0.0,
                             TacsScalar xc2 = 0.0, TacsScalar xc3 = 0.0,
                             TacsScalar xk2 = 0.0, TacsScalar xk3 = 0.0,
                             TacsScalar muS = 0.0);
@@ -105,12 +112,13 @@ class TACSBasicBeamConstitutive : public TACSBeamConstitutive {
   const char *getObjectName();
 
  private:
-  // Helper to initialize C and rho
+  // Helper to initialize C and rho. m1, m2 are the first mass moments (not xm *
+  // m00).
   void populateMats(TacsScalar EA, TacsScalar EI22, TacsScalar EI33,
                     TacsScalar EI23, TacsScalar GJ, TacsScalar kG22,
                     TacsScalar kG33, TacsScalar kG23, TacsScalar m00,
-                    TacsScalar m11, TacsScalar m22, TacsScalar m33,
-                    TacsScalar xm2, TacsScalar xm3, TacsScalar xc2,
+                    TacsScalar m1, TacsScalar m2, TacsScalar m11,
+                    TacsScalar m22, TacsScalar m33, TacsScalar xc2,
                     TacsScalar xc3, TacsScalar xk2, TacsScalar xk3,
                     TacsScalar muS);
 
