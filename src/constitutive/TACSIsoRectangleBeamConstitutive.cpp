@@ -138,10 +138,12 @@ void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,
 
   // NSM sits at (delta_y, delta_z) — same location as the cross-section
   // centroid. Full parallel-axis contributions are added for all six moment
-  // entries.
+  // entries. delta_y = -y_com and delta_z = -z_com (negative convention from
+  // pytacs.py), so negate moments[1] and moments[2] to give positive first
+  // mass moments as required by the beam element kinetic energy formula.
   moments[0] = rho * A + nsm;
-  moments[1] = rho * delta_y * A + nsm * delta_y;
-  moments[2] = rho * delta_z * A + nsm * delta_z;
+  moments[1] = -(rho * delta_y * A + nsm * delta_y);
+  moments[2] = -(rho * delta_z * A + nsm * delta_z);
   moments[3] = rho * Iz + nsm * delta_y * delta_y;
   moments[4] = rho * Iy + nsm * delta_z * delta_z;
   moments[5] = -rho * Iyz + nsm * delta_y * delta_z;
@@ -169,11 +171,12 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     evalMomentsOfInertiaSens(width_num, sI);
     TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+    // moments[1] and moments[2] are negated, so their derivatives are negated.
+    dfdx[index] += rho * (scale[0] * dA - scale[1] * dAy - scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
     // NSM at (delta_y, delta_z): d/d(width) terms (only delta_z varies)
     dfdx[index] += nsm * w_offset *
-                   (scale[2] + 2.0 * delta_z * scale[4] + delta_y * scale[5]);
+                   (-scale[2] + 2.0 * delta_z * scale[4] + delta_y * scale[5]);
     index++;
   }
   if (thickness_num >= 0) {
@@ -184,11 +187,12 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     evalMomentsOfInertiaSens(thickness_num, sI);
     TacsScalar dIy = sI[0], dIz = sI[1], dIyz = sI[2];
 
-    dfdx[index] += rho * (scale[0] * dA + scale[1] * dAy + scale[2] * dAz +
+    // moments[1] and moments[2] are negated, so their derivatives are negated.
+    dfdx[index] += rho * (scale[0] * dA - scale[1] * dAy - scale[2] * dAz +
                           scale[3] * dIz + scale[4] * dIy - scale[5] * dIyz);
     // NSM at (delta_y, delta_z): d/d(thickness) terms (only delta_y varies)
     dfdx[index] += nsm * t_offset *
-                   (scale[1] + 2.0 * delta_y * scale[3] + delta_z * scale[5]);
+                   (-scale[1] + 2.0 * delta_y * scale[3] + delta_z * scale[5]);
     index++;
   }
 }
@@ -241,12 +245,16 @@ void TACSIsoRectangleBeamConstitutive::evalStress(int elemIndex,
   TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar J = evalTorsionalConstant();
 
+  const TacsScalar kGA = kcorr * G * A;
+
   s[0] = E * A * (e[0] - delta_y * e[2] - delta_z * e[3]);
-  s[1] = G * J * e[1];
+  // Torsion augmented by kGA parallel-axis term; coupling to shear from offset
+  s[1] = (G * J + (delta_y * delta_y + delta_z * delta_z) * kGA) * e[1] +
+         delta_z * kGA * e[4] - delta_y * kGA * e[5];
   s[2] = E * (Iz * e[2] - delta_y * A * e[0] - Iyz * e[3]);
   s[3] = E * (Iy * e[3] - delta_z * A * e[0] - Iyz * e[2]);
-  s[4] = kcorr * G * A * e[4];
-  s[5] = kcorr * G * A * e[5];
+  s[4] = kGA * (e[4] + delta_z * e[1]);
+  s[5] = kGA * (e[5] - delta_y * e[1]);
 }
 
 void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
@@ -261,15 +269,21 @@ void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
 
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
+  const TacsScalar kGA = kcorr * G * A;
+
   C[0] = E * A;
   C[2] = -E * delta_y * A;
   C[3] = -E * delta_z * A;
-  C[6] = G * J;
+  // GJ augmented by kGA parallel-axis term; shear-torsion coupling from offset
+  C[6] = G * J + (delta_y * delta_y + delta_z * delta_z) * kGA;
+  C[9] = delta_z * kGA;  // torsion↔shear2 coupling (v-direction) from z-offset
+  C[10] =
+      -delta_y * kGA;  // torsion↔shear3 coupling (w-direction) from y-offset
   C[11] = E * Iz;
   C[12] = -E * Iyz;
   C[15] = E * Iy;
-  C[18] = kcorr * G * A;
-  C[20] = kcorr * G * A;
+  C[18] = kGA;
+  C[20] = kGA;
 }
 
 void TACSIsoRectangleBeamConstitutive::addStressDVSens(

@@ -136,13 +136,26 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   const TacsScalar kG22 = ky * G * A;
   const TacsScalar kG33 = kz * G * A;
   const TacsScalar kG23 = 0.0;
-  // NSM sits at (xm2, xm3) — same location as structural CoM.
-  // Full parallel-axis contributions are baked into rho[] here so that
-  // evalMassMoments can return rho[] directly without runtime NSM logic.
+  // Compute full parallel-axis second mass moments about the grid reference
+  // axis. xm2 = -(y_combined centroid), xm3 = -(z_combined centroid), xc3 =
+  // y_struct centroid, xc2 = -(z_struct centroid). Recover NSM centroid from
+  // the combined centroid and structural centroid:
+  //   y_nsm = (-xm2*m00 - density*A*xc3) / nsm
+  //   z_nsm = (-xm3*m00 + density*A*xc2) / nsm  [+xc2 because xc2 = -z_struct]
   const TacsScalar m00 = density * A + nsm;
-  const TacsScalar m11 = density * Iz + nsm * xm2 * xm2;
-  const TacsScalar m22 = density * Iy + nsm * xm3 * xm3;
-  const TacsScalar m33 = -density * Iyz + nsm * xm2 * xm3;
+  TacsScalar y_nsm = 0.0, z_nsm = 0.0;
+  if (nsm > 0.0) {
+    y_nsm = (-xm2 * m00 - density * A * xc3) / nsm;
+    z_nsm = (-xm3 * m00 + density * A * xc2) / nsm;
+  }
+  // Second moments include structural PA (density*xc^2*A) and NSM PA
+  // (nsm*centroid^2)
+  const TacsScalar m11 =
+      density * Iz + density * xc3 * xc3 * A + nsm * y_nsm * y_nsm;
+  const TacsScalar m22 =
+      density * Iy + density * xc2 * xc2 * A + nsm * z_nsm * z_nsm;
+  const TacsScalar m33 =
+      -density * Iyz - density * xc3 * xc2 * A + nsm * y_nsm * z_nsm;
 
   populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m11, m22, m33,
                xm2, xm3, xc2, xc3, xk2, xk3, muS);

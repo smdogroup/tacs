@@ -1143,12 +1143,12 @@ class pyTACS(BaseUI):
                 # Get shear center offset from the associated element card
                 elem0 = elemDict[propertyID]["elements"][0]
                 # Get element axes and offset vectors
-                _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
+                _, (_, _, yElem, zElem, wa, wb) = elem0.get_axes(self.bdfInfo)
                 # Take the average of the offset vectors at either end of bar
                 offset_vector = (wa + wb) / 2.0
                 # Project the offset vector onto the local section axes
-                jOffset = np.dot(jhat, offset_vector)
-                kOffset = np.dot(khat, offset_vector)
+                shearCenterYOffset = np.dot(yElem, offset_vector)
+                shearCenterZOffset = np.dot(zElem, offset_vector)
 
                 if propInfo.type == "PBAR":  # Nastran bar
                     area = propInfo.A
@@ -1180,12 +1180,12 @@ class pyTACS(BaseUI):
                         ky=k1,
                         kz=k2,
                         nsm=nsm,
-                        xm2=jOffset,
-                        xm3=kOffset,
-                        xc2=jOffset,
-                        xc3=kOffset,
-                        xk2=jOffset,
-                        xk3=kOffset,
+                        xm2=shearCenterYOffset,
+                        xm3=shearCenterZOffset,
+                        xc2=-shearCenterZOffset,
+                        xc3=shearCenterYOffset,
+                        xk2=shearCenterYOffset,
+                        xk3=shearCenterZOffset,
                     )
 
                 elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
@@ -1194,14 +1194,14 @@ class pyTACS(BaseUI):
                         w = propInfo.dim[0]
                         t = propInfo.dim[1]
                         # Normalize the offsets by the section dimensions to get non-dimensional offsets for TACS
-                        wOffset = -kOffset / w
-                        tOffset = -jOffset / t
+                        wOffset = -shearCenterZOffset / w
+                        tOffset = -shearCenterYOffset / t
                         con = tacs.constitutive.IsoRectangleBeamConstitutive(
                             mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
                         )
 
                     elif propInfo.Type == "TUBE" and (
-                        kOffset == 0.0 and jOffset == 0.0
+                        shearCenterZOffset == 0.0 and shearCenterYOffset == 0.0
                     ):
                         r1 = propInfo.dim[0]
                         r0 = propInfo.dim[1]
@@ -1228,12 +1228,12 @@ class pyTACS(BaseUI):
                             Iz=I1,
                             Iyz=-I12,
                             nsm=nsm,
-                            xm2=jOffset,
-                            xm3=kOffset,
-                            xc2=jOffset,
-                            xc3=kOffset,
-                            xk2=jOffset,
-                            xk3=kOffset,
+                            xm2=shearCenterYOffset,
+                            xm3=shearCenterZOffset,
+                            xc2=-shearCenterZOffset,
+                            xc3=shearCenterYOffset,
+                            xk2=shearCenterYOffset,
+                            xk3=shearCenterZOffset,
                         )
 
                 elif propInfo.type == "PBEAM":
@@ -1247,34 +1247,33 @@ class pyTACS(BaseUI):
                     k2 = propInfo.k2
                     nsm = propInfo.nsm
                     # Offsets relative to shear center
-                    nsmYA = (
-                        propInfo.m1a
-                    )  # Y coordinate of non-structural mass for end A
-                    nsmZA = (
-                        propInfo.m2a
-                    )  # Z coordinate of non-structural mass for end A
-                    nsmYB = (
-                        propInfo.m1b
-                    )  # Y coordinate of non-structural mass for end B
-                    nsmZB = (
-                        propInfo.m2b
-                    )  # Z coordinate of non-structural mass for end B
-                    neutralAxisYA = (
-                        propInfo.n1a
-                    )  # Y coordinate of neutral axis for end A
-                    neutralAxisZA = (
-                        propInfo.n2a
-                    )  # Z coordinate of neutral axis for end A
-                    neutralAxisYB = (
-                        propInfo.n1b
-                    )  # Y coordinate of neutral axis for end B
-                    neutralAxisZB = (
-                        propInfo.n2b
-                    )  # Z coordinate of neutral axis for end B
-                    nsmY = (nsmYA + nsmYB) / 2
-                    nsmZ = (nsmZA + nsmZB) / 2
-                    neutralAxisY = (neutralAxisYA + neutralAxisYB) / 2
-                    neutralAxisZ = (neutralAxisZA + neutralAxisZB) / 2
+                    # Y coordinate of non-structural mass for end A
+                    nsmYOffsetA = propInfo.m1a
+                    # Z coordinate of non-structural mass for end A
+                    nsmZOffsetA = propInfo.m2a
+                    # Y coordinate of non-structural mass for end B
+                    nsmYOffsetB = propInfo.m1b
+                    # Z coordinate of non-structural mass for end B
+                    nsmZOffsetB = propInfo.m2b
+                    # Y coordinate of neutral axis for end A
+                    neutralAxisYOffsetA = propInfo.n1a
+                    # Z coordinate of neutral axis for end A
+                    neutralAxisZOffsetA = propInfo.n2a
+                    # Y coordinate of neutral axis for end B
+                    neutralAxisYOffsetB = propInfo.n1b
+                    # Z coordinate of neutral axis for end B
+                    neutralAxisZOffsetB = propInfo.n2b
+
+                    # Average offsets at two ends, then add the shear center offset because TACS offsets are not
+                    # relative to shear center like Nastran's are
+                    nsmOffsetY = (nsmYOffsetA + nsmYOffsetB) / 2 + shearCenterYOffset
+                    nsmOffsetZ = (nsmZOffsetA + nsmZOffsetB) / 2 + shearCenterZOffset
+                    neutralAxisOffsetY = (
+                        neutralAxisYOffsetA + neutralAxisYOffsetB
+                    ) / 2 + shearCenterYOffset
+                    neutralAxisOffsetZ = (
+                        neutralAxisZOffsetA + neutralAxisZOffsetB
+                    ) / 2 + shearCenterZOffset
 
                     # pynastran defaults these values to 1e8,
                     # which can lead to scaling issues in the stiffness matrix
@@ -1301,11 +1300,11 @@ class pyTACS(BaseUI):
                         I12 = np.trapezoid(I12, xStations)
                         J = np.trapezoid(J, xStations)
                         nsm = np.trapezoid(nsm, xStations)
-                    # TACS BasicBeamConstitutive assumes structural and nonstructural masses have same COM, so we need to compute the average center of mass.
+                    # Compute the combined (structural + NSM) center of mass.
+                    # TODO: Include effect of NSM
                     rho = mat.getMaterialProperties()["rho"]
-                    nsmRatio = nsm / (rho * area + nsm)
-                    xm2 = nsmRatio * nsmY
-                    xm3 = nsmRatio * nsmZ
+                    m_struct = rho * area
+                    m_total = m_struct
                     con = tacs.constitutive.BasicBeamConstitutive(
                         mat,
                         A=area,
@@ -1316,12 +1315,12 @@ class pyTACS(BaseUI):
                         ky=k1,
                         kz=k2,
                         nsm=nsm,
-                        xc2=jOffset,
-                        xc3=kOffset,
-                        xm2=xm2 + jOffset,
-                        xm3=xm3 + kOffset,
-                        xk2=neutralAxisY + jOffset,
-                        xk3=neutralAxisZ + kOffset,
+                        xc2=-neutralAxisOffsetZ,
+                        xc3=neutralAxisOffsetY,
+                        xm2=neutralAxisOffsetY,
+                        xm3=neutralAxisOffsetZ,
+                        xk2=shearCenterYOffset,
+                        xk3=shearCenterZOffset,
                     )
 
                 elif propInfo.type == "PBEAML":
@@ -1333,14 +1332,14 @@ class pyTACS(BaseUI):
                         sectionProps["nsm"] = propInfo.nsm
                         # Project the offset vector onto the width and thickness axes
                         sectionProps["wOffset"] = (
-                            -np.dot(khat, offset_vector) / sectionProps["w"]
+                            -np.dot(zElem, offset_vector) / sectionProps["w"]
                         )
                         sectionProps["tOffset"] = (
-                            -np.dot(jhat, offset_vector) / sectionProps["t"]
+                            -np.dot(yElem, offset_vector) / sectionProps["t"]
                         )
                         conType = tacs.constitutive.IsoRectangleBeamConstitutive
                     elif propInfo.Type == "TUBE" and (
-                        kOffset == 0.0 and jOffset == 0.0
+                        shearCenterZOffset == 0.0 and shearCenterYOffset == 0.0
                     ):
                         r1 = propInfo.dim[:, 0]
                         r0 = propInfo.dim[:, 1]
