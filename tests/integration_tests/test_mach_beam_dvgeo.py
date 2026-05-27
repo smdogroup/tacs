@@ -95,7 +95,9 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # Create DVGeometry
         DVGeo = DVGeometry(fileName=ffd_file, isComplex=self.dtype == complex)
         # Create reference axis
-        nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex="i", yFraction=0.5)
+        nRefAxPts = DVGeo.addRefAxis(
+            name="centerline", alignIndex="i", yFraction=0.5, axis=None
+        )
 
         # Set up global design variables
         def depth(val, geo):
