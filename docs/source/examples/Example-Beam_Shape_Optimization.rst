@@ -1,6 +1,6 @@
 2D Beam Shape Optimization with MACH
 ************************************
-.. note:: The script for this example can be found under the ``examples/beam/shape_opt.py`` file.
+.. note:: The script for this example can be found under the ``examples/beam_shape_opt/shape_opt.py`` file.
 
 This example demonstrates TACS structural shape optimization using the
 :ref:`mach/mach:MACH` interface.
@@ -43,42 +43,42 @@ TACS' adjoint solver through the :class:`~tacs.mach.struct_problem.StructProblem
 
 First, import required libraries:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:imports-start]
    :end-before: # [docs:imports-end]
 
 Next, define the problem parameters and file paths:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:parameters-start]
    :end-before: # [docs:parameters-end]
 
 Now, define the element callback function used to setup TACS element objects and design variables:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:element-callback-start]
    :end-before: # [docs:element-callback-end]
 
 Create and initialize the pyTACS assembler:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:pytacs-init-start]
    :end-before: # [docs:pytacs-init-end]
 
 Set up the FFD and geometric design variables using `pyGeo <https://github.com/mdolab/pygeo>`_'s DVGeometry:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:dvgeo-setup-start]
    :end-before: # [docs:dvgeo-setup-end]
 
 Create the static problem and add functions of interest:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:static-problem-start]
    :end-before: # [docs:static-problem-end]
@@ -87,14 +87,14 @@ Wrap the static problem with the :class:`~tacs.mach.struct_problem.StructProblem
 Passing ``DVGeo`` here registers the structural node coordinates with the FFD volume;
 nodes are updated automatically before each solve when design variables change:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:struct-problem-start]
    :end-before: # [docs:struct-problem-end]
 
 Define the objective and constraint evaluation function:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:struct-obj-start]
    :end-before: # [docs:struct-obj-end]
@@ -105,7 +105,7 @@ chain-rule term automatically, producing sensitivities keyed by the geometric DV
 (``"depth"``).  The structural DV sensitivity (keyed ``"struct"``) is
 popped out because it is not used in the pyoptsparse optimization problem:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:struct-sens-start]
    :end-before: # [docs:struct-sens-end]
@@ -116,14 +116,14 @@ structural design variables (none in this case, since ``tNum=-1``), and
 ``DVGeo.addVariablesPyOpt`` registers the FFD ``"depth"`` DVs.
 The stress constraint is added as a nonlinear inequality using the KS failure aggregation:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:opt-setup-start]
    :end-before: # [docs:opt-setup-end]
 
 Finally, run the optimization:
 
-.. literalinclude:: ../../../examples/beam/shape_opt.py
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
    :language: python
    :start-after: # [docs:run-opt-start]
    :end-before: # [docs:run-opt-end]

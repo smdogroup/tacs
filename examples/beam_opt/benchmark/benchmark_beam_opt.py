@@ -8,7 +8,7 @@ import sys
 import os
 
 # Import the example to automatically run the script
-import beam_opt
+import examples.beam_opt.beam_opt as beam_opt
 
 # Set the path to the example script we're testing
 example_path = os.path.join(os.path.dirname(__file__), "..")
