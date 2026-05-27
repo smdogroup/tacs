@@ -231,6 +231,39 @@ class KSAggregationType(IntEnum):
     KS_DISCRETE_AVERAGE = _KSAGG_DISCRETE_AVERAGE
 
 
+def _ftype_str_to_ks_aggregation_type(ftype):
+    """Convert a legacy ftype string to a :class:`KSAggregationType` value.
+
+    Parameters
+    ----------
+    ftype : str
+        One of ``'discrete'``, ``'continuous'``, ``'pnorm-discrete'``,
+        ``'pnorm-continuous'``, or ``'discrete-average'``.
+
+    Returns
+    -------
+    KSAggregationType
+
+    Raises
+    ------
+    ValueError
+        If *ftype* is not a recognised string.
+    """
+    _str_map = {
+        'discrete': KSAggregationType.KS_DISCRETE,
+        'continuous': KSAggregationType.KS_CONTINUOUS,
+        'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
+        'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
+        'discrete-average': KSAggregationType.KS_DISCRETE_AVERAGE,
+    }
+    try:
+        return _str_map[ftype.lower()]
+    except KeyError:
+        raise ValueError(
+            f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
+        ) from None
+
+
 cdef class KSTemperature(Function):
     """
     The following class implements the methods necessary
@@ -274,20 +307,7 @@ cdef class KSTemperature(Function):
                 raise ValueError(
                     "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
-
-            _str_map = {
-                'discrete': KSAggregationType.KS_DISCRETE,
-                'continuous': KSAggregationType.KS_CONTINUOUS,
-                'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
-                'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
-            }
-            ftype = kwargs['ftype']
-            try:
-                ksAggregationType = _str_map[ftype.lower()]
-            except KeyError:
-                raise ValueError(
-                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
-                ) from None
+            ksAggregationType = _ftype_str_to_ks_aggregation_type(kwargs['ftype'])
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)
@@ -310,6 +330,26 @@ cdef class KSTemperature(Function):
                 "KSAggregationType.KS_DISCRETE_AVERAGE is only valid for KSFailure, not KSTemperature."
             )
         self.kstptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
+
+    def setKSTemperatureType(self, ftype):
+        """
+        Deprecated. Use :meth:`setKSAggregationType` instead.
+
+        Args:
+            ftype (str): Aggregation type string (e.g. ``'discrete'``, ``'continuous'``).
+
+        Raises:
+            DeprecationWarning: Always.
+            ValueError: If *ftype* is not a recognised string or is ``'discrete-average'``.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setKSTemperatureType is deprecated as of v3.12 and will be removed in v3.14. "
+            "Use setKSAggregationType(functions.KSAggregationType.<VALUE>) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setKSAggregationType(_ftype_str_to_ks_aggregation_type(ftype))
 
     def setParameter(self, double ksparam):
         self.kstptr.setParameter(ksparam)
@@ -372,21 +412,7 @@ cdef class KSFailure(Function):
                 raise ValueError(
                     "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
-
-            _str_map = {
-                'discrete': KSAggregationType.KS_DISCRETE,
-                'continuous': KSAggregationType.KS_CONTINUOUS,
-                'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
-                'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
-                'discrete-average': KSAggregationType.KS_DISCRETE_AVERAGE,
-            }
-            ftype = kwargs['ftype']
-            try:
-                ksAggregationType = _str_map[ftype.lower()]
-            except KeyError:
-                raise ValueError(
-                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
-                ) from None
+            ksAggregationType = _ftype_str_to_ks_aggregation_type(kwargs['ftype'])
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)
@@ -401,6 +427,27 @@ cdef class KSFailure(Function):
         """
         ksAggregationType = KSAggregationType(ksAggregationType)
         self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
+
+    def setKSFailureType(self, ftype):
+        """
+        Deprecated. Use :meth:`setKSAggregationType` instead.
+
+        Args:
+            ftype (str): Aggregation type string (e.g. ``'discrete'``, ``'continuous'``,
+                ``'discrete-average'``).
+
+        Raises:
+            DeprecationWarning: Always.
+            ValueError: If *ftype* is not a recognised string.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setKSFailureType is deprecated as of v3.12 and will be removed in v3.14. "
+            "Use setKSAggregationType(functions.KSAggregationType.<VALUE>) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setKSAggregationType(_ftype_str_to_ks_aggregation_type(ftype))
 
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)
@@ -462,20 +509,7 @@ cdef class KSDisplacement(Function):
                 raise ValueError(
                     "Cannot specify both 'ksAggregationType' and deprecated 'ftype' kwarg."
                 )
-
-            _str_map = {
-                'discrete': KSAggregationType.KS_DISCRETE,
-                'continuous': KSAggregationType.KS_CONTINUOUS,
-                'pnorm-discrete': KSAggregationType.PNORM_DISCRETE,
-                'pnorm-continuous': KSAggregationType.PNORM_CONTINUOUS,
-            }
-            ftype = kwargs['ftype']
-            try:
-                ksAggregationType = _str_map[ftype.lower()]
-            except KeyError:
-                raise ValueError(
-                    f"Unknown ftype {ftype!r}. Valid options: {sorted(_str_map)}"
-                ) from None
+            ksAggregationType = _ftype_str_to_ks_aggregation_type(kwargs['ftype'])
         else:
             ksAggregationType = kwargs.get('ksAggregationType', KSAggregationType.KS_CONTINUOUS)
         self.setKSAggregationType(ksAggregationType)
@@ -498,6 +532,26 @@ cdef class KSDisplacement(Function):
                 "KSAggregationType.KS_DISCRETE_AVERAGE is only valid for KSFailure, not KSDisplacement."
             )
         self.ksptr.setKSAggregationType(<_CKSAggregationType><int>ksAggregationType)
+
+    def setKSDisplacementType(self, ftype):
+        """
+        Deprecated. Use :meth:`setKSAggregationType` instead.
+
+        Args:
+            ftype (str): Aggregation type string (e.g. ``'discrete'``, ``'continuous'``).
+
+        Raises:
+            DeprecationWarning: Always.
+            ValueError: If *ftype* is not a recognised string or is ``'discrete-average'``.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setKSDisplacementType is deprecated as of v3.12 and will be removed in v3.14. "
+            "Use setKSAggregationType(functions.KSAggregationType.<VALUE>) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setKSAggregationType(_ftype_str_to_ks_aggregation_type(ftype))
 
     def setParameter(self, double ksparam):
         self.ksptr.setParameter(ksparam)

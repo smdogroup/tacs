@@ -1,14 +1,19 @@
 """
 Tests that KSAggregationType.KS_DISCRETE_AVERAGE raises ValueError when passed
 to KSTemperature or KSDisplacement (constructor and setKSAggregationType).
+Also covers the deprecated ftype= kwarg and the deprecated setKS*Type setters.
 """
 
 import os
 import unittest
+from importlib.metadata import version
 
 import numpy as np
 from mpi4py import MPI
+from packaging.version import Version
 from tacs import constitutive, elements, functions, pytacs
+
+_DEPRECATION_REMOVAL_VERSION = Version("3.14")
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "input_files/plate.bdf")
@@ -117,6 +122,93 @@ class TestDeprecatedFtypeKwarg(unittest.TestCase):
         """'discrete-average' is not in the KSTemperature ftype map and must raise ValueError."""
         with self.assertRaises(ValueError):
             functions.KSTemperature(self.assembler, ftype="discrete-average")
+
+
+class TestDeprecatedSetters(unittest.TestCase):
+    """Verify backward-compat behaviour of the deprecated setKS*Type setters."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.assembler = _make_assembler()
+
+    # ------------------------------------------------------------------
+    # DeprecationWarning cases
+    # ------------------------------------------------------------------
+
+    def test_set_ks_temperature_type_warns(self):
+        func = functions.KSTemperature(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            func.setKSTemperatureType("discrete")
+
+    def test_set_ks_failure_type_warns(self):
+        func = functions.KSFailure(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            func.setKSFailureType("discrete")
+
+    def test_set_ks_displacement_type_warns(self):
+        func = functions.KSDisplacement(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            func.setKSDisplacementType("discrete")
+
+    # ------------------------------------------------------------------
+    # ValueError for unknown strings
+    # ------------------------------------------------------------------
+
+    def test_set_ks_temperature_type_unknown_raises(self):
+        func = functions.KSTemperature(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                func.setKSTemperatureType("bogus")
+
+    def test_set_ks_failure_type_unknown_raises(self):
+        func = functions.KSFailure(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                func.setKSFailureType("bogus")
+
+    def test_set_ks_displacement_type_unknown_raises(self):
+        func = functions.KSDisplacement(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                func.setKSDisplacementType("bogus")
+
+    # ------------------------------------------------------------------
+    # Validation still enforced via the new setter
+    # ------------------------------------------------------------------
+
+    def test_set_ks_temperature_type_rejects_discrete_average(self):
+        """setKSTemperatureType('discrete-average') must raise ValueError."""
+        func = functions.KSTemperature(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                func.setKSTemperatureType("discrete-average")
+
+    def test_set_ks_displacement_type_rejects_discrete_average(self):
+        """setKSDisplacementType('discrete-average') must raise ValueError."""
+        func = functions.KSDisplacement(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            with self.assertRaises(ValueError):
+                func.setKSDisplacementType("discrete-average")
+
+    def test_set_ks_failure_type_accepts_discrete_average(self):
+        """setKSFailureType('discrete-average') must succeed for KSFailure."""
+        func = functions.KSFailure(self.assembler)
+        with self.assertWarns(DeprecationWarning):
+            func.setKSFailureType("discrete-average")
+
+
+class TestDeprecationRemovalVersionGuard(unittest.TestCase):
+    """Fails once TACS reaches the version where these deprecated APIs are removed.
+    When this fires, delete this test file (or the relevant classes) and the
+    deprecated code paths they cover."""
+
+    def test_deprecations_have_not_been_removed_yet(self):
+        current = Version(version("tacs"))
+        self.assertLess(
+            current,
+            _DEPRECATION_REMOVAL_VERSION,
+            f"TACS is at {current}; delete the deprecated KS setter and ftype APIs and their tests.",
+        )
 
 
 if __name__ == "__main__":
