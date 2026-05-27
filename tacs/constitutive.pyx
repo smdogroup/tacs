@@ -2269,7 +2269,7 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 
 def LamParamShellConstitutive(*args, **kwargs):
     warnings.warn(
-        "LamParamShellConstitutive is deprecated and will be removed in a future version. "
+        "LamParamShellConstitutive is deprecated and will be removed in version 3.14.0. "
         "Use LamParamSmearedShellConstitutive instead.",
         DeprecationWarning,
         stacklevel=2,
