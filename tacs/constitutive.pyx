@@ -611,25 +611,63 @@ cdef class OrthotropicPly:
     acceptable bounds - these are tested during initialization.
 
     Args:
-        ply_thickness (float or complex): The ply thickness.
+        plyThickness (float or complex): The ply thickness.
         props (MaterialProperties): The ply material property.
-        failure_criterion (constitutive.CompositeFailureCriterion): The failure criterion to use.
+        failureCriterion (constitutive.CompositeFailureCriterion): The failure criterion to use.
           Defaults to ``constitutive.CompositeFailureCriterion.TSAI_WU_MODIFIED``.
-        max_strain_criterion (bool): Deprecated. Use ``failure_criterion=constitutive.CompositeFailureCriterion.MAX_STRAIN``.
-        tsai_wu_criterion (bool): Deprecated. Use ``failure_criterion=constitutive.CompositeFailureCriterion.TSAI_WU``.
-        Cuntze_criterion_UD (bool): Deprecated. Use ``failure_criterion=constitutive.CompositeFailureCriterion.CUNTZE_UD``.
-        Cuntze_criterion_Woven (bool): Deprecated. Use ``failure_criterion=constitutive.CompositeFailureCriterion.CUNTZE_WOVEN``.
+        max_strain_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.MAX_STRAIN``.
+        tsai_wu_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.TSAI_WU``.
+        Cuntze_criterion_UD (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_UD``.
+        Cuntze_criterion_Woven (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_WOVEN``.
     """
 
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
 
-    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  failure_criterion=None,
-                  max_strain_criterion=False, tsai_wu_criterion=False,
-                  Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
-        self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL  # guard: __dealloc__ is called even when __cinit__ raises
+        cdef TacsScalar plyThickness
+
+        # -- plyThickness (first positional; 'ply_thickness' keyword is deprecated) --
+        if 'ply_thickness' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
+            warnings.warn(
+                "The 'ply_thickness' keyword argument is deprecated as of v3.12 and will be "
+                "removed in v3.14. Use 'plyThickness' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if args or 'plyThickness' in kwargs:
+                raise ValueError(
+                    "Cannot specify both 'plyThickness' and deprecated 'ply_thickness' kwarg."
+                )
+            plyThickness = kwargs['ply_thickness']
+        elif args:
+            plyThickness = args[0]
+        elif 'plyThickness' in kwargs:
+            plyThickness = kwargs['plyThickness']
+        else:
+            raise TypeError("OrthotropicPly() missing required argument: 'plyThickness'")
+
+        # -- props (second positional) --
+        if len(args) >= 2:
+            props_py = args[1]
+        elif 'props' in kwargs:
+            props_py = kwargs['props']
+        else:
+            raise TypeError("OrthotropicPly() missing required argument: 'props'")
+
+        self.ptr = new TACSOrthotropicPly(plyThickness, (<MaterialProperties>props_py).ptr)
         self.ptr.incref()
+
+        # -- failureCriterion (new name in this PR; no backward compat alias needed) --
+        failureCriterion = kwargs.get('failureCriterion', None)
+
+        # -- deprecated boolean criterion kwargs --
+        max_strain_criterion = kwargs.get('max_strain_criterion', False)
+        tsai_wu_criterion = kwargs.get('tsai_wu_criterion', False)
+        Cuntze_criterion_UD = kwargs.get('Cuntze_criterion_UD', False)
+        Cuntze_criterion_Woven = kwargs.get('Cuntze_criterion_Woven', False)
 
         FC = CompositeFailureCriterion
         _deprecated = {
@@ -644,27 +682,28 @@ cdef class OrthotropicPly:
             warnings.warn(
                 f"Boolean failure criterion kwargs ({', '.join(k for k, _ in _deprecated_used)}) are deprecated "
                 "as of v3.12 and will be removed in v3.14. "
-                "Use 'failure_criterion=constitutive.CompositeFailureCriterion.<VALUE>' instead.",
+                "Use 'failureCriterion=constitutive.CompositeFailureCriterion.<VALUE>' instead.",
                 DeprecationWarning,
                 stacklevel=2,
             )
             if len(_deprecated_used) > 1:
                 raise ValueError('Only one failure criterion can be specified.')
-            if failure_criterion is not None:
+            if failureCriterion is not None:
                 raise ValueError(
-                    "Cannot specify both 'failure_criterion' and deprecated boolean kwargs."
+                    "Cannot specify both 'failureCriterion' and deprecated boolean kwargs."
                 )
-            failure_criterion = _deprecated_used[0][1]
+            failureCriterion = _deprecated_used[0][1]
 
-        if failure_criterion is None:
-            failure_criterion = FC.TSAI_WU_MODIFIED
+        if failureCriterion is None:
+            failureCriterion = FC.TSAI_WU_MODIFIED
 
-        failure_criterion = CompositeFailureCriterion(failure_criterion)
-        self.ptr.setFailureCriterion(<_CCompositeFC><int>failure_criterion)
-        self.props = props
+        failureCriterion = CompositeFailureCriterion(failureCriterion)
+        self.ptr.setFailureCriterion(<_CCompositeFC><int>failureCriterion)
+        self.props = props_py
 
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr != NULL:
+            self.ptr.decref()
 
     def getMaterialProperties(self):
         """

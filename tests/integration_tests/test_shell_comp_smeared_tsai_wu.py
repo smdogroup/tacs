@@ -86,7 +86,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         ortho_ply = constitutive.OrthotropicPly(
             ply_thickness,
             ortho_prop,
-            failure_criterion=constitutive.CompositeFailureCriterion.TSAI_WU,
+            failureCriterion=constitutive.CompositeFailureCriterion.TSAI_WU,
         )
 
         # Shell thickness
