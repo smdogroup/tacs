@@ -6,9 +6,13 @@ This example demonstrates TACS structural shape optimization using the
 :ref:`mach/mach:MACH` interface.
 It considers the same cantilevered beam with a tip shear load as the
 :ref:`examples/Example-Beam_Optimization:Beam optimization with MPhys` example, but differs
-in two key ways: the beam is modeled in 2D using shell elements rather than 1D beam elements,
-and the geometry is optimized by physically warping the finite-element mesh via a free-form deformation (FFD) volume
-rather than by adjusting 1D cross-sectional properties.
+in two key ways:
+
+#. The beam is modeled in 2D using shell elements rather than 1D beam elements,
+#. The geometry is optimized by physically warping the finite-element mesh via a
+   free-form deformation (FFD) volume rather than by adjusting 1D cross-sectional
+   properties.
+
 The beam is discretized using 1001 shell elements along its span and depth.
 
 The optimization problem is:

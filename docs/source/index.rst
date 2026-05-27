@@ -28,8 +28,8 @@ Examples
    examples/Example-Plate
    examples/Example-Transient_Battery
    examples/Example-Beam_Optimization
-   examples/Example-Beam_Shape_Optimization
    examples/Example-Composite_Optimization
+   examples/Example-Beam_Shape_Optimization
 
 References
 ==========
