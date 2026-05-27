@@ -78,7 +78,9 @@ FEAAssembler.initialize(element_callback)
 # [docs:dvgeo-setup-start]
 DVGeo = DVGeometry(fileName=ffd_file)
 # Create reference axis
-nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex="i", yFraction=0.5)
+nRefAxPts = DVGeo.addRefAxis(
+    name="centerline", alignIndex="i", yFraction=0.5, axis=None
+)
 
 
 # Set up global design variables

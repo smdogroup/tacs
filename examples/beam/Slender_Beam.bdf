@@ -3231,8 +3231,8 @@ CQUAD4       229       1     111     223     224     112
 CQUAD4       228       1     110     222     223     111                        
 CQUAD4       227       1     109     221     222     110                        
 CQUAD4       226       1     220     108     221     109                        
-RBE3         225            1112  123456      1.  123456    109     110
-             111     112     113     114     115     116    117
+RBE2         225    1112  123456     109     110     111     112     113
+             114     115     116     117
 $  Geometry defaults data
 $  Material Properties                                                          
 $  Analysis type data                                                           
