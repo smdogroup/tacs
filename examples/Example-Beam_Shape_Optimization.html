@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>2D Beam Shape Optimization with MACH &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="prev" title="Composite plate optimization with MPhys" href="Example-Composite_Optimization.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Example-Composite_Optimization.html" title="Composite plate optimization with MPhys"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">2D Beam Shape Optimization with MACH</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="d-beam-shape-optimization-with-mach">
+<h1>2D Beam Shape Optimization with MACH<a class="headerlink" href="#d-beam-shape-optimization-with-mach" title="Link to this heading">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The script for this example can be found under the <code class="docutils literal notranslate"><span class="pre">examples/beam_shape_opt/shape_opt.py</span></code> file.</p>
+</div>
+<p>This example demonstrates TACS structural shape optimization using the
+<a class="reference internal" href="../mach/mach.html#mach"><span class="std std-ref">MACH</span></a> interface.
+It considers the same cantilevered beam with a tip shear load as the
+<a class="reference internal" href="Example-Beam_Optimization.html#beam-optimization-with-mphys"><span class="std std-ref">Beam optimization with MPhys</span></a> example, but differs
+in two key ways:</p>
+<ol class="arabic simple">
+<li><p>The beam is modeled in 2D using shell elements rather than 1D beam elements,</p></li>
+<li><p>The geometry is optimized by physically warping the finite-element mesh via a
+free-form deformation (FFD) volume rather than by adjusting 1D cross-sectional
+properties.</p></li>
+</ol>
+<p>The beam is discretized using 1001 shell elements along its span and depth.</p>
+<p>The optimization problem is:</p>
+<blockquote>
+<div><p><strong>Minimize</strong> the mass of the beam with respect to the depth of the cross-section along the span,
+subject to a maximum stress constraint dictated by the material's yield stress.</p>
+</div></blockquote>
+<p>In order to change the shape of the FEM, we use a FFD volume
+parameterization scheme provided by the <a class="reference external" href="https://github.com/mdolab/pygeo">pyGeo</a> library.
+TACS <a class="reference internal" href="../mach/mach.html#mach"><span class="std std-ref">MACH</span></a> module is used to link the static problem with pyGeo's FFD volume parameterization.</p>
+<p>The figure below shows the initial (unoptimized) beam with the von Mises failure contour and
+the FFD box with its control points encapsulating the structure:</p>
+<a class="reference internal image-reference" href="../_images/Beam_FFD.png"><img alt="Initial beam failure contour with FFD volume box and control points" src="../_images/Beam_FFD.png" style="width: 700px;" />
+</a>
+<p>Each spanwise control point section will be parameterized in such a way that the depth of the beam can be optimized at each station.</p>
+<p>As was shown in <a class="reference internal" href="Example-Beam_Optimization.html#beam-optimization-with-mphys"><span class="std std-ref">Beam optimization with MPhys</span></a> example an analytic solution for the optimal spanwise depth profile can be derived and is given below:</p>
+<div class="math notranslate nohighlight">
+\[d(x) = \sqrt{\frac{6 V (L - x)}{t \, \sigma_y}}\]</div>
+<p>The optimization will be driven by SLSQP via pyoptsparse, with gradients supplied by
+TACS' adjoint solver through the <a class="reference internal" href="../mach/mach.html#tacs.mach.struct_problem.StructProblem" title="tacs.mach.struct_problem.StructProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructProblem</span></code></a> wrapper.</p>
+<p>First, import required libraries:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">pygeo</span><span class="w"> </span><span class="kn">import</span> <span class="n">DVGeometry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyoptsparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optimization</span><span class="p">,</span> <span class="n">OPT</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mach</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructProblem</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyTACS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">elements</span><span class="p">,</span> <span class="n">constitutive</span><span class="p">,</span> <span class="n">functions</span>
+
+</pre></div>
+</div>
+<p>Next, define the problem parameters and file paths:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;Slender_Beam.bdf&quot;</span><span class="p">)</span>
+<span class="n">ffd_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;ffd_8_linear.fmt&quot;</span><span class="p">)</span>
+
+<span class="c1"># Beam thickness</span>
+<span class="n">t</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c1"># m</span>
+<span class="c1"># Length of beam</span>
+<span class="n">L</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># m</span>
+
+<span class="c1"># Material properties</span>
+<span class="n">rho</span> <span class="o">=</span> <span class="mf">2780.0</span>  <span class="c1"># kg /m^3</span>
+<span class="n">E</span> <span class="o">=</span> <span class="mf">70.0e9</span>  <span class="c1"># Pa</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="mf">420.0e6</span>
+
+<span class="c1"># Shear force applied at tip</span>
+<span class="n">V</span> <span class="o">=</span> <span class="mf">2.5e4</span>  <span class="c1"># N</span>
+</pre></div>
+</div>
+<p>Now, define the element callback function used to setup TACS element objects and design variables:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="c1"># Setup (isotropic) property and constitutive objects</span>
+    <span class="n">prop</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">MaterialProperties</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">E</span><span class="o">=</span><span class="n">E</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="n">nu</span><span class="p">,</span> <span class="n">ys</span><span class="o">=</span><span class="n">ys</span><span class="p">)</span>
+    <span class="n">con</span> <span class="o">=</span> <span class="n">constitutive</span><span class="o">.</span><span class="n">IsoShellConstitutive</span><span class="p">(</span><span class="n">prop</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">refAxis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">ShellRefAxisTransform</span><span class="p">(</span><span class="n">refAxis</span><span class="p">)</span>
+    <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Quad4Shell</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">elem</span>
+
+
+</pre></div>
+</div>
+<p>Create and initialize the pyTACS assembler:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdf_file</span><span class="p">)</span>
+<span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">element_callback</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Set up the FFD and geometric design variables using <a class="reference external" href="https://github.com/mdolab/pygeo">pyGeo</a>'s DVGeometry:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">DVGeo</span> <span class="o">=</span> <span class="n">DVGeometry</span><span class="p">(</span><span class="n">fileName</span><span class="o">=</span><span class="n">ffd_file</span><span class="p">)</span>
+<span class="c1"># Create reference axis</span>
+<span class="n">nRefAxPts</span> <span class="o">=</span> <span class="n">DVGeo</span><span class="o">.</span><span class="n">addRefAxis</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;centerline&quot;</span><span class="p">,</span> <span class="n">alignIndex</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">yFraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+
+
+<span class="c1"># Set up global design variables</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">geo</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nRefAxPts</span><span class="p">):</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">scale_y</span><span class="p">[</span><span class="s2">&quot;centerline&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coef</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+
+<span class="n">DVGeo</span><span class="o">.</span><span class="n">addGlobalDV</span><span class="p">(</span>
+    <span class="n">dvName</span><span class="o">=</span><span class="s2">&quot;depth&quot;</span><span class="p">,</span>
+    <span class="n">value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nRefAxPts</span><span class="p">),</span>
+    <span class="n">func</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
+    <span class="n">lower</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">upper</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+    <span class="n">scale</span><span class="o">=</span><span class="mf">20.0</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Create the static problem and add functions of interest:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">&quot;tip_shear&quot;</span><span class="p">)</span>
+<span class="c1"># Add TACS Functions</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;mass&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span>
+    <span class="s2">&quot;ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
+<span class="p">)</span>
+<span class="c1"># Add forces to static problem</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addLoadToNodes</span><span class="p">(</span><span class="mi">1112</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Wrap the static problem with the <a class="reference internal" href="../mach/mach.html#tacs.mach.struct_problem.StructProblem" title="tacs.mach.struct_problem.StructProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructProblem</span></code></a> using the MACH interface.
+Passing <code class="docutils literal notranslate"><span class="pre">DVGeo</span></code> here registers the structural node coordinates with the FFD volume;
+nodes are updated automatically before each solve when design variables change:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">structProb</span> <span class="o">=</span> <span class="n">StructProblem</span><span class="p">(</span><span class="n">staticProb</span><span class="p">,</span> <span class="n">FEAAssembler</span><span class="p">,</span> <span class="n">DVGeo</span><span class="o">=</span><span class="n">DVGeo</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Define the objective and constraint evaluation function:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">structObj</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the objective and constraints&quot;&quot;&quot;</span>
+    <span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">structProb</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">DVGeo</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">structProb</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+    <span class="n">structProb</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+    <span class="n">structProb</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">structProb</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">funcs</span><span class="p">,</span> <span class="kc">False</span>
+
+
+</pre></div>
+</div>
+<p>Define the sensitivity evaluation function.
+<a class="reference internal" href="../mach/mach.html#tacs.mach.struct_problem.StructProblem.evalFunctionsSens" title="tacs.mach.struct_problem.StructProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evalFunctionsSens()</span></code></a> folds in the DVGeo
+chain-rule term automatically, producing sensitivities keyed by the geometric DV name
+(<code class="docutils literal notranslate"><span class="pre">&quot;depth&quot;</span></code>).  The structural DV sensitivity (keyed <code class="docutils literal notranslate"><span class="pre">&quot;struct&quot;</span></code>) is
+popped out because it is not used in the pyoptsparse optimization problem:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">structSens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">funcs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the objective and constraint sensitivities&quot;&quot;&quot;</span>
+    <span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">structProb</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcsSens</span><span class="p">:</span>
+        <span class="n">funcsSens</span><span class="p">[</span><span class="n">func</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="kc">False</span>
+
+
+</pre></div>
+</div>
+<p>Set up the optimization problem using pyoptsparse.
+<a class="reference internal" href="../mach/mach.html#tacs.mach.struct_problem.StructProblem.addVariablesPyOpt" title="tacs.mach.struct_problem.StructProblem.addVariablesPyOpt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">addVariablesPyOpt()</span></code></a> registers the TACS
+structural design variables (none in this case, since <code class="docutils literal notranslate"><span class="pre">tNum=-1</span></code>), and
+<code class="docutils literal notranslate"><span class="pre">DVGeo.addVariablesPyOpt</span></code> registers the FFD <code class="docutils literal notranslate"><span class="pre">&quot;depth&quot;</span></code> DVs.
+The stress constraint is added as a nonlinear inequality using the KS failure aggregation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now we create the structural optimization problem:</span>
+<span class="n">optProb</span> <span class="o">=</span> <span class="n">Optimization</span><span class="p">(</span><span class="s2">&quot;Mass min&quot;</span><span class="p">,</span> <span class="n">structObj</span><span class="p">)</span>
+<span class="n">optProb</span><span class="o">.</span><span class="n">addObj</span><span class="p">(</span><span class="s2">&quot;tip_shear_mass&quot;</span><span class="p">)</span>
+<span class="n">structProb</span><span class="o">.</span><span class="n">addVariablesPyOpt</span><span class="p">(</span><span class="n">optProb</span><span class="p">)</span>
+<span class="n">DVGeo</span><span class="o">.</span><span class="n">addVariablesPyOpt</span><span class="p">(</span><span class="n">optProb</span><span class="p">)</span>
+<span class="n">optProb</span><span class="o">.</span><span class="n">addCon</span><span class="p">(</span><span class="s2">&quot;tip_shear_ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">optProb</span><span class="o">.</span><span class="n">printSparsity</span><span class="p">()</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">OPT</span><span class="p">(</span>
+    <span class="s2">&quot;SLSQP&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;MAXIT&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s2">&quot;IPRINT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;IFILE&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;SLSQP.out&quot;</span><span class="p">),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, run the optimization:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Finally run the actual optimization</span>
+<span class="n">sol</span> <span class="o">=</span> <span class="n">opt</span><span class="p">(</span><span class="n">optProb</span><span class="p">,</span> <span class="n">sens</span><span class="o">=</span><span class="n">structSens</span><span class="p">,</span> <span class="n">storeSens</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="results">
+<h2>Results<a class="headerlink" href="#results" title="Link to this heading">¶</a></h2>
+<p>The optimization minimizes the beam mass while keeping the KS failure index below 1.0.
+The converged depth profile decreases from root to tip, matching the analytical solution
+<span class="math notranslate nohighlight">\(d(x) = \sqrt{6V(L-x)/(t\,\sigma_y)}\)</span>.</p>
+<a class="reference internal image-reference" href="../_images/Beam_Shape_Opt.png"><img alt="Optimized beam failure contours with the idealized analytic depth profile overlaid" src="../_images/Beam_Shape_Opt.png" style="width: 700px;" />
+</a>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">2D Beam Shape Optimization with MACH</a><ul>
+<li><a class="reference internal" href="#results">Results</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="Example-Composite_Optimization.html"
+                          title="previous chapter">Composite plate optimization with MPhys</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../theory/theory.html"
+                          title="next chapter">Theory</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../theory/theory.html" title="Theory"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Example-Composite_Optimization.html" title="Composite plate optimization with MPhys"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">2D Beam Shape Optimization with MACH</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

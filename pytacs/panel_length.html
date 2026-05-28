@@ -308,6 +308,20 @@ variables/node coordinates on this proc.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.getCoordName">
+<span class="sig-name descname"><span class="pre">getCoordName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.getCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.getDesignVarRange">
 <span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
@@ -420,6 +434,27 @@ on this processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.getOptions">
+<span class="sig-name descname"><span class="pre">getOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.getOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of all current options in use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.getVarName">
+<span class="sig-name descname"><span class="pre">getVarName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.getVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the design variables in pyOpt. Only needed
+if more than 1 pytacs object is used in an optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
@@ -455,6 +490,17 @@ options to the stdout on the root processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.setCoordName">
+<span class="sig-name descname"><span class="pre">setCoordName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.setCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Set a name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.setOption">
 <span class="sig-name descname"><span class="pre">setOption</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.setOption" title="Link to this definition">¶</a></dt>
 <dd><p>Set a solver option value. The name is not case sensitive.</p>
@@ -482,12 +528,12 @@ options to the stdout on the root processor</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.PanelLengthConstraint.setVarName">
 <span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.PanelLengthConstraint.setVarName" title="Link to this definition">¶</a></dt>
-<dd><p>Set a name for the structural variables in pyOpt. Only needs
+<dd><p>Set a name for the design variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the design variables used in setDesignVars() dict.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -523,6 +569,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.dtype"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getConstraintKeys()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getCoordName"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getDesignVars"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getNodes"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getNodes()</span></code></a></li>
@@ -531,10 +578,13 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getNumOwnedNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getNumVariables"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getOption"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getOptions"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getVarName"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.printOptions"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setCoordName"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setOption"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setOption()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setOptions"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.PanelLengthConstraint.setVarName"><code class="docutils literal notranslate"><span class="pre">PanelLengthConstraint.setVarName()</span></code></a></li>

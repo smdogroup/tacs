@@ -15,7 +15,7 @@
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Theory" href="../theory/theory.html" />
+    <link rel="next" title="2D Beam Shape Optimization with MACH" href="Example-Beam_Shape_Optimization.html" />
     <link rel="prev" title="Beam optimization with MPhys" href="Example-Beam_Optimization.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
@@ -28,7 +28,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../theory/theory.html" title="Theory"
+          <a href="Example-Beam_Shape_Optimization.html" title="2D Beam Shape Optimization with MACH"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="Example-Beam_Optimization.html" title="Beam optimization with MPhys"
@@ -50,7 +50,7 @@
 <p>The script for this example can be found under the <cite>examples/plate/</cite> directory.</p>
 </div>
 <p>This example further demonstrates TACS structural optimization capabilities through <a class="reference internal" href="../mphys/mphys.html#mphys"><span class="std std-ref">MPhys</span></a>.
-In this example a compliance minimization problem for a composite plate, based off of one originally proposed by Lund and Stegmann [<a class="reference internal" href="#id1">1</a>], is solved.
+In this example a compliance minimization problem for a composite plate, based off of one originally proposed by Lund and Stegmann <a class="footnote-reference brackets" href="#id2" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>, is solved.
 A 1 m x 1 m x 0.05 m composite plate is clamped on all edges and subjected to
 a uniform pressure of 100 kPa loading on the top.
 The plate is discretized into 100 quad shell elements, each having its own independent laminate layup.
@@ -110,8 +110,8 @@ A diagram of the problem is shown below.</p>
 </pre></div>
 </div>
 <p>Next, we define an <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> function for setting up the TACS elements and design variables.
-We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.SmearedCompositeShellConstitutive" title="tacs.constitutive.SmearedCompositeShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code></a> class here for the constitutive properties, and
-assign four design variable numbers to each element (one for each ply fraction), and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a> element class.</p>
+We use the <code class="xref py py-class docutils literal notranslate"><span class="pre">SmearedCompositeShellConstitutive</span></code> class here for the constitutive properties, and
+assign four design variable numbers to each element (one for each ply fraction), and return a <code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code> element class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Create ply object</span>
@@ -189,7 +189,7 @@ We can accomplish this by utilizing the <a class="reference internal" href="../p
 </pre></div>
 </div>
 <p>Fianlly, we define our <a class="reference external" href="https://openmdao.github.io/mphys/basics/model_hierarchy.html#mphys.Multipoint" title="(in MPhys)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code></a> class.
-To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> we defined above.
+To do this, we instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code>, <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code>, and <code class="docutils literal notranslate"><span class="pre">constraint_setup</span></code> we defined above.
 We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
 We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">PlateModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>
@@ -264,8 +264,8 @@ A visualization of the optimized result is shown below:</p>
 </a>
 <p class="rubric">References</p>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id1" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<aside class="footnote brackets" id="id2" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>Lund, E. and Stegmann, J., “On structural optimization of composite shell structures using a discrete constitutive parametrization,” Wind Energy, Vol. 8, No. 1, 2005, pp. 109–124.</p>
 </aside>
 </aside>
@@ -285,8 +285,8 @@ A visualization of the optimized result is shown below:</p>
   </div>
   <div>
     <h4>Next topic</h4>
-    <p class="topless"><a href="../theory/theory.html"
-                          title="next chapter">Theory</a></p>
+    <p class="topless"><a href="Example-Beam_Shape_Optimization.html"
+                          title="next chapter">2D Beam Shape Optimization with MACH</a></p>
   </div>
 <search id="searchbox" style="display: none" role="search">
   <h3 id="searchlabel">Quick search</h3>
@@ -312,7 +312,7 @@ A visualization of the optimized result is shown below:</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../theory/theory.html" title="Theory"
+          <a href="Example-Beam_Shape_Optimization.html" title="2D Beam Shape Optimization with MACH"
              >next</a> |</li>
         <li class="right" >
           <a href="Example-Beam_Optimization.html" title="Beam optimization with MPhys"

@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MACH &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="caps2tacs" href="../caps2tacs/caps2tacs.html" />
+    <link rel="prev" title="TacsBuilder class" href="../mphys/builder.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../caps2tacs/caps2tacs.html" title="caps2tacs"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../mphys/builder.html" title="TacsBuilder class"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" accesskey="U">Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACH</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="mach">
+<h1>MACH<a class="headerlink" href="#mach" title="Link to this heading">¶</a></h1>
+<p>The MACH interface provides a specialized wrapper for coupling TACS with MDOLab's MACH framework codes, particularly for aerostructural analysis and multidisciplinary optimization. It is built around the <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem" title="tacs.mach.struct_problem.StructProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructProblem</span></code></a> class, which adapts a TACS <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> to conform to the <code class="docutils literal notranslate"><span class="pre">baseclasses.StructProblem</span></code> interface expected by MACH framework codes.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The MACH interface is designed for scenarios where TACS is integrated with external computational libraries, such as:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/mdolab/adflow">ADflow</a> — aerodynamic solver for aerostructural coupling</p></li>
+<li><p><a class="reference external" href="https://github.com/mdolab/pygeo">pyGeo</a> — geometric parametrization and design variables</p></li>
+<li><p><a class="reference external" href="https://github.com/mdolab/pyoptsparse">pyoptsparse</a> — gradient-based optimization</p></li>
+</ul>
+<p>The typical workflow is:</p>
+<ol class="arabic simple">
+<li><p>Create a <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> assembler and a <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a>.</p></li>
+<li><p>Set up any external forces on the <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a>.</p></li>
+<li><p>Wrap the <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> with <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem" title="tacs.mach.struct_problem.StructProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructProblem</span></code></a>.</p></li>
+<li><p>Optionally attach a <code class="docutils literal notranslate"><span class="pre">DVGeometry</span></code> object for geometric design variables.</p></li>
+<li><p>At each optimization step: call <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve" title="tacs.mach.struct_problem.StructProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code></a>, then call <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctions" title="tacs.mach.struct_problem.StructProblem.evalFunctions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evalFunctions()</span></code></a> / <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctionsSens" title="tacs.mach.struct_problem.StructProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evalFunctionsSens()</span></code></a>.</p></li>
+</ol>
+</section>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>External Force Integration</strong>: The <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.Fext" title="tacs.mach.struct_problem.StructProblem.Fext"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Fext</span></code></a> property holds the aerodynamic coupling force vector. It is automatically included in the residual during <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve" title="tacs.mach.struct_problem.StructProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code></a>.</p></li>
+<li><p><strong>Aitken Acceleration</strong>: <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve" title="tacs.mach.struct_problem.StructProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code></a> optionally applies Aitken relaxation to stabilize fixed-point iteration in aerostructural coupling loops.</p></li>
+<li><p><strong>Adjoint Capabilities</strong>: The class manages all adjoint state vectors needed for coupled sensitivity analysis, including <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.phi" title="tacs.mach.struct_problem.StructProblem.phi"><code class="xref py py-attr docutils literal notranslate"><span class="pre">phi</span></code></a>, <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.pLoad" title="tacs.mach.struct_problem.StructProblem.pLoad"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pLoad</span></code></a>, <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.dSdu" title="tacs.mach.struct_problem.StructProblem.dSdu"><code class="xref py py-attr docutils literal notranslate"><span class="pre">dSdu</span></code></a>, and <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.adjRHS" title="tacs.mach.struct_problem.StructProblem.adjRHS"><code class="xref py py-attr docutils literal notranslate"><span class="pre">adjRHS</span></code></a>.</p></li>
+<li><p><strong>Geometric Design Variables</strong>: When a <code class="docutils literal notranslate"><span class="pre">DVGeometry</span></code> object is provided (via <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setDVGeo" title="tacs.mach.struct_problem.StructProblem.setDVGeo"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setDVGeo()</span></code></a>), node coordinates are automatically updated before each analysis call and geometric sensitivities are folded in by <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctionsSens" title="tacs.mach.struct_problem.StructProblem.evalFunctionsSens"><code class="xref py py-meth docutils literal notranslate"><span class="pre">evalFunctionsSens()</span></code></a>.</p></li>
+<li><p><strong>pyoptsparse Integration</strong>: <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addVariablesPyOpt" title="tacs.mach.struct_problem.StructProblem.addVariablesPyOpt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">addVariablesPyOpt()</span></code></a> and <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt" title="tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt"><code class="xref py py-meth docutils literal notranslate"><span class="pre">addConstraintsPyOpt()</span></code></a> register structural design variables and constraints directly with a <code class="docutils literal notranslate"><span class="pre">pyoptsparse</span></code> optimization problem.</p></li>
+<li><p><strong>Force File I/O</strong>: External coupling forces can be saved to and loaded from BDF-format files for post-processing or restarting aerostructural analyses.</p></li>
+</ul>
+</section>
+<section id="managed-state-vectors">
+<h2>Managed State Vectors<a class="headerlink" href="#managed-state-vectors" title="Link to this heading">¶</a></h2>
+<p>During coupled computation, both in forward and reverse mode, the following state vectors are managed by <code class="docutils literal notranslate"><span class="pre">StructProblem</span></code>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Fext</span></code></p></td>
+<td><p>External aerodynamic coupling force. Set by the aero solver before each <code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code> call.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">phi</span></code></p></td>
+<td><p>Structural adjoint vector <span class="math notranslate nohighlight">\(\phi\)</span>. Updated by <code class="xref py py-meth docutils literal notranslate"><span class="pre">solveAdjoint()</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pLoad</span></code></p></td>
+<td><p>Aerodynamic adjoint contribution to the structural adjoint RHS: <span class="math notranslate nohighlight">\([dA/du]^T \psi\)</span>. Supplied by the aero solver.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dSdu</span></code></p></td>
+<td><p>Product <span class="math notranslate nohighlight">\([dS/du]^T \phi\)</span> from a coupled structural block. Supplied by the coupling layer.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adjRHS</span></code></p></td>
+<td><p>Assembled adjoint RHS: <span class="math notranslate nohighlight">\(dI/du - [dA/du]^T\psi - [dS/du]^T\phi\)</span>. Built by <code class="xref py py-meth docutils literal notranslate"><span class="pre">assembleAdjointRHS()</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dIdu</span></code></p></td>
+<td><p>Partial derivative of the objective with respect to state variables. Set by <code class="xref py py-meth docutils literal notranslate"><span class="pre">setAdjointRHS()</span></code> and BCs are applied automatically.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">matVecRHS</span></code> / <code class="docutils literal notranslate"><span class="pre">matVecSolve</span></code></p></td>
+<td><p>Scratch vectors used for matrix–vector products in the coupled direct/adjoint system.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="structproblem-class">
+<h2>StructProblem Class<a class="headerlink" href="#structproblem-class" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.mach.struct_problem.</span></span><span class="sig-name descname"><span class="pre">StructProblem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">staticProblem</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">FEAAssembler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">DVGeo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadFile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem" title="Link to this definition">¶</a></dt>
+<dd><p>MACH StructProblem wrapper for pyTACS StaticProblem class</p>
+<p>Initialize the StructProblem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>staticProblem</strong> (<a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><em>tacs.problems.StaticProblem</em></a>) -- StaticProblem object used for modeling and solving static cases.</p></li>
+<li><p><strong>FEAAssembler</strong> (<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><em>tacs.pytacs.pyTACS</em></a>) -- pyTACS assembler object.</p></li>
+<li><p><strong>DVGeo</strong> (<em>pygeo.DVGeometry</em><em>, </em><em>optional</em>) -- Object responsible for manipulating the geometry design variables.
+If None, no geometric design variables will be used.</p></li>
+<li><p><strong>loadFile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Filename of the (static) external load file. Should be
+generated from pyAerostructure.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.name" title="Link to this definition">¶</a></dt>
+<dd><p>Get the name of the structural problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Name of the structural problem.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.callCounter">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">callCounter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.callCounter" title="Link to this definition">¶</a></dt>
+<dd><p>Get the call counter for the underlying static problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of times the static problem's solve method has been called.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.Fext">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fext</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.Fext" title="Link to this definition">¶</a></dt>
+<dd><p>Get the external aerodynamic force vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>External aerodynamic force vector as a numpy array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.phi">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">phi</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.phi" title="Link to this definition">¶</a></dt>
+<dd><p>Get the adjoint vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Adjoint vector as a numpy array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.pLoad">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pLoad</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.pLoad" title="Link to this definition">¶</a></dt>
+<dd><p>The contribution of the aerodynamic adjoint to the structural
+adjoint RHS. This term is given by dAdu^T*psi and is subtracted
+from the structural adjoint RHS.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Aerodynamic adjoint contribution to the structural adjoint RHS.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.dSdu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dSdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dSdu" title="Link to this definition">¶</a></dt>
+<dd><p>Get the product of the derivative of structural residual with
+respect to state variables and the structural adjoint vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Product of the derivative of structural residual with
+respect to state variables and the structural adjoint
+vector.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.adjRHS">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">adjRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.adjRHS" title="Link to this definition">¶</a></dt>
+<dd><p>Get the adjoint right-hand side vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Adjoint RHS vector as a numpy array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.dIdu">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dIdu</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.dIdu" title="Link to this definition">¶</a></dt>
+<dd><p>Get the derivative of the function with respect to state variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Derivative vector as a numpy array with boundary conditions applied.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.matVecRHS">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">matVecRHS</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecRHS" title="Link to this definition">¶</a></dt>
+<dd><p>Get the matrix-vector product right-hand side vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Matrix-vector RHS vector as a numpy array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.matVecSolve">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">matVecSolve</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.matVecSolve" title="Link to this definition">¶</a></dt>
+<dd><p>Get the matrix-vector solve vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Matrix-vector solve vector as a numpy array.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getVarName">
+<span class="sig-name descname"><span class="pre">getVarName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getVarName"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the design variables in pyOpt. Only needed
+if more than 1 pytacs object is used in an optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setDVGeo">
+<span class="sig-name descname"><span class="pre">setDVGeo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">DVGeo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pointSetKwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setDVGeo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setDVGeo" title="Link to this definition">¶</a></dt>
+<dd><p>Set the DVGeometry object that will manipulate 'geometry' in
+this object. Note that TACS doe not <strong>strictly</strong> need a
+DVGeometry object, but if optimization with geometric
+changes is desired, then it is required.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dvGeo</strong> (<em>A DVGeometry object.</em>) -- Object responsible for manipulating the constraints that
+this object is responsible for.</p></li>
+<li><p><strong>pointSetKwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Keyword arguments to be passed to the DVGeo addPointSet call.
+Useful for DVGeometryMulti, specifying FFD projection tolerances, etc</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">StructProblem</span><span class="o">.</span><span class="n">setDVGeo</span><span class="p">(</span><span class="n">DVGeo</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getDVGeo">
+<span class="sig-name descname"><span class="pre">getDVGeo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getDVGeo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getDVGeo" title="Link to this definition">¶</a></dt>
+<dd><p>Get the DVGeometry object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>DVGeometry</strong> -- DVGeometry object.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pygeo.parameterization.BaseDVGeometry or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setDesignVars">
+<span class="sig-name descname"><span class="pre">setDesignVars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Set the variables in the x-dict for this object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary of variables which may or may not contain the
+design variable names this object needs</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.addConstraint">
+<span class="sig-name descname"><span class="pre">addConstraint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.addConstraint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.addConstraint" title="Link to this definition">¶</a></dt>
+<dd><p>Add pyTACS constraint object to StructProblem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>constr</strong> (<em>tacs.constraints.TACSConstraint</em>) -- pyTACS Constraint object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.addVariablesPyOpt">
+<span class="sig-name descname"><span class="pre">addVariablesPyOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optProb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.addVariablesPyOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.addVariablesPyOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Add the current set of variables to the optProb object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>optProb</strong> (<em>pyOpt_optimization class</em>) -- Optimization problem definition to which variables are added</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt">
+<span class="sig-name descname"><span class="pre">addConstraintsPyOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optProb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonLinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.addConstraintsPyOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Add any linear constraints that were generated during setup to
+the specified pyOpt problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>optProb</strong> (<a class="reference external" href="https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/api/optimization.html#pyoptsparse.pyOpt_optimization.Optimization" title="(in pyOptSparse v2.16.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimization</span></code></a> instance) -- Optimization problem object to add constraints to</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getNodes">
+<span class="sig-name descname"><span class="pre">getNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getNodes" title="Link to this definition">¶</a></dt>
+<dd><p>Return the mesh coordinates of this problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coords</strong> -- Structural coordinate in array of size (N * 3) where N is
+the number of structural nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.solve">
+<span class="sig-name descname"><span class="pre">solve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAitkenAcceleration</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dampLB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loadScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.solve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.solve" title="Link to this definition">¶</a></dt>
+<dd><p>Solution of the static problem for current load set. The
+forces must already be set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Value to use to damp the solution update.</p></li>
+<li><p><strong>useAitkenAcceleration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to use aitkenAcceleration. Only applicable for aerostructural problems</p></li>
+<li><p><strong>dampLB</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Lower bound for the damping parameter used in Aitken acceleration.</p></li>
+<li><p><strong>loadScale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Value to scale external loads by. Only useful for load step approach on nonlinear problems.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalFunctions">
+<span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFunctions" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the current functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the functions are save</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions that the user wants evaluated</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalConstraints">
+<span class="sig-name descname"><span class="pre">evalConstraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fcon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonLinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.evalConstraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalConstraints" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate values for constraints. The constraints corresponding to the strings in
+evalCons are evaluated and updated into the provided
+dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fcon</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the constraints are saved.</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings.</em>) -- If not none, use these constraints to evaluate.</p></li>
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to supress checking for a valid constraint. Please use
+this option with caution.</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalFunctionsSens">
+<span class="sig-name descname"><span class="pre">evalFunctionsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcsSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.evalFunctionsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFunctionsSens" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the sensitivity of the desired functions</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the function sensitivities are saved</p></li>
+<li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions that the user wants evaluated</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalConstraintsSens">
+<span class="sig-name descname"><span class="pre">evalConstraintsSens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fconSens</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalCons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nonLinear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.evalConstraintsSens"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalConstraintsSens" title="Link to this definition">¶</a></dt>
+<dd><p>This is the main routine for returning useful (sensitivity)
+information from constraint. The derivatives of the constraints
+corresponding to the strings in evalCons are evaluated and
+updated into the provided dictionary. The derivatives with
+respect to all design variables and node locations are computed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fconSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>evalCons</strong> (<em>iterable object containing strings</em>) -- The constraints the user wants returned</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getVarsPerNode">
+<span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getVarsPerNode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getVarsPerNode" title="Link to this definition">¶</a></dt>
+<dd><p>The number of degrees of freedom used at each output location.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of degrees of freedom of each node in the domain.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getNumNodes">
+<span class="sig-name descname"><span class="pre">getNumNodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getNumNodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getNumNodes" title="Link to this definition">¶</a></dt>
+<dd><p>Get the number of nodes on this processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Number of nodes on this processor.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getOrigDesignVars">
+<span class="sig-name descname"><span class="pre">getOrigDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getOrigDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getOrigDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Get an array holding the original values for all design
+variables added to TACS at time of initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Array containing all design variable values across all processors.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getDesignVarRange">
+<span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getDesignVarRange"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getDesignVarRange" title="Link to this definition">¶</a></dt>
+<dd><p>Get arrays containing the lower and upper bounds for the design variables,
+in the form needed by pyoptsparse.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Lower and upper bounds for the design variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getDesignVarScales">
+<span class="sig-name descname"><span class="pre">getDesignVarScales</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getDesignVarScales"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getDesignVarScales" title="Link to this definition">¶</a></dt>
+<dd><p>Get an array containing the scaling factors for the design
+variables, in the form needed by pyoptsparse.
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Scaling values for design variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getNumDesignVars">
+<span class="sig-name descname"><span class="pre">getNumDesignVars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getNumDesignVars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getNumDesignVars" title="Link to this definition">¶</a></dt>
+<dd><p>Get total number of structural design variables across all processors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Total number of structural design variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getStates">
+<span class="sig-name descname"><span class="pre">getStates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getStates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getStates" title="Link to this definition">¶</a></dt>
+<dd><p>Return the current state values for the problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>states</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) -- Vector to place current state variables into.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current state vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setStates">
+<span class="sig-name descname"><span class="pre">setStates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setStates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setStates" title="Link to this definition">¶</a></dt>
+<dd><p>Set the current state values for the problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>states</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Vector to replace current state variables with.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getExternalForce">
+<span class="sig-name descname"><span class="pre">getExternalForce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fext</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getExternalForce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getExternalForce" title="Link to this definition">¶</a></dt>
+<dd><p>Return the current external coupling force vector for the problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Fext</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) -- Vector to place current external coupling force vector into.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Current external coupling force vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setExternalForce">
+<span class="sig-name descname"><span class="pre">setExternalForce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fext</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setExternalForce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setExternalForce" title="Link to this definition">¶</a></dt>
+<dd><p>Set the external coupling force vector for the problem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Fext</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- External coupling force vector to set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getStateNorm">
+<span class="sig-name descname"><span class="pre">getStateNorm</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getStateNorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getStateNorm" title="Link to this definition">¶</a></dt>
+<dd><p>Get the norm of the current state vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Norm of the current state vector.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getResidual">
+<span class="sig-name descname"><span class="pre">getResidual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getResidual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getResidual" title="Link to this definition">¶</a></dt>
+<dd><p>This routine is used to evaluate directly the structural
+residual. Only typically used with aerostructural analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Computed residuals for problem.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getResNorms">
+<span class="sig-name descname"><span class="pre">getResNorms</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getResNorms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getResNorms" title="Link to this definition">¶</a></dt>
+<dd><p>Return the initial, starting and final residual norms. Note that
+the same norms are used for both solution and adjoint
+computations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Initial, starting, and final residual norms.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setResNorms">
+<span class="sig-name descname"><span class="pre">setResNorms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initNorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startNorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finalNorm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setResNorms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setResNorms" title="Link to this definition">¶</a></dt>
+<dd><p>Set one of these norms if not None.
+This is typically only used with aerostructural analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Initial residual norm to set.</p></li>
+<li><p><strong>startNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Starting residual norm to set.</p></li>
+<li><p><strong>finalNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Final residual norm to set.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.zeroVectors">
+<span class="sig-name descname"><span class="pre">zeroVectors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.zeroVectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.zeroVectors" title="Link to this definition">¶</a></dt>
+<dd><p>Zero all the TACS b-vectors.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalFuncs">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">evalFuncs</span></span><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFuncs" title="Link to this definition">¶</a></dt>
+<dd><p>Get strings for added evaluation functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of function names that can be evaluated.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getAdjoint">
+<span class="sig-name descname"><span class="pre">getAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getAdjoint" title="Link to this definition">¶</a></dt>
+<dd><p>Return the adjoint values for func if they exist. Otherwise just return zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Adjoint values for the specified function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setAdjoint">
+<span class="sig-name descname"><span class="pre">setAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjoint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setAdjoint" title="Link to this definition">¶</a></dt>
+<dd><p>Set externally supplied adjoint values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>numpy array</em>) -- An array of size getStateSize() to
+be copied to the structural adjoint variables</p></li>
+<li><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of function to set adjoint for</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.setAdjointRHS">
+<span class="sig-name descname"><span class="pre">setAdjointRHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.setAdjointRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.setAdjointRHS" title="Link to this definition">¶</a></dt>
+<dd><p>Set the adjoint right-hand side for given function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to set adjoint RHS for.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdSduVec">
+<span class="sig-name descname"><span class="pre">getdSduVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdSduVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdSduVec" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the direct residual.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inVec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Direct residual vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdSduTVec">
+<span class="sig-name descname"><span class="pre">getdSduTVec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdSduTVec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdSduTVec" title="Link to this definition">¶</a></dt>
+<dd><p>Evaluate the adjoint residual.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inVec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Adjoint residual vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdIdXpt">
+<span class="sig-name descname"><span class="pre">getdIdXpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdIdXpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdIdXpt" title="Link to this definition">¶</a></dt>
+<dd><p>Get the (partial) derivative of the structural function
+with respect to all structural nodes for the current
+structProblem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Derivative vector with respect to structural nodes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tacs.TACS.Vec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdIdXdv">
+<span class="sig-name descname"><span class="pre">getdIdXdv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdIdXdv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdIdXdv" title="Link to this definition">¶</a></dt>
+<dd><p>Get the (partial) derivative of the structural function
+with respect to all structural design variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Derivative vector with respect to structural design variables.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tacs.TACS.Vec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdIduTransProd">
+<span class="sig-name descname"><span class="pre">getdIduTransProd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vecT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdIduTransProd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdIduTransProd" title="Link to this definition">¶</a></dt>
+<dd><p>Perform the transpose matvec of the getdIduProd function and
+return a TACS vector. The result is stored locally.</p>
+<p>We assume that evalFuncs is valid.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transpose matrix-vector product result.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdIdXdvTransProd">
+<span class="sig-name descname"><span class="pre">getdIdXdvTransProd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vecT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdIdXdvTransProd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdIdXdvTransProd" title="Link to this definition">¶</a></dt>
+<dd><p>Perform the transpose matvec of the getdIdXdvProd function and
+return a vector.</p>
+<p>We assume that structProblem is set and that handles is valid.</p>
+<p>Note that handles contains the list of function handles, whereas the
+names are contained in evalFuncs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing transpose matrix-vector product results.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.globalNKPreCon">
+<span class="sig-name descname"><span class="pre">globalNKPreCon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.globalNKPreCon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.globalNKPreCon" title="Link to this definition">¶</a></dt>
+<dd><p>This function is ONLY used as a preconditioner to the
+global Aero-Structural system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inVec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector for preconditioning.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preconditioned output vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.globalAdjointPreCon">
+<span class="sig-name descname"><span class="pre">globalAdjointPreCon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.globalAdjointPreCon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.globalAdjointPreCon" title="Link to this definition">¶</a></dt>
+<dd><p>This function is ONLY used as a preconditioner to the
+global Aero-Structural adjoint system. For the linear
+symmetric case this is actually identical to the NKPreCon
+function above.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inVec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector for preconditioning.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preconditioned output vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.globalDirectPreCon">
+<span class="sig-name descname"><span class="pre">globalDirectPreCon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.globalDirectPreCon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.globalDirectPreCon" title="Link to this definition">¶</a></dt>
+<dd><p>This function is ONLY used as a preconditioner to the
+global Aero-Structural direct system. For the linear
+symmetric case this is actually identical to the NKPreCon
+function above.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>inVec</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Input vector for preconditioning.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Preconditioned output vector.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.assembleAdjointRHS">
+<span class="sig-name descname"><span class="pre">assembleAdjointRHS</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.assembleAdjointRHS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.assembleAdjointRHS" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the final adjoint RHS:
+Adjoint RHS should be: dIdu - dAdu^T*psi - dSdu^T*phi</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.solveAdjoint">
+<span class="sig-name descname"><span class="pre">solveAdjoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">damp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.solveAdjoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.solveAdjoint" title="Link to this definition">¶</a></dt>
+<dd><p>Solve the structural adjoint.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- A damping variable for adjoint update. Typically only used
+in multidisciplinary analysis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdRdXptPhi">
+<span class="sig-name descname"><span class="pre">getdRdXptPhi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdRdXptPhi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdRdXptPhi" title="Link to this definition">¶</a></dt>
+<dd><p>Get the result of <span class="math notranslate nohighlight">\([dR/dX_{nodes}]^T \phi\)</span> for each of the functions in the function list.</p>
+<p>This is the total sensitivity calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- List of function names.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of sensitivity products for each function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of tacs.TACS.Vec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdRdXdvPhi">
+<span class="sig-name descname"><span class="pre">getdRdXdvPhi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdRdXdvPhi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdRdXdvPhi" title="Link to this definition">¶</a></dt>
+<dd><p>Get the result of <span class="math notranslate nohighlight">\([dR/dX_{dv}]^T \phi\)</span> for the total sensitivity calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- List of function names.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of sensitivity products for each function.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of tacs.TACS.Vec</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.getdRdXdvTransProd">
+<span class="sig-name descname"><span class="pre">getdRdXdvTransProd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.getdRdXdvTransProd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.getdRdXdvTransProd" title="Link to this definition">¶</a></dt>
+<dd><p>Perform the transpose matvec of getdRdXdvProd. The result is
+returned as a dict of numpy arrays.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing transpose matrix-vector product results.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.convertDesignVecToDict">
+<span class="sig-name descname"><span class="pre">convertDesignVecToDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dvVec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.convertDesignVecToDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.convertDesignVecToDict" title="Link to this definition">¶</a></dt>
+<dd><p>Convert a design vector to a dictionary format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dvVec</strong> (<em>tacs.TACS.Vec</em><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><em>numpy.ndarray</em></a>) -- Design vector to convert.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing the design vector with variable name as key.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.writeSolution">
+<span class="sig-name descname"><span class="pre">writeSolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.writeSolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.writeSolution" title="Link to this definition">¶</a></dt>
+<dd><p>This is a generic shell function that writes the output
+file(s).  The intent is that the user or calling program can
+call this function and pyTACS writes all the files that the
+user has defined. It is recommended that this function is used
+along with the associated logical flags in the options to
+determine the desired writing procedure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+only used from an external solver.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
+typically used from an external solver</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.writeExternalForceFile">
+<span class="sig-name descname"><span class="pre">writeExternalForceFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.writeExternalForceFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.writeExternalForceFile" title="Link to this definition">¶</a></dt>
+<dd><p>This function writes the external coupling loads stored in Fext to a file.
+This is typically used to save aero loads from an aerostructural run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Output directory for the force file.</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Base name for the force file. If None, uses problem name + &quot;_external_forces&quot;.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Number to append to the filename.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.readExternalForceFile">
+<span class="sig-name descname"><span class="pre">readExternalForceFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fileName</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.readExternalForceFile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.readExternalForceFile" title="Link to this definition">¶</a></dt>
+<dd><p>Reads in a force file and sets the external forces in the structural problem.
+This is typically used to read in loads saved from an aerostructural run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fileName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Filename for force file. Should have .dat or .bdf extension.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://mdolab-adflow.readthedocs-hosted.com/en/latest/">ADflow</a> — ADflow documentation</p></li>
+<li><p><a class="reference external" href="https://mdolab-pygeo.readthedocs-hosted.com/en/latest/">pyGeo</a> — pyGeo documentation</p></li>
+<li><p><a class="reference external" href="https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/">pyoptsparse</a> — pyoptsparse documentation</p></li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">MACH</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#key-features">Key Features</a></li>
+<li><a class="reference internal" href="#managed-state-vectors">Managed State Vectors</a></li>
+<li><a class="reference internal" href="#structproblem-class">StructProblem Class</a><ul>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem"><code class="docutils literal notranslate"><span class="pre">StructProblem</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.name"><code class="docutils literal notranslate"><span class="pre">StructProblem.name</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.callCounter"><code class="docutils literal notranslate"><span class="pre">StructProblem.callCounter</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.Fext"><code class="docutils literal notranslate"><span class="pre">StructProblem.Fext</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.phi"><code class="docutils literal notranslate"><span class="pre">StructProblem.phi</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.pLoad"><code class="docutils literal notranslate"><span class="pre">StructProblem.pLoad</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.dSdu"><code class="docutils literal notranslate"><span class="pre">StructProblem.dSdu</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.adjRHS"><code class="docutils literal notranslate"><span class="pre">StructProblem.adjRHS</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.dIdu"><code class="docutils literal notranslate"><span class="pre">StructProblem.dIdu</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.matVecRHS"><code class="docutils literal notranslate"><span class="pre">StructProblem.matVecRHS</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.matVecSolve"><code class="docutils literal notranslate"><span class="pre">StructProblem.matVecSolve</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getVarName"><code class="docutils literal notranslate"><span class="pre">StructProblem.getVarName()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setDVGeo"><code class="docutils literal notranslate"><span class="pre">StructProblem.setDVGeo()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getDVGeo"><code class="docutils literal notranslate"><span class="pre">StructProblem.getDVGeo()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setDesignVars"><code class="docutils literal notranslate"><span class="pre">StructProblem.setDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addConstraint"><code class="docutils literal notranslate"><span class="pre">StructProblem.addConstraint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addVariablesPyOpt"><code class="docutils literal notranslate"><span class="pre">StructProblem.addVariablesPyOpt()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt"><code class="docutils literal notranslate"><span class="pre">StructProblem.addConstraintsPyOpt()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getNodes"><code class="docutils literal notranslate"><span class="pre">StructProblem.getNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve"><code class="docutils literal notranslate"><span class="pre">StructProblem.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalFunctions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalConstraints"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalConstraints()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctionsSens"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalFunctionsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalConstraintsSens"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalConstraintsSens()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">StructProblem.getVarsPerNode()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getNumNodes"><code class="docutils literal notranslate"><span class="pre">StructProblem.getNumNodes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getOrigDesignVars"><code class="docutils literal notranslate"><span class="pre">StructProblem.getOrigDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">StructProblem.getDesignVarRange()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getDesignVarScales"><code class="docutils literal notranslate"><span class="pre">StructProblem.getDesignVarScales()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getNumDesignVars"><code class="docutils literal notranslate"><span class="pre">StructProblem.getNumDesignVars()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getStates"><code class="docutils literal notranslate"><span class="pre">StructProblem.getStates()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setStates"><code class="docutils literal notranslate"><span class="pre">StructProblem.setStates()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getExternalForce"><code class="docutils literal notranslate"><span class="pre">StructProblem.getExternalForce()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setExternalForce"><code class="docutils literal notranslate"><span class="pre">StructProblem.setExternalForce()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getStateNorm"><code class="docutils literal notranslate"><span class="pre">StructProblem.getStateNorm()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getResidual"><code class="docutils literal notranslate"><span class="pre">StructProblem.getResidual()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getResNorms"><code class="docutils literal notranslate"><span class="pre">StructProblem.getResNorms()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setResNorms"><code class="docutils literal notranslate"><span class="pre">StructProblem.setResNorms()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.zeroVectors"><code class="docutils literal notranslate"><span class="pre">StructProblem.zeroVectors()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFuncs"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalFuncs</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getAdjoint"><code class="docutils literal notranslate"><span class="pre">StructProblem.getAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setAdjoint"><code class="docutils literal notranslate"><span class="pre">StructProblem.setAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.setAdjointRHS"><code class="docutils literal notranslate"><span class="pre">StructProblem.setAdjointRHS()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdSduVec"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdSduVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdSduTVec"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdSduTVec()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdIdXpt"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdIdXpt()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdIdXdv"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdIdXdv()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdIduTransProd"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdIduTransProd()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdIdXdvTransProd"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdIdXdvTransProd()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.globalNKPreCon"><code class="docutils literal notranslate"><span class="pre">StructProblem.globalNKPreCon()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.globalAdjointPreCon"><code class="docutils literal notranslate"><span class="pre">StructProblem.globalAdjointPreCon()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.globalDirectPreCon"><code class="docutils literal notranslate"><span class="pre">StructProblem.globalDirectPreCon()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.assembleAdjointRHS"><code class="docutils literal notranslate"><span class="pre">StructProblem.assembleAdjointRHS()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solveAdjoint"><code class="docutils literal notranslate"><span class="pre">StructProblem.solveAdjoint()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdRdXptPhi"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdRdXptPhi()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdRdXdvPhi"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdRdXdvPhi()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getdRdXdvTransProd"><code class="docutils literal notranslate"><span class="pre">StructProblem.getdRdXdvTransProd()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.convertDesignVecToDict"><code class="docutils literal notranslate"><span class="pre">StructProblem.convertDesignVecToDict()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.writeSolution"><code class="docutils literal notranslate"><span class="pre">StructProblem.writeSolution()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.writeExternalForceFile"><code class="docutils literal notranslate"><span class="pre">StructProblem.writeExternalForceFile()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.readExternalForceFile"><code class="docutils literal notranslate"><span class="pre">StructProblem.readExternalForceFile()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="../mphys/builder.html"
+                          title="previous chapter">TacsBuilder class</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../caps2tacs/caps2tacs.html"
+                          title="next chapter">caps2tacs</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../caps2tacs/caps2tacs.html" title="caps2tacs"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../mphys/builder.html" title="TacsBuilder class"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MACH</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>

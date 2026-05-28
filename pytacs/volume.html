@@ -286,6 +286,20 @@ are evaluated and updated into the provided dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.getCoordName">
+<span class="sig-name descname"><span class="pre">getCoordName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.getCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.getDesignVarRange">
 <span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
@@ -398,6 +412,27 @@ on this processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.getOptions">
+<span class="sig-name descname"><span class="pre">getOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.getOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of all current options in use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.getVarName">
+<span class="sig-name descname"><span class="pre">getVarName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.getVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the design variables in pyOpt. Only needed
+if more than 1 pytacs object is used in an optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
@@ -430,6 +465,17 @@ modified from their defaults</p>
 <span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.printOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
 options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.setCoordName">
+<span class="sig-name descname"><span class="pre">setCoordName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.setCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Set a name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -484,12 +530,12 @@ the number of structural nodes on this processor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.VolumeConstraint.setVarName">
 <span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.VolumeConstraint.setVarName" title="Link to this definition">¶</a></dt>
-<dd><p>Set a name for the structural variables in pyOpt. Only needs
+<dd><p>Set a name for the design variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the design variables used in setDesignVars() dict.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -523,6 +569,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getConstraintBounds()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getConstraintKeys()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getConstraintSizes"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getConstraintSizes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getCoordName"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getDesignVars"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getNodes"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getNodes()</span></code></a></li>
@@ -531,10 +578,13 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getNumOwnedNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getNumVariables"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getOption"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getOptions"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getVarName"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.printOptions"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.setCoordName"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.setCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.setDesignVars"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.setNodes"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.setNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.VolumeConstraint.setOption"><code class="docutils literal notranslate"><span class="pre">VolumeConstraint.setOption()</span></code></a></li>

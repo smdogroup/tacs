@@ -47,7 +47,7 @@
 <h1>Beam optimization with MPhys<a class="headerlink" href="#beam-optimization-with-mphys" title="Link to this heading">¶</a></h1>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The script for this example can be found under the <cite>examples/beam/</cite> directory.</p>
+<p>The script for this example can be found under the <cite>examples/beam_opt/</cite> directory.</p>
 </div>
 <p>This example demonstrates TACS structural optimization capabilities.
 The optimization is setup using TACS' <a class="reference internal" href="../mphys/mphys.html#mphys"><span class="std std-ref">MPhys</span></a> module, which acts as a wrapper
@@ -101,8 +101,8 @@ can be found independently using:</p>
 </div>
 <p>Next we define an <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.elemCallBack" title="tacs.pytacs.elemCallBack"><code class="xref py py-func docutils literal notranslate"><span class="pre">elemCallBack()</span></code></a> function.
 This is a user-defined callback function for setting up TACS elements and element design variables.
-We use the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.IsoRectangleBeamConstitutive" title="tacs.constitutive.IsoRectangleBeamConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code></a> class for the constitutive properties,
-assign a design variable number for the thickness parameter, and return a <a class="reference internal" href="../core/elements.html#tacs.elements.Beam2" title="tacs.elements.Beam2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Beam2</span></code></a> element class.</p>
+We use the <code class="xref py py-class docutils literal notranslate"><span class="pre">IsoRectangleBeamConstitutive</span></code> class for the constitutive properties,
+assign a design variable number for the thickness parameter, and return a <code class="xref py py-class docutils literal notranslate"><span class="pre">Beam2</span></code> element class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Callback function used to setup TACS element objects and DVs</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">element_callback</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Setup (isotropic) property and constitutive objects</span>
@@ -140,7 +140,7 @@ Here we specify the beam mass (<a class="reference internal" href="../core/funct
 </pre></div>
 </div>
 <p>Here we define our <a class="reference external" href="https://openmdao.github.io/mphys/basics/model_hierarchy.html#mphys.Multipoint" title="(in MPhys)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Multipoint</span></code></a> (essentially an OpenMDAO <code class="docutils literal notranslate"><span class="pre">Group</span></code>) which will contain our analysis <a class="reference external" href="https://openmdao.github.io/mphys/developers/new_multiphysics_problems.html#mphys.Scenario" title="(in MPhys)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scenario</span></code></a>.
-To do this, we instantiate the <a class="reference internal" href="../mphys/builder.html#tacs.mphys.builder.TacsBuilder" title="tacs.mphys.builder.TacsBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code></a> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> and <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> we defined above.
+To do this, we instantiate the <code class="xref py py-class docutils literal notranslate"><span class="pre">TacsBuilder</span></code> using the <code class="docutils literal notranslate"><span class="pre">element_callback</span></code> and <code class="docutils literal notranslate"><span class="pre">problem_setup</span></code> we defined above.
 We create OpenMDAO <code class="docutils literal notranslate"><span class="pre">Component</span></code>'s to feed design variable and mesh inputs to the <code class="docutils literal notranslate"><span class="pre">Scenario</span></code> component.
 We use this builder to create an MPhys <code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralScenario</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BeamModel</span><span class="p">(</span><span class="n">Multipoint</span><span class="p">):</span>

@@ -107,10 +107,10 @@ For this example, we will take the first approach. Our <a class="reference inter
 </div>
 <p>The callback function for this example is pretty simple.
 First, we define the <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.MaterialProperties" title="tacs.constitutive.MaterialProperties"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaterialProperties</span></code></a> for aluminum.
-We then use those properties and the plate thickness to setup a <a class="reference internal" href="../core/constitutive.html#tacs.constitutive.IsoShellConstitutive" title="tacs.constitutive.IsoShellConstitutive"><code class="xref py py-class docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code></a>
+We then use those properties and the plate thickness to setup a <code class="xref py py-class docutils literal notranslate"><span class="pre">IsoShellConstitutive</span></code>
 for modeling the shell stiffness. We set the element transform type to <code class="docutils literal notranslate"><span class="pre">None</span></code>. Finally, for every element card in
 <code class="docutils literal notranslate"><span class="pre">elemDescripts</span></code>, we pass back an appropriate initialized TACS element class. In this case, the only element type
-in the BDF are <cite>CQUAD4</cite>, so we'll always pass back an <code class="docutils literal notranslate"><span class="pre">elemList</span></code> with one entry, a <a class="reference internal" href="../core/elements.html#tacs.elements.Quad4Shell" title="tacs.elements.Quad4Shell"><code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code></a>.</p>
+in the BDF are <cite>CQUAD4</cite>, so we'll always pass back an <code class="docutils literal notranslate"><span class="pre">elemList</span></code> with one entry, a <code class="xref py py-class docutils literal notranslate"><span class="pre">Quad4Shell</span></code>.</p>
 <p>Now that the callback function has been defined, we can pass it to <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.initialize" title="tacs.pytacs.pyTACS.initialize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.initialize</span></code></a>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">elemCallBack</span><span class="p">)</span>
 </pre></div>
@@ -169,6 +169,9 @@ selecting node ID 481 (the node at the center of the plate).</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>f5totec<span class="w"> </span>point_force_000.f5
 </pre></div>
 </div>
+<p>The figure below shows what the failure contour mapped over the deformed plate looks as visualized in Tecplot.</p>
+<a class="reference internal image-reference" href="../_images/point_force_def.png"><img alt="Plate solution" src="../_images/point_force_def.png" style="width: 800px;" />
+</a>
 </section>
 
 

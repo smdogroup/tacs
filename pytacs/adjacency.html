@@ -287,6 +287,20 @@ are evaluated and updated into the provided dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getCoordName">
+<span class="sig-name descname"><span class="pre">getCoordName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getDesignVarRange">
 <span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
@@ -399,6 +413,27 @@ on this processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getOptions">
+<span class="sig-name descname"><span class="pre">getOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of all current options in use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getVarName">
+<span class="sig-name descname"><span class="pre">getVarName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the design variables in pyOpt. Only needed
+if more than 1 pytacs object is used in an optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
@@ -431,6 +466,17 @@ modified from their defaults</p>
 <span class="sig-name descname"><span class="pre">printOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.printOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Prints a nicely formatted dictionary of all the current solver
 options to the stdout on the root processor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setCoordName">
+<span class="sig-name descname"><span class="pre">setCoordName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Set a name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -485,12 +531,12 @@ the number of structural nodes on this processor.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.constraints.AdjacencyConstraint.setVarName">
 <span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.constraints.AdjacencyConstraint.setVarName" title="Link to this definition">¶</a></dt>
-<dd><p>Set a name for the structural variables in pyOpt. Only needs
+<dd><p>Set a name for the design variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the design variables used in setDesignVars() dict.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -524,6 +570,7 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getConstraintBounds"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getConstraintBounds()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getConstraintKeys"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getConstraintKeys()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getConstraintSizes"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getConstraintSizes()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getCoordName"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getDesignVars"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getNodes"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getNodes()</span></code></a></li>
@@ -532,10 +579,13 @@ optimization</p>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getNumOwnedNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getNumVariables"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getOption"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getVarName"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printOptions"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setCoordName"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setDesignVars"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setNodes"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setOption"><code class="docutils literal notranslate"><span class="pre">AdjacencyConstraint.setOption()</span></code></a></li>

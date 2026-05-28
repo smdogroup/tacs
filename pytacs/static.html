@@ -887,6 +887,20 @@ typically used from an external solver</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.getCoordName">
+<span class="sig-name descname"><span class="pre">getCoordName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getDesignVarRange">
 <span class="sig-name descname"><span class="pre">getDesignVarRange</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getDesignVarRange" title="Link to this definition">¶</a></dt>
 <dd><p>get the lower/upper bounds for the design variables.</p>
@@ -1013,6 +1027,27 @@ on this processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.getOptions">
+<span class="sig-name descname"><span class="pre">getOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of all current options in use.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.getVarName">
+<span class="sig-name descname"><span class="pre">getVarName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getVarName" title="Link to this definition">¶</a></dt>
+<dd><p>Get name for the design variables in pyOpt. Only needed
+if more than 1 pytacs object is used in an optimization</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.getVarsPerNode">
 <span class="sig-name descname"><span class="pre">getVarsPerNode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.getVarsPerNode" title="Link to this definition">¶</a></dt>
 <dd><p>Get the number of variables per node for the model.</p>
@@ -1054,6 +1089,17 @@ options to the stdout on the root processor</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.problems.StaticProblem.setCoordName">
+<span class="sig-name descname"><span class="pre">setCoordName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coordName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setCoordName" title="Link to this definition">¶</a></dt>
+<dd><p>Set a name for the nodal coordinates in pyOpt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>coordName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the nodal coordinates used in setNodes() dict.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setOptions">
 <span class="sig-name descname"><span class="pre">setOptions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setOptions" title="Link to this definition">¶</a></dt>
 <dd><p>Set multiple solver options at once. The names are not case sensitive.</p>
@@ -1067,12 +1113,12 @@ options to the stdout on the root processor</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.problems.StaticProblem.setVarName">
 <span class="sig-name descname"><span class="pre">setVarName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">varName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.problems.StaticProblem.setVarName" title="Link to this definition">¶</a></dt>
-<dd><p>Set a name for the structural variables in pyOpt. Only needs
+<dd><p>Set a name for the design variables in pyOpt. Only needs
 to be changed if more than 1 pytacs object is used in an
 optimization</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the structural variable used in addVarGroup().</p>
+<dd class="field-odd"><p><strong>varName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the design variables used in setDesignVars() dict.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1190,6 +1236,7 @@ can be None otherwise.</p></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.copyFromTACSVec"><code class="docutils literal notranslate"><span class="pre">StaticProblem.copyFromTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.copyToTACSVec"><code class="docutils literal notranslate"><span class="pre">StaticProblem.copyToTACSVec()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.dtype"><code class="docutils literal notranslate"><span class="pre">StaticProblem.dtype</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getCoordName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVarRange"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVarRange()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getDesignVars"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getDesignVars()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getFunctionKeys"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getFunctionKeys()</span></code></a></li>
@@ -1199,11 +1246,14 @@ can be None otherwise.</p></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumOwnedNodes"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumOwnedNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getNumVariables"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getNumVariables()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getOption"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.getVarName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.getVarsPerNode"><code class="docutils literal notranslate"><span class="pre">StaticProblem.getVarsPerNode()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.isNonlinear"><code class="docutils literal notranslate"><span class="pre">StaticProblem.isNonlinear</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printDefaultOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printModifiedOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printModifiedOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.printOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.printOptions()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.problems.StaticProblem.setCoordName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setCoordName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setOptions"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.setVarName"><code class="docutils literal notranslate"><span class="pre">StaticProblem.setVarName()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.problems.StaticProblem.writeSensFile"><code class="docutils literal notranslate"><span class="pre">StaticProblem.writeSensFile()</span></code></a></li>

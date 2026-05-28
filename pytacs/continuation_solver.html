@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="NewtonSolver" href="newton_solver.html" />
-    <link rel="prev" title="Solver classes" href="solvers.html" /> 
+    <link rel="prev" title="BaseSolver" href="base_solver.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="Related">
       <h3>Navigation</h3>
@@ -30,7 +30,7 @@
           <a href="newton_solver.html" title="NewtonSolver"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="solvers.html" title="Solver classes"
+          <a href="base_solver.html" title="BaseSolver"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
@@ -247,6 +247,12 @@ fatal failure in the solver which requires a full reset</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.getOptions">
+<span class="sig-name descname"><span class="pre">getOptions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tacs.solvers.ContinuationSolver.getOptions" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of all current options in use.</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.solvers.ContinuationSolver.hasConverged">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">hasConverged</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><a class="headerlink" href="#tacs.solvers.ContinuationSolver.hasConverged" title="Link to this definition">¶</a></dt>
@@ -357,6 +363,7 @@ Where:
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.dtype"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.dtype</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.fatalFailure"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.fatalFailure</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.getOption"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.getOption()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.getOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.getOptions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.hasConverged"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.hasConverged</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.iterationCount"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.iterationCount</span></code></a></li>
 <li><a class="reference internal" href="#tacs.solvers.ContinuationSolver.printDefaultOptions"><code class="docutils literal notranslate"><span class="pre">ContinuationSolver.printDefaultOptions()</span></code></a></li>
@@ -377,8 +384,8 @@ Where:
   </div>
   <div>
     <h4>Previous topic</h4>
-    <p class="topless"><a href="solvers.html"
-                          title="previous chapter">Solver classes</a></p>
+    <p class="topless"><a href="base_solver.html"
+                          title="previous chapter">BaseSolver</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -412,7 +419,7 @@ Where:
           <a href="newton_solver.html" title="NewtonSolver"
              >next</a> |</li>
         <li class="right" >
-          <a href="solvers.html" title="Solver classes"
+          <a href="base_solver.html" title="BaseSolver"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../interfaces.html" >Interfaces</a> &#187;</li>
