@@ -1595,7 +1595,7 @@ cdef class GaussianProcess:
         """
         Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
@@ -1617,7 +1617,7 @@ cdef class GaussianProcess:
         """
         Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
@@ -1674,7 +1674,7 @@ cdef class GaussianProcess:
         a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
         this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
         for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
-            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
+        this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
 
         Parameters
         ----------
@@ -1705,9 +1705,11 @@ cdef class BucklingGP(GaussianProcess):
     """
     Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
     Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
-    The ML model uses non-dimensional inputs and outputs as follows:
+    The ML model uses non-dimensional inputs and outputs as follows::
+
         log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
         log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+
     The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
 
     Parameters
@@ -1738,9 +1740,13 @@ cdef class BucklingGP(GaussianProcess):
         """
         Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
         the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
+
+        This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
         The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
         and is the following:
+
+        .. code-block:: python
+
             axial_gp = BucklingGP.from_csv(
                 csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
             )
@@ -1803,20 +1809,21 @@ cdef class PanelGPs:
     The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
     (assuming each TACSComponent is associated with a different panel).
 
-    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
-    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is::
 
-    def callback_generator(tacs_component_names):
-        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
-        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
-        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+        # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
 
-        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def callback_generator(tacs_component_names):
+            axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+            shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+            panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
 
-            # get the panelGPs object associated with this tacs component
-            panelGPs = panelGP_dict[compDescript]
+            def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
 
-            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+                # get the panelGPs object associated with this tacs component
+                panelGPs = panelGP_dict[compDescript]
+
+                # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
 
     Parameters
     ----------
@@ -1864,7 +1871,8 @@ cdef class PanelGPs:
         bool saveData = True,
         ):
         """
-        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form::
+
             { tacs_component (str) : PanelGPs object }
 
         Parameters
@@ -1889,7 +1897,7 @@ cdef class PanelGPs:
         return _dict
 
 cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
-    """"
+    """
     This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
 
@@ -1898,13 +1906,13 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
     The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
 
     For the methods below, consider a panel with dimensions a the panel length, b the panel width,
-        h the panel thickness, and stiffeners along the length or 1-direction.
+    h the panel thickness, and stiffeners along the length or 1-direction.
     The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
-        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
     The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
     For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
-        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
-        by Sean Engelstad, Brian Burke, Graeme Kennedy.
+    "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+    by Sean Engelstad, Brian Burke, Graeme Kennedy.
 
     Parameters
     ----------
@@ -2385,7 +2393,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     W3_num : int, optional
         Design variable number for W3. Default is -3 (inactive).
     ksWeight : float, optional
-        Weight for the KS aggregation function. Default is 30.0.
+        Weight for the KS aggregation function. Default is 100.0.
     epsilon : float, optional
         Regularization parameter. Default is 0.0.
     kcorr : float, optional
@@ -2500,7 +2508,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
     lpNums : np.ndarray[int]
         Array of laminate parameter design variable numbers.
     ksWeight : float, optional
-        The KS aggregation weight for constraints (default is 30.0).
+        The KS aggregation weight for constraints (default is 100.0).
     kcorr : float, optional
         Shear correction factor. Default is 5.0/6.0.
     """
