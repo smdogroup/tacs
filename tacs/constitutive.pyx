@@ -723,6 +723,48 @@ cdef class OrthotropicPly:
         """
         self.ptr.setFailureCriterion(<_CCompositeFC><int>CompositeFailureCriterion(fc))
 
+    def setUseMaxStrainCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.MAX_STRAIN`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseMaxStrainCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN)
+
+    def setUseTsaiWuCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU)
+
+    def setUseModifiedTsaiWuCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU_MODIFIED`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseModifiedTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED)
+
 cdef class PlaneStressConstitutive(Constitutive):
     """
     This is the base class for the plane stress constitutive objects.
