@@ -153,5 +153,28 @@ class TestOrthotropicPlyKwargRename(unittest.TestCase):
         self.assertIsNotNone(ply)
 
 
+class TestOrthotropicPlyDeprecatedSetters(unittest.TestCase):
+    """Tests for the deprecated setUse*Criterion setters restored as shims."""
+
+    def setUp(self):
+        self.props = _make_props()
+        self.ply = constitutive.OrthotropicPly(0.005, self.props)
+
+    @fails_at_version(_DEPRECATION_REMOVAL_VERSION)
+    def test_set_use_max_strain_criterion_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.ply.setUseMaxStrainCriterion()
+
+    @fails_at_version(_DEPRECATION_REMOVAL_VERSION)
+    def test_set_use_tsai_wu_criterion_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.ply.setUseTsaiWuCriterion()
+
+    @fails_at_version(_DEPRECATION_REMOVAL_VERSION)
+    def test_set_use_modified_tsai_wu_criterion_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.ply.setUseModifiedTsaiWuCriterion()
+
+
 if __name__ == "__main__":
     unittest.main()
