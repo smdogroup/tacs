@@ -367,7 +367,7 @@ int main(int argc, char *argv[]) {
   // Create the continuous KS function
   double ksRho = 100.0;
   TACSKSFailure *ksfunc = new TACSKSFailure(assembler, ksRho);
-  ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+  ksfunc->setKSAggregationType(KS_DISCRETE);
 
   // Set the functions
   TACSFunction *funcs = ksfunc;

@@ -14,6 +14,7 @@
 
 import difflib
 import warnings
+from enum import IntEnum
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
@@ -588,50 +589,121 @@ cdef class MAT2MaterialProperties(MaterialProperties):
                                             np.real(self.E2), np.real(self.G23), np.real(self.E3), np.real(self.rho))
 
 
+class CompositeFailureCriterion(IntEnum):
+    """Mirrors ``TACSOrthotropicPly::CompositeFailureCriterion`` from ``TACSMaterialProperties.h``."""
+    MAX_STRAIN = _COMPOSITE_FC_MAX_STRAIN
+    TSAI_WU = _COMPOSITE_FC_TSAI_WU
+    TSAI_WU_MODIFIED = _COMPOSITE_FC_TSAI_WU_MODIFIED
+    CUNTZE_UD = _COMPOSITE_FC_CUNTZE_UD
+    CUNTZE_WOVEN = _COMPOSITE_FC_CUNTZE_WOVEN
+
+
 cdef class OrthotropicPly:
     """
-      The following class holds the material stiffness and strength
-      properties for an orthotropic ply. This class is used by several
-      constitutive classes within TACS.
+    The following class holds the material stiffness and strength
+    properties for an orthotropic ply. This class is used by several
+    constitutive classes within TACS.
 
-      The interaction coefficient for the Tsai-Wu failure criterion is set
-      to zero by default. If a value of C, the failure stress under
-      combined in-plane loading, is supplied, the interaction coefficient
-      is determined. Be careful - the value can easily fall outside
-      acceptable bounds - these are tested during initialization.
+    The interaction coefficient for the Tsai-Wu failure criterion is set
+    to zero by default. If a value of C, the failure stress under
+    combined in-plane loading, is supplied, the interaction coefficient
+    is determined. Be careful - the value can easily fall outside
+    acceptable bounds - these are tested during initialization.
 
-      Args:
-          ply_thickness (float or complex): The ply thickness.
-          props (MaterialProperties): The ply material property.
-          max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use Tsai-Wu).
-          Cuntze_criterion_UD (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
-            unidirectional plies is to be used. Defaults to False (i.e. use Tsai-Wu).
-          Cuntze_criterion_Woven (bool): Flag to determine if Cuntze's Failure Mode Concept criterion for
-            woven plies is to be used. Defaults to False (i.e. use Tsai-Wu).
+    Args:
+        plyThickness (float or complex): The ply thickness.
+        props (MaterialProperties): The ply material property.
+        failureCriterion (constitutive.CompositeFailureCriterion): The failure criterion to use.
+          Defaults to ``constitutive.CompositeFailureCriterion.TSAI_WU_MODIFIED``.
+        max_strain_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.MAX_STRAIN``.
+        tsai_wu_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.TSAI_WU``.
+        Cuntze_criterion_UD (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_UD``.
+        Cuntze_criterion_Woven (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_WOVEN``.
     """
+
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
-    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  max_strain_criterion=False, Cuntze_criterion_UD=False, Cuntze_criterion_Woven=False):
-        self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
+
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL  # guard: __dealloc__ is called even when __cinit__ raises
+        cdef TacsScalar plyThickness
+
+        # -- plyThickness (first positional; 'ply_thickness' keyword is deprecated) --
+        if 'ply_thickness' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
+            warnings.warn(
+                "The 'ply_thickness' keyword argument is deprecated as of v3.12 and will be "
+                "removed in v3.14. Use 'plyThickness' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if args or 'plyThickness' in kwargs:
+                raise ValueError(
+                    "Cannot specify both 'plyThickness' and deprecated 'ply_thickness' kwarg."
+                )
+            plyThickness = kwargs['ply_thickness']
+        elif args:
+            plyThickness = args[0]
+        elif 'plyThickness' in kwargs:
+            plyThickness = kwargs['plyThickness']
+        else:
+            raise TypeError("OrthotropicPly() missing required argument: 'plyThickness'")
+
+        # -- props (second positional) --
+        if len(args) >= 2:
+            props_py = args[1]
+        elif 'props' in kwargs:
+            props_py = kwargs['props']
+        else:
+            raise TypeError("OrthotropicPly() missing required argument: 'props'")
+
+        self.ptr = new TACSOrthotropicPly(plyThickness, (<MaterialProperties>props_py).ptr)
         self.ptr.incref()
 
-        if [max_strain_criterion, Cuntze_criterion_UD, Cuntze_criterion_Woven].count(True) > 1:
-            raise ValueError('Only one failure criterion can be specified.')
+        # -- failureCriterion (new name in this PR; no backward compat alias needed) --
+        failureCriterion = kwargs.get('failureCriterion', None)
 
-        if max_strain_criterion:
-            self.ptr.setUseMaxStrainCriterion()
-        elif Cuntze_criterion_UD:
-            self.ptr.setUseCuntzeCriterion_UD()
-        elif Cuntze_criterion_Woven:
-            self.ptr.setUseCuntzeCriterion_Woven()
-        else:
-            self.ptr.setUseModifiedTsaiWuCriterion()
-        self.props = props
+        # -- deprecated boolean criterion kwargs --
+        max_strain_criterion = kwargs.get('max_strain_criterion', False)
+        tsai_wu_criterion = kwargs.get('tsai_wu_criterion', False)
+        Cuntze_criterion_UD = kwargs.get('Cuntze_criterion_UD', False)
+        Cuntze_criterion_Woven = kwargs.get('Cuntze_criterion_Woven', False)
+
+        FC = CompositeFailureCriterion
+        _deprecated = {
+            'max_strain_criterion': (max_strain_criterion, FC.MAX_STRAIN),
+            'tsai_wu_criterion': (tsai_wu_criterion, FC.TSAI_WU),
+            'Cuntze_criterion_UD': (Cuntze_criterion_UD, FC.CUNTZE_UD),
+            'Cuntze_criterion_Woven': (Cuntze_criterion_Woven, FC.CUNTZE_WOVEN),
+        }
+        _deprecated_used = [(k, v[1]) for k, v in _deprecated.items() if v[0]]
+        if _deprecated_used:
+            # Deprecated in v3.12, remove in v3.14
+            warnings.warn(
+                f"Boolean failure criterion kwargs ({', '.join(k for k, _ in _deprecated_used)}) are deprecated "
+                "as of v3.12 and will be removed in v3.14. "
+                "Use 'failureCriterion=constitutive.CompositeFailureCriterion.<VALUE>' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if len(_deprecated_used) > 1:
+                raise ValueError('Only one failure criterion can be specified.')
+            if failureCriterion is not None:
+                raise ValueError(
+                    "Cannot specify both 'failureCriterion' and deprecated boolean kwargs."
+                )
+            failureCriterion = _deprecated_used[0][1]
+
+        if failureCriterion is None:
+            failureCriterion = FC.TSAI_WU_MODIFIED
+
+        failureCriterion = CompositeFailureCriterion(failureCriterion)
+        self.ptr.setFailureCriterion(<_CCompositeFC><int>failureCriterion)
+        self.props = props_py
 
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr != NULL:
+            self.ptr.decref()
 
     def getMaterialProperties(self):
         """
@@ -642,23 +714,56 @@ cdef class OrthotropicPly:
         """
         return self.props
 
+    def setFailureCriterion(self, fc):
+        """
+        Set the failure criterion to use.
+
+        Args:
+            fc (CompositeFailureCriterion): The failure criterion enum value.
+        """
+        self.ptr.setFailureCriterion(<_CCompositeFC><int>CompositeFailureCriterion(fc))
+
     def setUseMaxStrainCriterion(self):
         """
-        Set to use the maximum strain failure criterion.
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.MAX_STRAIN`` instead.
         """
-        self.ptr.setUseMaxStrainCriterion()
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseMaxStrainCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN)
 
     def setUseTsaiWuCriterion(self):
         """
-        Set to use the Tsai-Wu failure criterion.
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU`` instead.
         """
-        self.ptr.setUseTsaiWuCriterion()
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU)
 
     def setUseModifiedTsaiWuCriterion(self):
         """
-        Set to use the modified Tsai-Wu failure criterion.
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU_MODIFIED`` instead.
         """
-        self.ptr.setUseModifiedTsaiWuCriterion()
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseModifiedTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED)
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -1532,7 +1637,7 @@ cdef class GaussianProcess:
         """
         Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
@@ -1554,7 +1659,7 @@ cdef class GaussianProcess:
         """
         Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
@@ -1611,7 +1716,7 @@ cdef class GaussianProcess:
         a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
         this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
         for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
-            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
+        this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
 
         Parameters
         ----------
@@ -1642,9 +1747,11 @@ cdef class BucklingGP(GaussianProcess):
     """
     Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
     Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
-    The ML model uses non-dimensional inputs and outputs as follows:
+    The ML model uses non-dimensional inputs and outputs as follows::
+
         log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
         log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+
     The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
 
     Parameters
@@ -1675,9 +1782,13 @@ cdef class BucklingGP(GaussianProcess):
         """
         Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
         the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
+
+        This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
         The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
         and is the following:
+
+        .. code-block:: python
+
             axial_gp = BucklingGP.from_csv(
                 csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
             )
@@ -1740,20 +1851,21 @@ cdef class PanelGPs:
     The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
     (assuming each TACSComponent is associated with a different panel).
 
-    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
-    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is::
 
-    def callback_generator(tacs_component_names):
-        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
-        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
-        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+        # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
 
-        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def callback_generator(tacs_component_names):
+            axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+            shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+            panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
 
-            # get the panelGPs object associated with this tacs component
-            panelGPs = panelGP_dict[compDescript]
+            def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
 
-            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+                # get the panelGPs object associated with this tacs component
+                panelGPs = panelGP_dict[compDescript]
+
+                # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
 
     Parameters
     ----------
@@ -1801,7 +1913,8 @@ cdef class PanelGPs:
         bool saveData = True,
         ):
         """
-        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form::
+
             { tacs_component (str) : PanelGPs object }
 
         Parameters
@@ -1826,7 +1939,7 @@ cdef class PanelGPs:
         return _dict
 
 cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
-    """"
+    """
     This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
 
@@ -1835,13 +1948,13 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
     The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
 
     For the methods below, consider a panel with dimensions a the panel length, b the panel width,
-        h the panel thickness, and stiffeners along the length or 1-direction.
+    h the panel thickness, and stiffeners along the length or 1-direction.
     The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
-        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
     The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
     For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
-        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
-        by Sean Engelstad, Brian Burke, Graeme Kennedy.
+    "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+    by Sean Engelstad, Brian Burke, Graeme Kennedy.
 
     Parameters
     ----------
@@ -2322,7 +2435,7 @@ cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
     W3_num : int, optional
         Design variable number for W3. Default is -3 (inactive).
     ksWeight : float, optional
-        Weight for the KS aggregation function. Default is 30.0.
+        Weight for the KS aggregation function. Default is 100.0.
     epsilon : float, optional
         Regularization parameter. Default is 0.0.
     kcorr : float, optional
@@ -2437,7 +2550,7 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
     lpNums : np.ndarray[int]
         Array of laminate parameter design variable numbers.
     ksWeight : float, optional
-        The KS aggregation weight for constraints (default is 30.0).
+        The KS aggregation weight for constraints (default is 100.0).
     kcorr : float, optional
         Shear correction factor. Default is 5.0/6.0.
     """
