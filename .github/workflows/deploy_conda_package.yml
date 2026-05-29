@@ -87,10 +87,6 @@ jobs:
           python-version: "3.10"
           architecture: arm64
 
-      - name: Install conda build tools
-        run: |
-          conda install anaconda-client conda-build conda-verify -q -y
-
       - name: Build TACS package
         run: |
           export TACS_DIR=${GITHUB_WORKSPACE};
@@ -102,7 +98,8 @@ jobs:
           elif [[ ${{ matrix.SCALAR }} == "real" ]]; then
             export LABEL="main"
           fi
+          conda install anaconda-client conda-build conda-verify -q -y;
           conda config --set anaconda_upload no;
           cd ${TACS_DIR}/conda;
-          conda build --variants "{scalar: ${{ matrix.SCALAR }}}" -c smdogroup -c conda-forge $BUILD_ARGS --output-folder . .;
+          conda-build --variants "{scalar: ${{ matrix.SCALAR }}}" -c smdogroup -c conda-forge $BUILD_ARGS --output-folder . .;
           anaconda upload --label $LABEL ${{ matrix.TARGET }}/*.conda --force;
