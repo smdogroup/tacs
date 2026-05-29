@@ -432,14 +432,6 @@
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Updated deprecated option</span>
-        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;ksmsolver&quot;</span><span class="p">:</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;linearSolver&quot;</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;&#39;KSMSolver&#39; option will be deprecated starting in tacs 3.7.0. &quot;</span>
-                <span class="s2">&quot;Please use `linearSolver` option instead.&quot;</span><span class="p">,</span>
-                <span class="ne">DeprecationWarning</span><span class="p">,</span>
-            <span class="p">)</span>
 
         <span class="c1"># Default setOption for common problem class objects</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -1809,32 +1801,6 @@
             <span class="n">prod</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">prod</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">prod</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="StaticProblem.addTransposeJacVecProduct">
-<a class="viewcode-back" href="../../../pytacs/static.html#tacs.problems.StaticProblem.addTransposeJacVecProduct">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">addTransposeJacVecProduct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds product of Jacobian transpose and input vector into output vector as shown below:</span>
-<span class="sd">        prod += scale * J(^T) . phi</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        phi : tacs.TACS.Vec or numpy.ndarray</span>
-<span class="sd">            Input vector to product with the transpose Jacobian.</span>
-
-<span class="sd">        prod : tacs.TACS.Vec or numpy.ndarray</span>
-<span class="sd">            Output vector to add Jacobian product to.</span>
-
-<span class="sd">        scale : float</span>
-<span class="sd">            Scalar used to scale Jacobian product by.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. &quot;</span>
-            <span class="s2">&quot;Use addJacVecProduct(phi, prod, scale, transpose=True) instead.&quot;</span><span class="p">,</span>
-            <span class="ne">DeprecationWarning</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">addJacVecProduct</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">prod</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">transpose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StaticProblem.zeroVariables">
