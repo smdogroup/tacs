@@ -102,7 +102,7 @@ with open(os.path.join(tacs_root, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 optional_dependencies = {
-    "testing": ["testflo>=1.4.7", "packaging"],
+    "testing": ["testflo>=1.4.7"],
     "docs": ["sphinx", "breathe", "sphinxcontrib-programoutput"],
     "mphys": ["mphys>=2.0.0,<3.0.0", "openmdao>=3.28.0"],
     "caps2tacs": ["imageio>=2.16.1"],
@@ -134,6 +134,7 @@ setup(
         # pin pynastran against last commit that supports python 3.10
         "pynastran @ git+https://github.com/smdogroup/pyNastran.git@ba6a3c460f65fd4083b08579e462de40c6b0cf84",
         "numba",
+        "packaging",
     ],
     extras_require=optional_dependencies,
     packages=find_packages(include=["tacs*"]),
