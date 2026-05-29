@@ -54,14 +54,6 @@
 */
 class TACSKSFailure : public TACSFunction {
  public:
-  enum KSFailureType {
-    DISCRETE,
-    CONTINUOUS,
-    PNORM_DISCRETE,
-    PNORM_CONTINUOUS,
-    DISCRETE_AVERAGE
-  };
-
   TACSKSFailure(TACSAssembler *_assembler, double ksWeight, double alpha = 1.0,
                 double safetyFactor = 1.0);
   ~TACSKSFailure();
@@ -73,7 +65,7 @@ class TACSKSFailure : public TACSFunction {
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSFailureType(enum KSFailureType type);
+  void setKSAggregationType(KSAggregationType type);
   double getParameter();
   void setParameter(double _ksWeight);
 
@@ -137,7 +129,7 @@ class TACSKSFailure : public TACSFunction {
 
  private:
   // The type of aggregation to use
-  KSFailureType ksType;
+  KSAggregationType ksType;
 
   // The weight on the ks function value
   double ksWeight;

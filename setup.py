@@ -134,6 +134,7 @@ setup(
         # pin pynastran against last commit that supports python 3.10
         "pynastran @ git+https://github.com/smdogroup/pyNastran.git@ba6a3c460f65fd4083b08579e462de40c6b0cf84",
         "numba",
+        "packaging",
     ],
     extras_require=optional_dependencies,
     packages=find_packages(include=["tacs*"]),
