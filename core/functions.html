@@ -114,6 +114,14 @@ of the load vector with the displacement.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tacs.functions.KSAggregationType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSAggregationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSAggregationType" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.IntEnum" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">IntEnum</span></code></a></p>
+<p>Aggregation type for KS functions. Mirrors <code class="docutils literal notranslate"><span class="pre">KSAggregationType</span></code> from <code class="docutils literal notranslate"><span class="pre">TACSFunction.h</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">KS_DISCRETE_AVERAGE</span></code> is only valid for <a class="reference internal" href="#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tacs.functions.KSDisplacement">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tacs.functions.</span></span><span class="sig-name descname"><span class="pre">KSDisplacement</span></span><a class="headerlink" href="#tacs.functions.KSDisplacement" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Function</span></code></p>
@@ -129,12 +137,43 @@ maximum value.</p>
 <li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
 <li><p><strong>direction</strong> (<em>array-like</em><em>[</em><em>double</em><em>]</em><em>, </em><em>optional</em>) -- 3d vector specifying which direction to project displacements in for KS aggregation (keyword argument).
 Defaults to [0.0, 0.0, 0.0].</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
-Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
-Case-insensitive, defaults to 'continuous'.</p></li>
+<li><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used.
+Defaults to <code class="docutils literal notranslate"><span class="pre">functions.KSAggregationType.KS_CONTINUOUS</span></code>. <code class="docutils literal notranslate"><span class="pre">DISCRETE_AVERAGE</span></code> is not supported.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Deprecated. Use <code class="docutils literal notranslate"><span class="pre">ksAggregationType=functions.KSAggregationType.&lt;VALUE&gt;</span></code> instead.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSDisplacement.setKSAggregationType">
+<span class="sig-name descname"><span class="pre">setKSAggregationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksAggregationType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSDisplacement.setKSAggregationType" title="Link to this definition">¶</a></dt>
+<dd><p>Set the type of KS aggregation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a>) -- The aggregation type.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> -- If <code class="docutils literal notranslate"><span class="pre">ksAggregationType</span></code> is <code class="docutils literal notranslate"><span class="pre">KSAggregationType.KS_DISCRETE_AVERAGE</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSDisplacement.setKSDisplacementType">
+<span class="sig-name descname"><span class="pre">setKSDisplacementType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSDisplacement.setKSDisplacementType" title="Link to this definition">¶</a></dt>
+<dd><p>Deprecated. Use <a class="reference internal" href="#tacs.functions.KSDisplacement.setKSAggregationType" title="tacs.functions.KSDisplacement.setKSAggregationType"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setKSAggregationType()</span></code></a> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Aggregation type string (e.g. <code class="docutils literal notranslate"><span class="pre">'discrete'</span></code>, <code class="docutils literal notranslate"><span class="pre">'continuous'</span></code>).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#DeprecationWarning" title="(in Python v3.14)"><strong>DeprecationWarning</strong></a> -- Always.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> -- If <em>ftype</em> is not a recognised string or is <code class="docutils literal notranslate"><span class="pre">'discrete-average'</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -158,12 +197,41 @@ its strength criteria. While values &lt; 1.0 implies all elements are within the
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
 <li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
 <li><p><strong>safetyFactor</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- The safety factor to apply to loads before computing the failure (keyword argument). Defaults to 1.0.</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
-Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous',
-'discrete-average'. Case-insensitive, defaults to 'continuous'.</p></li>
+<li><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used.
+Defaults to <code class="docutils literal notranslate"><span class="pre">functions.KSAggregationType.KS_CONTINUOUS</span></code>.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Deprecated. Use <code class="docutils literal notranslate"><span class="pre">ksAggregationType=functions.KSAggregationType.&lt;VALUE&gt;</span></code> instead.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSFailure.setKSAggregationType">
+<span class="sig-name descname"><span class="pre">setKSAggregationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksAggregationType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSFailure.setKSAggregationType" title="Link to this definition">¶</a></dt>
+<dd><p>Set the type of KS aggregation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a>) -- The aggregation type.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSFailure.setKSFailureType">
+<span class="sig-name descname"><span class="pre">setKSFailureType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSFailure.setKSFailureType" title="Link to this definition">¶</a></dt>
+<dd><p>Deprecated. Use <a class="reference internal" href="#tacs.functions.KSFailure.setKSAggregationType" title="tacs.functions.KSFailure.setKSAggregationType"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setKSAggregationType()</span></code></a> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Aggregation type string (e.g. <code class="docutils literal notranslate"><span class="pre">'discrete'</span></code>, <code class="docutils literal notranslate"><span class="pre">'continuous'</span></code>,
+<code class="docutils literal notranslate"><span class="pre">'discrete-average'</span></code>).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#DeprecationWarning" title="(in Python v3.14)"><strong>DeprecationWarning</strong></a> -- Always.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> -- If <em>ftype</em> is not a recognised string.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -180,12 +248,43 @@ maximum value.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>assembler</strong> (<a class="reference internal" href="TACS.html#TACS.Assembler" title="TACS.Assembler"><em>Assembler</em></a>) -- TACS Assembler object that will evaluating this function.</p></li>
 <li><p><strong>ksWeight</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- The ks weight used in the calculation (keyword argument). Defaults to 80.0.</p></li>
-<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used (keyword argument).
-Accepted inputs are: 'discrete', 'continuous', 'pnorm-discrete', and 'pnorm-continuous'.
-Case-insensitive, defaults to 'continuous'.</p></li>
+<li><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a><em>, </em><em>optional</em>) -- The type of KS aggregation to be used.
+Defaults to <code class="docutils literal notranslate"><span class="pre">functions.KSAggregationType.KS_CONTINUOUS</span></code>. <code class="docutils literal notranslate"><span class="pre">DISCRETE_AVERAGE</span></code> is not supported.</p></li>
+<li><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Deprecated. Use <code class="docutils literal notranslate"><span class="pre">ksAggregationType=functions.KSAggregationType.&lt;VALUE&gt;</span></code> instead.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSTemperature.setKSAggregationType">
+<span class="sig-name descname"><span class="pre">setKSAggregationType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ksAggregationType</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSTemperature.setKSAggregationType" title="Link to this definition">¶</a></dt>
+<dd><p>Set the type of KS aggregation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ksAggregationType</strong> (<a class="reference internal" href="#tacs.functions.KSAggregationType" title="tacs.functions.KSAggregationType"><em>functions.KSAggregationType</em></a>) -- The aggregation type.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> -- If <code class="docutils literal notranslate"><span class="pre">ksAggregationType</span></code> is <code class="docutils literal notranslate"><span class="pre">KSAggregationType.KS_DISCRETE_AVERAGE</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tacs.functions.KSTemperature.setKSTemperatureType">
+<span class="sig-name descname"><span class="pre">setKSTemperatureType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tacs.functions.KSTemperature.setKSTemperatureType" title="Link to this definition">¶</a></dt>
+<dd><p>Deprecated. Use <a class="reference internal" href="#tacs.functions.KSTemperature.setKSAggregationType" title="tacs.functions.KSTemperature.setKSAggregationType"><code class="xref py py-meth docutils literal notranslate"><span class="pre">setKSAggregationType()</span></code></a> instead.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ftype</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Aggregation type string (e.g. <code class="docutils literal notranslate"><span class="pre">'discrete'</span></code>, <code class="docutils literal notranslate"><span class="pre">'continuous'</span></code>).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#DeprecationWarning" title="(in Python v3.14)"><strong>DeprecationWarning</strong></a> -- Always.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> -- If <em>ftype</em> is not a recognised string or is <code class="docutils literal notranslate"><span class="pre">'discrete-average'</span></code>.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -265,9 +364,22 @@ about origin (False) or center of mass (True) (keyword argument). Defaults to Fa
 </ul>
 </li>
 <li><a class="reference internal" href="#tacs.functions.EnclosedVolume"><code class="docutils literal notranslate"><span class="pre">EnclosedVolume</span></code></a></li>
-<li><a class="reference internal" href="#tacs.functions.KSDisplacement"><code class="docutils literal notranslate"><span class="pre">KSDisplacement</span></code></a></li>
-<li><a class="reference internal" href="#tacs.functions.KSFailure"><code class="docutils literal notranslate"><span class="pre">KSFailure</span></code></a></li>
-<li><a class="reference internal" href="#tacs.functions.KSTemperature"><code class="docutils literal notranslate"><span class="pre">KSTemperature</span></code></a></li>
+<li><a class="reference internal" href="#tacs.functions.KSAggregationType"><code class="docutils literal notranslate"><span class="pre">KSAggregationType</span></code></a></li>
+<li><a class="reference internal" href="#tacs.functions.KSDisplacement"><code class="docutils literal notranslate"><span class="pre">KSDisplacement</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.functions.KSDisplacement.setKSAggregationType"><code class="docutils literal notranslate"><span class="pre">KSDisplacement.setKSAggregationType()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.functions.KSDisplacement.setKSDisplacementType"><code class="docutils literal notranslate"><span class="pre">KSDisplacement.setKSDisplacementType()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.functions.KSFailure"><code class="docutils literal notranslate"><span class="pre">KSFailure</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.functions.KSFailure.setKSAggregationType"><code class="docutils literal notranslate"><span class="pre">KSFailure.setKSAggregationType()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.functions.KSFailure.setKSFailureType"><code class="docutils literal notranslate"><span class="pre">KSFailure.setKSFailureType()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tacs.functions.KSTemperature"><code class="docutils literal notranslate"><span class="pre">KSTemperature</span></code></a><ul>
+<li><a class="reference internal" href="#tacs.functions.KSTemperature.setKSAggregationType"><code class="docutils literal notranslate"><span class="pre">KSTemperature.setKSAggregationType()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.functions.KSTemperature.setKSTemperatureType"><code class="docutils literal notranslate"><span class="pre">KSTemperature.setKSTemperatureType()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#tacs.functions.MomentOfInertia"><code class="docutils literal notranslate"><span class="pre">MomentOfInertia</span></code></a></li>
 <li><a class="reference internal" href="#tacs.functions.StructuralMass"><code class="docutils literal notranslate"><span class="pre">StructuralMass</span></code></a></li>
 </ul>
