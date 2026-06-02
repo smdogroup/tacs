@@ -883,32 +883,32 @@ void meshStudy(const char *file_name, double P, TACSShellTransform *transform,
 
     // Evaluate the induced norms
     TacsScalar ind_exp_tacs, ind_dexp_tacs;
-    ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL);
+    ind_func->setInducedType(EXPONENTIAL);
     assembler->evalFunctions(1, &ind, &ind_exp_tacs);
 
-    ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
+    ind_func->setInducedType(DISCRETE_EXPONENTIAL);
     assembler->evalFunctions(1, &ind, &ind_dexp_tacs);
 
     TacsScalar ind_exp2_tacs, ind_dexp2_tacs;
-    ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
+    ind_func->setInducedType(EXPONENTIAL_SQUARED);
     assembler->evalFunctions(1, &ind, &ind_exp2_tacs);
 
-    ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
+    ind_func->setInducedType(DISCRETE_EXPONENTIAL_SQUARED);
     assembler->evalFunctions(1, &ind, &ind_dexp2_tacs);
 
     // Compute the induced power norms
     TacsScalar ind_pow_tacs, ind_dpow_tacs;
-    ind_func->setInducedType(TACSInducedFailure::POWER);
+    ind_func->setInducedType(POWER);
     assembler->evalFunctions(1, &ind, &ind_pow_tacs);
 
-    ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER);
+    ind_func->setInducedType(DISCRETE_POWER);
     assembler->evalFunctions(1, &ind, &ind_dpow_tacs);
 
     TacsScalar ind_pow2_tacs, ind_dpow2_tacs;
-    ind_func->setInducedType(TACSInducedFailure::POWER_SQUARED);
+    ind_func->setInducedType(POWER_SQUARED);
     assembler->evalFunctions(1, &ind, &ind_pow2_tacs);
 
-    ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
+    ind_func->setInducedType(DISCRETE_POWER_SQUARED);
     assembler->evalFunctions(1, &ind, &ind_dpow2_tacs);
 
     // Print all the variables to the file
@@ -1200,32 +1200,32 @@ int main(int argc, char *argv[]) {
 
   // Evaluate the induced norms
   TacsScalar ind_exp_tacs, ind_dexp_tacs;
-  ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL);
+  ind_func->setInducedType(EXPONENTIAL);
   assembler->evalFunctions(1, &ind, &ind_exp_tacs);
 
-  ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL);
+  ind_func->setInducedType(DISCRETE_EXPONENTIAL);
   assembler->evalFunctions(1, &ind, &ind_dexp_tacs);
 
   TacsScalar ind_exp2_tacs, ind_dexp2_tacs;
-  ind_func->setInducedType(TACSInducedFailure::EXPONENTIAL_SQUARED);
+  ind_func->setInducedType(EXPONENTIAL_SQUARED);
   assembler->evalFunctions(1, &ind, &ind_exp2_tacs);
 
-  ind_func->setInducedType(TACSInducedFailure::DISCRETE_EXPONENTIAL_SQUARED);
+  ind_func->setInducedType(DISCRETE_EXPONENTIAL_SQUARED);
   assembler->evalFunctions(1, &ind, &ind_dexp2_tacs);
 
   // Compute the induced power norms
   TacsScalar ind_pow_tacs, ind_dpow_tacs;
-  ind_func->setInducedType(TACSInducedFailure::POWER);
+  ind_func->setInducedType(POWER);
   assembler->evalFunctions(1, &ind, &ind_pow_tacs);
 
-  ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER);
+  ind_func->setInducedType(DISCRETE_POWER);
   assembler->evalFunctions(1, &ind, &ind_dpow_tacs);
 
   TacsScalar ind_pow2_tacs, ind_dpow2_tacs;
-  ind_func->setInducedType(TACSInducedFailure::POWER_SQUARED);
+  ind_func->setInducedType(POWER_SQUARED);
   assembler->evalFunctions(1, &ind, &ind_pow2_tacs);
 
-  ind_func->setInducedType(TACSInducedFailure::DISCRETE_POWER_SQUARED);
+  ind_func->setInducedType(DISCRETE_POWER_SQUARED);
   assembler->evalFunctions(1, &ind, &ind_dpow2_tacs);
 
   printf("TACS discrete KS function with P = %d: %15.8e\n", P,
