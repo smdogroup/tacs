@@ -88,11 +88,12 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
                                                   const double pt[],
                                                   const TacsScalar X[],
                                                   TacsScalar moments[]) {
-  TacsScalar rho = props->getDensity();
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const rho = props->getDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   // Tube is centered on the reference axis; NSM contributes only to moments[0]
   moments[0] = rho * A + nsm;
@@ -106,21 +107,21 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
 void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
-  TacsScalar rho = props->getDensity();
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
+  TacsScalar const rho = props->getDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
 
   int index = 0;
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall;
-    TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
+    TacsScalar const dA = M_PI * wall;
+    TacsScalar const dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
 
     dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0;
-    TacsScalar dIa = M_PI * (d0 * d0 * d0) / 8.0;
+    TacsScalar const dA = M_PI * d0;
+    TacsScalar const dIa = M_PI * (d0 * d0 * d0) / 8.0;
 
     dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
@@ -139,10 +140,10 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalSpecificHeat(int elemIndex,
 TacsScalar TACSIsoTubeBeamConstitutive::evalDensity(int elemIndex,
                                                     const double pt[],
                                                     const TacsScalar X[]) {
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
-  TacsScalar rho = props->getDensity();
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const rho = props->getDensity();
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
 
   return rho * A + nsm;
 }
@@ -151,16 +152,16 @@ void TACSIsoTubeBeamConstitutive::addDensityDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     int dvLen, TacsScalar dfdx[]) {
   int index = 0;
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar rho = props->getDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const rho = props->getDensity();
 
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall;
+    TacsScalar const dA = M_PI * wall;
     dfdx[index] += scale * rho * dA;
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0;
+    TacsScalar const dA = M_PI * d0;
     dfdx[index] += scale * rho * dA;
     index++;
   }
@@ -173,12 +174,13 @@ void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const G = 0.5 * E / (1.0 + nu);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   s[0] = E * A * e[0];
   s[1] = 2.0 * G * Ia * e[1];
@@ -195,12 +197,13 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness(int elemIndex,
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const G = 0.5 * E / (1.0 + nu);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
@@ -219,15 +222,15 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
   TacsScalar E, nu;
   props->getIsotropicProperties(&E, &nu);
 
-  TacsScalar G = 0.5 * E / (1.0 + nu);
-  TacsScalar kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
-  TacsScalar d0 = inner + 2.0 * wall;
-  TacsScalar d1 = inner;
+  TacsScalar const G = 0.5 * E / (1.0 + nu);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
 
   int index = 0;
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall;
-    TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
+    TacsScalar const dA = M_PI * wall;
+    TacsScalar const dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
 
     dfdx[index] +=
         scale *
@@ -237,8 +240,8 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0;
-    TacsScalar dIa = M_PI * (d0 * d0 * d0) / 8.0;
+    TacsScalar const dA = M_PI * d0;
+    TacsScalar const dIa = M_PI * (d0 * d0 * d0) / 8.0;
 
     dfdx[index] +=
         scale *
@@ -255,7 +258,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailure(int elemIndex,
                                                     const TacsScalar e[]) {
   // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
   TacsScalar e0[6], s0[6];
-  TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar const r0 = 0.5 * inner + wall;
 
   e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
   e0[1] = 0.0;
@@ -276,7 +279,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
   TacsScalar e0[6], s0[6];
-  TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar const r0 = 0.5 * inner + wall;
 
   e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
   e0[1] = 0.0;
@@ -290,7 +293,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
 
   // Compute the von Mises stress
   TacsScalar s0d[6];
-  TacsScalar fail = props->vonMisesFailure3DStressSens(s0, s0d);
+  TacsScalar const fail = props->vonMisesFailure3DStressSens(s0, s0d);
 
   TacsScalar e0d[6];
   props->evalStress3D(s0d, e0d);
@@ -310,7 +313,7 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
     const TacsScalar e[], int dvLen, TacsScalar dfdx[]) {
   // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
   TacsScalar e0[6], s0[6];
-  TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar const r0 = 0.5 * inner + wall;
 
   e0[0] = e[0] + r0 * e[2] + r0 * e[3];  // ex
   e0[1] = 0.0;
@@ -331,12 +334,12 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
 
   int index = 0;
   if (innerDV >= 0) {
-    TacsScalar dr0 = 0.5;
+    TacsScalar const dr0 = 0.5;
     dfdx[index] += scale * (e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1]);
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dr0 = 1.0;
+    TacsScalar const dr0 = 1.0;
     dfdx[index] += scale * (e0d[0] * dr0 * (e[2] + e[3]) + e0d[3] * dr0 * e[1]);
 
     index++;
