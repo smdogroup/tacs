@@ -29,7 +29,7 @@ class ConstitutiveTest(unittest.TestCase):
         self.dvs = np.array([1.0, 0.1], dtype=self.dtype)
 
         # Create the isotropic material
-        rho = 2700.0
+        self.rho = 2700.0
         specific_heat = 921.096
         E = 70e3
         nu = 0.3
@@ -37,7 +37,7 @@ class ConstitutiveTest(unittest.TestCase):
         cte = 24.0e-6
         kappa = 230.0
         self.props = constitutive.MaterialProperties(
-            rho=rho,
+            rho=self.rho,
             specific_heat=specific_heat,
             E=E,
             nu=nu,
@@ -45,14 +45,14 @@ class ConstitutiveTest(unittest.TestCase):
             alpha=cte,
             kappa=kappa,
         )
-        t = 0.1
-        d = 1.0
+        self.t = 0.1
+        self.d = 1.0
         dNum = 0
         tNum = 1
 
         # Create stiffness (need class)
         self.con = constitutive.IsoTubeBeamConstitutive(
-            self.props, t=t, tNum=tNum, d=d, dNum=dNum
+            self.props, t=self.t, tNum=tNum, d=self.d, dNum=dNum
         )
 
         # Seed random number generator in tacs for consistent test results
@@ -161,3 +161,29 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol,
         )
         self.assertFalse(fail)
+
+    def test_cross_section_area_and_inertia(self):
+        """Verify density and mass moments against the analytic equations.
+
+        The outer diameter is d0 = inner_diameter + 2 * wall_thickness (diameter arithmetic).
+        This test catches the bug where d0 was computed as inner + wall (off by one wall
+        thickness), since the self-consistency DV-sensitivity tests cannot detect that error —
+        the buggy value formula and its sensitivities are consistently wrong so they agree
+        with each other even while both are incorrect.
+        """
+        # Analytic cross-section properties: d0 = d + 2*t (diameter arithmetic)
+        d0 = self.d + 2.0 * self.t
+        d1 = self.d
+        A = np.pi * (d0**2 - d1**2) / 4.0
+        Ia = np.pi * (d0**4 - d1**4) / 64.0
+
+        density = self.con.evalDensity(self.elem_index, self.pt, self.x)
+        np.testing.assert_allclose(density, self.rho * A, rtol=1e-10)
+
+        moments = self.con.evalMassMoments(self.elem_index, self.pt, self.x)
+        np.testing.assert_allclose(moments[0], self.rho * A, rtol=1e-10)
+        np.testing.assert_allclose(moments[1], 0.0, atol=1e-14)
+        np.testing.assert_allclose(moments[2], 0.0, atol=1e-14)
+        np.testing.assert_allclose(moments[3], self.rho * Ia, rtol=1e-10)
+        np.testing.assert_allclose(moments[4], self.rho * Ia, rtol=1e-10)
+        np.testing.assert_allclose(moments[5], 0.0, atol=1e-14)
