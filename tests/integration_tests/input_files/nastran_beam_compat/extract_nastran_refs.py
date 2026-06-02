@@ -28,30 +28,15 @@ import numpy as np
 from pyNastran.op2.op2 import OP2  # pyNastran.op2.op2 → OP2
 
 # ==============================================================================
-# Configuration table — must match generate_inputs.py and the test harness
+# Local modules
 # ==============================================================================
-_LADDERS = {
-    ("CBAR", "PBAR", None): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "BAR"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "TUBE"): ["rotation", "nsm"],
-    ("CBAR", "PBARL", "T"): ["rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
-    ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
-    ("CBEAM", "PBEAML", "T"): ["taper", "rotation", "wa", "nsm"],
-}
-
-_STATIC_NAMES = [
-    "static_fx",
-    "static_fy",
-    "static_fz",
-    "static_mx",
-    "static_my",
-    "static_mz",
-]
+from cases import (
+    iterCases,
+    STATIC_LOAD_NAMES,
+)  # cases.iterCases, cases.STATIC_LOAD_NAMES
 
 _SCRIPT_DIR = Path(__file__).parent
-_NASTRAN_OUTPUTS_DIR = _SCRIPT_DIR / "_nastran_outputs"
+_NASTRAN_OUTPUTS_DIR = _SCRIPT_DIR / "nastran_outputs"
 
 
 # ==============================================================================
@@ -63,21 +48,6 @@ def _maxNormalize(shape: np.ndarray) -> np.ndarray:
     """Divide a mode shape by its largest-magnitude element so max(|shape|) == 1."""
     idx = np.argmax(np.abs(shape))
     return shape / shape.flatten()[idx]
-
-
-def _iterConfigs():
-    """Yield (stem,) for every one of the 36 configurations."""
-    for (element, prop, section), ladder in _LADDERS.items():
-        parts = [element.lower(), prop.lower()]
-        if section is not None:
-            parts.append(section.lower())
-        stemPrefix = "_".join(parts)
-
-        for rungLen in range(len(ladder) + 1):
-            active = ladder[:rungLen]
-            rungName = "baseline" if not active else "_".join(active)
-            stem = f"{stemPrefix}_{rungName}"
-            yield stem
 
 
 # ==============================================================================
@@ -116,7 +86,7 @@ def extractStaticRefs(stem: str, refDir: Path) -> None:
             if hasattr(dispObj, "label") and dispObj.label is not None:
                 subtitle = dispObj.label.strip().lower()
 
-        if subtitle not in _STATIC_NAMES:
+        if subtitle not in STATIC_LOAD_NAMES:
             print(
                 f"  WARNING: subcase {subcaseId} subtitle {subtitle!r} not in expected names — skipping"
             )
@@ -135,7 +105,7 @@ def extractStaticRefs(stem: str, refDir: Path) -> None:
         )
         found.add(subtitle)
 
-    missing = set(_STATIC_NAMES) - found
+    missing = set(STATIC_LOAD_NAMES) - found
     if missing:
         print(f"  WARNING: {stem}: no subcase found for {sorted(missing)}")
     else:
@@ -210,7 +180,7 @@ def main() -> None:
     print(f"Reference CSV output root: {_SCRIPT_DIR}")
     print()
 
-    for stem in _iterConfigs():
+    for _element, _prop, _section, stem, _features in iterCases():
         refDir = _SCRIPT_DIR / stem
         refDir.mkdir(parents=True, exist_ok=True)
 

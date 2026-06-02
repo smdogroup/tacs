@@ -16,11 +16,14 @@ feature "rungs" (taper, section rotation, shear-centre offset, neutral-axis
 offset, non-structural mass, NSM offset). See ``DESIGN.md`` in this directory
 for the authoritative spec.
 
-The BDFs are self-contained (no INCLUDE): the pyNastran model holds the bulk
-data, which is written to a string buffer and prefixed with hand-written
-executive- and case-control sections. The SOL 101 driver carries 6 SUBCASEs
+The BDFs are self-contained (no INCLUDE) and are written end-to-end through
+pyNastran's BDF writer. ``NASTRAN BARMASS=1`` is set via
+``model.system_command_lines`` so CBAR torsional rotary inertia is included in
+the mass matrix (matching TACS Beam2). The SOL 101 driver carries 6 SUBCASEs
 (one per tip-load direction); the SOL 103 driver carries a single modal
-SUBCASE plus an EIGRL card requesting the first 10 modes.
+SUBCASE plus an EIGRL card requesting the first 10 modes. The case matrix
+(which element/property/feature configurations are generated) is defined once
+in ``cases.py``; this script imports it.
 
 Usage:
     python generate_inputs.py
@@ -29,7 +32,6 @@ Usage:
 # ==============================================================================
 # Standard Python modules
 # ==============================================================================
-import io
 from pathlib import Path
 
 # ==============================================================================
@@ -37,23 +39,8 @@ from pathlib import Path
 # ==============================================================================
 import numpy as np
 from pyNastran.bdf.bdf import BDF
-
-# ==============================================================================
-# Configuration table (single source of truth for the 36 configurations)
-# ==============================================================================
-# Each entry maps an (element, property, section) combo to its compounding
-# feature ladder. A combo contributes ``len(ladder) + 1`` configurations
-# (baseline plus every accumulated prefix).
-_LADDERS = {
-    ("CBAR", "PBAR", None): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "BAR"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "TUBE"): ["rotation", "nsm"],
-    ("CBAR", "PBARL", "T"): ["rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
-    ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
-    ("CBEAM", "PBEAML", "T"): ["taper", "rotation", "wa", "nsm"],
-}
+from pyNastran.bdf.case_control_deck import CaseControlDeck
+from cases import iterCases, STATIC_LOAD_NAMES
 
 # ==============================================================================
 # Material and geometry constants
@@ -112,13 +99,16 @@ MOMENT_MAG = 1000.0  # N*m
 
 # (subcase name, load type, direction vector, load set id). Load ids are
 # unique so a single model can hold all 6 static load cases simultaneously.
+_STATIC_LOAD_DEFINITIONS = [
+    ("force", [1.0, 0.0, 0.0], 10),
+    ("force", [0.0, 1.0, 0.0], 20),
+    ("force", [0.0, 0.0, 1.0], 30),
+    ("moment", [1.0, 0.0, 0.0], 40),
+    ("moment", [0.0, 1.0, 0.0], 50),
+    ("moment", [0.0, 0.0, 1.0], 60),
+]
 _STATIC_LOADS = [
-    ("static_fx", "force", [1.0, 0.0, 0.0], 10),
-    ("static_fy", "force", [0.0, 1.0, 0.0], 20),
-    ("static_fz", "force", [0.0, 0.0, 1.0], 30),
-    ("static_mx", "moment", [1.0, 0.0, 0.0], 40),
-    ("static_my", "moment", [0.0, 1.0, 0.0], 50),
-    ("static_mz", "moment", [0.0, 0.0, 1.0], 60),
+    (name, *spec) for name, spec in zip(STATIC_LOAD_NAMES, _STATIC_LOAD_DEFINITIONS)
 ]
 
 # ==============================================================================
@@ -408,8 +398,36 @@ def buildModel(element, prop, section, features, addEigrl):
     return model
 
 
-def writeBdf(path, sol, title, caseControlLines, model):
-    """Write a self-contained BDF: executive + case control + bulk data.
+def buildStaticDeck(title, log):
+    """Build the SOL 101 case-control deck: one SUBCASE per static load."""
+    deck = CaseControlDeck([], log=log)
+    deck.add_parameter_to_global_subcase(f"TITLE = {title}")
+    deck.add_parameter_to_global_subcase(f"SPC = {_SPC_ID}")
+    deck.add_parameter_to_global_subcase("DISP = ALL")
+    deck.add_parameter_to_global_subcase("STRESS = ALL")
+    for subcaseId, (name, _type, _direction, loadId) in enumerate(
+        _STATIC_LOADS, start=1
+    ):
+        deck.create_new_subcase(subcaseId)
+        deck.add_parameter_to_local_subcase(subcaseId, f"SUBTITLE = {name}")
+        deck.add_parameter_to_local_subcase(subcaseId, f"LOAD = {loadId}")
+    return deck
+
+
+def buildModalDeck(title, log):
+    """Build the SOL 103 case-control deck: a single modal SUBCASE."""
+    deck = CaseControlDeck([], log=log)
+    deck.add_parameter_to_global_subcase(f"TITLE = {title}")
+    deck.add_parameter_to_global_subcase(f"SPC = {_SPC_ID}")
+    deck.add_parameter_to_global_subcase("DISP = ALL")
+    deck.create_new_subcase(1)
+    deck.add_parameter_to_local_subcase(1, "SUBTITLE = modal")
+    deck.add_parameter_to_local_subcase(1, f"METHOD = {_EIGRL_ID}")
+    return deck
+
+
+def writeBdf(path, sol, title, deckBuilder, model):
+    """Write a self-contained BDF using pyNastran's writer.
 
     Parameters
     ----------
@@ -418,73 +436,30 @@ def writeBdf(path, sol, title, caseControlLines, model):
     sol : int
         Solution sequence number (101 or 103).
     title : str
-        TITLE line for the case control section.
-    caseControlLines : list of str
-        Case control lines (SPC, SUBCASEs, etc.) between TITLE and BEGIN BULK.
+        TITLE line for the case-control deck.
+    deckBuilder : callable
+        ``(title, log) -> CaseControlDeck`` factory for this BDF's case-control.
     model : BDF
-        Populated model whose bulk data is appended.
+        Populated model whose bulk data is written.
     """
-    buf = io.StringIO()
-    model.write_bulk_data(buf, interspersed=False, enddata=False, close=False)
-    bulkData = buf.getvalue()
-
-    lines = [
-        f"SOL {sol}",
-        "CEND",
-        f"TITLE = {title}",
-        *caseControlLines,
-        "BEGIN BULK",
-    ]
-    header = "\n".join(lines) + "\n"
-    path.write_text(header + bulkData + "ENDDATA\n", encoding="utf-8")
-
-
-def buildStaticCaseControl():
-    """Build SOL 101 case control: one SUBCASE per static load direction."""
-    lines = [f"SPC = {_SPC_ID}", "DISP = ALL", "STRESS = ALL"]
-    for subcaseId, (name, _type, _dir, loadId) in enumerate(_STATIC_LOADS, start=1):
-        lines.append(f"SUBCASE {subcaseId}")
-        lines.append(f"  SUBTITLE = {name}")
-        lines.append(f"  LOAD = {loadId}")
-    return lines
-
-
-def buildModalCaseControl():
-    """Build SOL 103 case control: a single modal SUBCASE."""
-    return [
-        f"SPC = {_SPC_ID}",
-        "DISP = ALL",
-        "SUBCASE 1",
-        "  SUBTITLE = modal",
-        f"  METHOD = {_EIGRL_ID}",
-    ]
-
-
-def iterConfigs():
-    """Yield (element, prop, section, stem, features) for all 36 configurations."""
-    for (element, prop, section), ladder in _LADDERS.items():
-        parts = [element.lower(), prop.lower()]
-        if section is not None:
-            parts.append(section.lower())
-        stemPrefix = "_".join(parts)
-
-        for rungLen in range(len(ladder) + 1):
-            active = ladder[:rungLen]
-            rungName = "baseline" if not active else "_".join(active)
-            stem = f"{stemPrefix}_{rungName}"
-            yield element, prop, section, stem, set(active)
+    # NASTRAN BARMASS=1 makes CBAR's mass matrix include torsional rotary inertia,
+    # matching TACS Beam2's mass formulation. CBEAM ignores it (no-op there).
+    model.system_command_lines = ["NASTRAN BARMASS=1"]
+    model.sol = sol
+    model.case_control_deck = deckBuilder(title, model.log)
+    model.write_bdf(path, size=8, enddata=True, close=True, write_header=False)
 
 
 def main():
     """Generate all 72 BDFs into this script's directory."""
     numWritten = 0
-    for element, prop, section, stem, features in iterConfigs():
+    for element, prop, section, stem, features in iterCases():
         staticModel = buildModel(element, prop, section, features, addEigrl=False)
         writeBdf(
             _OUT_DIR / f"{stem}_sol101.bdf",
             sol=101,
             title=f"{stem} static analysis",
-            caseControlLines=buildStaticCaseControl(),
+            deckBuilder=buildStaticDeck,
             model=staticModel,
         )
         numWritten += 1
@@ -494,7 +469,7 @@ def main():
             _OUT_DIR / f"{stem}_sol103.bdf",
             sol=103,
             title=f"{stem} modal analysis",
-            caseControlLines=buildModalCaseControl(),
+            deckBuilder=buildModalDeck,
             model=modalModel,
         )
         numWritten += 1
