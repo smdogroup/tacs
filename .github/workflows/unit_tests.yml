@@ -133,7 +133,7 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
            if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
-            if wget --timeout 60 https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz; then
+            if wget --tries=2 --timeout 60 https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz; then
               tar -xvf ESP122Lin.tgz
               export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
               export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
