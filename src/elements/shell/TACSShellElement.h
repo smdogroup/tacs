@@ -70,23 +70,6 @@ class TACSShellElement : public TACSElement {
     return quadrature::getQuadratureWeight(n);
   }
 
-  void setComplexStepGmatrix(bool complexStepFlag) {
-    printf(
-        "DeprecationWarning : This method had has been deprecated. The "
-        "geometric stiffness matrix is now computed analytically"
-        "for %s.\n",
-        getObjectName());
-  };
-
-  bool getComplexStepGmatrix() {
-    printf(
-        "DeprecationWarning : This method had has been deprecated. The "
-        "geometric stiffness matrix is now computed analytically"
-        "for %s.\n",
-        getObjectName());
-    return false;
-  };
-
   double getQuadraturePoint(int n, double pt[]) {
     return quadrature::getQuadraturePoint(n, pt);
   }

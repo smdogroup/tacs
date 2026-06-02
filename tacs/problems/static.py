@@ -391,14 +391,6 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Updated deprecated option
-        if name.lower() == "ksmsolver":
-            name = "linearSolver"
-            warnings.warn(
-                "'KSMSolver' option will be deprecated starting in tacs 3.7.0. "
-                "Please use `linearSolver` option instead.",
-                DeprecationWarning,
-            )
 
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
@@ -1734,29 +1726,6 @@ class StaticProblem(TACSProblem):
             prod.axpy(scale, self.res)
         else:
             prod[:] = prod + scale * self.res.getArray()
-
-    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
-        """
-        Adds product of Jacobian transpose and input vector into output vector as shown below:
-        prod += scale * J(^T) . phi
-
-        Parameters
-        ----------
-        phi : tacs.TACS.Vec or numpy.ndarray
-            Input vector to product with the transpose Jacobian.
-
-        prod : tacs.TACS.Vec or numpy.ndarray
-            Output vector to add Jacobian product to.
-
-        scale : float
-            Scalar used to scale Jacobian product by.
-        """
-        warnings.warn(
-            "addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. "
-            "Use addJacVecProduct(phi, prod, scale, transpose=True) instead.",
-            DeprecationWarning,
-        )
-        self.addJacVecProduct(phi, prod, scale, transpose=True)
 
     def zeroVariables(self):
         """
