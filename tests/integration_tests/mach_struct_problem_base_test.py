@@ -59,12 +59,8 @@ class MACHStructProblemTestCase:
             self.geo_dvs0 = self.dv_geo.getValues() if self.dv_geo is not None else {}
 
             # Create temporary vectors for doing fd/cs
-            self.dv1 = deepcopy(self.dv0)
-            self.dv_pert = {
-                dv_name: np.zeros_like(self.dv0[dv_name], dtype=self.dtype)
-                for dv_name in self.dv0.keys()
-            }
-
+            self.dv1 = np.zeros_like(self.dv0, dtype=self.dtype)
+            self.dv_pert = np.zeros_like(self.dv0, dtype=self.dtype)
             self.geo_dvs1 = deepcopy(self.geo_dvs0)
             self.geo_dvs_pert = {
                 dv_name: np.zeros_like(self.geo_dvs0[dv_name], dtype=self.dtype)
@@ -92,10 +88,7 @@ class MACHStructProblemTestCase:
             Setup user-defined vectors for analysis and fd/cs sensitivity verification
             """
             # Create temporary dv vec for doing fd/cs
-            for dv_name in dv_pert_vec.keys():
-                dv_pert_vec[dv_name] = np.ones_like(
-                    dv_pert_vec[dv_name], dtype=self.dtype
-                )
+            dv_pert_vec[:] = 1.0
 
             # Define perturbation array that moves all geometric design variables
             for dv_name in geo_dvs_pert_vec.keys():
@@ -132,135 +125,64 @@ class MACHStructProblemTestCase:
                                     atol=self.atol,
                                 )
 
-        def test_total_struct_dv_sensitivities(self):
+        def test_total_dv_sensitivities(self):
             """
-            Test total struct DV sensitivity through adjoint against fd/cs
+            Test total dv sensitivity through adjoint against fd/cs
             """
-            # Skip if no struct DVs across all problems
-            total_struct_dvs = sum(len(prob.structDVList) for prob in self.struct_probs)
-            if total_struct_dvs == 0:
+            # Skip this check if no dvs were added to model
+            total_dvs = sum(prob.getNumDesignVars() for prob in self.struct_probs)
+            if total_dvs == 0:
                 return
 
             # Initial solve
             funcs = self.run_solve()
 
-            # Compute sensitivities using adjoint
+            # Compute the total derivative w.r.t. material design variables using adjoint
             func_sens = self.run_sensitivities()
 
-            # Perturb only struct DV keys; leave mass DV keys at original values
-            dv1 = deepcopy(self.dv0)
-            for prob in self.struct_probs:
-                struct_key = prob.varName
-                if struct_key in self.dv_pert:
-                    dv1[struct_key] = self.perturb_struct_vec(
-                        self.dv0[struct_key], self.dv_pert[struct_key]
-                    )
+            # Compute the total derivative w.r.t. material design variables using fd/cs
+            self.dv1 = self.perturb_struct_vec(self.dv0, self.dv_pert)
 
             # Run perturbed solution
-            funcs_pert = self.run_solve(dv=dv1)
+            funcs_pert = self.run_solve(dv=self.dv1)
 
             # Tests cs/fd against sensitivity from adjoint
             for prob in self.struct_probs:
                 with self.subTest(problem=prob.name):
-                    struct_key = prob.varName
                     func_list = prob.evalFuncs
                     for func_name in func_list:
                         with self.subTest(function=func_name):
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
-                                if struct_key not in func_sens[func_key]:
-                                    continue
-                                # Project exact sens onto struct DV perturbation
-                                dfddv_proj = func_sens[func_key][struct_key].dot(
-                                    self.dv_pert[struct_key]
-                                )
-                                # Compute approximate sens
-                                fdv_sens_approx = self.compute_fdcs_approx(
-                                    funcs_pert[func_key], funcs[func_key]
-                                )
-                                # Convert to abs value if requested
-                                if self.absolute_compare:
-                                    dfddv_proj = np.abs(dfddv_proj)
-                                    fdv_sens_approx = np.abs(fdv_sens_approx)
-                                # Test values
-                                np.testing.assert_allclose(
-                                    dfddv_proj,
-                                    fdv_sens_approx,
-                                    rtol=self.rtol,
-                                    atol=self.atol,
-                                )
-
-        def test_total_promoted_dv_sensitivities(self):
-            """
-            Test total promoted global DV sensitivity through adjoint against fd/cs.
-            Covers all DVs returned by getPromotedDVNames(), which includes mass DVs,
-            aux DVs (e.g. load-factor variables), and any other global DVs the user
-            chose to promote to problem level.
-            """
-            # Skip if no promoted DVs across all problems
-            total_promoted_dvs = sum(
-                len(prob.getPromotedDVNames()) for prob in self.struct_probs
-            )
-            if total_promoted_dvs == 0:
-                return
-
-            # Initial solve
-            funcs = self.run_solve()
-
-            # Compute sensitivities using adjoint
-            func_sens = self.run_sensitivities()
-
-            # Perturb only promoted DV keys; leave struct DV keys at original values
-            dv1 = deepcopy(self.dv0)
-            for prob in self.struct_probs:
-                for promoted_key in prob.getPromotedDVNames():
-                    if promoted_key in self.dv_pert:
-                        dv1[promoted_key] = self.perturb_struct_vec(
-                            self.dv0[promoted_key], self.dv_pert[promoted_key]
-                        )
-
-            # Run perturbed solution
-            funcs_pert = self.run_solve(dv=dv1)
-
-            # Tests cs/fd against sensitivity from adjoint
-            for prob in self.struct_probs:
-                with self.subTest(problem=prob.name):
-                    promoted_keys = prob.getPromotedDVNames()
-                    func_list = prob.evalFuncs
-                    for func_name in func_list:
-                        with self.subTest(function=func_name):
-                            func_key = prob.name + "_" + func_name
-                            if func_key in self.FUNC_REFS:
-                                # Sum projected sens over all promoted DVs for this problem
-                                dfddv_proj = sum(
-                                    func_sens[func_key][promoted_key]
-                                    * self.dv_pert[promoted_key]
-                                    for promoted_key in promoted_keys
-                                    if promoted_key in func_sens[func_key]
-                                )
-                                # Compute approximate sens
-                                fdv_sens_approx = self.compute_fdcs_approx(
-                                    funcs_pert[func_key], funcs[func_key]
-                                )
-                                # Convert to abs value if requested
-                                if self.absolute_compare:
-                                    dfddv_proj = np.abs(dfddv_proj)
-                                    fdv_sens_approx = np.abs(fdv_sens_approx)
-                                # Test values
-                                np.testing.assert_allclose(
-                                    dfddv_proj,
-                                    fdv_sens_approx,
-                                    rtol=self.rtol,
-                                    atol=self.atol,
-                                )
+                                # Get design variable name for this problem
+                                dv_key = prob.staticProblem.getVarName()
+                                if dv_key in func_sens[func_key]:
+                                    # project exact sens
+                                    dfddv_proj = func_sens[func_key][dv_key].dot(
+                                        self.dv_pert
+                                    )
+                                    # Compute approximate sens
+                                    fdv_sens_approx = self.compute_fdcs_approx(
+                                        funcs_pert[func_key], funcs[func_key]
+                                    )
+                                    # Convert to abs value if requested
+                                    if self.absolute_compare:
+                                        dfddv_proj = np.abs(dfddv_proj)
+                                        fdv_sens_approx = np.abs(fdv_sens_approx)
+                                    # Test values
+                                    np.testing.assert_allclose(
+                                        dfddv_proj,
+                                        fdv_sens_approx,
+                                        rtol=self.rtol,
+                                        atol=self.atol,
+                                    )
 
         def test_total_dvgeo_sensitivities(self):
             """
             Test total geometric design variable sensitivity through adjoint against fd/cs
             """
-            # Skip this check if no dvs were added to model
-            total_geo_dvs = self.dv_geo.getNDV()
-            if total_geo_dvs == 0:
+            # Skip this check if no dvgeo was set or no dvs were added to model
+            if self.dv_geo is None or self.dv_geo.getNDV() == 0:
                 return
 
             # Initial solve

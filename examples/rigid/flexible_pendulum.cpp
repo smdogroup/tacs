@@ -292,11 +292,11 @@ int main(int argc, char **argv) {
 
     // Set the discrete and continuous KS functions
     TACSKSFailure *ksfunc = new TACSKSFailure(tacs, 20.0);
-    ksfunc->setKSFailureType(TACSKSFailure::DISCRETE);
+    ksfunc->setKSAggregationType(KS_DISCRETE);
     func[2] = ksfunc;
 
     ksfunc = new TACSKSFailure(tacs, 20.0);
-    ksfunc->setKSFailureType(TACSKSFailure::CONTINUOUS);
+    ksfunc->setKSAggregationType(KS_CONTINUOUS);
     func[3] = ksfunc;
 
     // Set the induced norm failure types

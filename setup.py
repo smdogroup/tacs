@@ -120,7 +120,7 @@ optional_dependencies["all"] = sorted(
 
 setup(
     name="tacs",
-    version="3.11.0",
+    version="3.12.0",
     description="Parallel finite-element analysis package",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -134,6 +134,7 @@ setup(
         # pin pynastran against last commit that supports python 3.10
         "pynastran @ git+https://github.com/smdogroup/pyNastran.git@ba6a3c460f65fd4083b08579e462de40c6b0cf84",
         "numba",
+        "packaging",
     ],
     extras_require=optional_dependencies,
     packages=find_packages(include=["tacs*"]),

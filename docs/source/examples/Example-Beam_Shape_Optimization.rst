@@ -1,14 +1,18 @@
 2D Beam Shape Optimization with MACH
 ************************************
-.. note:: The script for this example can be found under the ``examples/beam/shape_opt.py`` file.
+.. note:: The script for this example can be found under the ``examples/beam_shape_opt/shape_opt.py`` file.
 
 This example demonstrates TACS structural shape optimization using the
 :ref:`mach/mach:MACH` interface.
 It considers the same cantilevered beam with a tip shear load as the
 :ref:`examples/Example-Beam_Optimization:Beam optimization with MPhys` example, but differs
-in two key ways: the beam is modeled in 2D using shell elements rather than 1D beam elements,
-and the geometry is optimized by physically warping the finite-element mesh via a free-form deformation (FFD) volume
-rather than by adjusting 1D cross-sectional properties.
+in two key ways:
+
+#. The beam is modeled in 2D using shell elements rather than 1D beam elements,
+#. The geometry is optimized by physically warping the finite-element mesh via a
+   free-form deformation (FFD) volume rather than by adjusting 1D cross-sectional
+   properties.
+
 The beam is discretized using 1001 shell elements along its span and depth.
 
 The optimization problem is:
@@ -39,114 +43,61 @@ TACS' adjoint solver through the :class:`~tacs.mach.struct_problem.StructProblem
 
 First, import required libraries:
 
-.. code-block:: python
-
-  import numpy as np
-  import os
-
-  from pygeo import DVGeometry
-  from pyoptsparse import Optimization, OPT
-
-  from tacs.mach import StructProblem
-  from tacs import pyTACS
-  from tacs import elements, constitutive, functions
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:imports-start]
+   :end-before: # [docs:imports-end]
 
 Next, define the problem parameters and file paths:
 
-.. code-block:: python
-
-  bdf_file = os.path.join(os.path.dirname(__file__), 'Slender_Beam.bdf')
-  ffd_file = os.path.join(os.path.dirname(__file__), 'ffd_8_linear.fmt')
-
-  # Beam thickness
-  t = 0.01 # m
-  # Length of beam
-  L = 1.0 # m
-
-  # Material properties
-  rho = 2780.0 # kg /m^3
-  E = 70.0e9 # Pa
-  nu = 0.0
-  ys = 420.0e6
-
-  # Shear force applied at tip
-  V = 2.5E4 # N
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:parameters-start]
+   :end-before: # [docs:parameters-end]
 
 Now, define the element callback function used to setup TACS element objects and design variables:
 
-.. code-block:: python
-
-  def element_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
-      # Setup (isotropic) property and constitutive objects
-      prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
-      con = constitutive.IsoShellConstitutive(prop, t=t, tNum=-1)
-      # TACS shells are sometimes a little overly-rigid in shear
-      # We can reduce this effect by decreasing the drilling regularization
-      con.setDrillingRegularization(0.1)
-      refAxis = np.array([1.0, 0.0, 0.0])
-      transform = elements.ShellRefAxisTransform(refAxis)
-      elem = elements.Quad4Shell(transform, con)
-      return elem
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:element-callback-start]
+   :end-before: # [docs:element-callback-end]
 
 Create and initialize the pyTACS assembler:
 
-.. code-block:: python
-
-  FEAAssembler = pyTACS(bdf_file)
-  FEAAssembler.initialize(element_callback)
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:pytacs-init-start]
+   :end-before: # [docs:pytacs-init-end]
 
 Set up the FFD and geometric design variables using `pyGeo <https://github.com/mdolab/pygeo>`_'s DVGeometry:
 
-.. code-block:: python
-
-  DVGeo = DVGeometry(fileName=ffd_file)
-  # Create reference axis
-  nRefAxPts = DVGeo.addRefAxis(name="centerline", alignIndex='i', yFraction=0.5)
-
-  # Set up global design variables
-  def depth(val, geo):
-      for i in range(nRefAxPts):
-          geo.scale_y["centerline"].coef[i] = val[i]
-
-  DVGeo.addGlobalDV(dvName="depth", value=np.ones(nRefAxPts), func=depth,
-                    lower=1e-3, upper=10.0, scale=20.0)
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:dvgeo-setup-start]
+   :end-before: # [docs:dvgeo-setup-end]
 
 Create the static problem and add functions of interest:
 
-.. code-block:: python
-
-  staticProb = FEAAssembler.createStaticProblem("tip_shear")
-  # Add TACS Functions
-  staticProb.addFunction('mass', functions.StructuralMass)
-  staticProb.addFunction('ks_vmfailure', functions.KSFailure, safetyFactor=1.0, ksWeight=100.0)
-  # Add forces to static problem
-  staticProb.addLoadToNodes(1112, [0.0, V, 0.0, 0.0, 0.0, 0.0], nastranOrdering=True)
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:static-problem-start]
+   :end-before: # [docs:static-problem-end]
 
 Wrap the static problem with the :class:`~tacs.mach.struct_problem.StructProblem` using the MACH interface.
 Passing ``DVGeo`` here registers the structural node coordinates with the FFD volume;
 nodes are updated automatically before each solve when design variables change:
 
-.. code-block:: python
-
-  structProb = StructProblem(staticProb, FEAAssembler, DVGeo=DVGeo)
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:struct-problem-start]
+   :end-before: # [docs:struct-problem-end]
 
 Define the objective and constraint evaluation function:
 
-.. code-block:: python
-
-  def structObj(x):
-      """Evaluate the objective and constraints"""
-      funcs = {}
-      structProb.setDesignVars(x)
-      DVGeo.setDesignVars(x)
-      structProb.solve()
-      structProb.evalFunctions(funcs)
-      structProb.writeSolution()
-      if structProb.comm.rank == 0:
-          print(x)
-          print(funcs)
-
-      return funcs, False
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:struct-obj-start]
+   :end-before: # [docs:struct-obj-end]
 
 Define the sensitivity evaluation function.
 :meth:`~tacs.mach.struct_problem.StructProblem.evalFunctionsSens` folds in the DVGeo
@@ -154,15 +105,10 @@ chain-rule term automatically, producing sensitivities keyed by the geometric DV
 (``"depth"``).  The structural DV sensitivity (keyed ``"struct"``) is
 popped out because it is not used in the pyoptsparse optimization problem:
 
-.. code-block:: python
-
-  def structSens(x, funcs):
-      """Evaluate the objective and constraint sensitivities"""
-      funcsSens = {}
-      structProb.evalFunctionsSens(funcsSens)
-      for func in funcsSens:
-          funcsSens[func].pop("struct")
-      return funcsSens, False
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:struct-sens-start]
+   :end-before: # [docs:struct-sens-end]
 
 Set up the optimization problem using pyoptsparse.
 :meth:`~tacs.mach.struct_problem.StructProblem.addVariablesPyOpt` registers the TACS
@@ -170,25 +116,17 @@ structural design variables (none in this case, since ``tNum=-1``), and
 ``DVGeo.addVariablesPyOpt`` registers the FFD ``"depth"`` DVs.
 The stress constraint is added as a nonlinear inequality using the KS failure aggregation:
 
-.. code-block:: python
-
-  # Now we create the structural optimization problem:
-  optProb = Optimization("Mass min", structObj)
-  optProb.addObj("tip_shear_mass")
-  structProb.addVariablesPyOpt(optProb)
-  DVGeo.addVariablesPyOpt(optProb)
-  optProb.addCon("tip_shear_ks_vmfailure", upper=1.0)
-
-  optProb.printSparsity()
-
-  opt = OPT("SLSQP", options={"MAXIT": 100, "IPRINT": 1, "IFILE": os.path.join(os.path.dirname(__file__), 'SLSQP.out')})
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:opt-setup-start]
+   :end-before: # [docs:opt-setup-end]
 
 Finally, run the optimization:
 
-.. code-block:: python
-
-  # Finally run the actual optimization
-  sol = opt(optProb, sens=structSens, storeSens=False)
+.. literalinclude:: ../../../examples/beam_shape_opt/shape_opt.py
+   :language: python
+   :start-after: # [docs:run-opt-start]
+   :end-before: # [docs:run-opt-end]
 
 Results
 -------

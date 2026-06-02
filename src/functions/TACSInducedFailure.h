@@ -62,17 +62,6 @@
 
 class TACSInducedFailure : public TACSFunction {
  public:
-  enum InducedNormType {
-    EXPONENTIAL,
-    POWER,
-    EXPONENTIAL_SQUARED,
-    POWER_SQUARED,
-    DISCRETE_EXPONENTIAL,
-    DISCRETE_POWER,
-    DISCRETE_EXPONENTIAL_SQUARED,
-    DISCRETE_POWER_SQUARED
-  };
-
   TACSInducedFailure(TACSAssembler *_assembler, double _P);
   ~TACSInducedFailure();
 
