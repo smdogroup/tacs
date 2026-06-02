@@ -2615,6 +2615,30 @@ cdef class LamParamFullShellConstitutive(ShellConstitutive):
         """
         self.lam_cptr.setNumFailAngles(numFailAngles)
 
+cdef class BeamConstitutive(Constitutive):
+    def evalDensity(self, int elemIndex,
+                    np.ndarray[double, ndim=1, mode='c'] pt,
+                    np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """Evaluate the mass per unit length at the given point, including nonstructural mass."""
+        return self.cptr.evalDensity(elemIndex, <double*>pt.data, <TacsScalar*>x.data)
+
+    def evalMassMoments(self, int elemIndex,
+                        np.ndarray[double, ndim=1, mode='c'] pt,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """
+        Evaluate the six cross-sectional mass moments at the given point.
+
+        Returns
+        -------
+        np.ndarray of shape (6,)
+            moments = [rho*A, cz1, cz2, Iz1z1, Iz2z2, Iz1z2], including
+            any nonstructural mass with full parallel-axis contributions.
+        """
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] moments = np.zeros(6, dtype=dtype)
+        self.cptr.evalMassMoments(elemIndex, <double*>pt.data, <TacsScalar*>x.data,
+                                  <TacsScalar*>moments.data)
+        return moments
+
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
     Timoshenko theory based constitutive object for an general beam.

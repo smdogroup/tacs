@@ -286,7 +286,8 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
-        pass
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
 
 cdef extern from "TACSBasicBeamConstitutive.h":
     cdef cppclass TACSBasicBeamConstitutive(TACSBeamConstitutive):
