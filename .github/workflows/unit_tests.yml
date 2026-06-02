@@ -133,27 +133,30 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
            if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
-             wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz
-             tar -xvf ESP122Lin.tgz
-             export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
-             export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
-             export CASARCH=
-             export PATH=$PATH:$CASROOT/bin
-             export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
-             cd $ESP_ROOT
-             ./config/makeEnv ${CASROOT}
-             source $ESP_ROOT/../ESPenv.sh
-             cd ./src/CAPS/aim
-             make
-             cd $TACS_DIR/extern/ESP122/
-             # remove all ESP/CAPS unit test files with recursive delete
-             find . -name "test*" -type f -delete
-             cd $TACS_DIR
-           fi
+            if wget https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz; then
+              tar -xvf ESP122Lin.tgz
+              export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
+              export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
+              export CASARCH=
+              export PATH=$PATH:$CASROOT/bin
+              export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
+              cd $ESP_ROOT
+              ./config/makeEnv ${CASROOT}
+              source $ESP_ROOT/../ESPenv.sh
+              cd ./src/CAPS/aim
+              make
+              cd $TACS_DIR/extern/ESP122/
+              # remove all ESP/CAPS unit test files with recursive delete
+              find . -name "test*" -type f -delete
+              cd $TACS_DIR
+            else
+              echo "Warning: ESP/CAPS tarball download failed, skipping ESP/CAPS installation"
+            fi
+          fi
       - name: Run unit tests
         run: |
-          # Reload ESP/CAPS environment variables if in real mode
-          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
+          # Reload ESP/CAPS environment variables if in real mode and ESP was installed
+          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]] && [[ -f ${TACS_DIR}/extern/ESP122/ESPenv.sh ]]; then
             source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           fi
           testflo -v --timeout 420 .;
