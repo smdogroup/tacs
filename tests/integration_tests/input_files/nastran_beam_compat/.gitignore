@@ -1,1 +1,6 @@
-_nastran_outputs/
+_nastran_outputs/*
+*.bdf
+*.png
+*.f04
+*.f06
+*.op2
