@@ -1149,6 +1149,9 @@ class pyTACS(BaseUI):
                 # Project the offset vector onto the local section axes
                 shearCenterYOffset = np.dot(yElem, offset_vector)
                 shearCenterZOffset = np.dot(zElem, offset_vector)
+                hasShearCenterOffset = (
+                    shearCenterYOffset != 0.0 or shearCenterZOffset != 0.0
+                )
 
                 if propInfo.type == "PBAR":  # Nastran bar
                     area = propInfo.A
@@ -1169,7 +1172,8 @@ class pyTACS(BaseUI):
 
                     if k2 is None or k2 > 1e3:
                         k2 = 1e3
-                    # For a bar we assume that the shear center, neutral axis, and center of mass all coincide, with the defined offset from the nodes
+                    # All section reference points (mass, centroid, shear, NSM) are assumed
+                    # coincident and placed at the WA/WB offset from the nodes.
                     con = tacs.constitutive.BasicBeamConstitutive(
                         mat,
                         A=area,
@@ -1186,6 +1190,8 @@ class pyTACS(BaseUI):
                         xc3=shearCenterYOffset,
                         xk2=shearCenterYOffset,
                         xk3=shearCenterZOffset,
+                        xnsm2=shearCenterYOffset,
+                        xnsm3=shearCenterZOffset,
                     )
 
                 elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
@@ -1211,15 +1217,14 @@ class pyTACS(BaseUI):
                             mat, d=d_inner, t=t_wall, nsm=nsm
                         )
 
-                    else:
-                        # We use the pynastran API to get the area, moments of inertia, and torsional constant
-                        # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
-                        # this more general method
+                    elif propInfo.Type in ("ROD", "TUBE"):
+                        # ROD and TUBE: pyNastran computes a correct J() for these types.
+                        # TUBE falls here only when WA/WB offsets are non-zero (the
+                        # IsoTubeBeamConstitutive branch above requires zero offset).
                         A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
                             "PBARL", propInfo.Type, propInfo.dim, propInfo
                         )
                         J = propInfo.J()
-                        # For a bar we assume that the shear center, neutral axis, and center of mass all coincide, with the defined offset from the nodes
                         con = tacs.constitutive.BasicBeamConstitutive(
                             mat,
                             A=A,
@@ -1234,6 +1239,14 @@ class pyTACS(BaseUI):
                             xc3=shearCenterYOffset,
                             xk2=shearCenterYOffset,
                             xk3=shearCenterZOffset,
+                            xnsm2=shearCenterYOffset,
+                            xnsm3=shearCenterZOffset,
+                        )
+
+                    else:
+                        raise self._TACSError(
+                            f"Unsupported PBARL section type '{propInfo.Type}' for property "
+                            f"number {propertyID}. TACS supports BAR, ROD, and TUBE."
                         )
 
                 elif propInfo.type == "PBEAM":
@@ -1335,7 +1348,7 @@ class pyTACS(BaseUI):
                             -np.dot(yElem, offset_vector) / sectionProps["t"]
                         )
                         conType = tacs.constitutive.IsoRectangleBeamConstitutive
-                    elif propInfo.Type == "TUBE" and (
+                    elif sectionType == "TUBE" and (
                         shearCenterZOffset == 0.0 and shearCenterYOffset == 0.0
                     ):
                         r1 = propInfo.dim[:, 0]
@@ -1344,17 +1357,13 @@ class pyTACS(BaseUI):
                         sectionProps["t"] = r1 - r0
                         sectionProps["nsm"] = propInfo.nsm
                         conType = tacs.constitutive.IsoTubeBeamConstitutive
+
                     else:
-                        # Section shape that doesn't have a corresponding TACS
-                        # constitutive class, so we just compute the section properties
-                        # and use BasicBeamConstitutive
-                        sectionProps["A"] = propInfo.Area()
-                        sectionProps["J"] = propInfo.J()
-                        sectionProps["Iz"] = propInfo.I1()
-                        sectionProps["Iy"] = propInfo.I2()
-                        sectionProps["Iyz"] = -propInfo.I12()
-                        sectionProps["nsm"] = propInfo.nsm
-                        conType = tacs.constitutive.BasicBeamConstitutive
+                        raise self._TACSError(
+                            f"Unsupported PBEAML section type '{sectionType}' for property "
+                            f"number {propertyID}. TACS supports BAR and TUBE (without "
+                            f"WA/WB offsets). pyNastran does not compute J for other types."
+                        )
 
                     # Whatever properties we're going to pass to the TACS
                     # constitutive model, average them along the element
