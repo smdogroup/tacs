@@ -721,10 +721,6 @@ cdef class Quad4Shell(Element):
         self.con = con
         self.transform = transform
 
-    def setComplexStepGmatrix(self, bool flag):
-        if self.cptr:
-            self.cptr.setComplexStepGmatrix(flag)
-
 cdef class Quad4NonlinearShell(Element):
     """
     A 4-node quad shell element for general geometric nonlinear elastic analysis.
@@ -911,10 +907,6 @@ cdef class Quad9Shell(Element):
         self.ptr.incref()
         self.con = con
         self.transform = transform
-
-    def setComplexStepGmatrix(self, bool flag):
-        if self.cptr:
-            self.cptr.setComplexStepGmatrix(flag)
 
 cdef class Quad9NonlinearShell(Element):
     """
@@ -1106,10 +1098,6 @@ cdef class Quad16Shell(Element):
         self.ptr.incref()
         self.con = con
         self.transform = transform
-
-    def setComplexStepGmatrix(self, bool flag):
-        if self.cptr:
-            self.cptr.setComplexStepGmatrix(flag)
 
 cdef class Quad16NonlinearShell(Element):
     """

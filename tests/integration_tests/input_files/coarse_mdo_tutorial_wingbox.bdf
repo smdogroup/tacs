@@ -1,0 +1,611 @@
+INIT MASTER(S)
+NASTRAN SYSTEM(442)=-1,SYSTEM(319)=1
+ID test,FEMAP
+SOL SESTATIC
+CEND
+  TITLE = Simcenter Nastran Static Analysis Set
+  ECHO = NONE
+  DISPLACEMENT(PLOT) = ALL
+  SPCFORCE(PLOT) = ALL
+  OLOAD(PLOT) = ALL
+  FORCE(PLOT,CORNER) = ALL
+  STRESS(PLOT,CORNER) = ALL
+  SPC = 1
+BEGIN BULK
+$ ***************************************************************************
+$   Written by : Femap
+$   Version    : 2506.0
+$   Translator : Simcenter Nastran
+$   From Model : C:\Mac\Home\Documents\test_wing.modfem
+$   Date       : Tue Oct 28 16:52:44 2025
+$   Output To  : C:\Mac\Home\Documents\
+$ ***************************************************************************
+$
+PARAM,PRGPST,NO
+PARAM,POST,-1
+PARAM,OGEOM,NO
+PARAM,AUTOSPC,YES
+PARAM,K6ROT,100.
+PARAM,GRDPNT,0
+CORD2C         1       0      0.      0.      0.      0.      0.      1.+FEMAPC1
++FEMAPC1      1.      0.      1.        
+CORD2S         2       0      0.      0.      0.      0.      0.      1.+FEMAPC2
++FEMAPC2      1.      0.      1.        
+$ Femap Constraint Set 1 : CLAMP
+SPC1           1  123456       9
+SPC1           1  123456      10
+SPC1           1  123456      11
+SPC1           1  123456      12
+$ Femap Property 1 : WING_U_SKIN_000
+PSHELL         1       1     .01       1               1              0.
+$ Femap Property 2 : WING_U_SKIN_001
+PSHELL         2       1     .01       1               1              0.
+$ Femap Property 3 : WING_U_SKIN_002
+PSHELL         3       1     .01       1               1              0.
+$ Femap Property 4 : WING_U_SKIN_003
+PSHELL         4       1     .01       1               1              0.
+$ Femap Property 5 : WING_U_SKIN_004
+PSHELL         5       1     .01       1               1              0.
+$ Femap Property 6 : WING_U_SKIN_005
+PSHELL         6       1     .01       1               1              0.
+$ Femap Property 7 : WING_U_SKIN_006
+PSHELL         7       1     .01       1               1              0.
+$ Femap Property 8 : WING_U_SKIN_007
+PSHELL         8       1     .01       1               1              0.
+$ Femap Property 9 : WING_U_SKIN_008
+PSHELL         9       1     .01       1               1              0.
+$ Femap Property 10 : WING_U_SKIN_009
+PSHELL        10       1     .01       1               1              0.
+$ Femap Property 11 : WING_U_SKIN_010
+PSHELL        11       1     .01       1               1              0.
+$ Femap Property 12 : WING_U_SKIN_011
+PSHELL        12       1     .01       1               1              0.
+$ Femap Property 13 : WING_U_SKIN_012
+PSHELL        13       1     .01       1               1              0.
+$ Femap Property 14 : WING_U_SKIN_013
+PSHELL        14       1     .01       1               1              0.
+$ Femap Property 15 : WING_U_SKIN_014
+PSHELL        15       1     .01       1               1              0.
+$ Femap Property 16 : WING_U_SKIN_015
+PSHELL        16       1     .01       1               1              0.
+$ Femap Property 17 : WING_U_SKIN_016
+PSHELL        17       1     .01       1               1              0.
+$ Femap Property 18 : WING_U_SKIN_017
+PSHELL        18       1     .01       1               1              0.
+$ Femap Property 19 : WING_L_SKIN_000
+PSHELL        19       1     .01       1               1              0.
+$ Femap Property 20 : WING_L_SKIN_001
+PSHELL        20       1     .01       1               1              0.
+$ Femap Property 21 : WING_L_SKIN_002
+PSHELL        21       1     .01       1               1              0.
+$ Femap Property 22 : WING_L_SKIN_003
+PSHELL        22       1     .01       1               1              0.
+$ Femap Property 23 : WING_L_SKIN_004
+PSHELL        23       1     .01       1               1              0.
+$ Femap Property 24 : WING_L_SKIN_005
+PSHELL        24       1     .01       1               1              0.
+$ Femap Property 25 : WING_L_SKIN_006
+PSHELL        25       1     .01       1               1              0.
+$ Femap Property 26 : WING_L_SKIN_007
+PSHELL        26       1     .01       1               1              0.
+$ Femap Property 27 : WING_L_SKIN_008
+PSHELL        27       1     .01       1               1              0.
+$ Femap Property 28 : WING_L_SKIN_009
+PSHELL        28       1     .01       1               1              0.
+$ Femap Property 29 : WING_L_SKIN_010
+PSHELL        29       1     .01       1               1              0.
+$ Femap Property 30 : WING_L_SKIN_011
+PSHELL        30       1     .01       1               1              0.
+$ Femap Property 31 : WING_L_SKIN_012
+PSHELL        31       1     .01       1               1              0.
+$ Femap Property 32 : WING_L_SKIN_013
+PSHELL        32       1     .01       1               1              0.
+$ Femap Property 33 : WING_L_SKIN_014
+PSHELL        33       1     .01       1               1              0.
+$ Femap Property 34 : WING_L_SKIN_015
+PSHELL        34       1     .01       1               1              0.
+$ Femap Property 35 : WING_L_SKIN_016
+PSHELL        35       1     .01       1               1              0.
+$ Femap Property 36 : WING_L_SKIN_017
+PSHELL        36       1     .01       1               1              0.
+$ Femap Property 37 : WING_LE_SPAR_000
+PSHELL        37       1     .01       1               1              0.
+$ Femap Property 38 : WING_LE_SPAR_001
+PSHELL        38       1     .01       1               1              0.
+$ Femap Property 39 : WING_LE_SPAR_002
+PSHELL        39       1     .01       1               1              0.
+$ Femap Property 40 : WING_LE_SPAR_003
+PSHELL        40       1     .01       1               1              0.
+$ Femap Property 41 : WING_LE_SPAR_004
+PSHELL        41       1     .01       1               1              0.
+$ Femap Property 42 : WING_LE_SPAR_005
+PSHELL        42       1     .01       1               1              0.
+$ Femap Property 43 : WING_LE_SPAR_006
+PSHELL        43       1     .01       1               1              0.
+$ Femap Property 44 : WING_LE_SPAR_007
+PSHELL        44       1     .01       1               1              0.
+$ Femap Property 45 : WING_LE_SPAR_008
+PSHELL        45       1     .01       1               1              0.
+$ Femap Property 46 : WING_LE_SPAR_009
+PSHELL        46       1     .01       1               1              0.
+$ Femap Property 47 : WING_LE_SPAR_010
+PSHELL        47       1     .01       1               1              0.
+$ Femap Property 48 : WING_LE_SPAR_011
+PSHELL        48       1     .01       1               1              0.
+$ Femap Property 49 : WING_LE_SPAR_012
+PSHELL        49       1     .01       1               1              0.
+$ Femap Property 50 : WING_LE_SPAR_013
+PSHELL        50       1     .01       1               1              0.
+$ Femap Property 51 : WING_LE_SPAR_014
+PSHELL        51       1     .01       1               1              0.
+$ Femap Property 52 : WING_LE_SPAR_015
+PSHELL        52       1     .01       1               1              0.
+$ Femap Property 53 : WING_LE_SPAR_016
+PSHELL        53       1     .01       1               1              0.
+$ Femap Property 54 : WING_LE_SPAR_017
+PSHELL        54       1     .01       1               1              0.
+$ Femap Property 55 : WING_TE_SPAR_000
+PSHELL        55       1     .01       1               1              0.
+$ Femap Property 56 : WING_TE_SPAR_001
+PSHELL        56       1     .01       1               1              0.
+$ Femap Property 57 : WING_TE_SPAR_002
+PSHELL        57       1     .01       1               1              0.
+$ Femap Property 58 : WING_TE_SPAR_003
+PSHELL        58       1     .01       1               1              0.
+$ Femap Property 59 : WING_TE_SPAR_004
+PSHELL        59       1     .01       1               1              0.
+$ Femap Property 60 : WING_TE_SPAR_005
+PSHELL        60       1     .01       1               1              0.
+$ Femap Property 61 : WING_TE_SPAR_006
+PSHELL        61       1     .01       1               1              0.
+$ Femap Property 62 : WING_TE_SPAR_007
+PSHELL        62       1     .01       1               1              0.
+$ Femap Property 63 : WING_TE_SPAR_008
+PSHELL        63       1     .01       1               1              0.
+$ Femap Property 64 : WING_TE_SPAR_009
+PSHELL        64       1     .01       1               1              0.
+$ Femap Property 65 : WING_TE_SPAR_010
+PSHELL        65       1     .01       1               1              0.
+$ Femap Property 66 : WING_TE_SPAR_011
+PSHELL        66       1     .01       1               1              0.
+$ Femap Property 67 : WING_TE_SPAR_012
+PSHELL        67       1     .01       1               1              0.
+$ Femap Property 68 : WING_TE_SPAR_013
+PSHELL        68       1     .01       1               1              0.
+$ Femap Property 69 : WING_TE_SPAR_014
+PSHELL        69       1     .01       1               1              0.
+$ Femap Property 70 : WING_TE_SPAR_015
+PSHELL        70       1     .01       1               1              0.
+$ Femap Property 71 : WING_TE_SPAR_016
+PSHELL        71       1     .01       1               1              0.
+$ Femap Property 72 : WING_TE_SPAR_017
+PSHELL        72       1     .01       1               1              0.
+$ Femap Property 73 : WING_RIB_000
+PSHELL        73       1     .01       1               1              0.
+$ Femap Property 74 : WING_RIB_001
+PSHELL        74       1     .01       1               1              0.
+$ Femap Property 75 : WING_RIB_002
+PSHELL        75       1     .01       1               1              0.
+$ Femap Property 76 : WING_RIB_003
+PSHELL        76       1     .01       1               1              0.
+$ Femap Property 77 : WING_RIB_004
+PSHELL        77       1     .01       1               1              0.
+$ Femap Property 78 : WING_RIB_005
+PSHELL        78       1     .01       1               1              0.
+$ Femap Property 79 : WING_RIB_006
+PSHELL        79       1     .01       1               1              0.
+$ Femap Property 80 : WING_RIB_007
+PSHELL        80       1     .01       1               1              0.
+$ Femap Property 81 : WING_RIB_008
+PSHELL        81       1     .01       1               1              0.
+$ Femap Property 82 : WING_RIB_009
+PSHELL        82       1     .01       1               1              0.
+$ Femap Property 83 : WING_RIB_010
+PSHELL        83       1     .01       1               1              0.
+$ Femap Property 84 : WING_RIB_011
+PSHELL        84       1     .01       1               1              0.
+$ Femap Property 85 : WING_RIB_012
+PSHELL        85       1     .01       1               1              0.
+$ Femap Property 86 : WING_RIB_013
+PSHELL        86       1     .01       1               1              0.
+$ Femap Property 87 : WING_RIB_014
+PSHELL        87       1     .01       1               1              0.
+$ Femap Property 88 : WING_RIB_015
+PSHELL        88       1     .01       1               1              0.
+$ Femap Property 89 : WING_RIB_016
+PSHELL        89       1     .01       1               1              0.
+$ Femap Property 90 : WING_RIB_017
+PSHELL        90       1     .01       1               1              0.
+$ Femap Property 91 : WING_RIB_018
+PSHELL        91       1     .01       1               1              0.
+$ Femap Property 92 : WING_U_LE_SPAR_CAP_000
+PBARL         92       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 93 : WING_U_LE_SPAR_CAP_001
+PBARL         93       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 94 : WING_U_LE_SPAR_CAP_002
+PBARL         94       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 95 : WING_U_LE_SPAR_CAP_003
+PBARL         95       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 96 : WING_U_LE_SPAR_CAP_004
+PBARL         96       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 97 : WING_U_LE_SPAR_CAP_005
+PBARL         97       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 98 : WING_U_LE_SPAR_CAP_006
+PBARL         98       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 99 : WING_U_LE_SPAR_CAP_007
+PBARL         99       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 100 : WING_U_LE_SPAR_CAP_008
+PBARL        100       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 101 : WING_U_LE_SPAR_CAP_009
+PBARL        101       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 102 : WING_U_LE_SPAR_CAP_010
+PBARL        102       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 103 : WING_U_LE_SPAR_CAP_011
+PBARL        103       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 104 : WING_U_LE_SPAR_CAP_012
+PBARL        104       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 105 : WING_U_LE_SPAR_CAP_013
+PBARL        105       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 106 : WING_U_LE_SPAR_CAP_014
+PBARL        106       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 107 : WING_U_LE_SPAR_CAP_015
+PBARL        107       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 108 : WING_U_LE_SPAR_CAP_016
+PBARL        108       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 109 : WING_U_LE_SPAR_CAP_017
+PBARL        109       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 110 : WING_L_LE_SPAR_CAP_000
+PBARL        110       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 111 : WING_L_LE_SPAR_CAP_001
+PBARL        111       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 112 : WING_L_LE_SPAR_CAP_002
+PBARL        112       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 113 : WING_L_LE_SPAR_CAP_003
+PBARL        113       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 114 : WING_L_LE_SPAR_CAP_004
+PBARL        114       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 115 : WING_L_LE_SPAR_CAP_005
+PBARL        115       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 116 : WING_L_LE_SPAR_CAP_006
+PBARL        116       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 117 : WING_L_LE_SPAR_CAP_007
+PBARL        117       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 118 : WING_L_LE_SPAR_CAP_008
+PBARL        118       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 119 : WING_L_LE_SPAR_CAP_009
+PBARL        119       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 120 : WING_L_LE_SPAR_CAP_010
+PBARL        120       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 121 : WING_L_LE_SPAR_CAP_011
+PBARL        121       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 122 : WING_L_LE_SPAR_CAP_012
+PBARL        122       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 123 : WING_L_LE_SPAR_CAP_013
+PBARL        123       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 124 : WING_L_LE_SPAR_CAP_014
+PBARL        124       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 125 : WING_L_LE_SPAR_CAP_015
+PBARL        125       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 126 : WING_L_LE_SPAR_CAP_016
+PBARL        126       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 127 : WING_L_LE_SPAR_CAP_017
+PBARL        127       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 128 : WING_U_TE_SPAR_CAP_000
+PBARL        128       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 129 : WING_U_TE_SPAR_CAP_001
+PBARL        129       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 130 : WING_U_TE_SPAR_CAP_002
+PBARL        130       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 131 : WING_U_TE_SPAR_CAP_003
+PBARL        131       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 132 : WING_U_TE_SPAR_CAP_004
+PBARL        132       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 133 : WING_U_TE_SPAR_CAP_005
+PBARL        133       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 134 : WING_U_TE_SPAR_CAP_006
+PBARL        134       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 135 : WING_U_TE_SPAR_CAP_007
+PBARL        135       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 136 : WING_U_TE_SPAR_CAP_008
+PBARL        136       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 137 : WING_U_TE_SPAR_CAP_009
+PBARL        137       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 138 : WING_U_TE_SPAR_CAP_010
+PBARL        138       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 139 : WING_U_TE_SPAR_CAP_011
+PBARL        139       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 140 : WING_U_TE_SPAR_CAP_012
+PBARL        140       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 141 : WING_U_TE_SPAR_CAP_013
+PBARL        141       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 142 : WING_U_TE_SPAR_CAP_014
+PBARL        142       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 143 : WING_U_TE_SPAR_CAP_015
+PBARL        143       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 144 : WING_U_TE_SPAR_CAP_016
+PBARL        144       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 145 : WING_U_TE_SPAR_CAP_017
+PBARL        145       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 146 : WING_L_TE_SPAR_CAP_000
+PBARL        146       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 147 : WING_L_TE_SPAR_CAP_001
+PBARL        147       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 148 : WING_L_TE_SPAR_CAP_002
+PBARL        148       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 149 : WING_L_TE_SPAR_CAP_003
+PBARL        149       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 150 : WING_L_TE_SPAR_CAP_004
+PBARL        150       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 151 : WING_L_TE_SPAR_CAP_005
+PBARL        151       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 152 : WING_L_TE_SPAR_CAP_006
+PBARL        152       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 153 : WING_L_TE_SPAR_CAP_007
+PBARL        153       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 154 : WING_L_TE_SPAR_CAP_008
+PBARL        154       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 155 : WING_L_TE_SPAR_CAP_009
+PBARL        155       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 156 : WING_L_TE_SPAR_CAP_010
+PBARL        156       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 157 : WING_L_TE_SPAR_CAP_011
+PBARL        157       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 158 : WING_L_TE_SPAR_CAP_012
+PBARL        158       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 159 : WING_L_TE_SPAR_CAP_013
+PBARL        159       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 160 : WING_L_TE_SPAR_CAP_014
+PBARL        160       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 161 : WING_L_TE_SPAR_CAP_015
+PBARL        161       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 162 : WING_L_TE_SPAR_CAP_016
+PBARL        162       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 163 : WING_L_TE_SPAR_CAP_017
+PBARL        163       1 MSCBML0     BAR                                +       
++             .1     .01      0.        
+$ Femap Property 9999 : WING_TE_SPAR_018
+PSHELL      9999       1     .01       1               1              0.
+$ Femap Property 10000 : WING_LE_SPAR_018
+PSHELL     10000       1     .01       1               1              0.
+$ Femap Material 1 : Alumnium 2024
+MAT1           1 7.31+10             .33   2780.      0.      0.        +       
++                         3.24+8
+GRID           1       0    1.25.2675956.7666711       0
+GRID           2       0    1.25-.267596.7666711       0
+GRID           3       0    1.25-.213818     1.5       0
+GRID           4       0    1.25.2138178     1.5       0
+GRID           5       0      4..1532634.7666711       0
+GRID           6       0      4.-.153263.7666711       0
+GRID           7       0      4.-.173337     1.5       0
+GRID           8       0      4..1733372     1.5       0
+GRID           9       0      4..1301126    1.-5       0
+GRID          10       0    1.25.2970615    1.-5       0
+GRID          11       0      4.-.130113    1.-5       0
+GRID          12       0    1.25-.297062    1.-5       0
+GRID          13       04.300811.16483152.299993       0
+GRID          14       01.671135  .206622.299993       0
+GRID          15       04.300811-.1648312.299993       0
+GRID          16       01.671135 -.206622.299993       0
+GRID          17       04.589088.15667713.066654       0
+GRID          18       02.074723.19966473.066654       0
+GRID          19       02.074723-.1996653.066654       0
+GRID          20       04.589088-.1566773.066654       0
+GRID          21       04.877365.14851933.833316       0
+GRID          22       0 2.47831.19264743.833316       0
+GRID          23       0 2.47831-.1926473.833316       0
+GRID          24       04.877365-.1485193.833316       0
+GRID          25       05.165642.14035774.599977       0
+GRID          26       02.881898.18556154.599977       0
+GRID          27       02.881898-.1855624.599977       0
+GRID          28       05.165642-.1403584.599977       0
+GRID          29       05.453919 .1321925.366638       0
+GRID          30       03.285486.17839935.366638       0
+GRID          31       03.285486-.1783995.366638       0
+GRID          32       05.453919-.1321925.366638       0
+GRID          33       05.742196.12402166.133299       0
+GRID          34       03.689074 .1711526.133299       0
+GRID          35       03.689074-.1711526.133299       0
+GRID          36       05.742196-.1240226.133299       0
+GRID          37       06.030473 .115846 6.89996       0
+GRID          38       04.092662.1638092 6.89996       0
+GRID          39       04.092662-.163809 6.89996       0
+GRID          40       06.030473-.115846 6.89996       0
+GRID          41       0 6.31875.10766487.666621       0
+GRID          42       0 4.49625.15635867.666621       0
+GRID          43       0 4.49625-.1563597.666621       0
+GRID          44       0 6.31875-.1076657.666621       0
+GRID          45       06.607027.09947738.433282       0
+GRID          46       04.899838.14878548.433282       0
+GRID          47       04.899838-.1487858.433282       0
+GRID          48       06.607027-.0994778.433282       0
+GRID          49       06.895304.09128289.199943       0
+GRID          50       05.303425.14107169.199943       0
+GRID          51       05.303425-.1410729.199943       0
+GRID          52       06.895304-.0912839.199943       0
+GRID          53       07.183581.08308089.966604       0
+GRID          54       05.707013.13319529.966604       0
+GRID          55       05.707013-.1331959.966604       0
+GRID          56       07.183581-.0830819.966604       0
+GRID          57       07.471858.074870310.73327       0
+GRID          58       06.110601.125128710.73327       0
+GRID          59       06.110601-.12512910.73327       0
+GRID          60       07.471858 -.0748710.73327       0
+GRID          61       07.760135.066650511.49993       0
+GRID          62       06.514189.116837111.49993       0
+GRID          63       06.514189-.11683711.49993       0
+GRID          64       07.760135 -.0666511.49993       0
+GRID          65       08.048412.058419712.26659       0
+GRID          66       06.917777.108276212.26659       0
+GRID          67       06.917777-.10827612.26659       0
+GRID          68       08.048412 -.0584212.26659       0
+GRID          69       08.336689.050175213.03325       0
+GRID          70       07.321365.099388313.03325       0
+GRID          71       07.321365-.09938813.03325       0
+GRID          72       08.336689-.05017513.03325       0
+GRID          73       08.624966.041912213.79991       0
+GRID          74       07.724953.090095713.79991       0
+GRID          75       07.724953-.09009613.79991       0
+GRID          76       08.624966-.04191213.79991       0
+CQUAD4         1      38       1       4       3       2                
+CQUAD4         2      56       5       8       7       6                
+CQUAD4         3       1       9      10       1       5                
+CQUAD4         4      19       2      12      11       6                
+CQUAD4         5       3       4      14      13       8                
+CQUAD4         6      21      15      16       3       7                
+CQUAD4         7       4      13      14      18      17                
+CQUAD4         8      22      19      16      15      20                
+CQUAD4         9       5      17      18      22      21                
+CQUAD4        10      23      23      19      20      24                
+CQUAD4        11       6      21      22      26      25                
+CQUAD4        12      24      27      23      24      28                
+CQUAD4        13       7      25      26      30      29                
+CQUAD4        14      25      31      27      28      32                
+CQUAD4        15       8      29      30      34      33                
+CQUAD4        16      26      35      31      32      36                
+CQUAD4        17       9      33      34      38      37                
+CQUAD4        18      27      39      35      36      40                
+CQUAD4        19      10      37      38      42      41                
+CQUAD4        20      28      43      39      40      44                
+CQUAD4        21      11      41      42      46      45                
+CQUAD4        22      29      47      43      44      48                
+CQUAD4        23      12      45      46      50      49                
+CQUAD4        24      30      51      47      48      52                
+CQUAD4        25      13      49      50      54      53                
+CQUAD4        26      31      55      51      52      56                
+CQUAD4        27      14      53      54      58      57                
+CQUAD4        28      32      59      55      56      60                
+CQUAD4        29      15      57      58      62      61                
+CQUAD4        30      33      63      59      60      64                
+CQUAD4        31      16      61      62      66      65                
+CQUAD4        32      34      67      63      64      68                
+CQUAD4        33      17      65      66      70      69                
+CQUAD4        34      35      71      67      68      72                
+CQUAD4        35      18      69      70      74      73                
+CQUAD4        36      36      75      71      72      76                
+CQUAD4        37       2       5       1       4       8                
+CQUAD4        38      20       3       2       6       7                
+CQUAD4        39      37      12      10       1       2                
+CQUAD4        40      39       3       4      14      16                
+CQUAD4        41      40      16      14      18      19                
+CQUAD4        42      41      19      18      22      23                
+CQUAD4        43      42      23      22      26      27                
+CQUAD4        44      43      27      26      30      31                
+CQUAD4        45      44      31      30      34      35                
+CQUAD4        46      45      35      34      38      39                
+CQUAD4        47      46      39      38      42      43                
+CQUAD4        48      47      43      42      46      47                
+CQUAD4        49      48      47      46      50      51                
+CQUAD4        50      49      51      50      54      55                
+CQUAD4        51      50      55      54      58      59                
+CQUAD4        52      51      59      58      62      63                
+CQUAD4        53      52      63      62      66      67                
+CQUAD4        54      53      67      66      70      71                
+CQUAD4        55      54      71      70      74      75                
+CQUAD4        56      57       7       8      13      15                
+CQUAD4        57      76      13      14      16      15                
+CQUAD4        58      58      15      13      17      20                
+CQUAD4        59      77      17      18      19      20                
+CQUAD4        60      59      20      17      21      24                
+CQUAD4        61      78      21      22      23      24                
+CQUAD4        62      60      24      21      25      28                
+CQUAD4        63      79      25      26      27      28                
+CQUAD4        64      61      28      25      29      32                
+CQUAD4        65      80      29      30      31      32                
+CQUAD4        66      62      32      29      33      36                
+CQUAD4        67      81      33      34      35      36                
+CQUAD4        68      63      36      33      37      40                
+CQUAD4        69      82      37      38      39      40                
+CQUAD4        70      64      40      37      41      44                
+CQUAD4        71      83      41      42      43      44                
+CQUAD4        72      65      44      41      45      48                
+CQUAD4        73      84      45      46      47      48                
+CQUAD4        74      66      48      45      49      52                
+CQUAD4        75      85      49      50      51      52                
+CQUAD4        76      67      52      49      53      56                
+CQUAD4        77      86      53      54      55      56                
+CQUAD4        78      68      56      53      57      60                
+CQUAD4        79      87      57      58      59      60                
+CQUAD4        80      69      60      57      61      64                
+CQUAD4        81      88      61      62      63      64                
+CQUAD4        82      70      64      61      65      68                
+CQUAD4        83      89      65      66      67      68                
+CQUAD4        84      71      68      65      69      72                
+CQUAD4        85      90      69      70      71      72                
+CQUAD4        86      72      72      69      73      76                
+CQUAD4        87      91      73      74      75      76                
+CQUAD4        88      75       8       4       3       7                
+CQUAD4        89      73       9      10      12      11                
+CQUAD4        90      55      11       9       5       6                
+CQUAD4        91      74       5       1       2       6                
+ENDDATA e5cb220a
