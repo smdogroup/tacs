@@ -13,15 +13,27 @@ the next has the first two, and so on. So an entry with N features yields
 N+1 cases (baseline plus N rungs of feature accumulation).
 """
 
+# PBARL/PBEAML section types TACS can translate with a correct torsion constant
+# J. See docs/adr/0001-nastran-beam-section-support-bounded-by-torsion-constant.md.
+# The negative-test sweep derives its unsupportable sections from pyNastran's
+# valid_types minus this set, so keep this as the single source of truth.
+SUPPORTED_SECTIONS = ("BAR", "ROD", "TUBE", "TUBE2")
+
+# PBEAML circular sections (ROD/TUBE/TUBE2) cannot take a WA/WB offset: IsoTube
+# can't carry an offset and pyNastran computes no J for the BasicBeam fallback.
+# Hence their ladders omit the "wa" rung. PBARL circular sections keep "wa"
+# because PBARL.J() gives a correct circular J for the BasicBeam fallback.
 CASE_MATRIX = {
     ("CBAR", "PBAR", None): ["rotation", "wa", "nsm"],
     ("CBAR", "PBARL", "BAR"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "TUBE"): ["rotation", "nsm"],
-    # ("CBAR", "PBARL", "T"): ["rotation", "wa", "nsm"],  # T not supported: pyNastran J() incorrect
-    # ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
-    # ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
-    # ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
-    # ("CBEAM", "PBEAML", "T"): ["taper", "rotation", "wa", "nsm"],  # T not supported: pyNastran does not compute J
+    ("CBAR", "PBARL", "ROD"): ["rotation", "wa", "nsm"],
+    ("CBAR", "PBARL", "TUBE"): ["rotation", "wa", "nsm"],
+    ("CBAR", "PBARL", "TUBE2"): ["rotation", "wa", "nsm"],
+    ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
+    ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
+    ("CBEAM", "PBEAML", "ROD"): ["taper", "rotation", "nsm"],
+    ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
+    ("CBEAM", "PBEAML", "TUBE2"): ["taper", "rotation", "nsm"],
 }
 
 STATIC_LOAD_NAMES = (

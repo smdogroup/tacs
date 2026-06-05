@@ -58,9 +58,30 @@ NUM_ELEMENTS = 30
 WIDTH1, DEPTH1 = 0.20, 0.05  # end-A (root) dimensions
 WIDTH2, DEPTH2 = 0.10, 0.025  # end-B (tip) dimensions = half of end-A
 
-# Tube section (PBARL+TUBE / PBEAML+TUBE): [outer diameter, wall thickness].
-TUBE_OD1, TUBE_T1 = 0.10, 0.01  # end-A
-TUBE_OD2, TUBE_T2 = 0.05, 0.005  # end-B = half of end-A
+# Tube sections are deliberately THIN-WALLED (wall = 10% of the outer radius).
+# TACS's TACSIsoTubeBeamConstitutive hard-codes the *thin-walled* transverse
+# shear-correction factor kappa = 2(1+nu)/(4+3nu), which only matches Nastran
+# (and reality) in the thin-wall limit. A thick or near-solid tube would
+# disagree with Nastran by ~1-2% in shear-affected responses. See the note in
+# src/constitutive/TACSIsoTubeBeamConstitutive.cpp about generalising to the
+# full Cowper hollow-circular coefficient, which would let us test thick tubes
+# and solid rods against Nastran too.
+#
+# Tube section (PBARL+TUBE / PBEAML+TUBE): Nastran TUBE dims are
+# [outer radius, inner radius].
+TUBE_OUTER_R, TUBE_INNER_R = 0.10, 0.09  # end-A: outer radius, inner radius
+
+# Tube2 section (PBARL+TUBE2 / PBEAML+TUBE2): Nastran TUBE2 dims are
+# [outer radius, wall thickness]. Describes the same physical tube as TUBE above
+# (wall = outer radius - inner radius = 0.10 - 0.09 = 0.01).
+TUBE2_OUTER_R, TUBE2_WALL = 0.10, 0.01  # end-A: outer radius, wall thickness
+
+# Rod section (PBARL+ROD / PBEAML+ROD): a solid circle, single dim [radius].
+# NOTE: a ROD is solid (inner radius 0), so TACS's thin-wall shear factor is
+# wrong for it (the solid-circle value is ~0.89, not ~0.53). ROD results will
+# disagree with Nastran in shear-affected responses until the Cowper factor is
+# implemented; see the .cpp note referenced above.
+ROD_R1 = 0.05  # end-A radius
 
 # T-section (PBARL+T / PBEAML+T): [flange width, total depth, web t, flange t].
 T_DIMS1 = [0.20, 0.10, 0.02, 0.02]  # end-A
@@ -122,7 +143,8 @@ _NODE_ID_START = 1
 _ELEM_ID_START = 1
 _PROP_ID_START = 1
 
-_OUT_DIR = Path(__file__).parent
+_SCRIPT_DIR = Path(__file__).parent
+_BDF_OUT_DIR = _SCRIPT_DIR / "nastran_input_files"
 
 
 def computeRectangleSectionProperties(width, depth):
@@ -166,7 +188,8 @@ def addPropertyCard(
     prop : str
         Property card type ("PBAR", "PBARL", "PBEAM", or "PBEAML").
     section : str or None
-        Section type for PBARL/PBEAML ("BAR", "TUBE", or "T"); None otherwise.
+        Section type for PBARL/PBEAML ("BAR", "ROD", "TUBE", "TUBE2", or "T");
+        None otherwise. ("T" is used only when building negative-test BDFs.)
     propertyId : int
         ID for this property card.
     widthA, depthA : float
@@ -207,7 +230,11 @@ def addPropertyCard(
             # BAR dims = [depth (local-z), width (local-y)] per Nastran convention.
             dims = [depthA, widthA]
         elif section == "TUBE":
-            dims = [TUBE_OD1, TUBE_T1]
+            dims = [TUBE_OUTER_R, TUBE_INNER_R]
+        elif section == "TUBE2":
+            dims = [TUBE2_OUTER_R, TUBE2_WALL]
+        elif section == "ROD":
+            dims = [ROD_R1]
         elif section == "T":
             dims = list(T_DIMS1)
         else:
@@ -258,8 +285,14 @@ def addPropertyCard(
             dimsA = [depthA, widthA]
             dimsB = [depthB, widthB]
         elif section == "TUBE":
-            dimsA = [TUBE_OD1 * scaleA, TUBE_T1 * scaleA]
-            dimsB = [TUBE_OD1 * scaleB, TUBE_T1 * scaleB]
+            dimsA = [TUBE_OUTER_R * scaleA, TUBE_INNER_R * scaleA]
+            dimsB = [TUBE_OUTER_R * scaleB, TUBE_INNER_R * scaleB]
+        elif section == "TUBE2":
+            dimsA = [TUBE2_OUTER_R * scaleA, TUBE2_WALL * scaleA]
+            dimsB = [TUBE2_OUTER_R * scaleB, TUBE2_WALL * scaleB]
+        elif section == "ROD":
+            dimsA = [ROD_R1 * scaleA]
+            dimsB = [ROD_R1 * scaleB]
         elif section == "T":
             dimsA = [dim * scaleA for dim in T_DIMS1]
             dimsB = [dim * scaleB for dim in T_DIMS1]
@@ -451,12 +484,13 @@ def writeBdf(path, sol, title, deckBuilder, model):
 
 
 def main():
-    """Generate all 72 BDFs into this script's directory."""
+    """Generate all 88 BDFs into the nastran_input_files/ subdirectory."""
+    _BDF_OUT_DIR.mkdir(parents=True, exist_ok=True)
     numWritten = 0
     for element, prop, section, stem, features in iterCases():
         staticModel = buildModel(element, prop, section, features, addEigrl=False)
         writeBdf(
-            _OUT_DIR / f"{stem}_sol101.bdf",
+            _BDF_OUT_DIR / f"{stem}_sol101.bdf",
             sol=101,
             title=f"{stem} static analysis",
             deckBuilder=buildStaticDeck,
@@ -466,7 +500,7 @@ def main():
 
         modalModel = buildModel(element, prop, section, features, addEigrl=True)
         writeBdf(
-            _OUT_DIR / f"{stem}_sol103.bdf",
+            _BDF_OUT_DIR / f"{stem}_sol103.bdf",
             sol=103,
             title=f"{stem} modal analysis",
             deckBuilder=buildModalDeck,
@@ -474,7 +508,7 @@ def main():
         )
         numWritten += 1
 
-    print(f"Generated {numWritten} BDF files in {_OUT_DIR}")
+    print(f"Generated {numWritten} BDF files in {_BDF_OUT_DIR}")
 
 
 if __name__ == "__main__":

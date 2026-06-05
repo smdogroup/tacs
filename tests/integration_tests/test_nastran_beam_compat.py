@@ -1,11 +1,18 @@
+import contextlib
+import io
 import os
 import sys
+import tempfile
 import unittest
 
 import numpy as np
 from mpi4py import MPI
+from pyNastran.bdf.bdf import BDF
+from pyNastran.bdf.cards.properties.bars import PBARL
+from pyNastran.bdf.cards.properties.beam import PBEAML
 
 from tacs import pyTACS
+from tacs.utilities import Error
 
 """
 Nastran beam compatibility regression suite.
@@ -15,9 +22,12 @@ element/property card combination and every supported field on those cards.
 Each (configuration, analysis) pair is its own unit test so a single failure
 identifies exactly which card, feature combination, and analysis is broken.
 
-The 252 tests (36 configurations x 7 analyses) self-skip until the Nastran
-reference CSVs have been generated and committed. See the directory README and
-DESIGN.md for the maintainer workflow that produces the references.
+The 308 positive tests (44 configurations x 7 analyses) self-skip until the
+Nastran reference CSVs have been generated and committed. See the directory
+README and DESIGN.md for the maintainer workflow that produces the references.
+A separate set of negative tests asserts that every unsupportable card/section
+combination raises a clear error; these need no Nastran reference and always
+run.
 
 Set DEBUG = True below to save (a) 6-panel TACS-vs-Nastran comparison plots for
 every static load case, (b) 6-panel per-mode comparison plots for every Nastran
@@ -26,13 +36,14 @@ TACS and Nastran mode shapes. Plots are written to ``<REF_DIR>/debug_plots/``.
 """
 
 # Set to True to save comparison plots for each test into <REF_DIR>/debug_plots/.
-DEBUG = True
+DEBUG = False
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _INPUT_DIR = os.path.join(_BASE_DIR, "input_files", "nastran_beam_compat")
+_BDF_DIR = os.path.join(_INPUT_DIR, "nastran_input_files")
 
 sys.path.insert(0, _INPUT_DIR)
-from cases import iterCases  # noqa: E402
+from cases import iterCases, SUPPORTED_SECTIONS  # noqa: E402
 
 _DOF_LABELS = ("u", "v", "w", "rotx", "roty", "rotz")
 
@@ -168,6 +179,8 @@ class NastranCompatBeamBase(unittest.TestCase):
             # propagate a setUpClass skip, so the per-test setUp also guards on
             # REF_DIR. Bail out of the (expensive) pyTACS build here regardless.
             return
+        if not os.path.isfile(cls.SOL101_BDF) or not os.path.isfile(cls.SOL103_BDF):
+            return
         comm = MPI.COMM_WORLD
         cls.fea_static = pyTACS(cls.SOL101_BDF, comm)
         cls.fea_static.initialize()
@@ -184,6 +197,10 @@ class NastranCompatBeamBase(unittest.TestCase):
             raise unittest.SkipTest(
                 f"Reference CSVs not found at {self.REF_DIR}. "
                 "Run generate_inputs.py -> run_nastran.sh -> extract_nastran_refs.py first."
+            )
+        if not os.path.isfile(self.SOL101_BDF) or not os.path.isfile(self.SOL103_BDF):
+            raise unittest.SkipTest(
+                f"BDF inputs not found in {_BDF_DIR}. Run generate_inputs.py first."
             )
 
     def _static_by_name(self, name):
@@ -323,9 +340,9 @@ for _element, _prop, _section, _stem, _features in iterCases():
         f"Test_{_stem}",
         (NastranCompatBeamBase,),
         {
-            "SOL101_BDF": os.path.join(_INPUT_DIR, f"{_stem}_sol101.bdf"),
-            "SOL103_BDF": os.path.join(_INPUT_DIR, f"{_stem}_sol103.bdf"),
-            "REF_DIR": os.path.join(_INPUT_DIR, _stem),
+            "SOL101_BDF": os.path.join(_BDF_DIR, f"{_stem}_sol101.bdf"),
+            "SOL103_BDF": os.path.join(_BDF_DIR, f"{_stem}_sol103.bdf"),
+            "REF_DIR": os.path.join(_INPUT_DIR, "nastran_ref_results", _stem),
             "ACTIVE_FEATURES": _features,
         },
     )
@@ -334,6 +351,150 @@ for _element, _prop, _section, _stem, _features in iterCases():
 # Remove the abstract base from the module namespace so testflo does not
 # collect its method stubs as a standalone test case.
 del NastranCompatBeamBase
+
+
+# ==============================================================================
+# Negative tests: unsupportable card/section combinations must raise.
+# ==============================================================================
+# These guard against a routing regression that silently starts "supporting" a
+# section for which pyTACS cannot obtain a correct torsion constant J. Each test
+# builds a minimal single-element BDF in memory with pyNastran and asserts that
+# pyTACS.initialize() raises tacs.utilities.Error. The section list is derived
+# from pyNastran's valid_types minus SUPPORTED_SECTIONS, so it tracks pyNastran.
+# See docs/adr/0001-nastran-beam-section-support-bounded-by-torsion-constant.md.
+
+# Minimal beam material; values are irrelevant since the error is raised during
+# constitutive translation, before any material property is used.
+_NEG_E, _NEG_NU, _NEG_RHO = 71.7e9, 0.33, 2810.0
+
+# Valid example dimensions for each unsupported section. PBEAML validates section
+# geometry in its constructor, so generic dims are rejected for many types; these
+# were vetted against that validation (seeded from pyNastran's own test suite).
+# PBARL does not validate geometry, so any correctly-sized dims work there.
+_UNSUPPORTED_SECTION_DIMS = {
+    "BOX": [1.0, 2.0, 0.1, 0.1],
+    "BOX1": [2.0, 2.0, 0.1, 0.1, 0.1, 0.1],
+    "CHAN": [2.0, 2.0, 0.1, 0.1],
+    "CHAN1": [3.0, 3.0, 2.0, 3.0],
+    "CHAN2": [3.0, 3.0, 3.0, 3.0],
+    "CROSS": [2.0, 2.0, 0.1, 0.1],
+    "DBOX": [3.0, 2.0, 1.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+    "H": [2.0, 2.0, 0.1, 0.1],
+    "HAT": [3.0, 1.0, 3.0, 3.0],
+    "HAT1": [2.0, 2.0, 0.1, 0.1, 0.1],
+    "HEXA": [1.0, 3.0, 3.0],
+    "I": [2.0, 2.0, 0.1, 0.1, 0.1, 0.1],
+    "I1": [2.0, 2.0, 0.1, 0.1],
+    "L": [2.0, 2.0, 0.1, 0.1],
+    "T": [1.0, 2.0, 0.1, 0.2],
+    "T1": [1.0, 2.0, 0.2, 0.1],
+    "T2": [1.0, 2.0, 0.2, 0.1],
+    "Z": [2.0, 2.0, 0.1, 0.1],
+    # Circular sections; used only for the PBEAML-with-offset cases.
+    "ROD": [2.0],
+    "TUBE": [2.0, 1.0],
+    "TUBE2": [2.0, 0.5],
+}
+
+# A shear-centre (WA/WB) offset with non-zero local y and z components, so it
+# projects onto the section axes and trips the offset-handling path.
+_NEG_OFFSET_VEC = [0.0, 0.1, 0.1]
+
+
+def _sectionDims(prop, section):
+    """Return valid dims for an unsupported section, falling back to a generic
+    correctly-sized list for any section not in the vetted table (works for
+    PBARL; a new PBEAML section would surface as a visible test error)."""
+    if section in _UNSUPPORTED_SECTION_DIMS:
+        return list(_UNSUPPORTED_SECTION_DIMS[section])
+    validTypes = PBARL.valid_types if prop == "PBARL" else PBEAML.valid_types
+    numDims = validTypes[section]
+    return [round(0.12 - 0.01 * ii, 4) for ii in range(numDims)]
+
+
+def _writeSingleElementBeamBdf(path, element, prop, section, dims, withOffset):
+    """Write a minimal single-element CBAR/CBEAM + PBARL/PBEAML BDF to ``path``."""
+    model = BDF(debug=False)
+    model.add_grid(1, [0.0, 0.0, 0.0])
+    model.add_grid(2, [1.0, 0.0, 0.0])
+    model.add_mat1(1, _NEG_E, None, _NEG_NU, _NEG_RHO)
+    orientationVec = [0.0, 1.0, 0.0]
+    wa = _NEG_OFFSET_VEC if withOffset else None
+    wb = _NEG_OFFSET_VEC if withOffset else None
+    if prop == "PBARL":
+        model.add_pbarl(10, 1, section, dims)
+        model.add_cbar(100, 10, [1, 2], orientationVec, None, wa=wa, wb=wb)
+    else:
+        model.add_pbeaml(10, 1, section, xxb=[0.0, 1.0], dims=[dims, dims])
+        model.add_cbeam(100, 10, [1, 2], orientationVec, None, wa=wa, wb=wb)
+    model.write_bdf(path)
+
+
+class NastranCompatUnsupportedBase(unittest.TestCase):
+    # Runs on a single process; the in-memory BDF has one element.
+    ELEMENT = None
+    PROP = None
+    SECTION = None
+    WITH_OFFSET = False
+
+    def test_raises(self):
+        dims = _sectionDims(self.PROP, self.SECTION)
+        fd, path = tempfile.mkstemp(suffix=".bdf")
+        os.close(fd)
+        try:
+            _writeSingleElementBeamBdf(
+                path, self.ELEMENT, self.PROP, self.SECTION, dims, self.WITH_OFFSET
+            )
+            # tacs.utilities.Error prints its message rather than storing it on
+            # the exception, so capture stdout to confirm we hit *our* routing
+            # branch (the message names the offending section type).
+            captured = io.StringIO()
+            with self.assertRaises(Error):
+                with contextlib.redirect_stdout(captured):
+                    fea = pyTACS(path, MPI.COMM_WORLD)
+                    fea.initialize()
+            self.assertIn(
+                self.SECTION,
+                captured.getvalue(),
+                msg=f"{self.PROP} {self.SECTION} raised, but the message did not "
+                "name the section — it may be a different error than the "
+                "unsupported-section routing error.",
+            )
+        finally:
+            if os.path.isfile(path):
+                os.remove(path)
+
+
+def _iterUnsupportedCases():
+    """Yield (element, prop, section, withOffset) for every unsupportable combo."""
+    for prop, element, validTypes in (
+        ("PBARL", "CBAR", PBARL.valid_types),
+        ("PBEAML", "CBEAM", PBEAML.valid_types),
+    ):
+        for section in sorted(set(validTypes) - set(SUPPORTED_SECTIONS)):
+            yield element, prop, section, False
+    # Circular sections with a shear-centre offset: supported for PBARL (PBARL.J()
+    # is a correct circular J) but unsupported for PBEAML (PBEAML.J() is None).
+    for section in ("ROD", "TUBE", "TUBE2"):
+        yield "CBEAM", "PBEAML", section, True
+
+
+for _element, _prop, _section, _withOffset in _iterUnsupportedCases():
+    _suffix = f"{_prop.lower()}_{_section.lower()}" + ("_offset" if _withOffset else "")
+    _negName = f"Test_unsupported_{_suffix}"
+    _negCls = type(
+        _negName,
+        (NastranCompatUnsupportedBase,),
+        {
+            "ELEMENT": _element,
+            "PROP": _prop,
+            "SECTION": _section,
+            "WITH_OFFSET": _withOffset,
+        },
+    )
+    globals()[_negName] = _negCls
+
+del NastranCompatUnsupportedBase
 
 if __name__ == "__main__":
     unittest.main()

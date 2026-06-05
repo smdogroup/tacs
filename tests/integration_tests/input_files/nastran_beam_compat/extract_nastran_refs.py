@@ -177,11 +177,12 @@ def extractModalRefs(stem: str, refDir: Path) -> None:
 def main() -> None:
     """Extract Nastran reference data for all 36 configurations."""
     print(f"Nastran outputs directory: {_NASTRAN_OUTPUTS_DIR}")
-    print(f"Reference CSV output root: {_SCRIPT_DIR}")
+    refRoot = _SCRIPT_DIR / "nastran_ref_results"
+    print(f"Reference CSV output root: {refRoot}")
     print()
 
     for _element, _prop, _section, stem, _features in iterCases():
-        refDir = _SCRIPT_DIR / stem
+        refDir = refRoot / stem
         refDir.mkdir(parents=True, exist_ok=True)
 
         extractStaticRefs(stem, refDir)
