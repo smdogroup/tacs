@@ -20,7 +20,7 @@
   EA               : axial stiffness
   EI22, EI33, EI23 : bending stiffness
   GJ               : torsional stiffness
-  kG22, kG33, kG23 : shearing stiffness
+  kGA22, kGA33, kGA23 : shearing stiffness
   m00              : mass per unit span
   m11, m22, m33    : second mass moments of inertia (m11 = m22 + m33)
   xm2, xm3         : combined center of mass (positive geometric y, z)
@@ -30,19 +30,19 @@
 */
 TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
     TacsScalar EA, TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-    TacsScalar GJ, TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
+    TacsScalar GJ, TacsScalar kGA22, TacsScalar kGA33, TacsScalar kGA23,
     TacsScalar m00, TacsScalar m11, TacsScalar m22, TacsScalar m33,
     TacsScalar xm2, TacsScalar xm3, TacsScalar xc2, TacsScalar xc3,
     TacsScalar xk2, TacsScalar xk3, TacsScalar muS) {
   props = NULL;
 
-  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, xm2 * m00,
+  populateMats(EA, EI22, EI33, EI23, GJ, kGA22, kGA33, kGA23, m00, xm2 * m00,
                xm3 * m00, m11, m22, m33, xc2, xc3, xk2, xk3, muS);
 }
 
 void TACSBasicBeamConstitutive::populateMats(
     TacsScalar EA, TacsScalar EI22, TacsScalar EI33, TacsScalar EI23,
-    TacsScalar GJ, TacsScalar kG22, TacsScalar kG33, TacsScalar kG23,
+    TacsScalar GJ, TacsScalar kGA22, TacsScalar kGA33, TacsScalar kGA23,
     TacsScalar m00, TacsScalar m1, TacsScalar m2, TacsScalar m11,
     TacsScalar m22, TacsScalar m33, TacsScalar xc2, TacsScalar xc3,
     TacsScalar xk2, TacsScalar xk3, TacsScalar muS) {
@@ -55,9 +55,9 @@ void TACSBasicBeamConstitutive::populateMats(
   C[3] = -xc2 * EA;
 
   // row 2 for twisting moment
-  C[6] = GJ + xk2 * xk2 * kG33 + xk3 * xk3 * kG22 + 2.0 * xk2 * xk3 * kG23;
-  C[9] = -xk2 * kG23 - xk3 * kG22;
-  C[10] = xk2 * kG33 + xk3 * kG23;
+  C[6] = GJ + xk2 * xk2 * kGA33 + xk3 * xk3 * kGA22 + 2.0 * xk2 * xk3 * kGA23;
+  C[9] = -xk2 * kGA23 - xk3 * kGA22;
+  C[10] = xk2 * kGA33 + xk3 * kGA23;
 
   // row 3 for bending moment about axis 2
   C[11] = EI22 + xc3 * xc3 * EA;
@@ -67,11 +67,11 @@ void TACSBasicBeamConstitutive::populateMats(
   C[15] = EI33 + xc2 * xc2 * EA;
 
   // row 5 for shear 2
-  C[18] = kG22;
-  C[19] = -kG23;
+  C[18] = kGA22;
+  C[19] = -kGA23;
 
   // row 6 for shear 3
-  C[20] = kG33;
+  C[20] = kGA33;
 
   // Set the entries of the density matrix
   rho[0] = m00;
@@ -134,9 +134,9 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   const TacsScalar EI33 = E * Iy;
   const TacsScalar EI23 = E * Iyz;
   const TacsScalar GJ = G * J;
-  const TacsScalar kG22 = ky * G * A;
-  const TacsScalar kG33 = kz * G * A;
-  const TacsScalar kG23 = 0.0;
+  const TacsScalar kGA22 = ky * G * A;
+  const TacsScalar kGA33 = kz * G * A;
+  const TacsScalar kGA23 = 0.0;
 
   // xm2, xm3   : structural CoM (positive geometric y, z)
   // xnsm2, xnsm3 : NSM CoM (positive geometric y, z); default 0 = at reference
@@ -153,7 +153,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   const TacsScalar m33 =
       -density * Iyz + density * A * xm2 * xm3 + nsm * xnsm2 * xnsm3;
 
-  populateMats(EA, EI22, EI33, EI23, GJ, kG22, kG33, kG23, m00, m1, m2, m11,
+  populateMats(EA, EI22, EI33, EI23, GJ, kGA22, kGA33, kGA23, m00, m1, m2, m11,
                m22, m33, xc2, xc3, xk2, xk3, muS);
 }
 
