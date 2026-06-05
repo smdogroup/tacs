@@ -167,6 +167,17 @@ void TACSIsoTubeBeamConstitutive::addDensityDVSens(
   }
 }
 
+// NOTE (transverse shear correction factor): the methods below use
+//   kcorr = 2(1+nu) / (4 + 3*nu)
+// which is the shear-correction factor for a *thin-walled* circular tube. It is
+// only accurate in the thin-wall limit (inner/outer radius -> 1).
+//
+// FUTURE IDEA: generalise to Cowper's (1966) hollow-circular shear coefficient,
+//   m = d1/d0 (inner/outer diameter ratio),
+//   kcorr = 6(1+nu)(1+m^2)^2
+//           / [ (7+6*nu)(1+m^2)^2 + (20+12*nu)*m^2 ],
+// which reduces to the thin-wall expression above as m -> 1 and to the solid
+// value 6(1+nu)/(7+6*nu) as m -> 0.
 void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
                                              const TacsScalar X[],
                                              const TacsScalar e[],
