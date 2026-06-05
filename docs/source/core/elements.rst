@@ -26,6 +26,7 @@ The following :class:`~TACS.ElementModel` classes are available in TACS:
     LinearElasticity2D, LinearElasticity3D,
     LinearThermoelasticity2D, LinearThermoelasticity3D
   :show-inheritance:
+  :no-index:
 
 Transform classes
 -----------------
@@ -36,6 +37,7 @@ The following transform classes are available in TACS:
   :members: ShellNaturalTransform, ShellRefAxisTransform, BeamRefAxisTransform,
     SpringIdentityTransform, SpringRefAxisTransform, SpringRefFrameTransform
   :show-inheritance:
+  :no-index:
 
 Element classes
 ---------------
@@ -50,3 +52,4 @@ The following :class:`~TACS.Element` classes are available in TACS:
     Beam2, Beam3, Beam2ModRot, Beam3ModRot,
     RBE2, RBE3, MassElement, SpringElement
   :show-inheritance:
+  :no-index:

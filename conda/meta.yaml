@@ -71,6 +71,7 @@ requirements:
     - mpi4py >=4.0.3,<5.0.0
     - pynastran >=1.4.0
     - numba >=0.55.2
+    - mdolab-baseclasses
 
 test:
   requires:

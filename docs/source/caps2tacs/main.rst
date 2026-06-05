@@ -100,12 +100,13 @@ Finally the routine ``post_analysis()`` saves output functional values and deriv
 Examples
 ********
 The main caps2tacs example is in the directory ``./examples/caps_wing/``, with five analyses
-on a coarse mesh of a symmetric NACA 0012 wing structure. 
+on a coarse mesh of a symmetric NACA 0012 wing structure.
+
 1. A steady analysis, using the EGADS AIM for meshing, with a vertical distributed load.
 2. An unsteady analysis with a vertical distributed load varying sinusoidally in time.
 3. A sizing optimization which finds the optimal panel thicknesses to hold fixed aero loads.
 4. A sizing and shape optimization which optimizes the panel thicknesses and location of ribs
-    and spars inside the wing to hold fixed aero loads.
+   and spars inside the wing to hold fixed aero loads.
 5. A steady analysis, using the AFLR AIM for meshing, with a vertical distributed load.
 
 The sizing optimization shown below resulted in about a 40\% drop in weight from the equal thickness design. Notice 

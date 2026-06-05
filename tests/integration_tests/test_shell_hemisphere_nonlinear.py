@@ -16,29 +16,30 @@ nonlinear analysis of shells" by Sze et al
 # Standard Python modules
 # ==============================================================================
 import os
+import unittest
 
 # ==============================================================================
 # External Python modules
 # ==============================================================================
 import numpy as np
-from mpi4py import MPI
-from pprint import pprint
 
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from tacs import pyTACS, constitutive, elements, functions
+from tacs import pyTACS, constitutive, elements, functions, TACS
 from pytacs_analysis_base_test import PyTACSTestCase
+
+TACS_IS_COMPLEX = TACS.dtype == complex
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/quarterHemisphere.bdf")
 
 # nonlinear quadratic
 hemisphereProbRefFuncs = {
-    "RadialForces_Compliance": 20.59867522072626,
-    "RadialForces_KSFailure": 2.3731860388536483,
-    "RadialForces_MaxYDisp": 0.4948883544992733,
-    "RadialForces_MaxZDisp": 0.4093283830600901,
+    "RadialForces_Compliance": 165.51140441529395,
+    "RadialForces_KSFailure": 6.827665576404779,
+    "RadialForces_MaxYDisp": 1.7454271859340547,
+    "RadialForces_MaxZDisp": 1.4277751763114546,
 }
 
 STRAIN_TYPE = "nonlinear"
@@ -139,7 +140,10 @@ def setupHemisphereProblem(FEAAssembler, problem):
 
     # KS approximation of the maximum failure value
     problem.addFunction(
-        "KSFailure", functions.KSFailure, ksWeight=10.0, ftype="discrete"
+        "KSFailure",
+        functions.KSFailure,
+        ksWeight=10.0,
+        ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
     )
 
     # Maximum displacement in the y and z-directions (KS with a very large weight to get a true max)
@@ -148,7 +152,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         functions.KSDisplacement,
         direction=np.array([0.0, 1.0, 0.0]),
         ksWeight=10.0,
-        ftype="discrete",
+        ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
     )
 
     problem.addFunction(
@@ -156,7 +160,7 @@ def setupHemisphereProblem(FEAAssembler, problem):
         functions.KSDisplacement,
         direction=np.array([0.0, 0.0, 1.0]),
         ksWeight=10.0,
-        ftype="discrete",
+        ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
     )
 
     # Compliance
@@ -199,6 +203,21 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         setupHemisphereProblem(FEAAssembler, problem)
 
         return [problem], FEAAssembler
+
+    # Skip the derivative tests in real mode because the FD sensistivities for this problem are bad
+    @unittest.skipIf(
+        not TACS_IS_COMPLEX,
+        "Skipping total derivative checks in real mode, compile TACS in complex mode to run this test",
+    )
+    def test_total_dv_sensitivities(self):
+        super().test_total_dv_sensitivities()
+
+    @unittest.skipIf(
+        not TACS_IS_COMPLEX,
+        "Skipping total derivative checks in real mode, compile TACS in complex mode to run this test",
+    )
+    def test_total_xpt_sensitivities(self):
+        super().test_total_xpt_sensitivities()
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ Composite plate optimization with MPhys
 .. note:: The script for this example can be found under the `examples/plate/` directory.
 
 This example further demonstrates TACS structural optimization capabilities through :ref:`mphys/mphys:MPhys`.
-In this example a compliance minimization problem for a composite plate, based off of one originally proposed by Lund and Stegmann [`1`_], is solved.
+In this example a compliance minimization problem for a composite plate, based off of one originally proposed by Lund and Stegmann [1]_, is solved.
 A 1 m x 1 m x 0.05 m composite plate is clamped on all edges and subjected to
 a uniform pressure of 100 kPa loading on the top.
 The plate is discretized into 100 quad shell elements, each having its own independent laminate layup.

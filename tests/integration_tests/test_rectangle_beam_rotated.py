@@ -24,9 +24,7 @@ TACS_IS_COMPLEX = TACS.dtype == complex
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/beam_model_skewed.bdf")
 
-from test_rectangle_beam_tractions import ProblemTest as PT
-
-ksweight = 10.0
+from test_rectangle_beam_tractions import ksweight, ProblemTest as PT
 
 # Define rotated coordinate frame axes
 x_prime = np.sqrt(0.5) * np.array([1.0, 0.0, 1.0])

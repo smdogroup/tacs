@@ -57,7 +57,7 @@ double TACSInducedFailure::getParameter() { return P; }
 /*
   Set the type of p-norm to use
 */
-void TACSInducedFailure::setInducedType(enum InducedNormType type) {
+void TACSInducedFailure::setInducedType(InducedNormType type) {
   normType = type;
 }
 

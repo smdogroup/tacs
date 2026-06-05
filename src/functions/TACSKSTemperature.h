@@ -45,13 +45,6 @@
 */
 class TACSKSTemperature : public TACSFunction {
  public:
-  enum KSTemperatureType {
-    DISCRETE,
-    CONTINUOUS,
-    PNORM_DISCRETE,
-    PNORM_CONTINUOUS
-  };
-
   TACSKSTemperature(TACSAssembler *_assembler, double ksWeight,
                     double alpha = 1.0);
   ~TACSKSTemperature();
@@ -63,7 +56,7 @@ class TACSKSTemperature : public TACSFunction {
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSTemperatureType(enum KSTemperatureType type);
+  void setKSAggregationType(KSAggregationType type);
   double getParameter();
   void setParameter(double _ksWeight);
 
@@ -127,7 +120,7 @@ class TACSKSTemperature : public TACSFunction {
 
  private:
   // The type of aggregation to use
-  KSTemperatureType ksType;
+  KSAggregationType ksType;
 
   // The weight on the ks function value
   double ksWeight;

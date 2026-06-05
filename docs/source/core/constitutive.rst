@@ -21,3 +21,4 @@ The following :class:`~TACS.Constitutive` classes are available in TACS:
   :exclude-members: MaterialProperties, OrthotropicPly
   :members:
   :show-inheritance:
+  :no-index:

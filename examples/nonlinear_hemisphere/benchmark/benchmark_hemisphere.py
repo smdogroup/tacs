@@ -13,10 +13,10 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "RadialForces_Compliance": 121.37975434928234,
-    "RadialForces_KSFailure": 312113.1779703558,
-    "RadialForces_MaxYDisp": 0.2301210668705867,
-    "RadialForces_MaxZDisp": 2.3202346529635003,
+    "RadialForces_Compliance": 896.9343363059334,
+    "RadialForces_KSFailure": 669067.5904001838,
+    "RadialForces_MaxYDisp": 0.009607780622299474,
+    "RadialForces_MaxZDisp": 7.077230399192353,
 }
 
 

@@ -66,16 +66,28 @@ class TACSSystem(BaseUI):
 
     def setVarName(self, varName):
         """
-        Set a name for the structural variables in pyOpt. Only needs
+        Set a name for the design variables in pyOpt. Only needs
         to be changed if more than 1 pytacs object is used in an
         optimization
 
         Parameters
         ----------
         varName : str
-            Name of the structural variable used in addVarGroup().
+            Name of the design variables used in setDesignVars() dict.
         """
         self.varName = varName
+
+    def getVarName(self):
+        """
+        Get name for the design variables in pyOpt. Only needed
+        if more than 1 pytacs object is used in an optimization
+
+        Returns
+        ----------
+        varName : str
+            Name of the design variables used in setDesignVars() dict.
+        """
+        return self.varName
 
     def getDesignVars(self):
         """
@@ -169,6 +181,28 @@ class TACSSystem(BaseUI):
             Number of design variables on this processor.
         """
         return self.x.getSize()
+
+    def setCoordName(self, coordName):
+        """
+        Set a name for the nodal coordinates in pyOpt.
+
+        Parameters
+        ----------
+        coordName : str
+            Name of the nodal coordinates used in setNodes() dict.
+        """
+        self.coordName = coordName
+
+    def getCoordName(self):
+        """
+        Get name for the nodal coordinates in pyOpt.
+
+        Returns
+        ----------
+        coordName : str
+            Name of the nodal coordinates used in setNodes() dict.
+        """
+        return self.coordName
 
     def getNodes(self):
         """

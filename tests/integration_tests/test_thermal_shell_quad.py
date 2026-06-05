@@ -49,16 +49,16 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     # mechanical case (T = 0 everywhere → avg_temp = 0.0 exactly) are set
     # here to bootstrap the regression suite.
     FUNC_REFS = {
-        "point_load_avg_temp": np.float64(0.0),
-        "point_load_compliance": np.float64(683.8571611665853),
-        "point_load_ks_temp": np.float64(-7.993605777301159e-16),
-        "point_load_ks_vmfailure": np.float64(0.575748802592218),
-        "point_load_mass": np.float64(12.5),
-        "therm_load_avg_temp": np.float64(64.57377010363139),
-        "therm_load_compliance": np.float64(4217.7729380842875),
-        "therm_load_ks_temp": np.float64(412.87832592614416),
-        "therm_load_ks_vmfailure": np.float64(1.7884207581534473),
-        "therm_load_mass": np.float64(12.5),
+        "point_load_avg_temp": 0.0,
+        "point_load_compliance": 683.8571611657693,
+        "point_load_ks_temp": -7.993605777301159e-16,
+        "point_load_ks_vmfailure": 0.5757488025917047,
+        "point_load_mass": 12.5,
+        "therm_load_avg_temp": 64.57377010363132,
+        "therm_load_compliance": 4209.35073068908,
+        "therm_load_ks_temp": 412.8783259261439,
+        "therm_load_ks_vmfailure": 1.7538512215981727,
+        "therm_load_mass": 12.5,
     }
 
     def setup_tacs_problems(self, comm):

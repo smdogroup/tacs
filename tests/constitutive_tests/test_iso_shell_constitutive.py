@@ -156,3 +156,16 @@ class ConstitutiveTest(unittest.TestCase):
             self.rtol,
         )
         self.assertFalse(fail)
+
+    def test_drilling_regularization_default(self):
+        # Default drilling regularization should be 0.1
+        self.assertAlmostEqual(self.con.getDrillingRegularization(), 0.1)
+
+    def test_drilling_regularization_set_get(self):
+        # Verify set/get round-trip and restore the default afterward
+        original = self.con.getDrillingRegularization()
+        try:
+            self.con.setDrillingRegularization(5.0)
+            self.assertAlmostEqual(self.con.getDrillingRegularization(), 5.0)
+        finally:
+            self.con.setDrillingRegularization(original)

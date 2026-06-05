@@ -1,6 +1,6 @@
 Beam optimization with MPhys
 ****************************
-.. note:: The script for this example can be found under the `examples/beam/` directory.
+.. note:: The script for this example can be found under the `examples/beam_opt/` directory.
 
 This example demonstrates TACS structural optimization capabilities.
 The optimization is setup using TACS' :ref:`mphys/mphys:MPhys` module, which acts as a wrapper

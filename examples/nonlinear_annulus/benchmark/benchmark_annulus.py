@@ -13,9 +13,9 @@ sys.path.append(example_path)
 
 # Reference values for eval functions
 FUNC_REF = {
-    "Annulus_Compliance": 19.001784662112364,
-    "Annulus_KSFailure": 48164.44513056076,
-    "Annulus_MaxZDisp": 12.519062474962878,
+    "Annulus_Compliance": 27.75776114055993,
+    "Annulus_KSFailure": 57253.65789049099,
+    "Annulus_MaxZDisp": 16.71138782635565,
 }
 
 

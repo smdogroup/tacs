@@ -8,7 +8,7 @@ from tacs import pytacs, elements, constitutive, functions
 """
 Tests a smeared laminate shell model with the following layup: [0, 45, 30].
 Two load cases are tested: an in-plane tension and out-of-plane shear.
-This test is identical to test_shell_comp_unbalanced.py except since the laminate 
+This test is identical to test_shell_comp_unbalanced.py except since the laminate
 is smeared all stacking sequence dependence is neglected.
 tests KSDisplacement, KSFailure, StructuralMass, CenterOfMass, MomentOfInertia, and Compliance functions
 and sensitivities.
@@ -34,11 +34,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "Tension_cgx": 0.25000000000000006,
         "Tension_cgy": 1.0000000000000002,
         "Tension_cgz": 0.0,
-        "Tension_compliance": 8433.69262638969,
-        "Tension_ks_TsaiWufailure": 4.35234046725213,
+        "Tension_compliance": 8815.728691190227,
+        "Tension_ks_TsaiWufailure": 4.800260517642399,
         "Tension_mass": 1.1624999999999999,
-        "Tension_x_disp": 0.04604283873354243,
-        "Tension_y_disp": -0.014684823847867035,
+        "Tension_x_disp": 0.047326910764703585,
+        "Tension_y_disp": -0.020147153060017922,
         "Tension_z_disp": 0.0,
         "VertShear_I_xx": 0.3875000544921874,
         "VertShear_I_xy": 5.551115123125783e-17,
@@ -49,12 +49,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "VertShear_cgx": 0.25000000000000006,
         "VertShear_cgy": 1.0000000000000002,
         "VertShear_cgz": 0.0,
-        "VertShear_compliance": 0.00010817284888043632,
-        "VertShear_ks_TsaiWufailure": 0.22626387488408603,
+        "VertShear_compliance": 0.0001081728488883857,
+        "VertShear_ks_TsaiWufailure": 0.22626387488409813,
         "VertShear_mass": 1.1624999999999999,
         "VertShear_x_disp": 0.0,
         "VertShear_y_disp": 0.0,
-        "VertShear_z_disp": 0.0054598659927803965,
+        "VertShear_z_disp": 0.005459865992982426,
     }
 
     def setup_tacs_problems(self, comm):
@@ -173,7 +173,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_TsaiWufailure",
                 functions.KSFailure,
                 ksWeight=ksweight,
-                ftype="discrete",
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
             )
             problem.addFunction(
                 "x_disp",

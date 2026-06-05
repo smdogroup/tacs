@@ -22,8 +22,8 @@ bdf_file = os.path.join(base_dir, "./input_files/debug_plate.bdf")
 
 # Historical reference values for function outputs
 FUNC_REFS = {
-    "analysis.eigsb_0": -1.08864541,
-    "analysis.eigsb_1": 1.08938765,
+    "analysis.eigsb_0": -1.08789949,
+    "analysis.eigsb_1": 1.08865772,
 }
 
 # Inputs to check total sensitivities wrt

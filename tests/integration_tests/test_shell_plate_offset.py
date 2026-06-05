@@ -25,17 +25,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "gravity_Ixx": 1.041692708333326,
-        "gravity_Ixy": 4.884981308350689e-15,
-        "gravity_Ixz": 0.0,
-        "gravity_Iyy": 1.0416927083333283,
-        "gravity_Iyz": 0.0,
-        "gravity_Izz": 2.0833333333333233,
-        "gravity_cgx": 0.5,
-        "gravity_cgy": 0.5,
-        "gravity_cgz": 0.0025,
-        "gravity_compliance": 67.59168942441727,
-        "gravity_ks_vmfailure": 0.11479343495254533,
+        "gravity_Ixx": 1.0416927083333247,
+        "gravity_Ixy": 5.329070518200751e-15,
+        "gravity_Ixz": -1.3010426069826053e-16,
+        "gravity_Iyy": 1.04169270833333,
+        "gravity_Iyz": -1.0061396160665481e-16,
+        "gravity_Izz": 2.0833333333333224,
+        "gravity_cgx": 0.5000000000000003,
+        "gravity_cgy": 0.5000000000000007,
+        "gravity_cgz": 0.00249999999999998,
+        "gravity_compliance": 69.77253320941628,
+        "gravity_ks_vmfailure": 0.11662874517237555,
         "gravity_mass": 12.5,
     }
 

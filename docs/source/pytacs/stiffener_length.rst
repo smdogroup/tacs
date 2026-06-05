@@ -1,5 +1,5 @@
 StiffenerLengthConstraint
----------------------
+-------------------------
 .. automodule:: tacs.constraints.stiffener_length
 
 API Reference
