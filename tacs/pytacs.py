@@ -39,6 +39,7 @@ import tacs.elements
 import tacs.functions
 import tacs.problems
 import tacs.TACS
+from tacs.nastran.properties import isoTubeBeamDims
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI, preinitialize_method, postinitialize_method
 
@@ -1206,21 +1207,25 @@ class pyTACS(BaseUI):
                             mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
                         )
 
-                    elif propInfo.Type == "TUBE" and (
-                        shearCenterZOffset == 0.0 and shearCenterYOffset == 0.0
+                    elif propInfo.Type in ("ROD", "TUBE", "TUBE2") and (
+                        not hasShearCenterOffset
                     ):
-                        r1 = propInfo.dim[0]
-                        r0 = propInfo.dim[1]
-                        d_inner = 2 * r0
-                        t_wall = r1 - r0
+                        # Circular sections without a shear-center offset go to
+                        # IsoTubeBeamConstitutive, which computes its own (correct)
+                        # J. ROD is a solid circle, i.e. a tube with inner diameter
+                        # zero. TUBE/TUBE2 differ only in dim convention.
+                        innerDiameter, wallThickness = isoTubeBeamDims(
+                            propInfo.Type, propInfo.dim
+                        )
                         con = tacs.constitutive.IsoTubeBeamConstitutive(
-                            mat, d=d_inner, t=t_wall, nsm=nsm
+                            mat, d=innerDiameter, t=wallThickness, nsm=nsm
                         )
 
-                    elif propInfo.Type in ("ROD", "TUBE"):
-                        # ROD and TUBE: pyNastran computes a correct J() for these types.
-                        # TUBE falls here only when WA/WB offsets are non-zero (the
-                        # IsoTubeBeamConstitutive branch above requires zero offset).
+                    elif propInfo.Type in ("ROD", "TUBE", "TUBE2"):
+                        # Circular section with a shear-center offset:
+                        # IsoTubeBeamConstitutive cannot carry an offset, so fall
+                        # back to BasicBeamConstitutive. pyNastran's PBARL.J() is
+                        # exact for circular sections (J = polar moment I1 + I2).
                         A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
                             "PBARL", propInfo.Type, propInfo.dim, propInfo
                         )
@@ -1246,7 +1251,9 @@ class pyTACS(BaseUI):
                     else:
                         raise self._TACSError(
                             f"Unsupported PBARL section type '{propInfo.Type}' for property "
-                            f"number {propertyID}. TACS supports BAR, ROD, and TUBE."
+                            f"number {propertyID}. TACS supports BAR, ROD, TUBE, and TUBE2. "
+                            "pyNastran does not compute a correct torsion constant J for "
+                            "other section types."
                         )
 
                 elif propInfo.type == "PBEAM":
@@ -1348,21 +1355,42 @@ class pyTACS(BaseUI):
                             -np.dot(yElem, offset_vector) / sectionProps["t"]
                         )
                         conType = tacs.constitutive.IsoRectangleBeamConstitutive
-                    elif sectionType == "TUBE" and (
-                        shearCenterZOffset == 0.0 and shearCenterYOffset == 0.0
+                    elif sectionType in ("ROD", "TUBE", "TUBE2") and (
+                        not hasShearCenterOffset
                     ):
-                        r1 = propInfo.dim[:, 0]
-                        r0 = propInfo.dim[:, 1]
-                        sectionProps["d"] = 2 * r0
-                        sectionProps["t"] = r1 - r0
+                        # Circular sections without a shear-center offset go to
+                        # IsoTubeBeamConstitutive, which computes its own (correct)
+                        # J. dims are per-station, so transpose so the helper sees
+                        # one dimension across all stations.
+                        innerDiameter, wallThickness = isoTubeBeamDims(
+                            sectionType, propInfo.dim.T
+                        )
+                        sectionProps["d"] = innerDiameter
+                        sectionProps["t"] = wallThickness
                         sectionProps["nsm"] = propInfo.nsm
                         conType = tacs.constitutive.IsoTubeBeamConstitutive
+
+                    elif sectionType in ("ROD", "TUBE", "TUBE2"):
+                        # Circular section with a shear-center offset.
+                        # IsoTubeBeamConstitutive cannot carry the offset, and the
+                        # BasicBeamConstitutive fallback needs a J that PBEAML cannot
+                        # provide (pyNastran's PBEAML.J() always returns None), so
+                        # this combination is unsupported.
+                        raise self._TACSError(
+                            f"PBEAML section type '{sectionType}' with a shear-center "
+                            f"(WA/WB) offset is unsupported for property number "
+                            f"{propertyID}: IsoTubeBeamConstitutive cannot carry an "
+                            "offset, and pyNastran does not compute a torsion constant J "
+                            "for PBEAML, so there is no J for the BasicBeamConstitutive "
+                            "fallback."
+                        )
 
                     else:
                         raise self._TACSError(
                             f"Unsupported PBEAML section type '{sectionType}' for property "
-                            f"number {propertyID}. TACS supports BAR and TUBE (without "
-                            f"WA/WB offsets). pyNastran does not compute J for other types."
+                            f"number {propertyID}. TACS supports BAR, ROD, TUBE, and TUBE2 "
+                            "(circular types without WA/WB offsets). pyNastran does not "
+                            "compute a correct J for other section types."
                         )
 
                     # Whatever properties we're going to pass to the TACS
