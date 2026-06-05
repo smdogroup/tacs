@@ -19,7 +19,8 @@
 TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
                                TACSElementBasis *_basis,
                                const TacsScalar _trac[],
-                               int _tractionCoordinateComponent) {
+                               int _tractionCoordinateComponent,
+                               const int *_tracDVNums) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -30,6 +31,13 @@ TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
     memcpy(trac, _trac, varsPerNode * sizeof(TacsScalar));
   } else {
     memcpy(trac, _trac, 3 * varsPerNode * sizeof(TacsScalar));
+  }
+  if (_tracDVNums) {
+    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
+  } else {
+    for (int i = 0; i < varsPerNode; i++) {
+      tracDVNums[i] = -1;
+    }
   }
 }
 
@@ -79,6 +87,61 @@ int TACSTraction3D::getNumFaceQuadraturePoints(int face) {
 double TACSTraction3D::getFaceQuadraturePoint(int face, int n, double pt[],
                                               double tangent[]) {
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
+}
+
+int TACSTraction3D::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = tracDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::setDesignVars(int elemIndex, int dvLen,
+                                  const TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        trac[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = trac[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                                      TacsScalar ub[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -1e20;
+        ub[num] = 1e20;
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 /*

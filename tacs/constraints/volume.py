@@ -152,7 +152,7 @@ class VolumeConstraint(TACSConstraint):
         # Wait for root
         self.comm.barrier()
 
-    def addConstraint(self, conName, compIDs=None, lower=0, upper=1e20):
+    def addConstraint(self, conName, compIDs=None, lower=0.0, upper=1e20):
         """
         Generic method to adding a new constraint set for TACS.
 
@@ -626,12 +626,12 @@ class ParallelVolumeConstraint(object):
         # Save bound information
         if isinstance(lb, np.ndarray) and len(lb) == self.nCon:
             self.lb = lb.astype(self.dtype)
-        elif isinstance(lb, float) or isinstance(lb, complex):
+        elif np.isscalar(lb):
             self.lb = np.array([lb] * self.nCon, dtype=self.dtype)
 
         if isinstance(ub, np.ndarray) and len(ub) == self.nCon:
             self.ub = ub.astype(self.dtype)
-        elif isinstance(ub, float) or isinstance(ub, complex):
+        elif np.isscalar(ub):
             self.ub = np.array([ub] * self.nCon, dtype=self.dtype)
 
     def evalCon(self, x):

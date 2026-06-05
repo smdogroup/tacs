@@ -666,12 +666,12 @@ double TACSCubicHexaBasis::getFaceQuadraturePoint(int face, int n, double pt[],
     pt[1] = TacsGaussQuadPts4[n % 4];
     pt[2] = TacsGaussQuadPts4[n / 4];
   } else if (face / 2 == 1) {
-    pt[0] = TacsGaussQuadPts3[n % 4];
+    pt[0] = TacsGaussQuadPts4[n % 4];
     pt[1] = -1.0 + 2.0 * (face % 2);
-    pt[2] = TacsGaussQuadPts3[n / 4];
+    pt[2] = TacsGaussQuadPts4[n / 4];
   } else {
-    pt[0] = TacsGaussQuadPts3[n % 4];
-    pt[1] = TacsGaussQuadPts3[n / 4];
+    pt[0] = TacsGaussQuadPts4[n % 4];
+    pt[1] = TacsGaussQuadPts4[n / 4];
     pt[2] = -1.0 + 2.0 * (face % 2);
   }
 

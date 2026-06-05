@@ -53,21 +53,24 @@ TACSElementBasis *TACSElement2D::getElementBasis() { return basis; }
 TACSElementModel *TACSElement2D::getElementModel() { return model; }
 
 TACSElement *TACSElement2D::createElementTraction(int faceIndex,
-                                                  const TacsScalar t[]) {
+                                                  const TacsScalar t[],
+                                                  const int *tracDVNums) {
   int varsPerNode = getVarsPerNode();
-  return new TACSTraction2D(varsPerNode, faceIndex, basis, t);
+  return new TACSTraction2D(varsPerNode, faceIndex, basis, t, 1, tracDVNums);
 }
 
-TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p) {
+TACSElement *TACSElement2D::createElementPressure(int faceIndex, TacsScalar p,
+                                                  int pressureDVNum) {
   int varsPerNode = getVarsPerNode();
-  return new TACSPressure2D(varsPerNode, faceIndex, basis, p);
+  return new TACSPressure2D(varsPerNode, faceIndex, basis, p, pressureDVNum);
 }
 
 TACSElement *TACSElement2D::createElementInertialForce(
-    const TacsScalar inertiaVec[]) {
+    const TacsScalar inertiaVec[], const int *inertiaVecDVNums) {
   int varsPerNode = getVarsPerNode();
   TACSConstitutive *con = model->getConstitutive();
-  return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec);
+  return new TACSInertialForce2D(varsPerNode, con, basis, inertiaVec,
+                                 inertiaVecDVNums);
 }
 
 int TACSElement2D::getNumQuadraturePoints() {

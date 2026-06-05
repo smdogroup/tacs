@@ -20,7 +20,8 @@
 class TACSTraction3D : public TACSElement {
  public:
   TACSTraction3D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
-                 const TacsScalar trac[], int tractionCoordinateComponent = 1);
+                 const TacsScalar trac[], int tractionCoordinateComponent = 1,
+                 const int *tracDVNums = NULL);
   TACSTraction3D(int _varsPerNode, int _faceIndex, TACSElementBasis *_basis,
                  void (*_getTractionComponents)(int, int, double,
                                                 const TacsScalar *,
@@ -42,6 +43,27 @@ class TACSTraction3D : public TACSElement {
   double getFaceQuadraturePoint(int face, int n, double pt[], double tangent[]);
 
   /**
+    Retrieve the global design variable numbers associated with this element
+  */
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
+
+  /**
+    Set the element design variables from the design vector
+  */
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]);
+
+  /**
+    Get the element design variables values
+  */
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]);
+
+  /**
+    Get the lower and upper bounds for the design variable values
+  */
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]);
+
+  /**
     Add the residual to the provided vector
   */
   void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
@@ -61,6 +83,7 @@ class TACSTraction3D : public TACSElement {
   TACSElementBasis *basis;
   int tractionCoordinateComponent;
   TacsScalar trac[3 * TACSElement3D::MAX_VARS_PER_NODE];
+  int tracDVNums[TACSElement3D::MAX_VARS_PER_NODE];
   void (*getTractionComponents)(int, int, double, const TacsScalar *,
                                 const TacsScalar *, TacsScalar *);
 };

@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_TRACTION_H
 #define TACS_BEAM_TRACTION_H
 
+#include <string.h>
+
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
@@ -14,7 +16,8 @@
 template <int vars_per_node, class quadrature, class basis>
 class TACSBeamTraction : public TACSElement {
  public:
-  TACSBeamTraction(const TacsScalar _t[], int useConstTrac = 1) {
+  TACSBeamTraction(const TacsScalar _t[], int useConstTrac = 1,
+                   const int *_tDVNums = NULL) {
     // Traction is constant across element
     if (useConstTrac) {
       for (int i = 0; i < basis::NUM_NODES; i++) {
@@ -28,6 +31,11 @@ class TACSBeamTraction : public TACSElement {
       for (int i = 0; i < 3 * basis::NUM_NODES; i++) {
         t[i] = _t[i];
       }
+    }
+    if (_tDVNums) {
+      memcpy(tDVNums, _tDVNums, 3 * sizeof(int));
+    } else {
+      tDVNums[0] = tDVNums[1] = tDVNums[2] = -1;
     }
   }
 
@@ -57,6 +65,63 @@ class TACSBeamTraction : public TACSElement {
   double getFaceQuadraturePoint(int face, int n, double pt[],
                                 double tangent[]) {
     return quadrature::getFaceQuadraturePoint(face, n, pt, tangent);
+  }
+
+  int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+    int num = 0;
+    for (int i = 0; i < 3; i++) {
+      if (tDVNums[i] >= 0) {
+        if (dvNums && num < dvLen) {
+          dvNums[num] = tDVNums[i];
+        }
+        num++;
+      }
+    }
+    return num;
+  }
+
+  int setDesignVars(int elemIndex, int dvLen, const TacsScalar dvs[]) {
+    int num = 0;
+    for (int i = 0; i < 3; i++) {
+      if (tDVNums[i] >= 0) {
+        if (num < dvLen) {
+          TacsScalar tval = dvs[num];
+          for (int j = 0; j < basis::NUM_NODES; j++) {
+            t[3 * j + i] = tval;
+          }
+        }
+        num++;
+      }
+    }
+    return num;
+  }
+
+  int getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+    int num = 0;
+    for (int i = 0; i < 3; i++) {
+      if (tDVNums[i] >= 0) {
+        if (dvs && num < dvLen) {
+          dvs[num] = t[i];
+        }
+        num++;
+      }
+    }
+    return num;
+  }
+
+  int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                        TacsScalar ub[]) {
+    int num = 0;
+    for (int i = 0; i < 3; i++) {
+      if (tDVNums[i] >= 0) {
+        if (num < dvLen) {
+          lb[num] = -1e20;
+          ub[num] = 1e20;
+        }
+        num++;
+      }
+    }
+    return num;
   }
 
   void addResidual(int elemIndex, double time, const TacsScalar *Xpts,
@@ -94,6 +159,7 @@ class TACSBeamTraction : public TACSElement {
 
  private:
   TacsScalar t[3 * basis::NUM_NODES];
+  int tDVNums[3];
 };
 
 #endif  // TACS_BEAM_TRACTION_H

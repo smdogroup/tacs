@@ -48,7 +48,8 @@ class TACSMassElement : public TACSElement {
     @return The TACSElement inertial force class associated with this element.
     Possibly NULL.
   */
-  TACSElement *createElementInertialForce(const TacsScalar g[]);
+  TACSElement *createElementInertialForce(const TacsScalar g[],
+                                          const int *inertiaVecDVNums = NULL);
 
   /**
     Create element centrifugal force class
