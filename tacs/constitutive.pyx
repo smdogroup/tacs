@@ -2659,12 +2659,23 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
         ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
         kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
+        nsm (float or complex): Non-structural mass per unit length (keyword argument). Defaults to 0.0.
+        xm2 (float or complex): Structural center of mass location in y-direction (keyword argument). Defaults to 0.0.
+        xm3 (float or complex): Structural center of mass location in z-direction (keyword argument). Defaults to 0.0.
+        xnsm2 (float or complex): Non-structural mass center of mass location in y-direction (keyword argument). Defaults to 0.0.
+        xnsm3 (float or complex): Non-structural mass center of mass location in z-direction (keyword argument). Defaults to 0.0.
+        xc2 (float or complex): Cross-sectional centroid in y-direction (keyword argument). Defaults to 0.0.
+        xc3 (float or complex): Cross-sectional centroid in z-direction (keyword argument). Defaults to 0.0.
+        xk2 (float or complex): Cross-sectional shear center in y-direction (keyword argument). Defaults to 0.0.
+        xk3 (float or complex): Cross-sectional shear center in z-direction (keyword argument). Defaults to 0.0.
+        muS (float or complex): Viscous damping coefficient (keyword argument). Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, BasicBeamConstitutive, kwargs,
             required_keys=["A", "J", "Iy", "Iz"],
-            valid_keys=["Iyz", "ky", "kz"],
+            valid_keys=["Iyz", "ky", "kz", "nsm", "xm2", "xm3", "xnsm2", "xnsm3",
+                        "xc2", "xc3", "xk2", "xk3", "muS"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar A = 0.0
@@ -2674,6 +2685,16 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         cdef TacsScalar Iyz = 0.0
         cdef TacsScalar ky = 5.0/6.0
         cdef TacsScalar kz = 5.0/6.0
+        cdef TacsScalar nsm = 0.0
+        cdef TacsScalar xm2 = 0.0
+        cdef TacsScalar xm3 = 0.0
+        cdef TacsScalar xnsm2 = 0.0
+        cdef TacsScalar xnsm3 = 0.0
+        cdef TacsScalar xc2 = 0.0
+        cdef TacsScalar xc3 = 0.0
+        cdef TacsScalar xk2 = 0.0
+        cdef TacsScalar xk3 = 0.0
+        cdef TacsScalar muS = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2692,8 +2713,30 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
             ky = kwargs['ky']
         if 'kz' in kwargs:
             kz = kwargs['kz']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
+        if 'xm2' in kwargs:
+            xm2 = kwargs['xm2']
+        if 'xm3' in kwargs:
+            xm3 = kwargs['xm3']
+        if 'xnsm2' in kwargs:
+            xnsm2 = kwargs['xnsm2']
+        if 'xnsm3' in kwargs:
+            xnsm3 = kwargs['xnsm3']
+        if 'xc2' in kwargs:
+            xc2 = kwargs['xc2']
+        if 'xc3' in kwargs:
+            xc3 = kwargs['xc3']
+        if 'xk2' in kwargs:
+            xk2 = kwargs['xk2']
+        if 'xk3' in kwargs:
+            xk3 = kwargs['xk3']
+        if 'muS' in kwargs:
+            muS = kwargs['muS']
 
-        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz)
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz,
+                                                  nsm, xm2, xm3, xnsm2, xnsm3,
+                                                  xc2, xc3, xk2, xk3, muS)
         self.ptr = self.cptr
         self.ptr.incref()
 
@@ -2754,12 +2797,14 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Lower bound on wall thickness (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Upper bound on wall thickness (keyword argument). Defaults to 10.0.
+        nsm (float or complex, optional): Nonstructural mass per unit length added to the first mass moment.
+            Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoTubeBeamConstitutive, kwargs,
             required_keys=["d", "t"],
-            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub"],
+            valid_keys=["dNum", "dlb", "dub", "tNum", "tlb", "tub", "nsm"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar d = 1.0
@@ -2770,6 +2815,7 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar nsm = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2790,10 +2836,12 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
 
         if props is not NULL:
             self.cptr = new TACSIsoTubeBeamConstitutive(props, d, t, dNum, tNum,
-                                                        dlb, dub, tlb, tub)
+                                                        dlb, dub, tlb, tub, nsm)
             self.ptr = self.cptr
             self.ptr.incref()
         else:
@@ -2855,12 +2903,14 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         Kb (float or complex, optional): Effective buckling length factor used to compute the critical axial buckling load in the following equation: pi^2*E*I/(Kb * Lb)^2.
             The value depends on the boundary conditions of the beams attached end: pinned-pinned (1.0), fixed-fixed (0.5), fixed-free (2.0).
             If set to None buckling calculations will be skipped in failure check. Defaults to None.
+        nsm (float or complex, optional): Nonstructural mass per unit length added to the first mass moment.
+            Defaults to 0.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoRectangleBeamConstitutive, kwargs,
             required_keys=["w", "t"],
-            valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb"],
+            valid_keys=["wNum", "wlb", "wub", "tNum", "tlb", "tub", "Lb", "LbNum", "wOffset", "tOffset", "Kb", "nsm"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar w = 1.0
@@ -2876,6 +2926,7 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         cdef TacsScalar Kb = 0.0
         cdef TacsScalar wOffset = 0.0
         cdef TacsScalar tOffset = 0.0
+        cdef TacsScalar nsm = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -2906,10 +2957,12 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
             tOffset = kwargs['tOffset']
         if 'Kb' in kwargs and kwargs['Kb'] is not None:
             Kb = kwargs['Kb']
+        if 'nsm' in kwargs:
+            nsm = kwargs['nsm']
 
         if props is not NULL:
             self.cptr = new TACSIsoRectangleBeamConstitutive(props, w, t, Lb, wNum, tNum, LbNum,
-                                                             wlb, wub, tlb, tub, wOffset, tOffset, Kb)
+                                                             wlb, wub, tlb, tub, wOffset, tOffset, Kb, nsm)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

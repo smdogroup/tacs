@@ -1,0 +1,179 @@
+$pyNastran: version=msc
+$pyNastran: punch=False
+$pyNastran: encoding=utf-8
+$EXECUTIVE CONTROL DECK
+SOL 103
+CEND
+$CASE CONTROL DECK
+SUBCASE 1
+    DISPLACEMENT(PLOT) = ALL
+    LABEL = Modal Analysis
+    METHOD = 42
+    SPC = 5001
+BEGIN BULK
+$PARAMS
+PARAM       POST       1
+$NODES
+GRID        1001              0.      0.      0.
+GRID        1002        .0333333      0.      0.
+GRID        1003        .0666667      0.      0.
+GRID        1004              .1      0.      0.
+GRID        1005        .1333333      0.      0.
+GRID        1006        .1666667      0.      0.
+GRID        1007              .2      0.      0.
+GRID        1008        .2333333      0.      0.
+GRID        1009        .2666667      0.      0.
+GRID        1010              .3      0.      0.
+GRID        1011        .3333333      0.      0.
+GRID        1012        .3666667      0.      0.
+GRID        1013              .4      0.      0.
+GRID        1014        .4333333      0.      0.
+GRID        1015        .4666667      0.      0.
+GRID        1016              .5      0.      0.
+GRID        1017        .5333333      0.      0.
+GRID        1018        .5666667      0.      0.
+GRID        1019              .6      0.      0.
+GRID        1020        .6333333      0.      0.
+GRID        1021        .6666667      0.      0.
+GRID        1022              .7      0.      0.
+GRID        1023        .7333333      0.      0.
+GRID        1024        .7666667      0.      0.
+GRID        1025              .8      0.      0.
+GRID        1026        .8333333      0.      0.
+GRID        1027        .8666667      0.      0.
+GRID        1028              .9      0.      0.
+GRID        1029        .9333333      0.      0.
+GRID        1030        .9666667      0.      0.
+GRID        1031              1.      0.      0.
+$ELEMENTS
+$Elements and Element Properties for region : Element 1
+CBEAM       4001    3001    1001    1002      0.      0.      1.
+$Elements and Element Properties for region : Element 2
+CBEAM       4002    3002    1002    1003      0.      0.      1.
+$Elements and Element Properties for region : Element 3
+CBEAM       4003    3003    1003    1004      0.      0.      1.
+$Elements and Element Properties for region : Element 4
+CBEAM       4004    3004    1004    1005      0.      0.      1.
+$Elements and Element Properties for region : Element 5
+CBEAM       4005    3005    1005    1006      0.      0.      1.
+$Elements and Element Properties for region : Element 6
+CBEAM       4006    3006    1006    1007      0.      0.      1.
+$Elements and Element Properties for region : Element 7
+CBEAM       4007    3007    1007    1008      0.      0.      1.
+$Elements and Element Properties for region : Element 8
+CBEAM       4008    3008    1008    1009      0.      0.      1.
+$Elements and Element Properties for region : Element 9
+CBEAM       4009    3009    1009    1010      0.      0.      1.
+$Elements and Element Properties for region : Element 10
+CBEAM       4010    3010    1010    1011      0.      0.      1.
+$Elements and Element Properties for region : Element 11
+CBEAM       4011    3011    1011    1012      0.      0.      1.
+$Elements and Element Properties for region : Element 12
+CBEAM       4012    3012    1012    1013      0.      0.      1.
+$Elements and Element Properties for region : Element 13
+CBEAM       4013    3013    1013    1014      0.      0.      1.
+$Elements and Element Properties for region : Element 14
+CBEAM       4014    3014    1014    1015      0.      0.      1.
+$Elements and Element Properties for region : Element 15
+CBEAM       4015    3015    1015    1016      0.      0.      1.
+$Elements and Element Properties for region : Element 16
+CBEAM       4016    3016    1016    1017      0.      0.      1.
+$Elements and Element Properties for region : Element 17
+CBEAM       4017    3017    1017    1018      0.      0.      1.
+$Elements and Element Properties for region : Element 18
+CBEAM       4018    3018    1018    1019      0.      0.      1.
+$Elements and Element Properties for region : Element 19
+CBEAM       4019    3019    1019    1020      0.      0.      1.
+$Elements and Element Properties for region : Element 20
+CBEAM       4020    3020    1020    1021      0.      0.      1.
+$Elements and Element Properties for region : Element 21
+CBEAM       4021    3021    1021    1022      0.      0.      1.
+$Elements and Element Properties for region : Element 22
+CBEAM       4022    3022    1022    1023      0.      0.      1.
+$Elements and Element Properties for region : Element 23
+CBEAM       4023    3023    1023    1024      0.      0.      1.
+$Elements and Element Properties for region : Element 24
+CBEAM       4024    3024    1024    1025      0.      0.      1.
+$Elements and Element Properties for region : Element 25
+CBEAM       4025    3025    1025    1026      0.      0.      1.
+$Elements and Element Properties for region : Element 26
+CBEAM       4026    3026    1026    1027      0.      0.      1.
+$Elements and Element Properties for region : Element 27
+CBEAM       4027    3027    1027    1028      0.      0.      1.
+$Elements and Element Properties for region : Element 28
+CBEAM       4028    3028    1028    1029      0.      0.      1.
+$Elements and Element Properties for region : Element 29
+CBEAM       4029    3029    1029    1030      0.      0.      1.
+$Elements and Element Properties for region : Element 30
+CBEAM       4030    3030    1030    1031      0.      0.      1.
+$PROPERTIES
+PBEAML      3001    2001             BAR
+              .2     .05      0.     YES      1..1966667    .049      0.
+PBEAML      3002    2001             BAR
+        .1966667    .049      0.     YES      1..1933333    .048      0.
+PBEAML      3003    2001             BAR
+        .1933333    .048      0.     YES      1.     .19    .047      0.
+PBEAML      3004    2001             BAR
+             .19    .047      0.     YES      1..1866667    .046      0.
+PBEAML      3005    2001             BAR
+        .1866667    .046      0.     YES      1..1833333    .045      0.
+PBEAML      3006    2001             BAR
+        .1833333    .045      0.     YES      1.     .18    .044      0.
+PBEAML      3007    2001             BAR
+             .18    .044      0.     YES      1..1766667    .043      0.
+PBEAML      3008    2001             BAR
+        .1766667    .043      0.     YES      1..1733333    .042      0.
+PBEAML      3009    2001             BAR
+        .1733333    .042      0.     YES      1.     .17    .041      0.
+PBEAML      3010    2001             BAR
+             .17    .041      0.     YES      1..1666667     .04      0.
+PBEAML      3011    2001             BAR
+        .1666667     .04      0.     YES      1..1633333    .039      0.
+PBEAML      3012    2001             BAR
+        .1633333    .039      0.     YES      1.     .16    .038      0.
+PBEAML      3013    2001             BAR
+             .16    .038      0.     YES      1..1566667    .037      0.
+PBEAML      3014    2001             BAR
+        .1566667    .037      0.     YES      1..1533333    .036      0.
+PBEAML      3015    2001             BAR
+        .1533333    .036      0.     YES      1.     .15    .035      0.
+PBEAML      3016    2001             BAR
+             .15    .035      0.     YES      1..1466667    .034      0.
+PBEAML      3017    2001             BAR
+        .1466667    .034      0.     YES      1..1433333    .033      0.
+PBEAML      3018    2001             BAR
+        .1433333    .033      0.     YES      1.     .14    .032      0.
+PBEAML      3019    2001             BAR
+             .14    .032      0.     YES      1..1366667    .031      0.
+PBEAML      3020    2001             BAR
+        .1366667    .031      0.     YES      1..1333333     .03      0.
+PBEAML      3021    2001             BAR
+        .1333333     .03      0.     YES      1.     .13    .029      0.
+PBEAML      3022    2001             BAR
+             .13    .029      0.     YES      1..1266667    .028      0.
+PBEAML      3023    2001             BAR
+        .1266667    .028      0.     YES      1..1233333    .027      0.
+PBEAML      3024    2001             BAR
+        .1233333    .027      0.     YES      1.     .12    .026      0.
+PBEAML      3025    2001             BAR
+             .12    .026      0.     YES      1..1166667    .025      0.
+PBEAML      3026    2001             BAR
+        .1166667    .025      0.     YES      1..1133333    .024      0.
+PBEAML      3027    2001             BAR
+        .1133333    .024      0.     YES      1.     .11    .023      0.
+PBEAML      3028    2001             BAR
+             .11    .023      0.     YES      1..1066667    .022      0.
+PBEAML      3029    2001             BAR
+        .1066667    .022      0.     YES      1..1033333    .021      0.
+PBEAML      3030    2001             BAR
+        .1033333    .021      0.     YES      1.      .1     .02      0.
+$MATERIALS
+$Aluminium 7075
+MAT1        2001 7.17+10             .33   2810.
+$LOADS
+GRAV        6001       0    9.81      0.      0.     -1.       0
+$DYNAMIC
+EIGRL         42                      10
+$SPCs
+SPC1        5001  123456    1001
+ENDDATA

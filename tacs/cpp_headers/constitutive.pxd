@@ -31,8 +31,8 @@ cdef extern from "TACSMaterialProperties.h":
                                TacsScalar, TacsScalar,
                                TacsScalar,
                                TacsScalar, TacsScalar, TacsScalar,
-                               TacsScalar, TacsScalar, TacsScalar, 
-                               TacsScalar, TacsScalar, TacsScalar, 
+                               TacsScalar, TacsScalar, TacsScalar,
+                               TacsScalar, TacsScalar, TacsScalar,
                                TacsScalar, TacsScalar, TacsScalar)
         void setDensity(TacsScalar)
         TacsScalar getDensity();
@@ -43,8 +43,8 @@ cdef extern from "TACSMaterialProperties.h":
                                       TacsScalar*, TacsScalar*, TacsScalar*)
         void getStrengthProperties(TacsScalar*, TacsScalar*, TacsScalar*,
                                    TacsScalar*, TacsScalar*, TacsScalar*,
-                                   TacsScalar*, TacsScalar*, TacsScalar*, 
-                                   TacsScalar*, TacsScalar*, TacsScalar*, 
+                                   TacsScalar*, TacsScalar*, TacsScalar*,
+                                   TacsScalar*, TacsScalar*, TacsScalar*,
                                    TacsScalar*, TacsScalar*, TacsScalar*)
         void getCoefThermalExpansion(TacsScalar*, TacsScalar*, TacsScalar*)
         void getThermalConductivity(TacsScalar*, TacsScalar*, TacsScalar*)
@@ -288,22 +288,32 @@ cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
         TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
         void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
+        void setNonStructuralMass(TacsScalar)
 
 cdef extern from "TACSBasicBeamConstitutive.h":
     cdef cppclass TACSBasicBeamConstitutive(TACSBeamConstitutive):
         TACSBasicBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar, TacsScalar,
-                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar)
+        TACSBasicBeamConstitutive(TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                  TacsScalar, TacsScalar, TacsScalar)
 
 cdef extern from "TACSIsoTubeBeamConstitutive.h":
     cdef cppclass TACSIsoTubeBeamConstitutive(TACSBeamConstitutive):
         TACSIsoTubeBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar,
-                                    int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar)
+                                    int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
+                                    TacsScalar)
 
 cdef extern from "TACSIsoRectangleBeamConstitutive.h":
     cdef cppclass TACSIsoRectangleBeamConstitutive(TACSBeamConstitutive):
         TACSIsoRectangleBeamConstitutive(TACSMaterialProperties*, TacsScalar, TacsScalar, TacsScalar,
                                          int, int, int, TacsScalar, TacsScalar, TacsScalar, TacsScalar,
-                                         TacsScalar, TacsScalar, TacsScalar)
+                                         TacsScalar, TacsScalar, TacsScalar, TacsScalar)
 
 cdef extern from "TACSGeneralMassConstitutive.h":
     cdef cppclass TACSGeneralMassConstitutive(TACSConstitutive):
