@@ -257,30 +257,214 @@ class TACSOrthotropicPly : public TACSObject {
                                         const TacsScalar cstrain[],
                                         const TacsScalar lstrain[],
                                         TacsScalar *posSens);
+  void getPlyStress(const TacsScalar strain[], TacsScalar stress[]);
 
   // Transform the stress and strain between global/local frames
   // -----------------------------------------------------------
-  void getPlyStress(const TacsScalar strain[], TacsScalar stress[]);
-  void transformStressGlobal2Ply(TacsScalar angle, const TacsScalar global[],
-                                 TacsScalar plyStress[]);
-  void transformStressPly2Global(TacsScalar angle, const TacsScalar plyStress[],
-                                 TacsScalar global[]);
-  void transformStressGlobal2PlyAngleSens(TacsScalar angle,
-                                          const TacsScalar global[],
-                                          TacsScalar plyStress[]);
-  void transformStressPly2GlobalAngleSens(TacsScalar angle,
-                                          const TacsScalar plyStress[],
-                                          TacsScalar global[]);
-  void transformStrainGlobal2Ply(TacsScalar angle, const TacsScalar global[],
-                                 TacsScalar plyStrain[]);
-  void transformStrainPly2Global(TacsScalar angle, const TacsScalar plyStrain[],
-                                 TacsScalar global[]);
-  void transformStrainGlobal2PlyAngleSens(TacsScalar angle,
-                                          const TacsScalar global[],
-                                          TacsScalar plyStrain[]);
-  void transformStrainPly2GlobalAngleSens(TacsScalar angle,
-                                          const TacsScalar plyStrain[],
-                                          TacsScalar global[]);
+  /*
+    For a ply at an angle t, the stress in the local ply frame is computed from
+    the stress in the global frame as:
+
+    s_local = T(t) * s_global
+
+    where T is the transformation matrix:
+
+    T(t) =
+        [c^2  s^2        2*s*c ]
+        [s^2  c^2        -2*s*c]
+        [s*c (c^2 - s^2) s*c   ]
+
+    where c = cos(t) and s = sin(t)
+
+    The strain in the local ply frame is computed from the transposed
+    transformation matrix (because we use engineering shear strain rather than
+    tensorial shear strain):
+
+    e_local = T(t)^T * e_global
+
+    The transformation from the local ply frame to the global frame can be
+    computed by simply replacing t with -t in the transformation matrix:
+
+    s_global = T(-t) * s_local
+
+    e_global = T(-t)^T * e_local
+
+    Sensitivities w.r.t local or global stresses and strains can be transformed
+    using the transpose of the relevant transformation matrix, e.g:
+
+    e_local = T(t)^T * e_global
+    e_global = T(-t)^T * e_local
+    df/de_local = T(t) * df/de_global
+    df/de_global = T(-t) * df/de_local
+  */
+
+  // Generic transformations
+  // -----------------------
+  /**
+   * @brief Compute out = T(angle) * in
+   *
+   * @param angle Transformation angle
+   * @param in 3-component input vector
+   * @param out 3-component output vector
+   */
+  static void applyTransform(const TacsScalar angle, const TacsScalar in[],
+                             TacsScalar out[]);
+
+  /**
+   * @brief Compute out = T(angle)^T * in
+   *
+   * @param angle Transformation angle
+   * @param in 3-component input vector
+   * @param out 3-component output vector
+   */
+  static void applyTransformTranspose(const TacsScalar angle,
+                                      const TacsScalar in[], TacsScalar out[]);
+
+  // Stress transformations
+  // ----------------------
+  /**
+   * @brief Given the stress in the global frame, determine the stress in the
+   * local ply frame
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param global Stress in the global frame (s11, s22, s12)
+   * @param plyStress Stress in the local ply frame (s1, s2, s12)
+   */
+  static void transformStressGlobal2Ply(const TacsScalar angle,
+                                        const TacsScalar global[],
+                                        TacsScalar plyStress[]) {
+    applyTransform(angle, global, plyStress);
+  }
+
+  /**
+   * @brief Given the stress in the local ply frame, determine the stress in the
+   * global frame
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param plyStress Stress in the local ply frame (s1, s2, s12)
+   * @param global Stress in the global frame (s11, s22, s12)
+   */
+  static void transformStressPly2Global(const TacsScalar angle,
+                                        const TacsScalar plyStress[],
+                                        TacsScalar global[]) {
+    applyTransform(-angle, plyStress, global);
+  }
+
+  /**
+   * @brief Compute the derivative of the ply-frame stress with respect to the
+   * ply angle
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param global Stress in the global frame (s11, s22, s12)
+   * @param plyStress Derivative of the ply-frame stress with respect to the ply
+   * angle (ds1/dt, ds2/dt, ds12/dt)
+   */
+  static void transformStressGlobal2PlyAngleSens(const TacsScalar angle,
+                                                 const TacsScalar global[],
+                                                 TacsScalar plyStress[]);
+
+  /**
+   * @brief Compute the derivative of the global-frame stress with respect to
+   * the ply angle
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param plyStress Stress in the local ply frame (s1, s2, s12)
+   * @param global Derivative of the global-frame stress with respect to the ply
+   * angle (ds11/dt, ds22/dt, ds12/dt)
+   */
+  static void transformStressPly2GlobalAngleSens(const TacsScalar angle,
+                                                 const TacsScalar plyStress[],
+                                                 TacsScalar global[]);
+
+  // Strain transformations
+  // ----------------------
+  /**
+   * @brief Given the strain in the global frame, determine the strain in the
+   * local ply frame
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param global Strain in the global frame (e11, e22, gamma12)
+   * @param plyStrain Strain in the local ply frame (e1, e2, gamma12)
+   */
+  static void transformStrainGlobal2Ply(const TacsScalar angle,
+                                        const TacsScalar global[],
+                                        TacsScalar plyStrain[]) {
+    applyTransformTranspose(angle, global, plyStrain);
+  }
+
+  /**
+   * @brief Given the strain in the local ply frame, determine the strain in the
+   * global frame
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param plyStrain Strain in the local ply frame (e1, e2, gamma12)
+   * @param global Strain in the global frame (e11, e22, gamma12)
+   */
+  static void transformStrainPly2Global(const TacsScalar angle,
+                                        const TacsScalar plyStrain[],
+                                        TacsScalar global[]) {
+    applyTransformTranspose(-angle, plyStrain, global);
+  }
+
+  /**
+   * @brief Compute the derivative of the ply-frame strain with respect to the
+   * ply angle
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param global Strain in the global frame (e11, e22, gamma12)
+   * @param plyStrain Derivative of the ply-frame strain with respect to the ply
+   * angle (de1/dt, de2/dt, dgamma12/dt)
+   */
+  static void transformStrainGlobal2PlyAngleSens(const TacsScalar angle,
+                                                 const TacsScalar global[],
+                                                 TacsScalar plyStrain[]);
+
+  /**
+   * @brief Compute the derivative of the global-frame strain with respect to
+   * the ply angle
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param plyStrain Strain in the local ply frame (e1, e2, gamma12)
+   * @param global Derivative of the global-frame strain with respect to the ply
+   * angle (de11/dt, de22/dt, dgamma12/dt)
+   */
+  static void transformStrainPly2GlobalAngleSens(const TacsScalar angle,
+                                                 const TacsScalar plyStrain[],
+                                                 TacsScalar global[]);
+
+  // Strain sensitivity transformations
+  // ----------------------------------
+  /**
+   * @brief Transform a sensitivity w.r.t the global strain to a sensitivity
+   * w.r.t the ply strain
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param globalStrainSens Sensitivity w.r.t. strain in the global frame
+   * (df/de11, df/de22, df/dgamma12)
+   * @param plyStrainSens Sensitivity w.r.t. strain in the local ply frame
+   * (df/de1, df/de2, df/dgamma12)
+   */
+  static void transformStrainSensGlobal2Ply(const TacsScalar angle,
+                                            const TacsScalar globalStrainSens[],
+                                            TacsScalar plyStrainSens[]) {
+    applyTransform(angle, globalStrainSens, plyStrainSens);
+  }
+
+  /**
+   * @brief Transform a sensitivity w.r.t the ply strain to a sensitivity w.r.t
+   * the global strain
+   *
+   * @param angle Angle between ply and global frame in radians
+   * @param plyStrainSens Sensitivity w.r.t. strain in the local ply frame
+   * (df/de1, df/de2, df/dgamma12)
+   * @param globalStrainSens Sensitivity w.r.t. strain in the global frame
+   * (df/de11, df/de22, df/dgamma12)
+   */
+  static void transformStrainSensPly2Global(const TacsScalar angle,
+                                            const TacsScalar plyStrainSens[],
+                                            TacsScalar globalStrainSens[]) {
+    applyTransform(-angle, plyStrainSens, globalStrainSens);
+  }
 
   // Get or print other information
   // ------------------------------
