@@ -430,6 +430,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailure(int elemIndex,
 TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[], TacsScalar sens[]) {
+  // Compute the combined strain state e0 = [ex, ey, ez, gyz, gxz, gxy]
   TacsScalar e0[6], s0[6], s0d[6], e0d[6];
   TacsScalar const r0 = 0.5 * inner + wall;
   TacsScalar fail_checks[2];

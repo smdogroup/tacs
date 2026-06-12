@@ -51,14 +51,27 @@ cdef extern from "TACSMaterialProperties.h":
 
         MaterialType getMaterialType();
 
+    # Declare the nested enum at module scope under a private Cython name so it
+    # can be used as a cast target in .pyx files without conflicting with the
+    # Python IntEnum class also named CompositeFailureCriterion.
+    enum _CCompositeFC "TACSOrthotropicPly::CompositeFailureCriterion":
+        _FC_MAX_STRAIN "TACSOrthotropicPly::MAX_STRAIN"
+        _FC_TSAI_WU "TACSOrthotropicPly::TSAI_WU"
+        _FC_TSAI_WU_MODIFIED "TACSOrthotropicPly::TSAI_WU_MODIFIED"
+        _FC_CUNTZE_UD "TACSOrthotropicPly::CUNTZE_UD"
+        _FC_CUNTZE_WOVEN "TACSOrthotropicPly::CUNTZE_WOVEN"
+
+    # Integer aliases for populating the Python IntEnum
+    int _COMPOSITE_FC_MAX_STRAIN "TACSOrthotropicPly::MAX_STRAIN"
+    int _COMPOSITE_FC_TSAI_WU "TACSOrthotropicPly::TSAI_WU"
+    int _COMPOSITE_FC_TSAI_WU_MODIFIED "TACSOrthotropicPly::TSAI_WU_MODIFIED"
+    int _COMPOSITE_FC_CUNTZE_UD "TACSOrthotropicPly::CUNTZE_UD"
+    int _COMPOSITE_FC_CUNTZE_WOVEN "TACSOrthotropicPly::CUNTZE_WOVEN"
+
     cdef cppclass TACSOrthotropicPly(TACSObject):
         TACSOrthotropicPly(TacsScalar, TACSMaterialProperties*)
         void setKSWeight(TacsScalar)
-        void setUseMaxStrainCriterion()
-        void setUseTsaiWuCriterion()
-        void setUseModifiedTsaiWuCriterion()
-        void setUseCuntzeCriterion_UD()
-        void setUseCuntzeCriterion_Woven()
+        void setFailureCriterion(_CCompositeFC)
 
 cdef extern from "TACSPlaneStressConstitutive.h":
     cdef cppclass TACSPlaneStressConstitutive(TACSConstitutive):
@@ -82,6 +95,7 @@ cdef extern from "TACSSolidConstitutive.h":
 cdef extern from "TACSShellConstitutive.h":
     cdef cppclass TACSShellConstitutive(TACSConstitutive):
         void setDrillingRegularization(double)
+        double getDrillingRegularization()
         TacsScalar getShearCorrectionFactor()
         TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
         void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
@@ -272,7 +286,8 @@ cdef extern from "TACSGPBladeStiffenedShellConstitutive.h":
 
 cdef extern from "TACSBeamConstitutive.h":
     cdef cppclass TACSBeamConstitutive(TACSConstitutive):
-        pass
+        TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
+        void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
 
 cdef extern from "TACSBasicBeamConstitutive.h":
     cdef cppclass TACSBasicBeamConstitutive(TACSBeamConstitutive):

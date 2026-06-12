@@ -53,13 +53,6 @@
 */
 class TACSKSDisplacement : public TACSFunction {
  public:
-  enum KSDisplacementType {
-    DISCRETE,
-    CONTINUOUS,
-    PNORM_DISCRETE,
-    PNORM_CONTINUOUS
-  };
-
   TACSKSDisplacement(TACSAssembler *_assembler, double ksWeight,
                      const double *_dir, double alpha = 1.0);
   ~TACSKSDisplacement();
@@ -71,7 +64,7 @@ class TACSKSDisplacement : public TACSFunction {
 
   // Set parameters for the KS function
   // ----------------------------------
-  void setKSDisplacementType(enum KSDisplacementType type);
+  void setKSAggregationType(KSAggregationType type);
   double getParameter();
   void setParameter(double _ksWeight);
 
@@ -135,7 +128,7 @@ class TACSKSDisplacement : public TACSFunction {
 
  private:
   // The type of aggregation to use
-  KSDisplacementType ksType;
+  KSAggregationType ksType;
 
   // The weight on the ks function value
   double ksWeight;

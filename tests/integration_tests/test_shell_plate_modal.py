@@ -27,11 +27,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "modal_eigsm.0": 1396464.9023496218,
-        "modal_eigsm.1": 6329530.425709786,
-        "modal_eigsm.2": 6329530.425710541,
-        "modal_eigsm.3": 13800023.12391336,
-        "modal_eigsm.4": 23935675.376059294,
+        "modal_eigsm.0": 1396464.9023498422,
+        "modal_eigsm.1": 6329530.425709587,
+        "modal_eigsm.2": 6329530.425709991,
+        "modal_eigsm.3": 13800023.12391325,
+        "modal_eigsm.4": 23935675.376057968,
     }
 
     def setup_tacs_problems(self, comm):

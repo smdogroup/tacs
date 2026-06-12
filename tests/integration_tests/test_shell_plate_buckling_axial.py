@@ -17,11 +17,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "buckling_eigsb.0": 20.18364503170502,
-        "buckling_eigsb.1": 48.93915410646456,
-        "buckling_eigsb.2": 82.32683532479277,
-        "buckling_eigsb.3": 86.45944604770253,
-        "buckling_eigsb.4": 126.77071579688763,
+        "buckling_eigsb.0": 20.183645031683817,
+        "buckling_eigsb.1": 48.9391541064531,
+        "buckling_eigsb.2": 82.32683532475838,
+        "buckling_eigsb.3": 86.45944604744642,
+        "buckling_eigsb.4": 126.77071579672322,
     }
 
     def setup_tacs_problems(self, comm):
