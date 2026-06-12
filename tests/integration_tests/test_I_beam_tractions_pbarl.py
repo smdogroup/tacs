@@ -1,10 +1,9 @@
 import os
 import unittest
 
-import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
-from tacs import pytacs, elements, constitutive, functions, TACS
+from tacs import pytacs, functions, TACS
 
 """
 6 noded beam model 1 meter long in x direction.
@@ -16,7 +15,7 @@ The cross-section is an I beam (defined by PBARL) with the following properties:
     w_flange = 0.05
 
 We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
 """
 

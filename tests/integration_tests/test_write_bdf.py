@@ -173,7 +173,7 @@ class ProblemTest(unittest.TestCase):
             new_loads = new_bdf.loads[load_id]
             scaled_loads = scaled_bdf.loads[load_id]
 
-            for new_load, scaled_load in zip(new_loads, scaled_loads):
+            for new_load, scaled_load in zip(new_loads, scaled_loads, strict=True):
                 if new_load.type == "FORCE":
                     forceScale = massScale * xyzScale / timeScale**2
                     # Forces should scale as mass * length / time^2
@@ -212,7 +212,7 @@ class ProblemTest(unittest.TestCase):
             elif new_prop.type in ["PCOMP", "PCOMPG"]:
                 # Check ply thicknesses
                 for i, (new_t, scaled_t) in enumerate(
-                    zip(new_prop.thicknesses, scaled_prop.thicknesses)
+                    zip(new_prop.thicknesses, scaled_prop.thicknesses, strict=True)
                 ):
                     np.testing.assert_allclose(
                         scaled_t,

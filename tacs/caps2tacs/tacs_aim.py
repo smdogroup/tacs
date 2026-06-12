@@ -4,8 +4,9 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 
 __all__ = ["TacsAim"]
 
-from typing import TYPE_CHECKING, List
-import os, numpy as np
+from typing import List
+import os
+import numpy as np
 from .proc_decorator import root_broadcast, parallel
 from .materials import Material
 from .constraints import Constraint
@@ -64,14 +65,14 @@ class TacsAim:
     @parallel
     def _build_aim(self, caps_problem):
         """
-        build the TacsAim pyCAPS object inside our wrapper class on root proc
+        Build the TacsAim pyCAPS object inside our wrapper class on root proc
         """
         self._aim = caps_problem.analysis.create(aim="tacsAIM", name="tacs")
         self._geometry = caps_problem.geometry
 
     def register(self, obj):
         """
-        register any one of the available objects: Materials, Properties, Variables, etc.
+        Register any one of the available objects: Materials, Properties, Variables, etc.
         """
         if isinstance(obj, Material):
             self._materials.append(obj)
@@ -97,7 +98,7 @@ class TacsAim:
             )
 
     def get_proc_with_shape_var(self, shape_var: ShapeVariable or str):
-        """get the proc index that has a certain shape variable"""
+        """Get the proc index that has a certain shape variable"""
         n_procs = len(self.active_procs)
         assert n_procs > 0
         assert len(self.shape_variables) > 0
@@ -118,7 +119,7 @@ class TacsAim:
     @property
     def local_shape_vars(self) -> list:
         """
-        local shape variables assigned to each processor
+        Local shape variables assigned to each processor
         goal is to distribute them as evenly as possible among each of the active procs
         so that the tacsAIM postAnalysis() is less expensive (in terms of runtime)
         """
@@ -271,7 +272,7 @@ class TacsAim:
     @property
     def geometry(self):
         """
-        caps problem geometry object pyCAPS.problem.geometry
+        Caps problem geometry object pyCAPS.problem.geometry
         """
         return self._geometry
 
@@ -356,21 +357,21 @@ class TacsAim:
     @property
     def aim(self):
         """
-        returns the auto-built tacsAim object
+        Returns the auto-built tacsAim object
         """
         return self._aim
 
     @property
     def change_shape(self) -> bool:
         """
-        whether the aim will change shape (only if shape variables provided)
+        Whether the aim will change shape (only if shape variables provided)
         """
         return len(self.shape_variables) > 0
 
     @parallel
     def update_properties(self):
         """
-        update thickness properties and design variables in ESP/CAPS inputs
+        Update thickness properties and design variables in ESP/CAPS inputs
         if shape change w/ thickness variables
         """
         # exit if no thickness variables
@@ -424,7 +425,7 @@ class TacsAim:
     @parallel
     def pre_analysis(self):
         """
-        provide access to the tacs aim preAnalysis for generating TACS input files and mesh
+        Provide access to the tacs aim preAnalysis for generating TACS input files and mesh
         """
         assert self._setup
         self.aim.preAnalysis()
@@ -433,7 +434,7 @@ class TacsAim:
     @parallel
     def post_analysis(self):
         """
-        provide access to the tacs aim postAnalysis for collecting analysis outputs - functions and derivatives
+        Provide access to the tacs aim postAnalysis for collecting analysis outputs - functions and derivatives
         """
         self.aim.postAnalysis()
         return self

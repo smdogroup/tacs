@@ -17,7 +17,7 @@ from typing import List
 class Derivative:
     def __init__(self, name: str, value: float = None):
         """
-        used to track derivatives for d(function)/d(var) of each analysis function and variable in the tacs aim
+        Used to track derivatives for d(function)/d(var) of each analysis function and variable in the tacs aim
         """
         self.name = name
         self.value = value
@@ -32,7 +32,7 @@ class AnalysisFunction:
             Calls addFunction in each new staticProblem for now
 
         Parameters
-        -----------------------------------------------------
+        ----------
         name : str
             the name of the function i.e. mass, ks_vmfailure, etc.
         handle : TACS.function

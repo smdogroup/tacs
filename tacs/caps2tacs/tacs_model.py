@@ -13,7 +13,6 @@ from .constraints import Constraint
 from .property import BaseProperty
 from .loads import Load
 from .variables import ShapeVariable, ThicknessVariable
-from .egads_aim import EgadsAim
 from .aflr_aim import AflrAim
 from typing import List
 from tacs.pytacs import pyTACS
@@ -68,10 +67,10 @@ class TacsModel:
         verbosity: int = 0,
     ):
         """
-        make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
+        Make a pyCAPS problem with the tacsAIM and egadsAIM on serial / root proc
 
         Parameters
-        ---------------------------------
+        ----------
         csm_file : filepath
             filename / full path of ESP/CAPS Constructive Solid Model or .CSM file
         comm : MPI.COMM
@@ -131,7 +130,7 @@ class TacsModel:
 
     def register(self, obj):
         """
-        register each of the objects to the tacs model
+        Register each of the objects to the tacs model
         can also register any object for the tacs aim to the tacs model which passes it on
         """
 
@@ -157,10 +156,10 @@ class TacsModel:
 
     def setup(self, include_aim: bool = True):
         """
-        setup the analysis functions to store derivatives
+        Setup the analysis functions to store derivatives
 
         Parameters
-        --------------------------------------------
+        ----------
         auto_tacs_aim : bool
             automatically setup the tacs aim too
         """
@@ -187,7 +186,7 @@ class TacsModel:
     @property
     def analysis_functions(self) -> List[AnalysisFunction]:
         """
-        return the list of analysis function objects registered to the tacs aim wrapper class
+        Return the list of analysis function objects registered to the tacs aim wrapper class
         to add more functions use Function.(...).register_to(tacs_aim) or tacs_aim.register(my_analysis_function)
         """
         return self._analysis_functions
@@ -195,7 +194,7 @@ class TacsModel:
     @property
     def function_names(self) -> List[str]:
         """
-        list of names of each analysis function
+        List of names of each analysis function
         """
         return [func.name for func in self.analysis_functions]
 
@@ -213,7 +212,7 @@ class TacsModel:
     @property
     def geometry(self):
         """
-        link to pyCAPS geometry object to enable shape change in tacsAIM
+        Link to pyCAPS geometry object to enable shape change in tacsAIM
         """
         return self.tacs_aim.geometry
 
@@ -243,7 +242,7 @@ class TacsModel:
 
     def update_design(self, input_dict: dict = None):
         """
-        method to change the values of each design variable in tacsAim wrapper and ESP/CAPS
+        Method to change the values of each design variable in tacsAim wrapper and ESP/CAPS
         """
 
         input_dict = input_dict if input_dict is not None else self.variable_dict
@@ -267,9 +266,9 @@ class TacsModel:
                         ):
                             changed_design = True
                             if shape_var.value is not None:
-                                self.geometry.despmtr[shape_var.name].value = (
-                                    shape_var.value
-                                )
+                                self.geometry.despmtr[
+                                    shape_var.name
+                                ].value = shape_var.value
                             else:
                                 shape_var.value = self.geometry.despmtr[
                                     shape_var.name
@@ -294,7 +293,7 @@ class TacsModel:
 
     def fea_solver(self, root=0) -> pyTACS:
         """
-        build pyTACS from nastran dat file on the root proc
+        Build pyTACS from nastran dat file on the root proc
         """
         return pyTACS(self.tacs_aim.dat_file_path(root), self.comm)
 
@@ -302,7 +301,7 @@ class TacsModel:
         self, root=0, callback=None, addFunctions: bool = True, auto: bool = False
     ):
         """
-        creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
+        Creates TACS list of static, transient, or modal analysis TACS problems from the TacsAim class
         most important call method from the tacsAim class: SPs = tacs_aim.createTACSProbs
         """
         fea_solver = self.fea_solver(root)
@@ -324,7 +323,7 @@ class TacsModel:
         return self.SPs
 
     def _convert_shape_vars_dict(self, shape_vars_dict: dict):
-        """convert the shape variable dict keys from str or funtofem variables to Tacs Shape Variables if necessary"""
+        """Convert the shape variable dict keys from str or funtofem variables to Tacs Shape Variables if necessary"""
         # convert shape variable dict to caps2tacs ShapeVariable keys if necessary
         shape_vars_dict2 = {}
         first_key = list(shape_vars_dict.keys())[0]
@@ -445,7 +444,7 @@ class TacsModel:
 
     def pre_analysis(self, mpi_barrier: bool = True):
         """
-        call tacs aim pre_analysis to build TACS input files and mesh
+        Call tacs aim pre_analysis to build TACS input files and mesh
         only regenerate the mesh each time if there are shape variables
         """
         if self.tacs_aim.change_shape:
@@ -460,7 +459,7 @@ class TacsModel:
         self, write_f5: bool = True, iteration: float = 0, mpi_barrier: bool = True
     ):
         """
-        run the static problem analysis
+        Run the static problem analysis
         """
 
         assert self._setup
@@ -527,7 +526,7 @@ class TacsModel:
 
     def post_analysis(self, mpi_barrier=True):
         """
-        call tacs aim wrapper postAnalysis and update analysis functions and gradients
+        Call tacs aim wrapper postAnalysis and update analysis functions and gradients
         """
 
         if self.tacs_aim.change_shape:
@@ -548,9 +547,7 @@ class TacsModel:
 
             for var in self.variables:
                 # get derivative from one of the processors that has it and broadcast
-                c_deriv_dict = (
-                    {}
-                )  # key is func name, holds derivatives for current variable
+                c_deriv_dict = {}  # key is func name, holds derivatives for current variable
                 if isinstance(var, ThicknessVariable):
                     c_root = self.root_proc_ind
                 elif isinstance(var, ShapeVariable):

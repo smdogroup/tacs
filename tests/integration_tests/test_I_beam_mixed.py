@@ -10,7 +10,7 @@ This model tests an I-beam made up of two different element types:
 The properties of the cross-section are given below:
     Acaps = 0.05
     tweb = 0.1
-We apply apply various tip loads test KSDisplacement, KSFailure, 
+We apply apply various tip loads test KSDisplacement, KSFailure,
 StructuralMass, and Compliance functions and sensitivities.
 
 NOTE: Design variables are read in from BDF file.

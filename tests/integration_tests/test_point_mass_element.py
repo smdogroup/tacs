@@ -6,15 +6,15 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, TACS, functions
 
 """
-A point mass element free in space. 
-Case 1: We apply a unit force in every direction on the mass for 10 seconds. 
+A point mass element free in space.
+Case 1: We apply a unit force in every direction on the mass for 10 seconds.
 Case 2: We apply a gravity load in the z direction for 10 seconds.
 
 The inertial values for the mass are given below:
 mass = 20.0 kg
 Ixx = 23.5 kg*m^2
-Iyy = 32.6 kg*m^2 
-Izz = 12.8 kg*m^2 
+Iyy = 32.6 kg*m^2
+Izz = 12.8 kg*m^2
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))

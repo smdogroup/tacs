@@ -9,7 +9,7 @@ from tacs import pytacs, constitutive, elements, functions
 6 noded beam model 1 meter long in x direction with a two transient tip load cases:
     1. linear ramp
     2. sinusoidal
-The transient loads are read in from the BDF using the createTACSProbsFromBDF method. 
+The transient loads are read in from the BDF using the createTACSProbsFromBDF method.
 We apply apply various tip loads test KSDisplacement and Compliance functions and sensitivities.
 """
 

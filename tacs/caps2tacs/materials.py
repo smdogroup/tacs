@@ -4,7 +4,6 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 
 __all__ = ["Material", "Isotropic", "Orthotropic"]
 
-from typing import TYPE_CHECKING
 
 
 class Material:
@@ -80,7 +79,7 @@ class Material:
     @property
     def dictionary(self) -> dict:
         """
-        return dictionary of material settings
+        Return dictionary of material settings
         """
         m_dict = {}
         m_dict["materialType"] = self._material_type
@@ -112,7 +111,7 @@ class Material:
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this constraint to TacsAim
+        Cascaded method to register this constraint to TacsAim
         """
         tacs_aim.register(self)
         return self
@@ -134,7 +133,7 @@ class Isotropic(Material):
         G=None,
     ):
         """
-        wrapper class for ESP/CAPS isotropic materials
+        Wrapper class for ESP/CAPS isotropic materials
         """
         if G is None:
             G = E / 2.0 / (1 + nu)
@@ -157,7 +156,7 @@ class Isotropic(Material):
 
     @classmethod
     def null(cls):
-        """these properties need to be set then through element callback"""
+        """These properties need to be set then through element callback"""
         return cls(
             name="null",
             E=0.0,
@@ -316,7 +315,7 @@ class Orthotropic(Material):
 
     @classmethod
     def null(cls):
-        """these properties need to be set then through element callback"""
+        """These properties need to be set then through element callback"""
         return cls(
             name="null",
             E1=0.0,

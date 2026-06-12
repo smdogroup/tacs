@@ -4,7 +4,7 @@ from static_analysis_base_test import StaticTestCase
 from tacs import TACS, elements, constitutive, functions
 
 """
-Create a uniform plate under uniform plane stress 
+Create a uniform plate under uniform plane stress
 and test KSFailure, StructuralMass, and Compliance functions and sensitivities
 """
 

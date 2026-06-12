@@ -5,10 +5,7 @@ pySystem
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
 
-import tacs.pymeshloader
-import tacs.TACS
 from tacs.utilities import BaseUI
 
 
@@ -94,7 +91,7 @@ class TACSSystem(BaseUI):
         Get the current set of  design variables for this problem.
 
         Returns
-        ----------
+        -------
         x : numpy.ndarray
             The current design variable vector set in tacs.
 
@@ -130,10 +127,10 @@ class TACSSystem(BaseUI):
 
     def getDesignVarRange(self):
         """
-        get the lower/upper bounds for the design variables.
+        Get the lower/upper bounds for the design variables.
 
         Returns
-        ----------
+        -------
         xlb : numpy.ndarray
             The design variable lower bound.
         xub : numpy.ndarray

@@ -6,8 +6,8 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
 
 """"
-The nominal case is a 0.5m x 0.5m flat plate under no load. The solution to this is trivial, 
-but its still worth testing. The plate comprises 100 CQUAD4 elements and test KSFailure, 
+The nominal case is a 0.5m x 0.5m flat plate under no load. The solution to this is trivial,
+but its still worth testing. The plate comprises 100 CQUAD4 elements and test KSFailure,
 KSDisplacement, StructuralMass, and Compliance functions and sensitivities
 """
 

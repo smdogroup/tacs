@@ -1,6 +1,5 @@
 __all__ = ["EgadsAim"]
 
-from typing import TYPE_CHECKING, List
 from .proc_decorator import parallel
 
 
@@ -36,7 +35,7 @@ class EgadsAim:
         max_dihedral_angle: float = 15,
     ):
         """
-        cascaded method to set the mesh input settings to the egadsAim
+        Cascaded method to set the mesh input settings to the egadsAim
         """
         for proc in self.active_procs:
             if self.comm.rank == proc:
@@ -82,7 +81,7 @@ class EgadsAim:
 
     def register_to(self, tacs_aim):
         """
-        cascade method to register the egads aim to the tacs aim wrapper class
+        Cascade method to register the egads aim to the tacs aim wrapper class
         """
         tacs_aim.register(self)
         return self

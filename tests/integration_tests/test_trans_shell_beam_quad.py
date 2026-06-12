@@ -39,7 +39,7 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
 
         # Overwrite default check values
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-8
             self.atol = 1e-3
             self.dh = 1e-50

@@ -7,7 +7,7 @@ from tacs import pytacs, functions
 """
 Create annulus out of shell elements using pyNASTRAN's BDF class.
 We then use this class object to initialize pyTACS rather than reading in a file.
-Apply a load at the spider-webbed RBE2 centered inside the annulus and test KSFailure, StructuralMass, 
+Apply a load at the spider-webbed RBE2 centered inside the annulus and test KSFailure, StructuralMass,
 Moment of Inertia, and Compliance functions and sensitivities.
 """
 

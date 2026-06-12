@@ -19,7 +19,6 @@ a part of.
 # External Python modules
 # ==============================================================================
 import numpy as np
-import scipy as sp
 
 # ==============================================================================
 # Extension modules
@@ -68,7 +67,7 @@ class PanelWidthConstraint(PanelLengthConstraint):
 
     def computeRefAxis(self, refAxis: np.ndarray, comp_bndry_node_coords: np.ndarray):
         """
-        remove the panelNormal from the refAxis
+        Remove the panelNormal from the refAxis
 
         Parameters
         ----------

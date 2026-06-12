@@ -139,7 +139,7 @@ class ProblemTest(TransientTestCase.TransientTest):
 
         # Loop through the force vector for every time step and set the time-dependent load
         time_history = np.linspace(tinit, tfinal, num_steps + 1)
-        for t, force_vec in zip(time_history, force_history):
+        for t, force_vec in zip(time_history, force_history, strict=True):
             # Create force vector
             f_array = force_vec.getArray().reshape(local_num_nodes, vars_per_node)
 

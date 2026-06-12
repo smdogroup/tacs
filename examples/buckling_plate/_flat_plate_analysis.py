@@ -40,7 +40,7 @@ class CompositeMaterialUtility:
 
     def rotate_ply(self, angle=0.0):
         """
-        compute the properties at a general angle
+        Compute the properties at a general angle
         assume the input angle is in degrees
         """
         # copy previous properties at 0 deg into temp variables
@@ -130,7 +130,7 @@ class FlatPlateAnalysis:
         cls, nominal_plate: Self, new_plate: Self, num_modes: int
     ) -> dict:
         """
-        compute the permutation of modes in the new plate that correspond to the modes in the nominal plate
+        Compute the permutation of modes in the new plate that correspond to the modes in the nominal plate
         using 2D Discrete Fourier transform in a model assurance criterion
         """
         eigenvalues = [None for _ in range(num_modes)]
@@ -173,11 +173,11 @@ class FlatPlateAnalysis:
         # check the permutation map is one-to-one
 
         # print to the terminal about the modal criterion
-        print(f"0-based mac criterion permutation map")
+        print("0-based mac criterion permutation map")
         print(
             f"\tbetween nominal plate {nominal_plate._plate_name} and new plate {new_plate._plate_name}"
         )
-        print(f"\tthe permutation map is the following::\n")
+        print("\tthe permutation map is the following::\n")
         for imode in range(num_modes):
             print(f"\t nominal {imode} : new {permutation[imode]}")
 
@@ -369,7 +369,7 @@ class FlatPlateAnalysis:
 
     @property
     def nu21(self) -> float:
-        """reversed 12 Poisson's ratio"""
+        """Reversed 12 Poisson's ratio"""
         return self.nu12 * self.E22 / self.E11
 
     @property
@@ -407,7 +407,7 @@ class FlatPlateAnalysis:
     @property
     def affine_exx(self):
         """
-        get the exx so that lambda = kx_0 the affine buckling coefficient for pure axial load
+        Get the exx so that lambda = kx_0 the affine buckling coefficient for pure axial load
         out of the buckling analysis!
         """
         exx_T = np.pi**2 * np.sqrt(self.D11 * self.D22) / self.b**2 / self.h / self.E11
@@ -421,7 +421,7 @@ class FlatPlateAnalysis:
     @property
     def affine_exy(self):
         """
-        get the exy so that lambda = kx_0y_0 the affine buckling coefficient for pure shear load
+        Get the exy so that lambda = kx_0y_0 the affine buckling coefficient for pure shear load
         out of the buckling analysis!
         """
         option = 2
@@ -459,7 +459,7 @@ class FlatPlateAnalysis:
     @property
     def Dstar(self):
         """
-        return Dstar the generalized rigidity from the affine transformatin of orthotropic CPT (Classical Plate Theory)
+        Return Dstar the generalized rigidity from the affine transformatin of orthotropic CPT (Classical Plate Theory)
         TODO : may need to add isotropic case to this with Dstar = 1.0
         """
         return (self.D12 + 2 * self.D66) / np.sqrt(self.D11 * self.D22)
@@ -467,7 +467,7 @@ class FlatPlateAnalysis:
     @property
     def slenderness(self):
         """
-        slenderness ratio b/h. As the slenderness ratio decreases (plate is thicker) the CPT (Classical Plate Theory)
+        Slenderness ratio b/h. As the slenderness ratio decreases (plate is thicker) the CPT (Classical Plate Theory)
         which doesn't include shear strain energy is less exact. And FSDT (First Order Shear Deformation Theory) or Reissler-Mindlin plate
         theory which includes shear is required.
         """
@@ -475,7 +475,7 @@ class FlatPlateAnalysis:
 
     def _vec_to_plate_matrix(self, vec):
         """
-        build a matrix for transforming column vectors MN x 1 to M x N matrices
+        Build a matrix for transforming column vectors MN x 1 to M x N matrices
         for the mesh for Modal assurance criterion
         """
         return np.array(
@@ -510,7 +510,7 @@ class FlatPlateAnalysis:
 
     def interpolate_eigenvectors(self, X_test, compute_covar=False):
         """
-        interpolate the eigenvector from this object the nominal plate to a new mesh in non-dim coordinates
+        Interpolate the eigenvector from this object the nominal plate to a new mesh in non-dim coordinates
         """
         X_train = self.nondim_X
         num_train = self.num_nodes
@@ -594,7 +594,7 @@ class FlatPlateAnalysis:
 
     @property
     def num_modes(self) -> int:
-        """number of eigenvalues or modes that were recorded"""
+        """Number of eigenvalues or modes that were recorded"""
         return self._num_modes
 
     def generate_bdf(self, nx=30, ny=30, exx=0.0, eyy=0.0, exy=0.0, clamped=True):
@@ -792,7 +792,7 @@ class FlatPlateAnalysis:
 
     def run_static_analysis(self, base_path=None, write_soln=False):
         """
-        run a linear static analysis on the flat plate with either isotropic or composite materials
+        Run a linear static analysis on the flat plate with either isotropic or composite materials
         return the average stresses in the plate => to compute in-plane loads Nx, Ny, Nxy
         """
 
@@ -829,7 +829,7 @@ class FlatPlateAnalysis:
         base_path=None,
     ):
         """
-        run a linear buckling analysis on the flat plate with either isotropic or composite materials
+        Run a linear buckling analysis on the flat plate with either isotropic or composite materials
         return the sorted eigenvalues of the plate => would like to include M
         """
 
