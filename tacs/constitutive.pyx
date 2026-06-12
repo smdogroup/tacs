@@ -2716,7 +2716,7 @@ cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
 
     DV convention (same as IsoTubeBeamConstitutive):
       d  — inner diameter [m]
-      tw — diametric wall thickness = OD - ID [m]
+      tw — wall thickness [m]
 
     Failure modes aggregated in KS (ks_weight = 100):
       1. Fiber-direction compression at the outer fibre: -E11*eps1 / X_c
@@ -2736,7 +2736,7 @@ cdef class CompositeTubeBeamConstitutive(BeamConstitutive):
         layup_angles (list of float): Ply angles in degrees. Length sets
             the number of plies; all plies are assumed equal thickness.
         d (float): Initial inner diameter [m].
-        tw (float): Initial diametric wall thickness (OD - ID) [m].
+        tw (float): Initial wall thickness [m].
         dNum (int, optional): DV index for inner diameter. Defaults to -1.
         dlb (float, optional): Lower bound on d. Defaults to 0.
         dub (float, optional): Upper bound on d. Defaults to 10.

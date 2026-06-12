@@ -27,8 +27,8 @@
 
   DV convention (mirrors TACSIsoTubeBeamConstitutive):
     inner (d)  — inner diameter [m], DV index dNum
-    wall  (tw) — diametric wall thickness = OD - ID [m], DV index twNum
-  Outer diameter: D_o = inner + wall.
+    wall  (tw) — wall thickness [m], DV index twNum
+  Outer diameter: D_o = inner + 2*wall.
 
   Failure modes aggregated by a KS smooth-max (ks_weight = 100):
     1. Fiber-direction compression at the outer fibre: -E11*eps_1 / X_c
@@ -52,9 +52,9 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
     n_plies      — number of plies (all equal thickness)
 
     Geometry DVs:
-    inner_init, wall_init — initial inner diameter and diametric wall thickness
-    [m] inner_dv, wall_dv     — global DV indices (-1 = fixed) inner_lb/ub,
-    wall_lb/ub — DV bounds
+    inner_init, wall_init — initial inner diameter and wall thickness [m]
+    inner_dv, wall_dv     — global DV indices (-1 = fixed)
+    inner_lb/ub, wall_lb/ub — DV bounds
 
     Buckling:
     buckle_length        — member length Lb [m]
@@ -162,7 +162,7 @@ class TACSCompositeTubeBeamConstitutive : public TACSBeamConstitutive {
   TacsScalar X_t;  // fibre-direction tensile strength [Pa] (0 = disabled)
 
   // Geometry DVs (same convention as TACSIsoTubeBeamConstitutive)
-  TacsScalar inner, wall;  // inner diameter, diametric wall thickness [m]
+  TacsScalar inner, wall;  // inner diameter and wall thickness [m]
   int innerDV, wallDV;
   TacsScalar innerLb, innerUb;
   TacsScalar wallLb, wallUb;

@@ -67,7 +67,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::getYoungsModulus() const {
   if (xDV < 0) {
     return E0;
   }
-  TacsScalar stiffness_scale =
+  TacsScalar const stiffness_scale =
       k_floor + (1.0 - k_floor) * pow(x_val, p_penalty);
   return stiffness_scale * E0;
 }
@@ -76,7 +76,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::getYoungsModulusDVSens() const {
   if (xDV < 0) {
     return 0.0;
   }
-  TacsScalar dstiffness_scale =
+  TacsScalar const dstiffness_scale =
       (1.0 - k_floor) * p_penalty * pow(x_val, p_penalty - 1.0);
   return dstiffness_scale * E0;
 }
@@ -186,11 +186,12 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
                                                   const double pt[],
                                                   const TacsScalar X[],
                                                   TacsScalar moments[]) {
-  TacsScalar rho = getMaterialDensity();
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const rho = getMaterialDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   moments[0] = rho * A;
   moments[1] = 0.0;
@@ -203,28 +204,32 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
 void TACSIsoTubeBeamConstitutive::addMassMomentsDVSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
-  TacsScalar rho = getMaterialDensity();
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
+  TacsScalar const rho = getMaterialDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
 
   int index = 0;
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall / 2.0;
-    TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
+    TacsScalar const dA = M_PI * wall;
+    TacsScalar const dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
 
     dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0 / 2.0;
-    TacsScalar dIa = M_PI * (d0 * d0 * d0) / 16.0;
+    TacsScalar const dA = M_PI * d0;
+    TacsScalar const dIa = M_PI * (d0 * d0 * d0) / 8.0;
 
     dfdx[index] += rho * (scale[0] * dA + scale[3] * dIa + scale[4] * dIa);
     index++;
   }
+  if (buckleLengthDV >= 0) {
+    index++;
+  }
   if (xDV >= 0) {
-    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar const Ia =
+        M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
     dfdx[index] += getMaterialDensityDVSens() *
                    (scale[0] * A + scale[3] * Ia + scale[4] * Ia);
     index++;
@@ -243,9 +248,9 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalSpecificHeat(int elemIndex,
 TacsScalar TACSIsoTubeBeamConstitutive::evalDensity(int elemIndex,
                                                     const double pt[],
                                                     const TacsScalar X[]) {
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
 
   return getMaterialDensity() * A;
 }
@@ -254,22 +259,25 @@ void TACSIsoTubeBeamConstitutive::addDensityDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     int dvLen, TacsScalar dfdx[]) {
   int index = 0;
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar rho = getMaterialDensity();
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const rho = getMaterialDensity();
 
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall / 2.0;
+    TacsScalar const dA = M_PI * wall;
     dfdx[index] += scale * rho * dA;
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0 / 2.0;
+    TacsScalar const dA = M_PI * d0;
     dfdx[index] += scale * rho * dA;
     index++;
   }
+  if (buckleLengthDV >= 0) {
+    index++;
+  }
   if (xDV >= 0) {
-    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
     dfdx[index] += scale * getMaterialDensityDVSens() * A;
     index++;
   }
@@ -279,13 +287,14 @@ void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
                                              const TacsScalar X[],
                                              const TacsScalar e[],
                                              TacsScalar s[]) {
-  TacsScalar E = getYoungsModulus();
-  TacsScalar G = 0.5 * E / (1.0 + nu0);
-  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const E = getYoungsModulus();
+  TacsScalar const G = 0.5 * E / (1.0 + nu0);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   s[0] = E * A * e[0];
   s[1] = 2.0 * G * Ia * e[1];
@@ -299,13 +308,14 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness(int elemIndex,
                                                        const double pt[],
                                                        const TacsScalar X[],
                                                        TacsScalar C[]) {
-  TacsScalar E = getYoungsModulus();
-  TacsScalar G = 0.5 * E / (1.0 + nu0);
-  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
-  TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-  TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+  TacsScalar const E = getYoungsModulus();
+  TacsScalar const G = 0.5 * E / (1.0 + nu0);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
+  TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+  TacsScalar const Ia =
+      M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
@@ -321,16 +331,16 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     int elemIndex, TacsScalar scale, const double pt[], const TacsScalar X[],
     const TacsScalar e[], const TacsScalar psi[], int dvLen,
     TacsScalar dfdx[]) {
-  TacsScalar Ep = getYoungsModulus();
-  TacsScalar Gp = 0.5 * Ep / (1.0 + nu0);
-  TacsScalar kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
-  TacsScalar d0 = inner + wall;
-  TacsScalar d1 = inner;
+  TacsScalar const Ep = getYoungsModulus();
+  TacsScalar const Gp = 0.5 * Ep / (1.0 + nu0);
+  TacsScalar const kcorr = 2.0 * (1.0 + nu0) / (4.0 + 3.0 * nu0);
+  TacsScalar const d0 = inner + 2.0 * wall;
+  TacsScalar const d1 = inner;
 
   int index = 0;
   if (innerDV >= 0) {
-    TacsScalar dA = M_PI * wall / 2.0;
-    TacsScalar dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
+    TacsScalar const dA = M_PI * wall;
+    TacsScalar const dIa = M_PI * ((d0 * d0 * d0) - (d1 * d1 * d1)) / 16.0;
 
     dfdx[index] +=
         scale *
@@ -340,8 +350,8 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (wallDV >= 0) {
-    TacsScalar dA = M_PI * d0 / 2.0;
-    TacsScalar dIa = M_PI * (d0 * d0 * d0) / 16.0;
+    TacsScalar const dA = M_PI * d0;
+    TacsScalar const dIa = M_PI * (d0 * d0 * d0) / 8.0;
 
     dfdx[index] +=
         scale *
@@ -355,10 +365,11 @@ void TACSIsoTubeBeamConstitutive::addStressDVSens(
     index++;
   }
   if (xDV >= 0) {
-    TacsScalar dEp = getYoungsModulusDVSens();
-    TacsScalar dGp = 0.5 * dEp / (1.0 + nu0);
-    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar const dEp = getYoungsModulusDVSens();
+    TacsScalar const dGp = 0.5 * dEp / (1.0 + nu0);
+    TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar const Ia =
+        M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
     dfdx[index] +=
         scale *
@@ -374,7 +385,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailure(int elemIndex,
                                                     const TacsScalar X[],
                                                     const TacsScalar e[]) {
   TacsScalar e0[6], s0[6];
-  TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar const r0 = 0.5 * inner + wall;
   TacsScalar fail_checks[2];
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
   int count = 1;
@@ -394,14 +405,15 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailure(int elemIndex,
 
   // Euler column buckling (pin-pin, E cancels in Nx/Pcr)
   if (TacsRealPart(buckleLengthFactor) != 0.0) {
-    TacsScalar d0 = inner + wall;
-    TacsScalar d1 = inner;
-    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-    TacsScalar Leff = buckleLengthFactor * buckleLength;
-    TacsScalar Nx = -A * e[0];
-    TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
-    TacsScalar buckle_ratio = Nx / Pcr;
+    TacsScalar const d0 = inner + 2.0 * wall;
+    TacsScalar const d1 = inner;
+    TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar const Ia =
+        M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar const Leff = buckleLengthFactor * buckleLength;
+    TacsScalar const Nx = -A * e[0];
+    TacsScalar const Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+    TacsScalar const buckle_ratio = Nx / Pcr;
     fail_checks[1] = getTopologyValue() * buckle_ratio;
     if (TacsRealPart(fail_checks[1]) > TacsRealPart(max_fail)) {
       max_fail = fail_checks[1];
@@ -419,7 +431,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[], TacsScalar sens[]) {
   TacsScalar e0[6], s0[6], s0d[6], e0d[6];
-  TacsScalar r0 = 0.5 * inner + wall;
+  TacsScalar const r0 = 0.5 * inner + wall;
   TacsScalar fail_checks[2];
   TacsScalar fail_checks_sens[2][6];
   TacsScalar max_fail = -1e20, ks_sum = 0.0;
@@ -450,15 +462,16 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
 
   // Euler column buckling strain sensitivity: only e[0] (axial) contributes
   if (TacsRealPart(buckleLengthFactor) != 0.0) {
-    TacsScalar d0 = inner + wall;
-    TacsScalar d1 = inner;
-    TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-    TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-    TacsScalar Leff = buckleLengthFactor * buckleLength;
-    TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
-    TacsScalar Nx = -A * e[0];
-    TacsScalar buckle_ratio = Nx / Pcr;
-    TacsScalar x_eff = getTopologyValue();
+    TacsScalar const d0 = inner + 2.0 * wall;
+    TacsScalar const d1 = inner;
+    TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+    TacsScalar const Ia =
+        M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+    TacsScalar const Leff = buckleLengthFactor * buckleLength;
+    TacsScalar const Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+    TacsScalar const Nx = -A * e[0];
+    TacsScalar const buckle_ratio = Nx / Pcr;
+    TacsScalar const x_eff = getTopologyValue();
     fail_checks[1] = x_eff * buckle_ratio;
     fail_checks_sens[1][0] = x_eff * (-A / Pcr);
     if (TacsRealPart(fail_checks[1]) > TacsRealPart(max_fail)) {
@@ -468,7 +481,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalFailureStrainSens(
   }
 
   for (int ii = 0; ii < count; ii++) {
-    TacsScalar val = exp(ks_weight * (fail_checks[ii] - max_fail));
+    TacsScalar const val = exp(ks_weight * (fail_checks[ii] - max_fail));
     ks_sum += val;
     for (int kk = 0; kk < NUM_STRESSES; kk++) {
       sens[kk] += val * fail_checks_sens[ii][kk];
@@ -492,7 +505,7 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
   int index = 0;
 
   for (int dv_index = 0; dv_index < 4; dv_index++) {
-    int dvNum = dvNums[dv_index];
+    int const dvNum = dvNums[dv_index];
     if (dvNum < 0) {
       continue;
     }
@@ -503,10 +516,10 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
     TacsScalar max_fail = -1e20, ks_sum = 0.0;
     int count = 1;
 
-    TacsScalar dinner = (dvNum == innerDV) ? 1.0 : 0.0;
-    TacsScalar dwall = (dvNum == wallDV) ? 1.0 : 0.0;
-    TacsScalar r0 = 0.5 * inner + wall;
-    TacsScalar dr0 = 0.5 * dinner + dwall;
+    TacsScalar const dinner = (dvNum == innerDV) ? 1.0 : 0.0;
+    TacsScalar const dwall = (dvNum == wallDV) ? 1.0 : 0.0;
+    TacsScalar const r0 = 0.5 * inner + wall;
+    TacsScalar const dr0 = 0.5 * dinner + dwall;
 
     // Von Mises DV sensitivity (zero for x and buckleLengthDV)
     e0[0] = e[0] + r0 * e[2] + r0 * e[3];
@@ -525,26 +538,27 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
 
     // Euler buckling DV sensitivity
     if (TacsRealPart(buckleLengthFactor) != 0.0) {
-      TacsScalar d0 = inner + wall;
-      TacsScalar d1 = inner;
-      TacsScalar A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
-      TacsScalar Ia = M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
-      TacsScalar dA = M_PI * (wall * dinner + d0 * dwall) / 2.0;
-      TacsScalar dIa =
+      TacsScalar const d0 = inner + 2.0 * wall;
+      TacsScalar const d1 = inner;
+      TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
+      TacsScalar const Ia =
+          M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
+      TacsScalar const dA = M_PI * (wall * dinner + d0 * dwall);
+      TacsScalar const dIa =
           M_PI / 16.0 *
-          ((d0 * d0 * d0 - d1 * d1 * d1) * dinner + d0 * d0 * d0 * dwall);
-      TacsScalar dL = (dvNum == buckleLengthDV) ? 1.0 : 0.0;
-      TacsScalar Leff = buckleLengthFactor * buckleLength;
-      TacsScalar dLeff = buckleLengthFactor * dL;
-      TacsScalar Nx = -A * e[0];
-      TacsScalar dNx = -dA * e[0];
-      TacsScalar Pcr = M_PI * M_PI * Ia / (Leff * Leff);
-      TacsScalar dPcr =
+          ((d0 * d0 * d0 - d1 * d1 * d1) * dinner + 2.0 * d0 * d0 * d0 * dwall);
+      TacsScalar const dL = (dvNum == buckleLengthDV) ? 1.0 : 0.0;
+      TacsScalar const Leff = buckleLengthFactor * buckleLength;
+      TacsScalar const dLeff = buckleLengthFactor * dL;
+      TacsScalar const Nx = -A * e[0];
+      TacsScalar const dNx = -dA * e[0];
+      TacsScalar const Pcr = M_PI * M_PI * Ia / (Leff * Leff);
+      TacsScalar const dPcr =
           M_PI * M_PI *
           (dIa / (Leff * Leff) - 2.0 * Ia * dLeff / (Leff * Leff * Leff));
-      TacsScalar buckle_ratio = Nx / Pcr;
-      TacsScalar dbuckle_ratio = dNx / Pcr - Nx * dPcr / (Pcr * Pcr);
-      TacsScalar x_eff = getTopologyValue();
+      TacsScalar const buckle_ratio = Nx / Pcr;
+      TacsScalar const dbuckle_ratio = dNx / Pcr - Nx * dPcr / (Pcr * Pcr);
+      TacsScalar const x_eff = getTopologyValue();
 
       fail_checks[1] = x_eff * buckle_ratio;
       if (dvNum == xDV) {
