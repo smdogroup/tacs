@@ -390,14 +390,6 @@ class StaticProblem(TACSProblem):
         value : depends on option
             New option value to set
         """
-        # Updated deprecated option
-        if name.lower() == "ksmsolver":
-            name = "linearSolver"
-            warnings.warn(
-                "'KSMSolver' option will be deprecated starting in tacs 3.7.0. "
-                "Please use `linearSolver` option instead.",
-                DeprecationWarning,
-            )
 
         # Default setOption for common problem class objects
         TACSProblem.setOption(self, name, value)
@@ -860,6 +852,14 @@ class StaticProblem(TACSProblem):
 
         initSolveTime = time.time()
 
+        # Compute the internal and external force components of the residual at the current point
+        self.getForces(
+            externalForceVec=self.externalForce,
+            internalForceVec=self.internalForce,
+            Fext=Fext,
+        )
+        self.initNorm = np.real(self.externalForce.norm())
+
         if self.isNonlinear:
             hasConverged = self._solveNonlinear(Fext)
         else:
@@ -913,13 +913,6 @@ class StaticProblem(TACSProblem):
         # Get current residual
         self.getResidual(self.res, Fext=Fext)
 
-        # Get rhs vector
-        self.K.mult(self.u, self.rhs)
-        self.rhs.axpy(-1.0, self.res)
-
-        # Set initnorm as the norm of rhs
-        self.initNorm = np.real(self.rhs.norm())
-
         # Starting Norm for this computation
         self.startNorm = np.real(self.res.norm())
 
@@ -958,14 +951,6 @@ class StaticProblem(TACSProblem):
         bool
             Flag indicating whether the solver converged
         """
-        # Compute the internal and external force components of the residual at the current point
-        self.getForces(
-            externalForceVec=self.externalForce,
-            internalForceVec=self.internalForce,
-            Fext=Fext,
-        )
-        self.initNorm = np.real(self.externalForce.norm())
-
         if self.getOption("writeNLIterSolutions"):
             self.writeSolution(baseName=f"{self.name}-000-NLIter", number=0)
 
@@ -1153,7 +1138,9 @@ class StaticProblem(TACSProblem):
             )
             self._pp("+--------------------------------------------------+")
 
-    def evalFunctionsSens(self, funcsSens, evalFuncs=None):
+    def evalFunctionsSens(
+        self, funcsSens, evalFuncs=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from problem. The derivatives of the functions
@@ -1167,6 +1154,10 @@ class StaticProblem(TACSProblem):
             Dictionary into which the derivatives are saved.
         evalFuncs : iterable object containing strings
             The functions the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -1231,21 +1222,22 @@ class StaticProblem(TACSProblem):
             adjointEndTime[f] = time.time()
 
         adjointFinishedTime = time.time()
-        # Evaluate all the adoint res prooduct at the same time for
-        # efficiency:
-        self.addDVSens(evalFuncs, dvSenses)
-        self.addAdjointResProducts(adjoints, dvSenses)
-        self.addXptSens(evalFuncs, xptSenses)
-        self.addAdjointResXptSensProducts(adjoints, xptSenses)
+        # Evaluate all the adjoint res products at the same time for efficiency:
+        if includeDVSens:
+            self.addDVSens(evalFuncs, dvSenses)
+            self.addAdjointResProducts(adjoints, dvSenses)
+        if includeXptSens:
+            self.addXptSens(evalFuncs, xptSenses)
+            self.addAdjointResXptSensProducts(adjoints, xptSenses)
 
         # Recast sensititivities into dict for user
         for i, f in enumerate(evalFuncs):
             key = self.name + "_%s" % f
-            # Return sensitivities as array in sens dict
-            funcsSens[key] = {
-                self.varName: dvSenses[i].getArray().copy(),
-                self.coordName: xptSenses[i].getArray().copy(),
-            }
+            funcsSens[key] = {}
+            if includeDVSens:
+                funcsSens[key][self.varName] = dvSenses[i].getArray().copy()
+            if includeXptSens:
+                funcsSens[key][self.coordName] = xptSenses[i].getArray().copy()
 
         totalSensitivityTime = time.time()
 
@@ -1670,29 +1662,6 @@ class StaticProblem(TACSProblem):
         else:
             prod[:] = prod + scale * self.res.getArray()
 
-    def addTransposeJacVecProduct(self, phi, prod, scale=1.0):
-        """
-        Adds product of Jacobian transpose and input vector into output vector as shown below:
-        prod += scale * J(^T) . phi
-
-        Parameters
-        ----------
-        phi : tacs.TACS.Vec or numpy.ndarray
-            Input vector to product with the transpose Jacobian.
-
-        prod : tacs.TACS.Vec or numpy.ndarray
-            Output vector to add Jacobian product to.
-
-        scale : float
-            Scalar used to scale Jacobian product by.
-        """
-        warnings.warn(
-            "addTransposeJacVecProduct is deprecated and will be removed in version 3.12.0. "
-            "Use addJacVecProduct(phi, prod, scale, transpose=True) instead.",
-            DeprecationWarning,
-        )
-        self.addJacVecProduct(phi, prod, scale, transpose=True)
-
     def zeroVariables(self):
         """
         Zero all the tacs solution b-vecs
@@ -1920,7 +1889,7 @@ class StaticProblem(TACSProblem):
         """
 
         # Grab RHS vector from previous solve
-        F = self.rhs
+        F = self.externalForce
         F_array = np.real(F.getArray())
 
         # Get local force info for each processor

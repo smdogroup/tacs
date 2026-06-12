@@ -384,7 +384,9 @@ class VolumeConstraint(TACSConstraint):
         # Update call counter
         self.callCounter += 1
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -398,6 +400,10 @@ class VolumeConstraint(TACSConstraint):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -411,24 +417,23 @@ class VolumeConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        # Get number of dvs/coords on this proc
-        nDVs = self.getNumDesignVars()
-        ncoords = self.getNumCoordinates()
-
         # Loop through each requested constraint set
         for conName in evalCons:
             key = f"{self.name}_{conName}"
-            # DV sensitivities are always zero for this constraint,
             funcsSens[key] = {}
-            funcsSens[key][self.varName] = sp.sparse.csr_matrix(
-                (1, nDVs), dtype=self.dtype
-            )
-
-            # Get nodal sensitivity
-            xptSens = self.constraintList[conName].evalConSens(self.Xpts)
-            xpt_array = xptSens.getArray()
-            # Reshape from 1d array to a 1 by N column vector
-            funcsSens[key][self.coordName] = xpt_array.reshape(1, ncoords)
+            if includeDVSens:
+                # DV sensitivities are always zero for this constraint
+                nDVs = self.getNumDesignVars()
+                funcsSens[key][self.varName] = sp.sparse.csr_matrix(
+                    (1, nDVs), dtype=self.dtype
+                )
+            if includeXptSens:
+                # Get nodal sensitivity
+                ncoords = self.getNumCoordinates()
+                xptSens = self.constraintList[conName].evalConSens(self.Xpts)
+                xpt_array = xptSens.getArray()
+                # Reshape from 1d array to a 1 by N column vector
+                funcsSens[key][self.coordName] = xpt_array.reshape(1, ncoords)
 
     def writeVisualization(self, outputDir=None, baseName=None, number=None):
         """

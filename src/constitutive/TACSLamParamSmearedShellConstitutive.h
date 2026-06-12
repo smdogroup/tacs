@@ -18,11 +18,11 @@
   limitations under the License.
 */
 
-#ifndef TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
-#define TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H
+#pragma once
 
 #include "TACSMaterialProperties.h"
 #include "TACSShellConstitutive.h"
+#include "TacsUtilities.h"
 
 /*
   This class implements a lamination parameter based parametrization of
@@ -37,18 +37,16 @@
   The failure index calculations are based on the maximum strain failure
   criteria imposed at 0, pm 45, 90 ply angles.
 */
-class TACSLamParamShellConstitutive : public TACSShellConstitutive {
+class TACSLamParamSmearedShellConstitutive : public TACSShellConstitutive {
  public:
-  TACSLamParamShellConstitutive(TACSOrthotropicPly *_orthoPly, TacsScalar _t,
-                                int _t_num, TacsScalar _min_t,
-                                TacsScalar _max_t, TacsScalar _f0,
-                                TacsScalar _f45, TacsScalar _f90, int _f0_num,
-                                int _f45_num, int _f90_num, TacsScalar _min_f0,
-                                TacsScalar _min_f45, TacsScalar _min_f90,
-                                TacsScalar _W1, TacsScalar _W3, int _W1_num,
-                                int _W3_num, TacsScalar _ksWeight,
-                                TacsScalar _epsilon);
-  ~TACSLamParamShellConstitutive();
+  TACSLamParamSmearedShellConstitutive(
+      TACSOrthotropicPly *_orthoPly, TacsScalar _t, int _t_num,
+      TacsScalar _min_t, TacsScalar _max_t, TacsScalar _f0, TacsScalar _f45,
+      TacsScalar _f90, int _f0_num, int _f45_num, int _f90_num,
+      TacsScalar _min_f0, TacsScalar _min_f45, TacsScalar _min_f90,
+      TacsScalar _W1, TacsScalar _W3, int _W1_num, int _W3_num,
+      double _ksWeight, TacsScalar _epsilon, TacsScalar _kcorr = 5.0 / 6.0);
+  ~TACSLamParamSmearedShellConstitutive();
 
   // Retrieve the global design variable numbers
   int getDesignVarNums(int elemIndex, int dvLen, int dvNums[]);
@@ -114,6 +112,9 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
   // Get the object name
   const char *getObjectName() { return constName; }
 
+  // Get the shear correction factor
+  TacsScalar getShearCorrectionFactor() { return kcorr; }
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
@@ -123,16 +124,17 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
 
   // Calculate the failure properties
   void computeFailure(const TacsScalar strain[], TacsScalar fvals[],
-                      TacsScalar *_max);
+                      TacsScalar *_max) const;
   void computeFailureStrainSens(const TacsScalar strain[],
-                                const TacsScalar weights[], TacsScalar sens[]);
+                                const TacsScalar weights[],
+                                TacsScalar sens[]) const;
 
   // Check that the matrix is positive definite (used for testing)
-  int checkDeterminant(const TacsScalar a[]);
+  static bool checkDeterminant(const TacsScalar a[]);
 
   // Get the stiffness matrices based on the current parameter values
   void getStiffness(TacsScalar A[], TacsScalar B[], TacsScalar D[],
-                    TacsScalar As[], TacsScalar *drill);
+                    TacsScalar As[], TacsScalar *drill) const;
 
   // The number of design variables
   int numDesignVars;
@@ -145,7 +147,8 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
   TacsScalar U6, U7;  // The invariants for shear
 
   TACSOrthotropicPly *orthoPly;
-  TacsScalar ksWeight, epsilon;
+  double ksWeight;
+  TacsScalar epsilon;
 
   // The thickness information
   TacsScalar t;         // The thickness of the laminate
@@ -163,5 +166,3 @@ class TACSLamParamShellConstitutive : public TACSShellConstitutive {
 
   static const char *constName;
 };
-
-#endif  // TACS_LAM_PARAM_SHELL_CONSTITUTIVE_H

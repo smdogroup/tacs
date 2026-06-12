@@ -75,8 +75,16 @@ class TACSShellConstitutive : public TACSConstitutive {
                                     const TacsScalar scale[], int dvLen,
                                     TacsScalar dfdx[]) {}
 
-  // Set the drilling regularization value
+  // Set/get the drilling regularization value
   static void setDrillingRegularization(double kval);
+  static double getDrillingRegularization();
+
+  /**
+    Get the shear correction factor used in the transverse shear stiffness.
+
+    @return The shear correction factor (kcorr)
+  */
+  virtual TacsScalar getShearCorrectionFactor() { return 5.0 / 6.0; }
 
   // Extract the tangent
   static void extractTangentStiffness(const TacsScalar *C, const TacsScalar **A,

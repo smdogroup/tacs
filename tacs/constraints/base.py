@@ -198,7 +198,9 @@ class TACSConstraint(TACSSystem):
             f"'evalConstraints' method is not implemented for class '{type(self).__name__}'"
         )
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -212,6 +214,10 @@ class TACSConstraint(TACSSystem):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------

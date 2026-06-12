@@ -36,25 +36,25 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "load_cgx": 0.25,
+        "load_cgx": 0.25000000000000006,
         "load_cgy": 0.2499999999999999,
-        "load_compliance": 155663.05822283815,
-        "load_ks_disp": 38.52680169648463,
-        "load_ks_vmfailure": 20.170707090964743,
+        "load_compliance": 155663.05822271414,
+        "load_ks_disp": 38.52680169646134,
+        "load_ks_vmfailure": 20.170707090960548,
         "load_mass": 0.78125,
-        "pressure_cgx": 0.25,
+        "pressure_cgx": 0.25000000000000006,
         "pressure_cgy": 0.2499999999999999,
-        "pressure_compliance": 73362.09834795441,
-        "pressure_ks_disp": 21.60309155923349,
-        "pressure_ks_vmfailure": 16.464960170504654,
+        "pressure_compliance": 73362.09834789667,
+        "pressure_ks_disp": 21.603091559216303,
+        "pressure_ks_vmfailure": 16.464960170499857,
         "pressure_mass": 0.78125,
-        "traction_cgx": 0.25,
+        "traction_cgx": 0.25000000000000006,
         "traction_cgy": 0.2499999999999999,
-        "traction_compliance": 735.6034203895599,
-        "traction_ks_disp": 1.821814969038552,
-        "traction_ks_vmfailure": 0.7396840173568021,
+        "traction_compliance": 735.9672509354571,
+        "traction_ks_disp": 1.8220137789667872,
+        "traction_ks_vmfailure": 0.7391113264175144,
         "traction_mass": 0.78125,
-        "adjacency_con_ALL": [0.0, 0.0, 0.0, 0.0],
+        "adjacency_con_ALL": np.array([0.0, 0.0, 0.0, 0.0]),
     }
 
     def setup_tacs_problems(self, comm):

@@ -1,5 +1,5 @@
 Troubleshooting Guide
-====================
+=====================
 
 This guide helps you resolve common issues when using TACS. If you don't find your issue here, check the `GitHub Issues <https://github.com/smdogroup/tacs/issues>`_ for community support.
 
@@ -73,7 +73,7 @@ Analysis Issues
              raise ValueError(f"Unexpected element type: {descript}")
 
 Postprocessing Issues
---------------------
+---------------------
 
 **f5tovtk/f5totec not found**
 

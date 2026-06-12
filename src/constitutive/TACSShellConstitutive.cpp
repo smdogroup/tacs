@@ -54,13 +54,22 @@ void TACSShellConstitutive::extractTangentStiffness(
 }
 
 /*
-  Set the default drilling regularization value
+  Default drilling regularization value. Set to 0.1 to match the
+  behavior seen in Nastran, which improves agreement between
+  TACS and Nastran results for shell elements.
 */
-double TACSShellConstitutive::DRILLING_REGULARIZATION = 10.0;
+double TACSShellConstitutive::DRILLING_REGULARIZATION = 0.1;
 
 /*
   Set the drilling stiffness regularization parameter
 */
 void TACSShellConstitutive::setDrillingRegularization(double kval) {
   DRILLING_REGULARIZATION = kval;
+}
+
+/*
+  Get the drilling stiffness regularization parameter
+*/
+double TACSShellConstitutive::getDrillingRegularization() {
+  return DRILLING_REGULARIZATION;
 }

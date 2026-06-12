@@ -323,7 +323,9 @@ class AdjacencyConstraint(TACSConstraint):
         # Update call counter
         self.callCounter += 1
 
-    def evalConstraintsSens(self, funcsSens, evalCons=None):
+    def evalConstraintsSens(
+        self, funcsSens, evalCons=None, includeDVSens=True, includeXptSens=True
+    ):
         """
         This is the main routine for returning useful (sensitivity)
         information from constraint. The derivatives of the constraints
@@ -337,6 +339,10 @@ class AdjacencyConstraint(TACSConstraint):
             Dictionary into which the derivatives are saved.
         evalCons : iterable object containing strings
             The constraints the user wants returned
+        includeDVSens : bool, optional
+            Flag to include design variable sensitivities in output. Default is True.
+        includeXptSens : bool, optional
+            Flag to include node location sensitivities in output. Default is True.
 
         Examples
         --------
@@ -350,24 +356,23 @@ class AdjacencyConstraint(TACSConstraint):
         # Otherwise, output them all
         evalCons = self._processEvalCons(evalCons)
 
-        # Get number of nodes coords on this proc
-        nCoords = self.getNumCoordinates()
-
         # Loop through each requested constraint set
         for conName in evalCons:
             key = f"{self.name}_{conName}"
-            # Get sparse Jacobian for dv sensitivity
             funcsSens[key] = {}
-            funcsSens[key][self.varName] = self.constraintList[conName].evalConSens(
-                self.x.getArray()
-            )
-
-            # Nodal sensitivities are always zero for this constraint,
-            # Add an empty sparse matrix
-            nCon = self.constraintList[conName].nCon
-            funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
-                (nCon, nCoords), dtype=self.dtype
-            )
+            if includeDVSens:
+                # Get sparse Jacobian for dv sensitivity
+                funcsSens[key][self.varName] = self.constraintList[conName].evalConSens(
+                    self.x.getArray()
+                )
+            if includeXptSens:
+                # Nodal sensitivities are always zero for this constraint,
+                # Add an empty sparse matrix
+                nCoords = self.getNumCoordinates()
+                nCon = self.constraintList[conName].nCon
+                funcsSens[key][self.coordName] = sp.sparse.csr_matrix(
+                    (nCon, nCoords), dtype=self.dtype
+                )
 
     def writeVisualization(self, outputDir=None, baseName=None, number=None):
         """

@@ -257,6 +257,14 @@ TacsScalar ksAggregationSens(const TacsScalar f[], const int numVals,
                              const double ksWeight, TacsScalar dKSdf[]);
 
 /**
+ * @brief As above but with a precomputed maximum value passed in to avoid
+ * redundant calculations
+ */
+TacsScalar ksAggregationSens(const TacsScalar f[], const TacsScalar maxVal,
+                             const int numVals, const double ksWeight,
+                             TacsScalar dKSdf[]);
+
+/**
  * @brief Given the sensitivities of f w.r.t x, compute the sensitivity of KS(f)
  * w.r.t x
  *

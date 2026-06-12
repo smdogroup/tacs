@@ -101,7 +101,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
                 "ks_disp",
                 functions.KSDisplacement,
                 direction=[0.0, 0.0, 100.0],
-                ftype="discrete",
+                ksAggregationType=functions.KSAggregationType.KS_DISCRETE,
             )
 
         return load_probs, fea_assembler

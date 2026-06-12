@@ -4,6 +4,7 @@ from .panel_length import PanelLengthConstraint
 from .panel_width import PanelWidthConstraint
 from .stiffener_length import StiffenerLengthConstraint
 from .volume import VolumeConstraint
+from .lam_param_full import LamParamFullConstraint
 from .base import TACSConstraint
 
 __all__ = [

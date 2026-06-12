@@ -13,6 +13,8 @@
 #distutils: language=c++
 
 import difflib
+import warnings
+from enum import IntEnum
 
 # For the use of MPI
 from mpi4py.libmpi cimport *
@@ -211,6 +213,21 @@ cdef class MaterialProperties:
         S12 (float or complex, optional): The material orthotropic shear strength in the '1-2' plane (keyword argument).
         S13 (float or complex, optional): The material orthotropic shear strength in the '1-3' plane (keyword argument).
         S23 (float or complex, optional): The material orthotropic shear strength in the '2-3' plane (keyword argument).
+
+        b_tt (float or complex, optional): The material friction parameter for the failure mode IFF2
+            (transverse - transverse stress plane) in the Cuntze failure criterion for UD material.
+            Is not used for 2-dimensional stress states. (keyword argument)
+        b_tl (float or complex, optional): The material friction parameter for the failure mode IFF3
+            (transverse - longitudinal stress plane) in the Cuntze failure criterion for UD material (keyword argument).
+        muWF (float or complex, optional): The material friction value for the failure mode IFF_WF
+            (Warp - Fill stress plane) in the Cuntze failure criterion for woven material (keyword argument).
+        mu3W (float or complex, optional): The material friction value for the failure mode IFF_3W
+            (3 - Warp stress plane) in the Cuntze failure criterion for woven material.
+            Is not used for 2-dimensional stress states. (keyword argument)
+        mu3F (float or complex, optional): The material friction value for the failure mode IFF_3F
+            (3 - Fill stress plane) in the Cuntze failure criterion for woven material.
+            Is not used for 2-dimensional stress states. (keyword argument)
+        m (float or complex, optional): The interaction exponent used in the Cuntze failure criterion (keyword argument).
     """
     def __cinit__(self, **kwargs):
         # Set the density and specific heat value
@@ -244,6 +261,14 @@ cdef class MaterialProperties:
         cdef TacsScalar S13 = 0.0
         cdef TacsScalar S23 = 0.0
 
+        # Material properties for the Cuntze failure criterion
+        cdef TacsScalar b_tt = 0.0
+        cdef TacsScalar b_tl = 0.0
+        cdef TacsScalar muWF = 0.0
+        cdef TacsScalar mu3W = 0.0
+        cdef TacsScalar mu3F = 0.0
+        cdef TacsScalar m = 0.0
+
         # Set the thermal coefficient of expansion
         cdef TacsScalar alpha = 24e-6
         cdef TacsScalar alpha1 = 24e-6
@@ -265,7 +290,9 @@ cdef class MaterialProperties:
                             "S12", "S13", "S23",
                             "Xt", "Yt", "Xc", "Yc", "S",
                             "alpha1", "alpha2", "alpha3",
-                            "kappa1", "kappa2", "kappa3"]
+                            "kappa1", "kappa2", "kappa3",
+                            "b_tt", "b_tl", "muWF",
+                            "mu3W", "mu3F", "m"]
         ALL_KEYS = ISOTROPIC_KEYS + ORTHOTROPIC_KEYS
 
         # Check for any invalid/misspelled inputs
@@ -364,6 +391,20 @@ cdef class MaterialProperties:
         if 'S23' in kwargs:
             S23 = kwargs['S23']
 
+        # Cuntze properties
+        if 'b_tt' in kwargs:
+            b_tt = kwargs['b_tt']
+        if 'b_tl' in kwargs:
+            b_tl = kwargs['b_tl']
+        if 'muWF' in kwargs:
+            muWF = kwargs['muWF']
+        if 'mu3W' in kwargs:
+            mu3W = kwargs['mu3W']
+        if 'mu3F' in kwargs:
+            mu3F = kwargs['mu3F']
+        if 'm' in kwargs:
+            m = kwargs['m']
+
         # Set the thermal coefficient of expansion
         if 'alpha1' in kwargs:
             alpha1 = kwargs['alpha1']
@@ -385,7 +426,8 @@ cdef class MaterialProperties:
                                                   nu12, nu13, nu23, G12, G13, G23,
                                                   T1, C1, T2, C2, T3, C3, S12, S13, S23,
                                                   alpha1, alpha2, alpha3,
-                                                  kappa1, kappa2, kappa3)
+                                                  kappa1, kappa2, kappa3,
+                                                  b_tt, b_tl, muWF, mu3W, mu3F, m)
         else:
             self.ptr = new TACSMaterialProperties(rho, specific_heat,
                                                   E, nu, ys, alpha, kappa)
@@ -431,7 +473,8 @@ cdef class MaterialProperties:
 
         rho = self.ptr.getDensity()
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, NULL, NULL,
+                                       NULL, NULL, NULL, NULL)
 
         if  self.ptr.getMaterialType() == TACS_ISOTROPIC_MATERIAL:
             self.ptr.getIsotropicProperties(&E1, &nu12)
@@ -456,13 +499,15 @@ cdef class MaterialProperties:
 
         cdef TacsScalar E1, E2, E3, nu12, nu13, nu23, G12, G13, G23
         cdef TacsScalar T1, C1, T2, C2, T3, C3, S12, S13, S23
+        cdef TacsScalar b_tt, b_tl, muWF, mu3W, mu3F, m
         cdef TacsScalar alpha1, alpha2, alpha3
         cdef TacsScalar kappa1, kappa2, kappa3
 
         rho = self.ptr.getDensity()
         self.ptr.getOrthotropicProperties(&E1, &E2, &E3, &nu12, &nu13, &nu23, &G12, &G13, &G23)
         self.ptr.getStrengthProperties(&T1, &C1, &T2, &C2, &T3, &C3,
-                                       &S12, &S13, &S23)
+                                       &S12, &S13, &S23, &b_tt, &b_tl,
+                                       &muWF, &mu3W, &mu3F, &m)
         self.ptr.getCoefThermalExpansion(&alpha1, &alpha2, &alpha3)
         self.ptr.getThermalConductivity(&kappa1, &kappa2, &kappa3)
 
@@ -487,6 +532,13 @@ cdef class MaterialProperties:
         mat['S12'] = S12
         mat['S13'] = S13
         mat['S23'] = S23
+
+        mat['b_tt'] = b_tt
+        mat['b_tl'] = b_tl
+        mat['muWF'] = muWF
+        mat['mu3W'] = mu3W
+        mat['mu3F'] = mu3F
+        mat['m'] = m
 
         mat['alpha1'] = alpha1
         mat['alpha2'] = alpha2
@@ -516,38 +568,142 @@ cdef class MaterialProperties:
         """
         self.ptr.setSpecificHeat(specific_heat)
 
+cdef class MAT2MaterialProperties(MaterialProperties):
+    """
+    This class only exists so certain constitutive objects can return a TACS MaterialProperties
+    instance that generates the necessary MAT2 nastran cards.
+    """
+    def __cinit__(self, E1, G12, G13, E2, G23, E3, rho=0.0):
+        self.ptr = NULL
+        self.E1 = E1
+        self.G12 = G12
+        self.G13 = G13
+        self.E2 = E2
+        self.G23 = G23
+        self.E3 = E3
+        self.rho = rho
+        self.nastranID = 0
+
+    def generateBDFCard(self):
+        return nastran_cards.materials.MAT2(self.nastranID, np.real(self.E1), np.real(self.G12), np.real(self.G13),
+                                            np.real(self.E2), np.real(self.G23), np.real(self.E3), np.real(self.rho))
+
+
+class CompositeFailureCriterion(IntEnum):
+    """Mirrors ``TACSOrthotropicPly::CompositeFailureCriterion`` from ``TACSMaterialProperties.h``."""
+    MAX_STRAIN = _COMPOSITE_FC_MAX_STRAIN
+    TSAI_WU = _COMPOSITE_FC_TSAI_WU
+    TSAI_WU_MODIFIED = _COMPOSITE_FC_TSAI_WU_MODIFIED
+    CUNTZE_UD = _COMPOSITE_FC_CUNTZE_UD
+    CUNTZE_WOVEN = _COMPOSITE_FC_CUNTZE_WOVEN
+
+
 cdef class OrthotropicPly:
     """
-      The following class holds the material stiffness and strength
-      properties for an orthotropic ply. This class is used by several
-      constitutive classes within TACS.
+    The following class holds the material stiffness and strength
+    properties for an orthotropic ply. This class is used by several
+    constitutive classes within TACS.
 
-      The interaction coefficient for the Tsai-Wu failure criterion is set
-      to zero by default. If a value of C, the failure stress under
-      combined in-plane loading, is supplied, the interaction coefficient
-      is determined. Be careful - the value can easily fall outside
-      acceptable bounds - these are tested during initialization.
+    The interaction coefficient for the Tsai-Wu failure criterion is set
+    to zero by default. If a value of C, the failure stress under
+    combined in-plane loading, is supplied, the interaction coefficient
+    is determined. Be careful - the value can easily fall outside
+    acceptable bounds - these are tested during initialization.
 
-      Args:
-          ply_thickness (float or complex): The ply thickness.
-          props (MaterialProperties): The ply material property.
-          max_strain_criterion (bool): Flag to determine if max strain strength criterion is to be used.
-            Defaults to False (i.e. use max strength).
+    Args:
+        plyThickness (float or complex): The ply thickness.
+        props (MaterialProperties): The ply material property.
+        failureCriterion (constitutive.CompositeFailureCriterion): The failure criterion to use.
+          Defaults to ``constitutive.CompositeFailureCriterion.TSAI_WU_MODIFIED``.
+        max_strain_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.MAX_STRAIN``.
+        tsai_wu_criterion (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.TSAI_WU``.
+        Cuntze_criterion_UD (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_UD``.
+        Cuntze_criterion_Woven (bool): Deprecated. Use ``failureCriterion=constitutive.CompositeFailureCriterion.CUNTZE_WOVEN``.
     """
+
     cdef TACSOrthotropicPly *ptr
     cdef MaterialProperties props
-    def __cinit__(self, TacsScalar ply_thickness, MaterialProperties props,
-                  max_strain_criterion=False):
-        self.ptr = new TACSOrthotropicPly(ply_thickness, props.ptr)
-        self.ptr.incref()
-        if max_strain_criterion:
-            self.ptr.setUseMaxStrainCriterion()
+
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL  # guard: __dealloc__ is called even when __cinit__ raises
+        cdef TacsScalar plyThickness
+
+        # -- plyThickness (first positional; 'ply_thickness' keyword is deprecated) --
+        if 'ply_thickness' in kwargs:
+            # Deprecated in v3.12, remove in v3.14
+            warnings.warn(
+                "The 'ply_thickness' keyword argument is deprecated as of v3.12 and will be "
+                "removed in v3.14. Use 'plyThickness' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if args or 'plyThickness' in kwargs:
+                raise ValueError(
+                    "Cannot specify both 'plyThickness' and deprecated 'ply_thickness' kwarg."
+                )
+            plyThickness = kwargs['ply_thickness']
+        elif args:
+            plyThickness = args[0]
+        elif 'plyThickness' in kwargs:
+            plyThickness = kwargs['plyThickness']
         else:
-            self.ptr.setUseTsaiWuCriterion()
-        self.props = props
+            raise TypeError("OrthotropicPly() missing required argument: 'plyThickness'")
+
+        # -- props (second positional) --
+        if len(args) >= 2:
+            props_py = args[1]
+        elif 'props' in kwargs:
+            props_py = kwargs['props']
+        else:
+            raise TypeError("OrthotropicPly() missing required argument: 'props'")
+
+        self.ptr = new TACSOrthotropicPly(plyThickness, (<MaterialProperties>props_py).ptr)
+        self.ptr.incref()
+
+        # -- failureCriterion (new name in this PR; no backward compat alias needed) --
+        failureCriterion = kwargs.get('failureCriterion', None)
+
+        # -- deprecated boolean criterion kwargs --
+        max_strain_criterion = kwargs.get('max_strain_criterion', False)
+        tsai_wu_criterion = kwargs.get('tsai_wu_criterion', False)
+        Cuntze_criterion_UD = kwargs.get('Cuntze_criterion_UD', False)
+        Cuntze_criterion_Woven = kwargs.get('Cuntze_criterion_Woven', False)
+
+        FC = CompositeFailureCriterion
+        _deprecated = {
+            'max_strain_criterion': (max_strain_criterion, FC.MAX_STRAIN),
+            'tsai_wu_criterion': (tsai_wu_criterion, FC.TSAI_WU),
+            'Cuntze_criterion_UD': (Cuntze_criterion_UD, FC.CUNTZE_UD),
+            'Cuntze_criterion_Woven': (Cuntze_criterion_Woven, FC.CUNTZE_WOVEN),
+        }
+        _deprecated_used = [(k, v[1]) for k, v in _deprecated.items() if v[0]]
+        if _deprecated_used:
+            # Deprecated in v3.12, remove in v3.14
+            warnings.warn(
+                f"Boolean failure criterion kwargs ({', '.join(k for k, _ in _deprecated_used)}) are deprecated "
+                "as of v3.12 and will be removed in v3.14. "
+                "Use 'failureCriterion=constitutive.CompositeFailureCriterion.<VALUE>' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if len(_deprecated_used) > 1:
+                raise ValueError('Only one failure criterion can be specified.')
+            if failureCriterion is not None:
+                raise ValueError(
+                    "Cannot specify both 'failureCriterion' and deprecated boolean kwargs."
+                )
+            failureCriterion = _deprecated_used[0][1]
+
+        if failureCriterion is None:
+            failureCriterion = FC.TSAI_WU_MODIFIED
+
+        failureCriterion = CompositeFailureCriterion(failureCriterion)
+        self.ptr.setFailureCriterion(<_CCompositeFC><int>failureCriterion)
+        self.props = props_py
 
     def __dealloc__(self):
-        self.ptr.decref()
+        if self.ptr != NULL:
+            self.ptr.decref()
 
     def getMaterialProperties(self):
         """
@@ -557,6 +713,57 @@ cdef class OrthotropicPly:
             prop (tacs.constitutive.MaterialProperties): TACS material property class associated with object.
         """
         return self.props
+
+    def setFailureCriterion(self, fc):
+        """
+        Set the failure criterion to use.
+
+        Args:
+            fc (CompositeFailureCriterion): The failure criterion enum value.
+        """
+        self.ptr.setFailureCriterion(<_CCompositeFC><int>CompositeFailureCriterion(fc))
+
+    def setUseMaxStrainCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.MAX_STRAIN`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseMaxStrainCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN)
+
+    def setUseTsaiWuCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU)
+
+    def setUseModifiedTsaiWuCriterion(self):
+        """
+        Deprecated. Use :meth:`setFailureCriterion` with
+        ``CompositeFailureCriterion.TSAI_WU_MODIFIED`` instead.
+        """
+        # Deprecated in v3.12, remove in v3.14
+        warnings.warn(
+            "setUseModifiedTsaiWuCriterion is deprecated as of v3.12 and will be removed "
+            "in v3.14. Use setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED)
 
 cdef class PlaneStressConstitutive(Constitutive):
     """
@@ -728,15 +935,159 @@ cdef class ShellConstitutive(Constitutive):
     All objects performing shell elastic analysis should utilize this class.
     """
 
-    def setDrillingRegularization(self, double kpenalty=10.0):
+    def setDrillingRegularization(self, double kpenalty=0.1):
         """
         Update regularization parameter used to stiffen shell in drilling rotation dof.
 
         Args:
-            kpenalty (float): Drilling regularization parameter. Defaults to 10.0.
+            kpenalty (float): Drilling regularization parameter. Defaults to 0.1.
         """
         if self.cptr:
             self.cptr.setDrillingRegularization(kpenalty)
+
+    def getDrillingRegularization(self):
+        """
+        Get the regularization parameter used to stiffen shell in drilling rotation dof.
+
+        Returns:
+            kpenalty (float): Drilling regularization parameter.
+        """
+        if self.cptr:
+            return self.cptr.getDrillingRegularization()
+        return None
+
+    def getThicknessProperties(self):
+        """
+        Helper function to gather thickness properties and density of the shell based on the current design variable values.
+        These properties are needed to compute the equivalent MAT2 properties for the shell.
+
+        Returns
+        -------
+        t : float
+            Thickness of the shell based on current design variable values.
+        tFact : float
+            Thickness factor to compute the equivalent bending stiffness for the MAT2 card.
+        rho : float
+            Density of the shell material.
+        """
+        # Get the thickness and compute the thickness factor.
+        cdef int index = 0
+        t = self.cptr.evalDesignFieldValue(0, NULL, NULL, index)
+
+        # We also need the mass moments and density
+        cdef np.ndarray mass = np.zeros(3, dtype)
+        self.cptr.evalMassMoments(0, NULL, NULL, <TacsScalar*>mass.data)
+
+        # Get density. Note that evalDensity gives mass per unit area, thus divide by thickness to get the material density.
+        rho = self.cptr.evalDensity(0, NULL, NULL) / t
+
+        tFact = 12.0 * mass[2] / (rho * t**3)
+
+        return t, tFact, rho
+
+    def getMaterialProperties(self):
+        """
+        Get the material properties objects associated with this constitutive object.
+
+        The material properties are based directly on the A, B, D, and As matrices as MAT2 entries.
+
+        Returns
+        -------
+        list[tacs.constitutive.MAT2MaterialProperties]
+            Custom material property class associated with object. Order is [A, D, As, B].
+        """
+        cdef np.ndarray C = np.zeros(22, dtype)
+
+        matProps = []
+        # First thing we need to do is compute the stiffness matrix
+        self.cptr.evalTangentStiffness(0, NULL, NULL, <TacsScalar*>C.data)
+        A = C[0:6]
+        B = C[6:12]
+        D = C[12:18]
+        As = C[18:21]  # Last entry 22 is the drill factor, which we are not using here
+
+        t, tFact, rho = self.getThicknessProperties()
+        kcorr = self.cptr.getShearCorrectionFactor()
+        t1 = t * kcorr
+        t2 = t**2
+        t3 = t**3 * tFact
+
+        # MAT2 entry for membrane stiffness (the A matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(A[0] / t),
+                G12=np.real(A[1] / t),
+                G13=np.real(A[2] / t),
+                E2=np.real(A[3] / t),
+                G23=np.real(A[4] / t),
+                E3=np.real(A[5] / t),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for bending stiffness (the D matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(12.0 * D[0] / t3),
+                G12=np.real(12.0 * D[1] / t3),
+                G13=np.real(12.0 * D[2] / t3),
+                E2=np.real(12.0 * D[3] / t3),
+                G23=np.real(12.0 * D[4] / t3),
+                E3=np.real(12.0 * D[5] / t3),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for transverse shear stiffness (the As matrix)
+        matProps.append(MAT2MaterialProperties(
+                E1=np.real(As[0] / t1),
+                G12=np.real(As[1] / t1),
+                G13=np.real(0.0),
+                E2=np.real(As[2] / t1),
+                G23=np.real(0.0),
+                E3=np.real(0.0),
+                rho=np.real(rho)
+            )
+        )
+
+        # MAT2 entry for coupling stiffness (the B matrix)
+        # NASTRAN uses the opposite sign convention for the B matrix so we export the negative of the TACS B matrix
+        matProps.append(MAT2MaterialProperties(
+                E1=-np.real(B[0] / t2),
+                G12=-np.real(B[1] / t2),
+                G13=-np.real(B[2] / t2),
+                E2=-np.real(B[3] / t2),
+                G23=-np.real(B[4] / t2),
+                E3=-np.real(B[5] / t2),
+                rho=np.real(rho)
+            )
+        )
+
+        # Update so it can be referenced later
+        self.customMatProps = matProps
+
+        return matProps
+
+    def generateBDFCard(self):
+        """Generate pyNastran card class based on current design variable values.
+
+        Returns
+        -------
+        card : pyNastran.bdf.cards.properties.shell.PSHELL
+            pyNastran card holding property information.
+        """
+        t, tFact, rho = self.getThicknessProperties()
+        kcorr = self.cptr.getShearCorrectionFactor()
+
+        card = nastran_cards.properties.shell.PSHELL(
+            pid=self.nastranID,
+            mid1=self.customMatProps[0].getNastranID(),
+            t=np.real(t),
+            mid2=self.customMatProps[1].getNastranID(),
+            twelveIt3=np.real(tFact),
+            mid3=self.customMatProps[2].getNastranID(),
+            tst=np.real(kcorr),
+            mid4=self.customMatProps[3].getNastranID(),
+        )
+        return card
 
 cdef class IsoShellConstitutive(ShellConstitutive):
     """
@@ -790,6 +1141,17 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             self.ptr = NULL
             self.cptr = NULL
             self.props = None
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties object associated with this constitutive object.
+
+        Returns
+        -------
+        tacs.constitutive.MaterialProperties
+            Material property object associated with this constitutive.
+        """
+        return self.props
 
     def generateBDFCard(self):
         """
@@ -856,6 +1218,17 @@ cdef class CompositeShellConstitutive(ShellConstitutive):
         free(plys)
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
+
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties objects associated with each ply in this constitutive object.
+
+        Returns
+        -------
+        list[tacs.constitutive.MaterialProperties]
+            Material property objects for each ply in the layup.
+        """
+        return self.props
 
     def generateBDFCard(self):
         """
@@ -1198,13 +1571,13 @@ cdef class BladeStiffenedShellConstitutive(StiffenedShellConstitutive):
         self.ptr = self.cptr = self.blade_ptr = self.base_ptr
         self.ptr.incref()
 
-    
+
 cdef class GaussianProcess:
     """
     Base class for constructing Gaussian Process ML models to predict buckling loads.
     This is an abstract base class and hence has no constructor, only methods used by its subclasses.
     """
-    # base class so no constructor here    
+    # base class so no constructor here
     def predict_mean_test_data(
         self,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
@@ -1219,12 +1592,12 @@ cdef class GaussianProcess:
             a rank 1 tensor of size (4*N_test) which contains the list of nondim buckling inputs
             namely [log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta)] concatenated for each point in the test set.
             specifically: [log_xi1, log_rho01, log_gamma1, log_zeta1, log_xi2, ...]
-        
+
         Returns:
-            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load 
+            Ytest (np.ndarray) : a rank 1 tensor Ytest of size (N_test,) containing the log(N_ij,cr^*) aka log buckling load
             outputs where N_ij,cr^* is N_11,cr^* for the axial GP, N_12,cr^* for the shear GP.
         """
-        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data) 
+        return self.base_gp.predictMeanTestData(<TacsScalar*>Xtest.data)
 
     def getNparam(self):
         """
@@ -1259,12 +1632,12 @@ cdef class GaussianProcess:
         self.base_gp.getTrainingData(<TacsScalar*>train_data.data)
         return train_data
 
-    def setKS(self, TacsScalar ksWeight, 
+    def setKS(self, TacsScalar ksWeight,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the KS parameter of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
@@ -1280,18 +1653,18 @@ cdef class GaussianProcess:
         self.recompute_alpha(Ytrain)
         return
 
-    def setTheta(self, 
-            np.ndarray[TacsScalar, ndim=1, mode='c'] theta, 
+    def setTheta(self,
+            np.ndarray[TacsScalar, ndim=1, mode='c'] theta,
             np.ndarray[TacsScalar, ndim=1, mode='c'] Ytrain):
         """
         Set the hyperparameters theta of the Gaussian Process ML model used in the kernel functions.
         Ytrain is provided since this is needed to retrain the ML model weights for the new KS input,
-         and Ytrain is not stored in the GP data structure.
+        and Ytrain is not stored in the GP data structure.
 
         Parameters
         ----------
         theta : np.ndarray
-            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor). 
+            rank 1-tensor of model hyperparameters (currently a length 13 1-tensor).
         Ytrain : np.ndarray
             training dataset log(buckling load) outputs in order to retrain the ML model,
             it's a rank-1 tensor of size (Ntrain,)
@@ -1325,7 +1698,7 @@ cdef class GaussianProcess:
         """
         call the kernel function of the Gaussian Process model on an arbitrary test point and training point pair.
         this function is for debugging purposes only => to make sure the kernel functions implemented inside the TACS GP models
-        match those of the ml_buckling repo. 
+        match those of the ml_buckling repo.
 
         Parameters
         ----------
@@ -1343,7 +1716,7 @@ cdef class GaussianProcess:
         a helper function that recomputes the training weights alpha_train of size (n_train,) [a rank 1-tensor].
         this function solves the linear equation [K(X_train,X_train;theta) + sigma_n^2 * I] * alpha_train = Y_train
         for the training weights alpha_train with sigma_n from the hyperparameters theta which come from inside the model.
-            this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
+        this is called whenever the ksWeight or theta hyperparameters are changed so we update the ML model.
 
         Parameters
         ----------
@@ -1359,7 +1732,7 @@ cdef class GaussianProcess:
         self.base_gp.getTheta(<TacsScalar*>theta.data)
         self.base_gp.getTrainingData(<TacsScalar*>theta.data)
         cdef TacsScalar sigma_n = theta[-1]
-        
+
         # make the training matrix
         cdef np.ndarray[TacsScalar, ndim=2, mode='c'] kernel_matrix = np.array([[
             self.kernel(Xtrain[i:(i+nparam)], Xtrain[j:(j+nparam)]) + sigma_n**2 for i in range(ntrain)
@@ -1374,9 +1747,11 @@ cdef class BucklingGP(GaussianProcess):
     """
     Gaussian Process ML model to predict N_11,cr^* non-dimensional buckling loads of global axial modes.
     Local axial mode predictions can also be made with gamma = 0 and xi, rho0 computed for the local panel.
-    The ML model uses non-dimensional inputs and outputs as follows:
+    The ML model uses non-dimensional inputs and outputs as follows::
+
         log(N_11,cr^*) = my_axial_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
         log(N_12,cr^*) = my_shear_GP.predict_mean_test_data(log(1+xi), log(rho0), log(1+gamma), log(1+10^3 * zeta))
+
     The axialGP model accomodoates making multiple test point predictions in parallel as do many ML models.
 
     Parameters
@@ -1407,9 +1782,13 @@ cdef class BucklingGP(GaussianProcess):
         """
         Construct an BucklingGP from a csv_files in the ml_buckling repo (or your own dataset csv files) which contain
         the training weights of the ML model and the optimal hyperparameters theta.
-            This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
+
+        This is the method commonly used to construct the BucklingGP. Namely using the ml_buckling
         The common construction of this class from the ml_buckling repo, https://github.com/smdogroup/ml_buckling,
         and is the following:
+
+        .. code-block:: python
+
             axial_gp = BucklingGP.from_csv(
                 csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv
             )
@@ -1449,7 +1828,7 @@ cdef class BucklingGP(GaussianProcess):
 
     def __cinit__(
         self,
-        int n_train, 
+        int n_train,
         bool affine,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtrain,
         np.ndarray[TacsScalar, ndim=1, mode='c'] alpha,
@@ -1470,22 +1849,23 @@ cdef class PanelGPs:
     object for each panel, and the input and output buckling loads and derivatives are saved and restored so that
     only one call to each GP object is required per panel (speeds up computation time).
     The construction of the TACS callback with the panelGPs is such that only one PanelGPs object is made per TACSComponent
-    (assuming each TACSComponent is associated with a different panel). 
+    (assuming each TACSComponent is associated with a different panel).
 
-    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is:
-    # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
+    The typical construction from an example in ml_buckling repo (in file 4_aob_opt/_gp_callback) is::
 
-    def callback_generator(tacs_component_names):
-        axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
-        shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
-        panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
+        # now build a dictionary of PanelGP objects which manage the GP for each tacs component/panel
 
-        def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
+        def callback_generator(tacs_component_names):
+            axialGP = constitutive.BucklingGP.from_csv( csv_file=mlb.axialGP_csv, theta_csv=mlb.axial_theta_csv )
+            shearGP = constitutive.BucklingGP.from_csv( csv_file=mlb.shearGP_csv, theta_csv=mlb.shear_theta_csv )
+            panelGP_dict = constitutive.PanelGPs.component_dict( tacs_component_names, axialGP=axialGP, shearGP=shearGP )
 
-            # get the panelGPs object associated with this tacs component
-            panelGPs = panelGP_dict[compDescript]
+            def gp_callback(dvNum, compID, compDescript, elemDescripts, specialDVs, **kwargs):
 
-            # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
+                # get the panelGPs object associated with this tacs component
+                panelGPs = panelGP_dict[compDescript]
+
+                # ... (after this you build the TACSMaterialProperties objects and TACSGPBladeConstitutive objects.
 
     Parameters
     ----------
@@ -1500,11 +1880,11 @@ cdef class PanelGPs:
     """
     def __cinit__(
         self,
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
-    ):   
+    ):
         # make null ptrs for GPs if not defined and store them in this class too
         cdef TACSBucklingGaussianProcessModel *axial_gp_ptr = NULL
         if axialGP is not None:
@@ -1525,16 +1905,17 @@ cdef class PanelGPs:
 
     @classmethod
     def component_dict(
-        cls, 
+        cls,
         tacs_components, # list of strings of each tacs component name
-        BucklingGP axialGP = None, 
+        BucklingGP axialGP = None,
         BucklingGP shearGP = None,
         BucklingGP cripplingGP = None,
         bool saveData = True,
         ):
         """
-        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form:
-            { tacs_component (str) : PanelGPs object }      
+        constructs a dictionary of PanelGPs objects, one for each tacs component. The dictionary is of the form::
+
+            { tacs_component (str) : PanelGPs object }
 
         Parameters
         ----------
@@ -1558,7 +1939,7 @@ cdef class PanelGPs:
         return _dict
 
 cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
-    """"
+    """
     This constitutive class models a shell stiffened with T-shaped stiffeners.
     The stiffeners are not explicitly modelled. Instead, their stiffness is "smeared" across the shell.
 
@@ -1567,13 +1948,13 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
     The trained ML models are located on the repo, https://github.com/smdogroup/ml_buckling.
 
     For the methods below, consider a panel with dimensions a the panel length, b the panel width,
-        h the panel thickness, and stiffeners along the length or 1-direction.
+    h the panel thickness, and stiffeners along the length or 1-direction.
     The Dij for axial and shear modes of the panel use the panel laminate design, with the centroid shifted towards the stiffener
-        only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
+    only for the D11 stiffness for the global modes (the local modes use D11 at the center of the skin).
     The stiffener has a lateral spacing s_p the stiffener pitch, stiffener height h_s, stiffener thickness t_s.
     For more information on this constitutive class, see our paper https://arc.aiaa.org/doi/abs/10.2514/6.2024-3981,
-        "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
-        by Sean Engelstad, Brian Burke, Graeme Kennedy.
+    "Machine Learning to Improve Buckling Predictions for Efficient Structural Optimization of Aircraft Wings"
+    by Sean Engelstad, Brian Burke, Graeme Kennedy.
 
     Parameters
     ----------
@@ -1865,7 +2246,7 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
 
     def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
         """
-        test all the internal derivative tests 
+        test all the internal derivative tests
         """
         return self.gp_blade_ptr.testAllTests(epsilon, printLevel)
 
@@ -1957,6 +2338,17 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
 
         self.props = [prop.getMaterialProperties() for prop in ply_list]
 
+    def getMaterialProperties(self):
+        """
+        Get the MaterialProperties objects associated with each ply in this constitutive object.
+
+        Returns
+        -------
+        list[tacs.constitutive.MaterialProperties]
+            Material property objects for each ply in the layup.
+        """
+        return self.props
+
     def generateBDFCard(self):
         """
         Generate pyNASTRAN card class based on current design variable values.
@@ -1988,10 +2380,70 @@ cdef class SmearedCompositeShellConstitutive(ShellConstitutive):
                                                     z0=np.real(z0))
         return prop
 
-cdef class LamParamShellConstitutive(ShellConstitutive):
+def LamParamShellConstitutive(*args, **kwargs):
+    warnings.warn(
+        "LamParamShellConstitutive is deprecated and will be removed in version 3.14.0. "
+        "Use LamParamSmearedShellConstitutive instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return LamParamSmearedShellConstitutive(*args, **kwargs)
+
+cdef class LamParamSmearedShellConstitutive(ShellConstitutive):
+    """
+    This class implements a lamination parameter based parametrization of the shell stiffness and strength properties.
+    The class is restricted to symmetric balanced laminates.
+    The in-plane properties are parametrized in terms of laminate fractions at the angles 0, +/-45 and 90 degrees. The thickness is treated as a continuous design variable.
+    Additional lamination parameters W1 and W3 are used for the bending stiffness.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object defining the material properties.
+    t : float, optional
+        Shell thickness. Default is 1.0.
+    t_num : int, optional
+        Design variable number for thickness. Default is -1 (inactive).
+    min_t : float, optional
+        Minimum allowable thickness. Default is 1.0.
+    max_t : float, optional
+        Maximum allowable thickness. Default is 1.0.
+    f0 : float, optional
+        Fraction of 0-degree plies. Default is 0.25.
+    f45 : float, optional
+        Fraction of 45-degree plies. Default is 0.5.
+    f90 : float, optional
+        Fraction of 90-degree plies. Default is 0.25.
+    f0_num : int, optional
+        Design variable number for f0. Default is -1 (inactive).
+    f45_num : int, optional
+        Design variable number for f45. Default is -1 (inactive).
+    f90_num : int, optional
+        Design variable number for f90. Default is -1 (inactive).
+    min_f0 : float, optional
+        Minimum allowable fraction for f0. Default is 0.125.
+    min_f45 : float, optional
+        Minimum allowable fraction for f45. Default is 0.125.
+    min_f90 : float, optional
+        Minimum allowable fraction for f90. Default is 0.125.
+    W1 : float, optional
+        First lamination parameter. Default is 0.0.
+    W3 : float, optional
+        Third lamination parameter. Default is 0.0.
+    W1_num : int, optional
+        Design variable number for W1. Default is -1 (inactive).
+    W3_num : int, optional
+        Design variable number for W3. Default is -3 (inactive).
+    ksWeight : float, optional
+        Weight for the KS aggregation function. Default is 100.0.
+    epsilon : float, optional
+        Regularization parameter. Default is 0.0.
+    kcorr : float, optional
+        Shear correction factor. Default is 5.0/6.0.
+    """
     def __cinit__(self, OrthotropicPly ply, **kwargs):
         _check_constitutive_kwargs(
-            self, LamParamShellConstitutive, kwargs,
+            self, LamParamSmearedShellConstitutive, kwargs,
             required_keys=["t"],
             valid_keys=[
                 "t_num", "min_t", "max_t",
@@ -1999,7 +2451,7 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
                 "f0_num", "f45_num", "f90_num",
                 "min_f0", "min_f45", "min_f90",
                 "W1", "W3", "W1_num", "W3_num",
-                "ksWeight", "epsilon",
+                "ksWeight", "epsilon", "kcorr",
             ],
         )
         cdef TacsScalar t = 1.0
@@ -2019,8 +2471,9 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
         cdef TacsScalar W3 = 0.0
         cdef int W1_num = -1
         cdef int W3_num = -3
-        cdef TacsScalar ksWeight = 30.0
+        cdef double ksWeight = 100.0
         cdef TacsScalar epsilon = 0.0
+        cdef TacsScalar kcorr = 5.0 / 6.0
 
         if 't' in kwargs:
             t = kwargs['t']
@@ -2064,13 +2517,127 @@ cdef class LamParamShellConstitutive(ShellConstitutive):
             ksWeight = kwargs['ksWeight']
         if 'epsilon' in kwargs:
             epsilon = kwargs['epsilon']
+        if 'kcorr' in kwargs:
+            kcorr = kwargs['kcorr']
 
-        self.cptr = new TACSLamParamShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
+        self.cptr = new TACSLamParamSmearedShellConstitutive(ply.ptr, t, t_num, min_t, max_t,
                                                       f0, f45, f90, f0_num, f45_num, f90_num,
                                                       min_f0, min_f45, min_f90,
-                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon)
+                                                      W1, W3, W1_num, W3_num, ksWeight, epsilon,
+                                                      kcorr)
         self.ptr = self.cptr
         self.ptr.incref()
+
+cdef class LamParamFullShellConstitutive(ShellConstitutive):
+    """
+    This constitutive class implements lamination parameter based parametrization of the shell stiffness and strength properties.
+    There are six lamination parameters that define a symmetric balanced laminate.
+    These must be combined with appropriate feasibility domain for the constraint on the values of the lamination parameters.
+    The failure calculations are based on the maximum failure criteria taken from a set of set ply angles.
+
+    Parameters
+    ----------
+    ply : OrthotropicPly
+        The orthotropic ply object containing material properties.
+    t : float or complex
+        The thickness of the ply.
+    tNum : int
+        The thickness design variable number.
+    tlb : float or complex
+        The lower bound for the thickness.
+    tub : float or complex
+        The upper bound for the thickness.
+    lpNums : np.ndarray[int]
+        Array of laminate parameter design variable numbers.
+    ksWeight : float, optional
+        The KS aggregation weight for constraints (default is 100.0).
+    kcorr : float, optional
+        Shear correction factor. Default is 5.0/6.0.
+    """
+
+    cdef TACSLamParamFullShellConstitutive* lam_cptr
+    def __cinit__(
+            self,
+            OrthotropicPly ply,
+            TacsScalar t,
+            int tNum,
+            TacsScalar tlb,
+            TacsScalar tub,
+            np.ndarray[int, ndim=1, mode="c"] lpNums,
+            double ksWeight = 100.0,
+            TacsScalar kcorr = 5.0 / 6.0
+            ):
+
+        self.lam_cptr = new TACSLamParamFullShellConstitutive(
+            ply.ptr,
+            t,
+            tNum,
+            tlb,
+            tub,
+            <int*>lpNums.data,
+            ksWeight,
+            kcorr
+        )
+        self.ptr = self.cptr = self.lam_cptr
+        self.ptr.incref()
+
+    def setKSWeight(self, double ksWeight):
+        """
+        Update the ks weight used for aggregating the different failure modes
+
+        Parameters
+        ----------
+        ksWeight : float
+            KS aggregation weight
+        """
+        if self.lam_cptr:
+            self.lam_cptr.setKSWeight(ksWeight)
+
+    def setLaminationParameters(self, np.ndarray[TacsScalar, ndim=1, mode="c"] lp):
+        """
+        Set the lamination parameters for the constitutive object.
+
+        Parameters
+        ----------
+        lp : np.ndarray[float or complex]
+            A 1-dimensional numpy array containing the lamination parameters.
+        """
+        self.lam_cptr.setLaminationParameters(<TacsScalar*>lp.data)
+
+    def setNumFailAngles(self, int numFailAngles):
+        """
+        Set the number of failure angles for the constitutive model.
+
+        Parameters
+        ----------
+        numFailAngles : int
+            The number of failure angles to be used in the failure analysis.
+        """
+        self.lam_cptr.setNumFailAngles(numFailAngles)
+
+cdef class BeamConstitutive(Constitutive):
+    def evalDensity(self, int elemIndex,
+                    np.ndarray[double, ndim=1, mode='c'] pt,
+                    np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """Evaluate the mass per unit length at the given point, including nonstructural mass."""
+        return self.cptr.evalDensity(elemIndex, <double*>pt.data, <TacsScalar*>x.data)
+
+    def evalMassMoments(self, int elemIndex,
+                        np.ndarray[double, ndim=1, mode='c'] pt,
+                        np.ndarray[TacsScalar, ndim=1, mode='c'] x):
+        """
+        Evaluate the six cross-sectional mass moments at the given point.
+
+        Returns
+        -------
+        np.ndarray of shape (6,)
+            moments = [rho*A, cz1, cz2, Iz1z1, Iz2z2, Iz1z2], including
+            any nonstructural mass with full parallel-axis contributions.
+        """
+        cdef np.ndarray[TacsScalar, ndim=1, mode='c'] moments = np.zeros(6, dtype=dtype)
+        self.cptr.evalMassMoments(elemIndex, <double*>pt.data, <TacsScalar*>x.data,
+                                  <TacsScalar*>moments.data)
+        return moments
 
 cdef class BasicBeamConstitutive(BeamConstitutive):
     """
