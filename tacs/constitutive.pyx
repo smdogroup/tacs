@@ -1101,24 +1101,24 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             (i.e. no design variable).
         tlb (float or complex, optional): Thickness variable lower bound (keyword argument). Defaults to 0.0.
         tub (float or complex, optional): Thickness variable upper bound (keyword argument). Defaults to 10.0.
-        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
         tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
             Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
             a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoShellConstitutive, kwargs,
             required_keys=["t"],
-            valid_keys=["tNum", "tlb", "tub", "kcorr", "tOffset"],
+            valid_keys=["tNum", "tlb", "tub", "tOffset", "kcorr"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
+        cdef TacsScalar tOffset = 0.0
         cdef TacsScalar kcorr = 5.0/6.0
-        cdef TacsScalar tOff = 0.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -1131,14 +1131,14 @@ cdef class IsoShellConstitutive(ShellConstitutive):
             tlb = kwargs['tlb']
         if 'tub' in kwargs:
             tub = kwargs['tub']
+        if 'tOffset' in kwargs:
+            tOffset = kwargs['tOffset']
         if 'kcorr' in kwargs:
             kcorr = kwargs['kcorr']
-        if 'tOffset' in kwargs:
-            tOff = kwargs['tOffset']
 
         if props is not NULL:
             self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
-                                                     tlb, tub, kcorr, tOff)
+                                                     tlb, tub, tOffset, kcorr)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

@@ -27,7 +27,7 @@ const char *TACSIsoShellConstitutive::constName = "TACSIsoShellConstitutive";
 */
 TACSIsoShellConstitutive::TACSIsoShellConstitutive(
     TACSMaterialProperties *props, TacsScalar _t, int _tNum, TacsScalar _tlb,
-    TacsScalar _tub, TacsScalar _kcorr, TacsScalar _tOffset) {
+    TacsScalar _tub, TacsScalar _tOffset, TacsScalar _kcorr) {
   properties = props;
   if (properties) {
     properties->incref();
