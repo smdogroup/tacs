@@ -1063,7 +1063,12 @@ class pyTACS(BaseUI):
                     )
 
                 con = tacs.constitutive.IsoShellConstitutive(
-                    mat, t=thickness, tlb=minThickness, tub=maxThickness, tNum=tNum
+                    mat,
+                    t=thickness,
+                    tlb=minThickness,
+                    tub=maxThickness,
+                    tNum=tNum,
+                    kcorr=kcorr,
                 )
 
             elif propInfo.type == "PCOMP":  # Nastran composite shell
