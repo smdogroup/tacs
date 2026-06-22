@@ -7,6 +7,7 @@ c-layer of TACS. This module uses the pyNastran library for its bdf parsing
 functionality.
 
 """
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -850,7 +851,7 @@ class pyMeshLoader(BaseUI):
         elemObj = self.elemObjects[elemObjNum]
         return elemObj
 
-    def createTACSAssembler(self, varsPerNode, massDVs):
+    def createTACSAssembler(self, varsPerNode, massDVs, numDVs, globalDVNums=None):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
 
@@ -861,6 +862,15 @@ class pyMeshLoader(BaseUI):
 
         massDVs : dict
             Dictionary holding dv info for point masses.
+
+        numDVs : int
+            Total number of design variables for the model.
+
+        globalDVNums : array-like of int, optional
+            DV indices that must be available on every MPI rank (e.g. indices
+            registered via pyTACS.addGlobalDV).  These are forced into each
+            rank's external-DV distribution regardless of which elements
+            reference them.
         """
         self.creator = tacs.TACS.Creator(self.comm, varsPerNode)
 
@@ -976,6 +986,12 @@ class pyMeshLoader(BaseUI):
 
         # Set the elements for each component
         self.creator.setElements(self.elemObjects)
+
+        # Register Python-level global DVs so every rank fetches them even if
+        # they are only referenced by auxiliary elements added after initialize()
+        if globalDVNums is not None and len(globalDVNums) > 0:
+            dvArr = np.array(globalDVNums, dtype=np.intc)
+            self.creator.setGlobalDVIndices(dvArr)
 
         self.assembler = self.creator.createTACS()
 

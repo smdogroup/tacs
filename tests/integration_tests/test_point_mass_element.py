@@ -22,6 +22,7 @@ bdf_file = os.path.join(base_dir, "./input_files/point_mass.bdf")
 
 # Force to apply
 f = np.ones(6)
+g = 9.81
 
 ksweight = 10.0
 
@@ -64,6 +65,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         fea_assembler.addGlobalDV("point_mass", 20.0)
         # Assign mass to global dv
         fea_assembler.assignMassDV("point_mass", 1, "m")
+        gDVNum = fea_assembler.addGlobalDV("g", g)
 
         # Set up constitutive objects and elements
         fea_assembler.initialize()
@@ -80,9 +82,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Create case 2 transient problem
         problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
-        g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
+        gVec = np.array([0.0, 0.0, g], dtype=TACS.dtype)
         for step_i, time in enumerate(timeSteps):
-            problem.addInertialLoad(step_i, g)
+            problem.addInertialLoad(step_i, gVec, inertiaVecDVNums=[-1, -1, gDVNum])
         all_problems.append(problem)
 
         # Add Functions

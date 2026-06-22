@@ -143,7 +143,7 @@ class TACSConstraint(TACSSystem):
         --------
         >>> conSizes = {}
         >>> tacsConstraint.getConstraintSizes(conSizes, 'LE_SPAR')
-        >>> funconSizescs
+        >>> conSizes
         >>> # Result will look like (if TACSConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': 10}
         """
