@@ -1178,12 +1178,12 @@ class pyTACS(BaseUI):
                     con = tacs.constitutive.BasicBeamConstitutive(
                         mat,
                         A=area,
-                        Iy=I2,
-                        Iz=I1,
-                        Iyz=I12,
+                        I33=I1,
+                        I22=I2,
+                        I23=I12,
                         J=J,
-                        ky=k1,
-                        kz=k2,
+                        k2=k1,
+                        k3=k2,
                         nsm=nsm,
                         xm2=shearCenterYOffset,
                         xm3=shearCenterZOffset,
@@ -1286,12 +1286,12 @@ class pyTACS(BaseUI):
 
                     # Average offsets at two ends, then add the shear center offset because TACS offsets are not
                     # relative to shear center like Nastran's are
-                    nsmOffsetY = (nsmYOffsetA + nsmYOffsetB) / 2 + shearCenterYOffset
-                    nsmOffsetZ = (nsmZOffsetA + nsmZOffsetB) / 2 + shearCenterZOffset
-                    neutralAxisOffsetY = (
+                    nsmYOffset = (nsmYOffsetA + nsmYOffsetB) / 2 + shearCenterYOffset
+                    nsmZOffset = (nsmZOffsetA + nsmZOffsetB) / 2 + shearCenterZOffset
+                    neutralAxisYOffset = (
                         neutralAxisYOffsetA + neutralAxisYOffsetB
                     ) / 2 + shearCenterYOffset
-                    neutralAxisOffsetZ = (
+                    neutralAxisZOffset = (
                         neutralAxisZOffsetA + neutralAxisZOffsetB
                     ) / 2 + shearCenterZOffset
 
@@ -1330,14 +1330,14 @@ class pyTACS(BaseUI):
                         ky=k1,
                         kz=k2,
                         nsm=nsm,
-                        xc2=-neutralAxisOffsetZ,
-                        xc3=neutralAxisOffsetY,
-                        xm2=neutralAxisOffsetY,
-                        xm3=neutralAxisOffsetZ,
-                        xnsm2=nsmOffsetY,
-                        xnsm3=nsmOffsetZ,
                         xk2=shearCenterYOffset,
                         xk3=shearCenterZOffset,
+                        xc2=-neutralAxisZOffset,
+                        xc3=neutralAxisYOffset,
+                        xm2=neutralAxisYOffset,
+                        xm3=neutralAxisZOffset,
+                        xnsm2=nsmYOffset,
+                        xnsm3=nsmZOffset,
                     )
 
                 elif propInfo.type == "PBEAML":

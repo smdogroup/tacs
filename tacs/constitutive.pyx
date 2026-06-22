@@ -2645,20 +2645,20 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
 
      .. note::
         TACS uses a negative sign convention in the product of inertia definition, for example:
-            Iyz = -int[y * z * dA]
+            I23 = -int[x2 * x3 * dA]
 
         The moments of area are always positive, as usual:
-            Iyy = int[(z^2 * dA]
+            I22 = int[(x3^2 * dA]
 
     Args:
         props (MaterialProperties): The material property.
         A (float or complex): Beam cross-sectional area (keyword argument). Defaults to 0.0.
         J (float or complex): Beam polar moment of area about x-axis (keyword argument). Defaults to 0.0.
-        Iy (float or complex): Beam area moment of area about y-axis (keyword argument). Defaults to 0.0.
-        Iz (float or complex): Beam area moment of area about z-axis (keyword argument). Defaults to 0.0.
-        Iyz (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
-        ky (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
-        kz (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
+        I22 (float or complex): Beam area moment of area about y-axis (keyword argument). Defaults to 0.0.
+        I33 (float or complex): Beam area moment of area about z-axis (keyword argument). Defaults to 0.0.
+        I23 (float or complex): Beam product of area in yz-plane (keyword argument). Defaults to 0.0.
+        k2 (float or complex): Shear correction factor in y-direction (keyword argument). Defaults to 5/6.
+        k3 (float or complex): Shear correction factor in z-direction (keyword argument). Defaults to 5/6.
         nsm (float or complex): Non-structural mass per unit length (keyword argument). Defaults to 0.0.
         xm2 (float or complex): Structural center of mass location in y-direction (keyword argument). Defaults to 0.0.
         xm3 (float or complex): Structural center of mass location in z-direction (keyword argument). Defaults to 0.0.
@@ -2673,18 +2673,18 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, BasicBeamConstitutive, kwargs,
-            required_keys=["A", "J", "Iy", "Iz"],
-            valid_keys=["Iyz", "ky", "kz", "nsm", "xm2", "xm3", "xnsm2", "xnsm3",
+            required_keys=["A", "J", "I22", "I33"],
+            valid_keys=["I23", "k2", "k3", "nsm", "xm2", "xm3", "xnsm2", "xnsm3",
                         "xc2", "xc3", "xk2", "xk3", "muS"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar A = 0.0
         cdef TacsScalar J = 0.0
-        cdef TacsScalar Iy = 0.0
-        cdef TacsScalar Iz = 0.0
-        cdef TacsScalar Iyz = 0.0
-        cdef TacsScalar ky = 5.0/6.0
-        cdef TacsScalar kz = 5.0/6.0
+        cdef TacsScalar I22 = 0.0
+        cdef TacsScalar I33 = 0.0
+        cdef TacsScalar I23 = 0.0
+        cdef TacsScalar k2 = 5.0/6.0
+        cdef TacsScalar k3 = 5.0/6.0
         cdef TacsScalar nsm = 0.0
         cdef TacsScalar xm2 = 0.0
         cdef TacsScalar xm3 = 0.0
@@ -2703,16 +2703,16 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
             A = kwargs['A']
         if 'J' in kwargs:
             J = kwargs['J']
-        if 'Iy' in kwargs:
-            Iy = kwargs['Iy']
-        if 'Iz' in kwargs:
-            Iz = kwargs['Iz']
-        if 'Iyz' in kwargs:
-            Iyz = kwargs['Iyz']
-        if 'ky' in kwargs:
-            ky = kwargs['ky']
-        if 'kz' in kwargs:
-            kz = kwargs['kz']
+        if 'I22' in kwargs:
+            I22 = kwargs['I22']
+        if 'I33' in kwargs:
+            I33 = kwargs['I33']
+        if 'I23' in kwargs:
+            I23 = kwargs['I23']
+        if 'k2' in kwargs:
+            k2 = kwargs['k2']
+        if 'k3' in kwargs:
+            k3 = kwargs['k3']
         if 'nsm' in kwargs:
             nsm = kwargs['nsm']
         if 'xm2' in kwargs:
@@ -2734,7 +2734,7 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         if 'muS' in kwargs:
             muS = kwargs['muS']
 
-        self.cptr = new TACSBasicBeamConstitutive(props, A, J, Iy, Iz, Iyz, ky, kz,
+        self.cptr = new TACSBasicBeamConstitutive(props, A, J, I22, I33, I23, k2, k3,
                                                   nsm, xm2, xm3, xnsm2, xnsm3,
                                                   xc2, xc3, xk2, xk3, muS)
         self.ptr = self.cptr
