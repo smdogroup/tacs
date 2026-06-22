@@ -54,7 +54,10 @@ BEAM_LENGTH = 1.0  # m
 NUM_ELEMENTS = 30
 
 # Rectangular section (PBAR / PBARL+BAR / PBEAM / PBEAML+BAR).
-# WIDTH is the local-y dimension, DEPTH is the local-z dimension.
+# WIDTH is the local-z dimension; DEPTH (the through-thickness dimension) is the
+# local-y dimension. This matches the TACS convention that thickness lies along
+# local-y (see the figure in src/constitutive/TACSIsoRectangleBeamConstitutive.h)
+# and the Nastran PBARL/PBEAML BAR ordering dims=[local-y, local-z] used below.
 WIDTH1, DEPTH1 = 0.20, 0.05  # end-A (root) dimensions
 WIDTH2, DEPTH2 = 0.10, 0.025  # end-B (tip) dimensions = half of end-A
 
@@ -153,9 +156,10 @@ def computeRectangleSectionProperties(width, depth):
     Parameters
     ----------
     width : float
-        Section dimension in the local-y direction.
-    depth : float
         Section dimension in the local-z direction.
+    depth : float
+        Section dimension in the local-y direction (the through-thickness
+        dimension, per the TACS thickness-along-local-y convention).
 
     Returns
     -------
@@ -165,8 +169,8 @@ def computeRectangleSectionProperties(width, depth):
         formula for a solid rectangular bar.
     """
     area = width * depth
-    i1 = depth * width**3 / 12.0  # Izz, bending in the local-y direction
-    i2 = width * depth**3 / 12.0  # Iyy, bending in the local-z direction
+    i1 = width * depth**3 / 12.0  # Izz = int(y^2 dA), bending in the local-y direction
+    i2 = depth * width**3 / 12.0  # Iyy = int(z^2 dA), bending in the local-z direction
 
     a = 0.5 * max(width, depth)
     b = 0.5 * min(width, depth)
