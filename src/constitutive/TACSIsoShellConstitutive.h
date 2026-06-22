@@ -32,7 +32,8 @@ class TACSIsoShellConstitutive : public TACSShellConstitutive {
  public:
   TACSIsoShellConstitutive(TACSMaterialProperties *props, TacsScalar _t = 1.0,
                            int _tNum = -1, TacsScalar _tlb = 0.0,
-                           TacsScalar _tub = 1.0, TacsScalar _tOffset = 0.0);
+                           TacsScalar _tub = 10.0, TacsScalar _tOffset = 0.0,
+                           TacsScalar _kcorr = 5.0 / 6.0);
   ~TACSIsoShellConstitutive();
 
   // Retrieve the global design variable numbers
