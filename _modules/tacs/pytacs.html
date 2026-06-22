@@ -1144,7 +1144,12 @@
                     <span class="p">)</span>
 
                 <span class="n">con</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">constitutive</span><span class="o">.</span><span class="n">IsoShellConstitutive</span><span class="p">(</span>
-                    <span class="n">mat</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">thickness</span><span class="p">,</span> <span class="n">tlb</span><span class="o">=</span><span class="n">minThickness</span><span class="p">,</span> <span class="n">tub</span><span class="o">=</span><span class="n">maxThickness</span><span class="p">,</span> <span class="n">tNum</span><span class="o">=</span><span class="n">tNum</span>
+                    <span class="n">mat</span><span class="p">,</span>
+                    <span class="n">t</span><span class="o">=</span><span class="n">thickness</span><span class="p">,</span>
+                    <span class="n">tlb</span><span class="o">=</span><span class="n">minThickness</span><span class="p">,</span>
+                    <span class="n">tub</span><span class="o">=</span><span class="n">maxThickness</span><span class="p">,</span>
+                    <span class="n">tNum</span><span class="o">=</span><span class="n">tNum</span><span class="p">,</span>
+                    <span class="n">kcorr</span><span class="o">=</span><span class="n">kcorr</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">propInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;PCOMP&quot;</span><span class="p">:</span>  <span class="c1"># Nastran composite shell</span>
