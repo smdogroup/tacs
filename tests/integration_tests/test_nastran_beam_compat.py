@@ -232,6 +232,9 @@ class NastranCompatBeamBase(unittest.TestCase):
                 f"{stem} — {name}",
                 os.path.join(plot_dir, f"{name}.png"),
             )
+            # Also dump the TACS solution (.f5) next to the plots for inspection.
+            os.makedirs(plot_dir, exist_ok=True)
+            self._static_by_name(name).writeSolution(outputDir=plot_dir)
         np.testing.assert_allclose(
             actual,
             expected,
@@ -306,6 +309,9 @@ class NastranCompatBeamBase(unittest.TestCase):
                     ii + 1,
                     os.path.join(plot_dir, f"modal_mode{ii + 1:02d}.png"),
                 )
+            # Also dump the TACS modal solution (.f5) next to the plots.
+            os.makedirs(plot_dir, exist_ok=True)
+            prob.writeSolution(outputDir=plot_dir)
 
         # Frequencies: loose 5% rtol is intentional — known TACS/Nastran beam
         # element formulation differences cause up to 3-4% frequency error even
