@@ -104,16 +104,16 @@ _ROTATION_VEC = _ROTATION_VEC / np.linalg.norm(_ROTATION_VEC)
 _DEFAULT_ORIENTATION_VEC = np.array([0.0, 1.0, 0.0])
 
 # Shear-centre (grid) offset applied via the CBAR/CBEAM WA/WB fields.
-_WA_OFFSET = np.array([0.0, 2.0 * WIDTH1, 2.0 * DEPTH1])
+_WA_OFFSET = np.array([0.0, 2.0 * DEPTH1, 2.0 * WIDTH1])
 
 # PBEAM neutral-axis offset (N1/N2), same magnitudes as the shear-centre offset.
-_N1, _N2 = 2.0 * WIDTH1, 2.0 * DEPTH1
+_N1, _N2 = 2.0 * DEPTH1, 2.0 * WIDTH1
 
 # Non-structural mass per unit length (comparable to the section's own mass).
 _NSM = RHO * WIDTH1 * DEPTH1
 
 # PBEAM NSM offset (M1/M2).
-_M1, _M2 = WIDTH1, DEPTH1
+_M1, _M2 = DEPTH1, WIDTH1
 
 # ==============================================================================
 # Loads
