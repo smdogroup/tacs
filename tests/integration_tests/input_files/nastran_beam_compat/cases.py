@@ -25,15 +25,15 @@ SUPPORTED_SECTIONS = ("BAR", "ROD", "TUBE", "TUBE2")
 # because PBARL.J() gives a correct circular J for the BasicBeam fallback.
 CASE_MATRIX = {
     ("CBAR", "PBAR", None): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "BAR"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "ROD"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "TUBE"): ["rotation", "wa", "nsm"],
-    ("CBAR", "PBARL", "TUBE2"): ["rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
-    ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
-    ("CBEAM", "PBEAML", "ROD"): ["taper", "rotation", "nsm"],
-    ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
-    ("CBEAM", "PBEAML", "TUBE2"): ["taper", "rotation", "nsm"],
+    # ("CBAR", "PBARL", "BAR"): ["rotation", "wa", "nsm"],
+    # ("CBAR", "PBARL", "ROD"): ["rotation", "wa", "nsm"],
+    # ("CBAR", "PBARL", "TUBE"): ["rotation", "wa", "nsm"],
+    # ("CBAR", "PBARL", "TUBE2"): ["rotation", "wa", "nsm"],
+    # ("CBEAM", "PBEAM", None): ["taper", "rotation", "wa", "n", "nsm", "m"],
+    # ("CBEAM", "PBEAML", "BAR"): ["taper", "rotation", "wa", "nsm"],
+    # ("CBEAM", "PBEAML", "ROD"): ["taper", "rotation", "nsm"],
+    # ("CBEAM", "PBEAML", "TUBE"): ["taper", "rotation", "nsm"],
+    # ("CBEAM", "PBEAML", "TUBE2"): ["taper", "rotation", "nsm"],
 }
 
 STATIC_LOAD_NAMES = (
