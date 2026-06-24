@@ -1207,13 +1207,12 @@ class pyTACS(BaseUI):
                             mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset, nsm=nsm
                         )
 
-                    elif propInfo.Type in ("ROD", "TUBE", "TUBE2") and (
+                    elif propInfo.Type in ("TUBE", "TUBE2") and (
                         not hasShearCenterOffset
                     ):
-                        # Circular sections without a shear-center offset go to
-                        # IsoTubeBeamConstitutive, which computes its own (correct)
-                        # J. ROD is a solid circle, i.e. a tube with inner diameter
-                        # zero. TUBE/TUBE2 differ only in dim convention.
+                        # Hollow circular sections without a shear-center offset go
+                        # to IsoTubeBeamConstitutive, which computes its own
+                        # (correct) J. TUBE/TUBE2 differ only in dim convention.
                         innerDiameter, wallThickness = isoTubeBeamDims(
                             propInfo.Type, propInfo.dim
                         )
@@ -1222,25 +1221,48 @@ class pyTACS(BaseUI):
                         )
 
                     elif propInfo.Type in ("ROD", "TUBE", "TUBE2"):
-                        # Circular section with a shear-center offset:
-                        # IsoTubeBeamConstitutive cannot carry an offset, so fall
-                        # back to BasicBeamConstitutive. pyNastran's PBARL.J() is
-                        # exact for circular sections (J = polar moment I1 + I2).
+                        # Solid ROD (any case) and hollow tubes with a shear-center
+                        # offset use BasicBeamConstitutive: IsoTubeBeamConstitutive
+                        # cannot carry an offset, and its shear-correction factor is
+                        # the thin-walled limit 2(1+nu)/(4+3*nu), which is wrong for
+                        # a solid ROD. pyNastran does not expose a shear factor for
+                        # PBARL, so we compute Cowper's (1966) hollow-circular value
+                        # here from the inner/outer diameter ratio m. It reduces to
+                        # the solid-circle value 6(1+nu)/(7+6*nu) as m -> 0 and to
+                        # the thin-wall value above as m -> 1. pyNastran's PBARL.J()
+                        # is exact for circular sections (J = polar moment I1 + I2).
                         A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
                             "PBARL", propInfo.Type, propInfo.dim, propInfo
                         )
                         J = propInfo.J()
+                        innerDiameter, wallThickness = isoTubeBeamDims(
+                            propInfo.Type, propInfo.dim
+                        )
+                        outerDiameter = innerDiameter + 2.0 * wallThickness
+                        m = innerDiameter / outerDiameter
+                        nu = propInfo.mid_ref.nu
+                        kShear = (
+                            6.0
+                            * (1.0 + nu)
+                            * (1.0 + m**2) ** 2
+                            / (
+                                (7.0 + 6.0 * nu) * (1.0 + m**2) ** 2
+                                + (20.0 + 12.0 * nu) * m**2
+                            )
+                        )
                         con = tacs.constitutive.BasicBeamConstitutive(
                             mat,
                             A=A,
                             J=J,
-                            Iy=I2,
-                            Iz=I1,
-                            Iyz=-I12,
+                            I33=I1,
+                            I22=I2,
+                            I23=-I12,
+                            k2=kShear,
+                            k3=kShear,
                             nsm=nsm,
                             xm2=shearCenterYOffset,
                             xm3=shearCenterZOffset,
-                            xc2=-shearCenterZOffset,
+                            xc2=shearCenterZOffset,
                             xc3=shearCenterYOffset,
                             xk2=shearCenterYOffset,
                             xk3=shearCenterZOffset,
