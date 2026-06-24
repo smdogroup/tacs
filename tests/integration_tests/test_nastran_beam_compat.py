@@ -36,7 +36,7 @@ TACS and Nastran mode shapes. Plots are written to ``<REF_DIR>/debug_plots/``.
 """
 
 # Set to True to save comparison plots for each test into <REF_DIR>/debug_plots/.
-DEBUG = False
+DEBUG = True
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _INPUT_DIR = os.path.join(_BASE_DIR, "input_files", "nastran_beam_compat")
@@ -132,6 +132,38 @@ def _compute_mac_matrix(shapes_a, shapes_b):
     return mac
 
 
+def _degenerate_mode_groups(freqs, rtol):
+    """Cluster ascending-sorted modal frequencies into degenerate groups.
+
+    A new group starts whenever the relative gap to the previous frequency
+    exceeds ``rtol``. Degenerate twins (e.g. the two bending planes of a
+    symmetric section) differ by far less than the spacing between distinct
+    mode families, so they land in the same group.
+
+    Parameters
+    ----------
+    freqs : ndarray, shape (n_modes,)
+    rtol : float
+
+    Returns
+    -------
+    group_of : list[list[int]]
+        For each mode index, the list of mode indices sharing its group.
+    """
+    groups = [[0]]
+    for ii in range(1, len(freqs)):
+        gap = abs(freqs[ii] - freqs[ii - 1])
+        if gap <= rtol * max(abs(freqs[ii]), abs(freqs[ii - 1])):
+            groups[-1].append(ii)
+        else:
+            groups.append([ii])
+    group_of = [None] * len(freqs)
+    for group in groups:
+        for idx in group:
+            group_of[idx] = group
+    return group_of
+
+
 def _plot_mac_heatmap(mac, title, output_path):
     """Save an annotated viridis heatmap of an n x n MAC matrix."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -171,6 +203,17 @@ class NastranCompatBeamBase(unittest.TestCase):
     STATIC_ATOL = 1e-6
     MODAL_FREQ_RTOL = 0.05
     MAC_THRESHOLD = 0.99
+    # Two reference frequencies within this relative tolerance are treated as a
+    # degenerate group for the MAC check (see test_modal). Comfortably larger
+    # than the <1e-4 split of true degenerate twins and far smaller than the
+    # >9% spacing between distinct mode families.
+    MODAL_DEGEN_RTOL = 1e-2
+    # Oversolve the eigenproblem: for these symmetric circular sections the
+    # bending modes are degenerate pairs, and requesting exactly the number of
+    # reference modes can make the eigensolver drop a twin and return a
+    # non-contiguous set, misaligning the index-by-index frequency comparison.
+    # We solve for more modes than we compare (see test_modal).
+    MODAL_NUM_EIGS = 20
 
     @classmethod
     def setUpClass(cls):
@@ -190,7 +233,15 @@ class NastranCompatBeamBase(unittest.TestCase):
             prob.setOption("L2ConvergenceRel", 1e-20)
         cls.fea_modal = pyTACS(cls.SOL103_BDF, comm)
         cls.fea_modal.initialize()
-        cls.modal_problems = cls.fea_modal.createTACSProbsFromBDF()
+        # Recreate the BDF modal problem with a larger eigenvalue count
+        # (MODAL_NUM_EIGS) to resolve the degenerate bending clusters; reuse the
+        # name and shift (sigma) the BDF specified.
+        bdfModal = next(iter(cls.fea_modal.createTACSProbsFromBDF().values()))
+        cls.modal_problems = {
+            bdfModal.name: cls.fea_modal.createModalProblem(
+                bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS
+            )
+        }
 
     def setUp(self):
         if self.REF_DIR is None or not os.path.isdir(self.REF_DIR):
@@ -266,7 +317,12 @@ class NastranCompatBeamBase(unittest.TestCase):
             raise unittest.SkipTest(f"Reference not found: {freq_path}")
         prob = next(iter(self.modal_problems.values()))
         prob.solve()
-        n_modes = prob.getNumEigs()
+
+        # The solver is asked for MODAL_NUM_EIGS modes (more than we compare) so
+        # degenerate bending pairs converge as a contiguous set; the references
+        # only hold the lowest n_modes, so compare just those.
+        freqs_expected = np.loadtxt(freq_path, delimiter=",", comments="#").flatten()
+        n_modes = len(freqs_expected)
 
         # Collect frequencies and mode shapes before any assertions so that
         # debug plots are always generated when DEBUG=True, regardless of
@@ -274,7 +330,6 @@ class NastranCompatBeamBase(unittest.TestCase):
         freqs_actual = np.array(
             [np.sqrt(prob.getVariables(ii)[0]) / (2 * np.pi) for ii in range(n_modes)]
         )
-        freqs_expected = np.loadtxt(freq_path, delimiter=",", comments="#").flatten()
 
         shapes_actual = []
         shapes_expected = []
@@ -322,22 +377,37 @@ class NastranCompatBeamBase(unittest.TestCase):
             rtol=self.MODAL_FREQ_RTOL,
         )
 
-        # MAC: full n x n matrix. Assert each TACS mode's best Nastran match is
-        # its index-paired mode AND the diagonal MAC clears the threshold.
+        # MAC, degeneracy-aware. Symmetric circular sections have degenerate
+        # bending pairs (two planes at the same frequency); the eigenvector
+        # orientation within such a pair is arbitrary, so TACS and Nastran can
+        # pick different in-plane axes and the individual cross-MACs split (e.g.
+        # 0.74 / 0.26) even though the shapes are identical. We therefore group
+        # the reference modes by frequency and, for each TACS mode, require (a)
+        # its best Nastran match to lie within its frequency group and (b) the
+        # MAC summed over that group to clear the threshold. The group sum is
+        # the projection of the TACS shape onto the span of its degenerate
+        # twins, which is rotation-invariant. For a non-degenerate mode the
+        # group is a singleton and this reduces to argmax == ii and
+        # mac[ii, ii] >= threshold.
+        group_of = _degenerate_mode_groups(freqs_expected, self.MODAL_DEGEN_RTOL)
         for ii in range(n_modes):
+            group = group_of[ii]
             best_match = int(np.argmax(mac[ii]))
-            if best_match != ii:
+            group_mac = mac[ii, group].sum()
+            if best_match not in group:
                 self.fail(
                     f"Mode {ii + 1}: best Nastran match is mode {best_match + 1} "
-                    f"(MAC = {mac[ii, best_match]:.3f}), not mode {ii + 1} "
-                    f"(MAC = {mac[ii, ii]:.3f}). "
-                    "Modes appear to be swapped — see mac.png in debug_plots."
+                    f"(MAC = {mac[ii, best_match]:.3f}), outside its frequency "
+                    f"group {[g + 1 for g in group]}. Modes appear to be "
+                    "swapped — see mac.png in debug_plots."
                 )
-            if mac[ii, ii] < self.MAC_THRESHOLD:
+            if group_mac < self.MAC_THRESHOLD:
                 self.fail(
-                    f"Mode {ii + 1}: MAC = {mac[ii, ii]:.4f} < {self.MAC_THRESHOLD:.4f}. "
-                    "Modes are paired correctly but the shapes disagree — "
-                    "see mac.png and modal_mode*.png in debug_plots."
+                    f"Mode {ii + 1}: MAC summed over degenerate group "
+                    f"{[g + 1 for g in group]} = {group_mac:.4f} < "
+                    f"{self.MAC_THRESHOLD:.4f}. The shape lies outside the "
+                    "reference subspace — see mac.png and modal_mode*.png in "
+                    "debug_plots."
                 )
 
 
