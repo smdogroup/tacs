@@ -49,16 +49,15 @@ void TACSBasicBeamConstitutive::populateMats(
   // Set the entries of the stiffness matrix
   memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
 
-  // TODO: Figure out why this only gives correct results when xc2 is negated.
   C[0] = EA;
-  C[2] = -EA * (-xc2);
+  C[2] = EA * xc2;
   C[3] = EA * xc3;
   C[6] = GJ + xk2 * (kGA23 * xk3 + kGA33 * xk2) +
          xk3 * (kGA22 * xk3 + kGA23 * xk2);
   C[9] = -kGA22 * xk3 - kGA23 * xk2;
   C[10] = kGA23 * xk3 + kGA33 * xk2;
-  C[11] = EA * (-xc2) * (-xc2) + EI33;
-  C[12] = -EA * (-xc2) * xc3 - EI23;
+  C[11] = EA * xc2 * xc2 + EI33;
+  C[12] = EA * xc2 * xc3 + EI23;
   C[15] = EA * xc3 * xc3 + EI22;
   C[18] = kGA22;
   C[19] = -kGA23;
