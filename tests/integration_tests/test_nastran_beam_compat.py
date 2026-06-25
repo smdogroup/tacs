@@ -150,6 +150,41 @@ def _degenerate_mode_groups(freqs, rtol):
     return group_of
 
 
+def _subspace_projection_mac(shape, ref_group_shapes):
+    """Fraction of ``shape`` that lies in the span of a reference mode group.
+
+    Returns ``||Q Qᵀ a||² / ||a||²`` where ``a`` is the flattened TACS shape and
+    ``Q`` is an orthonormal basis (via QR) of the flattened reference group
+    shapes. This is the degeneracy-correct generalisation of the diagonal MAC:
+    for a singleton group it reduces exactly to the ordinary MAC value
+    ``mac[ii, ii]``, and for a degenerate group it is the rotation-invariant
+    projection of the TACS shape onto the reference subspace.
+
+    Crucially, unlike summing the individual MAC values over the group, it makes
+    no assumption that the reference twins are orthogonal in the plain inner
+    product. That assumption silently fails once an element offset (e.g. a CBAR
+    ``wa``/``wb`` offset) makes the mass matrix non-diagonal: the twins are then
+    mass-orthonormal but acquire a small mutual dot product, and the naive group
+    sum splits above/below 1 (e.g. 1.06 / 0.94) even though both subspaces
+    coincide. The projection is immune to this.
+
+    Parameters
+    ----------
+    shape : ndarray, shape (n_nodes, 6)
+    ref_group_shapes : ndarray, shape (n_group, n_nodes, 6)
+
+    Returns
+    -------
+    float
+        Projected MAC in [0, 1]; 1 when ``shape`` lies wholly in the span.
+    """
+    a = shape.flatten()
+    basis = np.stack([s.flatten() for s in ref_group_shapes], axis=1)
+    Q, _ = np.linalg.qr(basis)
+    proj = Q @ (Q.T @ a)
+    return float((proj @ proj) / (a @ a))
+
+
 def _plot_mac_heatmap(mac, title, output_path):
     """Save an annotated viridis heatmap of an n x n MAC matrix."""
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -370,16 +405,20 @@ class NastranCompatBeamBase(unittest.TestCase):
         # 0.74 / 0.26) even though the shapes are identical. We therefore group
         # the reference modes by frequency and, for each TACS mode, require (a)
         # its best Nastran match to lie within its frequency group and (b) the
-        # MAC summed over that group to clear the threshold. The group sum is
-        # the projection of the TACS shape onto the span of its degenerate
-        # twins, which is rotation-invariant. For a non-degenerate mode the
-        # group is a singleton and this reduces to argmax == ii and
+        # projection of the TACS shape onto the span of its degenerate twins to
+        # clear the threshold. The projection (see _subspace_projection_mac) is
+        # rotation-invariant within the group and makes no assumption that the
+        # reference twins are dot-orthogonal — they are not once an element
+        # offset makes the mass matrix non-diagonal. For a non-degenerate mode
+        # the group is a singleton and this reduces to argmax == ii and
         # mac[ii, ii] >= threshold.
         group_of = _degenerate_mode_groups(freqs_expected, self.MODAL_DEGEN_RTOL)
         for ii in range(n_modes):
             group = group_of[ii]
             best_match = int(np.argmax(mac[ii]))
-            group_mac = mac[ii, group].sum()
+            proj_mac = _subspace_projection_mac(
+                shapes_actual[ii], shapes_expected[group]
+            )
             if best_match not in group:
                 self.fail(
                     f"Mode {ii + 1}: best Nastran match is mode {best_match + 1} "
@@ -387,10 +426,10 @@ class NastranCompatBeamBase(unittest.TestCase):
                     f"group {[g + 1 for g in group]}. Modes appear to be "
                     "swapped — see mac.png in debug_plots."
                 )
-            if group_mac < self.MAC_THRESHOLD:
+            if proj_mac < self.MAC_THRESHOLD:
                 self.fail(
-                    f"Mode {ii + 1}: MAC summed over degenerate group "
-                    f"{[g + 1 for g in group]} = {group_mac:.4f} < "
+                    f"Mode {ii + 1}: projection onto degenerate group "
+                    f"{[g + 1 for g in group]} = {proj_mac:.4f} < "
                     f"{self.MAC_THRESHOLD:.4f}. The shape lies outside the "
                     "reference subspace — see mac.png and modal_mode*.png in "
                     "debug_plots."
