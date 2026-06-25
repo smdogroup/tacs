@@ -54,10 +54,14 @@ if DEBUG:
     plt.style.use(niceplots.get_style())
 
 
-def _plot_beam_disps(x, actual, expected, title, output_path):
-    """Save a 6-panel figure comparing TACS vs Nastran displacement components along the beam."""
+def _plot_beam_disp_comparison(x, actual, expected, title, output_path):
+    """Save a 6-panel figure comparing TACS vs Nastran solution components along the beam.
+
+    Used for both static displacement fields and modal mode shapes; the caller
+    supplies the figure title.
+    """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+    fig, axes = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey="row")
     for ax, dof_label, act_comp, exp_comp in zip(
         axes.flatten(), _DOF_LABELS, actual.T, expected.T
     ):
@@ -68,24 +72,6 @@ def _plot_beam_disps(x, actual, expected, title, output_path):
         ax.legend(fontsize=7)
         niceplots.adjust_spines(ax)
     fig.suptitle(title, fontsize=13)
-    fig.savefig(output_path, dpi=150)
-    plt.close(fig)
-
-
-def _plot_beam_mode_shape(x, actual, expected, mode_num, output_path):
-    """Save a 6-panel figure comparing TACS vs Nastran mode shape components along the beam."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fig, axes = plt.subplots(2, 3, figsize=(14, 8))
-    for ax, dof_label, act_comp, exp_comp in zip(
-        axes.flatten(), _DOF_LABELS, actual.T, expected.T
-    ):
-        ax.plot(x, act_comp, label="TACS", lw=1.5, clip_on=False)
-        ax.plot(x, exp_comp, "--", label="Nastran", lw=1.5, clip_on=False)
-        ax.set_xlabel("x (m)")
-        ax.set_ylabel(dof_label)
-        ax.legend(fontsize=7)
-        niceplots.adjust_spines(ax)
-    fig.suptitle(f"Mode {mode_num}", fontsize=13)
     fig.savefig(output_path, dpi=150)
     plt.close(fig)
 
@@ -276,7 +262,7 @@ class NastranCompatBeamBase(unittest.TestCase):
             plot_dir = os.path.join(self.REF_DIR, "debug_plots")
             x = np.linspace(0, 1, actual.shape[0])
             stem = os.path.basename(self.REF_DIR)
-            _plot_beam_disps(
+            _plot_beam_disp_comparison(
                 x,
                 actual,
                 expected,
@@ -357,11 +343,11 @@ class NastranCompatBeamBase(unittest.TestCase):
                 shape_a = _max_normalize(shapes_actual[ii])
                 shape_e = shapes_expected[ii]
                 shape_a = _align_mode_sign(shape_e, shape_a)
-                _plot_beam_mode_shape(
+                _plot_beam_disp_comparison(
                     x,
                     shape_a,
                     shape_e,
-                    ii + 1,
+                    f"Mode {ii + 1}",
                     os.path.join(plot_dir, f"modal_mode{ii + 1:02d}.png"),
                 )
             # Also dump the TACS modal solution (.f5) next to the plots.
