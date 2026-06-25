@@ -22,7 +22,7 @@ element/property card combination and every supported field on those cards.
 Each (configuration, analysis) pair is its own unit test so a single failure
 identifies exactly which card, feature combination, and analysis is broken.
 
-The 308 positive tests (44 configurations x 7 analyses) self-skip until the
+The 352 positive tests (44 configurations x 8 analyses) self-skip until the
 Nastran reference CSVs have been generated and committed. See the directory
 README and DESIGN.md for the maintainer workflow that produces the references.
 A separate set of negative tests asserts that every unsupportable card/section
@@ -163,10 +163,7 @@ def _subspace_projection_mac(shape, ref_group_shapes):
     Crucially, unlike summing the individual MAC values over the group, it makes
     no assumption that the reference twins are orthogonal in the plain inner
     product. That assumption silently fails once an element offset (e.g. a CBAR
-    ``wa``/``wb`` offset) makes the mass matrix non-diagonal: the twins are then
-    mass-orthonormal but acquire a small mutual dot product, and the naive group
-    sum splits above/below 1 (e.g. 1.06 / 0.94) even though both subspaces
-    coincide. The projection is immune to this.
+    ``wa``/``wb`` offset) makes the mass matrix non-diagonal.
 
     Parameters
     ----------
@@ -222,6 +219,9 @@ class NastranCompatBeamBase(unittest.TestCase):
     REF_DIR = None
     STATIC_RTOL = 1e-3
     STATIC_ATOL = 1e-6
+    # Frequencies: loose 5% rtol is intentional — known TACS/Nastran beam
+    # element formulation differences cause up to 3-4% frequency error even
+    # when mode shapes agree very well.
     MODAL_FREQ_RTOL = 0.05
     MAC_THRESHOLD = 0.99
     # Two reference frequencies within this relative tolerance are treated as a
@@ -258,11 +258,9 @@ class NastranCompatBeamBase(unittest.TestCase):
         # (MODAL_NUM_EIGS) to resolve the degenerate bending clusters; reuse the
         # name and shift (sigma) the BDF specified.
         bdfModal = next(iter(cls.fea_modal.createTACSProbsFromBDF().values()))
-        cls.modal_problems = {
-            bdfModal.name: cls.fea_modal.createModalProblem(
-                bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS
-            )
-        }
+        cls.modal_problem = cls.fea_modal.createModalProblem(
+            bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS
+        )
 
     def setUp(self):
         if self.REF_DIR is None or not os.path.isdir(self.REF_DIR):
@@ -332,22 +330,33 @@ class NastranCompatBeamBase(unittest.TestCase):
     def test_static_mz(self):
         self._assert_static("static_mz")
 
-    def test_modal(self):
+    def _solveModal(self):
+        """Solve the modal eigenproblem (once per class) and return aligned
+        TACS/Nastran data for the comparison tests.
+
+        ``test_modal_frequencies`` and ``test_modal_shapes`` each run on a fresh
+        TestCase instance but may share a process; the eigensolve is cached on
+        the class so splitting the checks into two tests does not solve twice.
+
+        Returns
+        -------
+        n_modes : int
+        freqs_actual, freqs_expected : ndarray, shape (n_modes,)
+        shapes_actual, shapes_expected : ndarray, shape (n_modes, n_nodes, 6)
+        """
         freq_path = os.path.join(self.REF_DIR, "modal_frequencies.csv")
         if not os.path.isfile(freq_path):
             raise unittest.SkipTest(f"Reference not found: {freq_path}")
-        prob = next(iter(self.modal_problems.values()))
-        prob.solve()
+        prob = self.modal_problem
+        if not getattr(type(self), "_modalSolved", False):
+            prob.solve()
+            type(self)._modalSolved = True
 
         # The solver is asked for MODAL_NUM_EIGS modes (more than we compare) so
         # degenerate bending pairs converge as a contiguous set; the references
         # only hold the lowest n_modes, so compare just those.
         freqs_expected = np.loadtxt(freq_path, delimiter=",", comments="#").flatten()
         n_modes = len(freqs_expected)
-
-        # Collect frequencies and mode shapes before any assertions so that
-        # debug plots are always generated when DEBUG=True, regardless of
-        # which check fails.
         freqs_actual = np.array(
             [np.sqrt(prob.getVariables(ii)[0]) / (2 * np.pi) for ii in range(n_modes)]
         )
@@ -360,9 +369,24 @@ class NastranCompatBeamBase(unittest.TestCase):
             shapes_actual.append(shape_actual)
             mode_path = os.path.join(self.REF_DIR, f"modal_mode{ii + 1:02d}.csv")
             shapes_expected.append(np.loadtxt(mode_path, delimiter=",", comments="#"))
-        shapes_actual = np.stack(shapes_actual)
-        shapes_expected = np.stack(shapes_expected)
+        return (
+            n_modes,
+            freqs_actual,
+            freqs_expected,
+            np.stack(shapes_actual),
+            np.stack(shapes_expected),
+        )
 
+    def test_modal_frequencies(self):
+        _, freqs_actual, freqs_expected, _, _ = self._solveModal()
+        np.testing.assert_allclose(
+            freqs_actual,
+            freqs_expected,
+            rtol=self.MODAL_FREQ_RTOL,
+        )
+
+    def test_modal_shapes(self):
+        n_modes, _, freqs_expected, shapes_actual, shapes_expected = self._solveModal()
         mac = _compute_mac_matrix(shapes_actual, shapes_expected)
 
         if DEBUG:
@@ -387,16 +411,7 @@ class NastranCompatBeamBase(unittest.TestCase):
                 )
             # Also dump the TACS modal solution (.f5) next to the plots.
             os.makedirs(plot_dir, exist_ok=True)
-            prob.writeSolution(outputDir=plot_dir)
-
-        # Frequencies: loose 5% rtol is intentional — known TACS/Nastran beam
-        # element formulation differences cause up to 3-4% frequency error even
-        # when mode shapes agree very well.
-        np.testing.assert_allclose(
-            freqs_actual,
-            freqs_expected,
-            rtol=self.MODAL_FREQ_RTOL,
-        )
+            self.modal_problem.writeSolution(outputDir=plot_dir)
 
         # MAC, degeneracy-aware. Symmetric circular sections have degenerate
         # bending pairs (two planes at the same frequency); the eigenvector
