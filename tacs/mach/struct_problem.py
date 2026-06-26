@@ -71,6 +71,7 @@ class StructProblem(BaseStructProblem):
         self.ptSetName = None
         self.loadFile = loadFile
         self.constraints = []
+        self.solveFailed = False
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
             raise RuntimeError(
@@ -528,7 +529,7 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.getVariables(u0)
 
         # Solve static problem w/o damping
-        successFlag = self.staticProblem.solve(Fext=self._Fext)
+        self.solveFailed = not self.staticProblem.solve(Fext=self._Fext)
 
         # Compute undamped update
         self.staticProblem.getVariables(self.update)
@@ -564,6 +565,21 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.setLoadScale(loadScale0)
 
         return damp
+
+    def checkSolutionFailure(self, funcs: dict) -> None:
+        """
+        Check whether the last structural solve failed and accumulate into funcs.
+
+        Parameters
+        ----------
+        funcs : dict
+            Dictionary of functions. A ``"fail"`` key is set (or OR-ed) with the
+            failure flag from the most recent call to :meth:`solve`.
+        """
+        if "fail" in funcs:
+            funcs["fail"] = funcs["fail"] or self.solveFailed
+        else:
+            funcs["fail"] = self.solveFailed
 
     @updateDVGeo
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
