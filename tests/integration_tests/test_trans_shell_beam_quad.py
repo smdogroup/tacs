@@ -1,5 +1,6 @@
 import numpy as np
 
+from static_analysis_base_test import getLocalCoords
 from tacs import TACS, elements, constitutive, functions
 from transient_analysis_base_test import TransientTestCase
 
@@ -130,12 +131,8 @@ class ProblemTest(TransientTestCase.TransientTest):
 
         # The nodes have been distributed across processors now
         # Let's find which nodes this processor owns
-        xpts0 = assembler.createNodeVec()
-        assembler.getNodes(xpts0)
-        xpts0_array = xpts0.getArray()
-        # Split node vector into numpy arrays for easier parsing of vectors
-        local_xyz = xpts0_array.reshape(local_num_nodes, 3)
-        local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
+        local_xyz = getLocalCoords(assembler)
+        local_x = local_xyz[:, 0]
 
         # Create impulse force vector
         init_force = force_history[1]

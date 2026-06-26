@@ -129,7 +129,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
             # Set up constitutive model
             plyAngles = np.zeros(1)
-            plyFractions = stiffenerPlyFractions = np.ones(1)
+            plyFractions = np.ones(1)
 
             con = constitutive.BladeStiffenedShellConstitutive(
                 panelPly=ply,

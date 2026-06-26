@@ -13,8 +13,10 @@ class EgadsAim:
     egadsAim.input.Tess_Params = [.25,.01,15]
     """
 
-    def __init__(self, caps_problem, comm, active_procs: list = [0]):
+    def __init__(self, caps_problem, comm, active_procs: list = None):
         self.comm = comm
+        if active_procs is None:
+            active_procs = [0]
         self.active_procs = active_procs
 
         self._dictOptions = None

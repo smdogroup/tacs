@@ -333,7 +333,7 @@ class PanelLengthConstraint(TACSConstraint):
         dvJacVals = []
         coordJacRows = []
         coordJacCols = []
-        for ii in range(self.comm.size):
+        for _ in range(self.comm.size):
             dvJacRows.append([])
             dvJacCols.append([])
             dvJacVals.append([])
@@ -666,7 +666,7 @@ class PanelLengthConstraint(TACSConstraint):
                     )
                     if self.rank == 0:
                         coordJacVals = []
-                        for ii in range(self.comm.size):
+                        for _ in range(self.comm.size):
                             coordJacVals.append([])
                         for ii in range(nCon):
                             numPoints = len(

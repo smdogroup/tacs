@@ -572,7 +572,6 @@ class SparseLamParamFullConstraint(object):
 
             # Values
             V1 = lp[0]
-            V3 = lp[1]
             W1 = lp[2]
             W2 = lp[3]
             W3 = lp[4]

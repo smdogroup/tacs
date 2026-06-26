@@ -337,7 +337,7 @@ class StructProblem(BaseStructProblem):
         if more than 1 pytacs object is used in an optimization
 
         Returns
-        ----------
+        -------
         varName : str
             Name of the design variables used in setDesignVars() dict.
         """

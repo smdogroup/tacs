@@ -75,9 +75,11 @@ class GridForce(Load):
         self,
         caps_load: str,
         name: str = None,
-        direction: List[float] = [0.0, 0.0, 1.0],
+        direction: List[float] = None,
         magnitude: float = 1.0e3,
     ):
+        if direction is None:
+            direction = [0.0, 0.0, 1.0]
         if name is None:
             name = f"GridForce_{caps_load}"
         super(GridForce, self).__init__(

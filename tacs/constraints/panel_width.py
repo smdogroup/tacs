@@ -23,7 +23,7 @@ import numpy as np
 # ==============================================================================
 # Extension modules
 # ==============================================================================
-from .panel_length import *
+from .panel_length import PanelLengthConstraint
 
 
 class PanelWidthConstraint(PanelLengthConstraint):

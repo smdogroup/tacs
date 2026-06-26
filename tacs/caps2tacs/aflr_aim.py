@@ -89,8 +89,8 @@ class AflrAim:
         dictOptions = self._dictOptions
 
         if self.root_proc:
-            for ind, option in enumerate(dictOptions["aflr4AIM"]):
-                self.aim.input[option].value = dictOptions["aflr4AIM"][option]
+            for option, value in dictOptions["aflr4AIM"].items():
+                self.aim.input[option].value = value
 
         return self
 

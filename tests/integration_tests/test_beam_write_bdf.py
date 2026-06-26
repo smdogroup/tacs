@@ -4,6 +4,7 @@ import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions, TACS
+from test_beam_bend_coupling import ProblemTest as PT
 
 """
 This case tests pyTACS's `writeBDF` method for shell elements.
@@ -13,7 +14,7 @@ This should be identical to the original BDF file. We then instantiate a second
 instance of pyTACS from this secondary BDF file and continue the tests with the secondary model.
 This test ensures that `writeBDF` generates a consistent file based on the pyTACS model.
 The test results should be identical to those in test_beam_bend_coupling.py
- 
+
 We test KSDisplacement, StructuralMass, MomentOfInertia, and Compliance functions and sensitivities.
 """
 
@@ -23,8 +24,6 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/beam_model.bdf")
 
 ksweight = 10.0
-
-from test_beam_bend_coupling import ProblemTest as PT
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):

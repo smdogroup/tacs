@@ -33,9 +33,11 @@ class TacsAim:
         comm=None,
         project_name="tacs",
         mesh_morph: bool = False,
-        active_procs: list = [0],
+        active_procs: list = None,
     ):
         self.comm = comm
+        if active_procs is None:
+            active_procs = [0]
         self.active_procs = active_procs
 
         # geometry and design parameters to change the design of the CSM file during an optimization

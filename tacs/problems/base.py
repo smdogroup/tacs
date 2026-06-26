@@ -986,9 +986,7 @@ class TACSProblem(TACSSystem):
 
                             # write any struct derivatives if there are struct derivatives
                             if num_struct_dvs > 0:
-                                for idx, thick_var in enumerate(
-                                    tacsAim.thickness_variables
-                                ):
+                                for thick_var in tacsAim.thickness_variables:
                                     # assumes these are sorted in tacs aim wrapper
                                     hdl.write(f"{thick_var.name}\n")
                                     hdl.write("1\n")

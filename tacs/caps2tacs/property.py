@@ -1,7 +1,8 @@
-__all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
 """
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
+
+__all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
 
 from .materials import Material
 

@@ -76,9 +76,9 @@ inpFile.close()
 
 # Store the data in a format suitable for plotting
 freqindex = 0
-for k in xrange(len(Omegas)):
+for k in range(len(Omegas)):
     freq = []
-    for i in xrange(num_freqs):
+    for i in range(num_freqs):
         line = freqdata[freqindex * (num_freqs + 1) + i + 1]
         entry = line.split()
         freq.append(float(entry[0]))

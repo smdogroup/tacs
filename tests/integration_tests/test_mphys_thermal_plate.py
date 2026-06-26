@@ -74,7 +74,6 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
-            elem_list = []
             model = elements.HeatConduction2D(con)
             basis = elements.LinearQuadBasis()
             elem = elements.Element2D(model, basis)

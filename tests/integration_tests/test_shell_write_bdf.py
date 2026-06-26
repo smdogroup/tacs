@@ -3,6 +3,7 @@ import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
+from test_shell_cylinder_quad import ProblemTest as PT
 
 """
 This case tests pyTACS's `writeBDF` method for shell elements.
@@ -18,8 +19,6 @@ test StructuralMass and Compliance functions and sensitivities
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
-
-from test_shell_cylinder_quad import ProblemTest as PT
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):

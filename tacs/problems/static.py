@@ -15,7 +15,6 @@ import copy
 import os
 import time
 from collections import OrderedDict
-import warnings
 
 import numpy as np
 import pyNastran.bdf as pn
@@ -399,7 +398,7 @@ class StaticProblem(TACSProblem):
         if self.linearSolver is not None:
             # Update tolerances
             if "l2convergence" in name.lower():
-                createVariables = False
+                recreateSolver = False
                 self.linearSolver.setTolerances(
                     self.getOption("L2ConvergenceRel"),
                     self.getOption("L2Convergence"),
@@ -1456,7 +1455,9 @@ class StaticProblem(TACSProblem):
 
         # Update from the BVec values, if the input was a numpy array
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList, strict=True):
+            for xptSensArray, xptSensBVec in zip(
+                xptSensList, xptSensBVecList, strict=True
+            ):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 
@@ -1510,7 +1511,9 @@ class StaticProblem(TACSProblem):
             xptSensBVec.endSetValues()
 
         if isinstance(xptSensList[0], np.ndarray):
-            for xptSensArray, xptSensBVec in zip(xptSensList, xptSensBVecList, strict=True):
+            for xptSensArray, xptSensBVec in zip(
+                xptSensList, xptSensBVecList, strict=True
+            ):
                 # Copy values to numpy array
                 xptSensArray[:] = xptSensBVec.getArray()
 

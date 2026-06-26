@@ -142,7 +142,7 @@ class FlatPlateAnalysis:
 
         _debug = False
         if _debug:
-            for imode, interp_mode in enumerate(nominal_interp_modes):
+            for interp_mode in nominal_interp_modes:
                 interp_mat = new_plate._vec_to_plate_matrix(interp_mode)
                 import matplotlib.pyplot as plt
 
@@ -519,7 +519,10 @@ class FlatPlateAnalysis:
         sigma_n = 1e-4
         sigma_f = 1.0
         L = 0.4
-        _kernel = lambda xp, xq: exp_kernel1(xp, xq, sigma_f=sigma_f, L=L)
+
+        def _kernel(xp, xq):
+            return exp_kernel1(xp, xq, sigma_f=sigma_f, L=L)
+
         K_train = sigma_n**2 * np.eye(num_train) + np.array(
             [
                 [_kernel(X_train[i, :], X_train[j, :]) for i in range(num_train)]

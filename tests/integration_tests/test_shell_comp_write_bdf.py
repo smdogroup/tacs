@@ -3,6 +3,7 @@ import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
+from test_shell_comp_unbalanced import ProblemTest as PT, ksweight
 
 """
 This case tests pyTACS's `writeBDF` method for composite shell elements.
@@ -19,8 +20,6 @@ and sensitivities.
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/comp_plate.bdf")
-
-from test_shell_comp_unbalanced import ProblemTest as PT, ksweight
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):

@@ -74,14 +74,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create case 1 transient problem
         problem = fea_assembler.createTransientProblem("constant_force", 0.0, 10.0, 100)
         timeSteps = problem.getTimeSteps()
-        for step_i, time in enumerate(timeSteps):
+        for step_i in range(len(timeSteps)):
             problem.addLoadToNodes(step_i, 0, f, nastranOrdering=False)
         all_problems.append(problem)
 
         # Create case 2 transient problem
         problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
         g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
-        for step_i, time in enumerate(timeSteps):
+        for step_i in range(len(timeSteps)):
             problem.addInertialLoad(step_i, g)
         all_problems.append(problem)
 

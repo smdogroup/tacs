@@ -701,7 +701,8 @@ class SolverHistory(object):
 
         if not overwrite and name in self._variables:
             warnings.warn(
-                f"Variable '{name}' already defined, set `overwrite=True` to overwrite"
+                f"Variable '{name}' already defined, set `overwrite=True` to overwrite",
+                stacklevel=2,
             )
         else:
             if valueFormat is not None:

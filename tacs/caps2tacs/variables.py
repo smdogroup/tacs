@@ -4,8 +4,8 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 
 __all__ = ["ShapeVariable", "ThicknessVariable"]
 
-from .materials import *
-from .property import *
+from .materials import Isotropic, Material, Orthotropic
+from .property import BaseProperty, CompositeProperty, ShellProperty
 
 
 class ShapeVariable:

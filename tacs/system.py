@@ -80,7 +80,7 @@ class TACSSystem(BaseUI):
         if more than 1 pytacs object is used in an optimization
 
         Returns
-        ----------
+        -------
         varName : str
             Name of the design variables used in setDesignVars() dict.
         """
@@ -117,10 +117,10 @@ class TACSSystem(BaseUI):
             # or array or TACSBVec
             else:
                 self.copyToTACSVec(x, self.x)
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "setDesignVars must be called with either a numpy array, TACS Vec, or dict containing one of the two, as input."
-            )
+            ) from err
 
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
@@ -195,7 +195,7 @@ class TACSSystem(BaseUI):
         Get name for the nodal coordinates in pyOpt.
 
         Returns
-        ----------
+        -------
         coordName : str
             Name of the nodal coordinates used in setNodes() dict.
         """
@@ -231,10 +231,10 @@ class TACSSystem(BaseUI):
             # or array or TACSBVec
             else:
                 self.copyToTACSVec(Xpts, self.Xpts)
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "setNodes must be called with either a numpy array, TACS Vec, or dict containing one of the two, as input."
-            )
+            ) from err
         self.assembler.setNodes(self.Xpts)
 
     def _arrayToNodeVec(self, xptsArray):

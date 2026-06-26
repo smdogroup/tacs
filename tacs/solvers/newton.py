@@ -306,6 +306,12 @@ class NewtonSolver(BaseSolver):
 
         flags = ""
 
+        resNorm = np.inf
+        linearSolveIterations = None
+        linearSolveResNorm = None
+        alpha = None
+        lineSearchIters = None
+
         for iteration in range(MAX_ITERS):
             self._iterationCount = iteration
             prevLinCovergenceRel = linCovergenceRel

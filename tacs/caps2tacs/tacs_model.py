@@ -61,7 +61,7 @@ class TacsModel:
         comm=None,
         mesh="egads",
         tacs_project="tacs",
-        active_procs: list = [0],
+        active_procs: list = None,
         problem_name: str = "capsStruct",
         mesh_morph: bool = False,
         verbosity: int = 0,
@@ -90,6 +90,8 @@ class TacsModel:
         verbosity: int
             0 to suppress print statements to terminal, 1 to allow them.
         """
+        if active_procs is None:
+            active_procs = [0]
 
         assert 0 in active_procs
         caps_problem = None
@@ -266,9 +268,9 @@ class TacsModel:
                         ):
                             changed_design = True
                             if shape_var.value is not None:
-                                self.geometry.despmtr[
-                                    shape_var.name
-                                ].value = shape_var.value
+                                self.geometry.despmtr[shape_var.name].value = (
+                                    shape_var.value
+                                )
                             else:
                                 shape_var.value = self.geometry.despmtr[
                                     shape_var.name
@@ -547,7 +549,9 @@ class TacsModel:
 
             for var in self.variables:
                 # get derivative from one of the processors that has it and broadcast
-                c_deriv_dict = {}  # key is func name, holds derivatives for current variable
+                c_deriv_dict = (
+                    {}
+                )  # key is func name, holds derivatives for current variable
                 if isinstance(var, ThicknessVariable):
                     c_root = self.root_proc_ind
                 elif isinstance(var, ShapeVariable):
