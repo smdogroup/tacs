@@ -110,6 +110,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loadFile</span> <span class="o">=</span> <span class="n">loadFile</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">assembler</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">assembler</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
@@ -593,7 +594,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
 
         <span class="c1"># Solve static problem w/o damping</span>
-        <span class="n">successFlag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">Fext</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">Fext</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="p">)</span>
 
         <span class="c1"># Compute undamped update</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
@@ -629,6 +630,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="n">loadScale0</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">damp</span></div>
+
+
+<div class="viewcode-block" id="StructProblem.checkSolutionFailure">
+<a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.checkSolutionFailure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">checkSolutionFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether the last structural solve failed and accumulate into funcs.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        funcs : dict</span>
+<span class="sd">            Dictionary of functions. A ``&quot;fail&quot;`` key is set (or OR-ed) with the</span>
+<span class="sd">            failure flag from the most recent call to :meth:`solve`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;fail&quot;</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.evalFunctions">
@@ -768,7 +787,6 @@
         <span class="c1"># Compute the DVGeo sensitivities if requested</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">coordName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getCoordName</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">computeTotalJacobian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">conKey</span> <span class="ow">in</span> <span class="n">sens</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">coordName</span> <span class="ow">in</span> <span class="n">sens</span><span class="p">[</span><span class="n">conKey</span><span class="p">]:</span>
                     <span class="c1"># Pop out the constraint sensitivities wrt TACS coords</span>
@@ -778,16 +796,14 @@
                     <span class="k">if</span> <span class="n">total_nnz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="c1"># if so, skip DVGeo sensitivities</span>
                         <span class="k">continue</span>
-                    <span class="c1"># Get the Jacobian</span>
-                    <span class="n">Jacobian</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">JT</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span><span class="p">]</span>
-                    <span class="c1"># Compute the local Jacobian product</span>
-                    <span class="n">dIdx_local</span> <span class="o">=</span> <span class="n">dIdpt</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Jacobian</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
-                    <span class="c1"># Add dvgeo contribution across all procs</span>
-                    <span class="n">dIdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allreduce</span><span class="p">(</span><span class="n">dIdx_local</span><span class="o">.</span><span class="n">toarray</span><span class="p">(),</span> <span class="n">op</span><span class="o">=</span><span class="n">MPI</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
-                    <span class="c1"># Convert to dict</span>
-                    <span class="n">dIdx_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">convertSensitivityToDict</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">dIdx</span><span class="p">))</span>
-                    <span class="c1"># Update sensitivity dict with new DVGeo sensitivities</span>
-                    <span class="n">sens</span><span class="p">[</span><span class="n">conKey</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">dIdx_dict</span><span class="p">)</span>
+
+                    <span class="c1"># pyGeo expects dIdpt to be a 3D array for multiple constraints, can only do this if we make it dense.</span>
+                    <span class="n">dIdpt</span> <span class="o">=</span> <span class="n">dIdpt</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">dIdpt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+                    <span class="n">sens</span><span class="p">[</span><span class="n">conKey</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">totalSensitivity</span><span class="p">(</span>
+                            <span class="n">dIdpt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
 
         <span class="n">fconSens</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sens</span><span class="p">)</span></div>
 

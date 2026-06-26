@@ -412,6 +412,18 @@ forces must already be set.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.checkSolutionFailure">
+<span class="sig-name descname"><span class="pre">checkSolutionFailure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.checkSolutionFailure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.checkSolutionFailure" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether the last structural solve failed and accumulate into funcs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary of functions. A <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> key is set (or OR-ed) with the
+failure flag from the most recent call to <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve" title="tacs.mach.struct_problem.StructProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code></a>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.evalFunctions">
 <span class="sig-name descname"><span class="pre">evalFunctions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evalFuncs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignoreMissing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.evalFunctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.evalFunctions" title="Link to this definition">¶</a></dt>
 <dd><p>Evaluate the current functions</p>
@@ -1106,6 +1118,7 @@ This is typically used to read in loads saved from an aerostructural run.</p>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt"><code class="docutils literal notranslate"><span class="pre">StructProblem.addConstraintsPyOpt()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.getNodes"><code class="docutils literal notranslate"><span class="pre">StructProblem.getNodes()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve"><code class="docutils literal notranslate"><span class="pre">StructProblem.solve()</span></code></a></li>
+<li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.checkSolutionFailure"><code class="docutils literal notranslate"><span class="pre">StructProblem.checkSolutionFailure()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctions"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalFunctions()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalConstraints"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalConstraints()</span></code></a></li>
 <li><a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.evalFunctionsSens"><code class="docutils literal notranslate"><span class="pre">StructProblem.evalFunctionsSens()</span></code></a></li>
