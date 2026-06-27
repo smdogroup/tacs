@@ -281,7 +281,7 @@ class LamParamFullConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> lamParamFullConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> lamParamFullConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if LamParamFullConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12.3, 4.56, 7.89])}
@@ -324,7 +324,7 @@ class LamParamFullConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> lamParamFullConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> lamParamFullConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if LamParamFullConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': {'struct': <Compressed Sparse Row sparse matrix of dtype 'float64' with 8 stored elements and shape (3, 7)>}}
