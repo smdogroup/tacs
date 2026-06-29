@@ -1,0 +1,719 @@
+import contextlib
+import io
+import os
+import sys
+import tempfile
+import unittest
+
+import numpy as np
+from mpi4py import MPI
+from pyNastran.bdf.bdf import BDF
+from pyNastran.bdf.cards.properties.bars import PBARL
+from pyNastran.bdf.cards.properties.beam import PBEAML
+
+from tacs import pyTACS
+from tacs.utilities import Error
+
+"""
+Nastran beam compatibility regression suite.
+
+Compares TACS results against Nastran reference data for every supported beam
+element/property card combination and every supported field on those cards.
+Each (configuration, analysis) pair is its own unit test so a single failure
+identifies exactly which card, feature combination, and analysis is broken.
+
+The 352 positive tests (44 configurations x 8 analyses) self-skip until the
+Nastran reference CSVs have been generated and committed. See the directory
+README and DESIGN.md for the maintainer workflow that produces the references.
+A separate set of negative tests asserts that every unsupportable card/section
+combination raises a clear error; these need no Nastran reference and always
+run.
+
+Set DEBUG = True below to save (a) 6-panel TACS-vs-Nastran comparison plots for
+every static load case, (b) 6-panel per-mode comparison plots for every Nastran
+reference mode, and (c) a MAC heatmap summarising the cross-correlation between
+TACS and Nastran mode shapes. Plots are written to ``<REF_DIR>/debug_plots/``.
+"""
+
+# Set to True to save comparison plots for each test into <REF_DIR>/debug_plots/.
+DEBUG = True
+
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_INPUT_DIR = os.path.join(_BASE_DIR, "input_files", "nastran_beam_compat")
+_BDF_DIR = os.path.join(_INPUT_DIR, "nastran_input_files")
+
+sys.path.insert(0, _INPUT_DIR)
+from cases import iterCases, SUPPORTED_SECTIONS  # noqa: E402
+
+_DOF_LABELS = ("u", "v", "w", "rotx", "roty", "rotz")
+
+if DEBUG:
+    import matplotlib.pyplot as plt
+    import niceplots
+
+    plt.style.use(niceplots.get_style())
+
+
+def _plot_beam_disp_comparison(x, actual, expected, title, output_path):
+    """Save a 6-panel figure comparing TACS vs Nastran solution components along the beam.
+
+    Used for both static displacement fields and modal mode shapes; the caller
+    supplies the figure title.
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    fig, axes = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey="row")
+    for ax, dof_label, act_comp, exp_comp in zip(
+        axes.flatten(), _DOF_LABELS, actual.T, expected.T
+    ):
+        ax.plot(x, act_comp, label="TACS", lw=1.5, clip_on=False)
+        ax.plot(x, exp_comp, "--", label="Nastran", lw=1.5, clip_on=False)
+        ax.set_xlabel("x (m)")
+        ax.set_ylabel(dof_label)
+        ax.legend(fontsize=7)
+        niceplots.adjust_spines(ax)
+    fig.suptitle(title, fontsize=13)
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+def _max_normalize(shape):
+    """Divide by the element with largest |value| so max(|shape|) = 1."""
+    flat = shape.flatten()
+    idx = np.argmax(np.abs(flat))
+    return shape / flat[idx]
+
+
+def _align_mode_sign(reference, candidate):
+    """Flip candidate's sign if its inner product with reference is negative."""
+    if np.dot(reference.flatten(), candidate.flatten()) < 0:
+        return -candidate
+    return candidate
+
+
+def _compute_mac_matrix(shapes_a, shapes_b):
+    """Compute the full n_a x n_b Modal Assurance Criterion matrix.
+
+    Each row/col represents one mode; cell (i, j) is the MAC between
+    shapes_a[i] and shapes_b[j], a scalar in [0, 1] that is 1 for
+    parallel (same-shape) modes and 0 for orthogonal ones.
+
+    Parameters
+    ----------
+    shapes_a, shapes_b : ndarray, shape (n_modes, n_nodes, 6)
+
+    Returns
+    -------
+    mac : ndarray, shape (n_a, n_b)
+    """
+    n_a = shapes_a.shape[0]
+    n_b = shapes_b.shape[0]
+    mac = np.zeros((n_a, n_b))
+    for ii in range(n_a):
+        vec_a = shapes_a[ii].flatten()
+        for jj in range(n_b):
+            vec_b = shapes_b[jj].flatten()
+            mac[ii, jj] = np.dot(vec_a, vec_b) ** 2 / (
+                np.dot(vec_a, vec_a) * np.dot(vec_b, vec_b)
+            )
+    return mac
+
+
+def _degenerate_mode_groups(freqs, rtol):
+    """Cluster ascending-sorted modal frequencies into degenerate groups.
+
+    A new group starts whenever the relative gap to the previous frequency
+    exceeds ``rtol``. Degenerate twins (e.g. the two bending planes of a
+    symmetric section) differ by far less than the spacing between distinct
+    mode families, so they land in the same group.
+
+    Parameters
+    ----------
+    freqs : ndarray, shape (n_modes,)
+    rtol : float
+
+    Returns
+    -------
+    group_of : list[list[int]]
+        For each mode index, the list of mode indices sharing its group.
+    """
+    groups = [[0]]
+    for ii in range(1, len(freqs)):
+        gap = abs(freqs[ii] - freqs[ii - 1])
+        if gap <= rtol * max(abs(freqs[ii]), abs(freqs[ii - 1])):
+            groups[-1].append(ii)
+        else:
+            groups.append([ii])
+    group_of = [None] * len(freqs)
+    for group in groups:
+        for idx in group:
+            group_of[idx] = group
+    return group_of
+
+
+def _subspace_projection_mac(shape, ref_group_shapes):
+    """Fraction of ``shape`` that lies in the span of a reference mode group.
+
+    Returns ``||Q Qᵀ a||² / ||a||²`` where ``a`` is the flattened TACS shape and
+    ``Q`` is an orthonormal basis (via QR) of the flattened reference group
+    shapes. This is the degeneracy-correct generalisation of the diagonal MAC:
+    for a singleton group it reduces exactly to the ordinary MAC value
+    ``mac[ii, ii]``, and for a degenerate group it is the rotation-invariant
+    projection of the TACS shape onto the reference subspace.
+
+    Crucially, unlike summing the individual MAC values over the group, it makes
+    no assumption that the reference twins are orthogonal in the plain inner
+    product. That assumption silently fails once an element offset (e.g. a CBAR
+    ``wa``/``wb`` offset) makes the mass matrix non-diagonal.
+
+    Parameters
+    ----------
+    shape : ndarray, shape (n_nodes, 6)
+    ref_group_shapes : ndarray, shape (n_group, n_nodes, 6)
+
+    Returns
+    -------
+    float
+        Projected MAC in [0, 1]; 1 when ``shape`` lies wholly in the span.
+    """
+    a = shape.flatten()
+    basis = np.stack([s.flatten() for s in ref_group_shapes], axis=1)
+    Q, _ = np.linalg.qr(basis)
+    proj = Q @ (Q.T @ a)
+    return float((proj @ proj) / (a @ a))
+
+
+def _plot_mac_heatmap(mac, title, output_path):
+    """Save an annotated viridis heatmap of an n x n MAC matrix."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    n_rows, n_cols = mac.shape
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.matshow(mac, cmap="viridis", vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    ax.set_xlabel("Nastran mode")
+    ax.set_ylabel("TACS mode")
+    ax.set_xticks(range(n_cols))
+    ax.set_xticklabels([str(jj + 1) for jj in range(n_cols)], fontsize=8)
+    ax.set_yticks(range(n_rows))
+    ax.set_yticklabels([str(ii + 1) for ii in range(n_rows)], fontsize=8)
+    ax.xaxis.set_label_position("bottom")
+    ax.xaxis.tick_bottom()
+    ax.set_title(title, fontsize=11)
+    for ii in range(n_rows):
+        for jj in range(n_cols):
+            ax.text(
+                jj,
+                ii,
+                f"{mac[ii, jj]:.2f}",
+                ha="center",
+                va="center",
+                fontsize=7,
+                color="white" if mac[ii, jj] < 0.5 else "black",
+            )
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+
+class NastranCompatBeamBase(unittest.TestCase):
+    SOL101_BDF = None
+    SOL103_BDF = None
+    REF_DIR = None
+    SECTION = None
+    STATIC_RTOL = 1e-3
+    STATIC_ATOL = 1e-6
+    # Circular TUBE/TUBE2 sections use TACS's Cowper (FSDT) transverse-shear
+    # correction factor k = 2(1+nu)/(4+3nu) ~ 0.53, whereas Nastran's PBARL/PBEAML
+    # TUBE uses the elementary thin-walled-tube value k = 0.5. This is a legitimate
+    # shear-coefficient convention difference (both are textbook values), not a
+    # TACS error: TACS's effective k matches Cowper to 4 significant figures. It
+    # only shows up in the transverse tip-force cases (fy, fz), where shear
+    # flexibility contributes, producing up to ~1.5% deflection difference near
+    # the root (where shear dominates bending). The relaxed tolerance below
+    # accommodates this; axial, torsion, and bending-moment cases are unaffected
+    # and keep the tight default tolerance.
+    SHEAR_CONVENTION_SECTIONS = ("TUBE", "TUBE2")
+    SHEAR_CONVENTION_STATIC_CASES = ("static_fy", "static_fz")
+    SHEAR_CONVENTION_STATIC_RTOL = 2e-2
+    # Frequencies: loose 5% rtol is intentional — known TACS/Nastran beam
+    # element formulation differences cause up to 3-4% frequency error even
+    # when mode shapes agree very well.
+    MODAL_FREQ_RTOL = 0.05
+    # Mode-shape agreement (subspace-projection MAC) threshold. FE-to-FE on the
+    # same mesh is near-1 for the low modes, but the highest resolved bending
+    # pair diverges in shape just as it does in frequency — the worst observed
+    # case is the 4th bending pair at 0.9861 (its frequency is also off by 2.3%).
+    # 0.98 accommodates that tail while staying a strong gate: a genuinely wrong
+    # shape projects far lower (~0.3-0.7).
+    MAC_THRESHOLD = 0.98
+    # Two reference frequencies within this relative tolerance are treated as a
+    # degenerate group for the MAC check (see test_modal). Comfortably larger
+    # than the <1e-4 split of true degenerate twins and far smaller than the
+    # >9% spacing between distinct mode families.
+    MODAL_DEGEN_RTOL = 1e-2
+    # Oversolve the eigenproblem: for these symmetric circular sections the
+    # bending modes are degenerate pairs, and requesting exactly the number of
+    # reference modes can make the eigensolver drop a twin and return a
+    # non-contiguous set, misaligning the index-by-index frequency comparison.
+    # We solve for more modes than we compare (see test_modal).
+    MODAL_NUM_EIGS = 20
+
+    @classmethod
+    def setUpClass(cls):
+        if cls.REF_DIR is None or not os.path.isdir(cls.REF_DIR):
+            # testflo runs each test method as its own case and does not always
+            # propagate a setUpClass skip, so the per-test setUp also guards on
+            # REF_DIR. Bail out of the (expensive) pyTACS build here regardless.
+            return
+        if not os.path.isfile(cls.SOL101_BDF) or not os.path.isfile(cls.SOL103_BDF):
+            return
+        comm = MPI.COMM_WORLD
+        cls.fea_static = pyTACS(cls.SOL101_BDF, comm)
+        cls.fea_static.initialize()
+        cls.static_problems = cls.fea_static.createTACSProbsFromBDF()
+        for prob in cls.static_problems.values():
+            prob.setOption("L2Convergence", 1e-20)
+            prob.setOption("L2ConvergenceRel", 1e-20)
+        cls.fea_modal = pyTACS(cls.SOL103_BDF, comm)
+        cls.fea_modal.initialize()
+        # Recreate the BDF modal problem with a larger eigenvalue count
+        # (MODAL_NUM_EIGS) to resolve the degenerate bending clusters; reuse the
+        # name and shift (sigma) the BDF specified.
+        bdfModal = next(iter(cls.fea_modal.createTACSProbsFromBDF().values()))
+        cls.modal_problem = cls.fea_modal.createModalProblem(
+            bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS
+        )
+
+    def setUp(self):
+        if self.REF_DIR is None or not os.path.isdir(self.REF_DIR):
+            raise unittest.SkipTest(
+                f"Reference CSVs not found at {self.REF_DIR}. "
+                "Run generate_inputs.py -> run_nastran.sh -> extract_nastran_refs.py first."
+            )
+        if not os.path.isfile(self.SOL101_BDF) or not os.path.isfile(self.SOL103_BDF):
+            raise unittest.SkipTest(
+                f"BDF inputs not found in {_BDF_DIR}. Run generate_inputs.py first."
+            )
+
+    def _static_by_name(self, name):
+        for prob in self.static_problems.values():
+            if prob.name == name:
+                return prob
+        raise KeyError(f"No static problem named {name!r}")
+
+    def _solve_and_get_disps(self, name):
+        prob = self._static_by_name(name)
+        prob.solve()
+        u_global = self.fea_static.localToGlobalArray(prob.getVariables())
+        return u_global.reshape(-1, 6)
+
+    def _assert_static(self, name):
+        ref_path = os.path.join(self.REF_DIR, f"{name}.csv")
+        if not os.path.isfile(ref_path):
+            raise unittest.SkipTest(f"Reference not found: {ref_path}")
+        actual = self._solve_and_get_disps(name)
+        expected = np.loadtxt(ref_path, delimiter=",", comments="#")
+        if DEBUG:
+            plot_dir = os.path.join(self.REF_DIR, "debug_plots")
+            x = np.linspace(0, 1, actual.shape[0])
+            stem = os.path.basename(self.REF_DIR)
+            _plot_beam_disp_comparison(
+                x,
+                actual,
+                expected,
+                f"{stem} — {name}",
+                os.path.join(plot_dir, f"{name}.png"),
+            )
+            # Also dump the TACS solution (.f5) next to the plots for inspection.
+            os.makedirs(plot_dir, exist_ok=True)
+            self._static_by_name(name).writeSolution(outputDir=plot_dir)
+        rtol = self.STATIC_RTOL
+        if (
+            self.SECTION in self.SHEAR_CONVENTION_SECTIONS
+            and name in self.SHEAR_CONVENTION_STATIC_CASES
+        ):
+            # Cowper-vs-elementary shear-coefficient convention difference; see
+            # SHEAR_CONVENTION_* on the base class for the full rationale.
+            rtol = self.SHEAR_CONVENTION_STATIC_RTOL
+        np.testing.assert_allclose(
+            actual,
+            expected,
+            rtol=rtol,
+            atol=self.STATIC_ATOL,
+        )
+
+    def test_static_fx(self):
+        self._assert_static("static_fx")
+
+    def test_static_fy(self):
+        self._assert_static("static_fy")
+
+    def test_static_fz(self):
+        self._assert_static("static_fz")
+
+    def test_static_mx(self):
+        self._assert_static("static_mx")
+
+    def test_static_my(self):
+        self._assert_static("static_my")
+
+    def test_static_mz(self):
+        self._assert_static("static_mz")
+
+    def _solveModal(self):
+        """Solve the modal eigenproblem (once per class) and return aligned
+        TACS/Nastran data for the comparison tests.
+
+        ``test_modal_frequencies`` and ``test_modal_shapes`` each run on a fresh
+        TestCase instance but may share a process; the eigensolve is cached on
+        the class so splitting the checks into two tests does not solve twice.
+
+        Returns
+        -------
+        n_modes : int
+            Number of Nastran reference modes (the comparison length).
+        freqs_actual : ndarray, shape (MODAL_NUM_EIGS,)
+            The full oversolved TACS frequency spectrum.
+        freqs_expected : ndarray, shape (n_modes,)
+        shapes_actual : ndarray, shape (MODAL_NUM_EIGS, n_nodes, 6)
+            The full oversolved TACS mode shapes; the modes beyond n_modes carry
+            the upper twins of any degenerate pair truncated by the reference
+            cutoff (see test_modal_shapes).
+        shapes_expected : ndarray, shape (n_modes, n_nodes, 6)
+        """
+        freq_path = os.path.join(self.REF_DIR, "modal_frequencies.csv")
+        if not os.path.isfile(freq_path):
+            raise unittest.SkipTest(f"Reference not found: {freq_path}")
+        prob = self.modal_problem
+        if not getattr(type(self), "_modalSolved", False):
+            prob.solve()
+            type(self)._modalSolved = True
+
+        # The solver is asked for MODAL_NUM_EIGS modes — more than we compare —
+        # so degenerate bending pairs converge as a contiguous set and a pair
+        # that straddles the n_modes reference cutoff still has its upper twin
+        # available (see test_modal_shapes). The references hold only the lowest
+        # n_modes, so the frequency check compares just those.
+        freqs_expected = np.loadtxt(freq_path, delimiter=",", comments="#").flatten()
+        n_modes = len(freqs_expected)
+        num_eigs = self.MODAL_NUM_EIGS
+
+        # TACS side: the full oversolved spectrum (frequencies and shapes).
+        freqs_actual = np.array(
+            [np.sqrt(prob.getVariables(ii)[0]) / (2 * np.pi) for ii in range(num_eigs)]
+        )
+        shapes_actual = []
+        for ii in range(num_eigs):
+            _, shape_local = prob.getVariables(ii)
+            shapes_actual.append(
+                self.fea_modal.localToGlobalArray(shape_local).reshape(-1, 6)
+            )
+
+        # Nastran side: the n_modes reference shapes.
+        shapes_expected = []
+        for ii in range(n_modes):
+            mode_path = os.path.join(self.REF_DIR, f"modal_mode{ii + 1:02d}.csv")
+            shapes_expected.append(np.loadtxt(mode_path, delimiter=",", comments="#"))
+        return (
+            n_modes,
+            freqs_actual,
+            freqs_expected,
+            np.stack(shapes_actual),
+            np.stack(shapes_expected),
+        )
+
+    def test_modal_frequencies(self):
+        n_modes, freqs_actual, freqs_expected, _, _ = self._solveModal()
+        # freqs_actual is the full oversolved spectrum; compare only the lowest
+        # n_modes against the references.
+        np.testing.assert_allclose(
+            freqs_actual[:n_modes],
+            freqs_expected,
+            rtol=self.MODAL_FREQ_RTOL,
+        )
+
+    def test_modal_shapes(self):
+        (
+            n_modes,
+            freqs_actual,
+            _,
+            shapes_actual,
+            shapes_expected,
+        ) = self._solveModal()
+
+        # MAC matrix with all oversolved TACS modes as rows and the n_modes
+        # references as columns. The rows beyond n_modes carry the upper twins of
+        # any degenerate pair truncated by the reference cutoff, which the
+        # reverse swap-guard below needs.
+        mac = _compute_mac_matrix(shapes_actual, shapes_expected)
+
+        # Degenerate groups from the OVERSOLVED TACS spectrum — the complete,
+        # authoritative picture of degeneracy, index-paired to the references by
+        # test_modal_frequencies. A group whose largest index reaches n_modes has
+        # a "truncated twin": its degenerate partner lies above the reference
+        # cutoff. MODAL_DEGEN_RTOL sits between the ~0 twin split and the >9%
+        # family spacing, so the clustering is unambiguous.
+        tacs_groups = _degenerate_mode_groups(freqs_actual, self.MODAL_DEGEN_RTOL)
+
+        if DEBUG:
+            plot_dir = os.path.join(self.REF_DIR, "debug_plots")
+            stem = os.path.basename(self.REF_DIR)
+            # Show the reference columns and the TACS rows up to the last twin.
+            max_row = max(max(tacs_groups[ii]) for ii in range(n_modes)) + 1
+            _plot_mac_heatmap(
+                mac[:max_row],
+                f"{stem} — MAC (TACS rows, Nastran cols)",
+                os.path.join(plot_dir, "mac.png"),
+            )
+            x = np.linspace(0, 1, shapes_actual.shape[1])
+            for ii in range(n_modes):
+                shape_a = _max_normalize(shapes_actual[ii])
+                shape_e = shapes_expected[ii]
+                shape_a = _align_mode_sign(shape_e, shape_a)
+                _plot_beam_disp_comparison(
+                    x,
+                    shape_a,
+                    shape_e,
+                    f"Mode {ii + 1}",
+                    os.path.join(plot_dir, f"modal_mode{ii + 1:02d}.png"),
+                )
+            # Also dump the TACS modal solution (.f5) next to the plots.
+            os.makedirs(plot_dir, exist_ok=True)
+            self.modal_problem.writeSolution(outputDir=plot_dir)
+
+        # MAC, degeneracy- and truncation-aware. Symmetric circular sections have
+        # degenerate bending pairs (two planes at the same frequency); the
+        # eigenvector orientation within such a pair is arbitrary, so TACS and
+        # Nastran can pick different in-plane axes and the individual cross-MACs
+        # split (e.g. 0.74 / 0.26) even though the shapes are identical. We
+        # therefore compare each shape against the SPAN of its degenerate group
+        # via _subspace_projection_mac, which is rotation-invariant within the
+        # group and makes no assumption that the twins are dot-orthogonal — they
+        # are not once an element offset makes the mass matrix non-diagonal.
+        #
+        # For a COMPLETE group we project the TACS shape onto the reference span
+        # (forward) and require the TACS mode's best Nastran match to lie in its
+        # group. For a TRUNCATED-TWIN group the reference span is incomplete (a
+        # degenerate partner sits above the cutoff), so we instead project the
+        # orphaned REFERENCE shape onto the complete oversolved TACS span
+        # (reverse) and apply the mirror-image swap-guard; this is well-posed
+        # precisely because TACS oversolves and holds the whole pair. A
+        # non-degenerate mode is a singleton group and forward projection reduces
+        # to argmax == ii and mac[ii, ii] >= threshold. See docs/adr/0002 and
+        # CONTEXT.md "Modal comparison".
+        checked_refs = set()
+        for ii in range(n_modes):
+            group = tacs_groups[ii]
+            if max(group) < n_modes:
+                # Complete group: forward projection (TACS shape -> ref span).
+                best_match = int(np.argmax(mac[ii]))
+                if best_match not in group:
+                    self.fail(
+                        f"Mode {ii + 1}: best Nastran match is mode "
+                        f"{best_match + 1} (MAC = {mac[ii, best_match]:.3f}), "
+                        f"outside its frequency group {[g + 1 for g in group]}. "
+                        "Modes appear to be swapped — see mac.png in debug_plots."
+                    )
+                proj_mac = _subspace_projection_mac(
+                    shapes_actual[ii], shapes_expected[group]
+                )
+                if proj_mac < self.MAC_THRESHOLD:
+                    self.fail(
+                        f"Mode {ii + 1}: projection onto degenerate group "
+                        f"{[g + 1 for g in group]} = {proj_mac:.4f} < "
+                        f"{self.MAC_THRESHOLD:.4f}. The shape lies outside the "
+                        "reference subspace — see mac.png and modal_mode*.png in "
+                        "debug_plots."
+                    )
+            else:
+                # Truncated twin: reverse projection (ref shape -> complete TACS
+                # span). Handle each orphaned reference in the group once.
+                for jj in (g for g in group if g < n_modes):
+                    if jj in checked_refs:
+                        continue
+                    checked_refs.add(jj)
+                    best_match = int(np.argmax(mac[:, jj]))
+                    if best_match not in group:
+                        self.fail(
+                            f"Reference mode {jj + 1}: best TACS match is mode "
+                            f"{best_match + 1} (MAC = {mac[best_match, jj]:.3f}), "
+                            f"outside its TACS frequency group "
+                            f"{[g + 1 for g in group]}. Modes appear to be "
+                            "swapped — see mac.png in debug_plots."
+                        )
+                    proj_mac = _subspace_projection_mac(
+                        shapes_expected[jj], shapes_actual[group]
+                    )
+                    if proj_mac < self.MAC_THRESHOLD:
+                        self.fail(
+                            f"Reference mode {jj + 1}: projection onto the "
+                            f"complete TACS span of its truncated group "
+                            f"{[g + 1 for g in group]} = {proj_mac:.4f} < "
+                            f"{self.MAC_THRESHOLD:.4f}. The reference shape lies "
+                            "outside the TACS subspace — see mac.png and "
+                            "modal_mode*.png in debug_plots."
+                        )
+
+
+for _element, _prop, _section, _stem, _features in iterCases():
+    _cls = type(
+        f"Test_{_stem}",
+        (NastranCompatBeamBase,),
+        {
+            "SOL101_BDF": os.path.join(_BDF_DIR, f"{_stem}_sol101.bdf"),
+            "SOL103_BDF": os.path.join(_BDF_DIR, f"{_stem}_sol103.bdf"),
+            "REF_DIR": os.path.join(_INPUT_DIR, "nastran_ref_results", _stem),
+            "SECTION": _section,
+            "ACTIVE_FEATURES": _features,
+        },
+    )
+    globals()[_cls.__name__] = _cls
+
+# Remove the abstract base from the module namespace so testflo does not
+# collect its method stubs as a standalone test case.
+del NastranCompatBeamBase
+
+
+# ==============================================================================
+# Negative tests: unsupportable card/section combinations must raise.
+# ==============================================================================
+# These guard against a routing regression that silently starts "supporting" a
+# section for which pyTACS cannot obtain a correct torsion constant J. Each test
+# builds a minimal single-element BDF in memory with pyNastran and asserts that
+# pyTACS.initialize() raises tacs.utilities.Error. The section list is derived
+# from pyNastran's valid_types minus SUPPORTED_SECTIONS, so it tracks pyNastran.
+# See docs/adr/0001-nastran-beam-section-support-bounded-by-torsion-constant.md.
+
+# Minimal beam material; values are irrelevant since the error is raised during
+# constitutive translation, before any material property is used.
+_NEG_E, _NEG_NU, _NEG_RHO = 71.7e9, 0.33, 2810.0
+
+# Valid example dimensions for each unsupported section. PBEAML validates section
+# geometry in its constructor, so generic dims are rejected for many types; these
+# were vetted against that validation (seeded from pyNastran's own test suite).
+# PBARL does not validate geometry, so any correctly-sized dims work there.
+_UNSUPPORTED_SECTION_DIMS = {
+    "BOX": [1.0, 2.0, 0.1, 0.1],
+    "BOX1": [2.0, 2.0, 0.1, 0.1, 0.1, 0.1],
+    "CHAN": [2.0, 2.0, 0.1, 0.1],
+    "CHAN1": [3.0, 3.0, 2.0, 3.0],
+    "CHAN2": [3.0, 3.0, 3.0, 3.0],
+    "CROSS": [2.0, 2.0, 0.1, 0.1],
+    "DBOX": [3.0, 2.0, 1.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
+    "H": [2.0, 2.0, 0.1, 0.1],
+    "HAT": [3.0, 1.0, 3.0, 3.0],
+    "HAT1": [2.0, 2.0, 0.1, 0.1, 0.1],
+    "HEXA": [1.0, 3.0, 3.0],
+    "I": [2.0, 2.0, 0.1, 0.1, 0.1, 0.1],
+    "I1": [2.0, 2.0, 0.1, 0.1],
+    "L": [2.0, 2.0, 0.1, 0.1],
+    "T": [1.0, 2.0, 0.1, 0.2],
+    "T1": [1.0, 2.0, 0.2, 0.1],
+    "T2": [1.0, 2.0, 0.2, 0.1],
+    "Z": [2.0, 2.0, 0.1, 0.1],
+    # Circular sections; used only for the PBEAML-with-offset cases.
+    "ROD": [2.0],
+    "TUBE": [2.0, 1.0],
+    "TUBE2": [2.0, 0.5],
+}
+
+# A shear-centre (WA/WB) offset with non-zero local y and z components, so it
+# projects onto the section axes and trips the offset-handling path.
+_NEG_OFFSET_VEC = [0.0, 0.1, 0.1]
+
+
+def _sectionDims(prop, section):
+    """Return valid dims for an unsupported section, falling back to a generic
+    correctly-sized list for any section not in the vetted table (works for
+    PBARL; a new PBEAML section would surface as a visible test error)."""
+    if section in _UNSUPPORTED_SECTION_DIMS:
+        return list(_UNSUPPORTED_SECTION_DIMS[section])
+    validTypes = PBARL.valid_types if prop == "PBARL" else PBEAML.valid_types
+    numDims = validTypes[section]
+    return [round(0.12 - 0.01 * ii, 4) for ii in range(numDims)]
+
+
+def _writeSingleElementBeamBdf(path, element, prop, section, dims, withOffset):
+    """Write a minimal single-element CBAR/CBEAM + PBARL/PBEAML BDF to ``path``."""
+    model = BDF(debug=False)
+    model.add_grid(1, [0.0, 0.0, 0.0])
+    model.add_grid(2, [1.0, 0.0, 0.0])
+    model.add_mat1(1, _NEG_E, None, _NEG_NU, _NEG_RHO)
+    orientationVec = [0.0, 1.0, 0.0]
+    wa = _NEG_OFFSET_VEC if withOffset else None
+    wb = _NEG_OFFSET_VEC if withOffset else None
+    if prop == "PBARL":
+        model.add_pbarl(10, 1, section, dims)
+        model.add_cbar(100, 10, [1, 2], orientationVec, None, wa=wa, wb=wb)
+    else:
+        model.add_pbeaml(10, 1, section, xxb=[0.0, 1.0], dims=[dims, dims])
+        model.add_cbeam(100, 10, [1, 2], orientationVec, None, wa=wa, wb=wb)
+    model.write_bdf(path)
+
+
+class NastranCompatUnsupportedBase(unittest.TestCase):
+    # Runs on a single process; the in-memory BDF has one element.
+    ELEMENT = None
+    PROP = None
+    SECTION = None
+    WITH_OFFSET = False
+
+    def test_raises(self):
+        dims = _sectionDims(self.PROP, self.SECTION)
+        fd, path = tempfile.mkstemp(suffix=".bdf")
+        os.close(fd)
+        try:
+            _writeSingleElementBeamBdf(
+                path, self.ELEMENT, self.PROP, self.SECTION, dims, self.WITH_OFFSET
+            )
+            # tacs.utilities.Error prints its message rather than storing it on
+            # the exception, so capture stdout to confirm we hit *our* routing
+            # branch (the message names the offending section type).
+            captured = io.StringIO()
+            with self.assertRaises(Error):
+                with contextlib.redirect_stdout(captured):
+                    fea = pyTACS(path, MPI.COMM_WORLD)
+                    fea.initialize()
+            self.assertIn(
+                self.SECTION,
+                captured.getvalue(),
+                msg=f"{self.PROP} {self.SECTION} raised, but the message did not "
+                "name the section — it may be a different error than the "
+                "unsupported-section routing error.",
+            )
+        finally:
+            if os.path.isfile(path):
+                os.remove(path)
+
+
+def _iterUnsupportedCases():
+    """Yield (element, prop, section, withOffset) for every unsupportable combo."""
+    for prop, element, validTypes in (
+        ("PBARL", "CBAR", PBARL.valid_types),
+        ("PBEAML", "CBEAM", PBEAML.valid_types),
+    ):
+        for section in sorted(set(validTypes) - set(SUPPORTED_SECTIONS)):
+            yield element, prop, section, False
+    # Circular sections with a shear-centre offset: supported for PBARL (PBARL.J()
+    # is a correct circular J) but unsupported for PBEAML (PBEAML.J() is None).
+    for section in ("ROD", "TUBE", "TUBE2"):
+        yield "CBEAM", "PBEAML", section, True
+
+
+for _element, _prop, _section, _withOffset in _iterUnsupportedCases():
+    _suffix = f"{_prop.lower()}_{_section.lower()}" + ("_offset" if _withOffset else "")
+    _negName = f"Test_unsupported_{_suffix}"
+    _negCls = type(
+        _negName,
+        (NastranCompatUnsupportedBase,),
+        {
+            "ELEMENT": _element,
+            "PROP": _prop,
+            "SECTION": _section,
+            "WITH_OFFSET": _withOffset,
+        },
+    )
+    globals()[_negName] = _negCls
+
+del NastranCompatUnsupportedBase
+
+if __name__ == "__main__":
+    unittest.main()
