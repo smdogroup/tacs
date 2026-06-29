@@ -171,9 +171,9 @@
                     <span class="c1"># will be inconsistent</span>
                     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">iComp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
                         <span class="k">for</span> <span class="n">jComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span><span class="n">jComp</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span>
-                            <span class="p">)</span> <span class="o">=</span> <span class="kc">False</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span>
+                                <span class="n">jComp</span>
+                            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="c1"># If this component shares an edge with another component</span>
                 <span class="c1"># but the edge ordering is reversed, the normal orientations</span>
                 <span class="c1"># will be consistent</span>
@@ -181,9 +181,9 @@
                 <span class="k">if</span> <span class="n">flippedEdgeKey</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
                     <span class="k">for</span> <span class="n">iComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">edgeKey</span><span class="p">]:</span>
                         <span class="k">for</span> <span class="n">jComp</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">[</span><span class="n">flippedEdgeKey</span><span class="p">]:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span><span class="n">jComp</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span>
-                            <span class="p">)</span> <span class="o">=</span> <span class="kc">True</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">iComp</span><span class="p">][</span>
+                                <span class="n">jComp</span>
+                            <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span><span class="p">[</span><span class="n">jComp</span><span class="p">][</span><span class="n">iComp</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">adjacentOrientationMatch</span> <span class="o">=</span> <span class="kc">None</span>
@@ -411,7 +411,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
-<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraints(funcs, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if VolumeConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_wing&#39;: array([12354.10])}</span>
@@ -455,7 +455,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; volConstraint.evalConstraintsSens(funcsSens, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if VolumeConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_wing&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
@@ -546,7 +546,7 @@
             <span class="p">)</span>
             <span class="c1"># Pull the updated xyz values of each node from each proc</span>
             <span class="n">nodeXYZDict</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">gID</span><span class="p">,</span> <span class="n">lID</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">allNodeIDsGlobal</span><span class="p">,</span> <span class="n">allNodeIDsLocal</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">gID</span><span class="p">,</span> <span class="n">lID</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">allNodeIDsGlobal</span><span class="p">,</span> <span class="n">allNodeIDsLocal</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                 <span class="c1"># Node is owned by this proc, add values to dict</span>
                 <span class="k">if</span> <span class="n">lID</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">nodeXYZDict</span><span class="p">[</span><span class="n">gID</span><span class="p">]</span> <span class="o">=</span> <span class="n">localXpts</span><span class="p">[</span><span class="n">lID</span><span class="p">]</span>

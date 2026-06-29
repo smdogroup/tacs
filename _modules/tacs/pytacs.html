@@ -559,7 +559,10 @@
 
 <span class="sd">            # This will select upper skin components between the</span>
 <span class="sd">            # leading and trailing edge spars and between ribs 1 and 4.</span>
-<span class="sd">            selectCompIDs(include=&quot;U_SKIN&quot;, includeBound=[&quot;LE_SPAR&quot;, &quot;TE_SPAR&quot;, &quot;RIB.01&quot;, &quot;RIB.04&quot;])</span>
+<span class="sd">            selectCompIDs(</span>
+<span class="sd">                include=&quot;U_SKIN&quot;,</span>
+<span class="sd">                includeBound=[&quot;LE_SPAR&quot;, &quot;TE_SPAR&quot;, &quot;RIB.01&quot;, &quot;RIB.04&quot;],</span>
+<span class="sd">            )</span>
 
 <span class="sd">        4. nGroup: The number of groups to divide the found components</span>
 <span class="sd">        into.</span>
@@ -1123,7 +1126,6 @@
                     <span class="n">tNum</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
                     <span class="n">minThickness</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">xlb</span>
                     <span class="n">maxThickness</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">xub</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">label</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="p">[</span><span class="n">tNum</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coeffs</span><span class="p">[</span>
                         <span class="mi">0</span>
                     <span class="p">]</span>
@@ -1207,7 +1209,6 @@
                     <span class="n">tNum</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
                     <span class="n">minThickness</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">xlb</span>
                     <span class="n">maxThickness</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">xub</span>
-                    <span class="n">name</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dvids_ref</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">label</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">scaleList</span><span class="p">[</span><span class="n">tNum</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">elemDict</span><span class="p">[</span><span class="n">propertyID</span><span class="p">][</span><span class="s2">&quot;dvs&quot;</span><span class="p">][</span><span class="s2">&quot;T&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coeffs</span><span class="p">[</span>
                         <span class="mi">0</span>
                     <span class="p">]</span>
@@ -1393,7 +1394,7 @@
     <span class="nd">@postinitialize_method</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getOrigDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        get the original design variables that were specified with</span>
+<span class="sd">        Get the original design variables that were specified with</span>
 <span class="sd">        during assembler creation.</span>
 
 <span class="sd">        Returns</span>
@@ -1410,7 +1411,7 @@
     <span class="nd">@postinitialize_method</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        get the lower/upper bounds for the design variables.</span>
+<span class="sd">        Get the lower/upper bounds for the design variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1913,7 +1914,7 @@
                 <span class="k">if</span> <span class="s2">&quot;DLOAD&quot;</span> <span class="ow">in</span> <span class="n">subCase</span><span class="p">:</span>
                     <span class="n">dloadsID</span> <span class="o">=</span> <span class="n">subCase</span><span class="p">[</span><span class="s2">&quot;DLOAD&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">dloadSet</span><span class="p">,</span> <span class="n">dloadScale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bdfInfo</span><span class="o">.</span><span class="n">get_reduced_dloads</span><span class="p">(</span><span class="n">dloadsID</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">dloadInfo</span><span class="p">,</span> <span class="n">dscale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dloadSet</span><span class="p">,</span> <span class="n">dloadScale</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">dloadInfo</span><span class="p">,</span> <span class="n">dscale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dloadSet</span><span class="p">,</span> <span class="n">dloadScale</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                         <span class="n">timeSteps</span> <span class="o">=</span> <span class="n">problem</span><span class="o">.</span><span class="n">getTimeSteps</span><span class="p">()</span>
                         <span class="k">if</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;TLOAD1&quot;</span><span class="p">,</span> <span class="s2">&quot;TLOAD2&quot;</span><span class="p">]:</span>
                             <span class="k">if</span> <span class="n">dloadInfo</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;TLOAD1&quot;</span><span class="p">:</span>
@@ -1988,7 +1989,7 @@
 <span class="sd">            Scale factor for time, by default 1.0</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Make sure problems is in a list</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="s2">&quot;__iter__&quot;</span><span class="p">):</span>
             <span class="n">problems</span> <span class="o">=</span> <span class="p">[</span><span class="n">problems</span><span class="p">]</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">problems</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">problems</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">problems</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -2367,7 +2368,7 @@
 <span class="sd">            Class-specific options to pass to PanelLengthConstraint instance (case-insensitive).</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.PanelLengthConstraint</span>
 <span class="sd">            PanelLengthConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2400,7 +2401,7 @@
 <span class="sd">            Class-specific options to pass to PanelWidthConstraint instance (case-insensitive).</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.{PanelWidthConstraint}</span>
 <span class="sd">            PanelWidthConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2433,7 +2434,7 @@
 <span class="sd">            Class-specific options to pass to StiffenerLengthConstraint instance (case-insensitive).</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        constraint : tacs.constraints.StiffenerLengthConstraint</span>
 <span class="sd">            StiffenerLengthConstraint object used for calculating constraints.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -2544,7 +2545,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_createOutputGroups</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Automatically determine how to split out the output file</span>
-<span class="sd">        for easier viewing&quot;&quot;&quot;</span>
+<span class="sd">        for easier viewing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fam</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">):</span>
@@ -2607,7 +2609,8 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_getCompIDs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="o">*</span><span class="n">inList</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal method to return the component IDs mathing</span>
-<span class="sd">        information in inList&quot;&quot;&quot;</span>
+<span class="sd">        information in inList</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># First recursively flatten the inList in case it was nested:</span>
         <span class="n">inList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">inList</span><span class="p">)</span>

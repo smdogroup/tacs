@@ -356,6 +356,12 @@
 
         <span class="n">flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
 
+        <span class="n">resNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">linearSolveIterations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">linearSolveResNorm</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">lineSearchIters</span> <span class="o">=</span> <span class="kc">None</span>
+
         <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_ITERS</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_iterationCount</span> <span class="o">=</span> <span class="n">iteration</span>
             <span class="n">prevLinCovergenceRel</span> <span class="o">=</span> <span class="n">linCovergenceRel</span>
@@ -505,7 +511,7 @@
             <span class="n">uNorm</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">PRINT_LINESEARCH_ITERS</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Line search iter </span><span class="si">{</span><span class="p">(</span><span class="n">iteration</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: alpha = </span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, f/f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">fNew</span><span class="o">/</span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Line search iter </span><span class="si">{</span><span class="p">(</span><span class="n">iteration</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: alpha = </span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, f/f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">fNew</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
             <span class="n">u</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">)</span>
             <span class="n">fReduction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fNew</span> <span class="o">/</span> <span class="n">f0</span><span class="p">)</span>

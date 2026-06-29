@@ -299,7 +299,7 @@
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        numEigs : int</span>
 <span class="sd">            Number of eigenvalues.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -337,7 +337,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
 <span class="sd">        &gt;&gt;&gt; bucklingProblem.solve()</span>
-<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctions(funcs, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctions(funcs, &quot;eigsm.0&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:12354.10}</span>
@@ -397,7 +397,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctionsSens(funcsSens, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; bucklingProblem.evalFunctionsSens(funcsSens, &quot;eigsm.0&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if bucklingProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
@@ -471,7 +471,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -486,7 +485,6 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
@@ -517,7 +515,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        nodeIDs : list[int]</span>
 <span class="sd">            The nodes IDs with added loads.</span>
 
@@ -531,7 +528,6 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
@@ -570,7 +566,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        Fapplied : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
 
@@ -588,7 +583,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -616,7 +610,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        elemIDs : list[int]</span>
 <span class="sd">            The global element ID numbers for which to apply the traction.</span>
 
@@ -648,7 +641,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -676,7 +668,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        elemIDs : list[int]</span>
 <span class="sd">            The global element ID numbers for which to apply the pressure.</span>
 
@@ -723,7 +714,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        omegaVector : numpy.ndarray</span>
 <span class="sd">            Rotational velocity vector (rad/s) used to define centrifugal load.</span>
 
@@ -746,7 +736,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        loadID : int</span>
 <span class="sd">            Load identification number of load set in BDF file user wishes to add to problem.</span>
 
@@ -895,7 +884,7 @@
 <span class="sd">            Place eigenvector for mode into this array (optional).</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        --------</span>
+<span class="sd">        -------</span>
 <span class="sd">        eigVal: float</span>
 <span class="sd">            Eigenvalue for mode corresponds to buckling load factor</span>
 
@@ -946,7 +935,7 @@
         <span class="c1"># Set problem vars to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">xptSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">xptSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">xptSensList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xptSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="n">xptSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToNodeVec</span><span class="p">(</span><span class="n">xptSens</span><span class="p">)</span>
@@ -986,7 +975,7 @@
         <span class="c1"># Set problem vars to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dvSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">dvSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">dvSensList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="n">dvSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToDesignVec</span><span class="p">(</span><span class="n">dvSens</span><span class="p">)</span>
@@ -1023,7 +1012,7 @@
         <span class="c1"># Set problem vars to assembler</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">svSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">svSens</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">svSensList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="c1"># Create a tacs BVec copy for the operation if the output is a numpy array</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svSens</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                 <span class="n">svSensBVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_arrayToVec</span><span class="p">(</span><span class="n">svSens</span><span class="p">)</span>

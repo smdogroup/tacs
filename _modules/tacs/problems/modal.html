@@ -285,7 +285,7 @@
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        numEigs : int</span>
 <span class="sd">            Number of eigenvalues.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -323,7 +323,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
 <span class="sd">        &gt;&gt;&gt; modalProblem.solve()</span>
-<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctions(funcs, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctions(funcs, &quot;eigsm.0&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:12354.10}</span>
@@ -383,7 +383,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctionsSens(funcsSens, &#39;eigsm.0&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctionsSens(funcsSens, &quot;eigsm.0&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
@@ -508,7 +508,7 @@
 <span class="sd">            Place eigenvector for mode into this array (optional).</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        --------</span>
+<span class="sd">        -------</span>
 <span class="sd">        eigVal: float</span>
 <span class="sd">            Eigenvalue for mode corresponds to square of eigenfrequency (rad^2/s^2)</span>
 

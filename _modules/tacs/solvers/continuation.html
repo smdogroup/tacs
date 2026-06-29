@@ -434,7 +434,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">innerSolver</span><span class="o">.</span><span class="n">setConvergenceTolerance</span><span class="p">(</span><span class="n">absTol</span><span class="o">=</span><span class="n">atol</span><span class="p">,</span> <span class="n">relTol</span><span class="o">=</span><span class="n">rtol</span><span class="p">)</span>
 
             <span class="c1"># Before calling the inner solver we need to create a callback function so that we can store data in this solver&#39;s history file at every iteration of the inner solver</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">continuationcallBack</span><span class="p">(</span><span class="n">solver</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">continuationcallBack</span><span class="p">(</span>
+                <span class="n">solver</span><span class="p">,</span>
+                <span class="n">u</span><span class="p">,</span>
+                <span class="n">res</span><span class="p">,</span>
+                <span class="n">monitorVars</span><span class="p">,</span>
+                <span class="n">increment</span><span class="o">=</span><span class="n">increment</span><span class="p">,</span>
+                <span class="n">currentLambda</span><span class="o">=</span><span class="n">currentLambda</span><span class="p">,</span>
+            <span class="p">):</span>
                 <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;SubIter&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solver</span><span class="o">.</span><span class="n">iterationCount</span>
                 <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Increment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">increment</span>
                 <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lambda&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">currentLambda</span>

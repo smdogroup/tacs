@@ -286,7 +286,7 @@
 <a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.externalClearUpToDate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">externalClearUpToDate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        clear UpToDate by FUNtoFEM which sets variables into</span>
+<span class="sd">        Clear UpToDate by FUNtoFEM which sets variables into</span>
 <span class="sd">        TACS through a different interface</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintsUpToDate</span><span class="p">:</span>
@@ -316,7 +316,7 @@
 <a class="viewcode-back" href="../../../pytacs/panel_length.html#tacs.constraints.PanelLengthConstraint.computeRefAxis">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        remove the panelNormal from the refAxis</span>
+<span class="sd">        Remove the panelNormal from the refAxis</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -386,7 +386,7 @@
         <span class="n">dvJacVals</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">coordJacRows</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">coordJacCols</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
             <span class="n">dvJacRows</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
             <span class="n">dvJacCols</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
             <span class="n">dvJacVals</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
@@ -532,7 +532,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; conBounds = {}</span>
-<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintBounds(conBounds, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintBounds(conBounds, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; conBounds</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: (array([-1e20]), array([1e20]))}</span>
@@ -566,7 +566,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; conSizes = {}</span>
-<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintSizes(conSizes, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; tacsConstraint.getConstraintSizes(conSizes, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funconSizescs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: 10}</span>
@@ -603,7 +603,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
-<span class="sd">        &gt;&gt;&gt; plConstraint.evalConstraints(funcs, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; plConstraint.evalConstraints(funcs, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if PanelLengthConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([1.325, 2.1983645, 3.1415926, ...])}</span>
@@ -692,7 +692,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &#39;LE_SPAR&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &quot;LE_SPAR&quot;)</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
@@ -731,7 +731,7 @@
                     <span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">coordJacVals</span> <span class="o">=</span> <span class="p">[]</span>
-                        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span><span class="p">):</span>
                             <span class="n">coordJacVals</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
                         <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nCon</span><span class="p">):</span>
                             <span class="n">numPoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span>
@@ -782,7 +782,7 @@
 <span class="sd">            List of compIDs to find boundaries of.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        --------</span>
+<span class="sd">        -------</span>
 <span class="sd">        dict[int, list[int]]</span>
 <span class="sd">            Dictionary where dict[compID] = sorted list of nodeIDs on the</span>
 <span class="sd">            boundary of the component</span>

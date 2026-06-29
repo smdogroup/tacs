@@ -52,7 +52,6 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pyNastran.bdf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pn</span>
@@ -275,8 +274,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">nonlinearSolver</span><span class="o">.</span><span class="n">setCallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nonlinearCallback</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                    <span class="s2">&quot;Unknown nonlinearSolver option. Valid options are &quot;</span>
-                    <span class="s2">&quot;&#39;Continuation&#39;&quot;</span>
+                    <span class="s2">&quot;Unknown nonlinearSolver option. Valid options are &#39;Continuation&#39;&quot;</span>
                 <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -390,7 +388,7 @@
         <span class="c1">#        opt(&#39;nRestarts&#39;), opt(&#39;flexible&#39;))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                <span class="s2">&quot;Unknown linearSolver option. Valid options are &quot;</span> <span class="s2">&quot;&#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span>
+                <span class="s2">&quot;Unknown linearSolver option. Valid options are &#39;GMRES&#39; or &#39;GCROT&#39;&quot;</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
@@ -441,7 +439,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Update tolerances</span>
             <span class="k">if</span> <span class="s2">&quot;l2convergence&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-                <span class="n">createVariables</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">recreateSolver</span> <span class="o">=</span> <span class="kc">False</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">),</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">),</span>
@@ -607,7 +605,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -622,7 +619,6 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
@@ -653,7 +649,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        nodeIDs : list[int]</span>
 <span class="sd">            The nodes IDs with added loads.</span>
 
@@ -667,7 +662,6 @@
 
 <span class="sd">        Notes</span>
 <span class="sd">        -----</span>
-
 <span class="sd">        The units of the entries of the &#39;force&#39; vector F are not</span>
 <span class="sd">        necessarily physical forces and their interpretation depends</span>
 <span class="sd">        on the physics problem being solved and the dofs included</span>
@@ -706,7 +700,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        Fapplied : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Distributed array containing loads to applied to RHS of the problem.</span>
 
@@ -724,7 +717,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -752,7 +744,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        elemIDs : list[int]</span>
 <span class="sd">            The global element ID numbers for which to apply the traction.</span>
 
@@ -784,7 +775,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        compIDs : list[int] or int</span>
 <span class="sd">            The components with added loads. Use pyTACS selectCompIDs method</span>
 <span class="sd">            to determine this.</span>
@@ -812,7 +802,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        elemIDs : list[int]</span>
 <span class="sd">            The global element ID numbers for which to apply the pressure.</span>
 
@@ -859,7 +848,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        omegaVector : numpy.ndarray</span>
 <span class="sd">            Rotational velocity vector (rad/s) used to define centrifugal load.</span>
 
@@ -882,7 +870,6 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-
 <span class="sd">        loadID : int</span>
 <span class="sd">            Load identification number of load set in BDF file user wishes to add to problem.</span>
 
@@ -1180,7 +1167,7 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
 <span class="sd">        &gt;&gt;&gt; staticProblem.solve()</span>
-<span class="sd">        &gt;&gt;&gt; staticProblem.evalFunctions(funcs, [&#39;mass&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; staticProblem.evalFunctions(funcs, [&quot;mass&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;cl_mass&#39;:12354.10}</span>
@@ -1275,7 +1262,7 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; staticProblem.evalFunctionsSens(funcsSens, [&#39;mass&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; staticProblem.evalFunctionsSens(funcsSens, [&quot;mass&quot;])</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
 <span class="sd">        &gt;&gt;&gt; # Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
 <span class="sd">        &gt;&gt;&gt; # {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
@@ -1299,7 +1286,7 @@
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                    <span class="s2">&quot;Supplied function has not been added &quot;</span> <span class="s2">&quot;using addFunction()&quot;</span>
+                    <span class="s2">&quot;Supplied function has not been added using addFunction()&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Populate the lists with the tacs bvecs</span>
@@ -1430,7 +1417,7 @@
 
         <span class="c1"># Update from the BVec values, if the input was a numpy array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">svSensList</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">svSensArray</span><span class="p">,</span> <span class="n">svSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">svSensList</span><span class="p">,</span> <span class="n">svSensBVecList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">svSensArray</span><span class="p">,</span> <span class="n">svSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">svSensList</span><span class="p">,</span> <span class="n">svSensBVecList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                 <span class="n">svSensArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">svSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
 
@@ -1477,7 +1464,7 @@
 
         <span class="c1"># Update the BVec values, if the input was a numpy array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">dvSensArray</span><span class="p">,</span> <span class="n">dvSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">,</span> <span class="n">dvSensBVecList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">dvSensArray</span><span class="p">,</span> <span class="n">dvSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">,</span> <span class="n">dvSensBVecList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                 <span class="c1"># Copy values to numpy array</span>
                 <span class="n">dvSensArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
@@ -1533,7 +1520,7 @@
 
         <span class="c1"># Update the BVec values, if the input was a numpy array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">dvSensArray</span><span class="p">,</span> <span class="n">dvSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">,</span> <span class="n">dvSensBVecList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">dvSensArray</span><span class="p">,</span> <span class="n">dvSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dvSensList</span><span class="p">,</span> <span class="n">dvSensBVecList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
                 <span class="c1"># Copy values to numpy array</span>
                 <span class="n">dvSensArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dvSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
@@ -1581,7 +1568,9 @@
 
         <span class="c1"># Update from the BVec values, if the input was a numpy array</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xptSensList</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">xptSensArray</span><span class="p">,</span> <span class="n">xptSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xptSensList</span><span class="p">,</span> <span class="n">xptSensBVecList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">xptSensArray</span><span class="p">,</span> <span class="n">xptSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">xptSensList</span><span class="p">,</span> <span class="n">xptSensBVecList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">):</span>
                 <span class="c1"># Copy values to numpy array</span>
                 <span class="n">xptSensArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
@@ -1638,7 +1627,9 @@
             <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">endSetValues</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xptSensList</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">xptSensArray</span><span class="p">,</span> <span class="n">xptSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">xptSensList</span><span class="p">,</span> <span class="n">xptSensBVecList</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">xptSensArray</span><span class="p">,</span> <span class="n">xptSensBVec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">xptSensList</span><span class="p">,</span> <span class="n">xptSensBVecList</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">):</span>
                 <span class="c1"># Copy values to numpy array</span>
                 <span class="n">xptSensArray</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">xptSensBVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span></div>
 
@@ -1915,7 +1906,7 @@
 <span class="sd">            Vector to place current state variables into (optional)</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ----------</span>
+<span class="sd">        -------</span>
 <span class="sd">        states : numpy.ndarray</span>
 <span class="sd">            current state vector</span>
 <span class="sd">        &quot;&quot;&quot;</span>

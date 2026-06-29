@@ -56,12 +56,11 @@
 <span class="c1"># External Python modules</span>
 <span class="c1"># ==============================================================================</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Extension modules</span>
 <span class="c1"># ==============================================================================</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.panel_length</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.panel_length</span><span class="w"> </span><span class="kn">import</span> <span class="n">PanelLengthConstraint</span>
 
 
 <div class="viewcode-block" id="PanelWidthConstraint">
@@ -109,7 +108,7 @@
 <a class="viewcode-back" href="../../../pytacs/panel_width.html#tacs.constraints.PanelWidthConstraint.computeRefAxis">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        remove the panelNormal from the refAxis</span>
+<span class="sd">        Remove the panelNormal from the refAxis</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
