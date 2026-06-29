@@ -6,8 +6,6 @@ Caps to TACS example
 
 from tacs import caps2tacs
 from mpi4py import MPI
-import numpy as np
-import matplotlib.pyplot as plt
 
 # run a steady elastic structural analysis in TACS using the tacsAIM wrapper caps2tacs submodule
 # -------------------------------------------------------------------------------------------------

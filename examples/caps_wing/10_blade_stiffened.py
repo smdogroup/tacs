@@ -6,10 +6,8 @@ Based off of Alasdair Christison Gray's Mach wing blade stiffened example in TAC
     Can only do analysis in caps2tacs module in TACS need FUNtoFEM + casp2tacs to perform full optimization
 """
 
-from tacs import caps2tacs
-import openmdao.api as om
+from tacs import caps2tacs, TACS
 from mpi4py import MPI
-import numpy as np
 
 from _blade_callback import blade_elemCallBack
 
@@ -30,9 +28,7 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
     global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
-).register_to(
-    tacs_model
-)
+).register_to(tacs_model)
 tacs_aim = tacs_model.tacs_aim
 
 # setup the thickness design variables + automatic shell properties

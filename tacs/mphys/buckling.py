@@ -1,9 +1,8 @@
 import numpy as np
+import openmdao.api as om
 from mphys.core import MPhysVariables
 
 StructVars = MPhysVariables.Structures
-
-import openmdao.api as om
 
 
 class TacsBuckling(om.ExplicitComponent):

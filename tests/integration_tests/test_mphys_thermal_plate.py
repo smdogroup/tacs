@@ -11,8 +11,8 @@ from tacs import elements, constitutive, functions
 
 """
 This is a simple 1m by 2m plate made up of four quad thermal elements.
-The plate is thermally loaded under a unit heat flow, 
-"q_conduct", applied on on every node. The mass, AverageTemperature, and KSTemperature 
+The plate is thermally loaded under a unit heat flow,
+"q_conduct", applied on on every node. The mass, AverageTemperature, and KSTemperature
 of the plate are evaluated as outputs and have their partial and total sensitivities checked.
 """
 
@@ -49,7 +49,7 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
         """
 
         # Overwrite default tolerances
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-6
             self.dh = 1e-50
         else:
@@ -74,7 +74,6 @@ class ProblemTest(OpenMDAOTestCase.OpenMDAOTest):
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
-            elem_list = []
             model = elements.HeatConduction2D(con)
             basis = elements.LinearQuadBasis()
             elem = elements.Element2D(model, basis)

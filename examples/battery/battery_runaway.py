@@ -1,10 +1,9 @@
 import os
 from pprint import pprint
 
-import numpy as np
 from mpi4py import MPI
 
-from tacs import functions, constitutive, elements, TACS, pyTACS
+from tacs import functions, constitutive, elements, pyTACS
 
 """
 This example demonstrates transient heating of a battery pack with one cell undergoing thermal runaway.

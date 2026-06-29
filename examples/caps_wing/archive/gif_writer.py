@@ -1,4 +1,5 @@
-import imageio, os
+import imageio
+import os
 
 
 class GifWriter:
@@ -11,7 +12,7 @@ class GifWriter:
 
     def __call__(self, gif_filename: str, path: str):
         """
-        call on current path to create gif of given filename
+        Call on current path to create gif of given filename
         """
         gif_filepath = os.path.join(path, gif_filename)
         with imageio.get_writer(gif_filepath, mode="I", fps=self._fps) as writer:

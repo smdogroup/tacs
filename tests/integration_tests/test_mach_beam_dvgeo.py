@@ -12,7 +12,6 @@ import os
 import shutil
 import tempfile
 import numpy as np
-from mpi4py import MPI
 import unittest
 
 import pyNastran.bdf as pn

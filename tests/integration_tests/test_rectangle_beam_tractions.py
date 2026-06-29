@@ -12,7 +12,7 @@ The cross-section is a solid rectangle with the following properties:
     w = 0.1
     t = 0.05
 We apply two load cases: a distributed gravity and distributed traction case.
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
 We also apply a constraint on the difference between the width and thickness dvs of the cross-section.
 """

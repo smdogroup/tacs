@@ -1,6 +1,6 @@
 import numpy as np
 
-from static_analysis_base_test import StaticTestCase
+from static_analysis_base_test import StaticTestCase, getLocalCoords
 from tacs import TACS, elements, constitutive, functions
 
 """
@@ -52,7 +52,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         """
 
         # Overwrite default tolerances from base class
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-11
             self.atol = 1e-8
             self.dh = 1e-50
@@ -116,7 +116,9 @@ class ProblemTest(StaticTestCase.StaticTest):
         conn = np.zeros(4 * num_elements, dtype=np.intc)
 
         ptr[0] = 0
-        for k, elem in zip(range(num_elements), range(first_elem, last_elem)):
+        for k, elem in zip(
+            range(num_elements), range(first_elem, last_elem), strict=True
+        ):
             # Back out the i, j coordinates from the corresponding
             # element number
             i = elem % nx
@@ -197,7 +199,7 @@ class ProblemTest(StaticTestCase.StaticTest):
         # Get the local node locations
         Xpts = X.getArray()
         for k, node in zip(
-            range(0, 3 * num_owned_nodes, 3), range(first_node, last_node)
+            range(0, 3 * num_owned_nodes, 3), range(first_node, last_node), strict=True
         ):
             i = node % (nx + 1)
             j = node // (nx + 1)
@@ -224,12 +226,8 @@ class ProblemTest(StaticTestCase.StaticTest):
 
         # The nodes have been distributed across processors now
         # Let's find which nodes this processor owns
-        xpts0 = assembler.createNodeVec()
-        assembler.getNodes(xpts0)
-        xpts0_array = xpts0.getArray()
-        # Split node vector into numpy arrays for easier parsing of vectors
-        local_xyz = xpts0_array.reshape(local_num_nodes, 3)
-        local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
+        local_xyz = getLocalCoords(assembler)
+        local_x = local_xyz[:, 0]
 
         # Set all components of the vector to 1.0 and apply boundary
         # conditions

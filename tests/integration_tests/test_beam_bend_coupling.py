@@ -12,8 +12,8 @@ The cross-sectional properties of the beam are as follows:
     Iy = 0.3
     J = 0.4
     Iyz = -0.1
-Because Iyz =/= 0.0, we expect some coupling to show up in y and z bending. 
-We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia, 
+Because Iyz =/= 0.0, we expect some coupling to show up in y and z bending.
+We apply apply various tip loads test KSDisplacement, StructuralMass, MomentOfInertia,
 and Compliance functions and sensitivities.
 """
 

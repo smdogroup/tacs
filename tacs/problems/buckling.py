@@ -252,7 +252,7 @@ class BucklingProblem(TACSProblem):
         Get the number of eigenvalues requested from solver for this problem.
 
         Returns
-        ----------
+        -------
         numEigs : int
             Number of eigenvalues.
         """
@@ -284,7 +284,7 @@ class BucklingProblem(TACSProblem):
         --------
         >>> funcs = {}
         >>> bucklingProblem.solve()
-        >>> bucklingProblem.evalFunctions(funcs, 'eigsm.0')
+        >>> bucklingProblem.evalFunctions(funcs, "eigsm.0")
         >>> funcs
         >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':12354.10}
@@ -341,7 +341,7 @@ class BucklingProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> bucklingProblem.evalFunctionsSens(funcsSens, 'eigsm.0')
+        >>> bucklingProblem.evalFunctionsSens(funcsSens, "eigsm.0")
         >>> funcsSens
         >>> # Result will look like (if bucklingProblem has name of 'c1'):
         >>> # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
@@ -412,7 +412,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -427,7 +426,6 @@ class BucklingProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -455,7 +453,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         nodeIDs : list[int]
             The nodes IDs with added loads.
 
@@ -469,7 +466,6 @@ class BucklingProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -505,7 +501,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
@@ -520,7 +515,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -545,7 +539,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the traction.
 
@@ -574,7 +567,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         compIDs : list[int] or int
             The components with added loads. Use pyTACS selectCompIDs method
             to determine this.
@@ -599,7 +591,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         elemIDs : list[int]
             The global element ID numbers for which to apply the pressure.
 
@@ -640,7 +631,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         omegaVector : numpy.ndarray
             Rotational velocity vector (rad/s) used to define centrifugal load.
 
@@ -660,7 +650,6 @@ class BucklingProblem(TACSProblem):
 
         Parameters
         ----------
-
         loadID : int
             Load identification number of load set in BDF file user wishes to add to problem.
 
@@ -800,7 +789,7 @@ class BucklingProblem(TACSProblem):
             Place eigenvector for mode into this array (optional).
 
         Returns
-        --------
+        -------
         eigVal: float
             Eigenvalue for mode corresponds to buckling load factor
 
@@ -845,7 +834,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, xptSens in zip(indices, xptSensList):
+        for index, xptSens in zip(indices, xptSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(xptSens, np.ndarray):
                 xptSensBVec = self._arrayToNodeVec(xptSens)
@@ -882,7 +871,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, dvSens in zip(indices, dvSensList):
+        for index, dvSens in zip(indices, dvSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(dvSens, np.ndarray):
                 dvSensBVec = self._arrayToDesignVec(dvSens)
@@ -916,7 +905,7 @@ class BucklingProblem(TACSProblem):
         # Set problem vars to assembler
         self._updateAssemblerVars()
 
-        for index, svSens in zip(indices, svSensList):
+        for index, svSens in zip(indices, svSensList, strict=True):
             # Create a tacs BVec copy for the operation if the output is a numpy array
             if isinstance(svSens, np.ndarray):
                 svSensBVec = self._arrayToVec(svSens)

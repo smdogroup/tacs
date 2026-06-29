@@ -22,7 +22,6 @@ solver. One can create new functions and append it to the list.
 # Import necessary modules
 # ---------------------------------------------------------------------!
 
-import sys
 import numpy as np
 
 # Import argparse

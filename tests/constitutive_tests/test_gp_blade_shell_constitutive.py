@@ -372,7 +372,7 @@ class GPConstitutiveMLTest(unittest.TestCase):
                         self.assertFalse(fail)
 
     def _constitutive_internal_tests(self):
-        """test all the internal or intermediate tests in C++"""
+        """Test all the internal or intermediate tests in C++"""
         for ply in self.ply_list:
             with self.subTest(ply=ply):
                 con = self.get_con(ply)

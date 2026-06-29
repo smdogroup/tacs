@@ -2,7 +2,8 @@
 boolean kwargs, and the validation errors raised for bad combinations.
 Also covers the plyThickness/ply_thickness kwarg rename and the deprecated
 setUseMaxStrainCriterion / setUseTsaiWuCriterion / setUseModifiedTsaiWuCriterion
-setters."""
+setters.
+"""
 
 import unittest
 import warnings

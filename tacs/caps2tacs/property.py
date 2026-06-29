@@ -1,10 +1,10 @@
-__all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
 """
 Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 """
 
+__all__ = ["BaseProperty", "ShellProperty", "CompositeProperty"]
+
 from .materials import Material
-from typing import TYPE_CHECKING
 
 
 class BaseProperty:
@@ -16,20 +16,20 @@ class BaseProperty:
     @property
     def caps_group(self) -> str:
         """
-        return capsGroup attribute associated with this property
+        Return capsGroup attribute associated with this property
         """
         return self._caps_group
 
     @property
     def dictionary(self) -> dict:
         """
-        return property dictionary, however this is only fully defined in subclasses
+        Return property dictionary, however this is only fully defined in subclasses
         """
         return {}
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this property to TacsAim
+        Cascaded method to register this property to TacsAim
         """
         tacs_aim.register(self)
         return self
@@ -64,7 +64,7 @@ class ShellProperty(BaseProperty):
 
     @classmethod
     def null(cls, caps_group: str, material):
-        """these properties need to be set then through element callback"""
+        """These properties need to be set then through element callback"""
         return cls(
             caps_group=caps_group,
             material=material,
@@ -82,7 +82,7 @@ class ShellProperty(BaseProperty):
     @property
     def dictionary(self) -> dict:
         """
-        return property dictionary to pass into tacsAim
+        Return property dictionary to pass into tacsAim
         """
         return {
             "propertyType": self._property_type,
@@ -94,7 +94,7 @@ class ShellProperty(BaseProperty):
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this ShellProperty to TacsAim
+        Cascaded method to register this ShellProperty to TacsAim
         """
         tacs_aim.register(self)
         return self
@@ -157,7 +157,7 @@ class CompositeProperty(BaseProperty):
 
     @classmethod
     def null(cls, caps_group: str, material):
-        """these properties need to be set then through element callback"""
+        """These properties need to be set then through element callback"""
         return cls.one_ply(
             caps_group=caps_group,
             material=material,
@@ -179,7 +179,7 @@ class CompositeProperty(BaseProperty):
     @property
     def dictionary(self) -> dict:
         """
-        return property dictionary to pass into tacsAim
+        Return property dictionary to pass into tacsAim
         """
         return {
             "propertyType": "Composite",
@@ -195,7 +195,7 @@ class CompositeProperty(BaseProperty):
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this ShellProperty to TacsAim
+        Cascaded method to register this ShellProperty to TacsAim
         """
         tacs_aim.register(self)
         return self

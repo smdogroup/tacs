@@ -26,8 +26,7 @@ def fails_at_version(removalVersion: str):
     --------
     >>> class TestDeprecated(unittest.TestCase):
     ...     @fails_at_version("3.14")
-    ...     def test_old_api_still_warns(self):
-    ...         ...
+    ...     def test_old_api_still_warns(self): ...
     """
     removal = Version(removalVersion)
 

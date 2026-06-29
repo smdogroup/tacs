@@ -3,12 +3,13 @@ import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
+from test_shell_cylinder_quad import ProblemTest as PT
 
 """
 This case tests pyTACS's `writeBDF` method for shell elements.
 We first instantiate pyTACS and structural problems from a provided BDF, as usual.
 Using that instance of pyTACS we then export a BDF file using the `writeBDF` method,
-This should be identical to the original BDF file. We then instantiate a second 
+This should be identical to the original BDF file. We then instantiate a second
 instance of pyTACS from this secondary BDF file and continue the tests with the secondary model.
 This test ensures that `writeBDF` generates a consistent file based on the pyTACS model.
 The test results should be identical to those in test_shell_cylinder_quad.py
@@ -18,8 +19,6 @@ test StructuralMass and Compliance functions and sensitivities
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/cylinder.bdf")
-
-from test_shell_cylinder_quad import ProblemTest as PT
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):

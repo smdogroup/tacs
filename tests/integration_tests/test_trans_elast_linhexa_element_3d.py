@@ -1,5 +1,6 @@
 import numpy as np
 
+from static_analysis_base_test import getLocalCoords
 from tacs import TACS, elements, constitutive, functions
 from transient_analysis_base_test import TransientTestCase
 
@@ -46,7 +47,7 @@ class ProblemTest(TransientTestCase.TransientTest):
         """
 
         # Overwrite default tolerances from base class
-        if dtype == complex:
+        if dtype is complex:
             self.rtol = 1e-11
             self.atol = 1e-8
             self.dh = 1e-50
@@ -141,20 +142,15 @@ class ProblemTest(TransientTestCase.TransientTest):
         Setup user-defined vectors for analysis and fd/cs sensitivity verification
         """
         local_num_nodes = assembler.getNumOwnedNodes()
-        vars_per_node = assembler.getVarsPerNode()
 
         # The nodes have been distributed across processors now
         # Let's find which nodes this processor owns
-        xpts0 = assembler.createNodeVec()
-        assembler.getNodes(xpts0)
-        xpts0_array = xpts0.getArray()
-        # Split node vector into numpy arrays for easier parsing of vectors
-        local_xyz = xpts0_array.reshape(local_num_nodes, 3)
-        local_x, local_y, local_z = local_xyz[:, 0], local_xyz[:, 1], local_xyz[:, 2]
+        local_xyz = getLocalCoords(assembler)
+        local_x = local_xyz[:, 0]
 
         # Loop through the force vector for every time step and set the time-dependent load
         time_history = np.linspace(tinit, tfinal, num_steps + 1)
-        for t, force_vec in zip(time_history, force_history):
+        for t, force_vec in zip(time_history, force_history, strict=True):
             # Create force vector
             f_array = force_vec.getArray()
 

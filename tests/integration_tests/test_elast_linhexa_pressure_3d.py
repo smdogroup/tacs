@@ -7,7 +7,7 @@ from tacs import pytacs, functions
 This model features two adjacent linear hex elements, clamped on one face.
 Six load conditions are considered: a pressure applied to each of the six faces using PLOAD4 cards.
 This test verifies that pyTACS/TACS applies pressure load on the consistent face based on the PLOAD4 information.
- 
+
 tests KSDisplacement, StructuralMass, and Compliance functions and sensitivities.
 
 We also add a enclosed volume constraint and test it's values/sensitivties.

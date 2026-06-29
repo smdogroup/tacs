@@ -174,7 +174,7 @@ class DVConstraint(TACSConstraint):
             # Get the dvs owned by this element
             globalDvNums = elemObj.getDesignVarNums(elemIndex)
             # Check if each specified dv num is owned by this proc
-            for dvIndex, dvWeight in zip(dvIndices, dvWeights):
+            for dvIndex, dvWeight in zip(dvIndices, dvWeights, strict=True):
                 if globalDvNums[dvIndex] in self.globalToLocalDVNums:
                     globalDVNum = globalDvNums[dvIndex]
                     localDVNum = self.globalToLocalDVNums[globalDVNum]
@@ -208,7 +208,7 @@ class DVConstraint(TACSConstraint):
         Examples
         --------
         >>> funcs = {}
-        >>> dvConstraint.evalConstraints(funcs, 'LE_SPAR')
+        >>> dvConstraint.evalConstraints(funcs, "LE_SPAR")
         >>> funcs
         >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR': array([12354.10])}
@@ -246,7 +246,7 @@ class DVConstraint(TACSConstraint):
         Examples
         --------
         >>> funcsSens = {}
-        >>> dvConstraint.evalConstraintsSens(funcsSens, 'LE_SPAR')
+        >>> dvConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")
         >>> funcsSens
         >>> # Result will look like (if DVConstraint has name of 'c1'):
         >>> # {'c1_LE_SPAR':{'struct':<50x242 sparse matrix of type '<class 'numpy.float64'>' with 100 stored elements in Compressed Sparse Row format>}}

@@ -69,7 +69,7 @@ ax.set_xticks(np.arange(0, 5, 1))
 ax.set_xticklabels([str(int(s)) for s in np.arange(0, 5, 1)])
 
 ax.set_yticks(np.arange(0, 0.7, 0.1))
-ax.set_yticklabels([f"{str(int(s*100))} %" for s in np.arange(0, 0.7, 0.1)])
+ax.set_yticklabels([f"{str(int(s * 100))} %" for s in np.arange(0, 0.7, 0.1)])
 ax.legend(labelcolor="linecolor")
 
 plt.savefig("TipForceZDispValidation.png", bbox_inches="tight")

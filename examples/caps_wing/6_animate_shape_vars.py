@@ -27,9 +27,7 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
     global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
-).register_to(
-    tacs_model
-)
+).register_to(tacs_model)
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 

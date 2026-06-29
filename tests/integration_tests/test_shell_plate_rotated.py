@@ -4,6 +4,7 @@ import numpy as np
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive, functions
+from test_shell_plate_quad import ProblemTest as PT, ksweight
 
 """
 This is the same test cases as `test_shell_plate_quad.py`, but the plate is been rotated
@@ -17,8 +18,6 @@ and Compliance functions and sensitivities
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/slanted_plate.bdf")
-
-from test_shell_plate_quad import ProblemTest as PT, ksweight
 
 # Define rotated coordinate frame axes
 x_prime = np.sqrt(0.5) * np.array([1.0, 0.0, 1.0])

@@ -4,8 +4,8 @@ Written by Sean Engelstad, GT SMDO Lab, 2022-2023
 
 __all__ = ["ShapeVariable", "ThicknessVariable"]
 
-from .materials import *
-from .property import *
+from .materials import Isotropic, Material, Orthotropic
+from .property import BaseProperty, CompositeProperty, ShellProperty
 
 
 class ShapeVariable:
@@ -29,7 +29,7 @@ class ShapeVariable:
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this ShapeVariable to TacsAim
+        Cascaded method to register this ShapeVariable to TacsAim
         """
         tacs_aim.register(self)
         return self
@@ -86,7 +86,7 @@ class ThicknessVariable:
 
     def material(self, material: Material):
         """
-        method cascading setter method
+        Method cascading setter method
         """
         self._material = material
         return self
@@ -170,7 +170,7 @@ class ThicknessVariable:
 
     def register_to(self, tacs_aim):
         """
-        cascaded method to register this ThicknessVariable to TacsAim
+        Cascaded method to register this ThicknessVariable to TacsAim
         """
         tacs_aim.register(self)
         return self

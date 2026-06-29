@@ -6,17 +6,17 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, TACS, functions
 
 """
-A point mass element free in space. 
-Case 1: We apply a unit force in every direction on the mass for 10 seconds. 
+A point mass element free in space.
+Case 1: We apply a unit force in every direction on the mass for 10 seconds.
 Case 2: We apply a gravity load in the z direction for 10 seconds.
 
 The inertial values for the mass are given by the 6 dof mass matrix below:
 1   0   0   0   0   0
 0   1   0   0   0   0
 0   0   1   0   0   0
-0   0   0   1  -1  -1 
-0   0   0  -1   1  -1 
-0   0   0  -1  -1   1 
+0   0   0   1  -1  -1
+0   0   0  -1   1  -1
+0   0   0  -1  -1   1
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,14 +71,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Create case 1 transient problem
         problem = fea_assembler.createTransientProblem("constant_force", 0.0, 10.0, 100)
         timeSteps = problem.getTimeSteps()
-        for step_i, time in enumerate(timeSteps):
+        for step_i in range(len(timeSteps)):
             problem.addLoadToNodes(step_i, 0, f, nastranOrdering=False)
         all_problems.append(problem)
 
         # Create case 2 transient problem
         problem = fea_assembler.createTransientProblem("gravity", 0.0, 10.0, 100)
         g = np.array([0.0, 0.0, 9.81], dtype=TACS.dtype)
-        for step_i, time in enumerate(timeSteps):
+        for step_i in range(len(timeSteps)):
             problem.addInertialLoad(step_i, g)
         all_problems.append(problem)
 

@@ -4,8 +4,11 @@ GT SMDO Lab, Dr. Graeme Kennedy
 Caps to TACS example
 """
 
-import unittest, os, numpy as np, importlib
-from tacs import caps2tacs, TACS
+import unittest
+import os
+import numpy as np
+import importlib
+from tacs import caps2tacs
 from mpi4py import MPI
 
 caps_loader = importlib.util.find_spec("pyCAPS")
@@ -23,7 +26,7 @@ csm_path = os.path.join(base_dir, "input_files", "simple_naca_wing.csm")
 class TestCaps2TacsSizing(unittest.TestCase):
     def test_thickness_derivatives(self):
         """
-        test the thickness derivatives in TACS setup from ESP/CAPS
+        Test the thickness derivatives in TACS setup from ESP/CAPS
         """
 
         # build the tacs model with constraints, loads, properties, analysis functions, mesh, etc.
@@ -37,9 +40,7 @@ class TestCaps2TacsSizing(unittest.TestCase):
             global_mesh_size=0.1,
             max_surf_offset=0.01,
             max_dihedral_angle=5,
-        ).register_to(
-            tacs_model
-        )
+        ).register_to(tacs_model)
         aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
 
         # setup the thickness design variables + automatic shell properties
