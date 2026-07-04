@@ -298,6 +298,14 @@ cdef extern from "TACSConstitutive.h":
         void getFailureEnvelope(int, int, const double*,
                                 const TacsScalar*, const TacsScalar*,
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
+        int getDesignVarNums(int, int, int*)
+        int getDesignVars(int, int, TacsScalar*)
+        int getNumDesignVarGroups()
+        const char *getDesignVarGroupName(int)
+        int getDesignVarGroupSize(int)
+        bool isDesignVarGroupScalar(int)
+        void getDesignVarGroupValues(int, TacsScalar*)
+        void getDesignVarGroupNums(int, int*)
 
 cdef extern from "TACSAuxElements.h":
     cdef cppclass TACSAuxElements(TACSObject):

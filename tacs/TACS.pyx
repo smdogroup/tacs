@@ -518,6 +518,135 @@ cdef class Constitutive:
             return self.ptr.getNumStresses()
         return 0
 
+    def getDesignVarNums(self, int elemIndex=0):
+        """
+        getDesignVarNums(self, int elemIndex=0)
+
+        Get the global design variable numbers of the active design variables
+
+        Args:
+            elemIndex (integer): The element index (unused by all current implementations)
+
+        Returns:
+            (np.ndarray) An array of the active design variable numbers
+        """
+        cdef int dvLen = 0
+        cdef np.ndarray dvNums = None
+        if self.ptr is NULL:
+            return None
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        dvNums = np.zeros(dvLen, dtype=np.intc)
+        self.ptr.getDesignVarNums(elemIndex, dvLen, <int*>dvNums.data)
+        return dvNums
+
+    def getDesignVars(self, int elemIndex=0):
+        """
+        getDesignVars(self, int elemIndex=0)
+
+        Get the values of the active design variables
+
+        Note that these values reflect this object's local state; in an MPI run the object
+        may not have been updated on processors that do not own any elements using it. For
+        globally consistent current values use pyTACS.getComponentDesignVars.
+
+        Args:
+            elemIndex (integer): The element index (unused by all current implementations)
+
+        Returns:
+            (np.ndarray) An array of the active design variable values
+        """
+        cdef int dvLen = 0
+        cdef np.ndarray dvs = None
+        if self.ptr is NULL:
+            return None
+        dvLen = self.ptr.getDesignVarNums(elemIndex, 0, NULL)
+        dvs = np.zeros(dvLen, dtype=dtype)
+        self.ptr.getDesignVars(elemIndex, dvLen, <TacsScalar*>dvs.data)
+        return dvs
+
+    def getNumDesignVarGroups(self):
+        """
+        getNumDesignVarGroups(self)
+
+        Get the number of logical design variable groups defined by this constitutive object
+
+        Returns:
+            (integer) The number of design variable groups
+        """
+        if self.ptr:
+            return self.ptr.getNumDesignVarGroups()
+        return 0
+
+    def getDesignVarGroups(self):
+        """
+        getDesignVarGroups(self)
+
+        Get the values of every design variable group defined by this constitutive object
+
+        Group names and value types match the keyword arguments of this class's constructor,
+        so the returned values can be passed straight back to the constructor. All groups are
+        returned, whether or not their entries are active design variables.
+
+        Note that these values reflect this object's local state; in an MPI run the object
+        may not have been updated on processors that do not own any elements using it. For
+        globally consistent current values use pyTACS.getComponentDesignVars.
+
+        Returns:
+            (dict) Dictionary mapping group names to a scalar (for scalar groups) or a 1D
+            np.ndarray (for array groups)
+        """
+        cdef int nGroups = 0
+        cdef int size = 0
+        cdef bytes name_bytes
+        cdef np.ndarray values
+        groups = {}
+        if self.ptr is NULL:
+            return groups
+        nGroups = self.ptr.getNumDesignVarGroups()
+        for groupIndex in range(nGroups):
+            name_bytes = self.ptr.getDesignVarGroupName(groupIndex)
+            size = self.ptr.getDesignVarGroupSize(groupIndex)
+            values = np.zeros(size, dtype=dtype)
+            self.ptr.getDesignVarGroupValues(groupIndex, <TacsScalar*>values.data)
+            if self.ptr.isDesignVarGroupScalar(groupIndex):
+                groups[convert_bytes_to_str(name_bytes)] = values.item()
+            else:
+                groups[convert_bytes_to_str(name_bytes)] = values
+        return groups
+
+    def getDesignVarGroupDVNums(self):
+        """
+        getDesignVarGroupDVNums(self)
+
+        Get the global design variable numbers of every design variable group
+
+        The returned dictionary has the same keys and scalar/array shapes as
+        getDesignVarGroups. Entries that are not active design variables have a design
+        variable number of -1.
+
+        Returns:
+            (dict) Dictionary mapping group names to an integer (for scalar groups) or a 1D
+            np.ndarray of integers (for array groups)
+        """
+        cdef int nGroups = 0
+        cdef int size = 0
+        cdef bytes name_bytes
+        cdef np.ndarray dvNums
+        groups = {}
+        if self.ptr is NULL:
+            return groups
+        nGroups = self.ptr.getNumDesignVarGroups()
+        for groupIndex in range(nGroups):
+            name_bytes = self.ptr.getDesignVarGroupName(groupIndex)
+            size = self.ptr.getDesignVarGroupSize(groupIndex)
+            dvNums = np.zeros(size, dtype=np.intc)
+            self.ptr.getDesignVarGroupNums(groupIndex, <int*>dvNums.data)
+            if self.ptr.isDesignVarGroupScalar(groupIndex):
+                groups[convert_bytes_to_str(name_bytes)] = int(dvNums[0])
+            else:
+                groups[convert_bytes_to_str(name_bytes)] = dvNums
+        return groups
+
     def setNastranID(self, id):
         """
         Set property ID to be used in NASTRAN card for this object.
