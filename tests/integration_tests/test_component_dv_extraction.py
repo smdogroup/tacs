@@ -262,8 +262,8 @@ class ComponentDVArrayGroupOverlayTest(unittest.TestCase):
             kappa=230.0,
         )
         ply = constitutive.OrthotropicPly(0.1, prop)
-        plyAngles = np.deg2rad([0.0, 45.0, 90.0])
-        plyFractions = np.array([0.5, 0.25, 0.25])
+        plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(TACS.dtype)
+        plyFractions = np.array([0.5, 0.3, 0.2], dtype=TACS.dtype)
         thicknessDVNum = dvNum
         plyFractionDVNums = np.array([dvNum + 1, dvNum + 2, dvNum + 3], dtype=np.intc)
         return constitutive.SmearedCompositeShellConstitutive(
@@ -310,9 +310,10 @@ class ComponentDVArrayGroupOverlayTest(unittest.TestCase):
                     )
 
         expectedThickness = 1.2 * 0.01
-        expectedPlyFractions = 1.2 * np.array([0.5, 0.25, 0.25])
+        expectedPlyFractions = 1.2 * np.array([0.5, 0.3, 0.2])
         for descript in PLATE_THICKNESSES:
             groupValues = compDVs[descript]
+            self.assertNotIsInstance(groupValues["thickness"], np.ndarray)
             np.testing.assert_allclose(
                 groupValues["thickness"], expectedThickness, rtol=1e-12
             )
