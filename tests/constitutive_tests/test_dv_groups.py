@@ -408,5 +408,54 @@ class TestIsoRectangleBeamDVGroups(DVGroupTestCase):
         )
 
 
+class TestPointMassDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.PointMassConstitutive(
+            m=2.0,
+            I11=1.0,
+            I22=1.0,
+            I33=1.0,
+            I12=0.5,
+            I13=0.5,
+            I23=0.5,
+            mNum=0,
+            I11Num=1,
+            I22Num=2,
+            I33Num=3,
+            I12Num=4,
+            I13Num=5,
+            I23Num=6,
+        )
+        self.assertGroupsConsistent(
+            con,
+            {
+                "m": 2.0,
+                "I11": 1.0,
+                "I22": 1.0,
+                "I33": 1.0,
+                "I12": 0.5,
+                "I13": 0.5,
+                "I23": 0.5,
+            },
+            {"m": 0, "I11": 1, "I22": 2, "I33": 3, "I12": 4, "I13": 5, "I23": 6},
+        )
+
+    def test_dv_groups_partially_active(self):
+        con = constitutive.PointMassConstitutive(m=2.0, I11=1.0, mNum=0)
+        self.assertGroupsConsistent(
+            con,
+            {
+                "m": 2.0,
+                "I11": 1.0,
+                "I22": 0.0,
+                "I33": 0.0,
+                "I12": 0.0,
+                "I13": 0.0,
+                "I23": 0.0,
+            },
+            {"m": 0, "I11": -1, "I22": -1, "I33": -1, "I12": -1, "I13": -1, "I23": -1},
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
