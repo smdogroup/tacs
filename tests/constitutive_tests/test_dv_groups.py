@@ -192,5 +192,49 @@ class TestSmearedCompositeShellDVGroups(DVGroupTestCase):
         )
 
 
+class TestLamParamFullShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        lpNums = np.array([1, 2, 3, 4, 5, 6], dtype=np.intc)
+        con = constitutive.LamParamFullShellConstitutive(ply, 0.1, 0, 0.05, 0.2, lpNums)
+        # The lamination parameter values cannot be set through the constructor;
+        # they always start at 0 and are restored via setLaminationParameters
+        self.assertGroupsConsistent(
+            con,
+            {"t": 0.1, "lp": np.zeros(6, dtype=self.dtype)},
+            {"t": 0, "lp": lpNums},
+        )
+
+
+class TestLamParamSmearedShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        con = constitutive.LamParamSmearedShellConstitutive(
+            ply,
+            t=0.1,
+            t_num=0,
+            min_t=0.05,
+            max_t=0.2,
+            f0=0.25,
+            f45=0.5,
+            f90=0.25,
+            f0_num=1,
+            f45_num=2,
+            f90_num=3,
+            min_f0=0.1,
+            min_f45=0.1,
+            min_f90=0.1,
+            W1=0.6,
+            W3=0.6,
+            W1_num=4,
+            W3_num=5,
+        )
+        self.assertGroupsConsistent(
+            con,
+            {"t": 0.1, "f0": 0.25, "f45": 0.5, "f90": 0.25, "W1": 0.6, "W3": 0.6},
+            {"t": 0, "f0": 1, "f45": 2, "f90": 3, "W1": 4, "W3": 5},
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
