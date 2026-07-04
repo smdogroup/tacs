@@ -1,13 +1,9 @@
 """
-This example demonstrates how to extract a complete description of a model's sizing
-variables with pyTACS and use it to recreate the same sizing state in a separate TACS
-execution.
+This example demonstrates how to extract a complete description of a model's sizing variables with pyTACS and use it to recreate the same sizing state in a separate TACS execution.
 
-The model is a flat plate split into four components (PLATE.00 through PLATE.03), each
-with its own thickness. Two components have active thickness design variables, and two
-are held fixed. We perturb the active design variables (standing in for the result of an
-optimization), extract the component design variable dictionary, save it to disk with
-pickle, and then rebuild a second, identical model from the file.
+The model is a flat plate split into four components (PLATE.00 through PLATE.03), each with its own thickness.
+Two components have active thickness design variables, and two are held fixed.
+We perturb the active design variables (standing in for the result of an optimization), extract the component design variable dictionary, save it to disk with pickle, and then rebuild a second, identical model from the file.
 """
 
 # [docs:imports-start]
