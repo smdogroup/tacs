@@ -1383,6 +1383,149 @@ class pyTACS(BaseUI):
         return self.dvNum
 
     @postinitialize_method
+    def getComponentDesignVars(self):
+        """
+        Get the design variable groups and their current values for every component.
+
+        The returned dictionary is keyed by component description and each entry maps design
+        variable group names to their current values. Group names and value types match the
+        keyword arguments of the corresponding constitutive class constructor, so the values
+        can be passed directly back to the constructor inside an elemCallBack function to
+        recreate the current sizing state in another TACS execution.
+
+        All design variable groups are always returned, whether or not their entries are
+        active design variables. Active entries reflect the assembler's current design
+        variable values; inactive entries hold the values the constitutive object was
+        constructed with. Use :meth:`getComponentDesignVarNums` to determine which entries
+        are active.
+
+        This method is collective on the pyTACS comm; the returned dictionary is identical
+        on every processor.
+
+        Returns
+        -------
+        compDVs : dict[str, dict]
+            Dictionary of design variable group values for each component. Scalar groups
+            are returned as scalars and array groups as 1D numpy arrays.
+        """
+        self._checkUniqueComponentDescripts()
+        globalDVValues = self._gatherGlobalDesignVarValues()
+        compDVs = {}
+        for compID in range(self.nComp):
+            descript = self.compDescripts[compID]
+            con = self._getComponentConstitutive(compID)
+            groupValues = {}
+            if con is not None:
+                self._checkDVGroupsImplemented(compID, con)
+                groupValues = con.getDesignVarGroups()
+                groupNums = con.getDesignVarGroupDVNums()
+                # Overlay the assembler's current values onto the active entries
+                for name, nums in groupNums.items():
+                    if isinstance(nums, np.ndarray):
+                        for ii in range(len(nums)):
+                            if nums[ii] >= 0:
+                                groupValues[name][ii] = globalDVValues[nums[ii]]
+                    elif nums >= 0:
+                        groupValues[name] = globalDVValues[nums].item()
+            compDVs[descript] = groupValues
+        return compDVs
+
+    @postinitialize_method
+    def getComponentDesignVarNums(self):
+        """
+        Get the global design variable numbers of every design variable group for every
+        component.
+
+        The returned dictionary has the same structure as the one returned by
+        :meth:`getComponentDesignVars`, but contains global design variable numbers instead
+        of values. Entries that are not active design variables have a design variable
+        number of -1. Note that design variable numbers are specific to this TACS execution
+        and should not be stored across executions.
+
+        Returns
+        -------
+        compDVNums : dict[str, dict]
+            Dictionary of design variable group numbers for each component. Scalar groups
+            are returned as integers and array groups as 1D numpy integer arrays.
+        """
+        self._checkUniqueComponentDescripts()
+        compDVNums = {}
+        for compID in range(self.nComp):
+            descript = self.compDescripts[compID]
+            con = self._getComponentConstitutive(compID)
+            groupNums = {}
+            if con is not None:
+                self._checkDVGroupsImplemented(compID, con)
+                groupNums = con.getDesignVarGroupDVNums()
+            compDVNums[descript] = groupNums
+        return compDVNums
+
+    def _checkUniqueComponentDescripts(self):
+        """Raise an error if any two components share a description, since the component
+        design variable dictionaries are keyed by description."""
+        seen = set()
+        duplicates = set()
+        for descript in self.compDescripts:
+            if descript in seen:
+                duplicates.add(descript)
+            seen.add(descript)
+        if len(duplicates) > 0:
+            raise self._TACSError(
+                "Component descriptions must be unique to use getComponentDesignVars/"
+                "getComponentDesignVarNums, but the following descriptions are shared by "
+                f"multiple components: {sorted(duplicates)}. Rename the property groups in "
+                "the BDF file so that every component has a unique description."
+            )
+
+    def _getComponentConstitutive(self, compID):
+        """Get the single constitutive object shared by all element objects of a component.
+
+        Returns None if the component has no constitutive object. Raises an error if the
+        component's element objects hold more than one distinct constitutive object, since
+        the component design variable dictionaries cannot represent that faithfully.
+        """
+        conObj = None
+        numObjs = len(self.meshLoader.getElementObjectNumsForComp(compID))
+        for objIndex in range(numObjs):
+            elemObj = self.meshLoader.getElementObject(compID, objIndex)
+            elemCon = elemObj.getConstitutive()
+            if elemCon is None:
+                continue
+            if conObj is None:
+                conObj = elemCon
+            elif elemCon is not conObj:
+                raise self._TACSError(
+                    f"Component {compID} ('{self.compDescripts[compID]}') uses more than "
+                    "one distinct constitutive object across its element types. "
+                    "getComponentDesignVars/getComponentDesignVarNums require all element "
+                    "types in a component to share a single constitutive object."
+                )
+        return conObj
+
+    def _gatherGlobalDesignVarValues(self):
+        """Gather the assembler's current design variable values into a rank-identical
+        numpy array indexed by global design variable number.
+
+        The design vector is distributed in contiguous blocks of design variable numbers,
+        so concatenating the local arrays in rank order yields the global array.
+        """
+        xVec = self.assembler.createDesignVec()
+        self.assembler.getDesignVars(xVec)
+        localValues = xVec.getArray().copy()
+        return np.concatenate(self.comm.allgather(localValues))
+
+    def _checkDVGroupsImplemented(self, compID, con):
+        """Warn if a constitutive object has design variables but does not implement the
+        design variable group API, since its DVs will be missing from the output."""
+        if con.getNumDesignVarGroups() == 0 and len(con.getDesignVarNums()) > 0:
+            self._TACSWarning(
+                f"Constitutive class '{type(con).__name__}' used by component {compID} "
+                f"('{self.compDescripts[compID]}') has design variables but does not "
+                "implement the design variable group interface. Its design variables will "
+                "be missing from the component design variable dictionaries."
+            )
+
+    @postinitialize_method
     def getOrigNodes(self):
         """
         Return the original mesh coordinates read in from the meshLoader.
