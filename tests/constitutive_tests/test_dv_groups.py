@@ -126,5 +126,41 @@ class TestConstitutiveWithoutDVs(DVGroupTestCase):
         self.assertGroupsConsistent(con, {}, {})
 
 
+class TestIsoShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.IsoShellConstitutive(makeIsoMaterial(), t=0.1, tNum=0)
+        self.assertGroupsConsistent(con, {"t": 0.1}, {"t": 0})
+
+    def test_dv_groups_inactive(self):
+        con = constitutive.IsoShellConstitutive(makeIsoMaterial(), t=0.1, tNum=-1)
+        self.assertGroupsConsistent(con, {"t": 0.1}, {"t": -1})
+
+
+class TestPlaneStressDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.PlaneStressConstitutive(makeIsoMaterial(), t=1.0, tNum=0)
+        self.assertGroupsConsistent(con, {"t": 1.0}, {"t": 0})
+
+
+class TestSolidDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.SolidConstitutive(makeIsoMaterial(), t=1.0, tNum=0)
+        self.assertGroupsConsistent(con, {"t": 1.0}, {"t": 0})
+
+
+class TestPhaseChangeMaterialDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        solidProps = constitutive.MaterialProperties(
+            rho=1.0, kappa=2.0, specific_heat=1.0
+        )
+        liquidProps = constitutive.MaterialProperties(
+            rho=0.95, kappa=1.0, specific_heat=1.1
+        )
+        con = constitutive.PhaseChangeMaterialConstitutive(
+            solidProps, liquidProps, lh=10.0, Tm=0.0, t=0.1, tNum=0
+        )
+        self.assertGroupsConsistent(con, {"t": 0.1}, {"t": 0})
+
+
 if __name__ == "__main__":
     unittest.main()
