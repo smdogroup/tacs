@@ -8,8 +8,11 @@ Nastran beam compatibility regression suite — reference data extractor
 
     For every configuration the script writes:
       - static_fx.csv  …  static_mz.csv  (31 × 6 displacement arrays)
-      - modal_frequencies.csv             (10 frequencies in Hz)
-      - modal_mode01.csv  …  modal_mode10.csv  (31 × 6 max-normalised mode shapes)
+      - modal_frequencies.csv             (12 frequencies in Hz)
+      - modal_mode01.csv  …  modal_mode12.csv  (31 × 6 max-normalised mode shapes)
+
+    The mode count follows the EIGRL request in the BDF (NUM_MODES in
+    generate_inputs.py); whatever the .op2 contains is written verbatim.
 
 Usage:
     cd tests/integration_tests/input_files/nastran_beam_compat
@@ -140,7 +143,7 @@ def extractModalRefs(stem: str, refDir: Path) -> None:
     shapes = eigvecObj.data  # (n_modes, n_nodes, 6)
     freqs = np.array(eigvecObj.mode_cycles, dtype=float)  # (n_modes,) in Hz
 
-    # Write frequency CSV: 10 rows × 1 column
+    # Write frequency CSV: one row per computed mode (12), 1 column
     freqPath = refDir / "modal_frequencies.csv"
     np.savetxt(
         str(freqPath),
@@ -175,7 +178,7 @@ def extractModalRefs(stem: str, refDir: Path) -> None:
 
 
 def main() -> None:
-    """Extract Nastran reference data for all 36 configurations."""
+    """Extract Nastran reference data for all 44 configurations."""
     print(f"Nastran outputs directory: {_NASTRAN_OUTPUTS_DIR}")
     refRoot = _SCRIPT_DIR / "nastran_ref_results"
     print(f"Reference CSV output root: {refRoot}")
