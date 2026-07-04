@@ -162,5 +162,35 @@ class TestPhaseChangeMaterialDVGroups(DVGroupTestCase):
         self.assertGroupsConsistent(con, {"t": 0.1}, {"t": 0})
 
 
+class TestSmearedCompositeShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
+        plyFracs = np.array([0.5, 0.25, 0.25], dtype=self.dtype)
+        plyFracNums = np.array([1, 2, 3], dtype=np.intc)
+        con = constitutive.SmearedCompositeShellConstitutive(
+            [ply] * 3, 0.1, plyAngles, plyFracs, 0, plyFracNums
+        )
+        self.assertGroupsConsistent(
+            con,
+            {"thickness": 0.1, "ply_fractions": plyFracs},
+            {"thickness": 0, "ply_fractions": plyFracNums},
+        )
+
+    def test_dv_groups_partially_active(self):
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
+        plyFracs = np.array([0.5, 0.25, 0.25], dtype=self.dtype)
+        plyFracNums = np.array([0, -1, 1], dtype=np.intc)
+        con = constitutive.SmearedCompositeShellConstitutive(
+            [ply] * 3, 0.1, plyAngles, plyFracs, -1, plyFracNums
+        )
+        self.assertGroupsConsistent(
+            con,
+            {"thickness": 0.1, "ply_fractions": plyFracs},
+            {"thickness": -1, "ply_fractions": plyFracNums},
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
