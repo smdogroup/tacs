@@ -236,5 +236,92 @@ class TestLamParamSmearedShellDVGroups(DVGroupTestCase):
         )
 
 
+def makeBladeCon(
+    dtype,
+    panelLengthNum,
+    stiffenerPitchNum,
+    panelThickNum,
+    panelPlyFracNums,
+    stiffenerHeightNum,
+    stiffenerThickNum,
+    stiffenerPlyFracNums,
+):
+    ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+    panelPlyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(dtype)
+    panelPlyFracs = np.array([0.5, 0.3, 0.2], dtype=dtype)
+    stiffenerPlyAngles = np.deg2rad([0.0, 60.0]).astype(dtype)
+    stiffenerPlyFracs = np.array([0.7, 0.3], dtype=dtype)
+    con = constitutive.BladeStiffenedShellConstitutive(
+        ply,
+        ply,
+        2.1,  # panelLength
+        0.178,  # stiffenerPitch
+        1.586e-2,  # panelThick
+        panelPlyAngles,
+        panelPlyFracs,
+        0.314,  # stiffenerHeight
+        1.23e-2,  # stiffenerThick
+        stiffenerPlyAngles,
+        stiffenerPlyFracs,
+        5.0 / 6.0,  # kcorr
+        1.0,  # flangeFraction
+        panelLengthNum,
+        stiffenerPitchNum,
+        panelThickNum,
+        panelPlyFracNums,
+        stiffenerHeightNum,
+        stiffenerThickNum,
+        stiffenerPlyFracNums,
+    )
+    expectedValues = {
+        "panelLength": 2.1,
+        "stiffenerPitch": 0.178,
+        "panelThick": 1.586e-2,
+        "panelPlyFracs": panelPlyFracs,
+        "stiffenerHeight": 0.314,
+        "stiffenerThick": 1.23e-2,
+        "stiffenerPlyFracs": stiffenerPlyFracs,
+    }
+    expectedNums = {
+        "panelLength": panelLengthNum,
+        "stiffenerPitch": stiffenerPitchNum,
+        "panelThick": panelThickNum,
+        "panelPlyFracs": panelPlyFracNums,
+        "stiffenerHeight": stiffenerHeightNum,
+        "stiffenerThick": stiffenerThickNum,
+        "stiffenerPlyFracs": stiffenerPlyFracNums,
+    }
+    return con, expectedValues, expectedNums
+
+
+class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con, expectedValues, expectedNums = makeBladeCon(
+            self.dtype,
+            panelLengthNum=0,
+            stiffenerPitchNum=1,
+            panelThickNum=2,
+            panelPlyFracNums=np.array([5, 6, 7], dtype=np.intc),
+            stiffenerHeightNum=3,
+            stiffenerThickNum=4,
+            stiffenerPlyFracNums=np.array([8, 9], dtype=np.intc),
+        )
+        self.assertGroupsConsistent(con, expectedValues, expectedNums)
+
+    def test_dv_groups_partially_active(self):
+        # Only the panel quantities are sized; the stiffener DVs are inactive
+        con, expectedValues, expectedNums = makeBladeCon(
+            self.dtype,
+            panelLengthNum=0,
+            stiffenerPitchNum=-1,
+            panelThickNum=1,
+            panelPlyFracNums=np.array([2, -1, 3], dtype=np.intc),
+            stiffenerHeightNum=-1,
+            stiffenerThickNum=-1,
+            stiffenerPlyFracNums=np.array([-1, -1], dtype=np.intc),
+        )
+        self.assertGroupsConsistent(con, expectedValues, expectedNums)
+
+
 if __name__ == "__main__":
     unittest.main()
