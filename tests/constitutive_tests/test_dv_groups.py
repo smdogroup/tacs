@@ -381,5 +381,32 @@ class TestGPBladeStiffenedShellDVGroups(DVGroupTestCase):
         )
 
 
+class TestIsoTubeBeamDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.IsoTubeBeamConstitutive(
+            makeIsoMaterial(), d=1.0, dNum=0, t=0.1, tNum=1
+        )
+        self.assertGroupsConsistent(con, {"d": 1.0, "t": 0.1}, {"d": 0, "t": 1})
+
+
+class TestIsoRectangleBeamDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        con = constitutive.IsoRectangleBeamConstitutive(
+            makeIsoMaterial(),
+            w=1.0,
+            wNum=0,
+            t=0.1,
+            tNum=1,
+            Lb=10.0,
+            LbNum=2,
+            wOffset=0.5,
+            tOffset=-0.5,
+            Kb=1.0,
+        )
+        self.assertGroupsConsistent(
+            con, {"w": 1.0, "t": 0.1, "Lb": 10.0}, {"w": 0, "t": 1, "Lb": 2}
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
