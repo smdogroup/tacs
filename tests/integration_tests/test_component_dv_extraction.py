@@ -6,7 +6,7 @@ import unittest
 import numpy as np
 from mpi4py import MPI
 
-from tacs import constitutive, elements, pyTACS
+from tacs import TACS, constitutive, elements, functions, pyTACS
 from tacs.utilities import Error
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -154,6 +154,172 @@ class ComponentDVExtractionTest(unittest.TestCase):
         compDVs = fea.getComponentDesignVars()
         for groupValues in compDVs.values():
             self.assertEqual(groupValues, {})
+
+
+class ComponentDVRoundTripTest(unittest.TestCase):
+    N_PROCS = 2
+
+    def setUp(self):
+        self.comm = MPI.COMM_WORLD
+        # Function-value comparison tolerance between the original and rebuilt models
+        self.rtol = 1e-11 if TACS.dtype is complex else 1e-9
+
+    @staticmethod
+    def setupProblem(fea):
+        problem = fea.createStaticProblem("gravity")
+        problem.addInertialLoad(np.array([0.0, 0.0, -9.81]))
+        problem.addFunction("mass", functions.StructuralMass)
+        problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
+        return problem
+
+    def test_round_trip(self):
+        fea1 = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
+        problem1 = self.setupProblem(fea1)
+
+        # Perturb the active DVs so the assembler state differs from the constructor values
+        xLocal = problem1.getDesignVars()
+        problem1.setDesignVars(1.5 * xLocal)
+        problem1.solve()
+        funcs1 = {}
+        problem1.evalFunctions(funcs1)
+
+        compDVs = fea1.getComponentDesignVars()
+
+        # The dictionary must be identical on every rank
+        allCompDVs = self.comm.allgather(compDVs)
+        for otherCompDVs in allCompDVs:
+            self.assertEqual(sorted(otherCompDVs.keys()), sorted(compDVs.keys()))
+            for descript in compDVs:
+                self.assertEqual(
+                    sorted(otherCompDVs[descript].keys()),
+                    sorted(compDVs[descript].keys()),
+                )
+                for name in compDVs[descript]:
+                    np.testing.assert_array_equal(
+                        otherCompDVs[descript][name], compDVs[descript][name]
+                    )
+
+        # Active components must show the perturbed values, inactive components the
+        # constructor values
+        for descript, t0 in PLATE_THICKNESSES.items():
+            if descript in ACTIVE_COMPONENTS:
+                expected = 1.5 * t0
+            else:
+                expected = t0
+            np.testing.assert_allclose(compDVs[descript]["t"], expected, rtol=1e-12)
+
+        # Rebuild a second model from the extracted dictionary, exactly as a user would in
+        # a new TACS execution, and check it produces the same function values
+        fea2 = pyTACS(PARTITIONED_PLATE_BDF, comm=self.comm)
+
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+        ):
+            con = makeShellCon(compDVs[compDescript]["t"], dvNum)
+            return elements.Quad4Shell(None, con)
+
+        fea2.initialize(elemCallBack)
+        problem2 = self.setupProblem(fea2)
+        problem2.solve()
+        funcs2 = {}
+        problem2.evalFunctions(funcs2)
+
+        self.assertEqual(sorted(funcs1.keys()), sorted(funcs2.keys()))
+        for key in funcs1:
+            np.testing.assert_allclose(funcs1[key], funcs2[key], rtol=self.rtol)
+
+
+class ComponentDVArrayGroupOverlayTest(unittest.TestCase):
+    """Exercises the array-valued-group overlay branch of getComponentDesignVars.
+
+    All other tests in this module use IsoShellConstitutive, whose only DV group is the
+    scalar "t", so the isinstance(nums, np.ndarray) branch that overlays array groups
+    (e.g. ply_fractions) is otherwise untested end-to-end under MPI.
+    """
+
+    N_PROCS = 2
+
+    def setUp(self):
+        self.comm = MPI.COMM_WORLD
+
+    @staticmethod
+    def makeSmearedCompositeCon(dvNum):
+        prop = constitutive.MaterialProperties(
+            rho=1550.0,
+            specific_heat=921.096,
+            E1=54e9,
+            E2=18e9,
+            nu12=0.25,
+            G12=9e9,
+            G13=9e9,
+            G23=9e9,
+            Xt=2410.0e6,
+            Xc=1040.0e6,
+            Yt=73.0e6,
+            Yc=173.0e6,
+            S12=71.0e6,
+            alpha=24.0e-6,
+            kappa=230.0,
+        )
+        ply = constitutive.OrthotropicPly(0.1, prop)
+        plyAngles = np.deg2rad([0.0, 45.0, 90.0])
+        plyFractions = np.array([0.5, 0.25, 0.25])
+        thicknessDVNum = dvNum
+        plyFractionDVNums = np.array([dvNum + 1, dvNum + 2, dvNum + 3], dtype=np.intc)
+        return constitutive.SmearedCompositeShellConstitutive(
+            [ply] * 3,
+            0.01,
+            plyAngles,
+            plyFractions,
+            thickness_dv_num=thicknessDVNum,
+            ply_fraction_dv_nums=plyFractionDVNums,
+        )
+
+    def test_array_group_overlay(self):
+        fea = pyTACS(PARTITIONED_PLATE_BDF, comm=self.comm)
+
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+        ):
+            con = self.makeSmearedCompositeCon(dvNum)
+            return elements.Quad4Shell(None, con)
+
+        fea.initialize(elemCallBack)
+        problem = fea.createStaticProblem("perturbed")
+
+        # Perturb every active DV (thickness and ply fractions alike) away from the
+        # constructor values
+        xLocal = problem.getDesignVars()
+        perturbed = 1.2 * xLocal
+        problem.setDesignVars(perturbed)
+
+        compDVs = fea.getComponentDesignVars()
+
+        # The dictionary must be identical on every rank
+        allCompDVs = self.comm.allgather(compDVs)
+        for otherCompDVs in allCompDVs:
+            self.assertEqual(sorted(otherCompDVs.keys()), sorted(compDVs.keys()))
+            for descript in compDVs:
+                self.assertEqual(
+                    sorted(otherCompDVs[descript].keys()),
+                    sorted(compDVs[descript].keys()),
+                )
+                for name in compDVs[descript]:
+                    np.testing.assert_array_equal(
+                        otherCompDVs[descript][name], compDVs[descript][name]
+                    )
+
+        expectedThickness = 1.2 * 0.01
+        expectedPlyFractions = 1.2 * np.array([0.5, 0.25, 0.25])
+        for descript in PLATE_THICKNESSES:
+            groupValues = compDVs[descript]
+            np.testing.assert_allclose(
+                groupValues["thickness"], expectedThickness, rtol=1e-12
+            )
+            self.assertIsInstance(groupValues["ply_fractions"], np.ndarray)
+            np.testing.assert_allclose(
+                groupValues["ply_fractions"], expectedPlyFractions, rtol=1e-12
+            )
 
 
 if __name__ == "__main__":
