@@ -323,5 +323,63 @@ class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
         self.assertGroupsConsistent(con, expectedValues, expectedNums)
 
 
+class TestGPBladeStiffenedShellDVGroups(DVGroupTestCase):
+    def test_dv_groups(self):
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        panelPlyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
+        panelPlyFracs = np.array([0.5, 0.3, 0.2], dtype=self.dtype)
+        panelPlyFracNums = np.array([5, 6, 7], dtype=np.intc)
+        stiffenerPlyAngles = np.deg2rad([0.0, 60.0]).astype(self.dtype)
+        stiffenerPlyFracs = np.array([0.7, 0.3], dtype=self.dtype)
+        stiffenerPlyFracNums = np.array([8, 9], dtype=np.intc)
+        con = constitutive.GPBladeStiffenedShellConstitutive(
+            ply,
+            ply,
+            2.1,  # panelLength
+            0.178,  # stiffenerPitch
+            1.586e-2,  # panelThick
+            panelPlyAngles,
+            panelPlyFracs,
+            0.314,  # stiffenerHeight
+            1.23e-2,  # stiffenerThick
+            stiffenerPlyAngles,
+            stiffenerPlyFracs,
+            1.2,  # panelWidth
+            5.0 / 6.0,  # kcorr
+            1.0,  # flangeFraction
+            0,  # panelLengthNum
+            1,  # stiffenerPitchNum
+            2,  # panelThickNum
+            panelPlyFracNums,
+            3,  # stiffenerHeightNum
+            4,  # stiffenerThickNum
+            stiffenerPlyFracNums,
+            10,  # panelWidthNum
+        )
+        self.assertGroupsConsistent(
+            con,
+            {
+                "panelLength": 2.1,
+                "stiffenerPitch": 0.178,
+                "panelThick": 1.586e-2,
+                "panelPlyFracs": panelPlyFracs,
+                "stiffenerHeight": 0.314,
+                "stiffenerThick": 1.23e-2,
+                "stiffenerPlyFracs": stiffenerPlyFracs,
+                "panelWidth": 1.2,
+            },
+            {
+                "panelLength": 0,
+                "stiffenerPitch": 1,
+                "panelThick": 2,
+                "panelPlyFracs": panelPlyFracNums,
+                "stiffenerHeight": 3,
+                "stiffenerThick": 4,
+                "stiffenerPlyFracs": stiffenerPlyFracNums,
+                "panelWidth": 10,
+            },
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
