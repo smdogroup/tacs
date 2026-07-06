@@ -10,10 +10,8 @@ Two properties make it suitable as a save/restore format:
 #. Group names and value types match the keyword arguments of the corresponding constitutive class constructor, so values can be passed straight back to the constructor inside an ``elemCallBack`` function.
 #. Every design variable group is always included, whether or not its entries are active design variables, so the receiving model is free to make a different choice of active design variables.
 
-One exception: the ``lp`` group of ``LamParamFullShellConstitutive`` cannot be set through the constructor, and must instead be restored with ``setLaminationParameters`` after construction.
-
-The dictionary is identical on every processor, and active entries always reflect the assembler's current design variable values.
-A companion method, :meth:`pyTACS.getComponentDesignVarNums <tacs.pytacs.pyTACS.getComponentDesignVarNums>`, returns the global design variable numbers in the same structure (with -1 marking inactive entries), which is useful for inspecting which variables are active in the current execution.
+The dictionary is identical on every processor, and active entries always reflect the assembler's current design variable values at the time :meth:`pyTACS.getComponentDesignVars <tacs.pytacs.pyTACS.getComponentDesignVars>` is called.
+A companion method, :meth:`pyTACS.getComponentDesignVarNums <tacs.pytacs.pyTACS.getComponentDesignVarNums>`, returns the global design variable numbers in the same structure (with -1 marking inactive entries).
 
 First, import the required libraries:
 
@@ -43,7 +41,7 @@ Set up the assembler and a static problem:
    :start-after: # [docs:setup-start]
    :end-before: # [docs:setup-end]
 
-Perturb the active design variables, standing in for the result of an optimization:
+Perturb the active design variables, and solve the problem to produce a new set of function values:
 
 .. literalinclude:: ../../../examples/component_dv_extraction/component_dv_extraction.py
    :language: python
@@ -58,6 +56,14 @@ The dictionary contains plain Python scalars and numpy arrays, so any serializat
    :start-after: # [docs:extract-start]
    :end-before: # [docs:extract-end]
 
+.. code-block:: text
+
+   {'PLATE.00': {'t': 0.015},
+   'PLATE.01': {'t': 0.012},
+   'PLATE.02': {'t': 0.021},
+   'PLATE.03': {'t': 0.016}}
+
+
 Finally, in a separate TACS execution, load the file and use it inside the element callback to rebuild the model with the saved sizing.
 The restored model produces the same function values as the original:
 
@@ -65,3 +71,13 @@ The restored model produces the same function values as the original:
    :language: python
    :start-after: # [docs:restore-start]
    :end-before: # [docs:restore-end]
+
+.. code-block:: text
+
+   Original model functions:
+   {'gravity_ks_vmfailure': np.float64(-0.006805843349318675),
+   'gravity_mass': np.float64(11.119999999999994)}
+
+   Restored model functions:
+   {'gravity_ks_vmfailure': np.float64(-0.006805843349318675),
+   'gravity_mass': np.float64(11.119999999999994)}

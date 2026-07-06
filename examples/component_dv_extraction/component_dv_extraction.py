@@ -9,6 +9,7 @@ We perturb the active design variables (standing in for the result of an optimiz
 # [docs:imports-start]
 import os
 import pickle
+from pprint import pprint
 
 import numpy as np
 
@@ -80,8 +81,7 @@ problem.evalFunctions(funcs)
 componentDVs = FEAAssembler.getComponentDesignVars()
 if FEAAssembler.comm.rank == 0:
     print("Extracted component design variables:")
-    for compDescript, groups in componentDVs.items():
-        print(f"  {compDescript}: {groups}")
+    pprint(componentDVs)
     with open(sizing_file, "wb") as f:
         pickle.dump(componentDVs, f)
 # Make sure the file is written before any other processor tries to read it
@@ -114,6 +114,8 @@ funcs2 = {}
 problem2.evalFunctions(funcs2)
 
 if FEAAssembler2.comm.rank == 0:
-    print("Original model functions: ", funcs)
-    print("Restored model functions: ", funcs2)
+    print("\nOriginal model functions:")
+    pprint(funcs)
+    print("\nRestored model functions:")
+    pprint(funcs2)
 # [docs:restore-end]
