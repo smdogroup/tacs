@@ -1408,7 +1408,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        compDVs : dict[str, dict]
+        compDVs : dict[str, dict[str, Union[float, np.ndarray]]]
             Dictionary of design variable group values for each component. Scalar groups
             are returned as scalars and array groups as 1D numpy arrays.
         """
@@ -1448,7 +1448,7 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        compDVNums : dict[str, dict]
+        compDVNums : dict[str, dict[str, Union[int, np.ndarray]]]
             Dictionary of design variable group numbers for each component. Scalar groups
             are returned as integers and array groups as 1D numpy integer arrays.
         """
