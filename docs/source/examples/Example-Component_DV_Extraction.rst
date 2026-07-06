@@ -10,6 +10,8 @@ Two properties make it suitable as a save/restore format:
 #. Group names and value types match the keyword arguments of the corresponding constitutive class constructor, so values can be passed straight back to the constructor inside an ``elemCallBack`` function.
 #. Every design variable group is always included, whether or not its entries are active design variables, so the receiving model is free to make a different choice of active design variables.
 
+One exception: the ``lp`` group of ``LamParamFullShellConstitutive`` cannot be set through the constructor, and must instead be restored with ``setLaminationParameters`` after construction.
+
 The dictionary is identical on every processor, and active entries always reflect the assembler's current design variable values.
 A companion method, :meth:`pyTACS.getComponentDesignVarNums <tacs.pytacs.pyTACS.getComponentDesignVarNums>`, returns the global design variable numbers in the same structure (with -1 marking inactive entries), which is useful for inspecting which variables are active in the current execution.
 

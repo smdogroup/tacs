@@ -155,6 +155,36 @@ class ComponentDVExtractionTest(unittest.TestCase):
         for groupValues in compDVs.values():
             self.assertEqual(groupValues, {})
 
+    def test_partially_implemented_class_does_not_raise(self):
+        class PartialGroupShellConstitutive(constitutive.IsoShellConstitutive):
+            """Simulates a class that reports a group but whose group DV nums don't cover
+            all of its active design variables."""
+
+            def getDesignVarGroups(self):
+                return {"t": 0.01}
+
+            def getDesignVarGroupDVNums(self):
+                return {"t": -1}
+
+        fea = pyTACS(PARTITIONED_PLATE_BDF, comm=self.comm)
+
+        def elemCallBack(
+            dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
+        ):
+            prop = constitutive.MaterialProperties(
+                rho=2780.0, E=73.1e9, nu=0.33, ys=324e6
+            )
+            con = PartialGroupShellConstitutive(prop, t=0.01, tNum=dvNum)
+            return elements.Quad4Shell(None, con)
+
+        fea.initialize(elemCallBack)
+        # The class claims one group but its group DV nums cover none of its active DVs, so
+        # a warning naming the class is printed on the root proc; the call must still succeed
+        # and return the stale (constructor) group values.
+        compDVs = fea.getComponentDesignVars()
+        for groupValues in compDVs.values():
+            np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
+
 
 class ComponentDVRoundTripTest(unittest.TestCase):
     N_PROCS = 2

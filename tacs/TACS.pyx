@@ -584,8 +584,10 @@ cdef class Constitutive:
         Get the values of every design variable group defined by this constitutive object
 
         Group names and value types match the keyword arguments of this class's constructor,
-        so the returned values can be passed straight back to the constructor. All groups are
-        returned, whether or not their entries are active design variables.
+        so the returned values can be passed straight back to the constructor. One exception:
+        the ``lp`` group of LamParamFullShellConstitutive cannot be set through the
+        constructor; restore it with setLaminationParameters after construction. All groups
+        are returned, whether or not their entries are active design variables.
 
         Note that these values reflect this object's local state; in an MPI run the object
         may not have been updated on processors that do not own any elements using it. For

@@ -1393,6 +1393,10 @@ class pyTACS(BaseUI):
         can be passed directly back to the constructor inside an elemCallBack function to
         recreate the current sizing state in another TACS execution.
 
+        One exception: the ``lp`` group of ``LamParamFullShellConstitutive`` cannot be set
+        through the constructor; restore it with ``setLaminationParameters`` after
+        construction.
+
         All design variable groups are always returned, whether or not their entries are
         active design variables. Active entries reflect the assembler's current design
         variable values; inactive entries hold the values the constitutive object was
@@ -1515,15 +1519,28 @@ class pyTACS(BaseUI):
         return np.concatenate(self.comm.allgather(localValues))
 
     def _checkDVGroupsImplemented(self, compID, con):
-        """Warn if a constitutive object has design variables but does not implement the
-        design variable group API, since its DVs will be missing from the output."""
-        if con.getNumDesignVarGroups() == 0 and len(con.getDesignVarNums()) > 0:
+        """Warn if a constitutive object's design variable groups do not cover all of its
+        design variables, since the missing DVs will be absent from the output."""
+        numDVs = len(con.getDesignVarNums())
+        if con.getNumDesignVarGroups() == 0 and numDVs > 0:
             self._TACSWarning(
                 f"Constitutive class '{type(con).__name__}' used by component {compID} "
                 f"('{self.compDescripts[compID]}') has design variables but does not "
                 "implement the design variable group interface. Its design variables will "
                 "be missing from the component design variable dictionaries."
             )
+        else:
+            numActiveGroupEntries = 0
+            for nums in con.getDesignVarGroupDVNums().values():
+                numActiveGroupEntries += int(np.count_nonzero(np.atleast_1d(nums) >= 0))
+            if numActiveGroupEntries != numDVs:
+                self._TACSWarning(
+                    f"Constitutive class '{type(con).__name__}' used by component {compID} "
+                    f"('{self.compDescripts[compID]}') has {numDVs} design variables but its "
+                    f"design variable groups only cover {numActiveGroupEntries} of them. The "
+                    "remaining design variables will be missing from the component design "
+                    "variable dictionaries."
+                )
 
     @postinitialize_method
     def getOrigNodes(self):
