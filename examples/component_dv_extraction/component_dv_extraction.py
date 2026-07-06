@@ -51,10 +51,16 @@ def element_callback(dvNum, compID, compDescript, elemDescripts, globalDVs, **kw
 FEAAssembler = pyTACS(bdf_file)
 FEAAssembler.initialize(element_callback)
 
-problem = FEAAssembler.createStaticProblem("gravity")
-problem.addInertialLoad(np.array([0.0, 0.0, -9.81]))
-problem.addFunction("mass", functions.StructuralMass)
-problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
+
+def setupStaticProblem(FEAAssembler):
+    problem = FEAAssembler.createStaticProblem("gravity")
+    problem.addInertialLoad(np.array([0.0, 0.0, -9.81]))
+    problem.addFunction("mass", functions.StructuralMass)
+    problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
+    return problem
+
+
+problem = setupStaticProblem(FEAAssembler)
 # [docs:setup-end]
 
 # [docs:perturb-start]
@@ -102,10 +108,7 @@ def element_callback_restored(
 
 FEAAssembler2 = pyTACS(bdf_file)
 FEAAssembler2.initialize(element_callback_restored)
-problem2 = FEAAssembler2.createStaticProblem("gravity")
-problem2.addInertialLoad(np.array([0.0, 0.0, -9.81]))
-problem2.addFunction("mass", functions.StructuralMass)
-problem2.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
+problem2 = setupStaticProblem(FEAAssembler2)
 problem2.solve()
 funcs2 = {}
 problem2.evalFunctions(funcs2)
