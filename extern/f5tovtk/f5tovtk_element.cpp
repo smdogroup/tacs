@@ -18,6 +18,8 @@
 */
 
 // Include FH5 header files
+#include <math.h>
+
 #include "TACSElementTypes.h"
 #include "TACSFH5Loader.h"
 
@@ -124,6 +126,8 @@ int main(int argc, char *argv[]) {
     int *basic_ltypes = new int[num_basic_elements];
     int *basic_conn = new int[basic_conn_size];
 
+    int *basic_parent = new int[num_basic_elements];
+    int *bparent = basic_parent;
     int *btypes = basic_ltypes;
     int *bconn = basic_conn;
     for (int k = 0; k < num_elements; k++) {
@@ -144,6 +148,10 @@ int main(int argc, char *argv[]) {
         TacsConvertVisLayoutToBasic(ltype, &conn_element[ptr[k]], btypes,
                                     bconn);
       }
+      for (int i = 0; i < ntypes; i++) {
+        bparent[i] = k;
+      }
+      bparent += ntypes;
       btypes += ntypes;
       bconn += nconn;
     }
@@ -249,6 +257,42 @@ int main(int argc, char *argv[]) {
         fprintf(fp, "%.3e\n", edata[edim2 * k + j]);
       }
     }
+
+    // Write the design variable data as cell fields (constant per element).
+    // Fields an element's constitutive does not define are NaN
+    const char *dvname, *dvvars;
+    int dvdim1 = 0, dvdim2 = 0;
+    double *dvdata = NULL;
+    loader->getDesignVarData(&dvname, &dvvars, &dvdim1, &dvdim2, &dvdata);
+
+    if (dvdata && dvdim1 == num_elements && dvdim2 > 0) {
+      fprintf(fp, "CELL_DATA %d\n", num_basic_elements);
+      for (int j = 0; j < dvdim2; j++) {
+        char name[256];
+        int index = 0;
+        while (strlen(dvvars) > 0 && dvvars[0] != ',') {
+          name[index] = dvvars[0];
+          index++;
+          dvvars++;
+        }
+        name[index] = '\0';
+        dvvars++;
+
+        fprintf(fp, "SCALARS %s double 1\n", name);
+        fprintf(fp, "LOOKUP_TABLE default\n");
+        for (int k = 0; k < num_basic_elements; k++) {
+          double d = dvdata[dvdim2 * basic_parent[k] + j];
+          if (isnan(d)) {
+            // Print a literal "nan": MSVC's %e emits "nan(ind)", which VTK
+            // readers cannot parse
+            fprintf(fp, "nan\n");
+          } else {
+            fprintf(fp, "%.9e\n", d);
+          }
+        }
+      }
+    }
+    delete[] basic_parent;
 
     fclose(fp);
 
