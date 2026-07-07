@@ -31,7 +31,8 @@ def makeShellCon(t, tNum):
 
 def setupPartitionedPlate(comm, thicknesses):
     """Create an initialized pyTACS instance for partitioned_plate.bdf with a mix of
-    active and inactive thickness DVs."""
+    active and inactive thickness DVs.
+    """
     fea = pyTACS(PARTITIONED_PLATE_BDF, comm=comm)
 
     def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
@@ -158,7 +159,8 @@ class ComponentDVExtractionTest(unittest.TestCase):
     def test_partially_implemented_class_does_not_raise(self):
         class PartialGroupShellConstitutive(constitutive.IsoShellConstitutive):
             """Simulates a class that reports a group but whose group DV nums don't cover
-            all of its active design variables."""
+            all of its active design variables.
+            """
 
             def getDesignVarGroups(self):
                 return {"t": 0.01}

@@ -1466,7 +1466,8 @@ class pyTACS(BaseUI):
 
     def _checkUniqueComponentDescripts(self):
         """Raise an error if any two components share a description, since the component
-        design variable dictionaries are keyed by description."""
+        design variable dictionaries are keyed by description.
+        """
         seen = set()
         duplicates = set()
         for descript in self.compDescripts:
@@ -1520,7 +1521,8 @@ class pyTACS(BaseUI):
 
     def _checkDVGroupsImplemented(self, compID, con):
         """Warn if a constitutive object's design variable groups do not cover all of its
-        design variables, since the missing DVs will be absent from the output."""
+        design variables, since the missing DVs will be absent from the output.
+        """
         numDVs = len(con.getDesignVarNums())
         if con.getNumDesignVarGroups() == 0 and numDVs > 0:
             self._TACSWarning(
