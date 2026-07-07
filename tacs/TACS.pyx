@@ -2852,6 +2852,36 @@ cdef class FH5Loader:
 
         return convert_bytes_to_str(var_names), fdata
 
+    def getDesignVarData(self):
+        """
+        getDesignVarData(self)
+
+        Return the design variable data: one row per element, one column per
+        design variable field entry in the file. Entries not defined by an
+        element's constitutive are NaN. Raises ValueError if the file holds
+        no design variable data zone (written by an older TACS or with the
+        writeDesignVars option disabled).
+        """
+        cdef const char* _var_names = NULL
+        cdef bytes var_names
+        cdef int dim1 = 0
+        cdef int dim2 = 0
+        cdef double *data = NULL
+
+        self.ptr.getDesignVarData(NULL, &_var_names, &dim1, &dim2, &data)
+        if data == NULL:
+            raise ValueError(
+                "File contains no design variable data zone; it was either "
+                "written by an older TACS version or with writeDesignVars=False"
+            )
+        var_names = _var_names
+
+        ddata = inplace_array_2d(np.NPY_DOUBLE, dim1, dim2, <void*>data,
+                                 <PyObject*>self)
+        Py_INCREF(self)
+
+        return convert_bytes_to_str(var_names), ddata
+
     def getElementDataAsContinuous(self, name):
         """
         getElementDataAsContinuous(self, name)

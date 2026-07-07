@@ -602,6 +602,8 @@ cdef extern from "TACSFH5Loader.h":
                                int*, int*, float**)
         void getElementData(const char**, const char**,
                             int*, int*, float**)
+        void getDesignVarData(const char **zone_name, const char **var_names,
+                              int *dim1, int *dim2, double **data)
         void getElementDataAsContinuous(int, float*)
         void computeValueMask(ElementLayout, int, int, float, float, int*)
         void computePlanarMask(ElementLayout, float*, float*, int*)
