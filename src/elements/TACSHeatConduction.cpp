@@ -335,10 +335,7 @@ void TACSHeatConduction2D::getOutputData(
     }
     if (write_flag & TACS_OUTPUT_EXTRAS) {
       data[0] = stiff->evalDensity(elemIndex, pt, X);
-      data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
-      data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
-      data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data += 4;
+      data += 1;
     }
   }
 }
@@ -698,10 +695,7 @@ void TACSHeatConduction3D::getOutputData(
     }
     if (write_flag & TACS_OUTPUT_EXTRAS) {
       data[0] = stiff->evalDensity(elemIndex, pt, X);
-      data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
-      data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
-      data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data += 4;
+      data += 1;
     }
   }
 }

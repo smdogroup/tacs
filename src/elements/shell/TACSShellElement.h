@@ -1647,10 +1647,7 @@ void TACSShellElement<quadrature, basis, director, model>::getOutputData(
           data[failInd] =
               con->evalFailureFieldValue(elemIndex, pt, X, e, failInd);
         }
-        for (int dvInd = 0; dvInd < 7; dvInd++) {
-          data[dvInd + 7] = con->evalDesignFieldValue(elemIndex, pt, X, dvInd);
-        }
-        data += 14;
+        data += 7;
       }
       if (write_flag & TACS_OUTPUT_COORDINATE_FRAME) {
         data[0] = T[0];

@@ -355,11 +355,8 @@ void TACSPCMHeatConduction2D::getOutputData(
     }
     if (write_flag & TACS_OUTPUT_EXTRAS) {
       data[0] = stiff->evalDensity(elemIndex, pt, X, Ut);
-      data[1] = stiff->evalDesignFieldValue(elemIndex, pt, X, 0);
-      data[2] = stiff->evalDesignFieldValue(elemIndex, pt, X, 1);
-      data[3] = stiff->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data[4] = stiff->evalPhase(Ut[0]);
-      data += 5;
+      data[1] = stiff->evalPhase(Ut[0]);
+      data += 2;
     }
   }
 }

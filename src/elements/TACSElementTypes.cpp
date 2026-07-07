@@ -67,7 +67,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 2;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 4;
+      return 1;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 1;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -81,7 +81,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 3;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 4;
+      return 1;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 1;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -95,7 +95,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 9;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 14;
+      return 7;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 6;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -111,7 +111,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 3;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 4;
+      return 1;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 2;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -125,7 +125,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 6;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 4;
+      return 1;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 3;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -139,7 +139,7 @@ int TacsGetOutputComponentCount(ElementType etype, int comp) {
     } else if (comp == TACS_OUTPUT_STRESSES) {
       return 2;
     } else if (comp == TACS_OUTPUT_EXTRAS) {
-      return 5;
+      return 2;
     } else if (comp == TACS_OUTPUT_LOADS) {
       return 1;
     } else if (comp == TACS_OUTPUT_REACTIONS) {
@@ -198,12 +198,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       switch (index) {
         case 0:
           return "failure";
-        case 1:
-          return "dv1";
-        case 2:
-          return "dv2";
-        case 3:
-          return "dv3";
         default:
           return NULL;
       }
@@ -241,12 +235,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       switch (index) {
         case 0:
           return "failure";
-        case 1:
-          return "dv1";
-        case 2:
-          return "dv2";
-        case 3:
-          return "dv3";
         default:
           return NULL;
       }
@@ -335,20 +323,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
           return "failure5";
         case 6:
           return "failure6";
-        case 7:
-          return "dv1";
-        case 8:
-          return "dv2";
-        case 9:
-          return "dv3";
-        case 10:
-          return "dv4";
-        case 11:
-          return "dv5";
-        case 12:
-          return "dv6";
-        case 13:
-          return "dv7";
         default:
           return NULL;
       }
@@ -447,12 +421,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       switch (index) {
         case 0:
           return "failure";
-        case 1:
-          return "dv1";
-        case 2:
-          return "dv2";
-        case 3:
-          return "dv3";
         default:
           return NULL;
       }
@@ -525,12 +493,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
       switch (index) {
         case 0:
           return "failure";
-        case 1:
-          return "dv1";
-        case 2:
-          return "dv2";
-        case 3:
-          return "dv3";
         default:
           return NULL;
       }
@@ -588,12 +550,6 @@ const char *TacsGetOutputComponentName(ElementType etype, int comp, int index) {
         case 0:
           return "rho";
         case 1:
-          return "dv1";
-        case 2:
-          return "dv2";
-        case 3:
-          return "dv3";
-        case 4:
           return "phase";
         default:
           return NULL;

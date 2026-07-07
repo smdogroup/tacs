@@ -256,8 +256,8 @@ void TACSNeohookean3D::getOutputData(int elemIndex, const double time,
       data += 6;
     }
     if (write_flag & TACS_OUTPUT_EXTRAS) {
-      data[0] = data[1] = data[2] = data[3] = 0.0;
-      data += 4;
+      data[0] = 0.0;
+      data += 1;
     }
   }
 }

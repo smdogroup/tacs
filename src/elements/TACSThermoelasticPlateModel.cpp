@@ -497,10 +497,10 @@ void TACSThermoelasticPlateModel::getOutputData(
     }
     if (write_flag & TACS_OUTPUT_EXTRAS) {
       data[0] = con->evalFailure(elemIndex, pt, X, e);
-      data[1] = con->evalDesignFieldValue(elemIndex, pt, X, 0);
-      data[2] = con->evalDesignFieldValue(elemIndex, pt, X, 1);
-      data[3] = con->evalDesignFieldValue(elemIndex, pt, X, 2);
-      data += 4;
+      for (int i = 1; i < 7; i++) {
+        data[i] = 0.0;
+      }
+      data += 7;
     }
   }
 }
