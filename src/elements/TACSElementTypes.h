@@ -43,6 +43,7 @@ const int TACS_OUTPUT_EXTRAS = 32;
 const int TACS_OUTPUT_LOADS = 64;
 const int TACS_OUTPUT_COORDINATE_FRAME = 128;
 const int TACS_OUTPUT_REACTIONS = 256;
+const int TACS_OUTPUT_DESIGN_VARS = 512;
 
 /**
   The Element type defines how many displacement, stress, and strain

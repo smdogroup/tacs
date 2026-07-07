@@ -49,7 +49,7 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
   element_write_flag =
       write_flag & (~(TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
                       TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_LOADS |
-                      TACS_OUTPUT_REACTIONS));
+                      TACS_OUTPUT_REACTIONS | TACS_OUTPUT_DESIGN_VARS));
 
   // Count up the number of values that will be output for each point
   // in the mesh
