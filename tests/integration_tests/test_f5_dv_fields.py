@@ -103,9 +103,7 @@ class F5DesignVarFieldTest(unittest.TestCase):
         return fea
 
     def writeAndLoad(self, fea):
-        """Write an f5 on all ranks, read the dv zone back on the root rank, and
-        broadcast the results so every rank can run identical assertions.
-        """
+        """Write an f5 on all ranks, read the dv zone back on the root rank, and broadcast the results so every rank can run identical assertions."""
         if self.comm.rank == 0:
             tmpDir = tempfile.mkdtemp()
         else:

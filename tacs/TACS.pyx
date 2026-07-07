@@ -2859,8 +2859,9 @@ cdef class FH5Loader:
         Return the design variable data: one row per element, one column per
         design variable field entry in the file. Entries not defined by an
         element's constitutive are NaN. Raises ValueError if the file holds
-        no design variable data zone (written by an older TACS or with the
-        writeDesignVars option disabled).
+        no design variable data zone (written by an older TACS, with the
+        writeDesignVars option disabled, or if the model's constitutive
+        objects define no named design variable groups).
         """
         cdef const char* _var_names = NULL
         cdef bytes var_names

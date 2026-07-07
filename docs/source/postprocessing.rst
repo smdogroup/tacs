@@ -341,6 +341,7 @@ Design Variable Fields
 ----------------------
 
 TACS writes the model's design variables to a dedicated per-element data block in the ``.f5`` file, controlled by the pyTACS option ``writeDesignVars``.
+At the C++ level, the block is controlled by the ``TACS_OUTPUT_DESIGN_VARS`` output flag passed to ``TACSToFH5``.
 Each field is named after the corresponding constitutive design variable group, matching the constructor keyword argument (e.g ``t``, ``thickness``).
 Array-valued groups contribute one field per entry with a zero-based suffix (e.g ``ply_fractions_0``, ``ply_fractions_1``).
 All groups are written whether or not their design variables are active.
