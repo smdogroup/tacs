@@ -49,6 +49,12 @@ class TACSToFH5 : public TACSObject {
   // Get a character string of the variable names
   char *getElementVarNames(int flag);
 
+  // Build the union of design variable field names across all ranks
+  void buildDesignVarNames();
+
+  // Write the design variable data zone
+  int writeDesignVarData(TACSFH5File *file);
+
   // Write the connectivity information to a file
   int writeConnectivity(TACSFH5File *file);
 
@@ -64,6 +70,9 @@ class TACSToFH5 : public TACSObject {
   int num_components;      // The number of components in the model
   char **component_names;  // The names of each of the components
   char *variable_names;    // The names of all the variables
+
+  int num_dv_names;  // Number of entries in the design variable name union
+  char **dv_names;   // Lexicographically sorted union of DV entry names
 };
 
 #endif  // TACS_TO_FH5

@@ -18,6 +18,12 @@
 
 #include "TACSToFH5.h"
 
+#include <limits>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
 /**
    Create the TACSToFH5 object.
 
@@ -70,6 +76,14 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
     snprintf(comp_name, sizeof(comp_name), "Component %d", k);
     setComponentName(k, comp_name);
   }
+
+  // Build the design variable field name union. This is a collective
+  // operation, so it must run on every rank
+  num_dv_names = 0;
+  dv_names = NULL;
+  if (write_flag & TACS_OUTPUT_DESIGN_VARS) {
+    buildDesignVarNames();
+  }
 }
 
 /**
@@ -88,6 +102,13 @@ TACSToFH5::~TACSToFH5() {
     }
   }
   delete[] component_names;
+
+  for (int k = 0; k < num_dv_names; k++) {
+    delete[] dv_names[k];
+  }
+  if (dv_names) {
+    delete[] dv_names;
+  }
 }
 
 /**
@@ -429,6 +450,12 @@ int TACSToFH5::writeToFile(const char *filename) {
     delete[] float_data;
   }
 
+  // Write the design variable data zone. num_dv_names is identical on all
+  // ranks, so this collective call is either made everywhere or nowhere
+  if ((write_flag & TACS_OUTPUT_DESIGN_VARS) && num_dv_names > 0) {
+    writeDesignVarData(file);
+  }
+
   file->close();
   file->decref();
 
@@ -633,4 +660,171 @@ char *TACSToFH5::getElementVarNames(int flag) {
   }
 
   return elem_vars;
+}
+
+/**
+  Build the sorted union of design variable field entry names.
+
+  Each rank collects the entry names from its local constitutive objects
+  (one entry per scalar group; an array group of size n contributes
+  name_0..name_{n-1}), the name sets are gathered across all ranks, and
+  the union is sorted lexicographically so every rank holds an identical
+  list.
+*/
+void TACSToFH5::buildDesignVarNames() {
+  // Collect the unique entry names from the local elements
+  std::set<std::string> local_names;
+  int num_elements = assembler->getNumElements();
+  TACSElement **elements = assembler->getElements();
+  for (int i = 0; i < num_elements; i++) {
+    TACSConstitutive *con = elements[i]->getConstitutive();
+    if (con) {
+      int num_groups = con->getNumDesignVarGroups();
+      for (int g = 0; g < num_groups; g++) {
+        const char *name = con->getDesignVarGroupName(g);
+        if (name) {
+          if (con->isDesignVarGroupScalar(g)) {
+            local_names.insert(std::string(name));
+          } else {
+            int size = con->getDesignVarGroupSize(g);
+            for (int j = 0; j < size; j++) {
+              char entry[256];
+              snprintf(entry, sizeof(entry), "%s_%d", name, j);
+              local_names.insert(std::string(entry));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Pack the local names into a null-separated buffer
+  std::string local_buf;
+  for (std::set<std::string>::iterator it = local_names.begin();
+       it != local_names.end(); ++it) {
+    local_buf += *it;
+    local_buf += '\0';
+  }
+
+  // Gather every rank's buffer so all ranks see the global name set
+  MPI_Comm comm = assembler->getMPIComm();
+  int mpi_size;
+  MPI_Comm_size(comm, &mpi_size);
+
+  int local_len = local_buf.size();
+  int *lens = new int[mpi_size];
+  MPI_Allgather(&local_len, 1, MPI_INT, lens, 1, MPI_INT, comm);
+
+  int *displs = new int[mpi_size];
+  displs[0] = 0;
+  for (int k = 1; k < mpi_size; k++) {
+    displs[k] = displs[k - 1] + lens[k - 1];
+  }
+  int total_len = displs[mpi_size - 1] + lens[mpi_size - 1];
+
+  char *global_buf = new char[total_len + 1];
+  MPI_Allgatherv(local_buf.data(), local_len, MPI_CHAR, global_buf, lens,
+                 displs, MPI_CHAR, comm);
+  delete[] lens;
+  delete[] displs;
+
+  // Re-parse the null-separated names into a set: sorted lexicographically
+  // and identical on all ranks
+  std::set<std::string> global_names;
+  int offset = 0;
+  while (offset < total_len) {
+    std::string name(&global_buf[offset]);
+    global_names.insert(name);
+    offset += name.size() + 1;
+  }
+  delete[] global_buf;
+
+  // Copy the union into the member array
+  num_dv_names = global_names.size();
+  if (num_dv_names > 0) {
+    dv_names = new char *[num_dv_names];
+    int index = 0;
+    for (std::set<std::string>::iterator it = global_names.begin();
+         it != global_names.end(); ++it, index++) {
+      dv_names[index] = new char[it->size() + 1];
+      strcpy(dv_names[index], it->c_str());
+    }
+  }
+}
+
+/**
+  Write the design variable data zone: one row per element, one column per
+  entry in the design variable name union. Entries that an element's
+  constitutive does not define are NaN.
+
+  @param file The FH5 file to write the zone into
+*/
+int TACSToFH5::writeDesignVarData(TACSFH5File *file) {
+  // Build the lookup from entry name to column index
+  std::map<std::string, int> name_to_col;
+  for (int j = 0; j < num_dv_names; j++) {
+    name_to_col[std::string(dv_names[j])] = j;
+  }
+
+  int num_elements = assembler->getNumElements();
+  TACSElement **elements = assembler->getElements();
+
+  double nan_val = std::numeric_limits<double>::quiet_NaN();
+  double *data = new double[num_elements * num_dv_names];
+  for (int i = 0; i < num_elements * num_dv_names; i++) {
+    data[i] = nan_val;
+  }
+
+  for (int i = 0; i < num_elements; i++) {
+    TACSConstitutive *con = elements[i]->getConstitutive();
+    if (con) {
+      int num_groups = con->getNumDesignVarGroups();
+      for (int g = 0; g < num_groups; g++) {
+        const char *name = con->getDesignVarGroupName(g);
+        if (name) {
+          int size = con->getDesignVarGroupSize(g);
+          std::vector<TacsScalar> values(size);
+          con->getDesignVarGroupValues(g, values.data());
+          if (con->isDesignVarGroupScalar(g)) {
+            int col = name_to_col[std::string(name)];
+            data[num_dv_names * i + col] = TacsRealPart(values[0]);
+          } else {
+            for (int j = 0; j < size; j++) {
+              char entry[256];
+              snprintf(entry, sizeof(entry), "%s_%d", name, j);
+              int col = name_to_col[std::string(entry)];
+              data[num_dv_names * i + col] = TacsRealPart(values[j]);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Build the comma-separated variable name string
+  size_t str_len = 1;
+  for (int j = 0; j < num_dv_names; j++) {
+    str_len += strlen(dv_names[j]) + 1;
+  }
+  char *var_names = new char[str_len];
+  var_names[0] = '\0';
+  for (int j = 0; j < num_dv_names; j++) {
+    size_t len = strlen(var_names);
+    if (j == 0) {
+      snprintf(&var_names[len], str_len - len, "%s", dv_names[j]);
+    } else {
+      snprintf(&var_names[len], str_len - len, ",%s", dv_names[j]);
+    }
+  }
+
+  // Write the zone with a time stamp matching the other data zones
+  char data_name[128];
+  double t = assembler->getSimulationTime();
+  snprintf(data_name, sizeof(data_name), "dv data t=%.10e", t);
+  file->writeZoneData(data_name, var_names, TACSFH5File::FH5_DOUBLE,
+                      num_elements, num_dv_names, data);
+
+  delete[] var_names;
+  delete[] data;
+  return 0;
 }
