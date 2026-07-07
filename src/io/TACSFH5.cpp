@@ -191,7 +191,7 @@ int TACSFH5File::writeZoneData(char *zone_name, char *var_names,
 
     int *dim_count = NULL;
     if (!dim1_range) {
-      int *dim_count = new int[size + 1];
+      dim_count = new int[size + 1];
       dim_count[0] = 0;
       MPI_Allgather(&dim1, 1, MPI_INT, &dim_count[1], 1, MPI_INT, comm);
 
