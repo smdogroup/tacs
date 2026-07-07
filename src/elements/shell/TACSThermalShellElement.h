@@ -58,6 +58,8 @@ class TACSThermalShellElement : public TACSElement {
 
   const char *getObjectName() { return "TACSThermalShellElement"; }
 
+  TACSConstitutive *getConstitutive() { return con; }
+
   ElementLayout getLayoutType() { return basis::getLayoutType(); }
 
   ElementType getElementType() { return TACS_BEAM_OR_SHELL_ELEMENT; }

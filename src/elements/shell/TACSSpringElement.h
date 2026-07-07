@@ -32,6 +32,7 @@ class TACSSpringElement : public TACSElement {
   // Get the element properties and names
   // ------------------------------------
   const char *getObjectName();
+  TACSConstitutive *getConstitutive() { return springStiff; }
   int getVarsPerNode();
   int getNumNodes();
   ElementType getElementType();

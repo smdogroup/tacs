@@ -146,6 +146,8 @@ class TACSBeamElement : public TACSElement {
 
   const char *getObjectName() { return "TACSBeamElement"; }
 
+  TACSConstitutive *getConstitutive() { return con; }
+
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return basis::NUM_NODES; }
 

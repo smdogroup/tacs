@@ -12,6 +12,7 @@ class TACSMassElement : public TACSElement {
   // Get the element properties and names
   // ------------------------------------
   const char *getObjectName();
+  TACSConstitutive *getConstitutive() { return con; }
   int getVarsPerNode();
   int getNumNodes();
   ElementType getElementType();

@@ -80,6 +80,10 @@ TACSElementBasis *TACSElement3D::getElementBasis() { return basis; }
 
 TACSElementModel *TACSElement3D::getElementModel() { return model; }
 
+TACSConstitutive *TACSElement3D::getConstitutive() {
+  return model->getConstitutive();
+}
+
 int TACSElement3D::getNumQuadraturePoints() {
   return basis->getNumQuadraturePoints();
 }

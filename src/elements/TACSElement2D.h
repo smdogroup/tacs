@@ -34,6 +34,7 @@ class TACSElement2D : public TACSElement {
   ElementType getElementType();
   TACSElementBasis *getElementBasis();
   TACSElementModel *getElementModel();
+  TACSConstitutive *getConstitutive();
   TACSElement *createElementTraction(int faceIndex, const TacsScalar t[]);
   TACSElement *createElementPressure(int faceIndex, TacsScalar p);
   TACSElement *createElementInertialForce(const TacsScalar inertiaVec[]);

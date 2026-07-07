@@ -52,6 +52,10 @@ TACSElementBasis *TACSElement2D::getElementBasis() { return basis; }
 
 TACSElementModel *TACSElement2D::getElementModel() { return model; }
 
+TACSConstitutive *TACSElement2D::getConstitutive() {
+  return model->getConstitutive();
+}
+
 TACSElement *TACSElement2D::createElementTraction(int faceIndex,
                                                   const TacsScalar t[]) {
   int varsPerNode = getVarsPerNode();

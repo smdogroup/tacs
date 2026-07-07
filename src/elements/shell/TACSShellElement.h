@@ -57,6 +57,8 @@ class TACSShellElement : public TACSElement {
 
   const char *getObjectName() { return "TACSShellElement"; }
 
+  TACSConstitutive *getConstitutive() { return con; }
+
   int getVarsPerNode() { return vars_per_node; }
   int getNumNodes() { return num_nodes; }
 

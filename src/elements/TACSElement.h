@@ -33,6 +33,8 @@
 #include "TACSElementTypes.h"
 #include "TACSObject.h"
 
+class TACSConstitutive;
+
 // The TACSElement base class
 class TACSElement : public TACSObject {
  public:
@@ -195,6 +197,14 @@ class TACSElement : public TACSObject {
     NULL.
   */
   virtual TACSElementModel *getElementModel() { return NULL; }
+
+  /**
+    Get the constitutive object associated with this element
+
+    @return The TACSConstitutive object associated with this element.
+    Possibly NULL.
+  */
+  virtual TACSConstitutive *getConstitutive() { return NULL; }
 
   /**
     Create element traction class
