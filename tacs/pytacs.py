@@ -102,6 +102,12 @@ class pyTACS(BaseUI):
             True,
             "Flag for whether to include element extra variables in f5 file.",
         ],
+        "writeDesignVars": [
+            bool,
+            True,
+            "Flag for whether to include design variable values in the f5 file.\n"
+            "\t Fields are named after the constitutive design variable groups (e.g t, thickness, ply_fractions_0).",
+        ],
         "writeLoads": [
             bool,
             True,
@@ -2576,6 +2582,8 @@ class pyTACS(BaseUI):
             write_flag |= tacs.TACS.OUTPUT_STRESSES
         if self.getOption("writeExtras"):
             write_flag |= tacs.TACS.OUTPUT_EXTRAS
+        if self.getOption("writeDesignVars"):
+            write_flag |= tacs.TACS.OUTPUT_DESIGN_VARS
         if self.getOption("writeLoads"):
             write_flag |= tacs.TACS.OUTPUT_LOADS
         if self.getOption("writeReactions"):
