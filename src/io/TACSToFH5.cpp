@@ -37,6 +37,12 @@
    the stress or strain independently in each element, (2) can produce
    a smaller output file and may be best for large-scale computations.
 
+   Note: when write_flag includes TACS_OUTPUT_DESIGN_VARS, this constructor
+   builds the design variable field name union, which is a collective
+   operation over the assembler's MPI communicator. In that case, this
+   constructor must be called on every rank in that communicator, or the
+   call will deadlock.
+
    @param assembler The TACSAssembler object
    @param elem_type The type of element output to generate
    @param write_flag XOR flag indicating classes of output to write
@@ -786,13 +792,13 @@ int TACSToFH5::writeDesignVarData(TACSFH5File *file) {
           std::vector<TacsScalar> values(size);
           con->getDesignVarGroupValues(g, values.data());
           if (con->isDesignVarGroupScalar(g)) {
-            int col = name_to_col[std::string(name)];
+            int col = name_to_col.at(std::string(name));
             data[num_dv_names * i + col] = TacsRealPart(values[0]);
           } else {
             for (int j = 0; j < size; j++) {
               char entry[256];
               snprintf(entry, sizeof(entry), "%s_%d", name, j);
-              int col = name_to_col[std::string(entry)];
+              int col = name_to_col.at(std::string(entry));
               data[num_dv_names * i + col] = TacsRealPart(values[j]);
             }
           }
