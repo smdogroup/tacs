@@ -39,6 +39,12 @@ TACSFH5Loader::TACSFH5Loader() {
   element_vars = NULL;
   num_nodes_element = -1;
   num_vals_element = -1;
+
+  dv_data = NULL;
+  dv_zone = NULL;
+  dv_vars = NULL;
+  num_elements_dv = -1;
+  num_vals_dv = -1;
 }
 
 TACSFH5Loader::~TACSFH5Loader() {
@@ -59,6 +65,9 @@ TACSFH5Loader::~TACSFH5Loader() {
   }
   if (element_data) {
     delete[] element_data;
+  }
+  if (dv_data) {
+    delete[] dv_data;
   }
   if (data_file) {
     data_file->decref();
@@ -173,6 +182,12 @@ int TACSFH5Loader::loadData(const char *conn_fname, const char *data_fname) {
         num_nodes_element = dim1;
         num_vals_element = dim2;
         element_data = (float *)fdata;
+      } else if (strncmp("dv data", zone_name, 7) == 0) {
+        void *ddata;
+        data_file->getZoneData(&dv_zone, &dv_vars, NULL, NULL, NULL, &ddata);
+        num_elements_dv = dim1;
+        num_vals_dv = dim2;
+        dv_data = (double *)ddata;
       }
 
       if (!data_file->nextZone()) {
@@ -270,6 +285,26 @@ void TACSFH5Loader::getElementData(const char **zone_name,
   }
   if (data) {
     *data = element_data;
+  }
+}
+
+void TACSFH5Loader::getDesignVarData(const char **zone_name,
+                                     const char **var_names, int *dim1,
+                                     int *dim2, double **data) {
+  if (zone_name) {
+    *zone_name = dv_zone;
+  }
+  if (var_names) {
+    *var_names = dv_vars;
+  }
+  if (dim1) {
+    *dim1 = num_elements_dv;
+  }
+  if (dim2) {
+    *dim2 = num_vals_dv;
+  }
+  if (data) {
+    *data = dv_data;
   }
 }
 

@@ -45,6 +45,8 @@ class TACSFH5Loader : public TACSObject {
                          int *dim1, int *dim2, float **data);
   void getElementData(const char **zone_name, const char **var_names, int *dim1,
                       int *dim2, float **data);
+  void getDesignVarData(const char **zone_name, const char **var_names,
+                        int *dim1, int *dim2, double **data);
 
   // Methods for post-processing data
   void getElementDataAsContinuous(int index, float *data);
@@ -85,6 +87,11 @@ class TACSFH5Loader : public TACSObject {
   const char *element_zone, *element_vars;
   int num_nodes_element, num_vals_element;
   float *element_data;
+
+  // Design variable data
+  const char *dv_zone, *dv_vars;
+  int num_elements_dv, num_vals_dv;
+  double *dv_data;
 
   // Open file that contains the
   TACSFH5File *data_file;
