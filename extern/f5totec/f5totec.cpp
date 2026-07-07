@@ -17,6 +17,7 @@
   FH5 files. (This is designed primarily to work with TACS).
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,7 +73,8 @@ int create_tec_file(char *data_info, char *var_names, char *file_name,
 */
 int create_fe_tec_zone(char *zone_name, ZoneType _zone_type, int _num_points,
                        int _num_elements, int *_value_location = NULL,
-                       int use_strands = 0, double solution_time = 0.0) {
+                       int *_passive_var_list = NULL, int use_strands = 0,
+                       double solution_time = 0.0) {
   if (_zone_type == ORDERED || _zone_type == FEPOLYGON ||
       _zone_type == FEPOLYHEDRA) {
     fprintf(stderr,
@@ -95,7 +97,7 @@ zone type\n");
   INTEGER4 total_num_face_nodes = 0;
   INTEGER4 num_connected_boundary_faces = 0;
   INTEGER4 total_num_boundary_connections = 0;
-  INTEGER4 *passive_var_list = NULL;  // No passive variables
+  INTEGER4 *passive_var_list = _passive_var_list;
   INTEGER4 *value_location =
       _value_location;  // Array defining if value is nodal or element-wise
   INTEGER4 *share_var_from_zone = NULL;
@@ -221,14 +223,29 @@ int main(int argc, char *argv[]) {
     loader->getElementData(&ename, &evar_names, &edim1, &num_evariables,
                            &edata);
 
+    const char *dvname, *dv_var_names;
+    int dvdim1 = 0, num_dvvars = 0;
+    double *dvdata = NULL;
+    loader->getDesignVarData(&dvname, &dv_var_names, &dvdim1, &num_dvvars,
+                             &dvdata);
+    if (!dvdata) {
+      num_dvvars = 0;  // Old file without a dv data zone
+    }
+
     double solution_time = 0.0;
 
     // Initialize the tecplot file with the variables
-    // Concatenate continuous and element variable names
-    char *all_vars = new char[strlen(var_names) + strlen(evar_names) + 2];
-    strcpy(all_vars, var_names);
-    all_vars[strlen(var_names)] = ',';
-    strcpy(&all_vars[strlen(var_names) + 1], evar_names);
+    // Concatenate continuous, element, and dv variable names
+    size_t all_len = strlen(var_names) + strlen(evar_names) + 3;
+    if (num_dvvars > 0) {
+      all_len += strlen(dv_var_names);
+    }
+    char *all_vars = new char[all_len];
+    snprintf(all_vars, all_len, "%s,%s", var_names, evar_names);
+    if (num_dvvars > 0) {
+      size_t len = strlen(all_vars);
+      snprintf(&all_vars[len], all_len - len, ",%s", dv_var_names);
+    }
     create_tec_file(data_info, all_vars, outfile, dir_name, FULL);
     tec_init = 1;
     delete[] all_vars;
@@ -399,11 +416,12 @@ int main(int argc, char *argv[]) {
 
     int *reduced_points = new int[num_points];
     int *reduced_conn = new int[basic_conn_size];
-    int *value_location = new int[num_variables + num_evariables];
+    int num_all_vars = num_variables + num_evariables + num_dvvars;
+    int *value_location = new int[num_all_vars];
     for (int j = 0; j < num_variables; j++) {
       value_location[j] = 1;  // 1 = nodal
     }
-    for (int j = 0; j < num_evariables; j++) {
+    for (int j = 0; j < num_evariables + num_dvvars; j++) {
       value_location[num_variables + j] = 0;  // 0 = cell-centered
     }
 
@@ -494,10 +512,31 @@ int main(int argc, char *argv[]) {
       float *element_float_data = NULL;
       element_float_data = new float[nelems];
 
+      // Mark dv variables with no data anywhere in this component as passive.
+      // Tecplot then treats them as absent from this zone
+      int *passive = NULL;
+      if (num_dvvars > 0) {
+        passive = new int[num_all_vars];
+        memset(passive, 0, num_all_vars * sizeof(int));
+        for (int j = 0; j < num_dvvars; j++) {
+          int all_nan = 1;
+          for (int i = 0; i < num_elements; i++) {
+            if (element_comp_num[i] == k &&
+                !isnan(dvdata[num_dvvars * i + j])) {
+              all_nan = 0;
+              break;
+            }
+          }
+          if (all_nan) {
+            passive[num_variables + num_evariables + j] = 1;
+          }
+        }
+      }
+
       if (nelems > 0 && npts > 0) {
         // Create the zone with the solution time
         create_fe_tec_zone(comp_name, zone_type, npts, nelems, value_location,
-                           use_strands, solution_time);
+                           passive, use_strands, solution_time);
 
         // Retrieve the continuous data
         for (int j = 0; j < num_variables; j++) {
@@ -525,12 +564,36 @@ int main(int argc, char *argv[]) {
           count = 0;
         }
 
+        // Write the dv data cell-centered; passive variables get no data.
+        // NaN inside a non-passive column (a mixed-constitutive component)
+        // is written as 0 because Tecplot does not support NaN data
+        for (int j = 0; j < num_dvvars; j++) {
+          if (passive[num_variables + num_evariables + j]) {
+            continue;
+          }
+          count = 0;
+          for (int i = 0; i < num_basic_elements; i++) {
+            if (basic_element_comp_num[i] == k) {
+              double d = dvdata[num_dvvars * basic_element_global_ptr[i] + j];
+              if (isnan(d)) {
+                d = 0.0;
+              }
+              element_float_data[count] = (float)d;
+              count++;
+            }
+          }
+          write_tec_float_data(nelems, element_float_data);
+        }
+
         // Now, write the connectivity
         write_con_data(reduced_conn);
       }
       // Clean up memory
       delete[] reduced_float_data;
       delete[] element_float_data;
+      if (passive) {
+        delete[] passive;
+      }
     }
 
     if (tec_init) {
