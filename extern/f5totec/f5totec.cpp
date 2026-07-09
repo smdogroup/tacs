@@ -564,7 +564,7 @@ int main(int argc, char *argv[]) {
           count = 0;
         }
 
-        // Write the dv data cell-centered; passive variables get no data.
+        // Write the design data cell-centered; passive variables get no data.
         // NaN inside a non-passive column (a mixed-constitutive component)
         // is written as 0 because Tecplot does not support NaN data
         for (int j = 0; j < num_dvvars; j++) {

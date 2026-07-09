@@ -52,7 +52,7 @@ class TACSToFH5 : public TACSObject {
   // Build the union of design variable field names across all ranks
   void buildDesignVarNames();
 
-  // Write the design variable data zone
+  // Write the design data zone
   int writeDesignVarData(TACSFH5File *file);
 
   // Write the connectivity information to a file

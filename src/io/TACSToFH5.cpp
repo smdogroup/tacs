@@ -456,7 +456,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     delete[] float_data;
   }
 
-  // Write the design variable data zone. num_dv_names is identical on all
+  // Write the design data zone. num_dv_names is identical on all
   // ranks, so this collective call is either made everywhere or nowhere
   if ((write_flag & TACS_OUTPUT_DESIGN_VARS) && num_dv_names > 0) {
     writeDesignVarData(file);
