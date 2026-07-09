@@ -1087,6 +1087,74 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
+int TACSGPBladeStiffenedShellConstitutive::getNumDerivedOutputs() {
+  return TACSBladeStiffenedShellConstitutive::getNumDerivedOutputs() + 6;
+}
+
+const char *TACSGPBladeStiffenedShellConstitutive::getDerivedOutputName(
+    int index) {
+  int numParentOutputs =
+      TACSBladeStiffenedShellConstitutive::getNumDerivedOutputs();
+  if (index < numParentOutputs) {
+    return TACSBladeStiffenedShellConstitutive::getDerivedOutputName(index);
+  }
+  switch (index - numParentOutputs) {
+    case 0:
+      return "stiffenerAspectRatio";
+    case 1:
+      return "stiffenerAreaRatio";
+    case 2:
+      return "affineAspectRatio";
+    case 3:
+      return "laminateIsotropy";
+    case 4:
+      return "stiffenerStiffnessRatio";
+    case 5:
+      return "transverseShearParameter";
+    default:
+      return NULL;
+  }
+}
+
+void TACSGPBladeStiffenedShellConstitutive::evalDerivedOutputs(
+    TacsScalar values[]) {
+  TACSBladeStiffenedShellConstitutive::evalDerivedOutputs(values);
+  int numParentOutputs =
+      TACSBladeStiffenedShellConstitutive::getNumDerivedOutputs();
+  TacsScalar *out = &values[numParentOutputs];
+
+  // Compute the non-dimensional buckling parameters. This computation is
+  // shared between the six parameters, which is why derived outputs are
+  // evaluated in bulk.
+  TacsScalar panelStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
+  this->computePanelStiffness(panelStiffness);
+  const TacsScalar *Ap, *Dp;
+  TacsScalar D11p;
+  this->extractTangentStiffness(panelStiffness, &Ap, NULL, &Dp, NULL, NULL);
+
+  // Compute effective moduli and the overall centroid
+  TacsScalar E1s, E1p, _;
+  this->computeEffectiveModulii(this->numPanelPlies, this->panelQMats,
+                                this->panelPlyFracs, &E1p, &_);
+  this->computeEffectiveModulii(this->numStiffenerPlies, this->stiffenerQMats,
+                                this->stiffenerPlyFracs, &E1s, &_);
+  TacsScalar zn = this->computeOverallCentroid(E1p, E1s);
+
+  computePanelGlobalBucklingStiffness(E1p, zn, &D11p);
+
+  TacsScalar D12p = Dp[1], D66p = Dp[5], D22p = Dp[3];
+  TacsScalar A11p = Ap[0], A66p = Ap[5];
+  TacsScalar a = this->panelLength;
+  TacsScalar b = this->panelWidth;
+
+  out[0] = this->stiffenerHeight / this->stiffenerThick;
+  out[1] = computeStiffenerAreaRatio(E1p, E1s);
+  out[2] = computeAffineAspectRatio(D11p, D22p, a, b);
+  out[3] = computeLaminateIsotropy(D11p, D22p, D12p, D66p);
+  out[4] = computeStiffenerStiffnessRatio(D11p, E1s, zn);
+  out[5] = computeTransverseShearParameter(A66p, A11p, b, this->panelThick);
+}
+
 void TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingStiffness(
     TacsScalar C[]) {
   TacsScalar *A = &C[0];

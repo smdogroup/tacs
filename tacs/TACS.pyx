@@ -650,6 +650,36 @@ cdef class Constitutive:
                 groups[convert_bytes_to_str(name_bytes)] = dvNums
         return groups
 
+    def getDerivedOutputs(self):
+        """
+        getDerivedOutputs(self)
+
+        Get the values of every derived output defined by this constitutive object
+
+        A derived output is a named scalar quantity computed from the current design
+        variable values (e.g an effective thickness). Derived outputs are written to
+        f5 files alongside the design variable groups, but are not themselves design
+        variables. Most constitutive classes define none.
+
+        Returns:
+            (dict) Dictionary mapping derived output names to scalar values
+        """
+        cdef int nOutputs = 0
+        cdef bytes name_bytes
+        cdef np.ndarray values
+        outputs = {}
+        if self.ptr is NULL:
+            return outputs
+        nOutputs = self.ptr.getNumDerivedOutputs()
+        if nOutputs == 0:
+            return outputs
+        values = np.zeros(nOutputs, dtype=dtype)
+        self.ptr.evalDerivedOutputs(<TacsScalar*>values.data)
+        for index in range(nOutputs):
+            name_bytes = self.ptr.getDerivedOutputName(index)
+            outputs[convert_bytes_to_str(name_bytes)] = values[index].item()
+        return outputs
+
     def setNastranID(self, id):
         """
         Set property ID to be used in NASTRAN card for this object.

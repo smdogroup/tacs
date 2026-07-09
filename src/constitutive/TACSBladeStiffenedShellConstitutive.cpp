@@ -1197,6 +1197,26 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalDesignFieldValue(
   return 0.0;
 }
 
+int TACSBladeStiffenedShellConstitutive::getNumDerivedOutputs() { return 2; }
+
+const char *TACSBladeStiffenedShellConstitutive::getDerivedOutputName(
+    int index) {
+  switch (index) {
+    case 0:
+      return "effectiveThickness";
+    case 1:
+      return "effectiveBendingThickness";
+    default:
+      return NULL;
+  }
+}
+
+void TACSBladeStiffenedShellConstitutive::evalDerivedOutputs(
+    TacsScalar values[]) {
+  values[0] = this->computeEffectiveThickness();
+  values[1] = this->computeEffectiveBendingThickness();
+}
+
 TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar strain[], int failIndex) {

@@ -184,6 +184,38 @@ class TACSConstitutive : public TACSObject {
   virtual void getDesignVarGroupNums(int groupIndex, int dvNums[]) {}
 
   /**
+    Get the number of named derived outputs defined by this constitutive object
+
+    A derived output is a named scalar quantity computed from the current
+    design variable values (e.g an effective thickness). Derived outputs are
+    written to F5 files alongside the design variable groups, but are not
+    themselves design variables. Names must not collide with any design
+    variable group entry name.
+
+    @return The number of derived outputs
+  */
+  virtual int getNumDerivedOutputs() { return 0; }
+
+  /**
+    Get the name of a derived output
+
+    @param index The derived output index
+    @return The name of the derived output, or NULL if index is out of range
+  */
+  virtual const char *getDerivedOutputName(int index) { return NULL; }
+
+  /**
+    Evaluate every derived output at the current design variable values
+
+    The values are ordered to match getDerivedOutputName. This is a bulk
+    evaluation because some implementations share expensive intermediate
+    computations between outputs.
+
+    @param values Output array of length getNumDerivedOutputs()
+  */
+  virtual void evalDerivedOutputs(TacsScalar values[]) {}
+
+  /**
     Evaluate the mass per unit length, area or volume for the element
 
     @param elemIndex The local element index

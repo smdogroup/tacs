@@ -412,6 +412,15 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);
 
+  // Get the number of named derived outputs
+  int getNumDerivedOutputs();
+
+  // Get the name of a derived output
+  const char *getDerivedOutputName(int index);
+
+  // Evaluate every derived output at the current design variable values
+  void evalDerivedOutputs(TacsScalar values[]);
+
   // Retrieve failure mode values for plotting purposes
   TacsScalar evalFailureFieldValue(int elemIndex, const double pt[],
                                    const TacsScalar X[],

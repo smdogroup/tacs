@@ -307,6 +307,9 @@ cdef extern from "TACSConstitutive.h":
         bool isDesignVarGroupScalar(int)
         void getDesignVarGroupValues(int, TacsScalar*)
         void getDesignVarGroupNums(int, int*)
+        int getNumDerivedOutputs()
+        const char *getDerivedOutputName(int)
+        void evalDerivedOutputs(TacsScalar*)
 
 cdef extern from "TACSAuxElements.h":
     cdef cppclass TACSAuxElements(TACSObject):

@@ -222,6 +222,15 @@ class TACSGPBladeStiffenedShellConstitutive
   void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
   void getDesignVarGroupNums(int groupIndex, int dvNums[]);
 
+  // Get the number of named derived outputs
+  int getNumDerivedOutputs();
+
+  // Get the name of a derived output
+  const char *getDerivedOutputName(int index);
+
+  // Evaluate every derived output at the current design variable values
+  void evalDerivedOutputs(TacsScalar values[]);
+
   // set the KS weight for the failure constraints and the GP models (if GP
   // models are active)
   void setKSWeight(double ksWeight);
