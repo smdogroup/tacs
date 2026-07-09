@@ -13,13 +13,23 @@ from tacs import TACS, constitutive, elements, pyTACS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PARTITIONED_PLATE_BDF = os.path.join(BASE_DIR, "input_files", "partitioned_plate.bdf")
 
-# Components PLATE.00/PLATE.02 get an isotropic shell (scalar group "t"), the other two
-# get a smeared composite shell (scalar "thickness" plus array "ply_fractions"), so the
-# union contains columns that are NaN on some components and real on others.
+# Components PLATE.00/PLATE.02 get an isotropic shell (scalar group "t"), PLATE.01 gets
+# a smeared composite shell (scalar "thickness" plus array "ply_fractions"), and PLATE.03
+# gets a blade-stiffened shell with inactive DVs and derived outputs (e.g
+# "effectiveThickness"). The union contains columns that are NaN on some components and
+# real on others.
 ISO_COMPONENTS = ["PLATE.00", "PLATE.02"]
 ISO_THICKNESSES = {"PLATE.00": 0.010, "PLATE.02": 0.014}
 # PLATE.02 deliberately has NO active DV: inactive groups must still be written
 ACTIVE_ISO_COMPONENTS = ["PLATE.00"]
+
+BLADE_COMPONENT = "PLATE.03"
+BLADE_PANEL_LENGTH = 0.5
+BLADE_STIFFENER_PITCH = 0.2
+BLADE_PANEL_THICK = 0.02
+BLADE_STIFFENER_HEIGHT = 0.05
+BLADE_STIFFENER_THICK = 0.008
+BLADE_FLANGE_FRACTION = 0.8
 
 
 def makeIsoCon(t, tNum):
@@ -59,6 +69,43 @@ def makeSmearedCon(dvNum):
     )
 
 
+def makeBladeCon():
+    prop = constitutive.MaterialProperties(
+        rho=1550.0,
+        E1=54e9,
+        E2=18e9,
+        nu12=0.25,
+        G12=9e9,
+        G13=9e9,
+        G23=9e9,
+        Xt=2410.0e6,
+        Xc=1040.0e6,
+        Yt=73.0e6,
+        Yc=173.0e6,
+        S12=71.0e6,
+    )
+    ply = constitutive.OrthotropicPly(1e-3, prop)
+    panelPlyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(TACS.dtype)
+    panelPlyFracs = np.array([0.5, 0.3, 0.2], dtype=TACS.dtype)
+    stiffenerPlyAngles = np.deg2rad([0.0, 60.0]).astype(TACS.dtype)
+    stiffenerPlyFracs = np.array([0.7, 0.3], dtype=TACS.dtype)
+    # All DVs left inactive: groups and derived outputs must be written anyway
+    return constitutive.BladeStiffenedShellConstitutive(
+        ply,
+        ply,
+        BLADE_PANEL_LENGTH,
+        BLADE_STIFFENER_PITCH,
+        BLADE_PANEL_THICK,
+        panelPlyAngles,
+        panelPlyFracs,
+        BLADE_STIFFENER_HEIGHT,
+        BLADE_STIFFENER_THICK,
+        stiffenerPlyAngles,
+        stiffenerPlyFracs,
+        flangeFraction=BLADE_FLANGE_FRACTION,
+    )
+
+
 def entryValues(groupValues):
     """Flatten a component's group-value dict into {entry name: float}.
     Mirrors the C++ naming rule: scalars keep the group name, arrays get _i suffixes.
@@ -73,18 +120,36 @@ def entryValues(groupValues):
     return entries
 
 
+def expectedEntries(fea, consByComp, includeGroups=True, includeDerived=True):
+    """Build {component: {field name: value}} the way the writer does."""
+    entries = {descript: {} for descript in consByComp}
+    if includeGroups:
+        compDVs = fea.getComponentDesignVars()
+        for descript, groups in compDVs.items():
+            entries[descript].update(entryValues(groups))
+    if includeDerived:
+        for descript, con in consByComp.items():
+            for name, value in con.getDerivedOutputs().items():
+                entries[descript][name] = float(np.real(value))
+    return entries
+
+
 class F5DesignVarFieldTest(unittest.TestCase):
     N_PROCS = 2
 
     def setUp(self):
         self.comm = MPI.COMM_WORLD
 
-    def setupMixedPlate(self, writeDesignVars=True):
+    def setupMixedPlate(self, writeDesignVars=True, writeDerivedOutputs=True):
         fea = pyTACS(
             PARTITIONED_PLATE_BDF,
-            options={"writeDesignVars": writeDesignVars},
+            options={
+                "writeDesignVars": writeDesignVars,
+                "writeDerivedOutputs": writeDerivedOutputs,
+            },
             comm=self.comm,
         )
+        consByComp = {}
 
         def elemCallBack(
             dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
@@ -95,12 +160,15 @@ class F5DesignVarFieldTest(unittest.TestCase):
                 else:
                     tNum = -1
                 con = makeIsoCon(ISO_THICKNESSES[compDescript], tNum)
+            elif compDescript == BLADE_COMPONENT:
+                con = makeBladeCon()
             else:
                 con = makeSmearedCon(dvNum)
+            consByComp[compDescript] = con
             return elements.Quad4Shell(None, con)
 
         fea.initialize(elemCallBack)
-        return fea
+        return fea, consByComp
 
     def writeAndLoad(self, fea):
         """Write an f5 on all ranks, read the dv zone back on the root rank, and broadcast the results so every rank can run identical assertions."""
@@ -134,15 +202,13 @@ class F5DesignVarFieldTest(unittest.TestCase):
         return payload
 
     def test_dv_field_names_and_values(self):
-        fea = self.setupMixedPlate()
+        fea, consByComp = self.setupMixedPlate()
         names, data, compNums, compNames = self.writeAndLoad(fea)
 
-        # The expected union comes from the (rank-identical) component DV dict,
-        # flattened with the same naming rule the writer uses
-        compDVs = fea.getComponentDesignVars()
-        compEntries = {
-            descript: entryValues(groups) for descript, groups in compDVs.items()
-        }
+        # The expected union comes from the (rank-identical) component DV dict
+        # and the constitutive derived outputs, flattened with the same naming
+        # rule the writer uses
+        compEntries = expectedEntries(fea, consByComp)
         expectedUnion = sorted(set().union(*[e.keys() for e in compEntries.values()]))
         self.assertEqual(names.split(","), expectedUnion)
 
@@ -166,8 +232,27 @@ class F5DesignVarFieldTest(unittest.TestCase):
                         msg=f"element {e} ({descript}), field {name} should be NaN",
                     )
 
+        # Spot-check the blade component's effective thickness against the formula
+        effTCol = expectedUnion.index("effectiveThickness")
+        stiffenerArea = (
+            (1.0 + BLADE_FLANGE_FRACTION)
+            * BLADE_STIFFENER_HEIGHT
+            * BLADE_STIFFENER_THICK
+        )
+        expectedEffT = BLADE_PANEL_THICK + stiffenerArea / BLADE_STIFFENER_PITCH
+        bladeRows = [
+            e for e in range(len(compNums)) if compNames[compNums[e]] == BLADE_COMPONENT
+        ]
+        self.assertGreater(len(bladeRows), 0)
+        for e in bladeRows:
+            np.testing.assert_allclose(data[e, effTCol], expectedEffT, rtol=1e-12)
+        # Non-blade components must hold NaN in the derived column
+        for e in range(len(compNums)):
+            if compNames[compNums[e]] != BLADE_COMPONENT:
+                self.assertTrue(np.isnan(data[e, effTCol]))
+
     def test_inactive_groups_are_written(self):
-        fea = self.setupMixedPlate()
+        fea, _ = self.setupMixedPlate()
         names, data, compNums, compNames = self.writeAndLoad(fea)
         nameList = names.split(",")
         tCol = nameList.index("t")
@@ -179,8 +264,24 @@ class F5DesignVarFieldTest(unittest.TestCase):
         for e in inactiveRows:
             np.testing.assert_allclose(data[e, tCol], 0.014, rtol=1e-12)
 
+    def test_derived_outputs_only(self):
+        fea, consByComp = self.setupMixedPlate(writeDesignVars=False)
+        names, data, compNums, compNames = self.writeAndLoad(fea)
+        expected = expectedEntries(fea, consByComp, includeGroups=False)
+        expectedUnion = sorted(set().union(*[e.keys() for e in expected.values()]))
+        self.assertEqual(names.split(","), expectedUnion)
+        self.assertNotIn("t", names.split(","))
+
+    def test_design_vars_only(self):
+        fea, consByComp = self.setupMixedPlate(writeDerivedOutputs=False)
+        names, data, compNums, compNames = self.writeAndLoad(fea)
+        expected = expectedEntries(fea, consByComp, includeDerived=False)
+        expectedUnion = sorted(set().union(*[e.keys() for e in expected.values()]))
+        self.assertEqual(names.split(","), expectedUnion)
+        self.assertNotIn("effectiveThickness", names.split(","))
+
     def test_no_dv_zone_when_disabled(self):
-        fea = self.setupMixedPlate(writeDesignVars=False)
+        fea, _ = self.setupMixedPlate(writeDesignVars=False, writeDerivedOutputs=False)
         if self.comm.rank == 0:
             tmpDir = tempfile.mkdtemp()
         else:

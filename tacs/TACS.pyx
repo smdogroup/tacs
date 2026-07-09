@@ -94,6 +94,7 @@ OUTPUT_LOADS = TACS_OUTPUT_LOADS
 OUTPUT_COORDINATE_FRAME = TACS_OUTPUT_COORDINATE_FRAME
 OUTPUT_REACTIONS = TACS_OUTPUT_REACTIONS
 OUTPUT_DESIGN_VARS = TACS_OUTPUT_DESIGN_VARS
+OUTPUT_DERIVED_OUTPUTS = TACS_OUTPUT_DERIVED_OUTPUTS
 
 LAYOUT_NONE = TACS_LAYOUT_NONE
 POINT_ELEMENT = TACS_POINT_ELEMENT
@@ -2889,9 +2890,10 @@ cdef class FH5Loader:
         Return the design data: one row per element, one column per
         design variable field entry in the file. Entries not defined by an
         element's constitutive are NaN. Raises ValueError if the file holds
-        no design data zone (written by an older TACS, with the
-        writeDesignVars option disabled, or if the model's constitutive
-        objects define no named design variable groups).
+        no design data zone (written by an older TACS, with both the
+        writeDesignVars and writeDerivedOutputs options disabled, or if the
+        model's constitutive objects define no named design variable groups
+        or derived outputs).
         """
         cdef const char* _var_names = NULL
         cdef bytes var_names
@@ -2902,8 +2904,9 @@ cdef class FH5Loader:
         self.ptr.getDesignData(NULL, &_var_names, &dim1, &dim2, &data)
         if data == NULL:
             raise ValueError(
-                "File contains no design variable data zone; it was either "
-                "written by an older TACS version or with writeDesignVars=False"
+                "File contains no design data zone; it was either written by "
+                "an older TACS version or with writeDesignVars=False and "
+                "writeDerivedOutputs=False"
             )
         var_names = _var_names
 

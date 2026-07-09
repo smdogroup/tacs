@@ -37,11 +37,11 @@
    the stress or strain independently in each element, (2) can produce
    a smaller output file and may be best for large-scale computations.
 
-   Note: when write_flag includes TACS_OUTPUT_DESIGN_VARS, this constructor
-   builds the design variable field name union, which is a collective
-   operation over the assembler's MPI communicator. In that case, this
-   constructor must be called on every rank in that communicator, or the
-   call will deadlock.
+   Note: when write_flag includes TACS_OUTPUT_DESIGN_VARS or
+   TACS_OUTPUT_DERIVED_OUTPUTS, this constructor builds the design variable
+   field name union, which is a collective operation over the assembler's
+   MPI communicator. In that case, this constructor must be called on every
+   rank in that communicator, or the call will deadlock.
 
    @param assembler The TACSAssembler object
    @param elem_type The type of element output to generate
@@ -59,9 +59,10 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
   // Form a flag that masks off the connectivity, nodes and displacements
   // which are handled separately from the remaining variables
   element_write_flag =
-      write_flag & (~(TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
-                      TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_LOADS |
-                      TACS_OUTPUT_REACTIONS | TACS_OUTPUT_DESIGN_VARS));
+      write_flag &
+      (~(TACS_OUTPUT_CONNECTIVITY | TACS_OUTPUT_NODES |
+         TACS_OUTPUT_DISPLACEMENTS | TACS_OUTPUT_LOADS | TACS_OUTPUT_REACTIONS |
+         TACS_OUTPUT_DESIGN_VARS | TACS_OUTPUT_DERIVED_OUTPUTS));
 
   // Count up the number of values that will be output for each point
   // in the mesh
@@ -87,7 +88,7 @@ TACSToFH5::TACSToFH5(TACSAssembler *_assembler, ElementType _elem_type,
   // operation, so it must run on every rank
   num_dv_names = 0;
   dv_names = NULL;
-  if (write_flag & TACS_OUTPUT_DESIGN_VARS) {
+  if (write_flag & (TACS_OUTPUT_DESIGN_VARS | TACS_OUTPUT_DERIVED_OUTPUTS)) {
     buildDesignVarNames();
   }
 }
@@ -458,7 +459,8 @@ int TACSToFH5::writeToFile(const char *filename) {
 
   // Write the design data zone. num_dv_names is identical on all
   // ranks, so this collective call is either made everywhere or nowhere
-  if ((write_flag & TACS_OUTPUT_DESIGN_VARS) && num_dv_names > 0) {
+  if ((write_flag & (TACS_OUTPUT_DESIGN_VARS | TACS_OUTPUT_DERIVED_OUTPUTS)) &&
+      num_dv_names > 0) {
     writeDesignVarData(file);
   }
 
@@ -669,13 +671,17 @@ char *TACSToFH5::getElementVarNames(int flag) {
 }
 
 /**
-  Build the sorted union of design variable field entry names.
+  Build the sorted union of design variable field and derived output
+  entry names.
 
   Each rank collects the entry names from its local constitutive objects
   (one entry per scalar group; an array group of size n contributes
-  name_0..name_{n-1}), the name sets are gathered across all ranks, and
-  the union is sorted lexicographically so every rank holds an identical
-  list.
+  name_0..name_{n-1}; derived outputs are always scalar and are never
+  suffixed), gated so design variable group names are only collected when
+  TACS_OUTPUT_DESIGN_VARS is set and derived output names are only
+  collected when TACS_OUTPUT_DERIVED_OUTPUTS is set. The name sets are
+  gathered across all ranks, and the union is sorted lexicographically so
+  every rank holds an identical list.
 */
 void TACSToFH5::buildDesignVarNames() {
   // Collect the unique entry names from the local elements
@@ -685,19 +691,30 @@ void TACSToFH5::buildDesignVarNames() {
   for (int i = 0; i < num_elements; i++) {
     TACSConstitutive *con = elements[i]->getConstitutive();
     if (con) {
-      int num_groups = con->getNumDesignVarGroups();
-      for (int g = 0; g < num_groups; g++) {
-        const char *name = con->getDesignVarGroupName(g);
-        if (name) {
-          if (con->isDesignVarGroupScalar(g)) {
-            local_names.insert(std::string(name));
-          } else {
-            int size = con->getDesignVarGroupSize(g);
-            for (int j = 0; j < size; j++) {
-              char entry[256];
-              snprintf(entry, sizeof(entry), "%s_%d", name, j);
-              local_names.insert(std::string(entry));
+      if (write_flag & TACS_OUTPUT_DESIGN_VARS) {
+        int num_groups = con->getNumDesignVarGroups();
+        for (int g = 0; g < num_groups; g++) {
+          const char *name = con->getDesignVarGroupName(g);
+          if (name) {
+            if (con->isDesignVarGroupScalar(g)) {
+              local_names.insert(std::string(name));
+            } else {
+              int size = con->getDesignVarGroupSize(g);
+              for (int j = 0; j < size; j++) {
+                char entry[256];
+                snprintf(entry, sizeof(entry), "%s_%d", name, j);
+                local_names.insert(std::string(entry));
+              }
             }
+          }
+        }
+      }
+      if (write_flag & TACS_OUTPUT_DERIVED_OUTPUTS) {
+        int num_outputs = con->getNumDerivedOutputs();
+        for (int d = 0; d < num_outputs; d++) {
+          const char *name = con->getDerivedOutputName(d);
+          if (name) {
+            local_names.insert(std::string(name));
           }
         }
       }
@@ -760,8 +777,12 @@ void TACSToFH5::buildDesignVarNames() {
 
 /**
   Write the design data zone: one row per element, one column per
-  entry in the design variable name union. Entries that an element's
-  constitutive does not define are NaN.
+  entry in the design variable group and derived output name union.
+  Design variable group columns are only filled when
+  TACS_OUTPUT_DESIGN_VARS is set, and derived output columns are only
+  filled when TACS_OUTPUT_DERIVED_OUTPUTS is set. Entries that an
+  element's constitutive does not define, or whose flag is not set, are
+  NaN.
 
   @param file The FH5 file to write the zone into
 */
@@ -784,22 +805,38 @@ int TACSToFH5::writeDesignVarData(TACSFH5File *file) {
   for (int i = 0; i < num_elements; i++) {
     TACSConstitutive *con = elements[i]->getConstitutive();
     if (con) {
-      int num_groups = con->getNumDesignVarGroups();
-      for (int g = 0; g < num_groups; g++) {
-        const char *name = con->getDesignVarGroupName(g);
-        if (name) {
-          int size = con->getDesignVarGroupSize(g);
-          std::vector<TacsScalar> values(size);
-          con->getDesignVarGroupValues(g, values.data());
-          if (con->isDesignVarGroupScalar(g)) {
-            int col = name_to_col.at(std::string(name));
-            data[num_dv_names * i + col] = TacsRealPart(values[0]);
-          } else {
-            for (int j = 0; j < size; j++) {
-              char entry[256];
-              snprintf(entry, sizeof(entry), "%s_%d", name, j);
-              int col = name_to_col.at(std::string(entry));
-              data[num_dv_names * i + col] = TacsRealPart(values[j]);
+      if (write_flag & TACS_OUTPUT_DESIGN_VARS) {
+        int num_groups = con->getNumDesignVarGroups();
+        for (int g = 0; g < num_groups; g++) {
+          const char *name = con->getDesignVarGroupName(g);
+          if (name) {
+            int size = con->getDesignVarGroupSize(g);
+            std::vector<TacsScalar> values(size);
+            con->getDesignVarGroupValues(g, values.data());
+            if (con->isDesignVarGroupScalar(g)) {
+              int col = name_to_col.at(std::string(name));
+              data[num_dv_names * i + col] = TacsRealPart(values[0]);
+            } else {
+              for (int j = 0; j < size; j++) {
+                char entry[256];
+                snprintf(entry, sizeof(entry), "%s_%d", name, j);
+                int col = name_to_col.at(std::string(entry));
+                data[num_dv_names * i + col] = TacsRealPart(values[j]);
+              }
+            }
+          }
+        }
+      }
+      if (write_flag & TACS_OUTPUT_DERIVED_OUTPUTS) {
+        int num_outputs = con->getNumDerivedOutputs();
+        if (num_outputs > 0) {
+          std::vector<TacsScalar> outputs(num_outputs);
+          con->evalDerivedOutputs(outputs.data());
+          for (int d = 0; d < num_outputs; d++) {
+            const char *name = con->getDerivedOutputName(d);
+            if (name) {
+              int col = name_to_col.at(std::string(name));
+              data[num_dv_names * i + col] = TacsRealPart(outputs[d]);
             }
           }
         }
