@@ -2882,14 +2882,14 @@ cdef class FH5Loader:
 
         return convert_bytes_to_str(var_names), fdata
 
-    def getDesignVarData(self):
+    def getDesignData(self):
         """
-        getDesignVarData(self)
+        getDesignData(self)
 
-        Return the design variable data: one row per element, one column per
+        Return the design data: one row per element, one column per
         design variable field entry in the file. Entries not defined by an
         element's constitutive are NaN. Raises ValueError if the file holds
-        no design variable data zone (written by an older TACS, with the
+        no design data zone (written by an older TACS, with the
         writeDesignVars option disabled, or if the model's constitutive
         objects define no named design variable groups).
         """
@@ -2899,7 +2899,7 @@ cdef class FH5Loader:
         cdef int dim2 = 0
         cdef double *data = NULL
 
-        self.ptr.getDesignVarData(NULL, &_var_names, &dim1, &dim2, &data)
+        self.ptr.getDesignData(NULL, &_var_names, &dim1, &dim2, &data)
         if data == NULL:
             raise ValueError(
                 "File contains no design variable data zone; it was either "

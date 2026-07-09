@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
     const char *dvname, *dvvars;
     int dvdim1 = 0, dvdim2 = 0;
     double *dvdata = NULL;
-    loader->getDesignVarData(&dvname, &dvvars, &dvdim1, &dvdim2, &dvdata);
+    loader->getDesignData(&dvname, &dvvars, &dvdim1, &dvdim2, &dvdata);
 
     if (dvdata && dvdim1 == num_elements && dvdim2 > 0) {
       fprintf(fp, "CELL_DATA %d\n", num_basic_elements);

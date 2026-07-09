@@ -226,10 +226,10 @@ int main(int argc, char *argv[]) {
     const char *dvname, *dv_var_names;
     int dvdim1 = 0, num_dvvars = 0;
     double *dvdata = NULL;
-    loader->getDesignVarData(&dvname, &dv_var_names, &dvdim1, &num_dvvars,
-                             &dvdata);
+    loader->getDesignData(&dvname, &dv_var_names, &dvdim1, &num_dvvars,
+                          &dvdata);
     if (!(dvdata && dvdim1 == num_elements)) {
-      num_dvvars = 0;  // Old file without a dv data zone, or malformed zone
+      num_dvvars = 0;  // Old file without a design data zone, or malformed zone
     }
 
     double solution_time = 0.0;

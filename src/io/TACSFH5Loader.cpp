@@ -182,7 +182,7 @@ int TACSFH5Loader::loadData(const char *conn_fname, const char *data_fname) {
         num_nodes_element = dim1;
         num_vals_element = dim2;
         element_data = (float *)fdata;
-      } else if (strncmp("dv data", zone_name, 7) == 0 &&
+      } else if (strncmp("design data", zone_name, 11) == 0 &&
                  dtype == TACSFH5File::FH5_DOUBLE) {
         void *ddata;
         data_file->getZoneData(&dv_zone, &dv_vars, NULL, NULL, NULL, &ddata);
@@ -289,9 +289,9 @@ void TACSFH5Loader::getElementData(const char **zone_name,
   }
 }
 
-void TACSFH5Loader::getDesignVarData(const char **zone_name,
-                                     const char **var_names, int *dim1,
-                                     int *dim2, double **data) {
+void TACSFH5Loader::getDesignData(const char **zone_name,
+                                  const char **var_names, int *dim1, int *dim2,
+                                  double **data) {
   if (zone_name) {
     *zone_name = dv_zone;
   }

@@ -118,7 +118,7 @@ class F5DesignVarFieldTest(unittest.TestCase):
         if self.comm.rank == 0:
             loader = TACS.FH5Loader()
             loader.loadData(os.path.join(tmpDir, "dvfields_000.f5"))
-            names, data = loader.getDesignVarData()
+            names, data = loader.getDesignData()
             compNums, _, _, _ = loader.getConnectivity()
             compNames = [
                 loader.getComponentName(k) for k in range(loader.getNumComponents())
@@ -197,7 +197,7 @@ class F5DesignVarFieldTest(unittest.TestCase):
             loader = TACS.FH5Loader()
             loader.loadData(os.path.join(tmpDir, "dvfields_000.f5"))
             try:
-                loader.getDesignVarData()
+                loader.getDesignData()
             except ValueError:
                 raised = True
         raised = self.comm.bcast(raised, root=0)

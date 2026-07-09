@@ -759,7 +759,7 @@ void TACSToFH5::buildDesignVarNames() {
 }
 
 /**
-  Write the design variable data zone: one row per element, one column per
+  Write the design data zone: one row per element, one column per
   entry in the design variable name union. Entries that an element's
   constitutive does not define are NaN.
 
@@ -826,7 +826,7 @@ int TACSToFH5::writeDesignVarData(TACSFH5File *file) {
   // Write the zone with a time stamp matching the other data zones
   char data_name[128];
   double t = assembler->getSimulationTime();
-  snprintf(data_name, sizeof(data_name), "dv data t=%.10e", t);
+  snprintf(data_name, sizeof(data_name), "design data t=%.10e", t);
   file->writeZoneData(data_name, var_names, TACSFH5File::FH5_DOUBLE,
                       num_elements, num_dv_names, data);
 
