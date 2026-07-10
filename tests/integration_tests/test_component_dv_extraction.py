@@ -8,6 +8,7 @@ import unittest
 import numpy as np
 from mpi4py import MPI
 
+import tacs.problems
 from tacs import TACS, constitutive, elements, functions, pyTACS
 from tacs.utilities import Error
 
@@ -24,6 +25,16 @@ PLATE_THICKNESSES = {
     "PLATE.03": 0.016,
 }
 ACTIVE_COMPONENTS = ["PLATE.00", "PLATE.02"]
+
+
+def scaledThicknesses(scale):
+    """Expected component->thickness dict when only the active components have been
+    scaled away from their constructor values.
+    """
+    return {
+        descript: (scale * t0 if descript in ACTIVE_COMPONENTS else t0)
+        for descript, t0 in PLATE_THICKNESSES.items()
+    }
 
 
 def makeShellCon(t, tNum):
@@ -195,6 +206,59 @@ class ComponentDVExtractionTest(unittest.TestCase):
         compDVs = problem.getComponentDesignVars()
         for groupValues in compDVs.values():
             np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
+
+    def test_two_problems_report_independent_snapshots(self):
+        fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
+        p1 = fea.createStaticProblem("p1")
+        p2 = fea.createStaticProblem("p2")
+
+        # Perturb ONLY p2. This also pushes p2's values into the shared assembler, so
+        # reading p1 AFTER this perturbation is the point of the test: the old
+        # pyTACS-level API would have reported p2's doubled values for p1 too.
+        x = p2.getDesignVars()
+        p2.setDesignVars(2.0 * x)
+
+        p1CompDVs = p1.getComponentDesignVars()
+        p2CompDVs = p2.getComponentDesignVars()
+
+        expectedP2 = scaledThicknesses(2.0)
+        for descript, t0 in PLATE_THICKNESSES.items():
+            np.testing.assert_allclose(p1CompDVs[descript]["t"], t0, rtol=1e-12)
+            np.testing.assert_allclose(
+                p2CompDVs[descript]["t"], expectedP2[descript], rtol=1e-12
+            )
+
+        # Design variable numbers are shared execution-wide, regardless of which
+        # problem/constraint is asked
+        self.assertEqual(p1.getComponentDesignVarNums(), p2.getComponentDesignVarNums())
+
+    def test_constraint_reports_independent_snapshot(self):
+        fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
+        problem = fea.createStaticProblem("p1")
+        constr = fea.createDVConstraint("dvcon")
+
+        x = constr.getDesignVars()
+        constr.setDesignVars(3.0 * x)
+
+        constrCompDVs = constr.getComponentDesignVars()
+        problemCompDVs = problem.getComponentDesignVars()
+
+        expectedConstr = scaledThicknesses(3.0)
+        for descript, t0 in PLATE_THICKNESSES.items():
+            np.testing.assert_allclose(
+                constrCompDVs[descript]["t"], expectedConstr[descript], rtol=1e-12
+            )
+            np.testing.assert_allclose(problemCompDVs[descript]["t"], t0, rtol=1e-12)
+
+    def test_no_meshloader_raises(self):
+        fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
+        # Bypass the pyTACS factory methods, which are the only supported way to obtain
+        # a meshLoader-backed problem/constraint
+        problem = tacs.problems.StaticProblem("noloader", fea.assembler, self.comm)
+        with self.assertRaises(Error):
+            problem.getComponentDesignVars()
+        with self.assertRaises(Error):
+            problem.getComponentDesignVarNums()
 
 
 class ComponentDVRoundTripTest(unittest.TestCase):
