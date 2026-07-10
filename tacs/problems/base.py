@@ -97,7 +97,7 @@ class TACSProblem(TACSSystem):
         try:
             # pass assembler an function-specific kwargs straight to tacs function
             self.functionList[funcName] = funcHandle(self.assembler, **kwargs)
-        except:
+        except Exception:
             self._TACSWarning(
                 f"Function type {funcHandle} is not currently supported. "
                 "in pyTACS. Skipping function."
@@ -141,7 +141,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -159,7 +158,6 @@ class TACSProblem(TACSSystem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -234,7 +232,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -251,7 +248,6 @@ class TACSProblem(TACSSystem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -350,7 +346,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         Fapplied : numpy.ndarray or tacs.TACS.Vec
             Distributed array containing loads to applied to RHS of the problem.
 
@@ -407,7 +402,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -474,7 +468,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -602,7 +595,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -666,7 +658,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -784,7 +775,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
          auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -823,7 +813,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         auxElems : tacs.TACS.AuxElements
             AuxElements object to add loads to.
 
@@ -863,7 +852,6 @@ class TACSProblem(TACSSystem):
 
         Parameters
         ----------
-
         FVec : tacs.TACS.Vec
             TACS BVec to add loads to.
 
@@ -885,7 +873,7 @@ class TACSProblem(TACSSystem):
         # Get loads and scalers for this load case ID
         loadSet, loadScale, _ = self.bdfInfo.get_reduced_loads(loadID)
         # Loop through every load in set and add it to problem
-        for loadInfo, scale in zip(loadSet, loadScale):
+        for loadInfo, scale in zip(loadSet, loadScale, strict=True):
             scale *= setScale
             # Add any point force or moment cards
             if loadInfo.type == "FORCE" or loadInfo.type == "MOMENT":
@@ -1012,7 +1000,7 @@ class TACSProblem(TACSSystem):
 
     def writeSensFile(self, evalFuncs, tacsAim, proc: int = 0, root=0):
         """
-        write an ESP/CAPS .sens file from the tacs aim
+        Write an ESP/CAPS .sens file from the tacs aim
         Optional tacs_aim arg for TacsAim wrapper class object in root/tacs/caps2tacs/
 
         Parameters
@@ -1125,9 +1113,7 @@ class TACSProblem(TACSSystem):
 
                             # write any struct derivatives if there are struct derivatives
                             if num_struct_dvs > 0:
-                                for idx, thick_var in enumerate(
-                                    tacsAim.thickness_variables
-                                ):
+                                for thick_var in tacsAim.thickness_variables:
                                     # assumes these are sorted in tacs aim wrapper
                                     hdl.write(f"{thick_var.name}\n")
                                     hdl.write("1\n")

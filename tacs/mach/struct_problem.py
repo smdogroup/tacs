@@ -132,6 +132,7 @@ class StructProblem(BaseStructProblem):
         # vector returned under this key is later remapped by
         # convertDesignVecToDict into the correct promoted/struct split.
         self.staticProblem.setVarName(f"_{self.varName}_flat")
+        self.solveFailed = False
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
             raise RuntimeError(
@@ -473,7 +474,7 @@ class StructProblem(BaseStructProblem):
         if more than 1 pytacs object is used in an optimization
 
         Returns
-        ----------
+        -------
         varName : str
             Name of the design variables used in setDesignVars() dict.
         """
@@ -752,7 +753,7 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.getVariables(u0)
 
         # Solve static problem w/o damping
-        successFlag = self.staticProblem.solve(Fext=self._Fext)
+        self.solveFailed = not self.staticProblem.solve(Fext=self._Fext)
 
         # Compute undamped update
         self.staticProblem.getVariables(self.update)
@@ -788,6 +789,21 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.setLoadScale(loadScale0)
 
         return damp
+
+    def checkSolutionFailure(self, funcs: dict) -> None:
+        """
+        Check whether the last structural solve failed and accumulate into funcs.
+
+        Parameters
+        ----------
+        funcs : dict
+            Dictionary of functions. A ``"fail"`` key is set (or OR-ed) with the
+            failure flag from the most recent call to :meth:`solve`.
+        """
+        if "fail" in funcs:
+            funcs["fail"] = funcs["fail"] or self.solveFailed
+        else:
+            funcs["fail"] = self.solveFailed
 
     @updateDVGeo
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
@@ -924,7 +940,6 @@ class StructProblem(BaseStructProblem):
         # Compute the DVGeo sensitivities if requested
         if self.DVGeo is not None:
             coordName = self.staticProblem.getCoordName()
-            self.DVGeo.computeTotalJacobian(self.ptSetName, config=self.name)
             for conKey in sens:
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
@@ -936,16 +951,14 @@ class StructProblem(BaseStructProblem):
                     if total_nnz == 0:
                         # if so, skip DVGeo sensitivities
                         continue
-                    # Get the Jacobian
-                    Jacobian = self.DVGeo.JT[self.ptSetName]
-                    # Compute the local Jacobian product
-                    dIdx_local = dIdpt.dot(Jacobian.T)
-                    # Add dvgeo contribution across all procs
-                    dIdx = self.comm.allreduce(dIdx_local.toarray(), op=MPI.SUM)
-                    # Convert to dict
-                    dIdx_dict = self.DVGeo.convertSensitivityToDict(np.atleast_2d(dIdx))
-                    # Update sensitivity dict with new DVGeo sensitivities
-                    sens[conKey].update(dIdx_dict)
+
+                    # pyGeo expects dIdpt to be a 3D array for multiple constraints, can only do this if we make it dense.
+                    dIdpt = dIdpt.toarray().reshape((dIdpt.shape[0], -1, 3))
+                    sens[conKey].update(
+                        self.DVGeo.totalSensitivity(
+                            dIdpt, self.ptSetName, comm=self.comm, config=self.name
+                        )
+                    )
 
         oldVarName = self.staticProblem.varName
         for conKey in sens:

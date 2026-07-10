@@ -5,8 +5,10 @@ Caps to TACS example
 """
 
 # also requires pySNOPT
-import os, numpy as np, matplotlib.pyplot as plt
-import openmdao, openmdao.api as om
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import openmdao.api as om
 from tacs import functions, caps2tacs
 from mpi4py import MPI
 
@@ -49,7 +51,7 @@ class AnalysisManager(om.ExplicitComponent):
 
     def setup_partials(self):
         """
-        declare partial derivatives
+        Declare partial derivatives
         """
         tacs_aim = self.options["tacs_aim"]
 
@@ -61,7 +63,7 @@ class AnalysisManager(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         """
-        compute the objective functions
+        Compute the objective functions
         """
         # obtain the aim from openmdao storage
         tacs_aim = self.options["tacs_aim"]
@@ -144,7 +146,7 @@ class AnalysisManager(om.ExplicitComponent):
 
     def compute_partials(self, inputs, partials):
         """
-        the actual value of partial derivatives assigned here
+        The actual value of partial derivatives assigned here
         """
         tacs_aim = self.options["tacs_aim"]
 
@@ -173,7 +175,7 @@ class AnalysisManager(om.ExplicitComponent):
 
     def _run_analysis(self, inputs):
         """
-        run forward and adjoint TACS analysis on fixed structural mesh geometry from tacsAIM
+        Run forward and adjoint TACS analysis on fixed structural mesh geometry from tacsAIM
         """
         tacs_aim = self.options["tacs_aim"]
         write_f5 = self.options["write_f5"]
@@ -236,9 +238,7 @@ caps_struct.egads_aim.set_mesh(  # need a refined-enough mesh for the derivative
     global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
-).register_to(
-    tacs_aim
-)
+).register_to(tacs_aim)
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_aim)
 

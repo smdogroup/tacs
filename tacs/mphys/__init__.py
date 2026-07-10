@@ -1,4 +1,4 @@
 from tacs.mphys.builder import TacsBuilder
-import tacs.mphys.utils
+from tacs.mphys import utils
 
 __all__ = ["TacsBuilder", "utils"]

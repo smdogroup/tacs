@@ -2,7 +2,7 @@ from pyNastran.bdf.bdf import read_bdf
 import numpy as np
 
 """
-Using pynastran open up original bdf file loop through all nodes on the edge of the plate 
+Using pynastran open up original bdf file loop through all nodes on the edge of the plate
 and add a temperature boundary condition such that:
  T(theta) = T0 + dT * sin(2*theta)
 Finally write out the modified bdf file so we can run it in the analysis.py script

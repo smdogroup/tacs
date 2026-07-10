@@ -10,8 +10,6 @@ The problem is identical to test_mach_beam_dvgeo, so reference values should mat
 
 import os
 import numpy as np
-from mpi4py import MPI
-import unittest
 
 from tacs import pyTACS
 from tacs import elements, constitutive, functions
