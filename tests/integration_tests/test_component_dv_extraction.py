@@ -315,11 +315,7 @@ class ComponentDVExtractionTest(unittest.TestCase):
             np.testing.assert_allclose(problemCompDVs[descript]["t"], t0, rtol=1e-12)
 
     def test_no_meshloader_raises(self):
-        """
-        Given a problem constructed directly without a meshLoader,
-        when getComponentDesignVars or getComponentDesignVarNums is called,
-        then a TACS Error is raised.
-        """
+        """Assert that a TACS Error is raised when getComponentDesignVars or getComponentDesignVarNums is called on a problem constructed directly without a meshLoader."""
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         # Bypass the pyTACS factory methods, which are the only supported way to obtain
         # a meshLoader-backed problem/constraint
