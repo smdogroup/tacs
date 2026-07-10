@@ -122,6 +122,17 @@ class ElementTest(unittest.TestCase):
             TACS.GEOMETRIC_STIFFNESS_MATRIX,
         ]
 
+        # Set quantity types
+        self.quantity_types = [
+            elements.FAILURE_INDEX,
+            elements.STRAIN_ENERGY_DENSITY,
+            elements.ELEMENT_DENSITY,
+            elements.ELEMENT_DISPLACEMENT,
+            elements.ELEMENT_DENSITY_MOMENT,
+            elements.ELEMENT_MOMENT_OF_INERTIA,
+            elements.ELEMENT_ENCLOSED_VOLUME,
+        ]
+
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
@@ -301,6 +312,48 @@ class ElementTest(unittest.TestCase):
                                             matType=matrix_type,
                                         ),
                                     )
+
+    def test_point_quantity_xpt_sens(self):
+        # Here we use a tighter dh than self.dh (real mode only; complex mode
+        # is unaffected since it always uses a fixed tiny complex-step size).
+        # TACS_ELEMENT_ENCLOSED_VOLUME's quantity is (X.n0)/3, which can land
+        # near zero for some element/random-seed/Xpts-DOF combinations (e.g.
+        # Quad9Shell + ShellRefAxisTransform); at self.dh=1e-5 the harness's
+        # plain forward-difference reference has enough truncation error at
+        # that near-zero component to exceed self.rtol, even though the
+        # analytic value there agrees with the base class's own (much
+        # smaller-step) internal FD to ~6 significant figures. A tighter dh
+        # removes the truncation artifact without touching atol/rtol.
+        dh = self.dh if TACS.dtype is complex else 1e-6
+        # Loop through every combination of transform type and shell element class and
+        # test the point quantity output node coordinate sensitivities
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for quantity_type in self.quantity_types:
+                            with self.subTest(quantity_type=quantity_type):
+                                fail = elements.TestElementQuantityXptSens(
+                                    element,
+                                    self.elem_index,
+                                    quantity_type,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dvars,
+                                    self.ddvars,
+                                    dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(
+                                    fail,
+                                    msg=generateTestFailMessage(
+                                        element=element, transform=transform
+                                    ),
+                                )
 
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens

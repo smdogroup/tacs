@@ -1648,15 +1648,120 @@ void TACSShellElement<quadrature, basis, director, model>::
     return;
   }
 
-  // Geometry-only branches (TACS_ELEMENT_DENSITY, TACS_ELEMENT_DISPLACEMENT,
-  // TACS_ELEMENT_DENSITY_MOMENT, TACS_ELEMENT_ENCLOSED_VOLUME), the explicit
-  // TACS_ELEMENT_MOMENT_OF_INERTIA punt, and any unrecognized quantityType
-  // are not yet implemented as of this commit -- temporarily forward to the
-  // base class's FD/CS fallback (a correct, if wasteful, placeholder;
-  // replaced by Task 3.2's second commit).
-  TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale, n,
-                                       pt, Xpts, vars, dvars, ddvars,
-                                       dfddetXd, dfdq, dfdXpts);
+  if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
+    // Explicit punt, mirroring beam's own punt exactly (TACSBeamElement.h:
+    // 1993-1997): this quantity's forward formula additionally depends on T
+    // (via mat3x3SymmTransform) on top of everything DENSITY_MOMENT depends
+    // on, plus the parallel-axis dXcg term -- deriving this analytically is
+    // disproportionate effort for one quantity type when a correct,
+    // precedented fallback exists.
+    TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale,
+                                         n, pt, Xpts, vars, dvars, ddvars,
+                                         dfddetXd, dfdq, dfdXpts);
+    return;
+  }
+
+  if (quantityType != TACS_ELEMENT_DENSITY &&
+      quantityType != TACS_ELEMENT_DISPLACEMENT &&
+      quantityType != TACS_ELEMENT_DENSITY_MOMENT &&
+      quantityType != TACS_ELEMENT_ENCLOSED_VOLUME) {
+    // Unrecognized quantity type: evalPointQuantity returns 0 (no value
+    // defined) for anything not in the 7-row coverage table, so there is
+    // nothing to differentiate here -- both this method and the base
+    // class's FD loop would compute nothing, so a plain no-op (not a
+    // forward to base) is the correct, non-wasteful match.
+    return;
+  }
+
+  // Geometry-only branches: TACS_ELEMENT_DENSITY/TACS_ELEMENT_DISPLACEMENT
+  // depend on Xpts only through the shared detXd-direction term (step 4
+  // below); TACS_ELEMENT_DENSITY_MOMENT/TACS_ELEMENT_ENCLOSED_VOLUME also
+  // have a direct X/n0 seed (mirrors beam's DENSITY_MOMENT branch setting
+  // X0.xd/n1.xd/n2.xd directly, TACSBeamElement.h:1988-1991).
+  TacsScalar fn[3 * num_nodes];
+  TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+  TacsScalar dfn[3 * num_nodes];
+  memset(dfn, 0, 3 * num_nodes * sizeof(TacsScalar));
+
+  TacsScalar X[3], Xxi[6], n0[3];
+  basis::template interpFields<3, 3>(pt, Xpts, X);
+  basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+  basis::template interpFields<3, 3>(pt, fn, n0);
+
+  if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
+    // quantity[0..2] = density*X + moments[1]*n0
+    TacsScalar moments[3];
+    con->evalMassMoments(elemIndex, pt, X, moments);
+    TacsScalar density = moments[0];
+
+    TacsScalar dX[3], dn0_direct[3];
+    for (int i = 0; i < 3; i++) {
+      dX[i] = scale * dfdq[i] * density;
+      dn0_direct[i] = scale * dfdq[i] * moments[1];
+    }
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dX, dfdXpts);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dn0_direct, dfn);
+  } else if (quantityType == TACS_ELEMENT_ENCLOSED_VOLUME) {
+    // quantity[0] = (X.n0)/3
+    TacsScalar dX[3], dn0_direct[3];
+    for (int i = 0; i < 3; i++) {
+      dX[i] = scale * dfdq[0] * n0[i] / 3.0;
+      dn0_direct[i] = scale * dfdq[0] * X[i] / 3.0;
+    }
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dX, dfdXpts);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dn0_direct, dfn);
+  }
+  // TACS_ELEMENT_DENSITY/TACS_ELEMENT_DISPLACEMENT contribute no direct
+  // seed on X/n0/quantity beyond the shared detXd-direction term below.
+
+  // Shared detXd-direction term: the ONLY Xpts-dependence for
+  // TACS_ELEMENT_DENSITY/TACS_ELEMENT_DISPLACEMENT, and an additional term
+  // for the other two branches above. No du0x/du1x seed applies here, so
+  // this takes the lighter-weight direct path through
+  // Xd = assembleFrame(Xxi, n0); detXd = det3x3(Xd) -- the same chain
+  // TacsShellComputeDispGradXptSens's own detXd-direction step reduces to
+  // when its du0x/du1x seeds are zero (SPEC's documented "implementer's
+  // choice": avoids the wasted work of computing the director field/tying
+  // strain forward recompute that TacsShellComputeDispGradXptSens's
+  // contract otherwise requires as inputs).
+  TacsScalar Xd[9], Xdinv[9];
+  TacsShellAssembleFrame(Xxi, n0, Xd);
+  TacsScalar detXd = inv3x3(Xd, Xdinv);
+
+  TacsScalar ddetXd_total = scale * dfddetXd;
+  TacsScalar dXd[9];
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      dXd[3 * i + j] = ddetXd_total * detXd * Xdinv[3 * j + i];
+    }
+  }
+
+  TacsScalar dXxi[6], dn0[3];
+  dXxi[0] = dXd[0];
+  dXxi[1] = dXd[1];
+  dXxi[2] = dXd[3];
+  dXxi[3] = dXd[4];
+  dXxi[4] = dXd[6];
+  dXxi[5] = dXd[7];
+
+  dn0[0] = dXd[2];
+  dn0[1] = dXd[5];
+  dn0[2] = dXd[8];
+
+  // transform->addTransformSens is only needed for branches whose dT is
+  // nonzero (the strain-based branches above); safe to call unconditionally
+  // with a zeroed dT here since none of these geometry-only branches touch T
+  TacsScalar dT[9];
+  memset(dT, 0, sizeof(dT));
+  transform->addTransformSens(Xxi, n0, dT, dXxi, dn0);
+
+  basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+  basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);
+
+  // Add the contributions from the node normals (final step, every branch
+  // touches fn/n0 in some form, even if only through detXd)
+  TacsShellAddNodeNormalsSens<basis>(Xpts, dfn, dfdXpts);
 }
 
 template <class quadrature, class basis, class director, class model>
