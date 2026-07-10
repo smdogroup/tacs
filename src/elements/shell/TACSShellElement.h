@@ -2237,6 +2237,15 @@ void TACSShellElement<quadrature, basis, director, model>::
                                           psi, phi, Xpts, vars, dvLen, dfdx);
     return;
   } else if (matType == TACS_STIFFNESS_MATRIX) {
+    // Deferred: see docs/plans/feature-shell-element-sens/HANDOFF-task-4.md.
+    // An energy-Hessian decomposition (e_psi^T*Cs*e_phi + s:E''(psi,phi),
+    // contracted from model::evalStrainHessian) was attempted for the
+    // nonlinear strain models but a residual discrepancy against the
+    // ground-truth Hessian contraction could not be resolved in the time
+    // available (confirmed via direct numeric comparison, isolated to the
+    // Cs-quadratic term, independent of the director's own linearization).
+    // Forward to the base-class FD/CS implementation rather than ship an
+    // unverified analytic result.
     TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
                                           psi, phi, Xpts, vars, dvLen, dfdx);
     return;
