@@ -2226,20 +2226,6 @@ cdef class GPBladeStiffenedShellConstitutive(StiffenedShellConstitutive):
         if self.gp_blade_ptr:
             self.gp_blade_ptr.setCPTstiffenerCrippling(CPTcripplingMode)
 
-    def setWriteDVMode(self, int newMode):
-        """
-        Set mode for writing DV inputs to the .f5 files
-        0 - write DVs, 1 - write nondim params, 2 - write failure indexes
-        this is a useful tool to investigate and debug final designs.
-
-        Parameters
-        ----------
-        newMode: int
-            new mode input for the writeDVMode
-        """
-        if self.gp_blade_ptr:
-            self.gp_blade_ptr.setWriteDVMode(newMode)
-
     def test_all_derivative_tests(self, TacsScalar epsilon, int printLevel):
         """
         test all the internal derivative tests

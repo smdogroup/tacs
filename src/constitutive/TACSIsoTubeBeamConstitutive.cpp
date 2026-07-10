@@ -394,16 +394,6 @@ void TACSIsoTubeBeamConstitutive::addFailureDVSens(
   }
 }
 
-TacsScalar TACSIsoTubeBeamConstitutive::evalDesignFieldValue(
-    int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (index == 0) {
-    return inner;
-  } else if (index == 1) {
-    return wall;
-  }
-  return 0.0;
-}
-
 const char *TACSIsoTubeBeamConstitutive::constName =
     "TACSIsoTubeBeamConstitutive";
 

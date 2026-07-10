@@ -675,17 +675,3 @@ void TACSLamParamFullShellConstitutive::addFailureDVSens(
     index++;
   }
 }
-
-// Retrieve the design variable for plotting purposes
-// --------------------------------------------------
-TacsScalar TACSLamParamFullShellConstitutive::evalDesignFieldValue(
-    int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (index == 0) {
-    return t;
-  } else if (index <= NUM_LAM_PARAMS) {
-    // Return the bending parameters
-    return lp[index - 1];
-  }
-
-  return 0.0;
-}

@@ -796,18 +796,6 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalTorsionalConstantSens(
   return dJ;
 }
 
-TacsScalar TACSIsoRectangleBeamConstitutive::evalDesignFieldValue(
-    int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (index == 0) {
-    return width;
-  } else if (index == 1) {
-    return thickness;
-  } else if (index == 2) {
-    return buckle_length;
-  }
-  return 0.0;
-}
-
 const char *TACSIsoRectangleBeamConstitutive::constName =
     "TACSIsoRectangleBeamConstitutive";
 

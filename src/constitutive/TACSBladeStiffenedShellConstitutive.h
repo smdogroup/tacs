@@ -411,10 +411,6 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // Get the thickness of a uniform shell with equivalent tensile stiffness
   TacsScalar getEffectiveThickness() { return computeEffectiveThickness(); }
 
-  // Retrieve the design variable for plotting purposes
-  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
-                                  const TacsScalar X[], int index);
-
   // Get the number of named derived outputs
   int getNumDerivedOutputs();
 

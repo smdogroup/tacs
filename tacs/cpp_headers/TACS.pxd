@@ -295,8 +295,6 @@ cdef extern from "TACSConstitutive.h":
         int getNumStresses()
         void evalStress(int, const double*, const TacsScalar*,
                         const TacsScalar*, TacsScalar*)
-        TacsScalar evalDesignFieldValue(int, const double*,
-                             const TacsScalar*, int)
         void getFailureEnvelope(int, int, const double*,
                                 const TacsScalar*, const TacsScalar*,
                                 const TacsScalar*, TacsScalar*, TacsScalar*)

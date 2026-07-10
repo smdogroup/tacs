@@ -210,10 +210,6 @@ class TACSGPBladeStiffenedShellConstitutive
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]) override;
 
-  // Retrieve the design variable for plotting purposes
-  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
-                                  const TacsScalar X[], int index) override;
-
   // Design variable group API
   int getNumDesignVarGroups();
   const char *getDesignVarGroupName(int groupIndex);
@@ -234,10 +230,6 @@ class TACSGPBladeStiffenedShellConstitutive
   // set the KS weight for the failure constraints and the GP models (if GP
   // models are active)
   void setKSWeight(double ksWeight);
-
-  // set the DV write out modes for f5 files [0 - regular DVs, 1 - ND, 2 - fail
-  // indexes]
-  void setWriteDVMode(int newMode) { writeDVmode = newMode; }
 
   // choose whether to use CPT (classical plate theory) analytical solution
   // (True) or DOD experimental buckling solution (False)
@@ -1243,9 +1235,6 @@ class TACSGPBladeStiffenedShellConstitutive
 
   // stiffener crippling prediction
   bool CPTstiffenerCrippling = false;
-
-  // debugging modes
-  int writeDVmode = 0;  // 0 - normal DVs, 1 - NDparams
 
   // pointers for Xtest vectors used in GP computation
   TacsScalar *XtestAxial, *XtestShear, *XtestCrippling;

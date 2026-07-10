@@ -854,23 +854,3 @@ void TACSLamParamSmearedShellConstitutive::addFailureDVSens(
     }
   }
 }
-
-// Retrieve the design variable for plotting purposes
-TacsScalar TACSLamParamSmearedShellConstitutive::evalDesignFieldValue(
-    int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (index == 0) {
-    return t;
-  } else if (index == 1) {
-    return f0;
-  } else if (index == 2) {
-    return f45;
-  } else if (index == 3) {
-    return f90;
-  } else if (index == 4) {
-    return W1;
-  } else if (index == 5) {
-    return W3;
-  }
-
-  return 0.0;
-}

@@ -275,20 +275,6 @@ void TACSSmearedCompositeShellConstitutive::addDensityDVSens(
   }
 }
 
-TacsScalar TACSSmearedCompositeShellConstitutive::evalDesignFieldValue(
-    int elemIndex, const double pt[], const TacsScalar X[], int index) {
-  if (index == 0) {
-    return thickness;
-  } else {
-    for (int i = 0; i < num_plies; i++) {
-      if (index == i + 1) {
-        return ply_fractions[i];
-      }
-    }
-  }
-  return 0.0;
-}
-
 // Evaluate the mass moments
 void TACSSmearedCompositeShellConstitutive::evalMassMoments(
     int elemIndex, const double pt[], const TacsScalar X[],

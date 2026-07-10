@@ -54,10 +54,6 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
   void getDesignVarGroupNums(int groupIndex, int dvNums[]);
 
-  // Retrieve the design variable for plotting purposes
-  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
-                                  const TacsScalar X[], int index);
-
   // Evaluate the material density
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]);

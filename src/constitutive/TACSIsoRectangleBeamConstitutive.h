@@ -116,10 +116,6 @@ class TACSIsoRectangleBeamConstitutive : public TACSBeamConstitutive {
   // The name of the constitutive object
   const char *getObjectName();
 
-  // Retrieve the design variable for plotting purposes
-  TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
-                                  const TacsScalar X[], int index);
-
   // Evaluate the cross-section area
   TacsScalar evalArea() { return width * thickness; };
   TacsScalar evalAreaSens(int dvNum);
