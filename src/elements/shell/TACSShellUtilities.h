@@ -1048,6 +1048,130 @@ void TacsShellAddDrillStrainSens(const TacsScalar Xdn[], const TacsScalar fn[],
 }
 
 /**
+  Add the Xpts/fn sensitivity of the drilling strain penalty
+
+  Given a per-node adjoint seed detn on the drill strain penalty etn computed
+  by TacsShellComputeDrillStrain(Deriv), accumulate the corresponding
+  sensitivity into dfdXpts (through each node's own Xxi) and dfn (through
+  each node's own fn, closed later by TacsShellAddNodeNormalsSens). No
+  vars-direction work is added here (that is TacsShellAddDrillStrainSens's
+  job, unchanged).
+
+  @param transform Transformation object
+  @param Xdn The frame derivatives at each node
+  @param fn The frame normals at each node
+  @param vars The state variable values
+  @param XdinvTn Computed inverse frame times transformation at each node
+  @param Tn The transformation at each node
+  @param u0xn The derivative of the displacements at each node
+  @param Ctn The rotation matrix at each node
+  @param detn The adjoint seed on the drill strain penalty at each node
+  @param dfdXpts The accumulated sensitivity with respect to Xpts
+  @param dfn The accumulated sensitivity with respect to the nodal fn field
+*/
+template <int vars_per_node, int offset, class basis, class director,
+          class model>
+void TacsShellAddDrillStrainXptSens(
+    TACSShellTransform *transform, const TacsScalar Xdn[],
+    const TacsScalar fn[], const TacsScalar vars[],
+    const TacsScalar XdinvTn[], const TacsScalar Tn[], const TacsScalar u0xn[],
+    const TacsScalar Ctn[], const TacsScalar detn[], TacsScalar dfdXpts[],
+    TacsScalar dfn[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    // Recompute the forward quantities needed for the reverse sweep (mirrors
+    // TacsShellComputeDrillStrain's per-node body)
+    TacsScalar Xxi[6];
+    TacsShellExtractFrame(&Xdn[9 * i], Xxi);
+
+    TacsScalar Xdinv[9];
+    inv3x3(&Xdn[9 * i], Xdinv);
+
+    TacsScalar u0xi[6];
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+    TacsScalar u0xnLocal[9];
+    TacsShellAssembleFrame(u0xi, u0xnLocal);  // [u0,xi; 0]
+
+    TacsScalar C[9];
+    director::template computeRotationMat<vars_per_node, offset, 1>(
+        &vars[vars_per_node * i], C);
+
+    const TacsScalar *T = &Tn[9 * i];
+    const TacsScalar *XdinvT = &XdinvTn[9 * i];
+
+    // ---- Reverse sweep ----
+    TacsScalar du0x[9], dCt[9];
+    director::evalDrillStrainSens(detn[i], &u0xn[9 * i], &Ctn[9 * i], du0x,
+                                  dCt);
+
+    TacsScalar dT[9];
+    memset(dT, 0, sizeof(dT));
+
+    // u0x = T^{T}*tmp, tmp = u0xnLocal*XdinvT
+    TacsScalar tmp[9], dtmp[9];
+    mat3x3MatMult(u0xnLocal, XdinvT, tmp);
+    mat3x3MatMult(T, du0x, dtmp);
+    TacsScalar dTloc[9];
+    mat3x3MatTransMult(tmp, du0x, dTloc);
+    for (int k = 0; k < 9; k++) dT[k] += dTloc[k];
+
+    // tmp = u0xnLocal*XdinvT (only need dXdinvT; u0xnLocal is vars-direction,
+    // not differentiated here)
+    TacsScalar dXdinvT[9];
+    mat3x3TransMatMult(u0xnLocal, dtmp, dXdinvT);
+
+    // Ct = T^{T}*M, M = C*T
+    TacsScalar M[9];
+    mat3x3MatMult(C, T, M);
+    TacsScalar dM[9];
+    mat3x3MatMult(T, dCt, dM);
+    mat3x3MatTransMult(M, dCt, dTloc);
+    for (int k = 0; k < 9; k++) dT[k] += dTloc[k];
+
+    // M = C*T
+    mat3x3TransMatMult(C, dM, dTloc);
+    for (int k = 0; k < 9; k++) dT[k] += dTloc[k];
+
+    // XdinvT = Xdinv*T
+    TacsScalar dXdinv[9];
+    mat3x3MatTransMult(dXdinvT, T, dXdinv);
+    mat3x3TransMatMult(Xdinv, dXdinvT, dTloc);
+    for (int k = 0; k < 9; k++) dT[k] += dTloc[k];
+
+    // Xdinv = inv3x3(Xdn_i): dXdn += -Xdinv^{T}*dXdinv*Xdinv^{T}
+    TacsScalar dXdn[9];
+    inv3x3Sens(Xdinv, dXdinv, dXdn);
+
+    // T = transform->computeTransform(Xxi, fn_i)
+    TacsScalar dXxi[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    TacsScalar dfnLocal[3] = {0.0, 0.0, 0.0};
+    transform->addTransformSens(Xxi, &fn[3 * i], dT, dXxi, dfnLocal);
+
+    // Xdn_i = assembleFrame(Xxi, fn_i): fold in the Xdinv-adjoint contribution
+    dXxi[0] += dXdn[0];
+    dXxi[1] += dXdn[1];
+    dXxi[2] += dXdn[3];
+    dXxi[3] += dXdn[4];
+    dXxi[4] += dXdn[6];
+    dXxi[5] += dXdn[7];
+
+    dfnLocal[0] += dXdn[2];
+    dfnLocal[1] += dXdn[5];
+    dfnLocal[2] += dXdn[8];
+
+    // Xxi_i = basis::interpFieldsGrad(pt_i, Xpts) directly at node i's own
+    // parametric point
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+
+    dfn[3 * i] += dfnLocal[0];
+    dfn[3 * i + 1] += dfnLocal[1];
+    dfn[3 * i + 2] += dfnLocal[2];
+  }
+}
+
+/**
   Add the first and second derivatives of the drilling strain penalty
   to the residual and Jacobian matrix
 
