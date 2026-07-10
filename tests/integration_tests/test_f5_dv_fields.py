@@ -13,11 +13,8 @@ from tacs import TACS, constitutive, elements, pyTACS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PARTITIONED_PLATE_BDF = os.path.join(BASE_DIR, "input_files", "partitioned_plate.bdf")
 
-# Components PLATE.00/PLATE.02 get an isotropic shell (scalar group "t"), PLATE.01 gets
-# a smeared composite shell (scalar "thickness" plus array "ply_fractions"), and PLATE.03
-# gets a blade-stiffened shell with inactive DVs and derived outputs (e.g
-# "effectiveThickness"). The union contains columns that are NaN on some components and
-# real on others.
+# Components PLATE.00/PLATE.02 get an isotropic shell (scalar group "t"), PLATE.01 gets a smeared composite shell (scalar "thickness" plus array "ply_fractions"), and PLATE.03 gets a blade-stiffened shell with inactive DVs and derived outputs (e.g "effectiveThickness").
+# The union contains columns that are NaN on some components and real on others.
 ISO_COMPONENTS = ["PLATE.00", "PLATE.02"]
 ISO_THICKNESSES = {"PLATE.00": 0.010, "PLATE.02": 0.014}
 # PLATE.02 deliberately has NO active DV: inactive groups must still be written
