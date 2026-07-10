@@ -29,6 +29,9 @@ class SpecialShellConstitutive : public TACSShellConstitutive {
   }
   ~SpecialShellConstitutive() { ply->decref(); }
 
+  // Get the thickness of a uniform shell with equivalent stiffness
+  TacsScalar getEffectiveThickness() { return t; }
+
   TacsScalar evalDensity(int elemIndex, const double pt[],
                          const TacsScalar X[]) {
     return t * ply->getDensity();
