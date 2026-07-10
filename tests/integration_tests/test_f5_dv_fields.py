@@ -121,7 +121,10 @@ def expectedEntries(fea, consByComp, includeGroups=True, includeDerived=True):
     """Build {component: {field name: value}} the way the writer does."""
     entries = {descript: {} for descript in consByComp}
     if includeGroups:
-        compDVs = fea.getComponentDesignVars()
+        # getComponentDesignVars is now a problem-level method; a throwaway
+        # problem reads back the same (unmodified) design vars this test uses.
+        problem = fea.createStaticProblem("expectedEntries")
+        compDVs = problem.getComponentDesignVars()
         for descript, groups in compDVs.items():
             entries[descript].update(entryValues(groups))
     if includeDerived:
