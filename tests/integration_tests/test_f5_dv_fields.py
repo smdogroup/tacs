@@ -202,6 +202,16 @@ class F5DesignVarFieldTest(unittest.TestCase):
         return payload
 
     def test_dv_field_names_and_values(self):
+        """
+        Given a mixed-constitutive plate (isotropic, smeared composite, and blade-
+        stiffened shells, with both active and inactive DVs) written with the
+        default design-var and derived-output options,
+        when the F5 file is written and its dv-data zone is read back,
+        then the field-name union matches the components' DV groups plus derived
+        outputs, each element row holds its own component's values with NaN in
+        every other field, and the blade component's effectiveThickness column
+        matches the analytic formula while being NaN for non-blade components.
+        """
         fea, consByComp = self.setupMixedPlate()
         names, data, compNums, compNames = self.writeAndLoad(fea)
 
@@ -252,6 +262,12 @@ class F5DesignVarFieldTest(unittest.TestCase):
                 self.assertTrue(np.isnan(data[e, effTCol]))
 
     def test_inactive_groups_are_written(self):
+        """
+        Given a component whose thickness DV is inactive,
+        when the F5 file is written and its dv-data zone is read back,
+        then the "t" field still holds that component's constructor thickness
+        for every one of its elements.
+        """
         fea, _ = self.setupMixedPlate()
         names, data, compNums, compNames = self.writeAndLoad(fea)
         nameList = names.split(",")
@@ -265,6 +281,12 @@ class F5DesignVarFieldTest(unittest.TestCase):
             np.testing.assert_allclose(data[e, tCol], 0.014, rtol=1e-12)
 
     def test_derived_outputs_only(self):
+        """
+        Given the plate is written with writeDesignVars disabled,
+        when the F5 file is written and its dv-data zone is read back,
+        then only derived-output fields appear, and no design-variable group
+        field (such as "t") is present.
+        """
         fea, consByComp = self.setupMixedPlate(writeDesignVars=False)
         names, data, compNums, compNames = self.writeAndLoad(fea)
         expected = expectedEntries(fea, consByComp, includeGroups=False)
@@ -273,6 +295,12 @@ class F5DesignVarFieldTest(unittest.TestCase):
         self.assertNotIn("t", names.split(","))
 
     def test_design_vars_only(self):
+        """
+        Given the plate is written with writeDerivedOutputs disabled,
+        when the F5 file is written and its dv-data zone is read back,
+        then only design-variable group fields appear, and no derived-output
+        field (such as "effectiveThickness") is present.
+        """
         fea, consByComp = self.setupMixedPlate(writeDerivedOutputs=False)
         names, data, compNums, compNames = self.writeAndLoad(fea)
         expected = expectedEntries(fea, consByComp, includeDerived=False)
@@ -281,6 +309,12 @@ class F5DesignVarFieldTest(unittest.TestCase):
         self.assertNotIn("effectiveThickness", names.split(","))
 
     def test_no_dv_zone_when_disabled(self):
+        """
+        Given the plate is written with both writeDesignVars and
+        writeDerivedOutputs disabled,
+        when the F5 file is written and the loader tries to read its design data,
+        then a ValueError is raised because no dv-data zone was written.
+        """
         fea, _ = self.setupMixedPlate(writeDesignVars=False, writeDerivedOutputs=False)
         if self.comm.rank == 0:
             tmpDir = tempfile.mkdtemp()

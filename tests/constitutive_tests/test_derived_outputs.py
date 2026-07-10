@@ -81,11 +81,19 @@ def makeGPBladeCon():
 
 class DerivedOutputTest(unittest.TestCase):
     def test_base_class_has_no_derived_outputs(self):
+        """Assert that an IsoShellConstitutive, which declares no derived outputs, returns an empty dict from getDerivedOutputs."""
         prop = constitutive.MaterialProperties(rho=2780.0, E=73.1e9, nu=0.33, ys=324e6)
         con = constitutive.IsoShellConstitutive(prop, t=0.01)
         self.assertEqual(con.getDerivedOutputs(), {})
 
     def test_blade_derived_outputs(self):
+        """
+        Given a BladeStiffenedShellConstitutive,
+        when getDerivedOutputs is called,
+        then it returns effectiveThickness and effectiveBendingThickness, with
+        effectiveThickness matching the analytic panel-plus-smeared-stiffener
+        formula and effectiveBendingThickness exceeding the bare panel thickness.
+        """
         con = makeBladeCon()
         outputs = con.getDerivedOutputs()
         self.assertEqual(
@@ -102,6 +110,13 @@ class DerivedOutputTest(unittest.TestCase):
         self.assertGreater(np.real(outputs["effectiveBendingThickness"]), PANEL_THICK)
 
     def test_gp_blade_derived_outputs(self):
+        """
+        Given a GPBladeStiffenedShellConstitutive,
+        when getDerivedOutputs is called,
+        then it returns the full named set of geometric and stiffness-ratio
+        outputs in order, with stiffenerAspectRatio matching the height/thickness
+        ratio and every returned value finite.
+        """
         con = makeGPBladeCon()
         outputs = con.getDerivedOutputs()
         self.assertEqual(
