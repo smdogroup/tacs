@@ -571,6 +571,180 @@ TacsScalar TacsShellComputeDispGradDeriv(
 }
 
 /**
+  Sensitivity of TacsShellComputeDispGrad with respect to Xxi, n0, fn, T and
+  d (the state-variable/vars direction is handled separately by
+  TacsShellAddDispGradSens).
+
+  Given adjoint seeds du0x/du1x on the two matrix outputs of
+  TacsShellComputeDispGrad and ddetXd on its scalar detXd return value,
+  accumulate the corresponding sensitivities into dXxi, dn0, dfn, dT, dd.
+
+  @param pt The parametric point
+  @param Xpts The node locations for the element (unused by the forward
+              function's own body; kept for signature symmetry)
+  @param vars The element variables (fixed; only used to rebuild u0xi)
+  @param fn The frame normal directions at each node
+  @param d The director field at each node
+  @param Xxi The in-plane coordinate derivatives
+  @param n0 The interpolated frame normal direction
+  @param T The transformation to local coordinates
+  @param XdinvT Product of inverse of the Jacobian trans. and T
+  @param XdinvzT Product of z-derivative of Jac. trans. inv. and T
+  @param du0x Seed on u0x
+  @param du1x Seed on u1x
+  @param ddetXd Seed on detXd
+  @param dXxi Xxi sensitivity (accumulated)
+  @param dn0 n0 sensitivity (accumulated)
+  @param dfn Nodal fn sensitivity (accumulated)
+  @param dT T sensitivity (accumulated)
+  @param dd Nodal director-field sensitivity (accumulated)
+*/
+template <int vars_per_node, class basis>
+void TacsShellComputeDispGradXptSens(
+    const double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar fn[], const TacsScalar d[], const TacsScalar Xxi[],
+    const TacsScalar n0[], const TacsScalar T[], const TacsScalar XdinvT[],
+    const TacsScalar XdinvzT[], const TacsScalar du0x[],
+    const TacsScalar du1x[], const TacsScalar ddetXd, TacsScalar dXxi[],
+    TacsScalar dn0[], TacsScalar dfn[], TacsScalar dT[], TacsScalar dd[]) {
+  // Recompute the forward quantities needed for the reverse sweep (mirrors
+  // TacsShellComputeDispGrad's own body)
+  TacsScalar nxi[6];
+  basis::template interpFieldsGrad<3, 3>(pt, fn, nxi);
+
+  TacsScalar Xd[9], Xdz[9];
+  TacsShellAssembleFrame(Xxi, n0, Xd);
+  TacsShellAssembleFrame(nxi, Xdz);
+
+  TacsScalar Xdinv[9];
+  TacsScalar detXd = inv3x3(Xd, Xdinv);
+
+  TacsScalar negXdinvXdz[9];
+  mat3x3MatMult(Xdinv, Xdz, negXdinvXdz);
+  for (int i = 0; i < 9; i++) {
+    negXdinvXdz[i] *= -1.0;
+  }
+
+  TacsScalar d0[3], d0xi[6];
+  basis::template interpFields<3, 3>(pt, d, d0);
+  basis::template interpFieldsGrad<3, 3>(pt, d, d0xi);
+
+  TacsScalar u0xi[6];
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi);
+
+  TacsScalar U[9], V[9];
+  TacsShellAssembleFrame(u0xi, d0, U);
+  TacsShellAssembleFrame(d0xi, V);
+
+  TacsScalar tmp1[9], tmp2[9];
+  mat3x3MatMult(V, XdinvT, tmp1);
+  mat3x3MatMultAdd(U, XdinvzT, tmp1);
+  mat3x3MatMult(U, XdinvT, tmp2);
+
+  // ---- Reverse sweep ----
+  TacsScalar dtmp1[9], dtmp2[9], tmp[9];
+
+  // u0x = T^{T}*tmp2
+  mat3x3MatMult(T, du0x, dtmp2);
+  mat3x3MatTransMult(tmp2, du0x, tmp);
+  for (int i = 0; i < 9; i++) dT[i] += tmp[i];
+
+  // u1x = T^{T}*tmp1
+  mat3x3MatMult(T, du1x, dtmp1);
+  mat3x3MatTransMult(tmp1, du1x, tmp);
+  for (int i = 0; i < 9; i++) dT[i] += tmp[i];
+
+  // tmp2 = U*XdinvT
+  TacsScalar dU[9], dV[9], dXdinvT[9], dXdinvzT[9];
+  mat3x3MatTransMult(dtmp2, XdinvT, dU);
+  mat3x3TransMatMult(U, dtmp2, dXdinvT);
+
+  // tmp1 = V*XdinvT + U*XdinvzT
+  mat3x3MatTransMult(dtmp1, XdinvT, dV);
+  mat3x3TransMatMult(V, dtmp1, tmp);
+  for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+
+  mat3x3MatTransMult(dtmp1, XdinvzT, tmp);
+  for (int i = 0; i < 9; i++) dU[i] += tmp[i];
+  mat3x3TransMatMult(U, dtmp1, dXdinvzT);
+
+  // XdinvzT = negXdinvXdz*XdinvT
+  TacsScalar dnegXdinvXdz[9];
+  mat3x3MatTransMult(dXdinvzT, XdinvT, dnegXdinvXdz);
+  mat3x3TransMatMult(negXdinvXdz, dXdinvzT, tmp);
+  for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+
+  // XdinvT = Xdinv*T
+  TacsScalar dXdinv[9];
+  mat3x3MatTransMult(dXdinvT, T, dXdinv);
+  mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
+  for (int i = 0; i < 9; i++) dT[i] += tmp[i];
+
+  // negXdinvXdz = -Xdinv*Xdz => the seed on the unscaled product Xdinv*Xdz
+  // is -dnegXdinvXdz
+  TacsScalar dCprime[9], dXdz[9];
+  for (int i = 0; i < 9; i++) dCprime[i] = -dnegXdinvXdz[i];
+  mat3x3MatTransMult(dCprime, Xdz, tmp);
+  for (int i = 0; i < 9; i++) dXdinv[i] += tmp[i];
+  mat3x3TransMatMult(Xdinv, dCprime, dXdz);
+
+  // detXd = det(Xd): dXd += ddetXd*detXd*Xdinv^{T}
+  TacsScalar dXd[9];
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      dXd[3 * i + j] = ddetXd * detXd * Xdinv[3 * j + i];
+    }
+  }
+
+  // Xdinv = inv3x3(Xd): dXd += -Xdinv^{T}*dXdinv*Xdinv^{T}
+  TacsScalar dXd_inv[9];
+  inv3x3Sens(Xdinv, dXdinv, dXd_inv);
+  for (int i = 0; i < 9; i++) dXd[i] += dXd_inv[i];
+
+  // Xd = assembleFrame(Xxi, n0)
+  dXxi[0] += dXd[0];
+  dXxi[1] += dXd[1];
+  dXxi[2] += dXd[3];
+  dXxi[3] += dXd[4];
+  dXxi[4] += dXd[6];
+  dXxi[5] += dXd[7];
+
+  dn0[0] += dXd[2];
+  dn0[1] += dXd[5];
+  dn0[2] += dXd[8];
+
+  // Xdz = assembleFrame(nxi) (no third column, no fn-direction term there)
+  TacsScalar dnxi[6];
+  dnxi[0] = dXdz[0];
+  dnxi[1] = dXdz[1];
+  dnxi[2] = dXdz[3];
+  dnxi[3] = dXdz[4];
+  dnxi[4] = dXdz[6];
+  dnxi[5] = dXdz[7];
+
+  basis::template addInterpFieldsGradTranspose<3, 3>(pt, dnxi, dfn);
+
+  // U = assembleFrame(u0xi, d0): only the d0 (third column) direction is
+  // differentiated here (u0xi is the vars direction, handled elsewhere)
+  TacsScalar dd0[3];
+  dd0[0] = dU[2];
+  dd0[1] = dU[5];
+  dd0[2] = dU[8];
+
+  // V = assembleFrame(d0xi)
+  TacsScalar dd0xi[6];
+  dd0xi[0] = dV[0];
+  dd0xi[1] = dV[1];
+  dd0xi[2] = dV[3];
+  dd0xi[3] = dV[4];
+  dd0xi[4] = dV[6];
+  dd0xi[5] = dV[7];
+
+  basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+  basis::template addInterpFieldsGradTranspose<3, 3>(pt, dd0xi, dd);
+}
+
+/**
   Add/accumulate the contributions to the residual from the coefficients
   of u0x, u1x and Ct
 
