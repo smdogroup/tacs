@@ -2327,8 +2327,126 @@ void TACSShellElement<quadrature, basis, director, model>::
                                            psi, phi, Xpts, vars, dfdXpts);
     return;
   } else if (matType == TACS_MASS_MATRIX) {
-    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
-                                           psi, phi, Xpts, vars, dfdXpts);
+    // Mass has no strain path. psi^T*M*phi's Xpts-dependence comes from two
+    // sources: (a) the shared detXd geometric factor (same detXd-only chain
+    // used for the geometry-only addPointQuantityXptSens branches above),
+    // and (b) the reference direction t=fn used inside the director
+    // Jacobian - psi_d = D_i(vars, t)*psi and phi_d = D_i(vars, t)*phi are
+    // each linear in t for fixed vars, so their t-sensitivity closes through
+    // director::addDirectorRefNormalSens's psi-paired overload.
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    TacsScalar fn[3 * num_nodes], Xdn[9 * num_nodes];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
+
+    TacsScalar zeros[vars_per_node * num_nodes];
+    memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+
+    TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize];
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 num_nodes>(
+        vars, zeros, zeros, psi, fn, d, ddot, dddot, dd_psi);
+
+    TacsScalar d2[dsize], ddot2[dsize], dddot2[dsize], dd_phi[dsize];
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 num_nodes>(
+        vars, zeros, zeros, phi, fn, d2, ddot2, dddot2, dd_phi);
+
+    TacsScalar dfn[3 * num_nodes];
+    memset(dfn, 0, 3 * num_nodes * sizeof(TacsScalar));
+
+    // Nodal seeds accumulated across all quadrature points, paired with
+    // psi's/phi's own directional-derivative closure respectively
+    TacsScalar dd_seed_psi[dsize], dd_seed_phi[dsize];
+    memset(dd_seed_psi, 0, dsize * sizeof(TacsScalar));
+    memset(dd_seed_phi, 0, dsize * sizeof(TacsScalar));
+
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      TacsScalar X[3], Xxi[6], n0[3], T[9];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+      transform->computeTransform(Xxi, n0, T);
+
+      TacsScalar XdinvT[9], XdinvzT[9];
+      TacsScalar u0x[9], u1x[9];
+      TacsScalar detXd = TacsShellComputeDispGrad<vars_per_node, basis>(
+          pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
+      detXd *= weight;
+
+      TacsScalar psi_u0[3], phi_u0[3], psi_d[3], phi_d[3];
+      basis::template interpFields<vars_per_node, 3>(pt, psi, psi_u0);
+      basis::template interpFields<vars_per_node, 3>(pt, phi, phi_u0);
+      basis::template interpFields<3, 3>(pt, dd_psi, psi_d);
+      basis::template interpFields<3, 3>(pt, dd_phi, phi_d);
+
+      TacsScalar moments[3];
+      con->evalMassMoments(elemIndex, pt, X, moments);
+
+      // (a) detXd-direction term
+      TacsScalar coefTotal =
+          scale * (moments[0] * vec3Dot(psi_u0, phi_u0) +
+                   moments[1] * (vec3Dot(psi_u0, phi_d) +
+                                vec3Dot(psi_d, phi_u0)) +
+                   moments[2] * vec3Dot(psi_d, phi_d));
+
+      TacsScalar Xd[9], Xdinv[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      TacsScalar detXd_raw = inv3x3(Xd, Xdinv);
+
+      TacsScalar ddetXd_total = coefTotal * weight;
+      TacsScalar dXd[9];
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          dXd[3 * i + j] = ddetXd_total * detXd_raw * Xdinv[3 * j + i];
+        }
+      }
+
+      TacsScalar dXxi[6], dn0[3];
+      dXxi[0] = dXd[0];
+      dXxi[1] = dXd[1];
+      dXxi[2] = dXd[3];
+      dXxi[3] = dXd[4];
+      dXxi[4] = dXd[6];
+      dXxi[5] = dXd[7];
+      dn0[0] = dXd[2];
+      dn0[1] = dXd[5];
+      dn0[2] = dXd[8];
+
+      TacsScalar dT[9];
+      memset(dT, 0, sizeof(dT));
+      transform->addTransformSens(Xxi, n0, dT, dXxi, dn0);
+
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+      basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);
+
+      // (b) t=fn-direction term through the director Jacobian
+      TacsScalar seed_paired_with_psi[3], seed_paired_with_phi[3];
+      for (int i = 0; i < 3; i++) {
+        seed_paired_with_psi[i] =
+            scale * detXd * (moments[1] * phi_u0[i] + moments[2] * phi_d[i]);
+        seed_paired_with_phi[i] =
+            scale * detXd * (moments[1] * psi_u0[i] + moments[2] * psi_d[i]);
+      }
+      basis::template addInterpFieldsTranspose<3, 3>(pt, seed_paired_with_psi,
+                                                      dd_seed_psi);
+      basis::template addInterpFieldsTranspose<3, 3>(pt, seed_paired_with_phi,
+                                                      dd_seed_phi);
+    }
+
+    TacsScalar zero_dd[dsize];
+    memset(zero_dd, 0, dsize * sizeof(TacsScalar));
+    director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                                num_nodes>(
+        vars, psi, fn, zero_dd, dd_seed_psi, dfn);
+    director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                                num_nodes>(
+        vars, phi, fn, zero_dd, dd_seed_phi, dfn);
+
+    TacsShellAddNodeNormalsSens<basis>(Xpts, dfn, dfdXpts);
     return;
   } else {
     // Unsupported/unknown matType - forward to the base class rather than
