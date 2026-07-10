@@ -1,4 +1,6 @@
-"""Tests for pyTACS.getComponentDesignVars and pyTACS.getComponentDesignVarNums."""
+"""Tests for the problem/constraint-level getComponentDesignVars and
+getComponentDesignVarNums methods (defined on TACSSystem, the shared base class).
+"""
 
 import os
 import unittest
@@ -55,7 +57,8 @@ class ComponentDVExtractionTest(unittest.TestCase):
 
     def test_component_dv_nums(self):
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
-        compDVNums = fea.getComponentDesignVarNums()
+        problem = fea.createStaticProblem("dvs")
+        compDVNums = problem.getComponentDesignVarNums()
         expected = {
             "PLATE.00": {"t": 0},
             "PLATE.01": {"t": -1},
@@ -66,7 +69,8 @@ class ComponentDVExtractionTest(unittest.TestCase):
 
     def test_initial_values(self):
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
-        compDVs = fea.getComponentDesignVars()
+        problem = fea.createStaticProblem("dvs")
+        compDVs = problem.getComponentDesignVars()
         self.assertEqual(sorted(compDVs.keys()), sorted(PLATE_THICKNESSES.keys()))
         for descript, t in PLATE_THICKNESSES.items():
             self.assertEqual(list(compDVs[descript].keys()), ["t"])
@@ -75,13 +79,14 @@ class ComponentDVExtractionTest(unittest.TestCase):
 
     def test_duplicate_descripts_error(self):
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
+        problem = fea.createStaticProblem("dvs")
         # Simulate a model whose BDF labels two property groups identically
-        fea.compDescripts = list(fea.compDescripts)
-        fea.compDescripts[1] = fea.compDescripts[0]
+        problem.meshLoader.compDescripts = list(problem.meshLoader.compDescripts)
+        problem.meshLoader.compDescripts[1] = problem.meshLoader.compDescripts[0]
         with self.assertRaises(Error):
-            fea.getComponentDesignVars()
+            problem.getComponentDesignVars()
         with self.assertRaises(Error):
-            fea.getComponentDesignVarNums()
+            problem.getComponentDesignVarNums()
 
     def test_multiple_constitutive_error(self):
         fea = pyTACS(QUAD_TRI_BDF, comm=self.comm)
@@ -100,8 +105,9 @@ class ComponentDVExtractionTest(unittest.TestCase):
             return elems
 
         fea.initialize(elemCallBack)
+        problem = fea.createStaticProblem("dvs")
         with self.assertRaises(Error):
-            fea.getComponentDesignVars()
+            problem.getComponentDesignVars()
 
     def test_shared_constitutive_ok(self):
         fea = pyTACS(QUAD_TRI_BDF, comm=self.comm)
@@ -120,7 +126,8 @@ class ComponentDVExtractionTest(unittest.TestCase):
             return elems
 
         fea.initialize(elemCallBack)
-        compDVs = fea.getComponentDesignVars()
+        problem = fea.createStaticProblem("dvs")
+        compDVs = problem.getComponentDesignVars()
         self.assertEqual(len(compDVs), 1)
         (groupValues,) = compDVs.values()
         np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
@@ -150,9 +157,10 @@ class ComponentDVExtractionTest(unittest.TestCase):
             return elements.Quad4Shell(None, con)
 
         fea.initialize(elemCallBack)
+        problem = fea.createStaticProblem("dvs")
         # The components have DVs but report no groups, so each entry is empty (and a
         # warning naming the class is printed on the root proc)
-        compDVs = fea.getComponentDesignVars()
+        compDVs = problem.getComponentDesignVars()
         for groupValues in compDVs.values():
             self.assertEqual(groupValues, {})
 
@@ -180,10 +188,11 @@ class ComponentDVExtractionTest(unittest.TestCase):
             return elements.Quad4Shell(None, con)
 
         fea.initialize(elemCallBack)
+        problem = fea.createStaticProblem("dvs")
         # The class claims one group but its group DV nums cover none of its active DVs, so
         # a warning naming the class is printed on the root proc; the call must still succeed
         # and return the stale (constructor) group values.
-        compDVs = fea.getComponentDesignVars()
+        compDVs = problem.getComponentDesignVars()
         for groupValues in compDVs.values():
             np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
 
@@ -215,7 +224,7 @@ class ComponentDVRoundTripTest(unittest.TestCase):
         funcs1 = {}
         problem1.evalFunctions(funcs1)
 
-        compDVs = fea1.getComponentDesignVars()
+        compDVs = problem1.getComponentDesignVars()
 
         # The dictionary must be identical on every rank
         allCompDVs = self.comm.allgather(compDVs)
@@ -325,7 +334,7 @@ class ComponentDVArrayGroupOverlayTest(unittest.TestCase):
         perturbed = 1.2 * xLocal
         problem.setDesignVars(perturbed)
 
-        compDVs = fea.getComponentDesignVars()
+        compDVs = problem.getComponentDesignVars()
 
         # The dictionary must be identical on every rank
         allCompDVs = self.comm.allgather(compDVs)

@@ -2,7 +2,7 @@ Extracting and Restoring Component Design Variables
 ***************************************************
 .. note:: The script for this example can be found under the ``examples/component_dv_extraction/component_dv_extraction.py`` file.
 
-This example demonstrates how to extract a complete, named description of a model's design variables with :meth:`pyTACS.getComponentDesignVars <tacs.pytacs.pyTACS.getComponentDesignVars>` and use it to recreate the same sizing state in a separate TACS execution.
+This example demonstrates how to extract a complete, named description of a model's design variables with :meth:`StaticProblem.getComponentDesignVars <tacs.problems.StaticProblem.getComponentDesignVars>` and use it to recreate the same sizing state in a separate TACS execution.
 
 The model combines four shell components with two tube-beam components that cross at the plate center.
 
@@ -12,8 +12,8 @@ Two properties make it suitable as a save/restore format:
 #. Group names and value types match the keyword arguments of the corresponding constitutive class constructor, so values can be passed straight back to the constructor inside an ``elemCallBack`` function.
 #. Every design variable group is always included, whether or not its entries are active design variables, so the receiving model is free to make a different choice of active design variables.
 
-The dictionary is identical on every processor, and active entries always reflect the assembler's current design variable values at the time :meth:`pyTACS.getComponentDesignVars <tacs.pytacs.pyTACS.getComponentDesignVars>` is called.
-A companion method, :meth:`pyTACS.getComponentDesignVarNums <tacs.pytacs.pyTACS.getComponentDesignVarNums>`, returns the global design variable numbers in the same structure (with -1 marking inactive entries).
+The dictionary is identical on every processor, and active entries always reflect the calling problem's or constraint's current design variable values at the time :meth:`StaticProblem.getComponentDesignVars <tacs.problems.StaticProblem.getComponentDesignVars>` is called.
+A companion method, :meth:`StaticProblem.getComponentDesignVarNums <tacs.problems.StaticProblem.getComponentDesignVarNums>`, returns the global design variable numbers in the same structure (with -1 marking inactive entries).
 
 First, import the required libraries:
 

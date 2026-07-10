@@ -98,9 +98,9 @@ problem.evalFunctions(funcs)
 # [docs:extract-start]
 # Extract the sizing state. Every component appears in the dictionary, and every design
 # variable group is included whether its entries are active design variables or not.
-# Active entries hold the assembler's current values; inactive entries hold the values
+# Active entries hold the problem's current values; inactive entries hold the values
 # the constitutive objects were constructed with.
-componentDVs = FEAAssembler.getComponentDesignVars()
+componentDVs = problem.getComponentDesignVars()
 if FEAAssembler.comm.rank == 0:
     print("Extracted component design variables:")
     pprint(componentDVs)
