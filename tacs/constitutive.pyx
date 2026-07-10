@@ -971,8 +971,7 @@ cdef class ShellConstitutive(Constitutive):
             Density of the shell material.
         """
         # Get the thickness and compute the thickness factor.
-        cdef int index = 0
-        t = self.cptr.evalDesignFieldValue(0, NULL, NULL, index)
+        t = self.cptr.getEffectiveThickness()
 
         # We also need the mass moments and density
         cdef np.ndarray mass = np.zeros(3, dtype)

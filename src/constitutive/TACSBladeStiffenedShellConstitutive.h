@@ -408,6 +408,9 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   // Get the shear correction factor
   TacsScalar getShearCorrectionFactor() { return kcorr; }
 
+  // Get the thickness of a uniform shell with equivalent tensile stiffness
+  TacsScalar getEffectiveThickness() { return computeEffectiveThickness(); }
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);

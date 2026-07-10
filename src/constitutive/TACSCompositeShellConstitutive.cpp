@@ -336,6 +336,15 @@ const char *TACSCompositeShellConstitutive::getObjectName() {
   return constName;
 }
 
+// Get the total laminate thickness
+TacsScalar TACSCompositeShellConstitutive::getEffectiveThickness() {
+  TacsScalar t = 0.0;
+  for (int i = 0; i < num_plies; i++) {
+    t += ply_thickness[i];
+  }
+  return t;
+}
+
 /*
   Get ply thicknesses
 */

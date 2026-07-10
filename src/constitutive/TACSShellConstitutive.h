@@ -86,6 +86,17 @@ class TACSShellConstitutive : public TACSConstitutive {
   */
   virtual TacsScalar getShearCorrectionFactor() { return 5.0 / 6.0; }
 
+  /**
+    Get the thickness of a uniform shell with equivalent tensile stiffness
+    and density
+
+    This is used when exporting equivalent Nastran property cards; for a
+    uniform shell it is just the laminate thickness.
+
+    @return The effective thickness
+  */
+  virtual TacsScalar getEffectiveThickness() = 0;
+
   // Extract the tangent
   static void extractTangentStiffness(const TacsScalar *C, const TacsScalar **A,
                                       const TacsScalar **B,

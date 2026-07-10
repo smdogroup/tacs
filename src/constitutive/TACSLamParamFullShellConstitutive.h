@@ -157,6 +157,9 @@ class TACSLamParamFullShellConstitutive : public TACSShellConstitutive {
   // Get the shear correction factor
   TacsScalar getShearCorrectionFactor() { return kcorr; }
 
+  // Get the thickness of a uniform shell with equivalent stiffness
+  TacsScalar getEffectiveThickness() { return t; }
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);

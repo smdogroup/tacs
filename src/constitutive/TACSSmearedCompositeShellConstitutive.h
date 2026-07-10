@@ -124,6 +124,9 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   // Get the shear correction factor
   TacsScalar getShearCorrectionFactor() { return kcorr; }
 
+  // Get the thickness of a uniform shell with equivalent stiffness
+  TacsScalar getEffectiveThickness() { return thickness; }
+
   // Get ply angles, thicknesses, and fractions
   TacsScalar getLaminateThickness();
   void getPlyAngles(TacsScalar *_ply_angles);

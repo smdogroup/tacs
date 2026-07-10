@@ -97,6 +97,7 @@ cdef extern from "TACSShellConstitutive.h":
         void setDrillingRegularization(double)
         double getDrillingRegularization()
         TacsScalar getShearCorrectionFactor()
+        TacsScalar getEffectiveThickness()
         TacsScalar evalDensity(int elemIndex, const double pt[], const TacsScalar X[])
         void evalMassMoments(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar moments[])
         void evalTangentStiffness(int elemIndex, const double pt[], const TacsScalar X[], TacsScalar C[])
