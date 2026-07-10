@@ -1163,14 +1163,7 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         Returns:
             card (pyNastran.bdf.cards.properties.shell.PSHELL): pyNastran card holding property information
         """
-        cdef double pt[3]
-        cdef TacsScalar X[3]
-        cdef int elemIndex = 0
-        cdef int index = 0
-        for i in range(3):
-            pt[i] = 0.0
-            X[i] = 0.0
-        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, index)
+        t = self.getDesignVarGroups()["t"]
         mat_id = self.props.getNastranID()
         con = nastran_cards.properties.shell.PSHELL(self.nastranID, mat_id, np.real(t), mid2=mat_id, mid3=mat_id)
         return con
@@ -2811,14 +2804,9 @@ cdef class IsoTubeBeamConstitutive(BeamConstitutive):
         Returns:
             card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
         """
-        cdef double pt[3]
-        cdef TacsScalar X[3]
-        cdef int elemIndex = 0
-        for i in range(3):
-            pt[i] = 0.0
-            X[i] = 0.0
-        d = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
-        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        groups = self.getDesignVarGroups()
+        d = groups["d"]
+        t = groups["t"]
         ri = np.real(d / 2.0)
         ro = np.real(ri + t)
         mat_id = self.props.getNastranID()
@@ -2927,14 +2915,9 @@ cdef class IsoRectangleBeamConstitutive(BeamConstitutive):
         Returns:
             card (pyNastran.bdf.cards.properties.bars.PBARL): pyNastran card holding property information
         """
-        cdef double pt[3]
-        cdef TacsScalar X[3]
-        cdef int elemIndex = 0
-        for i in range(3):
-            pt[i] = 0.0
-            X[i] = 0.0
-        w = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 0)
-        t = self.cptr.evalDesignFieldValue(elemIndex, pt, X, 1)
+        groups = self.getDesignVarGroups()
+        w = groups["w"]
+        t = groups["t"]
         mat_id = self.props.getNastranID()
         con = nastran_cards.properties.bars.PBARL(self.nastranID, mat_id, "BAR", [np.real(w), np.real(t)])
         return con
