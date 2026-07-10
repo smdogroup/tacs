@@ -174,8 +174,8 @@ class TACSShellInplaneLinearModel {
         dd0[0] = 0.5 * dety[index] * Xxi[1];
         dd0[1] = 0.5 * dety[index] * Xxi[3];
         dd0[2] = 0.5 * dety[index] * Xxi[5];
-      } else {
-        // field == TACS_SHELL_G13_COMPONENT: g13 = e1^{T}*G*e3
+      } else if (field == TACS_SHELL_G13_COMPONENT) {
+        // Compute g13 = e1^{T}*G*e3
         dXxi[0] = 0.5 * dety[index] * d0[0];
         dXxi[1] = 0.0;
         dXxi[2] = 0.5 * dety[index] * d0[1];
@@ -190,6 +190,8 @@ class TACSShellInplaneLinearModel {
         dd0[0] = 0.5 * dety[index] * Xxi[0];
         dd0[1] = 0.5 * dety[index] * Xxi[2];
         dd0[2] = 0.5 * dety[index] * Xxi[4];
+      } else {
+        continue;
       }
 
       basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);
@@ -1132,8 +1134,8 @@ class TACSShellInplaneNonlinearModel {
         dd0[0] = 0.5 * dety[index] * (Xxi[1] + Uxi[1]);
         dd0[1] = 0.5 * dety[index] * (Xxi[3] + Uxi[3]);
         dd0[2] = 0.5 * dety[index] * (Xxi[5] + Uxi[5]);
-      } else {
-        // field == TACS_SHELL_G13_COMPONENT: g13 = e1^{T}*G*e3
+      } else if (field == TACS_SHELL_G13_COMPONENT) {
+        // Compute g13 = e1^{T}*G*e3
         dXxi[0] = 0.5 * dety[index] * d0[0];
         dXxi[1] = 0.0;
         dXxi[2] = 0.5 * dety[index] * d0[1];
@@ -1148,6 +1150,8 @@ class TACSShellInplaneNonlinearModel {
         dd0[0] = 0.5 * dety[index] * (Xxi[0] + Uxi[0]);
         dd0[1] = 0.5 * dety[index] * (Xxi[2] + Uxi[2]);
         dd0[2] = 0.5 * dety[index] * (Xxi[4] + Uxi[4]);
+      } else {
+        continue;
       }
 
       basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);

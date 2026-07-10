@@ -598,6 +598,13 @@ TacsScalar TacsShellComputeDispGradDeriv(
   @param dfn Nodal fn sensitivity (accumulated)
   @param dT T sensitivity (accumulated)
   @param dd Nodal director-field sensitivity (accumulated)
+
+  Note: SPEC.md's interface table shows this returning TacsScalar, mirroring
+  TacsShellComputeDispGrad's detXd return -- that is a copy-paste artifact
+  from the forward function; there is no natural value for an adjoint
+  function to return here (ddetXd arrives as a seed/input, not something
+  this function produces), and no caller in this feature's data flow ever
+  reads a return value from this call. Declared void intentionally.
 */
 template <int vars_per_node, class basis>
 void TacsShellComputeDispGradXptSens(
