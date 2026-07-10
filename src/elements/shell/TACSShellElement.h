@@ -2241,8 +2241,62 @@ void TACSShellElement<quadrature, basis, director, model>::
                                           psi, phi, Xpts, vars, dvLen, dfdx);
     return;
   } else if (matType == TACS_MASS_MATRIX) {
-    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
-                                          psi, phi, Xpts, vars, dvLen, dfdx);
+    // The mass matrix has no strain/stiffness path at all - its only DV
+    // dependence is through con->evalMassMoments. psi^T*M*phi is a bilinear
+    // form in the (translational, director-directional-derivative) fields
+    // interpolated from psi and phi respectively, exactly mirroring the
+    // dynamics term addAdjResProduct already accumulates from (dvars,ddvars)
+    // and the psi-direction director derivative - here both "velocity" and
+    // "adjoint direction" roles are played by psi and phi respectively.
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    TacsScalar fn[3 * num_nodes], Xdn[9 * num_nodes];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn, Xdn);
+
+    TacsScalar zeros[vars_per_node * num_nodes];
+    memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+
+    // Directional derivative of the director field along psi and along phi
+    TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize];
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 num_nodes>(
+        vars, zeros, zeros, psi, fn, d, ddot, dddot, dd_psi);
+
+    TacsScalar d2[dsize], ddot2[dsize], dddot2[dsize], dd_phi[dsize];
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 num_nodes>(
+        vars, zeros, zeros, phi, fn, d2, ddot2, dddot2, dd_phi);
+
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      TacsScalar X[3], Xxi[6], n0[3], T[9];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+      transform->computeTransform(Xxi, n0, T);
+
+      TacsScalar XdinvT[9], XdinvzT[9];
+      TacsScalar u0x[9], u1x[9];
+      TacsScalar detXd = TacsShellComputeDispGrad<vars_per_node, basis>(
+          pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
+      detXd *= weight;
+
+      TacsScalar psi_u0[3], phi_u0[3], psi_d[3], phi_d[3];
+      basis::template interpFields<vars_per_node, 3>(pt, psi, psi_u0);
+      basis::template interpFields<vars_per_node, 3>(pt, phi, phi_u0);
+      basis::template interpFields<3, 3>(pt, dd_psi, psi_d);
+      basis::template interpFields<3, 3>(pt, dd_phi, phi_d);
+
+      TacsScalar coef[3];
+      coef[0] = scale * detXd * vec3Dot(psi_u0, phi_u0);
+      coef[1] = scale * detXd *
+                (vec3Dot(psi_u0, phi_d) + vec3Dot(psi_d, phi_u0));
+      coef[2] = scale * detXd * vec3Dot(psi_d, phi_d);
+
+      con->addMassMomentsDVSens(elemIndex, pt, X, coef, dvLen, dfdx);
+    }
     return;
   } else {
     // Unsupported/unknown matType - forward to the base class rather than
@@ -2309,6 +2363,23 @@ void TACSShellElement<quadrature, basis, director, model>::
                                           Xpts, vars, dfdu);
     return;
   } else if (matType == TACS_MASS_MATRIX) {
+    // NOTE: for TACSLinearizedRotation the mass matrix is genuinely
+    // state-independent (its rotational-DOF Jacobian is a fixed function of
+    // the reference direction t only) and psi^T*M*phi's vars-derivative is
+    // exactly zero, matching MITCShell's comment cited in VALIDATION.md
+    // Claim 2. However, this was verified NOT to generalize:
+    // TACSQuadraticRotation and TACSQuaternionRotation build the
+    // rotational-rotational mass block from a director Jacobian D_i(vars,t)
+    // that is itself a nonlinear function of vars, so mat's entries (and
+    // hence psi^T*mat*phi) genuinely depend on vars for those two director
+    // classes even though the mass moments/detXd do not (empirically
+    // confirmed against the FD/CS harness: Quad4ShellModRot/Quad4Quaternion
+    // both fail an exact-zero implementation while Quad4Shell - the
+    // TACSLinearizedRotation default - passes). Deriving the analytic
+    // third-derivative-like correction for the nonlinear-rotation directors
+    // is out of scope for this pass (see HANDOFF-task-4.md); forward to the
+    // base-class FD/CS implementation for correctness rather than assert an
+    // incorrect zero.
     TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                           Xpts, vars, dfdu);
     return;
