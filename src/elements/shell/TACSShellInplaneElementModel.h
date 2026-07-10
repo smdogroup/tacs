@@ -114,6 +114,90 @@ class TACSShellInplaneLinearModel {
     }
   }
 
+  /**
+    Sensitivity of computeTyingStrain with respect to Xpts and fn.
+
+    Given a seed dety on the tying strain ety, accumulate
+    dfdXpts += d(dety^{T}*ety)/d(Xpts), dfn += d(dety^{T}*ety)/d(fn), and
+    dd += d(dety^{T}*ety)/d(d). Unlike the (non-inplane) shell models, this
+    class's computeTyingStrain only ever has G23/G13 tying points (verified
+    by reading this class's own computeTyingStrain above) -- there is no
+    G11/G22/G12 branch to mirror here.
+
+    @param Xpts The node locations for the element
+    @param fn The frame normal directions at each node
+    @param vars The element variables
+    @param d The director field at each node
+    @param dety The seed on the tying strain
+    @param dfdXpts The accumulated sensitivity with respect to Xpts
+    @param dfn The accumulated sensitivity with respect to fn
+    @param dd The accumulated sensitivity with respect to the director field
+  */
+  template <int vars_per_node, class basis>
+  static void addTyingStrainXptSens(const TacsScalar Xpts[],
+                                    const TacsScalar fn[],
+                                    const TacsScalar vars[],
+                                    const TacsScalar d[],
+                                    const TacsScalar dety[],
+                                    TacsScalar dfdXpts[], TacsScalar dfn[],
+                                    TacsScalar dd[]) {
+    for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
+      // Get the field index
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
+
+      // Get the tying point parametric location
+      double pt[2];
+      basis::getTyingPoint(index, pt);
+
+      // Interpolate the field value
+      TacsScalar Uxi[6], Xxi[6], dXxi[6];
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+
+      TacsScalar d0[3], n0[3], dd0[3], dn0[3];
+      basis::template interpFields<3, 3>(pt, d, d0);
+      basis::template interpFields<3, 3>(pt, fn, n0);
+
+      if (field == TACS_SHELL_G23_COMPONENT) {
+        // Compute g23 = e2^{T}*G*e3
+        dXxi[0] = 0.0;
+        dXxi[1] = 0.5 * dety[index] * d0[0];
+        dXxi[2] = 0.0;
+        dXxi[3] = 0.5 * dety[index] * d0[1];
+        dXxi[4] = 0.0;
+        dXxi[5] = 0.5 * dety[index] * d0[2];
+
+        dn0[0] = 0.5 * dety[index] * Uxi[1];
+        dn0[1] = 0.5 * dety[index] * Uxi[3];
+        dn0[2] = 0.5 * dety[index] * Uxi[5];
+
+        dd0[0] = 0.5 * dety[index] * Xxi[1];
+        dd0[1] = 0.5 * dety[index] * Xxi[3];
+        dd0[2] = 0.5 * dety[index] * Xxi[5];
+      } else {
+        // field == TACS_SHELL_G13_COMPONENT: g13 = e1^{T}*G*e3
+        dXxi[0] = 0.5 * dety[index] * d0[0];
+        dXxi[1] = 0.0;
+        dXxi[2] = 0.5 * dety[index] * d0[1];
+        dXxi[3] = 0.0;
+        dXxi[4] = 0.5 * dety[index] * d0[2];
+        dXxi[5] = 0.0;
+
+        dn0[0] = 0.5 * dety[index] * Uxi[0];
+        dn0[1] = 0.5 * dety[index] * Uxi[2];
+        dn0[2] = 0.5 * dety[index] * Uxi[4];
+
+        dd0[0] = 0.5 * dety[index] * Xxi[0];
+        dd0[1] = 0.5 * dety[index] * Xxi[2];
+        dd0[2] = 0.5 * dety[index] * Xxi[4];
+      }
+
+      basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);
+      basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+    }
+  }
+
   template <int vars_per_node, class basis>
   static void addComputeTyingStrainHessian(
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
