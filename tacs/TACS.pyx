@@ -547,7 +547,8 @@ cdef class Constitutive:
 
         Note that these values reflect this object's local state; in an MPI run the object
         may not have been updated on processors that do not own any elements using it. For
-        globally consistent current values use pyTACS.getComponentDesignVars.
+        globally consistent current values use the getComponentDesignVars method on a
+        problem or constraint object.
 
         Args:
             elemIndex (integer): The element index (unused by all current implementations)
@@ -591,7 +592,8 @@ cdef class Constitutive:
 
         Note that these values reflect this object's local state; in an MPI run the object
         may not have been updated on processors that do not own any elements using it. For
-        globally consistent current values use pyTACS.getComponentDesignVars.
+        globally consistent current values use the getComponentDesignVars method on a
+        problem or constraint object.
 
         Returns:
             (dict) Dictionary mapping group names to a scalar (for scalar groups) or a 1D
