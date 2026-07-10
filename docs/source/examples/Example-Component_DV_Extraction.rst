@@ -4,6 +4,8 @@ Extracting and Restoring Component Design Variables
 
 This example demonstrates how to extract a complete, named description of a model's design variables with :meth:`pyTACS.getComponentDesignVars <tacs.pytacs.pyTACS.getComponentDesignVars>` and use it to recreate the same sizing state in a separate TACS execution.
 
+The model combines four shell components with two tube-beam components that cross at the plate center.
+
 The returned dictionary is keyed by component description, and each entry maps design variable group names to their current values.
 Two properties make it suitable as a save/restore format:
 
@@ -27,7 +29,7 @@ Define the component thicknesses and choose which components will have active de
    :start-after: # [docs:parameters-start]
    :end-before: # [docs:parameters-end]
 
-The element callback assigns each component its own thickness, activating a design variable only for the chosen components:
+The element callback assigns each plate component its own thickness and maps the beam components to tube-beam constitutive objects:
 
 .. literalinclude:: ../../../examples/component_dv_extraction/component_dv_extraction.py
    :language: python
@@ -58,7 +60,9 @@ The dictionary contains plain Python scalars and numpy arrays, so any serializat
 
 .. code-block:: text
 
-   {'PLATE.00': {'t': 0.015},
+   {'BEAM_X': {'d': 0.015, 't': 0.0015},
+   'BEAM_Y': {'d': 0.015, 't': 0.0015},
+   'PLATE.00': {'t': 0.015},
    'PLATE.01': {'t': 0.012},
    'PLATE.02': {'t': 0.021},
    'PLATE.03': {'t': 0.016}}
@@ -75,9 +79,9 @@ The restored model produces the same function values as the original:
 .. code-block:: text
 
    Original model functions:
-   {'gravity_ks_vmfailure': np.float64(-0.006805843349318675),
-   'gravity_mass': np.float64(11.119999999999994)}
+   {'gravity_ks_vmfailure': np.float64(0.01738452431014043),
+   'gravity_mass': np.float64(11.336157282530241)}
 
    Restored model functions:
-   {'gravity_ks_vmfailure': np.float64(-0.006805843349318675),
-   'gravity_mass': np.float64(11.119999999999994)}
+   {'gravity_ks_vmfailure': np.float64(0.01738452431014043),
+   'gravity_mass': np.float64(11.336157282530241)}
