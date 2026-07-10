@@ -16,6 +16,15 @@ class TACSShellTransform : public TACSObject {
   */
   virtual void computeTransform(const TacsScalar Xxi[], const TacsScalar n0[],
                                 TacsScalar T[]) = 0;
+
+  /*
+    Given the forward inputs Xxi/n0 (as passed to computeTransform) and an
+    upstream seed dT on the transform T, accumulate the sensitivity of T
+    with respect to Xxi and n0 into dXxi/dn0 (accumulate, not overwrite).
+  */
+  virtual void addTransformSens(const TacsScalar Xxi[], const TacsScalar n0[],
+                                const TacsScalar dT[], TacsScalar dXxi[],
+                                TacsScalar dn0[]) = 0;
 };
 
 class TACSShellNaturalTransform : public TACSShellTransform {
@@ -89,6 +98,91 @@ class TACSShellNaturalTransform : public TACSShellTransform {
     T[2] = n[0];
     T[5] = n[1];
     T[8] = n[2];
+  }
+
+  /*
+    Adjoint of computeTransform() above: given the forward inputs Xxi/n0 and
+    an upstream seed dT on T, accumulate dXxi/dn0.
+  */
+  void addTransformSens(const TacsScalar Xxi[], const TacsScalar n0[],
+                        const TacsScalar dT[], TacsScalar dXxi[],
+                        TacsScalar dn0[]) {
+    // Recompute the forward quantities needed for the reverse sweep
+    TacsScalar n[3];
+    n[0] = n0[0];
+    n[1] = n0[1];
+    n[2] = n0[2];
+
+    TacsScalar nnrm = sqrt(vec3Dot(n, n));
+    TacsScalar ninv = 1.0 / nnrm;
+    vec3Scale(ninv, n);
+
+    TacsScalar t1_orig[3];
+    t1_orig[0] = Xxi[0];
+    t1_orig[1] = Xxi[2];
+    t1_orig[2] = Xxi[4];
+
+    TacsScalar d = vec3Dot(n, t1_orig);
+
+    TacsScalar t1[3];
+    t1[0] = t1_orig[0] - 3.0 * d * n[0];
+    t1[1] = t1_orig[1];
+    t1[2] = t1_orig[2];
+
+    TacsScalar t1nrm = sqrt(vec3Dot(t1, t1));
+    TacsScalar t1inv = 1.0 / t1nrm;
+    TacsScalar t1n[3];
+    t1n[0] = t1[0] * t1inv;
+    t1n[1] = t1[1] * t1inv;
+    t1n[2] = t1[2] * t1inv;
+
+    // Reverse sweep: T = [t1n | t2 | n] (columns)
+    TacsScalar dt1n[3] = {dT[0], dT[3], dT[6]};
+    TacsScalar dt2[3] = {dT[1], dT[4], dT[7]};
+    TacsScalar dn[3] = {dT[2], dT[5], dT[8]};
+
+    // t2 = cross(n, t1n): dn += cross(t1n, dt2), dt1n += cross(dt2, n)
+    TacsScalar tmp[3];
+    crossProduct(t1n, dt2, tmp);
+    dn[0] += tmp[0];
+    dn[1] += tmp[1];
+    dn[2] += tmp[2];
+    crossProduct(dt2, n, tmp);
+    dt1n[0] += tmp[0];
+    dt1n[1] += tmp[1];
+    dt1n[2] += tmp[2];
+
+    // t1n = normalize(t1)
+    TacsScalar t1copy[3] = {t1[0], t1[1], t1[2]};
+    TacsScalar dt1[3] = {dt1n[0], dt1n[1], dt1n[2]};
+    TacsScalar sAnrm;
+    vec3NormalizeSens(t1copy, &sAnrm, dt1);
+
+    // t1 = [t1_orig[0] - 3*d*n[0], t1_orig[1], t1_orig[2]]
+    TacsScalar dt1_orig[3] = {0.0, 0.0, 0.0};
+    TacsScalar dd = 0.0;
+    dt1_orig[0] += dt1[0];
+    dd += -3.0 * n[0] * dt1[0];
+    dn[0] += -3.0 * d * dt1[0];
+    dt1_orig[1] += dt1[1];
+    dt1_orig[2] += dt1[2];
+
+    // d = dot(n, t1_orig)
+    vec3Axpy(dd, t1_orig, dn);
+    vec3Axpy(dd, n, dt1_orig);
+
+    // t1_orig = [Xxi[0], Xxi[2], Xxi[4]]
+    dXxi[0] += dt1_orig[0];
+    dXxi[2] += dt1_orig[1];
+    dXxi[4] += dt1_orig[2];
+
+    // n = normalize(n0)
+    TacsScalar n0copy[3] = {n0[0], n0[1], n0[2]};
+    vec3NormalizeSens(n0copy, &sAnrm, dn);
+
+    dn0[0] += dn[0];
+    dn0[1] += dn[1];
+    dn0[2] += dn[2];
   }
 };
 
@@ -210,6 +304,77 @@ class TACSShellRefAxisTransform : public TACSShellTransform {
     T[2] = n[0];
     T[5] = n[1];
     T[8] = n[2];
+  }
+
+  /*
+    Adjoint of computeTransform() above: given the forward inputs Xxi/n0 and
+    an upstream seed dT on T, accumulate dXxi/dn0. Note computeTransform()
+    above never uses Xxi (the reference axis, not Xxi, supplies the in-plane
+    direction), so this override contributes nothing to dXxi.
+  */
+  void addTransformSens(const TacsScalar Xxi[], const TacsScalar n0[],
+                        const TacsScalar dT[], TacsScalar dXxi[],
+                        TacsScalar dn0[]) {
+    // Recompute the forward quantities needed for the reverse sweep
+    TacsScalar n[3];
+    n[0] = n0[0];
+    n[1] = n0[1];
+    n[2] = n0[2];
+
+    TacsScalar nnrm = sqrt(vec3Dot(n, n));
+    TacsScalar ninv = 1.0 / nnrm;
+    vec3Scale(ninv, n);
+
+    TacsScalar an = vec3Dot(axis, n);
+
+    TacsScalar t1[3];
+    t1[0] = axis[0] - an * n[0];
+    t1[1] = axis[1] - an * n[1];
+    t1[2] = axis[2] - an * n[2];
+
+    TacsScalar t1nrm = sqrt(vec3Dot(t1, t1));
+    TacsScalar t1inv = 1.0 / t1nrm;
+    TacsScalar t1n[3];
+    t1n[0] = t1[0] * t1inv;
+    t1n[1] = t1[1] * t1inv;
+    t1n[2] = t1[2] * t1inv;
+
+    // Reverse sweep: T = [t1n | t2 | n] (columns)
+    TacsScalar dt1n[3] = {dT[0], dT[3], dT[6]};
+    TacsScalar dt2[3] = {dT[1], dT[4], dT[7]};
+    TacsScalar dn[3] = {dT[2], dT[5], dT[8]};
+
+    // t2 = cross(n, t1n): dn += cross(t1n, dt2), dt1n += cross(dt2, n)
+    TacsScalar tmp[3];
+    crossProduct(t1n, dt2, tmp);
+    dn[0] += tmp[0];
+    dn[1] += tmp[1];
+    dn[2] += tmp[2];
+    crossProduct(dt2, n, tmp);
+    dt1n[0] += tmp[0];
+    dt1n[1] += tmp[1];
+    dt1n[2] += tmp[2];
+
+    // t1n = normalize(t1)
+    TacsScalar t1copy[3] = {t1[0], t1[1], t1[2]};
+    TacsScalar dt1[3] = {dt1n[0], dt1n[1], dt1n[2]};
+    TacsScalar sAnrm;
+    vec3NormalizeSens(t1copy, &sAnrm, dt1);
+
+    // t1[i] = axis[i] - an*n[i]  (axis is a constant, no sensitivity path)
+    TacsScalar dan = -vec3Dot(dt1, n);
+    vec3Axpy(-an, dt1, dn);
+
+    // an = dot(axis, n)
+    vec3Axpy(dan, axis, dn);
+
+    // n = normalize(n0)
+    TacsScalar n0copy[3] = {n0[0], n0[1], n0[2]};
+    vec3NormalizeSens(n0copy, &sAnrm, dn);
+
+    dn0[0] += dn[0];
+    dn0[1] += dn[1];
+    dn0[2] += dn[2];
   }
 
  private:
