@@ -1,8 +1,9 @@
 """
 This example demonstrates how to extract a complete description of a model's sizing variables with pyTACS and use it to recreate the same sizing state in a separate TACS execution.
 
-The model is a flat plate split into four components (PLATE.00 through PLATE.03), each with its own thickness.
-Two components have active thickness design variables, and two are held fixed.
+The model is a flat plate split into four shell components and crossed by two tube-beam components through its center.
+The plate components have individual thicknesses, and the beam components have their own tube diameters and wall thicknesses.
+Two plate components have active thickness design variables, and the beam components are held fixed.
 We perturb the active design variables (standing in for the result of an optimization), extract the component design variable dictionary, save it to disk with pickle, and then rebuild a second, identical model from the file.
 """
 
@@ -29,7 +30,14 @@ thicknesses = {
     "PLATE.02": 0.014,
     "PLATE.03": 0.016,
 }
-active_components = ["PLATE.00", "PLATE.02"]
+beam_properties = {
+    "BEAM_X": {"d": 0.015, "t": 0.0015},
+    "BEAM_Y": {"d": 0.01, "t": 0.001},
+}
+active_components = ["PLATE.00", "PLATE.02", "BEAM_Y"]
+
+
+beam_ref_axis = np.array([0.0, 0.0, 1.0])
 # [docs:parameters-end]
 
 
@@ -37,13 +45,26 @@ active_components = ["PLATE.00", "PLATE.02"]
 def element_callback(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs):
     prop = constitutive.MaterialProperties(rho=2780.0, E=73.1e9, nu=0.33, ys=324e6)
     if compDescript in active_components:
-        tNum = dvNum
+        dvNums = [dvNum, dvNum + 1]
     else:
-        tNum = -1
-    con = constitutive.IsoShellConstitutive(
-        prop, t=thicknesses[compDescript], tNum=tNum
-    )
-    return elements.Quad4Shell(None, con)
+        dvNums = [-1, -1]
+    for descript in elemDescripts:
+        if descript == "CQUAD4":
+            con = constitutive.IsoShellConstitutive(
+                prop, t=thicknesses[compDescript], tNum=dvNums[0]
+            )
+            return elements.Quad4Shell(None, con)
+        elif descript == "CBAR":
+            section = beam_properties[compDescript]
+            con = constitutive.IsoTubeBeamConstitutive(
+                prop,
+                d=section["d"],
+                t=section["t"],
+                dNum=dvNums[0],
+                tNum=dvNums[1],
+            )
+            transform = elements.BeamRefAxisTransform(beam_ref_axis)
+            return elements.Beam2(transform, con)
 
 
 # [docs:element-callback-end]
@@ -55,7 +76,7 @@ FEAAssembler.initialize(element_callback)
 
 def setupStaticProblem(FEAAssembler):
     problem = FEAAssembler.createStaticProblem("gravity")
-    problem.addInertialLoad(np.array([0.0, 0.0, -9.81]))
+    problem.addInertialLoad(np.array([0.0, 0.0, -9.81 * 100]))
     problem.addFunction("mass", functions.StructuralMass)
     problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
     return problem
@@ -69,6 +90,7 @@ problem = setupStaticProblem(FEAAssembler)
 x = problem.getDesignVars()
 problem.setDesignVars(1.5 * x)
 problem.solve()
+problem.writeSolution()
 funcs = {}
 problem.evalFunctions(funcs)
 # [docs:perturb-end]
@@ -100,6 +122,16 @@ def element_callback_restored(
     dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
 ):
     prop = constitutive.MaterialProperties(rho=2780.0, E=73.1e9, nu=0.33, ys=324e6)
+    if compDescript in beam_properties:
+        con = constitutive.IsoTubeBeamConstitutive(
+            prop,
+            d=sizing[compDescript]["d"],
+            t=sizing[compDescript]["t"],
+            dNum=-1,
+            tNum=-1,
+        )
+        transform = elements.BeamRefAxisTransform(beam_ref_axis)
+        return elements.Beam2(transform, con)
     con = constitutive.IsoShellConstitutive(
         prop, t=sizing[compDescript]["t"], tNum=dvNum
     )
