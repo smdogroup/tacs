@@ -61,10 +61,10 @@ The dictionary contains plain Python scalars and numpy arrays, so any serializat
 .. code-block:: text
 
    {'BEAM_X': {'d': 0.015, 't': 0.0015},
-   'BEAM_Y': {'d': 0.015, 't': 0.0015},
-   'PLATE.00': {'t': 0.015},
+   'BEAM_Y': {'d': 0.02, 't': 0.002},
+   'PLATE.00': {'t': 0.02},
    'PLATE.01': {'t': 0.012},
-   'PLATE.02': {'t': 0.021},
+   'PLATE.02': {'t': 0.028},
    'PLATE.03': {'t': 0.016}}
 
 
@@ -79,9 +79,9 @@ The restored model produces the same function values as the original:
 .. code-block:: text
 
    Original model functions:
-   {'gravity_ks_vmfailure': np.float64(0.01738452431014043),
-   'gravity_mass': np.float64(11.336157282530241)}
+   {'gravity_ks_vmfailure': np.float64(0.9226573489386992),
+   'gravity_mass': np.float64(13.505218447958713)}
 
    Restored model functions:
-   {'gravity_ks_vmfailure': np.float64(0.01738452431014043),
-   'gravity_mass': np.float64(11.336157282530241)}
+   {'gravity_ks_vmfailure': np.float64(0.9226573489386992),
+   'gravity_mass': np.float64(13.505218447958713)}

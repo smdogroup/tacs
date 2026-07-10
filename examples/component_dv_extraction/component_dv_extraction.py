@@ -76,7 +76,7 @@ FEAAssembler.initialize(element_callback)
 
 def setupStaticProblem(FEAAssembler):
     problem = FEAAssembler.createStaticProblem("gravity")
-    problem.addInertialLoad(np.array([0.0, 0.0, -9.81 * 100]))
+    problem.addInertialLoad(np.array([0.0, 0.0, -9.81 * 4e3]))
     problem.addFunction("mass", functions.StructuralMass)
     problem.addFunction("ks_vmfailure", functions.KSFailure, ksWeight=100.0)
     return problem
@@ -88,7 +88,7 @@ problem = setupStaticProblem(FEAAssembler)
 # [docs:perturb-start]
 # Perturb the active design variables, standing in for the result of an optimization
 x = problem.getDesignVars()
-problem.setDesignVars(1.5 * x)
+problem.setDesignVars(2.0 * x)
 problem.solve()
 problem.writeSolution()
 funcs = {}
@@ -102,7 +102,7 @@ problem.evalFunctions(funcs)
 # the constitutive objects were constructed with.
 componentDVs = FEAAssembler.getComponentDesignVars()
 if FEAAssembler.comm.rank == 0:
-    print("Extracted component design variables:")
+    print("\nExtracted component design variables:")
     pprint(componentDVs)
     with open(sizing_file, "wb") as f:
         pickle.dump(componentDVs, f)
