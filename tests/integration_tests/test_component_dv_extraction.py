@@ -67,6 +67,13 @@ class ComponentDVExtractionTest(unittest.TestCase):
         self.comm = MPI.COMM_WORLD
 
     def test_component_dv_nums(self):
+        """
+        Given a partitioned plate with active thickness DVs on PLATE.00 and PLATE.02
+        and inactive thickness DVs on PLATE.01 and PLATE.03,
+        when getComponentDesignVarNums is called on the problem,
+        then it returns the correct "t" DV number, or -1 for inactive components,
+        for each component.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         problem = fea.createStaticProblem("dvs")
         compDVNums = problem.getComponentDesignVarNums()
@@ -79,6 +86,12 @@ class ComponentDVExtractionTest(unittest.TestCase):
         self.assertEqual(compDVNums, expected)
 
     def test_initial_values(self):
+        """
+        Given a partitioned plate whose components have distinct constructor thicknesses,
+        when getComponentDesignVars is called before any design variables are perturbed,
+        then each component reports a scalar (not array) "t" group value matching its
+        constructor thickness.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         problem = fea.createStaticProblem("dvs")
         compDVs = problem.getComponentDesignVars()
@@ -89,6 +102,12 @@ class ComponentDVExtractionTest(unittest.TestCase):
             np.testing.assert_allclose(compDVs[descript]["t"], t, rtol=1e-12)
 
     def test_duplicate_descripts_error(self):
+        """
+        Given a problem whose meshLoader has been altered so two different components
+        share the same component description,
+        when getComponentDesignVars or getComponentDesignVarNums is called,
+        then a TACS Error is raised.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         problem = fea.createStaticProblem("dvs")
         # Simulate a model whose BDF labels two property groups identically
@@ -100,6 +119,13 @@ class ComponentDVExtractionTest(unittest.TestCase):
             problem.getComponentDesignVarNums()
 
     def test_multiple_constitutive_error(self):
+        """
+        Given a component whose CQUAD4 and CTRIA3 elements are each assigned their own,
+        separately-constructed constitutive object instead of one shared object,
+        when getComponentDesignVars is called,
+        then a TACS Error is raised because the component's constitutive object is
+        ambiguous.
+        """
         fea = pyTACS(QUAD_TRI_BDF, comm=self.comm)
 
         def elemCallBack(
@@ -121,6 +147,12 @@ class ComponentDVExtractionTest(unittest.TestCase):
             problem.getComponentDesignVars()
 
     def test_shared_constitutive_ok(self):
+        """
+        Given a component whose CQUAD4 and CTRIA3 elements share a single constitutive
+        object,
+        when getComponentDesignVars is called,
+        then it succeeds and reports the shared object's "t" value for that component.
+        """
         fea = pyTACS(QUAD_TRI_BDF, comm=self.comm)
 
         def elemCallBack(
@@ -144,6 +176,13 @@ class ComponentDVExtractionTest(unittest.TestCase):
         np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
 
     def test_unimplemented_class_gives_empty_entry(self):
+        """
+        Given components whose constitutive class has an active thickness DV but reports
+        zero DV groups (simulating a class that predates the DV group API),
+        when getComponentDesignVars is called,
+        then each component's entry is an empty dict, rather than raising.
+        """
+
         class NoGroupShellConstitutive(constitutive.IsoShellConstitutive):
             """Simulates a constitutive class that predates the DV group API."""
 
@@ -176,6 +215,15 @@ class ComponentDVExtractionTest(unittest.TestCase):
             self.assertEqual(groupValues, {})
 
     def test_partially_implemented_class_does_not_raise(self):
+        """
+        Given components whose constitutive class reports a "t" group but whose
+        getDesignVarGroupDVNums claims that group is inactive even though the underlying
+        thickness DV is active,
+        when getComponentDesignVars is called,
+        then it does not raise and returns the class's reported (stale) "t" group value
+        for each component.
+        """
+
         class PartialGroupShellConstitutive(constitutive.IsoShellConstitutive):
             """Simulates a class that reports a group but whose group DV nums don't cover
             all of its active design variables.
@@ -208,6 +256,15 @@ class ComponentDVExtractionTest(unittest.TestCase):
             np.testing.assert_allclose(groupValues["t"], 0.01, rtol=1e-12)
 
     def test_two_problems_report_independent_snapshots(self):
+        """
+        Given two problems created from the same pyTACS instance,
+        and the design variables of only one of the two problems (p2) are doubled,
+        when getComponentDesignVars is called on each problem,
+        then p1 still reports the original constructor thicknesses and p2 reports the
+        doubled active-component thicknesses,
+        and getComponentDesignVarNums agrees between the two problems since DV numbers
+        are shared execution-wide.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         p1 = fea.createStaticProblem("p1")
         p2 = fea.createStaticProblem("p2")
@@ -233,6 +290,13 @@ class ComponentDVExtractionTest(unittest.TestCase):
         self.assertEqual(p1.getComponentDesignVarNums(), p2.getComponentDesignVarNums())
 
     def test_constraint_reports_independent_snapshot(self):
+        """
+        Given a problem and a DV constraint sharing the same assembler,
+        and the design variables of only the constraint are tripled,
+        when getComponentDesignVars is called on each,
+        then the constraint reports the tripled active-component thicknesses while the
+        problem reports the original constructor thicknesses.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         problem = fea.createStaticProblem("p1")
         constr = fea.createDVConstraint("dvcon")
@@ -251,6 +315,11 @@ class ComponentDVExtractionTest(unittest.TestCase):
             np.testing.assert_allclose(problemCompDVs[descript]["t"], t0, rtol=1e-12)
 
     def test_no_meshloader_raises(self):
+        """
+        Given a problem constructed directly without a meshLoader,
+        when getComponentDesignVars or getComponentDesignVarNums is called,
+        then a TACS Error is raised.
+        """
         fea = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         # Bypass the pyTACS factory methods, which are the only supported way to obtain
         # a meshLoader-backed problem/constraint
@@ -278,6 +347,15 @@ class ComponentDVRoundTripTest(unittest.TestCase):
         return problem
 
     def test_round_trip(self):
+        """
+        Given a solved plate problem whose active thickness DVs have been scaled by 1.5,
+        when getComponentDesignVars is called and the resulting dict is used to rebuild
+        an equivalent model in a second, independent pyTACS instance,
+        then the extracted dict is identical on every MPI rank, active components show
+        the perturbed thicknesses and inactive components the constructor thicknesses,
+        and the rebuilt model reproduces the same mass and KSFailure function values as
+        the original.
+        """
         fea1 = setupPartitionedPlate(self.comm, PLATE_THICKNESSES)
         problem1 = self.setupProblem(fea1)
 
@@ -381,6 +459,14 @@ class ComponentDVArrayGroupOverlayTest(unittest.TestCase):
         )
 
     def test_array_group_overlay(self):
+        """
+        Given a partitioned plate whose components use SmearedCompositeShellConstitutive
+        with active scalar thickness and array-valued ply_fractions DVs,
+        and every active DV (thickness and ply fractions alike) is scaled by 1.2,
+        when getComponentDesignVars is called,
+        then each component reports a scalar "thickness" value and an array-valued
+        "ply_fractions" value both scaled by 1.2, consistent across every MPI rank.
+        """
         fea = pyTACS(PARTITIONED_PLATE_BDF, comm=self.comm)
 
         def elemCallBack(

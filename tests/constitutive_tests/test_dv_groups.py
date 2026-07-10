@@ -117,6 +117,11 @@ class TestConstitutiveWithoutDVs(DVGroupTestCase):
     """A constitutive class with no DVs must report zero groups via the base-class defaults."""
 
     def test_no_dv_groups(self):
+        """
+        Given a BasicBeamConstitutive constructed with no design variables assigned,
+        when the DV group API is queried,
+        then it reports zero groups, and is consistent with the empty legacy DV arrays.
+        """
         con = constitutive.BasicBeamConstitutive(
             makeIsoMaterial(), A=1.0, J=2.0, Iy=3.0, Iz=4.0
         )
@@ -128,28 +133,63 @@ class TestConstitutiveWithoutDVs(DVGroupTestCase):
 
 class TestIsoShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given an IsoShellConstitutive constructed with an active thickness DV
+        (t=0.1, tNum=0),
+        when the DV group API is queried,
+        then it reports a single scalar "t" group matching the constructor value and
+        DV number.
+        """
         con = constitutive.IsoShellConstitutive(makeIsoMaterial(), t=0.1, tNum=0)
         self.assertGroupsConsistent(con, {"t": 0.1}, {"t": 0})
 
     def test_dv_groups_inactive(self):
+        """
+        Given an IsoShellConstitutive constructed with an inactive thickness DV
+        (t=0.1, tNum=-1),
+        when the DV group API is queried,
+        then it reports the "t" group's value with DV number -1, and the legacy
+        getDesignVars/getDesignVarNums arrays remain empty.
+        """
         con = constitutive.IsoShellConstitutive(makeIsoMaterial(), t=0.1, tNum=-1)
         self.assertGroupsConsistent(con, {"t": 0.1}, {"t": -1})
 
 
 class TestPlaneStressDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a PlaneStressConstitutive constructed with an active thickness DV
+        (t=1.0, tNum=0),
+        when the DV group API is queried,
+        then it reports a single scalar "t" group matching the constructor value and
+        DV number.
+        """
         con = constitutive.PlaneStressConstitutive(makeIsoMaterial(), t=1.0, tNum=0)
         self.assertGroupsConsistent(con, {"t": 1.0}, {"t": 0})
 
 
 class TestSolidDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a SolidConstitutive constructed with an active thickness DV
+        (t=1.0, tNum=0),
+        when the DV group API is queried,
+        then it reports a single scalar "t" group matching the constructor value and
+        DV number.
+        """
         con = constitutive.SolidConstitutive(makeIsoMaterial(), t=1.0, tNum=0)
         self.assertGroupsConsistent(con, {"t": 1.0}, {"t": 0})
 
 
 class TestPhaseChangeMaterialDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a PhaseChangeMaterialConstitutive constructed with an active thickness DV
+        (t=0.1, tNum=0),
+        when the DV group API is queried,
+        then it reports a single scalar "t" group matching the constructor value and
+        DV number.
+        """
         solidProps = constitutive.MaterialProperties(
             rho=1.0, kappa=2.0, specific_heat=1.0
         )
@@ -164,6 +204,13 @@ class TestPhaseChangeMaterialDVGroups(DVGroupTestCase):
 
 class TestSmearedCompositeShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a SmearedCompositeShellConstitutive with an active thickness DV and all
+        three ply fraction DVs active,
+        when the DV group API is queried,
+        then it reports a scalar "thickness" group and an array "ply_fractions" group
+        matching the constructor values and DV numbers.
+        """
         ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
         plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
         plyFracs = np.array([0.5, 0.25, 0.25], dtype=self.dtype)
@@ -178,6 +225,13 @@ class TestSmearedCompositeShellDVGroups(DVGroupTestCase):
         )
 
     def test_dv_groups_partially_active(self):
+        """
+        Given a SmearedCompositeShellConstitutive with an inactive thickness DV and a
+        ply fraction array whose entries are only partially active ([0, -1, 1]),
+        when the DV group API is queried,
+        then it reports the "thickness" and "ply_fractions" groups with their
+        constructor values and matching (partially inactive) DV numbers.
+        """
         ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
         plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
         plyFracs = np.array([0.5, 0.25, 0.25], dtype=self.dtype)
@@ -194,6 +248,14 @@ class TestSmearedCompositeShellDVGroups(DVGroupTestCase):
 
 class TestLamParamFullShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a LamParamFullShellConstitutive with an active thickness DV and six
+        active lamination parameter DVs,
+        when the DV group API is queried,
+        then it reports a scalar "t" group matching the constructor thickness and an
+        array "lp" group of zeros (lamination parameters cannot be set through the
+        constructor), both with the expected DV numbers.
+        """
         ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
         lpNums = np.array([1, 2, 3, 4, 5, 6], dtype=np.intc)
         con = constitutive.LamParamFullShellConstitutive(ply, 0.1, 0, 0.05, 0.2, lpNums)
@@ -208,6 +270,14 @@ class TestLamParamFullShellDVGroups(DVGroupTestCase):
 
 class TestLamParamSmearedShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a LamParamSmearedShellConstitutive constructed with active DVs for
+        thickness, all three ply fractions (f0, f45, f90), and both lamination
+        parameter weights (W1, W3),
+        when the DV group API is queried,
+        then it reports scalar groups for "t", "f0", "f45", "f90", "W1", and "W3"
+        matching their constructor values and DV numbers.
+        """
         ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
         con = constitutive.LamParamSmearedShellConstitutive(
             ply,
@@ -296,6 +366,14 @@ def makeBladeCon(
 
 class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a BladeStiffenedShellConstitutive with all panel and stiffener design
+        variables active (panel length, stiffener pitch, panel thickness and ply
+        fractions, stiffener height, thickness, and ply fractions),
+        when the DV group API is queried,
+        then it reports each quantity as its own group matching the constructor values
+        and DV numbers.
+        """
         con, expectedValues, expectedNums = makeBladeCon(
             self.dtype,
             panelLengthNum=0,
@@ -309,6 +387,15 @@ class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
         self.assertGroupsConsistent(con, expectedValues, expectedNums)
 
     def test_dv_groups_partially_active(self):
+        """
+        Given a BladeStiffenedShellConstitutive whose panel length and thickness DVs
+        are active, whose panel ply fractions are only partially active ([2, -1, 3]),
+        and whose stiffener pitch, height, thickness, and ply fractions are all
+        inactive,
+        when the DV group API is queried,
+        then each group reports its constructor value together with the correct mix
+        of active and inactive DV numbers.
+        """
         # Only the panel quantities are sized; the stiffener DVs are inactive
         con, expectedValues, expectedNums = makeBladeCon(
             self.dtype,
@@ -325,6 +412,13 @@ class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
 
 class TestGPBladeStiffenedShellDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a GPBladeStiffenedShellConstitutive with all panel and stiffener design
+        variables active, including the panel width DV unique to this class,
+        when the DV group API is queried,
+        then it reports each quantity, including "panelWidth", as its own group
+        matching the constructor values and DV numbers.
+        """
         ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
         panelPlyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
         panelPlyFracs = np.array([0.5, 0.3, 0.2], dtype=self.dtype)
@@ -383,6 +477,13 @@ class TestGPBladeStiffenedShellDVGroups(DVGroupTestCase):
 
 class TestIsoTubeBeamDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given an IsoTubeBeamConstitutive with active diameter and wall-thickness DVs
+        (d=1.0, t=0.1),
+        when the DV group API is queried,
+        then it reports separate "d" and "t" groups matching the constructor values
+        and DV numbers.
+        """
         con = constitutive.IsoTubeBeamConstitutive(
             makeIsoMaterial(), d=1.0, dNum=0, t=0.1, tNum=1
         )
@@ -391,6 +492,14 @@ class TestIsoTubeBeamDVGroups(DVGroupTestCase):
 
 class TestIsoRectangleBeamDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given an IsoRectangleBeamConstitutive with active width, thickness, and
+        unsupported-length DVs (w=1.0, t=0.1, Lb=10.0), plus fixed (non-DV) offset and
+        stiffness inputs,
+        when the DV group API is queried,
+        then it reports separate "w", "t", and "Lb" groups matching the constructor
+        values and DV numbers.
+        """
         con = constitutive.IsoRectangleBeamConstitutive(
             makeIsoMaterial(),
             w=1.0,
@@ -410,6 +519,13 @@ class TestIsoRectangleBeamDVGroups(DVGroupTestCase):
 
 class TestPointMassDVGroups(DVGroupTestCase):
     def test_dv_groups(self):
+        """
+        Given a PointMassConstitutive with all seven mass/inertia DVs active
+        (m, I11, I22, I33, I12, I13, I23),
+        when the DV group API is queried,
+        then it reports each quantity as its own scalar group matching the
+        constructor values and DV numbers.
+        """
         con = constitutive.PointMassConstitutive(
             m=2.0,
             I11=1.0,
@@ -441,6 +557,13 @@ class TestPointMassDVGroups(DVGroupTestCase):
         )
 
     def test_dv_groups_partially_active(self):
+        """
+        Given a PointMassConstitutive where only the mass DV is active and the
+        inertia DVs (including a non-default I11) are all left inactive,
+        when the DV group API is queried,
+        then it reports the "m" group as active and every inertia group as inactive,
+        each matching its constructor or default value.
+        """
         con = constitutive.PointMassConstitutive(m=2.0, I11=1.0, mNum=0)
         self.assertGroupsConsistent(
             con,
