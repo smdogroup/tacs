@@ -388,9 +388,10 @@ class TestBladeStiffenedShellDVGroups(DVGroupTestCase):
 
     def test_dv_groups_partially_active(self):
         """
-        Given a BladeStiffenedShellConstitutive whose panel design variables are
-        active but whose stiffener pitch, height, thickness, and ply fraction design
-        variables are all inactive,
+        Given a BladeStiffenedShellConstitutive whose panel length and thickness DVs
+        are active, whose panel ply fractions are only partially active ([2, -1, 3]),
+        and whose stiffener pitch, height, thickness, and ply fractions are all
+        inactive,
         when the DV group API is queried,
         then each group reports its constructor value together with the correct mix
         of active and inactive DV numbers.
