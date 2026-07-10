@@ -337,14 +337,15 @@ PCM Elements (TACS_PCM_ELEMENT)
      - Q
      - Applied heat source
 
-Design Variable Fields
-----------------------
+Design Data Fields
+------------------
 
-TACS writes the model's design variables to a dedicated per-element data block in the ``.f5`` file, controlled by the pyTACS option ``writeDesignVars``.
-At the C++ level, the block is controlled by the ``TACS_OUTPUT_DESIGN_VARS`` output flag passed to ``TACSToFH5``.
-Each field is named after the corresponding constitutive design variable group, matching the constructor keyword argument (e.g ``t``, ``thickness``).
+TACS writes the model's design variables and derived constitutive outputs to a dedicated per-element data block in the ``.f5`` file.
+Design variable fields are controlled by the pyTACS option ``writeDesignVars`` and derived output fields by ``writeDerivedOutputs``; at the C++ level the corresponding ``TACSToFH5`` output flags are ``TACS_OUTPUT_DESIGN_VARS`` and ``TACS_OUTPUT_DERIVED_OUTPUTS``.
+Each design variable field is named after the corresponding constitutive design variable group, matching the constructor keyword argument (e.g ``t``, ``thickness``).
 Array-valued groups contribute one field per entry with a zero-based suffix (e.g ``ply_fractions_0``, ``ply_fractions_1``).
 All groups are written whether or not their design variables are active.
+Derived outputs are named scalar quantities computed from the current design variable values, such as the ``effectiveThickness`` of a blade-stiffened shell; most constitutive classes define none.
 The set of fields is the union over all components in the model; elements whose constitutive does not define a field hold NaN there.
 ``f5tovtk`` writes these fields as per-cell data, so ParaView renders them without nodal averaging and shows NaN cells in the colour map's NaN colour.
 ``f5totec`` writes them cell-centered and marks fields that are absent from an entire component as passive variables in that zone.
