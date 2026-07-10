@@ -200,6 +200,20 @@ class TACSShellInplaneLinearModel {
     }
   }
 
+  /**
+    Correction term for the "vars->varsd substituted" addTyingStrainXptSens
+    call used by addAdjResXptProduct's psi-direction ("chain 1") tying-strain
+    closure to recover d(etyd)/d(director field). No correction is needed for
+    this (linear) model -- see TACSShellLinearModel's identical no-op for the
+    full rationale. This is a no-op kept only so the generic call site in
+    TACSShellElement::addAdjResXptProduct compiles uniformly across all 4
+    model classes.
+  */
+  template <int vars_per_node, class basis>
+  static void addTyingStrainXptSensDeriv(const TacsScalar[], const TacsScalar[],
+                                         const TacsScalar[], TacsScalar[],
+                                         TacsScalar[]) {}
+
   template <int vars_per_node, class basis>
   static void addComputeTyingStrainHessian(
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
@@ -1160,6 +1174,66 @@ class TACSShellInplaneNonlinearModel {
     }
   }
 
+  /**
+    Correction term for the "vars->varsd substituted" addTyingStrainXptSens
+    call used by addAdjResXptProduct's psi-direction ("chain 1") tying-strain
+    closure to recover d(etyd)/d(director field), where etyd is
+    computeTyingStrainDeriv's psi-direction output. Mirrors
+    TACSShellNonlinearModel's identical correction (this class's G23/G13
+    fields have the same "(n0+d0)*Uxi" cross-term structure) -- see that
+    class for the full derivation.
+
+    @param vars The element variables (base point)
+    @param varsd The psi-direction perturbation of the element variables
+    @param detyd The seed on etyd (computeTyingStrainDeriv's psi-direction
+    output)
+    @param dd The accumulated primal-direction sensitivity w.r.t. the
+    director field
+    @param ddvarsd The accumulated psi-direction sensitivity w.r.t. the
+    director-rate field (correction delta only)
+  */
+  template <int vars_per_node, class basis>
+  static void addTyingStrainXptSensDeriv(const TacsScalar vars[],
+                                         const TacsScalar varsd[],
+                                         const TacsScalar detyd[],
+                                         TacsScalar dd[], TacsScalar ddvarsd[]) {
+    for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
+
+      if (field == TACS_SHELL_G23_COMPONENT ||
+          field == TACS_SHELL_G13_COMPONENT) {
+        double pt[2];
+        basis::getTyingPoint(index, pt);
+
+        TacsScalar Uxi[6], Uxid[6];
+        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+        basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
+
+        TacsScalar dd0[3], ddelta[3];
+        if (field == TACS_SHELL_G23_COMPONENT) {
+          dd0[0] = 0.5 * detyd[index] * Uxid[1];
+          dd0[1] = 0.5 * detyd[index] * Uxid[3];
+          dd0[2] = 0.5 * detyd[index] * Uxid[5];
+
+          ddelta[0] = 0.5 * detyd[index] * (Uxi[1] - Uxid[1]);
+          ddelta[1] = 0.5 * detyd[index] * (Uxi[3] - Uxid[3]);
+          ddelta[2] = 0.5 * detyd[index] * (Uxi[5] - Uxid[5]);
+        } else {
+          dd0[0] = 0.5 * detyd[index] * Uxid[0];
+          dd0[1] = 0.5 * detyd[index] * Uxid[2];
+          dd0[2] = 0.5 * detyd[index] * Uxid[4];
+
+          ddelta[0] = 0.5 * detyd[index] * (Uxi[0] - Uxid[0]);
+          ddelta[1] = 0.5 * detyd[index] * (Uxi[2] - Uxid[2]);
+          ddelta[2] = 0.5 * detyd[index] * (Uxi[4] - Uxid[4]);
+        }
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+        basis::template addInterpFieldsTranspose<3, 3>(pt, ddelta, ddvarsd);
+      }
+    }
+  }
+
   template <int vars_per_node, class basis>
   static void addComputeTyingStrainHessian(
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
@@ -1748,10 +1822,20 @@ class TACSShellInplaneNonlinearModel {
     du1x[8] = 0.0;
   }
 
+  // NOTE: the parameter order here (scale, dfde, u0x, u1x, dfded, u0xd,
+  // u1xd, ...) is deliberately kept identical to
+  // TACSShellNonlinearModel::evalStrainSensDeriv's order -- both existing
+  // call sites (TACSShellElement.h's getMatType Deriv path and
+  // addAdjResXptProduct's Hessian-coupling term) pass arguments positionally
+  // in that canonical order, so a mismatched declaration here would
+  // silently bind `dfded` to `u0xd`'s slot (and so on), corrupting the
+  // result for exactly this model class. (This previously *was* declared
+  // with u0xd/u1xd/dfded swapped relative to the canonical order -- a
+  // latent bug, since fixed.)
   static inline void evalStrainSensDeriv(
       const TacsScalar scale, const TacsScalar dfde[], const TacsScalar u0x[],
-      const TacsScalar u1x[], const TacsScalar u0xd[], const TacsScalar u1xd[],
-      const TacsScalar dfded[], TacsScalar du0x[], TacsScalar du1x[],
+      const TacsScalar u1x[], const TacsScalar dfded[], const TacsScalar u0xd[],
+      const TacsScalar u1xd[], TacsScalar du0x[], TacsScalar du1x[],
       TacsScalar de0ty[], TacsScalar du0xd[], TacsScalar du1xd[],
       TacsScalar de0tyd[]) {
     // Evaluate the in-plane strains from the tying strain expressions

@@ -263,6 +263,27 @@ class TACSShellLinearModel {
     }
   }
 
+  /**
+    Correction term for the "vars->varsd substituted" addTyingStrainXptSens
+    call used by addAdjResXptProduct's psi-direction ("chain 1") tying-strain
+    closure to recover d(etyd)/d(director field), where etyd is
+    computeTyingStrainDeriv's psi-direction output.
+
+    No correction is needed for this (linear) model: computeTyingStrain's
+    G23/G13 fields are `Xxi.d0 + n0.Uxi` -- bilinear in the *disjoint* pairs
+    (Xxi,d0) and (n0,Uxi), with no (d0,Uxi) cross term -- so substituting
+    varsd/ddstate for vars/d into addTyingStrainXptSens already recovers
+    etyd's Xpts/fn/d sensitivity exactly (verified analytically and
+    numerically). This is a no-op kept only so the generic call site in
+    TACSShellElement::addAdjResXptProduct compiles uniformly across all 4
+    model classes; contrast with TACSShellNonlinearModel's non-trivial
+    version below.
+  */
+  template <int vars_per_node, class basis>
+  static void addTyingStrainXptSensDeriv(const TacsScalar[], const TacsScalar[],
+                                         const TacsScalar[], TacsScalar[],
+                                         TacsScalar[]) {}
+
   template <int vars_per_node, class basis>
   static void addComputeTyingStrainHessian(
       const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn[],
@@ -1436,6 +1457,90 @@ class TACSShellNonlinearModel {
       }
 
       basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+    }
+  }
+
+  /**
+    Correction term for the "vars->varsd substituted" addTyingStrainXptSens
+    call used by addAdjResXptProduct's psi-direction ("chain 1") tying-strain
+    closure to recover d(etyd)/d(director field), where etyd is
+    computeTyingStrainDeriv's psi-direction output.
+
+    Unlike the linear model, this model's computeTyingStrain has a genuine
+    (d0, Uxi) cross term for G23/G13 ("(n0+d0)*Uxi"), so etyd (the true
+    directional derivative computed by computeTyingStrainDeriv) contains a
+    cross term "d0d*Uxi + (n0+d0)*Uxid" -- bilinear jointly in the *base*
+    point (vars/d) and the *psi*-direction perturbation (varsd/ddstate), not
+    expressible as a single-argument substitution. Concretely, for G23/G13:
+
+      d(etyd)/d(d0)_primal      = 0.5*detyd*Uxid   (identical in form to
+                                                    d(etyd)/d(n0), since n0
+                                                    and d0 only ever appear
+                                                    summed)
+      d(etyd)/d(d0d)_varsd-dir  = 0.5*detyd*(Xxi + Uxi)
+
+    Substituting varsd/ddstate for vars/d into addTyingStrainXptSens (the
+    call this corrects) instead computes a single "dd0" output of
+    0.5*detyd*(Xxi + Uxid) -- using the *substituted* Uxid where the true
+    varsd-direction term needs the *base* Uxi -- and attributes the whole
+    thing to the varsd-direction buffer, silently dropping the primal-
+    direction contribution entirely. The correction below is exact for the
+    dXxi/dn0/G11/G22/G12 outputs (their Xpts-dependence is Xxi-linear-only,
+    so substitution already recovers them correctly; verified analytically),
+    so only the director-field split needs fixing here:
+      - add the missing primal contribution to `dd`
+      - add the delta 0.5*detyd*(Uxi - Uxid) to `ddvarsd` to convert its
+        already-accumulated (wrong) 0.5*detyd*(Xxi+Uxid) into the correct
+        0.5*detyd*(Xxi+Uxi)
+
+    @param vars The element variables (base point)
+    @param varsd The psi-direction perturbation of the element variables
+    @param detyd The seed on etyd (computeTyingStrainDeriv's psi-direction
+    output)
+    @param dd The accumulated primal-direction sensitivity w.r.t. the
+    director field
+    @param ddvarsd The accumulated psi-direction sensitivity w.r.t. the
+    director-rate field (correction delta only)
+  */
+  template <int vars_per_node, class basis>
+  static void addTyingStrainXptSensDeriv(const TacsScalar vars[],
+                                         const TacsScalar varsd[],
+                                         const TacsScalar detyd[],
+                                         TacsScalar dd[], TacsScalar ddvarsd[]) {
+    for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
+      const TacsShellTyingStrainComponent field = basis::getTyingField(index);
+
+      if (field == TACS_SHELL_G23_COMPONENT ||
+          field == TACS_SHELL_G13_COMPONENT) {
+        double pt[2];
+        basis::getTyingPoint(index, pt);
+
+        TacsScalar Uxi[6], Uxid[6];
+        basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, Uxi);
+        basis::template interpFieldsGrad<vars_per_node, 3>(pt, varsd, Uxid);
+
+        TacsScalar dd0[3], ddelta[3];
+        if (field == TACS_SHELL_G23_COMPONENT) {
+          dd0[0] = 0.5 * detyd[index] * Uxid[1];
+          dd0[1] = 0.5 * detyd[index] * Uxid[3];
+          dd0[2] = 0.5 * detyd[index] * Uxid[5];
+
+          ddelta[0] = 0.5 * detyd[index] * (Uxi[1] - Uxid[1]);
+          ddelta[1] = 0.5 * detyd[index] * (Uxi[3] - Uxid[3]);
+          ddelta[2] = 0.5 * detyd[index] * (Uxi[5] - Uxid[5]);
+        } else {
+          dd0[0] = 0.5 * detyd[index] * Uxid[0];
+          dd0[1] = 0.5 * detyd[index] * Uxid[2];
+          dd0[2] = 0.5 * detyd[index] * Uxid[4];
+
+          ddelta[0] = 0.5 * detyd[index] * (Uxi[0] - Uxid[0]);
+          ddelta[1] = 0.5 * detyd[index] * (Uxi[2] - Uxid[2]);
+          ddelta[2] = 0.5 * detyd[index] * (Uxi[4] - Uxid[4]);
+        }
+
+        basis::template addInterpFieldsTranspose<3, 3>(pt, dd0, dd);
+        basis::template addInterpFieldsTranspose<3, 3>(pt, ddelta, ddvarsd);
+      }
     }
   }
 
