@@ -181,6 +181,26 @@ class TACSShellElement : public TACSElement {
                               const TacsScalar ddvars[],
                               const TacsScalar dfdq[], TacsScalar dfdu[]);
 
+  void addMatDVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                double time, TacsScalar scale,
+                                const TacsScalar psi[], const TacsScalar phi[],
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[], int dvLen,
+                                TacsScalar dfdx[]);
+
+  void addMatXptSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                 double time, TacsScalar scale,
+                                 const TacsScalar psi[],
+                                 const TacsScalar phi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[],
+                                 TacsScalar dfdXpts[]);
+
+  void getMatSVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                double time, const TacsScalar psi[],
+                                const TacsScalar phi[], const TacsScalar Xpts[],
+                                const TacsScalar vars[], TacsScalar dfdu[]);
+
   void getOutputData(int elemIndex, ElementType etype, int write_flag,
                      const TacsScalar Xpts[], const TacsScalar vars[],
                      const TacsScalar dvars[], const TacsScalar ddvars[],
@@ -2198,6 +2218,106 @@ void TACSShellElement<quadrature, basis, director, model>::
   } else if (quantityType == TACS_ELEMENT_DISPLACEMENT) {
     // Compute the interpolated displacements
     basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, dfdq, dfdu);
+  }
+}
+
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+    addMatDVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                             double time, TacsScalar scale,
+                             const TacsScalar psi[], const TacsScalar phi[],
+                             const TacsScalar Xpts[], const TacsScalar vars[],
+                             int dvLen, TacsScalar dfdx[]) {
+  // The geometric stiffness matrix requires a hand-unrolled third
+  // derivative through getMatType's directional-derivative code path -
+  // out of scope for this feature (documented scope cut, SPEC.md sec 4.2).
+  // Forward to the base-class FD/CS implementation.
+  if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
+                                          psi, phi, Xpts, vars, dvLen, dfdx);
+    return;
+  } else if (matType == TACS_STIFFNESS_MATRIX) {
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
+                                          psi, phi, Xpts, vars, dvLen, dfdx);
+    return;
+  } else if (matType == TACS_MASS_MATRIX) {
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
+                                          psi, phi, Xpts, vars, dvLen, dfdx);
+    return;
+  } else {
+    // Unsupported/unknown matType - forward to the base class rather than
+    // leaving dfdx untouched.
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
+                                          psi, phi, Xpts, vars, dvLen, dfdx);
+    return;
+  }
+}
+
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+    addMatXptSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                              double time, TacsScalar scale,
+                              const TacsScalar psi[], const TacsScalar phi[],
+                              const TacsScalar Xpts[], const TacsScalar vars[],
+                              TacsScalar dfdXpts[]) {
+  // The geometric stiffness matrix requires a hand-unrolled third
+  // derivative through getMatType's directional-derivative code path -
+  // out of scope for this feature (documented scope cut, SPEC.md sec 4.2).
+  // Forward to the base-class FD/CS implementation.
+  if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
+    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
+                                           psi, phi, Xpts, vars, dfdXpts);
+    return;
+  } else if (matType == TACS_STIFFNESS_MATRIX) {
+    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
+                                           psi, phi, Xpts, vars, dfdXpts);
+    return;
+  } else if (matType == TACS_MASS_MATRIX) {
+    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
+                                           psi, phi, Xpts, vars, dfdXpts);
+    return;
+  } else {
+    // Unsupported/unknown matType - forward to the base class rather than
+    // leaving dfdXpts untouched.
+    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
+                                           psi, phi, Xpts, vars, dfdXpts);
+    return;
+  }
+}
+
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+    getMatSVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                             double time, const TacsScalar psi[],
+                             const TacsScalar phi[], const TacsScalar Xpts[],
+                             const TacsScalar vars[], TacsScalar dfdu[]) {
+  // getMatSVSensInnerProduct is an assignment (dfdu =), not an accumulation
+  // (SPEC.md sec 3.5) - zero the output unconditionally as the first
+  // statement, before the geometric-stiffness punt check.
+  memset(dfdu, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+
+  // The geometric stiffness matrix requires a hand-unrolled third
+  // derivative through getMatType's directional-derivative code path -
+  // out of scope for this feature (documented scope cut, SPEC.md sec 4.2).
+  // Forward to the base-class FD/CS implementation.
+  if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
+    TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                          Xpts, vars, dfdu);
+    return;
+  } else if (matType == TACS_STIFFNESS_MATRIX) {
+    TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                          Xpts, vars, dfdu);
+    return;
+  } else if (matType == TACS_MASS_MATRIX) {
+    TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                          Xpts, vars, dfdu);
+    return;
+  } else {
+    // Unsupported/unknown matType - forward to the base class rather than
+    // leaving dfdu untouched.
+    TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                          Xpts, vars, dfdu);
+    return;
   }
 }
 
