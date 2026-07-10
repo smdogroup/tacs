@@ -2,7 +2,7 @@
 This tests TACS MACH structural optimization capabilities.
 The wingbox model that we will be using for this problem is based on the MDOLab tutorial wingbox example,
 cantilevered, with a pressure load applied on the skin and a shear load applied at the tip and a gravity load. The wingbox is
-discretized using one shell element per panel. A fuel mass is modeled using a concentrated mass element tied to 
+discretized using one shell element per panel. A fuel mass is modeled using a concentrated mass element tied to
 the lower skin using an RBE3. This tests the KSFailure function and the panel length constraint.
 
 This tests the MACH StructProblem object's DVGeo and design variable sensitivities.

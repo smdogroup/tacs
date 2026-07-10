@@ -677,7 +677,9 @@ class StructProblem(BaseStructProblem):
         conAddToPyOpt = {}
         self.evalConstraints(fcon, nonLinear=nonLinear, linear=linear)
         self.evalConstraintsSens(fconSens, nonLinear=nonLinear, linear=linear)
-        for constr, addToPyOpt in zip(self.constraints, self.constraintsAddToPyOpt):
+        for constr, addToPyOpt in zip(
+            self.constraints, self.constraintsAddToPyOpt, strict=True
+        ):
             constr.getConstraintSizes(conSizes)
             constr.getConstraintBounds(conBounds)
             keys = constr.getConstraintKeys()

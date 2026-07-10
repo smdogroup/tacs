@@ -897,7 +897,7 @@ class TransientProblem(TACSProblem):
         for auxElemObj in self.auxElems:
             elems = auxElemObj.getAuxElements()
             nums = auxElemObj.getAuxElementNums()
-            for elem, compNum in zip(elems, nums):
+            for elem, compNum in zip(elems, nums, strict=True):
                 dvNums = elem.getDesignVarNums(compNum)
                 if len(dvNums) > 0:
                     dvVals = self.x.getValues(dvNums)
@@ -1015,9 +1015,9 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep
         else:
             # check that the integrator is multistage
-            assert self.numStages is not None, (
-                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
-            )
+            assert (
+                self.numStages is not None
+            ), f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
             timeIndex = timeStep * self.numStages + timeStage
 
         # set the loads - do not change self.F[timeIndex] in place
@@ -1311,9 +1311,9 @@ class TransientProblem(TACSProblem):
             time, q, qdot, qddot = self.integrator.getStates(timeStep)
         else:
             # check that the integrator is multistage
-            assert self.numStages is not None, (
-                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
-            )
+            assert (
+                self.numStages is not None
+            ), f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
             time, q, qdot, qddot = self.integrator.getStageStates(timeStep, timeStage)
 
         # Convert to arrays
