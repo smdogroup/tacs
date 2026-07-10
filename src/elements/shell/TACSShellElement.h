@@ -151,6 +151,14 @@ class TACSShellElement : public TACSElement {
                            const TacsScalar vars[], const TacsScalar dvars[],
                            const TacsScalar ddvars[], TacsScalar fXptSens[]);
 
+  void addPointQuantityXptSens(int elemIndex, int quantityType, double time,
+                               TacsScalar scale, int n, double pt[],
+                               const TacsScalar Xpts[], const TacsScalar vars[],
+                               const TacsScalar dvars[],
+                               const TacsScalar ddvars[],
+                               const TacsScalar dfddetXd,
+                               const TacsScalar dfdq[], TacsScalar dfdXpts[]);
+
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
@@ -1445,6 +1453,210 @@ void TACSShellElement<quadrature, basis, director, model>::
 
   // Add the contributions from the node normals
   TacsShellAddNodeNormalsSens<basis>(Xpts, dfn, fXptSens);
+}
+
+template <class quadrature, class basis, class director, class model>
+void TACSShellElement<quadrature, basis, director, model>::
+    addPointQuantityXptSens(int elemIndex, int quantityType, double time,
+                            TacsScalar scale, int n, double pt[],
+                            const TacsScalar Xpts[], const TacsScalar vars[],
+                            const TacsScalar dvars[],
+                            const TacsScalar ddvars[],
+                            const TacsScalar dfddetXd,
+                            const TacsScalar dfdq[], TacsScalar dfdXpts[]) {
+  if (quantityType == TACS_FAILURE_INDEX ||
+      quantityType == TACS_STRAIN_ENERGY_DENSITY) {
+    // Compute the node normal directions
+    TacsScalar fn[3 * num_nodes];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+    // Accumulator for the nodal frame-normal-direction sensitivity, closed
+    // at the end via TacsShellAddNodeNormalsSens
+    TacsScalar dfn[3 * num_nodes];
+    memset(dfn, 0, 3 * num_nodes * sizeof(TacsScalar));
+
+    // Compute the director rates
+    TacsScalar d[dsize], ddot[dsize];
+    director::template computeDirectorRates<vars_per_node, offset, num_nodes>(
+        vars, dvars, fn, d, ddot);
+
+    // Set the total number of tying points needed for this element
+    TacsScalar ety[basis::NUM_TYING_POINTS];
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn, vars,
+                                                             d, ety);
+
+    // Compute X, X,xi and the interpolated normal n0
+    TacsScalar X[3], Xxi[6], n0[3], T[9];
+    basis::template interpFields<3, 3>(pt, Xpts, X);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+    basis::template interpFields<3, 3>(pt, fn, n0);
+
+    // Compute the transformation at the quadrature point
+    transform->computeTransform(Xxi, n0, T);
+
+    // Evaluate the displacement gradient at the point
+    TacsScalar XdinvT[9], XdinvzT[9];
+    TacsScalar u0x[9], u1x[9];
+    TacsShellComputeDispGrad<vars_per_node, basis>(
+        pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, u0x, u1x);
+
+    // Evaluate the tying components of the strain
+    TacsScalar gty[6];  // The symmetric components of the tying strain
+    basis::interpTyingStrain(pt, ety, gty);
+
+    // Compute the symmetric parts of the tying strain
+    TacsScalar e0ty[6];  // e0ty = XdinvT^{T}*gty*XdinvT
+    mat3x3SymmTransformTranspose(XdinvT, gty, e0ty);
+
+    // Compute the set of strain components
+    TacsScalar e[9];  // The components of the strain
+    model::evalStrain(u0x, u1x, e0ty, e);
+    e[8] = 0.0;
+
+    // Compute the sensitivity of the quantity w.r.t. the strain (esens
+    // mirrors beam's esens construction, TACSBeamElement.h:1971-1981,
+    // generalized to shell's 9-component strain, with drill e[8] fixed at
+    // 0 exactly as evalPointQuantity's own strain-based branch does)
+    TacsScalar esens[9];
+    if (quantityType == TACS_FAILURE_INDEX) {
+      con->evalFailureStrainSens(elemIndex, pt, X, e, esens);
+    } else {  // quantityType == TACS_STRAIN_ENERGY_DENSITY
+      con->evalStress(elemIndex, pt, X, e, esens);
+      for (int i = 0; i < 9; i++) {
+        esens[i] *= 2.0;
+      }
+    }
+
+    // The detXd-direction seed is always included, regardless of branch
+    TacsScalar ddetXd_total = scale * dfddetXd;
+
+    TacsScalar du0x[9], du1x[9], de0ty[6];
+    model::evalStrainSens(scale * dfdq[0], esens, u0x, u1x, du0x, du1x,
+                          de0ty);
+
+    TacsScalar dXxi[6], dn0[3], dT[9], dd[dsize];
+    memset(dXxi, 0, sizeof(dXxi));
+    memset(dn0, 0, sizeof(dn0));
+    memset(dT, 0, sizeof(dT));
+    memset(dd, 0, dsize * sizeof(TacsScalar));
+
+    TacsShellComputeDispGradXptSens<vars_per_node, basis>(
+        pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, du0x, du1x,
+        ddetXd_total, dXxi, dn0, dfn, dT, dd);
+
+    // Tying-strain contribution: accumulate the seed on the tying-point
+    // strain, then close it into the Xpts/fn/director-field sensitivities
+    TacsScalar dgty[6];
+    mat3x3SymmTransformTransSens(XdinvT, de0ty, dgty);
+    TacsScalar dety[basis::NUM_TYING_POINTS];
+    memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+    basis::addInterpTyingStrainTranspose(pt, dgty, dety);
+    model::template addTyingStrainXptSens<vars_per_node, basis>(
+        Xpts, fn, vars, d, dety, dfdXpts, dfn, dd);
+
+    // XdinvT-direction contribution from the tying-strain transform itself
+    // (e0ty = XdinvT^{T}*gty*XdinvT) -- NOT captured by
+    // TacsShellComputeDispGradXptSens, whose contract is limited to the
+    // u0x/u1x/detXd chain; hand-derived here mirroring the mat3x3MatMult
+    // adjoint rules addAdjResXptProduct already uses for the identical
+    // e0ty=XdinvT^{T}*gty*XdinvT relationship ("XdinvT-direction
+    // contribution from the tying-strain transform" block above, single-seed
+    // specialization of that two-chain derivation). NOTE: the seed's
+    // off-diagonal (shear) entries must be halved when expanded from the
+    // compact 6-component symmetric storage to a full 3x3 matrix -- the
+    // compact form counts each off-diagonal term once, but expanding it
+    // symmetrically into both (i,j) and (j,i) slots of the full matrix and
+    // then using the plain (non-symmetric-aware) mat3x3MatMult adjoint rule
+    // would otherwise double-count it.
+    {
+      TacsScalar gty_full[9], de0ty_full[9];
+      gty_full[0] = gty[0];
+      gty_full[1] = gty[1];
+      gty_full[2] = gty[2];
+      gty_full[3] = gty[1];
+      gty_full[4] = gty[3];
+      gty_full[5] = gty[4];
+      gty_full[6] = gty[2];
+      gty_full[7] = gty[4];
+      gty_full[8] = gty[5];
+
+      de0ty_full[0] = de0ty[0];
+      de0ty_full[1] = 0.5 * de0ty[1];
+      de0ty_full[2] = 0.5 * de0ty[2];
+      de0ty_full[3] = 0.5 * de0ty[1];
+      de0ty_full[4] = de0ty[3];
+      de0ty_full[5] = 0.5 * de0ty[4];
+      de0ty_full[6] = 0.5 * de0ty[2];
+      de0ty_full[7] = 0.5 * de0ty[4];
+      de0ty_full[8] = de0ty[5];
+
+      TacsScalar dXdinvT[9];
+      memset(dXdinvT, 0, sizeof(dXdinvT));
+      TacsScalar W[9], dW[9], tmp[9];
+
+      // e0ty = XdinvT^{T}*W, W = gty_full*XdinvT
+      mat3x3MatMult(gty_full, XdinvT, W);
+      mat3x3MatMult(W, de0ty_full, tmp);
+      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+      mat3x3MatMult(XdinvT, de0ty_full, dW);
+      mat3x3MatMult(gty_full, dW, tmp);
+      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+
+      // Propagate dXdinvT back through XdinvT = Xdinv*T and
+      // Xdinv = inv3x3(Xd), Xd = assembleFrame(Xxi, n0)
+      TacsScalar Xd[9], Xdinv[9];
+      TacsShellAssembleFrame(Xxi, n0, Xd);
+      inv3x3(Xd, Xdinv);
+
+      TacsScalar dXdinv[9];
+      mat3x3MatTransMult(dXdinvT, T, dXdinv);
+      mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
+      for (int i = 0; i < 9; i++) dT[i] += tmp[i];
+
+      TacsScalar dXd[9];
+      inv3x3Sens(Xdinv, dXdinv, dXd);
+
+      dXxi[0] += dXd[0];
+      dXxi[1] += dXd[1];
+      dXxi[2] += dXd[3];
+      dXxi[3] += dXd[4];
+      dXxi[4] += dXd[6];
+      dXxi[5] += dXd[7];
+
+      dn0[0] += dXd[2];
+      dn0[1] += dXd[5];
+      dn0[2] += dXd[8];
+    }
+
+    // Add the contributions from the derivative of the director (the
+    // single-seed 4-argument overload -- exact, since only one adjoint
+    // direction, "dd", is closed here, unlike addAdjResXptProduct's
+    // bilinear psi-direction pairing)
+    director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                                num_nodes>(vars, fn, dd, dfn);
+
+    // transform->addTransformSens is needed here since dT is generally
+    // nonzero for this branch (T enters u0x/u1x's own construction)
+    transform->addTransformSens(Xxi, n0, dT, dXxi, dn0);
+
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dfdXpts);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, dn0, dfn);
+
+    // Add the contributions from the node normals (final step, every
+    // branch touches fn/n0 in some form, even if only through detXd)
+    TacsShellAddNodeNormalsSens<basis>(Xpts, dfn, dfdXpts);
+    return;
+  }
+
+  // Geometry-only branches (TACS_ELEMENT_DENSITY, TACS_ELEMENT_DISPLACEMENT,
+  // TACS_ELEMENT_DENSITY_MOMENT, TACS_ELEMENT_ENCLOSED_VOLUME), the explicit
+  // TACS_ELEMENT_MOMENT_OF_INERTIA punt, and any unrecognized quantityType
+  // are not yet implemented as of this commit -- temporarily forward to the
+  // base class's FD/CS fallback (a correct, if wasteful, placeholder;
+  // replaced by Task 3.2's second commit).
+  TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale, n,
+                                       pt, Xpts, vars, dvars, ddvars,
+                                       dfddetXd, dfdq, dfdXpts);
 }
 
 template <class quadrature, class basis, class director, class model>
