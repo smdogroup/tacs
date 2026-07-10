@@ -342,6 +342,62 @@ void TacsShellComputeNodeNormals(const TacsScalar Xpts[], TacsScalar fn[],
 }
 
 /**
+  Sensitivity of TacsShellComputeNodeNormals with respect to Xpts.
+
+  Given a seed dfn on the per-node normalized frame normals fn computed by
+  TacsShellComputeNodeNormals, accumulate dXpts += d(dfn^T*fn)/d(Xpts).
+
+  @param Xpts The node locations for the shell element
+  @param dfn The seed on the per-node normal directions, size 3*NUM_NODES
+  @param dXpts The accumulated sensitivity with respect to Xpts
+*/
+template <class basis>
+void TacsShellAddNodeNormalsSens(const TacsScalar Xpts[],
+                                 const TacsScalar dfn[], TacsScalar dXpts[]) {
+  for (int i = 0; i < basis::NUM_NODES; i++) {
+    double pt[2];
+    basis::getNodePoint(i, pt);
+
+    // Recompute the forward quantities needed for the reverse sweep
+    TacsScalar Xxi[6];
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+
+    TacsScalar a[3], b[3];
+    a[0] = Xxi[0];
+    a[1] = Xxi[2];
+    a[2] = Xxi[4];
+
+    b[0] = Xxi[1];
+    b[1] = Xxi[3];
+    b[2] = Xxi[5];
+
+    TacsScalar raw[3];
+    crossProduct(a, b, raw);
+
+    // Reverse sweep: fn = normalize(raw)
+    TacsScalar draw[3] = {dfn[3 * i], dfn[3 * i + 1], dfn[3 * i + 2]};
+    TacsScalar sAnrm;
+    vec3NormalizeSens(raw, &sAnrm, draw);
+
+    // raw = cross(a, b): da += cross(b, draw), db += cross(draw, a)
+    TacsScalar da[3], db[3];
+    crossProduct(b, draw, da);
+    crossProduct(draw, a, db);
+
+    TacsScalar dXxi[6];
+    dXxi[0] = da[0];
+    dXxi[2] = da[1];
+    dXxi[4] = da[2];
+
+    dXxi[1] = db[0];
+    dXxi[3] = db[1];
+    dXxi[5] = db[2];
+
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, dXxi, dXpts);
+  }
+}
+
+/**
   Compute the displacement gradient of the constant and through-thickness
   rate of change of the displacements.
 
