@@ -755,8 +755,8 @@ class PanelLengthConstraint(TACSConstraint):
                                     allEdges.add(key)
                                 else:
                                     dupEdges.add(key)
-                # Now get a list of all the edges that aren't duplicated, these are the boundary edges
-                boundaryEdges = list(allEdges - dupEdges)
+                # Now get a sorted list of all the edges that aren't duplicated, these are the boundary edges
+                boundaryEdges = sorted(allEdges - dupEdges)
 
                 # Create a nodeToElem Pointer using a dictionary:
                 nodeToElem = {}
