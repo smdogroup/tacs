@@ -1917,6 +1917,16 @@ void TACSBeamElement<quadrature, basis, director,
   // TACSDirector.h's per-class implementations) -- dvars/ddvars are passed
   // as vars here since this method's own signature has no dvars/ddvars, and
   // the ddot/dddot outputs they would feed are discarded, unused.
+  //
+  // Efficiency note (review-flagged, minor): the two calls below (one
+  // seeded with psi, one with phi) each recompute the identical,
+  // direction-independent d1/d1dot/d1ddot outputs redundantly --
+  // computeDirectorRatesDeriv has no lighter-weight overload that accepts
+  // precomputed d/ddot/dddot and returns only the direction-seeded dpsi
+  // output, so avoiding the redundant work would require an API change to
+  // TACSDirector.h (a shared header also used by shell elements) rather
+  // than a local contortion; left as-is (this is a duplicated O(num_nodes)
+  // computation per call site, not an algorithmic complexity issue).
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2119,10 +2129,24 @@ void TACSBeamElement<quadrature, basis, director,
     5. No tying-curvature term (beam's tying strain is linear -- omitted,
        not derived-and-discarded).
 
-  Director-class scope: exact for TACSLinearizedRotation (the only director
-  class this feature's test file exercises); TACSQuadraticRotation/
-  TACSQuaternionRotation are not verified here (same open risk as Task
-  4.2's TACS_MASS_MATRIX branch and Task 4.4's getMatSVSensInnerProduct).
+  Director-class scope: exact for TACSLinearizedRotation, confirmed via
+  the un-skipped test file (Beam2/Beam3) and a machine-precision
+  TACSBeam2ModRot-style cross-check (see PLAN.md). This function is ONLY
+  called for TACSLinearizedRotation -- its caller (addMatXptSensInnerProduct)
+  typeid-guards TACSQuadraticRotation/TACSQuaternionRotation to the base
+  FD/CS fallback, per a documented, review-flagged, currently-unresolved
+  finding: the director-field Xpts-adjoint fix below (the 6-arg
+  addDirectorRefNormalSens overload's ddpsi-only term, zeroed dd,
+  evaluated at the REAL vars) is CONFIRMED CORRECT and sufficient for
+  addMatXptSensInnerProduct's TACS_MASS_MATRIX branch (machine-precision
+  match against TACSBeam2ModRot) but does NOT fully resolve this
+  STIFFNESS_MATRIX branch's nonlinear-director discrepancy (~9% residual
+  at full rotation magnitude for TACSBeam2ModRot, confirmed non-FD-noise
+  via a dh-convergence check and confirmed genuinely q-dependent via a
+  vars-magnitude-scaling check) -- an additional, unidentified term
+  specific to this branch's larger kinematic chain (u0d/u0x/d1x/d2x/T/
+  XdinvT, absent from the simpler TACS_MASS_MATRIX branch) is suspected
+  but was not isolated within this session's investigation budget.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
@@ -2143,7 +2167,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
   memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
 
   // psi-direction and phi-direction director fields, linearized about the
-  // real vars (same reuse as Tasks 4.1/4.2).
+  // real vars (same reuse as Tasks 4.1/4.2; see Task 4.1's own comment for
+  // the redundant-recomputation efficiency note, unchanged here).
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2362,20 +2387,33 @@ void TACSBeamElement<quadrature, basis, director, model>::
       Xpts, fn1, fn2, phi, d1phi, d2phi, psi, d1psi, d2psi, etyphid, etypsid,
       dfdXpts, dfn1, dfn2, dd1phi, dd2phi, dd1psi, dd2psi);
 
-  // Add the contributions from the derivative of the director. Exact for
-  // TACSLinearizedRotation only -- see the function-level comment.
+  // Add the contributions from the derivative of the director, via the
+  // 6-arg addDirectorRefNormalSens overload's "ddpsi" (perturbation-
+  // direction) term with a zeroed "dd" (base-term) buffer, evaluated at
+  // the REAL vars (review fix: see the identical fix/rationale in
+  // addMatXptSensInnerProduct's TACS_MASS_MATRIX branch -- the earlier
+  // single-arg-with-phi/psi-as-"vars" calls silently dropped the q-qpsi
+  // cross term TACSQuadraticRotation/TACSQuaternionRotation's nonlinear
+  // director maps require). This isolated fix is verified EXACT for
+  // TACS_MASS_MATRIX (spot-checked against TACSBeam2ModRot, see PLAN.md)
+  // but this STIFFNESS_MATRIX branch retains a separate, unresolved
+  // residual for the nonlinear director classes even after this fix --
+  // see this function's own typeid guard at its call site
+  // (addMatXptSensInnerProduct) and PLAN.md's documented-failure note.
+  TacsScalar zero_dd[dsize];
+  memset(zero_dd, 0, dsize * sizeof(TacsScalar));
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(phi, fn1,
-                                                                dd1phi, dfn1);
+                                              basis::NUM_NODES>(
+      vars, phi, fn1, zero_dd, dd1phi, dfn1);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(psi, fn1,
-                                                                dd1psi, dfn1);
+                                              basis::NUM_NODES>(
+      vars, psi, fn1, zero_dd, dd1psi, dfn1);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(phi, fn2,
-                                                                dd2phi, dfn2);
+                                              basis::NUM_NODES>(
+      vars, phi, fn2, zero_dd, dd2phi, dfn2);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(psi, fn2,
-                                                                dd2psi, dfn2);
+                                              basis::NUM_NODES>(
+      vars, psi, fn2, zero_dd, dd2psi, dfn2);
 
   // Add the contributions from the node normals.
   TacsBeamAddNodeNormalsSens<basis>(Xpts, axis, dfn1, dfn2, dfdXpts);
@@ -2385,8 +2423,22 @@ void TACSBeamElement<quadrature, basis, director, model>::
   Add the derivative of the matrix inner product psi^T * mat * phi with
   respect to the nodal coordinates (SPEC.md sec 2.2/2.3/2.3.1).
   TACS_STIFFNESS_MATRIX (Task 4.3) and TACS_MASS_MATRIX (Task 4.2) are
-  analytic; TACS_GEOMETRIC_STIFFNESS_MATRIX is an interim
-  explicit-forward-to-base punt, superseded by Phase 5.
+  analytic for TACSLinearizedRotation; TACS_MASS_MATRIX is additionally
+  confirmed analytic-exact for TACSQuadraticRotation/TACSQuaternionRotation
+  too (spot-checked against TACSBeam2ModRot). TACS_STIFFNESS_MATRIX's
+  analytic branch is exact for TACSLinearizedRotation but retains an
+  unresolved residual discrepancy for the two nonlinear director classes
+  (documented failure, review-flagged -- see
+  addMatXptSensInnerProductStiffness's own header comment and PLAN.md):
+  fixing the director-Xpts-adjoint misuse the review caught (the same fix
+  that made TACS_MASS_MATRIX exact) measurably improves but does not fully
+  resolve the STIFFNESS_MATRIX case, indicating a further, unidentified
+  term specific to this branch's larger kinematic chain (u0d/u0x/d1x/d2x/
+  T/XdinvT) that further investigation within this session could not
+  isolate -- forwarded to the base FD/CS implementation for
+  TACSQuadraticRotation/TACSQuaternionRotation specifically, per the
+  documented-failure-only fallback rule. TACS_GEOMETRIC_STIFFNESS_MATRIX
+  is an interim explicit-forward-to-base punt, superseded by Phase 5.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
@@ -2396,6 +2448,14 @@ void TACSBeamElement<quadrature, basis, director, model>::
                               const TacsScalar Xpts[], const TacsScalar vars[],
                               TacsScalar dfdXpts[]) {
   if (matType == TACS_STIFFNESS_MATRIX) {
+    if (typeid(director) != typeid(TACSLinearizedRotation)) {
+      // Documented-failure fallback (see this function's header comment):
+      // the analytic derivation is exact for TACSLinearizedRotation but
+      // has an unresolved residual for the nonlinear director classes.
+      TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
+                                             psi, phi, Xpts, vars, dfdXpts);
+      return;
+    }
     addMatXptSensInnerProductStiffness(elemIndex, time, scale, psi, phi, Xpts,
                                        vars, dfdXpts);
     return;
@@ -2429,7 +2489,9 @@ void TACSBeamElement<quadrature, basis, director, model>::
   memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
 
   // psi-direction and phi-direction director fields, linearized about the
-  // real vars (same reuse as Task 4.1's DV-sens branch).
+  // real vars (same reuse as Task 4.1's DV-sens branch; see its own
+  // comment for the redundant-recomputation efficiency note, unchanged
+  // here).
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2538,28 +2600,37 @@ void TACSBeamElement<quadrature, basis, director, model>::
   }
 
   // Route the psi-direction/phi-direction director fields' own Xpts-sens
-  // through the reference normal (TACSLinearizedRotation only -- see the
-  // note above the single-arg addDirectorRefNormalSens overload; for
-  // TACSLinearizedRotation the director-map Jacobian is constant, so
-  // treating phi/psi as independent "vars" arguments in two separate
-  // single-direction calls is exact. This is NOT verified for
-  // TACSQuadraticRotation/TACSQuaternionRotation -- the general two-
-  // direction case would need the director's own curvature (second
-  // derivative) term, which this feature's A2D machinery does not build
-  // (out of scope, same risk flagged in SPEC.md sec 2.2/3.3 for
-  // getMatSVSensInnerProduct).
+  // through the reference normal, via the 6-arg addDirectorRefNormalSens
+  // overload's "ddpsi" (perturbation-direction) term with a zeroed "dd"
+  // (base-term) buffer, evaluated at the REAL vars (review fix: an
+  // earlier revision called the 4-arg single-direction overload with
+  // phi/psi themselves substituted for the "vars" argument -- exact only
+  // by accident for TACSLinearizedRotation, whose director-map Jacobian
+  // is constant and independent of the linearization point, but silently
+  // wrong for TACSQuadraticRotation/TACSQuaternionRotation, whose
+  // Jacobian-vector-product sensitivity genuinely depends on the REAL q,
+  // not on phi/psi treated as if they were the state -- confirmed via a
+  // TACSBeam2ModRot spot-check, see PLAN.md). Zeroing "dd" isolates
+  // exactly the q-qpsi cross term (TACSDirector.h's own Cd/tmp-based
+  // blocks), which is precisely the Jacobian-vector-product's own
+  // Xpts-adjoint for a fixed real q and perturbation direction qpsi=phi
+  // (or psi) -- this is the SAME reusable machinery
+  // addAdjResXptProduct's own 6-arg call already exercises, not new
+  // algebra.
+  TacsScalar zero_dd[dsize];
+  memset(zero_dd, 0, dsize * sizeof(TacsScalar));
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(phi, fn1,
-                                                                dd1phi, dfn1);
+                                              basis::NUM_NODES>(
+      vars, phi, fn1, zero_dd, dd1phi, dfn1);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(psi, fn1,
-                                                                dd1psi, dfn1);
+                                              basis::NUM_NODES>(
+      vars, psi, fn1, zero_dd, dd1psi, dfn1);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(phi, fn2,
-                                                                dd2phi, dfn2);
+                                              basis::NUM_NODES>(
+      vars, phi, fn2, zero_dd, dd2phi, dfn2);
   director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              basis::NUM_NODES>(psi, fn2,
-                                                                dd2psi, dfn2);
+                                              basis::NUM_NODES>(
+      vars, psi, fn2, zero_dd, dd2psi, dfn2);
 
   TacsBeamAddNodeNormalsSens<basis>(Xpts, axis, dfn1, dfn2, dfdXpts);
 }
