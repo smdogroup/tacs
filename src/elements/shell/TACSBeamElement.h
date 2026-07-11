@@ -1279,7 +1279,17 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
-    // Not implemented
+    // Explicit-forward to the base class instead of a silent early return
+    // (SPEC.md sec 1.4/4.1/4.2, the "never-silent-punt" principle): the
+    // base class's own TACS_GEOMETRIC_STIFFNESS_MATRIX branch
+    // (TACSElement.cpp:346-348) is ALSO "not implemented" today, so this is
+    // numerically a no-op (both produce an all-zero mat) -- the value is
+    // consistency/auditability, not a correctness fix, and this is an
+    // interim state: Phase 5 (SPEC.md sec 2.4.4/2.4.5) replaces this branch
+    // with a real analytic implementation, unless its
+    // TACSBeamNonlinearModel prerequisite overruns its timebox, in which
+    // case this forward becomes the permanent, documented fallback.
+    TACSElement::getMatType(matType, elemIndex, time, Xpts, vars, mat);
     return;
   }
   // Create dummy residual vector
