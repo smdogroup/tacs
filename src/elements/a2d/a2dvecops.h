@@ -739,6 +739,17 @@ class MatTrans3x3ADVecMultScale {
     MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
   }
   void reverse() { Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd); }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): y =
+  // scale.value*A^T*x is LINEAR in its single active input x (scale and A
+  // are both passive), so hforward/hreverse are exactly forward()/
+  // reverse()'s formulas with xp/yp (resp. xh/yh) substituted for xd/yd --
+  // no additional cross term (same structural reasoning as
+  // ADMat3x3MatMult, Task 1.5, and MatTrans3x3ADMatMult, Task 1.8).
+  // Verified in a2d/tests/test_mattrans3x3advecmultscale_second_order.cpp.
+  void hforward() {
+    MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);
+  }
+  void hreverse() { Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xh, x.xh); }
 
   const Scalar &scale;
   const Mat3x3 &A;
