@@ -2868,7 +2868,8 @@ void TACSShellElement<quadrature, basis, director, model>::
     //      (Xpts, fn, 0, 0, weight, ...) - the zero-baseline subtraction is
     //      required (unlike the Xpts-adjoint's analogous substitution trick)
     //      because addComputeTyingStrainTranspose's own gradient formula has
-    //      an Xxi-independent "+Xxi"-type term that does not otherwise
+    //      a vars-independent "+Xxi"-type term (depends only on geometry,
+    //      not on the substituted vars/d argument) that does not otherwise
     //      cancel; substituting vars=psi (or phi) into the linearization-
     //      point argument recovers exactly the bilinear cross-term's own
     //      vars-gradient once that Xxi-only piece is subtracted off.
