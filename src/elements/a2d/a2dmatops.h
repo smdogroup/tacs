@@ -313,6 +313,38 @@ class ADMat3x3FromThreeADVec3 {
     z.xd[1] += C.Ad[5];
     z.xd[2] += C.Ad[8];
   }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C's
+  // columns are literally the components of x/y/z -- a trivial LINEAR
+  // assignment, not even a product, so hforward/hreverse are exactly
+  // forward()/reverse()'s formulas with Ap/xp (resp. Ah/xh) substituted
+  // for Ad/xd -- no cross term. Verified in
+  // a2d/tests/test_admat3x3fromthreeadvec3_second_order.cpp.
+  void hforward() {
+    C.Ap[0] = x.xp[0];
+    C.Ap[3] = x.xp[1];
+    C.Ap[6] = x.xp[2];
+
+    C.Ap[1] = y.xp[0];
+    C.Ap[4] = y.xp[1];
+    C.Ap[7] = y.xp[2];
+
+    C.Ap[2] = z.xp[0];
+    C.Ap[5] = z.xp[1];
+    C.Ap[8] = z.xp[2];
+  }
+  void hreverse() {
+    x.xh[0] += C.Ah[0];
+    x.xh[1] += C.Ah[3];
+    x.xh[2] += C.Ah[6];
+
+    y.xh[0] += C.Ah[1];
+    y.xh[1] += C.Ah[4];
+    y.xh[2] += C.Ah[7];
+
+    z.xh[0] += C.Ah[2];
+    z.xh[1] += C.Ah[5];
+    z.xh[2] += C.Ah[8];
+  }
 
   ADVec3 &x;
   ADVec3 &y;
