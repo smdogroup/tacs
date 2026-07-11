@@ -398,13 +398,73 @@ class TACSBeamLinearModel {
     de0ty[1] = scale * dfde[5];
   }
 
+  /**
+    Evaluate the Hessian of the strain energy-like quadratic form
+    f = 0.5*s.e (s = Cs*e via TACSBeamConstitutive::computeStress) with
+    respect to the four strain-map inputs (u0x, d1x, d2x, e0ty).
+
+    Because e = L(u0x, d1x, d2x, e0ty) (see evalStrain, unchanged) is a
+    fixed *linear* map with constant coefficients, this Hessian is a pure
+    algebraic pullback of the packed-symmetric Cs[21] through L -- no
+    differentiation is performed at runtime, and the result does not
+    depend on the values of s/u0x/d1x/d2x/e0ty, only on Cs and scale (they
+    remain in the signature to match the call-site contract and shell's
+    analogous evalStrainHessian). Every Cs row/col index below was derived
+    directly from TACSBeamConstitutive::computeStress's packed-symmetric
+    index arithmetic (TACSBeamConstitutive.h:73-87), not transcribed from
+    SPEC.md a second time; each of the seven blocks is verified
+    independently against a central-difference-of-f ground truth (exact
+    for this quadratic f) in the Task 1.2 op-level scratch check.
+  */
   static void evalStrainHessian(const TacsScalar scale, const TacsScalar s[],
                                 const TacsScalar Cs[], const TacsScalar u0x[],
                                 const TacsScalar d1x[], const TacsScalar d2x[],
                                 const TacsScalar e0ty[], TacsScalar d2u0x[],
                                 TacsScalar d2d1x[], TacsScalar d2d2x[],
                                 TacsScalar d2e0ty[], TacsScalar d2u0xd1x[],
-                                TacsScalar d2u0xd2x[], TacsScalar d2d1xd2x[]) {}
+                                TacsScalar d2u0xd2x[], TacsScalar d2d1xd2x[]) {
+    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
+    memset(d2d1x, 0, 9 * sizeof(TacsScalar));
+    memset(d2d2x, 0, 9 * sizeof(TacsScalar));
+    memset(d2e0ty, 0, 4 * sizeof(TacsScalar));
+    memset(d2u0xd1x, 0, 27 * sizeof(TacsScalar));
+    memset(d2u0xd2x, 0, 27 * sizeof(TacsScalar));
+    memset(d2d1xd2x, 0, 9 * sizeof(TacsScalar));
+
+    // e[0] = u0x[0] (axial) -- only u0x[0] enters e, so d2u0x is rank-1.
+    d2u0x[0] = scale * Cs[0];
+
+    // e[1] = 0.5*(d1x[2] - d2x[1]) (torsion), e[2] = d1x[0] (bend1).
+    d2d1x[0] = scale * Cs[11];                  // bend1-bend1
+    d2d1x[2] = d2d1x[6] = 0.5 * scale * Cs[7];  // bend1-torsion
+    d2d1x[8] = 0.25 * scale * Cs[6];            // torsion-torsion
+
+    // e[3] = d2x[0] (bend2); torsion cross term picks up the -0.5 sign from
+    // evalStrainSens's dd2x[1] = -0.5*scale*dfde[1].
+    d2d2x[0] = scale * Cs[15];                   // bend2-bend2
+    d2d2x[1] = d2d2x[3] = -0.5 * scale * Cs[8];  // bend2-torsion
+    d2d2x[4] = 0.25 * scale * Cs[6];             // torsion-torsion
+
+    // d1x-d2x cross block (bend1-bend2 and the two torsion cross terms).
+    d2d1xd2x[0] = scale * Cs[12];         // bend1 - bend2
+    d2d1xd2x[1] = -0.5 * scale * Cs[7];   // bend1 - torsion(d2x)
+    d2d1xd2x[6] = 0.5 * scale * Cs[8];    // torsion(d1x) - bend2
+    d2d1xd2x[7] = -0.25 * scale * Cs[6];  // torsion-torsion cross
+
+    // e[4] = e0ty[0], e[5] = e0ty[1]: direct 2x2 sub-block of Cs at {4,5}.
+    d2e0ty[0] = scale * Cs[18];
+    d2e0ty[1] = d2e0ty[2] = scale * Cs[19];
+    d2e0ty[3] = scale * Cs[20];
+
+    // Axial (u0x[0]) vs bend1/torsion(d1x).
+    d2u0xd1x[0] = scale * Cs[2];
+    d2u0xd1x[2] = 0.5 * scale * Cs[1];
+
+    // Axial (u0x[0]) vs bend2/torsion(d2x); torsion cross term picks up the
+    // same sign flip as d2d2x above.
+    d2u0xd2x[0] = scale * Cs[3];
+    d2u0xd2x[1] = -0.5 * scale * Cs[1];
+  }
 };
 
 /*
