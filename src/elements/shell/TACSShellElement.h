@@ -1118,13 +1118,17 @@ void TACSShellElement<quadrature, basis, director, model>::
   memset(dd_xpt_psi, 0, dsize * sizeof(TacsScalar));
 
   // Xpts-direction accumulator for the *acceleration*-direction director
-  // field (dddot = crossProduct(ddvars-rotation, fn)), needed by the
-  // dynamics/rotary-inertia term below. This is a THIRD, distinct seed
-  // buffer (not dd_xpt/dd_xpt_psi) because dddot is parametrized by ddvars,
-  // not vars or psi, so it needs its own addDirectorRefNormalSens closure
-  // (the single-seed 4-argument overload, called with ddvars substituted for
-  // vars -- exact, not an approximation, since d = crossProduct(q,t) is
-  // linear in q for any q).
+  // field (dddot, a director-class-specific function of vars/dvars/ddvars),
+  // needed by the dynamics/rotary-inertia term below. This is a THIRD,
+  // distinct seed buffer (not dd_xpt/dd_xpt_psi) because dddot depends on
+  // vars/dvars/ddvars jointly (not just vars or psi like d/dpsi do), so it
+  // needs its own closure: the per-director-class
+  // addDirectorAccelRefNormalSens hook (TACSDirector.h), which is the exact
+  // transpose of d(dddot)/dt for that class. For TACSLinearizedRotation this
+  // reduces to the single-seed addDirectorRefNormalSens overload with ddvars
+  // substituted for vars (exact, since d = crossProduct(q,t) is linear in q
+  // for any q); TACSQuadraticRotation needs a genuinely different 4-term
+  // transpose, since its dddot couples q/qdot/qddot together.
   TacsScalar dd_xpt_ddot[dsize];
   memset(dd_xpt_ddot, 0, dsize * sizeof(TacsScalar));
 

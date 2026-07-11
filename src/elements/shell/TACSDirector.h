@@ -586,7 +586,7 @@ class TACSLinearizedRotation {
                                             const TacsScalar dd[],
                                             TacsScalar dt[]) {
     addDirectorRefNormalSens<vars_per_node, offset, num_nodes>(ddvars, t, dd,
-                                                                dt);
+                                                               dt);
   }
 
   static TacsScalar evalDrillStrain(const TacsScalar u0x[],
@@ -1466,9 +1466,9 @@ class TACSQuadraticRotation {
     dddot = qddot^{x}*t + 0.5*qddot^{x}*q^{x}*t + qdot^{x}*qdot^{x}*t
             + 0.5*q^{x}*qddot^{x}*t
     is linear in t, so writing dddot = M*t with
-    M = qddot^{x} + 0.5*qddot^{x}*q^{x} + qdot^{x}*qdot^{x} + 0.5*q^{x}*qddot^{x},
-    the transpose (using S^{T} = -S for any skew matrix S = a^{x}) is
-    M^{T} = -qddot^{x} + 0.5*q^{x}*qddot^{x} + qdot^{x}*qdot^{x}
+    M = qddot^{x} + 0.5*qddot^{x}*q^{x} + qdot^{x}*qdot^{x} +
+    0.5*q^{x}*qddot^{x}, the transpose (using S^{T} = -S for any skew matrix S =
+    a^{x}) is M^{T} = -qddot^{x} + 0.5*q^{x}*qddot^{x} + qdot^{x}*qdot^{x}
             + 0.5*qddot^{x}*q^{x}
     so
 
@@ -2710,8 +2710,8 @@ class TACSQuaternionRotation {
 
     for (int i = 0; i < num_nodes; i++) {
       TacsScalar Qddot[9];
-      Qddot[0] = -4.0 * (q[2] * qddot[2] + q[3] * qddot[3] +
-                         qdot[2] * qdot[2] + qdot[3] * qdot[3]);
+      Qddot[0] = -4.0 * (q[2] * qddot[2] + q[3] * qddot[3] + qdot[2] * qdot[2] +
+                         qdot[3] * qdot[3]);
       Qddot[1] =
           2.0 * (q[2] * qddot[1] - q[3] * qddot[0] + qddot[2] * q[1] -
                  qddot[3] * q[0] + qdot[2] * qdot[1] - qdot[3] * qdot[0] +
@@ -2725,8 +2725,8 @@ class TACSQuaternionRotation {
           2.0 * (q[1] * qddot[2] + q[3] * qddot[0] + qddot[1] * q[2] +
                  qddot[3] * q[0] + qdot[1] * qdot[2] + qdot[3] * qdot[0] +
                  qdot[1] * qdot[2] + qdot[3] * qdot[0]);
-      Qddot[4] = -4.0 * (q[1] * qddot[1] + q[3] * qddot[3] +
-                         qdot[1] * qdot[1] + qdot[3] * qdot[3]);
+      Qddot[4] = -4.0 * (q[1] * qddot[1] + q[3] * qddot[3] + qdot[1] * qdot[1] +
+                         qdot[3] * qdot[3]);
       Qddot[5] =
           2.0 * (q[3] * qddot[2] - q[1] * qddot[0] + qddot[3] * q[2] -
                  qddot[1] * q[0] + qdot[3] * qdot[2] - qdot[1] * qdot[0] +
@@ -2740,8 +2740,8 @@ class TACSQuaternionRotation {
           2.0 * (q[2] * qddot[3] + q[1] * qddot[0] + qddot[2] * q[3] +
                  qddot[1] * q[0] + qdot[2] * qdot[3] + qdot[1] * qdot[0] +
                  qdot[2] * qdot[3] + qdot[1] * qdot[0]);
-      Qddot[8] = -4.0 * (q[1] * qddot[1] + q[2] * qddot[2] +
-                         qdot[1] * qdot[1] + qdot[2] * qdot[2]);
+      Qddot[8] = -4.0 * (q[1] * qddot[1] + q[2] * qddot[2] + qdot[1] * qdot[1] +
+                         qdot[2] * qdot[2]);
 
       // dt += Qddot^{T} * dd
       dt[0] += Qddot[0] * dd[0] + Qddot[3] * dd[1] + Qddot[6] * dd[2];
