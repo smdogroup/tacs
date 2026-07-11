@@ -215,16 +215,11 @@ class TACSBeamElement : public TACSElement {
                    const TacsScalar *vars, const TacsScalar *dvars,
                    const TacsScalar *ddvars, TacsScalar *res);
 
-  // void addJacobian( int elemIndex, double time,
-  //                   TacsScalar alpha,
-  //                   TacsScalar beta,
-  //                   TacsScalar gamma,
-  //                   const TacsScalar Xpts[],
-  //                   const TacsScalar vars[],
-  //                   const TacsScalar dvars[],
-  //                   const TacsScalar ddvars[],
-  //                   TacsScalar res[],
-  //                   TacsScalar mat[] );
+  void addJacobian(int elemIndex, double time, TacsScalar alpha,
+                   TacsScalar beta, TacsScalar gamma, const TacsScalar Xpts[],
+                   const TacsScalar vars[], const TacsScalar dvars[],
+                   const TacsScalar ddvars[], TacsScalar res[],
+                   TacsScalar mat[]);
 
   void getMatType(ElementMatrixType matType, int elemIndex, double time,
                   const TacsScalar Xpts[], const TacsScalar vars[],
@@ -673,6 +668,212 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
   // rotational parametrization) - if any
   director::template addRotationConstraint<vars_per_node, offset, num_nodes>(
       vars, res);
+}
+
+/*
+  Add the Jacobian of the residual (SPEC.md sec 1.3): a second-order
+  extension of addResidual's own A2D graph, rather than a hand-coded
+  congruence-transform port -- Phase 2, Task 2.1's scaffold.
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
+    int elemIndex, double time, TacsScalar alpha, TacsScalar beta,
+    TacsScalar gamma, const TacsScalar Xpts[], const TacsScalar vars[],
+    const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar res[],
+    TacsScalar mat[]) {
+  // Zero the output buffers (SPEC.md sec 1.3 step 1).
+  memset(mat, 0,
+         vars_per_node * num_nodes * vars_per_node * num_nodes *
+             sizeof(TacsScalar));
+  if (res) {
+    memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  }
+
+  // Task 2.1: setup identical to addResidual's own (SPEC.md sec 1.3 step 2).
+  // mat is intentionally left all-zero at this checkpoint -- the A2D
+  // hforward/hreverse sweep that populates it lands in Task 2.2.
+  const int nquad = quadrature::getNumQuadraturePoints();
+
+  const A2D::Vec3 &axis = transform->getRefAxis();
+
+  TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+  TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
+  TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize];
+  TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize];
+  director::template computeDirectorRates<vars_per_node, offset,
+                                          basis::NUM_NODES>(
+      vars, dvars, ddvars, fn1, d1, d1dot, d1ddot);
+  director::template computeDirectorRates<vars_per_node, offset,
+                                          basis::NUM_NODES>(
+      vars, dvars, ddvars, fn2, d2, d2dot, d2ddot);
+
+  TacsScalar d1d[dsize], d2d[dsize];
+  memset(d1d, 0, dsize * sizeof(TacsScalar));
+  memset(d2d, 0, dsize * sizeof(TacsScalar));
+
+  TacsScalar ety[basis::NUM_TYING_POINTS];
+  model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn1, fn2, vars,
+                                                            d1, d2, ety);
+
+  TacsScalar dety[basis::NUM_TYING_POINTS];
+  memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+
+  for (int quad_index = 0; quad_index < nquad; quad_index++) {
+    double pt[3];
+    double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+    A2D::Mat3x3 T;
+    A2D::Vec3 X0;
+    A2D::Vec3 X0xi;
+    A2D::Vec3 n1, n2;
+    A2D::Vec3 n1xi, n2xi;
+
+    A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
+
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
+    basis::template interpFields<3, 3>(pt, d1, d01.x);
+    basis::template interpFields<3, 3>(pt, d2, d02.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+
+    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+    basis::template interpFields<3, 3>(pt, fn1, n1.x);
+    basis::template interpFields<3, 3>(pt, fn2, n2.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+
+    transform->computeTransform(X0xi.x, T.A);
+
+    A2D::Mat3x3 Xd, Xdinv;
+    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+
+    A2D::Scalar detXd;
+    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+
+    A2D::Mat3x3 XdinvT;
+    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+
+    A2D::ADMat3x3 u0d;
+    A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
+
+    A2D::ADMat3x3 u0dXdinvT, u0x;
+    A2D::ADMat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
+    A2D::MatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
+
+    A2D::Scalar s0, sz1, sz2;
+    A2D::Vec3 e1(1.0, 0.0, 0.0);
+    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+
+    A2D::ADVec3 d1t, d1x;
+    A2D::ADVec3ADVecScalarAxpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
+    A2D::MatTrans3x3ADVecMultScale matmultd1x(s0, T, d1t, d1x);
+
+    A2D::ADVec3 d2t, d2x;
+    A2D::ADVec3ADVecScalarAxpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
+    A2D::MatTrans3x3ADVecMultScale matmultd2x(s0, T, d2t, d2x);
+
+    TacsScalar gty[2];
+    basis::interpTyingStrain(pt, ety, gty);
+
+    TacsScalar e0ty[2], de0ty[2];
+    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+
+    TacsScalar e[6];
+    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+
+    TacsScalar s[6];
+    con->evalStress(elemIndex, pt, X0.x, e, s);
+
+    // NEW: materialize the tangent stiffness (SPEC.md sec 1.3 step 3's
+    // model-layer-coupling bullet) -- neither addResidual nor
+    // computeEnergies ever call this; it is consumed starting Task 2.2
+    // by model::evalStrainHessian, not by this scaffold task.
+    TacsScalar Cs[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
+    con->evalTangentStiffness(elemIndex, pt, X0.x, Cs);
+
+    model::evalStrainSens(detXd.value, s, u0x.A, d1x.x, d2x.x, e0ty, u0x.Ad,
+                          d1x.xd, d2x.xd, de0ty);
+
+    TacsScalar dgty[2];
+    dgty[0] = 2.0 * XdinvT.A[0] * de0ty[0];
+    dgty[1] = 2.0 * XdinvT.A[0] * de0ty[1];
+
+    matmultd2x.reverse();
+    axpyd2t.reverse();
+    matmultd1x.reverse();
+    axpyd1t.reverse();
+    multu0x.reverse();
+    multu0d.reverse();
+    assembleu0d.reverse();
+
+    if (res) {
+      basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(
+          pt, u0xi.xd, res);
+    }
+
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xd, d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xd, d2d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xd, d1d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xd, d2d);
+
+    basis::addInterpTyingStrainTranspose(pt, dgty, dety);
+
+    A2D::ADVec3 u0ddot, d01ddot, d02ddot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot.x);
+    basis::template interpFields<3, 3>(pt, d1ddot, d01ddot.x);
+    basis::template interpFields<3, 3>(pt, d2ddot, d02ddot.x);
+
+    A2D::ADScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    A2D::ADVec3Dot u0ddot0(u0ddot, u0ddot, u0d0);
+    A2D::ADVec3Dot u0d1dot(u0ddot, d01ddot, u0d10);
+    A2D::ADVec3Dot u0d2dot(u0ddot, d02ddot, u0d20);
+    A2D::ADVec3Dot d1d1dot(d01ddot, d01ddot, d1d10);
+    A2D::ADVec3Dot d2d2dot(d02ddot, d02ddot, d2d20);
+    A2D::ADVec3Dot d2d1dot(d01ddot, d02ddot, d1d20);
+
+    TacsScalar rho[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+
+    u0d0.valued = 0.5 * rho[0] * detXd.value;
+    u0d10.valued = rho[1] * detXd.value;
+    u0d20.valued = rho[2] * detXd.value;
+    d1d10.valued = 0.5 * rho[3] * detXd.value;
+    d2d20.valued = 0.5 * rho[4] * detXd.value;
+    d1d20.valued = rho[5] * detXd.value;
+
+    d2d1dot.reverse();
+    d2d2dot.reverse();
+    d1d1dot.reverse();
+    u0d2dot.reverse();
+    u0d1dot.reverse();
+    u0ddot0.reverse();
+
+    if (res) {
+      basis::template addInterpFieldsTranspose<vars_per_node, 3>(
+          pt, u0ddot.xd, res);
+    }
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddot.xd, d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddot.xd, d2d);
+  }
+
+  if (res) {
+    model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
+        Xpts, fn1, fn2, vars, d1, d2, dety, res, d1d, d2d);
+
+    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
+        vars, dvars, ddvars, fn1, d1d, res);
+    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
+        vars, dvars, ddvars, fn2, d2d, res);
+
+    director::template addRotationConstraint<vars_per_node, offset, num_nodes>(
+        vars, res);
+  }
 }
 
 template <class quadrature, class basis, class director, class model>
