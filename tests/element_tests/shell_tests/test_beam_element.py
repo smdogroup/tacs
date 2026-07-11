@@ -176,6 +176,36 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
+    def test_quantity_xpt_sens(self):
+        # Loop through every combination of transform type and beam element
+        # class and test the point-quantity Xpts-sensitivity (SPEC.md sec
+        # 3.1, Phase 3 Task 3.2). TACS_ELEMENT_MOMENT_OF_INERTIA is the only
+        # quantity type this feature brings in scope for
+        # addPointQuantityXptSens; the other quantity types
+        # (TACS_ELEMENT_DENSITY_MOMENT, TACS_FAILURE_INDEX,
+        # TACS_STRAIN_ENERGY_DENSITY) were already analytic before this
+        # feature and are not re-verified here.
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        fail = elements.TestElementQuantityXptSens(
+                            element,
+                            self.elem_index,
+                            elements.ELEMENT_MOMENT_OF_INERTIA,
+                            self.time,
+                            self.xpts,
+                            self.vars,
+                            self.dvars,
+                            self.ddvars,
+                            self.dh,
+                            self.print_level,
+                            self.atol,
+                            self.rtol,
+                        )
+                        self.assertFalse(fail)
+
     @unittest.SkipTest
     def test_element_mat_dv_sens(self):
         # Loop through every combination of transform type and beam element class and element matrix inner product sens

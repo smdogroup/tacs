@@ -2600,10 +2600,93 @@ void TACSBeamElement<quadrature, basis, director, model>::
       n2.xd[i] = -mass_moment[1] * dfdq[i];
     }
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
-    TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale,
-                                         n, pt, Xpts, vars, dvars, ddvars,
-                                         dfddetXd, dfdq, dfdXpts);
-    return;
+    // Analytic Xpts-sensitivity (SPEC.md sec 3.1; PLAN.md Phase 3 Task
+    // 3.2). Differentiates evalPointQuantity's own forward formula
+    // (TACSBeamElement.h:1939-1968) directly -- moments =
+    // con->evalMassMoments(...) and hence I0[3..5] are Xpts-independent
+    // (a per-quadrature-point constitutive evaluation, not a function of
+    // node location), so quantity = T*I0*T^T + parallel_axis(dXcg) has
+    // exactly two independent Xpts-dependent paths: T (via X0xi) and
+    // dXcg (via X0/n1/n2). No new algebra primitive is needed for
+    // either -- both reduce to plain 3x3 matrix arithmetic plus the
+    // EXISTING T (T is already an A2D::ADMat3x3 participating in this
+    // function's shared forward/reverse graph below) and
+    // transform->addTransformSens machinery the common tail already
+    // calls (TACSBeamElement.h:2638, unchanged).
+    TacsScalar moments[6];
+    con->evalMassMoments(elemIndex, pt, X0.x, moments);
+    TacsScalar density = moments[0];
+
+    TacsScalar I0[6] = {0.0};
+    I0[3] = moments[4] - moments[2] * moments[2] / density;
+    I0[4] = -moments[5] + moments[1] * moments[2] / density;
+    I0[5] = moments[3] - moments[1] * moments[1] / density;
+
+    // (1) T-dependent path: quantity_self = T*I0*T^T (I0 fixed, since it
+    // has no Xpts-dependence). For f = D:quantity_self (D the packed-
+    // symmetric adjoint dfdq, unpacked to a full 3x3), matrix calculus
+    // gives df/dT = 2*D*T*I0 -- seed this directly into T.Ad (T already
+    // participates in the shared A2D graph below; transform-
+    // >addTransformSens(X0xi.x, T.Ad, X0xi.xd) in the common tail
+    // converts T.Ad into the X0xi (hence Xpts) adjoint, unchanged).
+    //
+    // dfdq is packed-symmetric (6 slots: xx,xy,xz,yy,yz,zz), with
+    // f = sum_k dfdq[k]*quantity[k] -- each off-diagonal slot counted
+    // ONCE (matching every other quantity type in this function, e.g.
+    // TACS_ELEMENT_DENSITY_MOMENT's plain per-component dfdq[i] usage
+    // above). Unpacking dfdq into a full symmetric 3x3 matrix D such
+    // that sum_ij D_ij*A_ij reproduces that same packed sum requires
+    // HALVING the off-diagonal entries (verified via a standalone FD
+    // check before wiring this in: mirroring dfdq[1] into BOTH D[0][1]
+    // and D[1][0] at full value double-counts the off-diagonal
+    // contribution by a factor of 2).
+    // Every dfdq-driven contribution below is additionally scaled by
+    // "scale" (TacsTestElementQuantityXptSens draws a random, generically
+    // nonzero scale and folds it into its own FD reference exactly this
+    // way, TACSElementVerification.cpp:1678-1707 -- confirmed by reading
+    // the harness directly after an initial 2x-ish-looking mismatch
+    // turned out to be 1/scale, not a sign/formula error).
+    TacsScalar Dmat[9] = {
+        scale * dfdq[0],       scale * 0.5 * dfdq[1], scale * 0.5 * dfdq[2],
+        scale * 0.5 * dfdq[1], scale * dfdq[3],       scale * 0.5 * dfdq[4],
+        scale * 0.5 * dfdq[2], scale * 0.5 * dfdq[4], scale * dfdq[5]};
+    TacsScalar I0mat[9] = {I0[0], I0[1], I0[2], I0[1], I0[3],
+                           I0[4], I0[2], I0[4], I0[5]};
+    TacsScalar TI0[9], DTI0[9];
+    A2D::Mat3x3MatMultCore(T.A, I0mat, TI0);
+    A2D::Mat3x3MatMultCore(Dmat, TI0, DTI0);
+    for (int i = 0; i < 9; i++) {
+      T.Ad[i] += 2.0 * DTI0[i];
+    }
+
+    // (2) dXcg-dependent path: the parallel-axis contribution is the
+    // point-mass inertia tensor of a point of mass "density" located at
+    // dXcg = X0 - (moments[1]*n1 + moments[2]*n2)/density:
+    // quantity_parallel = density*(|dXcg|^2*Identity - dXcg (x) dXcg).
+    // For f = D:quantity_parallel, df/d(dXcg) =
+    // 2*density*(tr(D)*dXcg - D*dXcg); dXcg is linear in X0/n1/n2, so
+    // this seeds X0.xd/n1.xd/n2.xd directly (mirroring the existing
+    // TACS_ELEMENT_DENSITY_MOMENT branch's identical seed-then-fall-
+    // through pattern just above).
+    TacsScalar dXcg[3];
+    for (int i = 0; i < 3; i++) {
+      dXcg[i] =
+          X0.x[i] - (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density;
+    }
+    TacsScalar trD = Dmat[0] + Dmat[4] + Dmat[8];
+    TacsScalar Dr[3];
+    A2D::Mat3x3VecMultCore(Dmat, dXcg, Dr);
+
+    TacsScalar dfdr[3];
+    for (int i = 0; i < 3; i++) {
+      dfdr[i] = 2.0 * density * (trD * dXcg[i] - Dr[i]);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      X0.xd[i] = dfdr[i];
+      n1.xd[i] = -dfdr[i] * moments[1] / density;
+      n2.xd[i] = -dfdr[i] * moments[2] / density;
+    }
   }
 
   // Evaluate the strain and strain derivatives from the
