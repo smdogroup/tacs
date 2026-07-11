@@ -724,6 +724,27 @@ class MatTrans3x3ADMatMult {
       Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C =
+  // scale*A^T*B is LINEAR in its one active input B (A is a passive
+  // Mat3x3), so hforward/hreverse are exactly forward()/reverse()'s
+  // formulas with Bp/Cp (resp. Bh/Ch) substituted for Bd/Cd -- no
+  // additional cross term (same structural reasoning as ADMat3x3MatMult,
+  // Task 1.5). Verified in
+  // a2d/tests/test_mattrans3x3admatmult_second_order.cpp.
+  void hforward() {
+    if (TacsRealPart(scale) == 1.0) {
+      MatTrans3x3MatMultCore(A.A, B.Ap, C.Ap);
+    } else {
+      MatTrans3x3MatMultScaleCore(scale, A.A, B.Ap, C.Ap);
+    }
+  }
+  void hreverse() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatMultAddCore(A.A, C.Ah, B.Ah);
+    } else {
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ah, B.Ah);
+    }
+  }
 
   const TacsScalar scale;
   const Mat3x3 &A;
