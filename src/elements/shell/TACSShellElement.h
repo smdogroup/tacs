@@ -2772,6 +2772,26 @@ void TACSShellElement<quadrature, basis, director, model>::
                                           Xpts, vars, dfdu);
     return;
   } else if (matType == TACS_STIFFNESS_MATRIX) {
+    // Deferred: see docs/plans/feature-shell-element-sens/HANDOFF-task-4.md
+    // ("Task 4.3" section, follow-up update). A working analytic
+    // implementation was derived and validated to ~1e-8 relative accuracy
+    // against getMatType/FD for TACSLinearizedRotation + both linear and
+    // nonlinear model classes on most elements (the psi^T*K*phi decomposition
+    // from addMatDVSensInnerProduct, differentiated w.r.t. vars instead of
+    // design variables - no Xpts-style geometric adjoint chain is needed
+    // here, since model::evalStrain's Hessian is a vars-independent constant
+    // for every model class; the only additional piece beyond
+    // addMatDVSensInnerProduct's machinery is that psiU/phiU's own e0ty
+    // component is NOT vars-independent for the nonlinear tying-strain
+    // formulas, requiring a second application of the polarization-identity
+    // trick, scattered into dfdu via model::addComputeTyingStrainTranspose).
+    // However, a small (~1e-6 absolute, order 1e2-1e4x the test's atol)
+    // residual remains specifically for higher-order quad elements
+    // (Quad9Shell/Quad16Shell) under a LINEAR strain model, where SPEC
+    // requires an exact zero - root cause not found before this session's
+    // time budget ran out. Rather than ship a branch known to fail SPEC's
+    // exact-zero contract for some elements, this forwards to the
+    // base-class FD/CS implementation for all elements pending that fix.
     TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                           Xpts, vars, dfdu);
     return;
