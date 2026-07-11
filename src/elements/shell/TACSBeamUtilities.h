@@ -209,6 +209,16 @@ void TacsBeamAddCrossDirectorJacobian(const TacsScalar vars[],
           int col = offset + vars_per_node * j + q;
           mat[row * nvars + col] -= D[3 * p + q];
 
+          // Reusing the SAME D[3*p+q] value (rather than a separately
+          // computed transpose) for the (j,i) slot is valid only because
+          // this model's d2d1d2 3x3 node-pair blocks are themselves always
+          // symmetric (block[p,q] == block[q,p]): the static contribution
+          // is a rank-1 t1 (tangent) outer product with itself (SPEC.md
+          // sec 1.3.2's derivation), and the dynamics contribution is
+          // rho[5]*I3 -- both trivially symmetric 3x3 blocks. A future
+          // kinematics change that made d2d1d2's node-pair blocks
+          // non-symmetric would need a genuinely separate transposed
+          // computation here, not this shortcut.
           int rowT = offset + vars_per_node * j + q;
           int colT = offset + vars_per_node * i + p;
           mat[rowT * nvars + colT] -= D[3 * p + q];

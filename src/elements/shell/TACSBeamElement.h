@@ -1245,6 +1245,11 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
   for (int i = 0; i < dsize * dsize; i++) {
     d2d1d2[i] += gamma * d2Tdotd1d2[i];
   }
+  // Exact only for TACSLinearizedRotation (the only director class
+  // instantiated here today) -- see TacsBeamAddCrossDirectorJacobian's own
+  // docstring (TACSBeamUtilities.h) for the full scope-boundary rationale
+  // before wiring this call up for TACSQuadraticRotation/
+  // TACSQuaternionRotation.
   TacsBeamAddCrossDirectorJacobian<vars_per_node, offset, num_nodes>(
       vars, fn1, fn2, d2d1d2, mat);
 
