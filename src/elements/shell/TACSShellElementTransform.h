@@ -129,8 +129,17 @@ class TACSShellNaturalTransform : public TACSShellTransform {
     t1[1] = t1_orig[1];
     t1[2] = t1_orig[2];
 
+    // Guard against an exactly-degenerate in-plane projection, matching the
+    // same zero-guarded-normalize idiom applied in TACSShellRefAxisTransform
+    // below (see that class's addTransformSens for the full NaN-propagation
+    // rationale): without this guard, a t1 that lands exactly on the zero
+    // vector produces t1n = 0.0*Inf = NaN, which then survives multiplying
+    // an exactly-zero incoming seed (NaN*0.0 = NaN, not 0.0).
     TacsScalar t1nrm = sqrt(vec3Dot(t1, t1));
-    TacsScalar t1inv = 1.0 / t1nrm;
+    TacsScalar t1inv = 0.0;
+    if (t1nrm != 0.0) {
+      t1inv = 1.0 / t1nrm;
+    }
     TacsScalar t1n[3];
     t1n[0] = t1[0] * t1inv;
     t1n[1] = t1[1] * t1inv;
@@ -332,8 +341,22 @@ class TACSShellRefAxisTransform : public TACSShellTransform {
     t1[1] = axis[1] - an * n[1];
     t1[2] = axis[2] - an * n[2];
 
+    // Guard against an exactly-degenerate in-plane projection (reference
+    // axis exactly parallel to the shell normal -- the same ill-conditioned
+    // case computeTransform() warns about above). Without this guard,
+    // t1inv = 1.0/0.0 = +Inf and t1n = t1*t1inv degrades to 0.0*Inf = NaN
+    // even though t1 is exactly the zero vector; that NaN then survives a
+    // multiply by an exactly-zero incoming seed (NaN*0.0 = NaN, not 0.0 in
+    // IEEE 754) a few lines below, corrupting dn/dt1n even when the caller
+    // passed dT = 0 (as every geometry-only addPointQuantityXptSens branch
+    // does). Mirrors the same zero-guarded-normalize idiom already used by
+    // vec3NormalizeSens (TACSElementAlgebra.h) and by this class's own
+    // constructor/TacsShellComputeNodeNormals.
     TacsScalar t1nrm = sqrt(vec3Dot(t1, t1));
-    TacsScalar t1inv = 1.0 / t1nrm;
+    TacsScalar t1inv = 0.0;
+    if (t1nrm != 0.0) {
+      t1inv = 1.0 / t1nrm;
+    }
     TacsScalar t1n[3];
     t1n[0] = t1[0] * t1inv;
     t1n[1] = t1[1] * t1inv;
