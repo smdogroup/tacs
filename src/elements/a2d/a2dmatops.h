@@ -453,6 +453,17 @@ class ADMat3x3MatMult {
   // only one active input and the op is linear in it (E6's zero-self-
   // Hessian finding for this op-class; verified in
   // a2d/tests/test_admat3x3matmult_second_order.cpp).
+  //
+  // Deviation note (Phase 1 review): the TacsRealPart(scale)==1.0 branch
+  // below mirrors forward()/reverse()'s pre-existing branch verbatim and
+  // is a literal instance of the pattern SPEC.md sec 1.2.4 binds against
+  // ("no TacsRealPart()-gated branching... breaks complex-step
+  // differentiability"). It is safe here: scale is a passive TacsScalar
+  // constructor argument (always a real literal, e.g. 1.0 or -1.0, at
+  // every call site in this feature), never an active/complex-step-
+  // perturbed quantity -- branching on it cannot discard a perturbation
+  // that scale never carries. Not restructured, since it exactly mirrors
+  // the identical, already-accepted branch in forward()/reverse() above.
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
@@ -731,6 +742,17 @@ class MatTrans3x3ADMatMult {
   // additional cross term (same structural reasoning as ADMat3x3MatMult,
   // Task 1.5). Verified in
   // a2d/tests/test_mattrans3x3admatmult_second_order.cpp.
+  //
+  // Deviation note (Phase 1 review): the TacsRealPart(scale)==1.0 branch
+  // below mirrors forward()/reverse()'s pre-existing branch verbatim and
+  // is a literal instance of the pattern SPEC.md sec 1.2.4 binds against
+  // ("no TacsRealPart()-gated branching... breaks complex-step
+  // differentiability"). It is safe here: scale is a passive TacsScalar
+  // constructor argument (always a real literal at every call site in
+  // this feature), never an active/complex-step-perturbed quantity --
+  // branching on it cannot discard a perturbation that scale never
+  // carries. Not restructured, since it exactly mirrors the identical,
+  // already-accepted branch in forward()/reverse() above.
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       MatTrans3x3MatMultCore(A.A, B.Ap, C.Ap);
