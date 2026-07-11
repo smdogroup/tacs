@@ -265,6 +265,30 @@ class ADVec3Dot {
     y.xd[1] += s * x.x[1];
     y.xd[2] += s * x.x[2];
   }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): alpha =
+  // scale*(x.x . y.x) is bilinear in (x, y), so both hforward and hreverse
+  // carry cross terms between the two active inputs.
+  //
+  // hforward: product-rule directional derivative of forward()'s formula,
+  // seed (xp/yp) substituted for the tangent (xd/yd).
+  void hforward() {
+    alpha.valuep = scale * (Vec3DotCore(x.x, y.xp) + Vec3DotCore(x.xp, y.x));
+  }
+  // hreverse: reverse()'s adjoint shape (using the second-order valueh
+  // accumulator) plus one seed-cross-term per input, reflecting the
+  // bilinear coupling between x and y (see SPEC.md sec 1.2.2's ADVec3Dot
+  // worked example; verified in a2d/tests/test_advec3dot_second_order.cpp).
+  void hreverse() {
+    TacsScalar sh = scale * alpha.valueh;
+    TacsScalar sd = scale * alpha.valued;
+    x.xh[0] += sh * y.x[0] + sd * y.xp[0];
+    x.xh[1] += sh * y.x[1] + sd * y.xp[1];
+    x.xh[2] += sh * y.x[2] + sd * y.xp[2];
+
+    y.xh[0] += sh * x.x[0] + sd * x.xp[0];
+    y.xh[1] += sh * x.x[1] + sd * x.xp[1];
+    y.xh[2] += sh * x.x[2] + sd * x.xp[2];
+  }
 
   const TacsScalar scale;
   ADVec3 &x;
