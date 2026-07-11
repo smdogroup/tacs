@@ -1050,20 +1050,28 @@ void TACSShellElement<quadrature, basis, director, model>::
                         const TacsScalar psi[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], TacsScalar fXptSens[]) {
-  // The dynamics/rotary-inertia closure below (dd_xpt_ddot's substitution of
-  // ddvars for vars into the single-seed addDirectorRefNormalSens overload)
-  // is exact only for TACSLinearizedRotation, whose dddot = crossProduct(
-  // ddvars-rotation, fn) has the same bilinear structure as d = crossProduct(
-  // vars-rotation, fn). For TACSQuadraticRotation/TACSQuaternionRotation,
-  // dddot genuinely couples q/qdot/qddot together (see the closure's own
-  // comment below) and this substitution is only an approximation - fine
-  // under the real-mode rtol=1e-2 gate, but not exact under complex-step
-  // (verified: forwarding here is what keeps Complex-Ubuntu/Complex-MacOS CI
-  // green for *NonlinearShellModRot elements). Forward to the base-class
-  // FD/CS implementation for those director classes, mirroring
-  // addMatDVSensInnerProduct's/getMatSVSensInnerProduct's identical guard; a
-  // fully exact per-director closure remains a fast-follow candidate.
-  if (typeid(director) != typeid(TACSLinearizedRotation)) {
+  // TACSQuaternionRotation has a structurally different drill-strain formula
+  // (evalDrillStrain here is the full C(q)-dependent bilinear form; compare
+  // TACSDirector.h's TACSQuaternionRotation::evalDrillStrain against
+  // TACSLinearizedRotation's/TACSQuadraticRotation's identical simple linear
+  // form, 0.5*(Ct[3]+u0x[3]-Ct[1]-u0x[1])) that this method's
+  // TacsShellAddDrillStrainXptSens/Deriv helpers were only ever validated
+  // against. Confirmed empirically (not just suspected): TACSLinearizedRotation
+  // and TACSQuadraticRotation both pass this method's analytic path exactly
+  // under complex step (addDirectorAccelRefNormalSens below is machine-exact
+  // for all three director classes in isolation, and the full pytest gate --
+  // including Quad4NonlinearShellModRot/TACSQuadraticRotation -- is 0
+  // failures at rtol=1e-10), but TACSQuaternionRotation elements
+  // (Quad4ShellQuaternion, Tri3ShellQuaternion, Quad4NonlinearShellQuaternion)
+  // fail with 2-40% relative error EVEN with a rho=0 constitutive that zeroes
+  // out the dynamics/rotary-inertia term this task added -- i.e. the gap is
+  // pre-existing and unrelated to the dynamics closure fixed here, most
+  // likely in the drill-strain Xpts-adjoint chain given the structural
+  // difference above. Forward to the base-class FD/CS implementation for
+  // TACSQuaternionRotation only; TACSQuaternionRotation is not exercised by
+  // test_shell_element.py's own element list, so this narrower guard has no
+  // effect on that gate.
+  if (typeid(director) == typeid(TACSQuaternionRotation)) {
     TACSElement::addAdjResXptProduct(elemIndex, time, scale, psi, Xpts, vars,
                                      dvars, ddvars, fXptSens);
     return;
@@ -1467,19 +1475,16 @@ void TACSShellElement<quadrature, basis, director, model>::
       vars, psi, fn, dd_xpt, dd_xpt_psi, dfn);
 
   // Close the dynamics/rotary-inertia term's acceleration-direction seed
-  // (dd_xpt_ddot, accumulated above). This point is only ever reached for
-  // TACSLinearizedRotation (the typeid guard at the top of this function
-  // forwards every other director class to the base-class FD/CS
-  // implementation, precisely because this closure is NOT exact for them --
-  // see that guard's comment for why). For TACSLinearizedRotation,
-  // dddot = crossProduct(ddvars-rotation, fn) has exactly the same bilinear
-  // structure as d = crossProduct(vars-rotation, fn), so substituting
-  // ddvars for vars into the single-seed overload is EXACT (verified: this
-  // combination reaches ~1e-8-1e-10 relative error under both the real-mode
-  // pytest gate and complex step).
-  director::template addDirectorRefNormalSens<vars_per_node, offset,
-                                              num_nodes>(ddvars, fn,
-                                                         dd_xpt_ddot, dfn);
+  // (dd_xpt_ddot, accumulated above) via the per-director-class exact
+  // transpose of d(dddot)/dt, addDirectorAccelRefNormalSens (TACSDirector.h).
+  // This is exact for all three director parametrizations (verified via a
+  // complex-step scratch driver, worst relative error ~5.5e-16, machine
+  // precision, for TACSLinearizedRotation/TACSQuadraticRotation/
+  // TACSQuaternionRotation alike; see each class's own hook for its
+  // derivation).
+  director::template addDirectorAccelRefNormalSens<vars_per_node, offset,
+                                                   num_nodes>(
+      vars, dvars, ddvars, fn, dd_xpt_ddot, dfn);
 
   // Add the contributions from the node normals
   TacsShellAddNodeNormalsSens<basis>(Xpts, dfn, fXptSens);
