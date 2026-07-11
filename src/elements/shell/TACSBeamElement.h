@@ -2089,8 +2089,170 @@ void TACSBeamElement<quadrature, basis, director, model>::
                               const TacsScalar psi[], const TacsScalar phi[],
                               const TacsScalar Xpts[], const TacsScalar vars[],
                               TacsScalar dfdXpts[]) {
-  TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi,
-                                         phi, Xpts, vars, dfdXpts);
+  if (matType != TACS_MASS_MATRIX) {
+    // TACS_STIFFNESS_MATRIX: temporarily forwarded pending Task 4.3's
+    // analytic derivation (SPEC.md sec 2.3.1). TACS_GEOMETRIC_STIFFNESS_MATRIX
+    // and any future matType: interim explicit-forward-to-base (SPEC.md sec
+    // 4.1/4.2/4.3), superseded by Phase 5 for the former.
+    TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi,
+                                           phi, Xpts, vars, dfdXpts);
+    return;
+  }
+
+  // TACS_MASS_MATRIX: no strain/stiffness path (SPEC.md sec 2.2 point 3) --
+  // the mass matrix's Xpts-dependence flows through detXd(Xpts) (direct)
+  // and through the psi/phi-direction director fields' own dependence on
+  // Xpts via fn1/fn2 (the director map's reference-normal argument,
+  // TacsBeamComputeNodeNormals(Xpts, axis, fn1, fn2)) -- mirrors
+  // addAdjResXptProduct's own director-Xpts-adjoint chain
+  // (TacsBeamAddNodeNormalsSens/director::addDirectorRefNormalSens), but
+  // without the strain/tying-strain/transform kinematics the stiffness
+  // branch needs (the mass matrix's dynamics blocks in addJacobian never
+  // touch Xdinv/T/e0ty at all).
+  const int nquad = quadrature::getNumQuadraturePoints();
+  const A2D::Vec3 &axis = transform->getRefAxis();
+
+  TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+  TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
+  TacsScalar dfn1[3 * basis::NUM_NODES], dfn2[3 * basis::NUM_NODES];
+  memset(dfn1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+  memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+
+  // psi-direction and phi-direction director fields, linearized about the
+  // real vars (same reuse as Task 4.1's DV-sens branch).
+  TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
+  TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, psi, fn1, d1, d1dot, d1ddot, d1psi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, phi, fn1, d1, d1dot, d1ddot, d1phi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, psi, fn2, d2, d2dot, d2ddot, d2psi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, phi, fn2, d2, d2dot, d2ddot, d2phi);
+
+  // Per-node accumulators for the director-field Xpts-adjoint (weight on
+  // d1phi/d1psi/d2phi/d2psi's own dependence on fn1/fn2), separate from the
+  // direct detXd contribution below.
+  TacsScalar dd1phi[dsize], dd1psi[dsize], dd2phi[dsize], dd2psi[dsize];
+  memset(dd1phi, 0, dsize * sizeof(TacsScalar));
+  memset(dd1psi, 0, dsize * sizeof(TacsScalar));
+  memset(dd2phi, 0, dsize * sizeof(TacsScalar));
+  memset(dd2psi, 0, dsize * sizeof(TacsScalar));
+
+  for (int quad_index = 0; quad_index < nquad; quad_index++) {
+    double pt[3];
+    double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+    TacsScalar X0[3];
+    basis::template interpFields<3, 3>(pt, Xpts, X0);
+
+    A2D::ADVec3 X0xi, n1, n2;
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+    basis::template interpFields<3, 3>(pt, fn1, n1.x);
+    basis::template interpFields<3, 3>(pt, fn2, n2.x);
+
+    // The mass matrix needs no reference-axis transform, no Xdinv/XdinvT,
+    // and no tying strain -- only detXd(Xpts), matching addJacobian's own
+    // dynamics blocks (gamma-path), which are built from detXd alone.
+    A2D::ADMat3x3 Xd;
+    A2D::ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
+    A2D::ADScalar detXd;
+    A2D::ADMat3x3Det computedetXd(weight, Xd, detXd);
+
+    TacsScalar u0psi[3], u0phi[3];
+    basis::template interpFields<vars_per_node, 3>(pt, psi, u0psi);
+    basis::template interpFields<vars_per_node, 3>(pt, phi, u0phi);
+
+    TacsScalar d1psiv[3], d1phiv[3], d2psiv[3], d2phiv[3];
+    basis::template interpFields<3, 3>(pt, d1psi, d1psiv);
+    basis::template interpFields<3, 3>(pt, d1phi, d1phiv);
+    basis::template interpFields<3, 3>(pt, d2psi, d2psiv);
+    basis::template interpFields<3, 3>(pt, d2phi, d2phiv);
+
+    TacsScalar rho[6];
+    con->evalMassMoments(elemIndex, pt, X0, rho);
+
+    TacsScalar g = rho[0] * (u0psi[0] * u0phi[0] + u0psi[1] * u0phi[1] +
+                             u0psi[2] * u0phi[2]) +
+                   rho[1] * (u0psi[0] * d1phiv[0] + u0psi[1] * d1phiv[1] +
+                             u0psi[2] * d1phiv[2] + d1psiv[0] * u0phi[0] +
+                             d1psiv[1] * u0phi[1] + d1psiv[2] * u0phi[2]) +
+                   rho[2] * (u0psi[0] * d2phiv[0] + u0psi[1] * d2phiv[1] +
+                             u0psi[2] * d2phiv[2] + d2psiv[0] * u0phi[0] +
+                             d2psiv[1] * u0phi[1] + d2psiv[2] * u0phi[2]) +
+                   rho[3] * (d1psiv[0] * d1phiv[0] + d1psiv[1] * d1phiv[1] +
+                             d1psiv[2] * d1phiv[2]) +
+                   rho[4] * (d2psiv[0] * d2phiv[0] + d2psiv[1] * d2phiv[1] +
+                             d2psiv[2] * d2phiv[2]) +
+                   rho[5] * (d1psiv[0] * d2phiv[0] + d1psiv[1] * d2phiv[1] +
+                             d1psiv[2] * d2phiv[2] + d2psiv[0] * d1phiv[0] +
+                             d2psiv[1] * d1phiv[1] + d2psiv[2] * d1phiv[2]);
+
+    // detXd-direction term (piece 1-style, mirrors addAdjResXptProduct).
+    detXd.valued = scale * g;
+
+    // Director-field-direction term: d(g)/d(d1phi/d1psi/d2phi/d2psi),
+    // scaled by scale*detXd, propagated through addInterpFieldsTranspose
+    // into the per-node buffers, then (after the loop)
+    // addDirectorRefNormalSens/TacsBeamAddNodeNormalsSens into dfdXpts --
+    // exactly mirroring how addAdjResXptProduct routes its own dd1/dd2
+    // buffers.
+    TacsScalar coef = scale * detXd.value;
+    TacsScalar wd1phi[3], wd1psi[3], wd2phi[3], wd2psi[3];
+    for (int k = 0; k < 3; k++) {
+      wd1phi[k] =
+          coef * (rho[1] * u0psi[k] + rho[3] * d1psiv[k] + rho[5] * d2psiv[k]);
+      wd1psi[k] =
+          coef * (rho[1] * u0phi[k] + rho[3] * d1phiv[k] + rho[5] * d2phiv[k]);
+      wd2phi[k] =
+          coef * (rho[2] * u0psi[k] + rho[4] * d2psiv[k] + rho[5] * d1psiv[k]);
+      wd2psi[k] =
+          coef * (rho[2] * u0phi[k] + rho[4] * d2phiv[k] + rho[5] * d1phiv[k]);
+    }
+    basis::template addInterpFieldsTranspose<3, 3>(pt, wd1phi, dd1phi);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, wd1psi, dd1psi);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, wd2phi, dd2phi);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, wd2psi, dd2psi);
+
+    computedetXd.reverse();
+    assembleXd.reverse();
+
+    basis::template addInterpFieldsGradTranspose<3, 3>(pt, X0xi.xd, dfdXpts);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, n1.xd, dfn1);
+    basis::template addInterpFieldsTranspose<3, 3>(pt, n2.xd, dfn2);
+  }
+
+  // Route the psi-direction/phi-direction director fields' own Xpts-sens
+  // through the reference normal (TACSLinearizedRotation only -- see the
+  // note above the single-arg addDirectorRefNormalSens overload; for
+  // TACSLinearizedRotation the director-map Jacobian is constant, so
+  // treating phi/psi as independent "vars" arguments in two separate
+  // single-direction calls is exact. This is NOT verified for
+  // TACSQuadraticRotation/TACSQuaternionRotation -- the general two-
+  // direction case would need the director's own curvature (second
+  // derivative) term, which this feature's A2D machinery does not build
+  // (out of scope, same risk flagged in SPEC.md sec 2.2/3.3 for
+  // getMatSVSensInnerProduct).
+  director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                              basis::NUM_NODES>(phi, fn1,
+                                                                dd1phi, dfn1);
+  director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                              basis::NUM_NODES>(psi, fn1,
+                                                                dd1psi, dfn1);
+  director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                              basis::NUM_NODES>(phi, fn2,
+                                                                dd2phi, dfn2);
+  director::template addDirectorRefNormalSens<vars_per_node, offset,
+                                              basis::NUM_NODES>(psi, fn2,
+                                                                dd2psi, dfn2);
+
+  TacsBeamAddNodeNormalsSens<basis>(Xpts, axis, dfn1, dfn2, dfdXpts);
 }
 
 /*
