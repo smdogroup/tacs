@@ -2408,8 +2408,13 @@ void TACSShellElement<quadrature, basis, director, model>::
     // in vars) but is not exercised by this repo's test suite at all, so it
     // cannot be empirically confirmed either way; both nonlinear-director
     // classes are forwarded to the base-class FD/CS implementation for
-    // correctness, mirroring getMatSVSensInnerProduct's TACS_MASS_MATRIX
-    // fix. TACSLinearizedRotation keeps the exact analytic path below.
+    // correctness. This is a narrower, new pattern in this file (an
+    // analytic path retained for the one verified-exact director class,
+    // fallback only for the others) - NOT the same shape as
+    // getMatSVSensInnerProduct's TACS_MASS_MATRIX fix, which forwards to
+    // base unconditionally for every director class (no typeid split at
+    // all) rather than keeping any director on an analytic path.
+    // TACSLinearizedRotation keeps the exact analytic path below.
     if (typeid(director) != typeid(TACSLinearizedRotation)) {
       TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale,
                                             psi, phi, Xpts, vars, dvLen, dfdx);
