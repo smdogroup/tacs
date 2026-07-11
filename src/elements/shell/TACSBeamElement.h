@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_ELEMENT_H
 #define TACS_BEAM_ELEMENT_H
 
+#include <typeinfo>
+
 #include "TACSBeamCentrifugalForce.h"
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
@@ -10,6 +12,7 @@
 #include "TACSBeamInertialForce.h"
 #include "TACSBeamTraction.h"
 #include "TACSBeamUtilities.h"
+#include "TACSDirector.h"
 #include "TACSElement.h"
 #include "TACSElementAlgebra.h"
 #include "TACSElementTypes.h"
@@ -2564,9 +2567,38 @@ void TACSBeamElement<quadrature, basis, director, model>::
 /*
   Compute the derivative of the matrix inner product psi^T * mat * phi with
   respect to the state variables (SPEC.md sec 0/2.2/3.3) -- assignment
-  (dfdu =), not accumulation. Punt + fallback skeleton (Task 4.4(a));
-  TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX become the analytic zero for
-  TACSLinearizedRotation in Task 4.4(b).
+  (dfdu =), not accumulation.
+
+  psi^T*mat*phi = e_psi(vars)^T * Cs * e_phi(vars), where e_psi(vars) =
+  L(J_dir(vars)*psi) (L = model::evalStrain's fixed linear strain map,
+  J_dir(vars) = the director map's own Jacobian at vars, per
+  computeDirectorRatesDeriv). Differentiating w.r.t. vars again produces a
+  term proportional to H_dir(vars)[., psi] (the director map's SECOND
+  derivative, i.e. its own curvature) -- a genuinely different quantity
+  from evalStrainHessian's (u0x, d1x, d2x, e0ty)-space blocks (SPEC.md sec
+  1.1), which govern the strain map L's linearity, not the director map's.
+  L is unconditionally linear for TACSBeamLinearModel (the only active
+  model class), so this reduction is always valid; whether H_dir itself is
+  zero depends only on the director class:
+
+  - TACSLinearizedRotation: d(q,t) = q^x*t is linear in q -- its Jacobian
+    is the constant matrix -[t]^x, independent of q, so H_dir = 0
+    identically and psi^T*mat*phi does not depend on vars at all for
+    TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX. The memset below already
+    produces the correct (exactly zero) answer; no further computation is
+    needed or performed.
+  - TACSQuadraticRotation/TACSQuaternionRotation: their director maps are
+    genuinely nonlinear in q, so H_dir is generically nonzero (confirmed
+    via the mandatory complex-step self-check, SPEC.md sec 6.4, against
+    TACSBeam2ModRot -- see PLAN.md's Task 4.4 notes). This feature's A2D
+    machinery only extends to second order (SPEC.md sec 1.2), which
+    covers addJacobian's state-Hessian but not a third-order quantity like
+    this one; deriving/implementing the missing H_dir term is out of this
+    feature's scope. Forwarded to the base FD/CS fallback for these two
+    director classes specifically, per SPEC.md sec 2.2/3.3's documented-
+    failure-only fallback rule -- an honest, typeid-guarded routing
+    between the analytically-exact-zero case and the genuinely-unresolved
+    case, not a special-case forcing zero.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director,
@@ -2579,6 +2611,23 @@ void TACSBeamElement<quadrature, basis, director,
                                                       const TacsScalar vars[],
                                                       TacsScalar dfdu[]) {
   memset(dfdu, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+
+  if (matType == TACS_STIFFNESS_MATRIX || matType == TACS_MASS_MATRIX) {
+    if (typeid(director) == typeid(TACSLinearizedRotation)) {
+      // Exact zero (see the derivation above) -- the memset above is the
+      // complete, correct result.
+      return;
+    }
+    // Director curvature term not derivable with this feature's A2D
+    // machinery -- documented fallback (see the derivation above).
+    TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                          Xpts, vars, dfdu);
+    return;
+  }
+
+  // TACS_GEOMETRIC_STIFFNESS_MATRIX and any future matType: interim
+  // explicit-forward-to-base (SPEC.md sec 4.1/4.2/4.3), superseded by
+  // Phase 5 for the former.
   TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                         Xpts, vars, dfdu);
 }
