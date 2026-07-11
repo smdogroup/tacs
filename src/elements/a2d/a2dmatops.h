@@ -414,6 +414,27 @@ class ADMat3x3MatMult {
       Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
     }
   }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C =
+  // scale*A*B is LINEAR in its one active input A (B is a passive Mat3x3),
+  // so hforward/hreverse are exactly forward()/reverse()'s formulas with
+  // Ap/Ah substituted for Ad -- no additional cross term, since there is
+  // only one active input and the op is linear in it (E6's zero-self-
+  // Hessian finding for this op-class; verified in
+  // a2d/tests/test_admat3x3matmult_second_order.cpp).
+  void hforward() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
+    } else {
+      Mat3x3MatMultScaleCore(scale, A.Ap, B.A, C.Ap);
+    }
+  }
+  void hreverse() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatTransMultAddCore(C.Ah, B.A, A.Ah);
+    } else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ah, B.A, A.Ah);
+    }
+  }
 
   const TacsScalar scale;
   ADMat3x3 &A;
