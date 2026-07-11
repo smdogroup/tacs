@@ -465,6 +465,165 @@ class TACSBeamLinearModel {
     d2u0xd2x[0] = scale * Cs[3];
     d2u0xd2x[1] = -0.5 * scale * Cs[1];
   }
+
+  /**
+    Convert the tying-point-space tying-strain Hessian (d2ety, computed by
+    basis::addInterpTyingStrainHessian from the quadrature-point-level
+    strain Hessian) into mat[]'s vars-space entries, plus the director-
+    space Hessian accumulators (d2d1/d2d2) and their cross terms with the
+    translational field (d2d1u/d2d2u) that director::addDirectorJacobian
+    consumes (SPEC.md sec 1.3.1, "Gap 1" -- found missing during Phase 2
+    implementation; mirrors TACSShellElementModel::addComputeTyingStrainHessian,
+    TACSShellElementModel.h:159-390, adapted to beam's two-director shape).
+
+    Beam's version is simpler than shell's template: beam has exactly two
+    tying fields (G12, G13), and -- confirmed directly from
+    computeTyingStrain's formula above -- G12 depends only on d1/fn1 and
+    G13 depends only on d2/fn2; the two fields never cross-couple in their
+    FIRST derivative structure. Shell's arbitrary-tying-field-pair double
+    loop therefore reduces, for beam, to a per-field loop (i1, i2 both G12,
+    or both G13); cross-field (G12, G13) pairs are skipped. This relies on
+    d2ety being genuinely zero for cross-field pairs, which in turn
+    requires Cs's e0ty-e0ty off-diagonal entry (Cs[19], the G12-G13 shear
+    coupling term feeding evalStrainHessian's d2e0ty[1]/d2e0ty[2]) to be
+    zero -- confirmed directly from TACSIsoTubeBeamConstitutive::
+    evalTangentStiffness (TACSIsoTubeBeamConstitutive.cpp:190-212, the only
+    constitutive class test_beam_element.py exercises), which memsets Cs
+    to zero and never sets index 19 (a circular/symmetric tube has no
+    shear-direction coupling). A future constitutive model with nonzero
+    Cs[19] would need this loop extended back to shell's full arbitrary-
+    pair structure -- not needed today.
+
+    Shell's more general version also takes external tying-strain-vs-
+    other-strain cross-Hessian inputs (d2etyu/d2etyd, populated from a real
+    material coupling via TacsShellAddTyingDispCoupling). Beam's
+    evalStrainHessian above never produces any cross term between e0ty and
+    (u0x, d1x, d2x) -- so beam's analogous d2etyu/d2etyd1/d2etyd2 inputs
+    are always zero-filled placeholders at every call site in this
+    feature, kept in the signature only for structural parity with
+    shell's template (and possible future extensibility).
+
+    @param alpha Unused (kept for signature parity with shell's template;
+    every scale factor entering this closure is already baked into d2ety
+    by the caller, via evalStrainHessian's own alpha*detXd scale argument)
+    @param Xpts The element node locations
+    @param fn1 The first reference normal direction at each node
+    @param fn2 The second reference normal direction at each node
+    @param vars The full variable vector (unused; kept for signature parity)
+    @param d1 The first director field at each node (unused directly here;
+    kept for signature parity, mirrors addComputeTyingStrainTranspose)
+    @param d2 The second director field at each node (unused directly here)
+    @param dety The first derivative of the tying strain (unused directly
+    here; kept for signature parity)
+    @param d2ety The NUM_TYING_POINTS x NUM_TYING_POINTS tying-point-space
+    Hessian (already alpha-scaled)
+    @param d2etyu Zero-filled placeholder, tying-strain vs u0xi cross
+    Hessian (NUM_TYING_POINTS x dsize)
+    @param d2etyd1 Zero-filled placeholder, tying-strain vs d1 cross
+    Hessian (NUM_TYING_POINTS x dsize)
+    @param d2etyd2 Zero-filled placeholder, tying-strain vs d2 cross
+    Hessian (NUM_TYING_POINTS x dsize)
+    @param mat The element Jacobian matrix (receives the (u0xi, u0xi) block
+    directly)
+    @param d2d1 The d1-director-space Hessian accumulator (dsize x dsize)
+    @param d2d2 The d2-director-space Hessian accumulator (dsize x dsize)
+    @param d2d1u The (d1, u0xi) cross-Hessian accumulator (dsize x dsize)
+    @param d2d2u The (d2, u0xi) cross-Hessian accumulator (dsize x dsize)
+  */
+  template <int vars_per_node, class basis>
+  static void addComputeTyingStrainHessian(
+      const TacsScalar alpha, const TacsScalar Xpts[], const TacsScalar fn1[],
+      const TacsScalar fn2[], const TacsScalar vars[], const TacsScalar d1[],
+      const TacsScalar d2[], const TacsScalar dety[], const TacsScalar d2ety[],
+      const TacsScalar d2etyu[], const TacsScalar d2etyd1[],
+      const TacsScalar d2etyd2[], TacsScalar mat[], TacsScalar d2d1[],
+      TacsScalar d2d2[], TacsScalar d2d1u[], TacsScalar d2d2u[]) {
+    const int dsize = 3 * basis::NUM_NODES;
+    const int nvars = vars_per_node * basis::NUM_NODES;
+
+    for (int i1 = 0; i1 < basis::NUM_TYING_POINTS; i1++) {
+      const TacsBeamTyingStrainComponent f1 = basis::getTyingField(i1);
+      const TacsScalar *n1field = (f1 == TACS_BEAM_G12_COMPONENT) ? fn1 : fn2;
+      TacsScalar *d2d = (f1 == TACS_BEAM_G12_COMPONENT) ? d2d1 : d2d2;
+      TacsScalar *d2du = (f1 == TACS_BEAM_G12_COMPONENT) ? d2d1u : d2d2u;
+
+      double pt1[2];
+      basis::getTyingPoint(i1, pt1);
+
+      TacsScalar Xxi1[3];
+      basis::template interpFieldsGrad<3, 3>(pt1, Xpts, Xxi1);
+
+      // Accumulate the i2-summed (d2ety[i1, :]-weighted) gradients for the
+      // matching field only -- cross-field (G12, G13) pairs are skipped
+      // (see the class-level comment above).
+      TacsScalar du2[dsize], dd2[dsize];
+      memset(du2, 0, dsize * sizeof(TacsScalar));
+      memset(dd2, 0, dsize * sizeof(TacsScalar));
+
+      for (int i2 = 0; i2 < basis::NUM_TYING_POINTS; i2++) {
+        const TacsBeamTyingStrainComponent f2 = basis::getTyingField(i2);
+        if (f2 != f1) {
+          continue;
+        }
+
+        double pt2[2];
+        basis::getTyingPoint(i2, pt2);
+
+        TacsScalar Xxi2[3], n02[3];
+        basis::template interpFieldsGrad<3, 3>(pt2, Xpts, Xxi2);
+        basis::template interpFields<3, 3>(pt2, n1field, n02);
+
+        TacsScalar value = d2ety[basis::NUM_TYING_POINTS * i1 + i2];
+
+        TacsScalar dUxi2[3], dd02[3];
+        dUxi2[0] = 0.5 * value * n02[0];
+        dUxi2[1] = 0.5 * value * n02[1];
+        dUxi2[2] = 0.5 * value * n02[2];
+
+        dd02[0] = 0.5 * value * Xxi2[0];
+        dd02[1] = 0.5 * value * Xxi2[1];
+        dd02[2] = 0.5 * value * Xxi2[2];
+
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt2, dUxi2, du2);
+        basis::template addInterpFieldsTranspose<3, 3>(pt2, dd02, dd2);
+      }
+
+      // The (unweighted) gradient of ety[i1] itself, for the outer product
+      // against the i2-summed vectors above.
+      TacsScalar n01[3];
+      basis::template interpFields<3, 3>(pt1, n1field, n01);
+
+      TacsScalar dUxi1[3], dd01[3];
+      dUxi1[0] = 0.5 * n01[0];
+      dUxi1[1] = 0.5 * n01[1];
+      dUxi1[2] = 0.5 * n01[2];
+
+      dd01[0] = 0.5 * Xxi1[0];
+      dd01[1] = 0.5 * Xxi1[1];
+      dd01[2] = 0.5 * Xxi1[2];
+
+      TacsScalar du1[dsize], dd1[dsize];
+      memset(du1, 0, dsize * sizeof(TacsScalar));
+      memset(dd1, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt1, dUxi1, du1);
+      basis::template addInterpFieldsTranspose<3, 3>(pt1, dd01, dd1);
+
+      for (int i = 0; i < dsize; i++) {
+        for (int j = 0; j < dsize; j++) {
+          d2d[dsize * i + j] += dd1[i] * dd2[j];
+          d2du[dsize * i + j] += dd1[i] * du2[j];
+        }
+      }
+
+      for (int i = 0; i < dsize; i++) {
+        int ii = vars_per_node * (i / 3) + (i % 3);
+        for (int j = 0; j < dsize; j++) {
+          int jj = vars_per_node * (j / 3) + (j % 3);
+          mat[nvars * ii + jj] += du1[i] * du2[j];
+        }
+      }
+    }
+  }
 };
 
 /*
