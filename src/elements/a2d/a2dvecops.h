@@ -163,6 +163,26 @@ class ADVec3ADVecScalarAxpy {
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
+  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): v =
+  // scale*alpha.value*x + y is LINEAR jointly in the two active inputs
+  // (x, y) -- alpha is a fixed passive Scalar, not itself an AD variable,
+  // so there is no bilinear coupling between x and y (unlike ADVec3Dot).
+  // hforward/hreverse are exactly forward()/reverse()'s formulas with
+  // xp/yp/vp (resp. xh/yh/vh) substituted for xd/yd/vd -- no cross term.
+  // Verified in a2d/tests/test_advec3advecscalaraxpy_second_order.cpp.
+  void hforward() {
+    v.xp[0] = scale * (alpha.value * x.xp[0]) + y.xp[0];
+    v.xp[1] = scale * (alpha.value * x.xp[1]) + y.xp[1];
+    v.xp[2] = scale * (alpha.value * x.xp[2]) + y.xp[2];
+  }
+  void hreverse() {
+    x.xh[0] += scale * alpha.value * v.xh[0];
+    x.xh[1] += scale * alpha.value * v.xh[1];
+    x.xh[2] += scale * alpha.value * v.xh[2];
+    y.xh[0] += v.xh[0];
+    y.xh[1] += v.xh[1];
+    y.xh[2] += v.xh[2];
+  }
 
   const TacsScalar scale;
   const Scalar &alpha;
