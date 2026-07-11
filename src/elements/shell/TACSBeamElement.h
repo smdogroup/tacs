@@ -276,6 +276,24 @@ class TACSBeamElement : public TACSElement {
                           const TacsScalar dvars[], const TacsScalar ddvars[],
                           TacsScalar *avgStresses);
 
+  void addMatDVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                double time, TacsScalar scale,
+                                const TacsScalar psi[], const TacsScalar phi[],
+                                const TacsScalar Xpts[],
+                                const TacsScalar vars[], int dvLen,
+                                TacsScalar dfdx[]);
+
+  void addMatXptSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                 double time, TacsScalar scale,
+                                 const TacsScalar psi[], const TacsScalar phi[],
+                                 const TacsScalar Xpts[],
+                                 const TacsScalar vars[], TacsScalar dfdXpts[]);
+
+  void getMatSVSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                                double time, const TacsScalar psi[],
+                                const TacsScalar phi[], const TacsScalar Xpts[],
+                                const TacsScalar vars[], TacsScalar dfdu[]);
+
  private:
   // Set sizes for the different components
   static const int usize = 3 * basis::NUM_NODES;
@@ -1835,6 +1853,266 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
 
   // Add the contributions from the node normals
   TacsBeamAddNodeNormalsSens<basis>(Xpts, axis, dfn1, dfn2, dfdXpts);
+}
+
+/*
+  Add the derivative of the matrix inner product psi^T * mat * phi with
+  respect to the design variables (SPEC.md sec 2.2/2.3). TACS_STIFFNESS_MATRIX
+  and TACS_MASS_MATRIX are analytic; TACS_GEOMETRIC_STIFFNESS_MATRIX is an
+  interim explicit-forward-to-base punt, superseded by Phase 5 (SPEC.md sec
+  2.4.4/2.4.5, 4.2) -- not a permanent scope cut.
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSBeamElement<quadrature, basis, director,
+                     model>::addMatDVSensInnerProduct(ElementMatrixType matType,
+                                                      int elemIndex,
+                                                      double time,
+                                                      TacsScalar scale,
+                                                      const TacsScalar psi[],
+                                                      const TacsScalar phi[],
+                                                      const TacsScalar Xpts[],
+                                                      const TacsScalar vars[],
+                                                      int dvLen,
+                                                      TacsScalar dfdx[]) {
+  if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
+    // Interim explicit-forward to the base class (SPEC.md sec 4.1/4.2's
+    // "never-silent-punt" principle): Phase 5 (SPEC.md sec 2.4.4/2.4.5)
+    // replaces this branch with a real analytic implementation, unless its
+    // TACSBeamNonlinearModel prerequisite overruns its timebox, in which
+    // case this forward becomes the permanent, documented fallback.
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
+                                          phi, Xpts, vars, dvLen, dfdx);
+    return;
+  } else if (matType != TACS_STIFFNESS_MATRIX && matType != TACS_MASS_MATRIX) {
+    // Unsupported matType beyond the enumerated set (SPEC.md sec 4.3):
+    // explicit-forward, never silent.
+    TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
+                                          phi, Xpts, vars, dvLen, dfdx);
+    return;
+  }
+
+  // Common setup, shared by both analytic branches.
+  const int nquad = quadrature::getNumQuadraturePoints();
+  const A2D::Vec3 &axis = transform->getRefAxis();
+
+  TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+  TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
+  // Build the psi-direction and phi-direction director fields, both
+  // linearized about the REAL state vars (SPEC.md sec 2.2's "psi/phi in
+  // place of vars" kinematics substitution). computeDirectorRatesDeriv's
+  // dpsi output is the exact director-map Jacobian-vector product at the
+  // given vars, for any director class (confirmed directly from
+  // TACSDirector.h's per-class implementations) -- dvars/ddvars are passed
+  // as vars here since this method's own signature has no dvars/ddvars, and
+  // the ddot/dddot outputs they would feed are discarded, unused.
+  TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
+  TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, psi, fn1, d1, d1dot, d1ddot, d1psi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, phi, fn1, d1, d1dot, d1ddot, d1phi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, psi, fn2, d2, d2dot, d2ddot, d2psi);
+  director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                               basis::NUM_NODES>(
+      vars, vars, vars, phi, fn2, d2, d2dot, d2ddot, d2phi);
+
+  // psi-direction and phi-direction tying strains, via the SAME linear
+  // tying-strain map (computeTyingStrainDeriv), substituting psi/phi for
+  // vars/d1/d2 in place of the real state (the map is linear, so this
+  // substitution gives exactly the psi-direction/phi-direction tying
+  // strains -- SPEC.md sec 2.3.1's "psi/phi in place of vars" reuse).
+  TacsScalar etypsi[basis::NUM_TYING_POINTS], etyphi[basis::NUM_TYING_POINTS];
+  model::template computeTyingStrainDeriv<vars_per_node, basis>(
+      Xpts, fn1, fn2, psi, d1psi, d2psi, phi, d1phi, d2phi, etypsi, etyphi);
+
+  for (int quad_index = 0; quad_index < nquad; quad_index++) {
+    double pt[3];
+    double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+    A2D::Mat3x3 T;
+    A2D::Vec3 X0, X0xi, n1, n2, n1xi, n2xi;
+
+    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+    basis::template interpFields<3, 3>(pt, fn1, n1.x);
+    basis::template interpFields<3, 3>(pt, fn2, n2.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+
+    transform->computeTransform(X0xi.x, T.A);
+
+    A2D::Mat3x3 Xd, Xdinv;
+    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+
+    A2D::Scalar detXd;
+    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+
+    A2D::Mat3x3 XdinvT;
+    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+
+    // psi-direction chain.
+    A2D::Vec3 u0xipsi, d01psi, d02psi, d01xipsi, d02xipsi;
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi, u0xipsi.x);
+    basis::template interpFields<3, 3>(pt, d1psi, d01psi.x);
+    basis::template interpFields<3, 3>(pt, d2psi, d02psi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d1psi, d01xipsi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d2psi, d02xipsi.x);
+
+    A2D::Mat3x3 u0dpsi;
+    A2D::Mat3x3FromThreeVec3 assembleu0dpsi(u0xipsi, d01psi, d02psi, u0dpsi);
+
+    A2D::Mat3x3 u0dXdinvTpsi, u0xpsi;
+    A2D::Mat3x3MatMult multu0dpsi(u0dpsi, XdinvT, u0dXdinvTpsi);
+    A2D::MatTrans3x3MatMult multu0xpsi(T, u0dXdinvTpsi, u0xpsi);
+
+    // phi-direction chain.
+    A2D::Vec3 u0xiphi, d01phi, d02phi, d01xiphi, d02xiphi;
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, phi, u0xiphi.x);
+    basis::template interpFields<3, 3>(pt, d1phi, d01phi.x);
+    basis::template interpFields<3, 3>(pt, d2phi, d02phi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d1phi, d01xiphi.x);
+    basis::template interpFieldsGrad<3, 3>(pt, d2phi, d02xiphi.x);
+
+    A2D::Mat3x3 u0dphi;
+    A2D::Mat3x3FromThreeVec3 assembleu0dphi(u0xiphi, d01phi, d02phi, u0dphi);
+
+    A2D::Mat3x3 u0dXdinvTphi, u0xphi;
+    A2D::Mat3x3MatMult multu0dphi(u0dphi, XdinvT, u0dXdinvTphi);
+    A2D::MatTrans3x3MatMult multu0xphi(T, u0dXdinvTphi, u0xphi);
+
+    A2D::Scalar s0, sz1, sz2;
+    A2D::Vec3 e1(1.0, 0.0, 0.0);
+    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+
+    A2D::Vec3 d1tpsi, d1xpsi;
+    A2D::Vec3Axpy axpyd1tpsi(-1.0, sz1, u0xipsi, d01xipsi, d1tpsi);
+    A2D::MatTrans3x3VecMultScale matmultd1xpsi(s0, T, d1tpsi, d1xpsi);
+
+    A2D::Vec3 d2tpsi, d2xpsi;
+    A2D::Vec3Axpy axpyd2tpsi(-1.0, sz2, u0xipsi, d02xipsi, d2tpsi);
+    A2D::MatTrans3x3VecMultScale matmultd2xpsi(s0, T, d2tpsi, d2xpsi);
+
+    A2D::Vec3 d1tphi, d1xphi;
+    A2D::Vec3Axpy axpyd1tphi(-1.0, sz1, u0xiphi, d01xiphi, d1tphi);
+    A2D::MatTrans3x3VecMultScale matmultd1xphi(s0, T, d1tphi, d1xphi);
+
+    A2D::Vec3 d2tphi, d2xphi;
+    A2D::Vec3Axpy axpyd2tphi(-1.0, sz2, u0xiphi, d02xiphi, d2tphi);
+    A2D::MatTrans3x3VecMultScale matmultd2xphi(s0, T, d2tphi, d2xphi);
+
+    // Interpolate the psi-direction and phi-direction tying strains and
+    // transform them to the local coordinates (identical formula to the
+    // real e0ty, SPEC.md sec 1.2.1).
+    TacsScalar gtypsi[2], gtyphi[2];
+    basis::interpTyingStrain(pt, etypsi, gtypsi);
+    basis::interpTyingStrain(pt, etyphi, gtyphi);
+
+    TacsScalar e0typsi[2], e0typhi[2];
+    e0typsi[0] = 2.0 * XdinvT.A[0] * gtypsi[0];
+    e0typsi[1] = 2.0 * XdinvT.A[0] * gtypsi[1];
+    e0typhi[0] = 2.0 * XdinvT.A[0] * gtyphi[0];
+    e0typhi[1] = 2.0 * XdinvT.A[0] * gtyphi[1];
+
+    if (matType == TACS_STIFFNESS_MATRIX) {
+      // e_psi/e_phi via the SAME linear strain map vars/psi/phi share
+      // (SPEC.md sec 2.3.1's "beam's strain is linear unconditionally"
+      // simplification) -- reduces psi^T*K*phi to e_psi^T*Cs*e_phi, whose
+      // DV-derivative is the SAME generic hook addAdjResProduct already
+      // calls (con->addStressDVSens), reused with a bilinear pair of
+      // strains instead of a single adjoint-direction strain (SPEC.md sec
+      // 2.2).
+      TacsScalar epsi[6], ephi[6];
+      model::evalStrainDeriv(u0xpsi.A, d1xpsi.x, d2xpsi.x, e0typsi, u0xphi.A,
+                             d1xphi.x, d2xphi.x, e0typhi, epsi, ephi);
+
+      con->addStressDVSens(elemIndex, scale * detXd.value, pt, X0.x, ephi, epsi,
+                           dvLen, dfdx);
+    } else {  // TACS_MASS_MATRIX
+      // No strain/stiffness path (SPEC.md sec 2.2/2.3): only the mass
+      // moments' own DV-sens, contracted against the bilinear (psi, phi)
+      // dot products the mass matrix's dynamics blocks are built from
+      // (mirrors addAdjResProduct's dynamics section, TACSBeamElement.h,
+      // but bilinear in (psi, phi) rather than (ddvars, psi)).
+      TacsScalar u0psi[3], u0phi[3];
+      basis::template interpFields<vars_per_node, 3>(pt, psi, u0psi);
+      basis::template interpFields<vars_per_node, 3>(pt, phi, u0phi);
+
+      TacsScalar d1psiv[3], d1phiv[3], d2psiv[3], d2phiv[3];
+      basis::template interpFields<3, 3>(pt, d1psi, d1psiv);
+      basis::template interpFields<3, 3>(pt, d1phi, d1phiv);
+      basis::template interpFields<3, 3>(pt, d2psi, d2psiv);
+      basis::template interpFields<3, 3>(pt, d2phi, d2phiv);
+
+      TacsScalar alpha = scale * detXd.value;
+      TacsScalar rho[6];
+      rho[0] = alpha * (u0psi[0] * u0phi[0] + u0psi[1] * u0phi[1] +
+                        u0psi[2] * u0phi[2]);
+      rho[1] = alpha * (u0psi[0] * d1phiv[0] + u0psi[1] * d1phiv[1] +
+                        u0psi[2] * d1phiv[2] + d1psiv[0] * u0phi[0] +
+                        d1psiv[1] * u0phi[1] + d1psiv[2] * u0phi[2]);
+      rho[2] = alpha * (u0psi[0] * d2phiv[0] + u0psi[1] * d2phiv[1] +
+                        u0psi[2] * d2phiv[2] + d2psiv[0] * u0phi[0] +
+                        d2psiv[1] * u0phi[1] + d2psiv[2] * u0phi[2]);
+      rho[3] = alpha * (d1psiv[0] * d1phiv[0] + d1psiv[1] * d1phiv[1] +
+                        d1psiv[2] * d1phiv[2]);
+      rho[4] = alpha * (d2psiv[0] * d2phiv[0] + d2psiv[1] * d2phiv[1] +
+                        d2psiv[2] * d2phiv[2]);
+      rho[5] = alpha * (d1psiv[0] * d2phiv[0] + d1psiv[1] * d2phiv[1] +
+                        d1psiv[2] * d2phiv[2] + d2psiv[0] * d1phiv[0] +
+                        d2psiv[1] * d1phiv[1] + d2psiv[2] * d1phiv[2]);
+
+      con->addMassMomentsDVSens(elemIndex, pt, X0.x, rho, dvLen, dfdx);
+    }
+  }
+}
+
+/*
+  Add the derivative of the matrix inner product psi^T * mat * phi with
+  respect to the nodal coordinates (SPEC.md sec 2.2/2.3/2.3.1). Punt +
+  fallback skeleton (Task 4.2(a)) -- TACS_MASS_MATRIX becomes analytic in
+  Task 4.2(b), TACS_STIFFNESS_MATRIX in Task 4.3;
+  TACS_GEOMETRIC_STIFFNESS_MATRIX is an interim explicit-forward-to-base punt,
+  superseded by Phase 5.
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSBeamElement<quadrature, basis, director, model>::
+    addMatXptSensInnerProduct(ElementMatrixType matType, int elemIndex,
+                              double time, TacsScalar scale,
+                              const TacsScalar psi[], const TacsScalar phi[],
+                              const TacsScalar Xpts[], const TacsScalar vars[],
+                              TacsScalar dfdXpts[]) {
+  TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi,
+                                         phi, Xpts, vars, dfdXpts);
+}
+
+/*
+  Compute the derivative of the matrix inner product psi^T * mat * phi with
+  respect to the state variables (SPEC.md sec 0/2.2/3.3) -- assignment
+  (dfdu =), not accumulation. Punt + fallback skeleton (Task 4.4(a));
+  TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX become the analytic zero for
+  TACSLinearizedRotation in Task 4.4(b).
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSBeamElement<quadrature, basis, director,
+                     model>::getMatSVSensInnerProduct(ElementMatrixType matType,
+                                                      int elemIndex,
+                                                      double time,
+                                                      const TacsScalar psi[],
+                                                      const TacsScalar phi[],
+                                                      const TacsScalar Xpts[],
+                                                      const TacsScalar vars[],
+                                                      TacsScalar dfdu[]) {
+  memset(dfdu, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                        Xpts, vars, dfdu);
 }
 
 template <class quadrature, class basis, class director, class model>
