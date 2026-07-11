@@ -271,6 +271,11 @@ class TACSBeamElement : public TACSElement {
                      const TacsScalar dvars[], const TacsScalar ddvars[],
                      int ld_data, TacsScalar *data);
 
+  void getAverageStresses(int elemIndex, ElementType etype,
+                          const TacsScalar Xpts[], const TacsScalar vars[],
+                          const TacsScalar dvars[], const TacsScalar ddvars[],
+                          TacsScalar *avgStresses);
+
  private:
   // Set sizes for the different components
   static const int usize = 3 * basis::NUM_NODES;
@@ -2850,6 +2855,131 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
         data[8] = T.A[8];
         data += 9;
       }
+    }
+  }
+}
+
+/*
+  Compute the averaged stress resultants over the element's visualization
+  nodes (SPEC.md sec 1.5). Forward-only value computation, not a
+  sensitivity -- reuses the same state-independent geometry chain and
+  strain/stress evaluation addResidual/computeEnergies/getOutputData
+  already use, unchanged. Mirrors TACSShellElement::getAverageStresses
+  (TACSShellElement.h:1455-1540) and TACSBeamElement::getOutputData's own
+  per-vis-node loop above, with the same e0ty = 2*XdinvT.A[0]*gty
+  transform addResidual/addJacobian use (getOutputData's own copy of this
+  loop omits the "2*XdinvT.A[0]*" factor -- a pre-existing inconsistency
+  in getOutputData, out of scope for this task; this new function uses
+  the confirmed-correct formula).
+
+  Beam's stress vector has only TACSBeamConstitutive::NUM_STRESSES = 6
+  components (SPEC.md sec 1.1) -- avgStresses[0..5] receive the averaged
+  stress, and avgStresses[6..8] are deliberately left untouched (not
+  zeroed), matching the base class's own no-op-leaves-untouched
+  convention for any slot this element doesn't know how to fill (SPEC.md
+  sec 1.5).
+*/
+template <class quadrature, class basis, class director, class model>
+void TACSBeamElement<quadrature, basis, director, model>::getAverageStresses(
+    int elemIndex, ElementType etype, const TacsScalar Xpts[],
+    const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], TacsScalar *avgStresses) {
+  if (etype == TACS_BEAM_OR_SHELL_ELEMENT) {
+    int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
+
+    const A2D::Vec3 &axis = transform->getRefAxis();
+
+    TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+    TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
+    TacsScalar d1[dsize], d2[dsize], d1dot[dsize], d2dot[dsize];
+    director::template computeDirectorRates<vars_per_node, offset,
+                                            basis::NUM_NODES>(vars, dvars, fn1,
+                                                              d1, d1dot);
+    director::template computeDirectorRates<vars_per_node, offset,
+                                            basis::NUM_NODES>(vars, dvars, fn2,
+                                                              d2, d2dot);
+
+    TacsScalar ety[basis::NUM_TYING_POINTS];
+    model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn1, fn2,
+                                                             vars, d1, d2, ety);
+
+    TacsScalar loc_avgStresses[6];
+    for (int i = 0; i < 6; i++) {
+      loc_avgStresses[i] = 0.0;
+    }
+
+    for (int index = 0; index < num_vis_nodes; index++) {
+      double pt[3];
+      basis::getNodePoint(index, pt);
+
+      A2D::Vec3 X0, X0xi, n1, n2;
+      basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+      basis::template interpFields<3, 3>(pt, fn1, n1.x);
+      basis::template interpFields<3, 3>(pt, fn2, n2.x);
+
+      A2D::Mat3x3 T;
+      transform->computeTransform(X0xi.x, T.A);
+
+      A2D::Mat3x3 Xd, Xdinv;
+      A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+      A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+
+      A2D::Mat3x3 XdinvT;
+      A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+
+      A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
+      basis::template interpFields<3, 3>(pt, d1, d01.x);
+      basis::template interpFields<3, 3>(pt, d2, d02.x);
+      basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
+      basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+
+      A2D::Mat3x3 u0d;
+      A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
+
+      A2D::Mat3x3 u0dXdinvT, u0x;
+      A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
+      A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+
+      A2D::Scalar s0, sz1, sz2;
+      A2D::Vec3 e1(1.0, 0.0, 0.0);
+      A2D::Vec3 n1xi, n2xi;
+      basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
+      basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+      A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+      A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+      A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+
+      A2D::Vec3 d1t, d1x;
+      A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
+      A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+
+      A2D::Vec3 d2t, d2x;
+      A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
+      A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+
+      TacsScalar gty[2];
+      basis::interpTyingStrain(pt, ety, gty);
+
+      TacsScalar e0ty[2];
+      e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
+      e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+
+      TacsScalar e[6];
+      model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+
+      TacsScalar s[6];
+      con->evalStress(elemIndex, pt, X0.x, e, s);
+
+      for (int i = 0; i < 6; i++) {
+        loc_avgStresses[i] += s[i];
+      }
+    }
+
+    for (int i = 0; i < 6; i++) {
+      avgStresses[i] += loc_avgStresses[i] / num_vis_nodes;
     }
   }
 }
