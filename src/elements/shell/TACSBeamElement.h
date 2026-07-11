@@ -671,9 +671,126 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
 }
 
 /*
+  Zero the second-order (.xp/.xh, .Ap/.Ah) fields on every second-order A2D
+  node in addJacobian's forward/reverse chain, ahead of a single per-DOF
+  hforward/hreverse sweep iteration (SPEC.md sec 1.3 step 3). These fields
+  are "+=" accumulators across hforward()/hreverse() calls, not
+  auto-reset, and (unlike the primal/first-order .x/.xd fields) most of
+  them are NOT freshly overwritten by every sweep iteration's own seed
+  step -- e.g. the translational sweep seeds only u0xi.xp, leaving
+  d01/d02/d01xi/d02xi's .xp stale from a previous iteration unless
+  explicitly zeroed here.
+*/
+static inline void TacsBeamZeroSecondOrderNodes(
+    A2D::ADVec3 &u0xi, A2D::ADVec3 &d01, A2D::ADVec3 &d02, A2D::ADVec3 &d01xi,
+    A2D::ADVec3 &d02xi, A2D::ADMat3x3 &u0d, A2D::ADMat3x3 &u0dXdinvT,
+    A2D::ADMat3x3 &u0x, A2D::ADVec3 &d1t, A2D::ADVec3 &d1x, A2D::ADVec3 &d2t,
+    A2D::ADVec3 &d2x) {
+  memset(u0xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(u0xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d01.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d01.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d02.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d02.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d01xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d01xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d02xi.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d02xi.xh, 0, 3 * sizeof(TacsScalar));
+  memset(u0d.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0d.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(u0dXdinvT.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0dXdinvT.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(u0x.Ap, 0, 9 * sizeof(TacsScalar));
+  memset(u0x.Ah, 0, 9 * sizeof(TacsScalar));
+  memset(d1t.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d1t.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d1x.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d1x.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d2t.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d2t.xh, 0, 3 * sizeof(TacsScalar));
+  memset(d2x.xp, 0, 3 * sizeof(TacsScalar));
+  memset(d2x.xh, 0, 3 * sizeof(TacsScalar));
+}
+
+/*
+  Contract the fixed, per-quadrature-point material Hessian blocks (from
+  model::evalStrainHessian, SPEC.md sec 1.1) against the forward-propagated
+  seed direction (u0xp/d1xp/d2xp, populated by a preceding hforward() call
+  sweep) to produce the Hessian-vector product at the u0x/d1x/d2x nodes
+  (u0xh/d1xh/d2xh), which the following hreverse() call sweep then
+  propagates back to the vars-space DOFs. This is the "H*p" step of the
+  per-DOF sweep (SPEC.md sec 1.3 step 3) -- a pure linear-algebra
+  contraction, not a differentiation; every array shape/index convention
+  below matches model::evalStrainHessian's own documented layout exactly
+  (row-major, e.g. d2u0xd1x[3*i+j] = d^2/d(u0x_i)d(d1x_j)).
+*/
+static inline void TacsBeamContractStrainHessian(
+    const TacsScalar d2u0x[81], const TacsScalar d2d1x[9],
+    const TacsScalar d2d2x[9], const TacsScalar d2u0xd1x[27],
+    const TacsScalar d2u0xd2x[27], const TacsScalar d2d1xd2x[9],
+    const TacsScalar u0xp[9], const TacsScalar d1xp[3],
+    const TacsScalar d2xp[3], TacsScalar u0xh[9], TacsScalar d1xh[3],
+    TacsScalar d2xh[3]) {
+  for (int i = 0; i < 9; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 9; j++) {
+      val += d2u0x[9 * i + j] * u0xp[j];
+    }
+    for (int j = 0; j < 3; j++) {
+      val += d2u0xd1x[3 * i + j] * d1xp[j];
+    }
+    for (int j = 0; j < 3; j++) {
+      val += d2u0xd2x[3 * i + j] * d2xp[j];
+    }
+    u0xh[i] += val;
+  }
+
+  for (int i = 0; i < 3; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 3; j++) {
+      val += d2d1x[3 * i + j] * d1xp[j];
+    }
+    for (int j = 0; j < 9; j++) {
+      val += d2u0xd1x[3 * j + i] * u0xp[j];
+    }
+    for (int j = 0; j < 3; j++) {
+      val += d2d1xd2x[3 * i + j] * d2xp[j];
+    }
+    d1xh[i] += val;
+  }
+
+  for (int i = 0; i < 3; i++) {
+    TacsScalar val = 0.0;
+    for (int j = 0; j < 3; j++) {
+      val += d2d2x[3 * i + j] * d2xp[j];
+    }
+    for (int j = 0; j < 9; j++) {
+      val += d2u0xd2x[3 * j + i] * u0xp[j];
+    }
+    for (int j = 0; j < 3; j++) {
+      val += d2d1xd2x[3 * j + i] * d1xp[j];
+    }
+    d2xh[i] += val;
+  }
+}
+
+/*
   Add the Jacobian of the residual (SPEC.md sec 1.3): a second-order
   extension of addResidual's own A2D graph, rather than a hand-coded
-  congruence-transform port -- Phase 2, Task 2.1's scaffold.
+  congruence-transform port. Reruns addResidual's own forward pass with
+  the 6 load-bearing A2D types upgraded to their second-order variants
+  (SPEC.md sec 1.2.2), then for each of 3*dsize state-DOF directions (the
+  "translational", "d1" and "d2" sweeps, SPEC.md sec 1.3 step 3,
+  VALIDATION.md E6) calls hforward()/hreverse() in the same order
+  addResidual's forward()/reverse() calls already use, extracting one
+  column of mat[] (or one column of the director-space Hessian
+  accumulators d2d1/d2d2/d2d1u/d2d2u/d2d1d2) per sweep iteration. The
+  post-loop closures (model::addComputeTyingStrainHessian, "Gap 1", SPEC.md
+  sec 1.3.1; TacsBeamAddCrossDirectorJacobian, "Gap 2", SPEC.md sec 1.3.2;
+  director::addDirectorJacobian x2) then convert those director-space
+  accumulators into mat[]'s vars-space entries, mirroring how
+  model::addComputeTyingStrainTranspose/director::addDirectorResidual
+  already convert the analogous first-order buffers for addResidual's res.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
@@ -681,17 +798,15 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     TacsScalar gamma, const TacsScalar Xpts[], const TacsScalar vars[],
     const TacsScalar dvars[], const TacsScalar ddvars[], TacsScalar res[],
     TacsScalar mat[]) {
+  const int nvars = vars_per_node * num_nodes;
+
   // Zero the output buffers (SPEC.md sec 1.3 step 1).
-  memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
   if (res) {
-    memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+    memset(res, 0, nvars * sizeof(TacsScalar));
   }
 
-  // Task 2.1: setup identical to addResidual's own (SPEC.md sec 1.3 step 2).
-  // mat is intentionally left all-zero at this checkpoint -- the A2D
-  // hforward/hreverse sweep that populates it lands in Task 2.2.
+  // Setup identical to addResidual's own (SPEC.md sec 1.3 step 2).
   const int nquad = quadrature::getNumQuadraturePoints();
 
   const A2D::Vec3 &axis = transform->getRefAxis();
@@ -714,10 +829,42 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
 
   TacsScalar ety[basis::NUM_TYING_POINTS];
   model::template computeTyingStrain<vars_per_node, basis>(Xpts, fn1, fn2, vars,
-                                                            d1, d2, ety);
+                                                           d1, d2, ety);
 
   TacsScalar dety[basis::NUM_TYING_POINTS];
   memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+
+  // Second-order accumulators (SPEC.md sec 1.3 step 3/4, sec 1.3.1/1.3.2).
+  // d2ety: tying-point-space tying-strain Hessian (Gap 1's input).
+  TacsScalar d2ety[basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS];
+  memset(
+      d2ety, 0,
+      basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+
+  // d2d1/d2d2: director-space self-Hessians (fed to addDirectorJacobian).
+  // d2d1u/d2d2u: (director, u0xi) cross-Hessians (also addDirectorJacobian).
+  // d2d1d2: (d1, d2) cross-Hessian, the new Gap 2 accumulator.
+  TacsScalar d2d1[dsize * dsize], d2d2[dsize * dsize];
+  TacsScalar d2d1u[dsize * dsize], d2d2u[dsize * dsize];
+  TacsScalar d2d1d2[dsize * dsize];
+  memset(d2d1, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2d2, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2d1u, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2d2u, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2d1d2, 0, dsize * dsize * sizeof(TacsScalar));
+
+  // Unscaled dynamics (mass-moment) Hessian accumulators -- gamma is
+  // applied internally by director::addDirectorJacobian (matching its
+  // documented contract), except for d2Tdotd1d2, which this closure
+  // gamma-scales itself before folding into d2d1d2 (SPEC.md sec 1.3.2).
+  TacsScalar d2Tdotd1[dsize * dsize], d2Tdotd2[dsize * dsize];
+  TacsScalar d2Tdotu1[dsize * dsize], d2Tdotu2[dsize * dsize];
+  TacsScalar d2Tdotd1d2[dsize * dsize];
+  memset(d2Tdotd1, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2Tdotd2, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2Tdotu1, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2Tdotu2, 0, dsize * dsize * sizeof(TacsScalar));
+  memset(d2Tdotd1d2, 0, dsize * dsize * sizeof(TacsScalar));
 
   for (int quad_index = 0; quad_index < nquad; quad_index++) {
     double pt[3];
@@ -855,25 +1002,266 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     u0ddot0.reverse();
 
     if (res) {
-      basis::template addInterpFieldsTranspose<vars_per_node, 3>(
-          pt, u0ddot.xd, res);
+      basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, u0ddot.xd,
+                                                                 res);
     }
     basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddot.xd, d1d);
     basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddot.xd, d2d);
+
+    // --- Second-order: material Hessian blocks (SPEC.md sec 1.3 step 3's
+    // model-layer-coupling bullet; Task 2.2). ---
+    TacsScalar d2u0x[81], d2d1x[9], d2d2x[9], d2e0ty[4];
+    TacsScalar d2u0xd1x[27], d2u0xd2x[27], d2d1xd2x[9];
+    model::evalStrainHessian(alpha * detXd.value, s, Cs, u0x.A, d1x.x, d2x.x,
+                             e0ty, d2u0x, d2d1x, d2d2x, d2e0ty, d2u0xd1x,
+                             d2u0xd2x, d2d1xd2x);
+
+    // Tying-strain Hessian: accumulate this quadrature point's contribution
+    // to the tying-point-space Hessian d2ety (SPEC.md sec 1.3.1's own
+    // per-quadrature-point seeding note). e0ty[k] = 2*XdinvT.A[0]*gty[k] is
+    // a fixed linear map, so d2gty = (2*XdinvT.A[0])^2 * d2e0ty.
+    TacsScalar coef = 2.0 * XdinvT.A[0];
+    TacsScalar d2gty[4];
+    d2gty[0] = coef * coef * d2e0ty[0];
+    d2gty[1] = coef * coef * d2e0ty[1];
+    d2gty[2] = coef * coef * d2e0ty[2];
+    d2gty[3] = coef * coef * d2e0ty[3];
+    basis::addInterpTyingStrainHessian(pt, d2gty, d2ety);
+
+    // --- Dynamics (mass-moment) Hessian blocks (SPEC.md sec 1.3 step 3's
+    // dynamics bullet; Task 2.3). These are fixed-coefficient outer
+    // products of the basis shape functions -- no hforward/hreverse sweep
+    // needed, mirroring TACSShellElement::addJacobian's identical
+    // mass-diagonal-block pattern (TACSShellElement.h:605-617). ---
+    TacsScalar d2mass[9];
+    memset(d2mass, 0, 9 * sizeof(TacsScalar));
+    d2mass[0] = d2mass[4] = d2mass[8] = gamma * detXd.value * rho[0];
+    basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node, 3,
+                                                3>(pt, d2mass, mat);
+
+    d2mass[0] = d2mass[4] = d2mass[8] = detXd.value * rho[3];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
+                                                            d2Tdotd1);
+    d2mass[0] = d2mass[4] = d2mass[8] = detXd.value * rho[4];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
+                                                            d2Tdotd2);
+    d2mass[0] = d2mass[4] = d2mass[8] = detXd.value * rho[1];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
+                                                            d2Tdotu1);
+    d2mass[0] = d2mass[4] = d2mass[8] = detXd.value * rho[2];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
+                                                            d2Tdotu2);
+    d2mass[0] = d2mass[4] = d2mass[8] = detXd.value * rho[5];
+    basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
+                                                            d2Tdotd1d2);
+
+    // --- Per-DOF hforward/hreverse sweep (SPEC.md sec 1.3 step 3,
+    // VALIDATION.md E6): one sweep per compact "translational"/"d1"/"d2"
+    // state-DOF direction, 3*dsize sweeps total per quadrature point (this
+    // is NOT nvars-many sweeps -- see the feature's phase-2 handoff for why
+    // the literal "for k in 0..nvars" reading of the SPEC text is subtly
+    // incomplete for a directored element). ---
+    TacsScalar seed[dsize];
+
+    // (A) Translational sweep: seeds u0xi only. Captures the (u0xi, u0xi)
+    // self block (scattered directly into mat[]) and the (u0xi, d1)/
+    // (u0xi, d2) cross blocks (into d2d1u/d2d2u).
+    for (int m = 0; m < dsize; m++) {
+      TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d, u0dXdinvT,
+                                   u0x, d1t, d1x, d2t, d2x);
+
+      memset(seed, 0, dsize * sizeof(TacsScalar));
+      seed[m] = 1.0;
+      basis::template interpFieldsGrad<3, 3>(pt, seed, u0xi.xp);
+
+      assembleu0d.hforward();
+      multu0d.hforward();
+      multu0x.hforward();
+      axpyd1t.hforward();
+      matmultd1x.hforward();
+      axpyd2t.hforward();
+      matmultd2x.hforward();
+
+      TacsBeamContractStrainHessian(d2u0x, d2d1x, d2d2x, d2u0xd1x, d2u0xd2x,
+                                    d2d1xd2x, u0x.Ap, d1x.xp, d2x.xp, u0x.Ah,
+                                    d1x.xh, d2x.xh);
+
+      matmultd2x.hreverse();
+      axpyd2t.hreverse();
+      matmultd1x.hreverse();
+      axpyd1t.hreverse();
+      multu0x.hreverse();
+      multu0d.hreverse();
+      assembleu0d.hreverse();
+
+      int mm = vars_per_node * (m / 3) + (m % 3);
+
+      TacsScalar ucol[dsize];
+      memset(ucol, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, u0xi.xh, ucol);
+      for (int r = 0; r < dsize; r++) {
+        int rr = vars_per_node * (r / 3) + (r % 3);
+        mat[rr * nvars + mm] += ucol[r];
+      }
+
+      TacsScalar d1col[dsize];
+      memset(d1col, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh, d1col);
+      for (int r = 0; r < dsize; r++) {
+        d2d1u[dsize * r + m] += d1col[r];
+      }
+
+      TacsScalar d2col[dsize];
+      memset(d2col, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
+      for (int r = 0; r < dsize; r++) {
+        d2d2u[dsize * r + m] += d2col[r];
+      }
+    }
+
+    // (B) d1 sweep: seeds d01/d01xi together. Captures the (d1, d1) self
+    // block (into d2d1) and the (d1, d2) cross block (into d2d1d2) --
+    // capturing this cross leakage, rather than discarding it, is exactly
+    // Gap 2's static contribution (SPEC.md sec 1.3.2); the (u0xi, d1)
+    // block is intentionally NOT re-scattered here (already captured by
+    // sweep (A), avoiding double-counting).
+    for (int m = 0; m < dsize; m++) {
+      TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d, u0dXdinvT,
+                                   u0x, d1t, d1x, d2t, d2x);
+
+      memset(seed, 0, dsize * sizeof(TacsScalar));
+      seed[m] = 1.0;
+      basis::template interpFields<3, 3>(pt, seed, d01.xp);
+      basis::template interpFieldsGrad<3, 3>(pt, seed, d01xi.xp);
+
+      assembleu0d.hforward();
+      multu0d.hforward();
+      multu0x.hforward();
+      axpyd1t.hforward();
+      matmultd1x.hforward();
+      axpyd2t.hforward();
+      matmultd2x.hforward();
+
+      TacsBeamContractStrainHessian(d2u0x, d2d1x, d2d2x, d2u0xd1x, d2u0xd2x,
+                                    d2d1xd2x, u0x.Ap, d1x.xp, d2x.xp, u0x.Ah,
+                                    d1x.xh, d2x.xh);
+
+      matmultd2x.hreverse();
+      axpyd2t.hreverse();
+      matmultd1x.hreverse();
+      axpyd1t.hreverse();
+      multu0x.hreverse();
+      multu0d.hreverse();
+      assembleu0d.hreverse();
+
+      TacsScalar d1col[dsize];
+      memset(d1col, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh, d1col);
+      for (int r = 0; r < dsize; r++) {
+        d2d1[dsize * r + m] += d1col[r];
+      }
+
+      TacsScalar d2col[dsize];
+      memset(d2col, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
+      for (int r = 0; r < dsize; r++) {
+        d2d1d2[dsize * m + r] += d2col[r];
+      }
+    }
+
+    // (C) d2 sweep: seeds d02/d02xi together. Captures ONLY the (d2, d2)
+    // self block (into d2d2); the (u0xi, d2) and (d1, d2) blocks are
+    // intentionally NOT re-scattered here (already captured above).
+    for (int m = 0; m < dsize; m++) {
+      TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d, u0dXdinvT,
+                                   u0x, d1t, d1x, d2t, d2x);
+
+      memset(seed, 0, dsize * sizeof(TacsScalar));
+      seed[m] = 1.0;
+      basis::template interpFields<3, 3>(pt, seed, d02.xp);
+      basis::template interpFieldsGrad<3, 3>(pt, seed, d02xi.xp);
+
+      assembleu0d.hforward();
+      multu0d.hforward();
+      multu0x.hforward();
+      axpyd1t.hforward();
+      matmultd1x.hforward();
+      axpyd2t.hforward();
+      matmultd2x.hforward();
+
+      TacsBeamContractStrainHessian(d2u0x, d2d1x, d2d2x, d2u0xd1x, d2u0xd2x,
+                                    d2d1xd2x, u0x.Ap, d1x.xp, d2x.xp, u0x.Ah,
+                                    d1x.xh, d2x.xh);
+
+      matmultd2x.hreverse();
+      axpyd2t.hreverse();
+      matmultd1x.hreverse();
+      axpyd1t.hreverse();
+      multu0x.hreverse();
+      multu0d.hreverse();
+      assembleu0d.hreverse();
+
+      TacsScalar d2col[dsize];
+      memset(d2col, 0, dsize * sizeof(TacsScalar));
+      basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+      basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
+      for (int r = 0; r < dsize; r++) {
+        d2d2[dsize * r + m] += d2col[r];
+      }
+    }
   }
 
   if (res) {
     model::template addComputeTyingStrainTranspose<vars_per_node, basis>(
         Xpts, fn1, fn2, vars, d1, d2, dety, res, d1d, d2d);
-
-    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
-        vars, dvars, ddvars, fn1, d1d, res);
-    director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
-        vars, dvars, ddvars, fn2, d2d, res);
-
-    director::template addRotationConstraint<vars_per_node, offset, num_nodes>(
-        vars, res);
   }
+
+  // Gap 1 (SPEC.md sec 1.3.1): convert the tying-point-space Hessian d2ety
+  // into mat[]'s (u0xi, u0xi) block plus the director-space accumulators
+  // d2d1/d2d2/d2d1u/d2d2u. Beam's Cs has no e0ty cross-coupling with
+  // (u0x, d1x, d2x) for the constitutive models this feature exercises
+  // (TACSIsoTubeBeamConstitutive::evalTangentStiffness never sets a
+  // cross-shear entry), so the corresponding cross-Hessian inputs are
+  // zero-filled placeholders (see TACSBeamElementModel.h's own comment).
+  TacsScalar d2etyu[basis::NUM_TYING_POINTS * dsize];
+  TacsScalar d2etyd1[basis::NUM_TYING_POINTS * dsize];
+  TacsScalar d2etyd2[basis::NUM_TYING_POINTS * dsize];
+  memset(d2etyu, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
+  memset(d2etyd1, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
+  memset(d2etyd2, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
+  model::template addComputeTyingStrainHessian<vars_per_node, basis>(
+      alpha, Xpts, fn1, fn2, vars, d1, d2, dety, d2ety, d2etyu, d2etyd1,
+      d2etyd2, mat, d2d1, d2d2, d2d1u, d2d2u);
+
+  // Gap 2 (SPEC.md sec 1.3.2): fold the dynamics (rho[5]) cross-director
+  // contribution (unscaled) into the already alpha-scaled static one
+  // (TacsBeamAddCrossDirectorJacobian expects an already-fully-scaled
+  // buffer, mirroring director::addDirectorJacobian's own
+  // "caller pre-scales d2d/d2du" contract), then scatter into mat[].
+  for (int i = 0; i < dsize * dsize; i++) {
+    d2d1d2[i] += gamma * d2Tdotd1d2[i];
+  }
+  TacsBeamAddCrossDirectorJacobian<vars_per_node, offset, num_nodes>(
+      vars, fn1, fn2, d2d1d2, mat);
+
+  // Per-director Jacobian closures (SPEC.md sec 1.3 step 4) -- each of
+  // these also updates res internally (mirroring addDirectorResidual's own
+  // formula), so the separate addDirectorResidual calls Task 2.1's res-only
+  // scaffold used are intentionally removed here to avoid double-counting.
+  director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+      alpha, beta, gamma, vars, dvars, ddvars, fn1, d1d, d2Tdotd1, d2Tdotu1,
+      d2d1, d2d1u, res, mat);
+  director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+      alpha, beta, gamma, vars, dvars, ddvars, fn2, d2d, d2Tdotd2, d2Tdotu2,
+      d2d2, d2d2u, res, mat);
+
+  director::template addRotationConstrJacobian<vars_per_node, offset,
+                                               num_nodes>(alpha, vars, res,
+                                                          mat);
 }
 
 template <class quadrature, class basis, class director, class model>
