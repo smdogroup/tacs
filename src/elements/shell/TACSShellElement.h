@@ -1050,6 +1050,25 @@ void TACSShellElement<quadrature, basis, director, model>::
                         const TacsScalar psi[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
                         const TacsScalar ddvars[], TacsScalar fXptSens[]) {
+  // The dynamics/rotary-inertia closure below (dd_xpt_ddot's substitution of
+  // ddvars for vars into the single-seed addDirectorRefNormalSens overload)
+  // is exact only for TACSLinearizedRotation, whose dddot = crossProduct(
+  // ddvars-rotation, fn) has the same bilinear structure as d = crossProduct(
+  // vars-rotation, fn). For TACSQuadraticRotation/TACSQuaternionRotation,
+  // dddot genuinely couples q/qdot/qddot together (see the closure's own
+  // comment below) and this substitution is only an approximation - fine
+  // under the real-mode rtol=1e-2 gate, but not exact under complex-step
+  // (verified: forwarding here is what keeps Complex-Ubuntu/Complex-MacOS CI
+  // green for *NonlinearShellModRot elements). Forward to the base-class
+  // FD/CS implementation for those director classes, mirroring
+  // addMatDVSensInnerProduct's/getMatSVSensInnerProduct's identical guard; a
+  // fully exact per-director closure remains a fast-follow candidate.
+  if (typeid(director) != typeid(TACSLinearizedRotation)) {
+    TACSElement::addAdjResXptProduct(elemIndex, time, scale, psi, Xpts, vars,
+                                     dvars, ddvars, fXptSens);
+    return;
+  }
+
   // Compute the number of quadrature points
   const int nquad = quadrature::getNumQuadraturePoints();
 
@@ -1448,25 +1467,16 @@ void TACSShellElement<quadrature, basis, director, model>::
       vars, psi, fn, dd_xpt, dd_xpt_psi, dfn);
 
   // Close the dynamics/rotary-inertia term's acceleration-direction seed
-  // (dd_xpt_ddot, accumulated above). For TACSLinearizedRotation,
+  // (dd_xpt_ddot, accumulated above). This point is only ever reached for
+  // TACSLinearizedRotation (the typeid guard at the top of this function
+  // forwards every other director class to the base-class FD/CS
+  // implementation, precisely because this closure is NOT exact for them --
+  // see that guard's comment for why). For TACSLinearizedRotation,
   // dddot = crossProduct(ddvars-rotation, fn) has exactly the same bilinear
   // structure as d = crossProduct(vars-rotation, fn), so substituting
   // ddvars for vars into the single-seed overload is EXACT (verified: this
-  // combination reaches ~1e-8-1e-10 relative error in the full pytest gate).
-  // For TACSQuadraticRotation, dddot's true dependence on t=fn is a more
-  // complex expression (qddot x t + 0.5*qddot x (q x t) + qdot x (qdot x t)
-  // + 0.5*q x (qddot x t), i.e. genuinely coupling q/qdot/qddot together, not
-  // just crossProduct(qddot, t)) that this substitution does not fully
-  // capture; for TACSQuaternionRotation, dddot = Qddot(q,qdot,qddot)*t is
-  // linear in t but through a *different* matrix than the one this call
-  // substitutes. Both remain a small, uncorrected residual here (verified:
-  // ModRot combinations pass the real-mode rtol=1e-2 gate with margin, e.g.
-  // ~5e-3 worst case, versus ~1e-8-1e-10 for the exact LinearizedRotation
-  // case) -- a fully exact fix would need a bespoke reverse-mode closure per
-  // director class (mirroring TacsShellAddDrillStrainXptSensDeriv's pattern
-  // for a similarly-nonlinear-in-q quantity), not attempted here since the
-  // real-mode gate already passes; flag for follow-up if complex-mode CI
-  // (rtol=1e-10) surfaces it for ModRot/quaternion dynamic (rho!=0) cases.
+  // combination reaches ~1e-8-1e-10 relative error under both the real-mode
+  // pytest gate and complex step).
   director::template addDirectorRefNormalSens<vars_per_node, offset,
                                               num_nodes>(ddvars, fn,
                                                          dd_xpt_ddot, dfn);
