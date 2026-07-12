@@ -3041,9 +3041,51 @@ void TACSBeamElement<quadrature, basis, director,
     return;
   }
 
-  // TACS_GEOMETRIC_STIFFNESS_MATRIX and any future matType: interim
-  // explicit-forward-to-base (SPEC.md sec 4.1/4.2/4.3), superseded by
-  // Phase 5 for the former.
+  if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
+    // Analytic (Task 5.4), scoped to TACSLinearizedRotation like Task
+    // 5.2's getMatType port it reuses directly (same typeid-guard
+    // reason: the other two director classes' addDirectorJacobian
+    // overloads genuinely depend on vars for mat[] itself).
+    if (typeid(director) != typeid(TACSLinearizedRotation)) {
+      TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
+                                            Xpts, vars, dfdu);
+      return;
+    }
+
+    // d(psi^T*G(vars)*phi)/d(vars) = G(phi)*psi (a symmetric-trilinear-
+    // tensor identity, not a fresh derivation): G(vars), as computed by
+    // getMatType's TACS_GEOMETRIC_STIFFNESS_MATRIX branch, is LINEAR in
+    // its "path" argument (confirmed directly from that branch's own
+    // construction -- every Hessian block it scatters is either a
+    // Cs-only constant times a quantity linear in path, since
+    // TACSBeamNonlinearModel::evalStrainHessianDeriv's "_d"-suffixed
+    // family is linear in (u0xd, d1xd, d2xd, sd), and sd = Cs*e_linear
+    // (path) is itself linear in path). The underlying physical quantity
+    // -- G(vars) contracted bilinearly against two directions -- is
+    // therefore a fully symmetric trilinear tensor B(psi, phi, path)
+    // (third mixed partial derivatives of the strain-energy-like
+    // functional commute, regardless of implementation detail), so
+    // d(psi^T*G(vars)*phi)/d(vars_k) = B(psi, phi, e_k) = B(e_k, phi,
+    // psi) = [G(phi)]_{k,:} . psi, i.e. exactly the (row k of) matrix-
+    // vector product of "getMatType(GEOMETRIC, ..., vars=phi, ...)"
+    // (reused verbatim, not re-derived) applied to psi.
+    TacsScalar Gphi[vars_per_node * num_nodes * vars_per_node * num_nodes];
+    getMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, elemIndex, time, Xpts, phi,
+              Gphi);
+
+    const int nvars = vars_per_node * num_nodes;
+    for (int i = 0; i < nvars; i++) {
+      TacsScalar val = 0.0;
+      for (int j = 0; j < nvars; j++) {
+        val += Gphi[i * nvars + j] * psi[j];
+      }
+      dfdu[i] = val;
+    }
+    return;
+  }
+
+  // Any future matType beyond the enumerated set: interim
+  // explicit-forward-to-base (SPEC.md sec 4.1/4.2/4.3).
   TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                         Xpts, vars, dfdu);
 }
