@@ -2231,11 +2231,30 @@ void TACSBeamElement<quadrature, basis, director,
                                                       int dvLen,
                                                       TacsScalar dfdx[]) {
   if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
-    // Interim explicit-forward to the base class (SPEC.md sec 4.1/4.2's
-    // "never-silent-punt" principle): Phase 5 (SPEC.md sec 2.4.4/2.4.5)
-    // replaces this branch with a real analytic implementation, unless its
-    // TACSBeamNonlinearModel prerequisite overruns its timebox, in which
-    // case this forward becomes the permanent, documented fallback.
+    // Documented failure (Task 5.3, SPEC.md sec 2.4.4.c's protocol), not a
+    // pre-planned punt: attempted a strain-vector-through-Cs
+    // reformulation of d(psi^T*G(vars)*phi)/dx (analogous in shape to
+    // TACS_STIFFNESS_MATRIX's own branch just below), built from the
+    // psi/phi-direction kinematics chains that branch already computes
+    // plus a Task-5.2-style zero-base/path(=vars)-direction chain.
+    // elements.TestElementMatDVSens failed with analytic-vs-FD/CS
+    // mismatches in both sign and magnitude (not a near-miss); a targeted
+    // value-level diagnostic (independent of any DV-differentiation)
+    // showed the reformulation's own hand-derived contraction disagrees
+    // with a direct getMatType-based contraction before any
+    // differentiation at all. Root cause: the reformulation only
+    // captures the direct u0x/d1x/d2x-to-DOF-basis contraction of the
+    // geometric Hessian; it omits getMatType's SEPARATE
+    // director-Jacobian-closure scatter path
+    // (TacsBeamAddCrossDirectorJacobian/director::addDirectorJacobian),
+    // which routes the SAME Cs-dependent director-space accumulators
+    // through the rotation parametrization's own kinematics
+    // (mat3x3SkewMatSkewTransform-style contractions, TACSDirector.h) --
+    // not reducible to a simple strain-pair-through-Cs contraction the
+    // way the direct contribution is. Full diagnostic recorded in
+    // PLAN.md's Phase 5 section (Task 5.3's own entry). Forwarding to the
+    // base class here is therefore the permanent fallback for this
+    // matType until that director-closure DV-sensitivity is derived.
     TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
                                           phi, Xpts, vars, dvLen, dfdx);
     return;
@@ -2805,9 +2824,22 @@ void TACSBeamElement<quadrature, basis, director, model>::
                                        vars, dfdXpts);
     return;
   } else if (matType != TACS_MASS_MATRIX) {
-    // TACS_GEOMETRIC_STIFFNESS_MATRIX and any future matType: interim
-    // explicit-forward-to-base (SPEC.md sec 4.1/4.2/4.3), superseded by
-    // Phase 5 for the former.
+    // TACS_GEOMETRIC_STIFFNESS_MATRIX: reasoned deferral (Task 5.5), not
+    // attempted with new code this session -- not "deferred for time"
+    // alone. Task 5.3's own addMatDVSensInnerProduct attempt (this
+    // file, its own header comment) found that a strain-vector-through-
+    // Cs reformulation of the analogous DV-sensitivity bilinear form
+    // misses getMatType's SEPARATE director-Jacobian-closure scatter
+    // path (TacsBeamAddCrossDirectorJacobian/
+    // director::addDirectorJacobian), which is not reducible to a simple
+    // strain-pair contraction. This Xpts-sensitivity would need that
+    // SAME director-closure complexity resolved first, plus additional
+    // Xpts-specific bookkeeping (a triple-direction psi/phi/Xpts
+    // extension, a new nonlinear tying-strain Xpts-adjoint-Deriv helper,
+    // extended T/XdinvT/XdinvzT Xpts-adjoint terms) on top of it -- see
+    // PLAN.md's Phase 5 section (Task 5.5's own entry) for the full
+    // record. Any future matType beyond the enumerated set also lands
+    // here (SPEC.md sec 4.1/4.2/4.3).
     TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi,
                                            phi, Xpts, vars, dfdXpts);
     return;
