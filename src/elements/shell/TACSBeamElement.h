@@ -2214,9 +2214,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
 /*
   Add the derivative of the matrix inner product psi^T * mat * phi with
   respect to the design variables (SPEC.md sec 2.2/2.3). TACS_STIFFNESS_MATRIX
-  and TACS_MASS_MATRIX are analytic; TACS_GEOMETRIC_STIFFNESS_MATRIX is an
-  interim explicit-forward-to-base punt, superseded by Phase 5 (SPEC.md sec
-  2.4.4/2.4.5, 4.2) -- not a permanent scope cut.
+  and TACS_MASS_MATRIX are analytic; TACS_GEOMETRIC_STIFFNESS_MATRIX is a
+  permanent documented-failure fallback (Task 5.3 attempted a
+  strain-through-Cs reformulation and root-caused why it fails -- see the
+  branch comment below -- not an interim punt awaiting a later phase).
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director,
@@ -2802,7 +2803,9 @@ void TACSBeamElement<quadrature, basis, director, model>::
   isolate -- forwarded to the base FD/CS implementation for
   TACSQuadraticRotation/TACSQuaternionRotation specifically, per the
   documented-failure-only fallback rule. TACS_GEOMETRIC_STIFFNESS_MATRIX
-  is an interim explicit-forward-to-base punt, superseded by Phase 5.
+  is a permanent reasoned-deferral fallback (Task 5.5, deferred pending
+  Task 5.3's director-closure root cause -- see the branch comment below
+  -- not an interim punt awaiting a later phase).
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
