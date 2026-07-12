@@ -884,6 +884,51 @@ class ADMatTrans3x3ADVecMultADScale {
     Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
     scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
   }
+  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
+  // 7): y = scale.value*A^T*x is TRILINEAR in (scale, A, x) (unlike every
+  // other op extended in this feature, which is at most bilinear) -- so
+  // hforward is forward()'s own formula with the p-seed substituted for the
+  // tangent (safe regardless of arity, since it is just the primal's own
+  // p-directional derivative), but hreverse needs reverse()'s own formula
+  // (using .xh in place of .xd, the ordinary "propagate through the
+  // Jacobian" term) PLUS TWO cross terms per input -- one per OTHER factor,
+  // since a trilinear form has two other factors to pair with, generalizing
+  // the bilinear ops' single cross term. Derived by the identical
+  // product-rule/reverse-shape-plus-cross-term(s) pattern E7 verified for
+  // ADMat3x3ADMatMult/ADMatTrans3x3ADMatMult, NOT itself run through E7's
+  // harness (SPEC-phase-7.md sec 2.2/sec 5) -- independently verified in
+  // a2d/tests/test_admattrans3x3advecmultadscale_second_order.cpp with all
+  // three operands genuinely seeded (the actual G4 usage seeds only x; scale
+  // and A stay Xpts-role-only there, per SPEC's own classification, so most
+  // of these cross terms are numerically zero in that specific call site --
+  // this general formula is verified independent of that restriction).
+  void hforward() {
+    MatTrans3x3VecMultScaleCore(scale.value, A.Ap, x.x, y.xp);
+    MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);
+    MatTrans3x3VecMultAddScaleCore(scale.valuep, A.A, x.x, y.xp);
+  }
+  void hreverse() {
+    // reverse()-shape term: propagate y.xh through the ordinary Jacobian
+    // (all three factors held at their primal values).
+    Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xh, x.xh);
+    Vec3OuterProductAddScaleCore(scale.value, x.x, y.xh, A.Ah);
+    scale.valueh += Mat3x3InnerProductCore(A.A, x.x, y.xh);
+    // Cross-pairing (scale, x): scale's p-seed contributes to x.xh (A held
+    // at primal); x's p-seed contributes to scale.valueh (A held at
+    // primal); both weighted by the ordinary downstream adjoint y.xd.
+    Mat3x3VecMultAddScaleCore(scale.valuep, A.A, y.xd, x.xh);
+    scale.valueh += Mat3x3InnerProductCore(A.A, x.xp, y.xd);
+    // Cross-pairing (scale, A): scale's p-seed contributes to A.Ah (x held
+    // at primal); A's p-seed contributes to scale.valueh (x held at
+    // primal); both weighted by y.xd.
+    Vec3OuterProductAddScaleCore(scale.valuep, x.x, y.xd, A.Ah);
+    scale.valueh += Mat3x3InnerProductCore(A.Ap, x.x, y.xd);
+    // Cross-pairing (A, x): A's p-seed contributes to x.xh (scale held at
+    // primal); x's p-seed contributes to A.Ah (scale held at primal); both
+    // weighted by y.xd.
+    Mat3x3VecMultAddScaleCore(scale.value, A.Ap, y.xd, x.xh);
+    Vec3OuterProductAddScaleCore(scale.value, x.xp, y.xd, A.Ah);
+  }
 
   ADScalar &scale;
   ADMat3x3 &A;
