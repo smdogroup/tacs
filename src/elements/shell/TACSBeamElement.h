@@ -2251,6 +2251,41 @@ void TACSBeamElement<quadrature, basis, director,
     // PLAN.md's Phase 5 section (Task 5.3's own entry). Forwarding to the
     // base class here is therefore the permanent fallback for this
     // matType until that director-closure DV-sensitivity is derived.
+    //
+    // Task 7.5 (G3, SPEC-phase-7.md sec 4.3) update: re-derived the
+    // "direct" piece from scratch this session (not just re-reading Task
+    // 5.3's note) by tracing getMatType's GEOMETRIC branch precisely: with
+    // TACSLinearizedRotation's u0x_base/d1x_base/d2x_base identically zero
+    // (getMatType's own "base=0, path=vars" convention), the Ju0x/Jd1x/Jd2x
+    // Jacobian rows evalStrainHessianDeriv builds collapse to FIXED
+    // constants, and the resulting 4-vector contraction
+    // "Ju0x.u0x_psi + Jd1x.d1x_psi + Jd2x.d2x_psi" reduces EXACTLY to
+    // epsi[0:4] (TACSBeamNonlinearModel::evalStrain's own axial/torsion/
+    // bending components, confirmed by direct comparison of the two
+    // formulas) -- i.e. the "direct" piece's DV-sens is expressible in ONE
+    // addGeometricTangentStressDVSens call using epsi/ephi with entries
+    // [4],[5] zeroed (mirroring the padding needed since C4 is only the
+    // upper-left 4x4 block of the packed Cs). This CONFIRMS (does not just
+    // repeat) Task 5.3's own finding, from a different angle: this
+    // "direct piece" formula is the SAME shape Task 5.3 already tried and
+    // found insufficient, and the closure piece
+    // (TacsBeamAddCrossDirectorJacobian/director::addDirectorJacobian) is a
+    // genuinely SEPARATE contribution -- specifically, it is the pullback
+    // of a (u0xi, d01, d02)-LEVEL Hessian block (built by getMatType's own
+    // per-DOF "m" sweep, BEFORE projecting through the director map J(q))
+    // through J(q) itself, i.e. a SECOND, independent "J(q)-congruence"
+    // nonlinearity beyond the one already implicit in d1x_psi/d2x_psi's own
+    // construction (which projects through J(q) exactly once, at the
+    // director-RATE level, not the closure's own director-VALUE level).
+    // Given the demonstrated pattern this same session (Task 7.3/7.4: a
+    // recipe that looked complete on paper turned out to have a second,
+    // independent missing/wrong term only caught by implementation-time
+    // verification), attempting this closure piece without a full,
+    // independently re-verified re-derivation (a nontrivial undertaking in
+    // its own right, likely comparable in size to Task 7.3's own attempt)
+    // was not started this session -- deferred with this added precision
+    // rather than guessed at. G4 (SPEC-phase-7.md sec 4.4), which hard-
+    // depends on this piece landing first, remains correspondingly blocked.
     TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
                                           phi, Xpts, vars, dvLen, dfdx);
     return;
