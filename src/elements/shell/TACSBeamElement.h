@@ -1318,17 +1318,362 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
-    // Explicit-forward to the base class instead of a silent early return
-    // (SPEC.md sec 1.4/4.1/4.2, the "never-silent-punt" principle): the
-    // base class's own TACS_GEOMETRIC_STIFFNESS_MATRIX branch
-    // (TACSElement.cpp:346-348) is ALSO "not implemented" today, so this is
-    // numerically a no-op (both produce an all-zero mat) -- the value is
-    // consistency/auditability, not a correctness fix, and this is an
-    // interim state: Phase 5 (SPEC.md sec 2.4.4/2.4.5) replaces this branch
-    // with a real analytic implementation, unless its
-    // TACSBeamNonlinearModel prerequisite overruns its timebox, in which
-    // case this forward becomes the permanent, documented fallback.
-    TACSElement::getMatType(matType, elemIndex, time, Xpts, vars, mat);
+    // Analytic port (Task 5.2, Phase 5), scoped to TACSLinearizedRotation
+    // -- same documented-fallback scope every prior director-Jacobian
+    // closure in this feature already uses (TacsBeamAddCrossDirectorJacobian,
+    // director::addDirectorJacobian's own vars/dd-independence relied on
+    // below both hold only for this director class; TACSQuadraticRotation/
+    // TACSQuaternionRotation's addDirectorJacobian overloads DO depend on
+    // the real vars for mat[] itself, confirmed by reading TACSDirector.h
+    // directly, so this typeid guard is a correctness requirement, not
+    // caution for its own sake).
+    if (typeid(director) != typeid(TACSLinearizedRotation)) {
+      TACSElement::getMatType(matType, elemIndex, time, Xpts, vars, mat);
+      return;
+    }
+
+    // Resolution (PLAN.md's Phase 5 "Kg-vs-Ku+Kg" note, cross-verified
+    // against src/TACSBuckling.cpp and origin/master's
+    // TACSShellElement::getMatType): report Ku+Kg combined, computed as
+    // the directional derivative of the (otherwise state-independent)
+    // material Hessian along path=vars, linearized about a ZERO reference
+    // state -- not a separate closed-form Kg-only term.
+    alpha = 1.0;
+    const TacsScalar *path = vars;
+
+    const int nquad = quadrature::getNumQuadraturePoints();
+    const A2D::Vec3 &axis = transform->getRefAxis();
+
+    TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
+    TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
+
+    TacsScalar zeros[vars_per_node * num_nodes];
+    memset(zeros, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+
+    // Base director state (zero) and its directional derivative along
+    // path=vars (dd1/dd2 -- for TACSLinearizedRotation's linear director
+    // map, this equals exactly what computeDirectorRates(vars) would give
+    // directly, confirmed algebraically in PLAN.md's progress note).
+    TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], dd1[dsize];
+    TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], dd2[dsize];
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 basis::NUM_NODES>(
+        zeros, zeros, zeros, path, fn1, d1, d1dot, d1ddot, dd1);
+    director::template computeDirectorRatesDeriv<vars_per_node, offset,
+                                                 basis::NUM_NODES>(
+        zeros, zeros, zeros, path, fn2, d2, d2dot, d2ddot, dd2);
+
+    // Tying strain at the zero base state (ety, identically zero -- e0ty
+    // is an exactly-linear functional of (Uxi, d), confirmed in Task 5.1)
+    // and its directional derivative along path (etyd, the real
+    // small-strain shear/tying strain).
+    TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
+    TACSBeamNonlinearModel::template computeTyingStrainDeriv<vars_per_node,
+                                                              basis>(
+        Xpts, fn1, fn2, zeros, d1, d2, path, dd1, dd2, ety, etyd);
+
+    // Director-space accumulators for the (only nonzero, "_d"-suffixed)
+    // path-direction contribution. The BASE (non-"_d") Hessian family is
+    // deliberately never scattered anywhere (confirmed by directly
+    // reading origin/master's TACSShellElement::getMatType: its own
+    // analogous base accumulators, d2d/d2du, are computed but never
+    // passed to addDirectorJacobian -- only the "_d" family is) since it
+    // reduces to the pure material stiffness TACS_STIFFNESS_MATRIX
+    // already reports; re-including it here would double-count K inside
+    // G. This also means beam needs no addComputeTyingStrainHessianDeriv-
+    // style helper at all (unlike shell): beam's e0ty is exactly linear
+    // in both models (Task 5.1), so its own Hessian block (d2e0ty) is a
+    // Cs-only constant with an identically-zero directional derivative
+    // (d2e0tyd below) -- the tying-strain contribution to G is provably
+    // zero, so no tying-strain-Hessian scatter is needed for this matType
+    // at all (only the tying-strain *value*, etyd, still feeds e0tyd into
+    // the strain vector and hence the real stress sd).
+    TacsScalar d2d1_g[dsize * dsize], d2d2_g[dsize * dsize];
+    TacsScalar d2d1u_g[dsize * dsize], d2d2u_g[dsize * dsize];
+    TacsScalar d2d1d2_g[dsize * dsize];
+    memset(d2d1_g, 0, dsize * dsize * sizeof(TacsScalar));
+    memset(d2d2_g, 0, dsize * dsize * sizeof(TacsScalar));
+    memset(d2d1u_g, 0, dsize * dsize * sizeof(TacsScalar));
+    memset(d2d2u_g, 0, dsize * dsize * sizeof(TacsScalar));
+    memset(d2d1d2_g, 0, dsize * dsize * sizeof(TacsScalar));
+
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      // Xpts-only geometry -- identical to addJacobian's own (no vars
+      // dependence at all, so no "base"/"path" distinction needed here).
+      A2D::Mat3x3 T;
+      A2D::Vec3 X0;
+      A2D::Vec3 X0xi;
+      A2D::Vec3 n1, n2;
+      A2D::Vec3 n1xi, n2xi;
+
+      basis::template interpFields<3, 3>(pt, Xpts, X0.x);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+      basis::template interpFields<3, 3>(pt, fn1, n1.x);
+      basis::template interpFields<3, 3>(pt, fn2, n2.x);
+      basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
+      basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+
+      transform->computeTransform(X0xi.x, T.A);
+
+      A2D::Mat3x3 Xd, Xdinv;
+      A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+      A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+
+      A2D::Scalar detXd;
+      A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+
+      A2D::Mat3x3 XdinvT;
+      A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+
+      A2D::Scalar s0, sz1, sz2;
+      A2D::Vec3 e1(1.0, 0.0, 0.0);
+      A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+      A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+      A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+
+      // Path-direction kinematics graph: build u0d/u0x/d1t/d1x/d2t/d2x
+      // using the SAME A2D ops addJacobian uses, but with vars/d1/d2
+      // replaced by path/dd1/dd2 -- since u0d/u0x/d1t/d1x/d2t/d2x are
+      // each an exactly-linear function of (u0xi, d01, d02, d01xi, d02xi)
+      // for fixed Xpts (T/Xdinv/XdinvT/s0/sz1/sz2 above never depend on
+      // vars), the graph's own forward VALUE fields (u0x.A/d1x.x/d2x.x),
+      // when fed path/dd1/dd2 in place of the real per-node fields,
+      // equal exactly the linearized (small-strain) strain-displacement
+      // gradients under path=vars -- no separate AD "directional" sweep
+      // is needed to get this; it is the plain forward value of the same
+      // linear map, verified via the standalone complex-step scratch
+      // check this task's PLAN.md progress note records.
+      A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, path, u0xi.x);
+      basis::template interpFields<3, 3>(pt, dd1, d01.x);
+      basis::template interpFields<3, 3>(pt, dd2, d02.x);
+      basis::template interpFieldsGrad<3, 3>(pt, dd1, d01xi.x);
+      basis::template interpFieldsGrad<3, 3>(pt, dd2, d02xi.x);
+
+      A2D::ADMat3x3 u0d;
+      A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
+
+      A2D::ADMat3x3 u0dXdinvT, u0x;
+      A2D::ADMat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
+      A2D::MatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
+
+      A2D::ADVec3 d1t, d1x;
+      A2D::ADVec3ADVecScalarAxpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
+      A2D::MatTrans3x3ADVecMultScale matmultd1x(s0, T, d1t, d1x);
+
+      A2D::ADVec3 d2t, d2x;
+      A2D::ADVec3ADVecScalarAxpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
+      A2D::MatTrans3x3ADVecMultScale matmultd2x(s0, T, d2t, d2x);
+
+      // u0x.A/d1x.x/d2x.x now hold the real (path-direction) small-strain
+      // gradients; the "base" strain-map inputs are identically zero.
+      TacsScalar u0x_base[9], d1x_base[3], d2x_base[3];
+      memset(u0x_base, 0, 9 * sizeof(TacsScalar));
+      memset(d1x_base, 0, 3 * sizeof(TacsScalar));
+      memset(d2x_base, 0, 3 * sizeof(TacsScalar));
+
+      TacsScalar gty_base[2], gty[2];
+      basis::interpTyingStrain(pt, ety, gty_base);
+      basis::interpTyingStrain(pt, etyd, gty);
+
+      TacsScalar e0ty[2], e0tyd[2];
+      e0ty[0] = 2.0 * XdinvT.A[0] * gty_base[0];
+      e0ty[1] = 2.0 * XdinvT.A[0] * gty_base[1];
+      e0tyd[0] = 2.0 * XdinvT.A[0] * gty[0];
+      e0tyd[1] = 2.0 * XdinvT.A[0] * gty[1];
+
+      TacsScalar e[6], ed[6];
+      TACSBeamNonlinearModel::evalStrainDeriv(u0x_base, d1x_base, d2x_base,
+                                              e0ty, u0x.A, d1x.x, d2x.x,
+                                              e0tyd, e, ed);
+
+      TacsScalar s[6], sd[6];
+      con->evalStress(elemIndex, pt, X0.x, e, s);
+      con->evalStress(elemIndex, pt, X0.x, ed, sd);
+
+      TacsScalar Cs[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
+      con->evalTangentStiffness(elemIndex, pt, X0.x, Cs);
+
+      TacsScalar d2u0x[81], d2d1x[9], d2d2x[9], d2e0ty[4];
+      TacsScalar d2u0xd1x[27], d2u0xd2x[27], d2d1xd2x[9];
+      TacsScalar d2u0xd[81], d2d1xd[9], d2d2xd[9], d2e0tyd[4];
+      TacsScalar d2u0xd1xd[27], d2u0xd2xd[27], d2d1xd2xd[9];
+      TACSBeamNonlinearModel::evalStrainHessianDeriv(
+          alpha * detXd.value, s, Cs, u0x_base, d1x_base, d2x_base, e0ty, sd,
+          u0x.A, d1x.x, d2x.x, e0tyd, d2u0x, d2d1x, d2d2x, d2e0ty, d2u0xd1x,
+          d2u0xd2x, d2d1xd2x, d2u0xd, d2d1xd, d2d2xd, d2e0tyd, d2u0xd1xd,
+          d2u0xd2xd, d2d1xd2xd);
+
+      // Per-DOF hforward/hreverse sweep -- identical structure to
+      // addJacobian's own (A)/(B)/(C) sections, but fed the "_d"-suffixed
+      // Hessian family (the combined Ku+Kg contribution) and scattering
+      // straight into mat[]/the real director accumulators, since (per
+      // the note above) there is no separate "base" sweep pass to run:
+      // its would-be output is unused in shell's own analogous code too.
+      TacsScalar seed[dsize];
+
+      for (int m = 0; m < dsize; m++) {
+        TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d,
+                                     u0dXdinvT, u0x, d1t, d1x, d2t, d2x);
+
+        memset(seed, 0, dsize * sizeof(TacsScalar));
+        seed[m] = 1.0;
+        basis::template interpFieldsGrad<3, 3>(pt, seed, u0xi.xp);
+
+        assembleu0d.hforward();
+        multu0d.hforward();
+        multu0x.hforward();
+        axpyd1t.hforward();
+        matmultd1x.hforward();
+        axpyd2t.hforward();
+        matmultd2x.hforward();
+
+        TacsBeamContractStrainHessian(d2u0xd, d2d1xd, d2d2xd, d2u0xd1xd,
+                                      d2u0xd2xd, d2d1xd2xd, u0x.Ap, d1x.xp,
+                                      d2x.xp, u0x.Ah, d1x.xh, d2x.xh);
+
+        matmultd2x.hreverse();
+        axpyd2t.hreverse();
+        matmultd1x.hreverse();
+        axpyd1t.hreverse();
+        multu0x.hreverse();
+        multu0d.hreverse();
+        assembleu0d.hreverse();
+
+        int mm = vars_per_node * (m / 3) + (m % 3);
+
+        TacsScalar ucol[dsize];
+        memset(ucol, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, u0xi.xh, ucol);
+        for (int r = 0; r < dsize; r++) {
+          int rr = vars_per_node * (r / 3) + (r % 3);
+          mat[rr * vars_per_node * num_nodes + mm] += ucol[r];
+        }
+
+        TacsScalar d1col[dsize];
+        memset(d1col, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh,
+                                                           d1col);
+        for (int r = 0; r < dsize; r++) {
+          d2d1u_g[dsize * r + m] += d1col[r];
+        }
+
+        TacsScalar d2col[dsize];
+        memset(d2col, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
+                                                           d2col);
+        for (int r = 0; r < dsize; r++) {
+          d2d2u_g[dsize * r + m] += d2col[r];
+        }
+      }
+
+      for (int m = 0; m < dsize; m++) {
+        TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d,
+                                     u0dXdinvT, u0x, d1t, d1x, d2t, d2x);
+
+        memset(seed, 0, dsize * sizeof(TacsScalar));
+        seed[m] = 1.0;
+        basis::template interpFields<3, 3>(pt, seed, d01.xp);
+        basis::template interpFieldsGrad<3, 3>(pt, seed, d01xi.xp);
+
+        assembleu0d.hforward();
+        multu0d.hforward();
+        multu0x.hforward();
+        axpyd1t.hforward();
+        matmultd1x.hforward();
+        axpyd2t.hforward();
+        matmultd2x.hforward();
+
+        TacsBeamContractStrainHessian(d2u0xd, d2d1xd, d2d2xd, d2u0xd1xd,
+                                      d2u0xd2xd, d2d1xd2xd, u0x.Ap, d1x.xp,
+                                      d2x.xp, u0x.Ah, d1x.xh, d2x.xh);
+
+        matmultd2x.hreverse();
+        axpyd2t.hreverse();
+        matmultd1x.hreverse();
+        axpyd1t.hreverse();
+        multu0x.hreverse();
+        multu0d.hreverse();
+        assembleu0d.hreverse();
+
+        TacsScalar d1col[dsize];
+        memset(d1col, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh,
+                                                           d1col);
+        for (int r = 0; r < dsize; r++) {
+          d2d1_g[dsize * r + m] += d1col[r];
+        }
+
+        TacsScalar d2col[dsize];
+        memset(d2col, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
+                                                           d2col);
+        for (int r = 0; r < dsize; r++) {
+          d2d1d2_g[dsize * m + r] += d2col[r];
+        }
+      }
+
+      for (int m = 0; m < dsize; m++) {
+        TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d,
+                                     u0dXdinvT, u0x, d1t, d1x, d2t, d2x);
+
+        memset(seed, 0, dsize * sizeof(TacsScalar));
+        seed[m] = 1.0;
+        basis::template interpFields<3, 3>(pt, seed, d02.xp);
+        basis::template interpFieldsGrad<3, 3>(pt, seed, d02xi.xp);
+
+        assembleu0d.hforward();
+        multu0d.hforward();
+        multu0x.hforward();
+        axpyd1t.hforward();
+        matmultd1x.hforward();
+        axpyd2t.hforward();
+        matmultd2x.hforward();
+
+        TacsBeamContractStrainHessian(d2u0xd, d2d1xd, d2d2xd, d2u0xd1xd,
+                                      d2u0xd2xd, d2d1xd2xd, u0x.Ap, d1x.xp,
+                                      d2x.xp, u0x.Ah, d1x.xh, d2x.xh);
+
+        matmultd2x.hreverse();
+        axpyd2t.hreverse();
+        matmultd1x.hreverse();
+        axpyd1t.hreverse();
+        multu0x.hreverse();
+        multu0d.hreverse();
+        assembleu0d.hreverse();
+
+        TacsScalar d2col[dsize];
+        memset(d2col, 0, dsize * sizeof(TacsScalar));
+        basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
+                                                           d2col);
+        for (int r = 0; r < dsize; r++) {
+          d2d2_g[dsize * r + m] += d2col[r];
+        }
+      }
+    }
+
+    TacsBeamAddCrossDirectorJacobian<vars_per_node, offset, num_nodes>(
+        path, fn1, fn2, d2d1d2_g, mat);
+
+    TacsScalar d2Tdotd_zero[dsize * dsize], d2Tdotu_zero[dsize * dsize];
+    memset(d2Tdotd_zero, 0, dsize * dsize * sizeof(TacsScalar));
+    memset(d2Tdotu_zero, 0, dsize * dsize * sizeof(TacsScalar));
+
+    director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+        alpha, 0.0, 0.0, path, zeros, zeros, fn1, dd1, d2Tdotd_zero,
+        d2Tdotu_zero, d2d1_g, d2d1u_g, NULL, mat);
+    director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
+        alpha, 0.0, 0.0, path, zeros, zeros, fn2, dd2, d2Tdotd_zero,
+        d2Tdotu_zero, d2d2_g, d2d2u_g, NULL, mat);
+
     return;
   }
   // Create dummy residual vector
