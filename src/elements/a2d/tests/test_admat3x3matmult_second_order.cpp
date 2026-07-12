@@ -45,6 +45,18 @@ int main() {
     A.A[i] = randReal();
     B[i] = randReal();
   }
+  // Named, block-scoped Mat3x3 (NOT the raw TacsScalar[9] array above passed
+  // directly to a constructor storing a `const Mat3x3&` reference member) --
+  // E7 found this exact raw-array pattern creates a temporary Mat3x3 (via
+  // Mat3x3's own implicit converting constructor) that is destroyed at the
+  // end of the constructor-call's full expression, leaving the op object
+  // holding a DANGLING reference for every subsequent .hforward()/
+  // .hreverse() call -- undefined behavior that stayed silently benign here
+  // only by luck of stack-slot reuse (SPEC-phase-7.md sec 2.2/sec 7,
+  // VALIDATION.md's E7 entry). B[] itself is retained above for the
+  // hand-computed reference formulas below, which only ever read its value,
+  // never bind a reference to it.
+  Mat3x3 Bmat(B);
   TacsScalar Ap[9];
   for (int i = 0; i < 9; i++) Ap[i] = randReal();
 
@@ -55,7 +67,7 @@ int main() {
     ADMat3x3 At = A;
     for (int i = 0; i < 9; i++) At.Ap[i] = Ap[i];
     ADMat3x3 Ct;
-    ADMat3x3MatMult op(scale, At, B, Ct);
+    ADMat3x3MatMult op(scale, At, Bmat, Ct);
     op.hforward();
 
 #ifdef TACS_USE_COMPLEX
@@ -63,7 +75,7 @@ int main() {
     ADMat3x3 Ah;
     for (int i = 0; i < 9; i++) Ah.A[i] = A.A[i] + TacsScalar(0.0, dh) * Ap[i];
     ADMat3x3 Ch;
-    ADMat3x3MatMult(scale, Ah, B, Ch);
+    ADMat3x3MatMult(scale, Ah, Bmat, Ch);
     double maxerr = 0.0;
     for (int i = 0; i < 9; i++) {
       double ref = TacsImagPart(Ch.A[i]) / dh;
@@ -77,8 +89,8 @@ int main() {
       Amh.A[i] = A.A[i] - dh * Ap[i];
     }
     ADMat3x3 Cph, Cmh;
-    ADMat3x3MatMult(scale, Aph, B, Cph);
-    ADMat3x3MatMult(scale, Amh, B, Cmh);
+    ADMat3x3MatMult(scale, Aph, Bmat, Cph);
+    ADMat3x3MatMult(scale, Amh, Bmat, Cmh);
     double maxerr = 0.0;
     for (int i = 0; i < 9; i++) {
       double ref = TacsRealPart((Cph.A[i] - Cmh.A[i]) / (2.0 * dh));
@@ -97,7 +109,7 @@ int main() {
     ADMat3x3 At = A;
     for (int i = 0; i < 9; i++) At.Ap[i] = Ap[i];
     ADMat3x3 Ct;
-    ADMat3x3MatMult op(scale, At, B, Ct);
+    ADMat3x3MatMult op(scale, At, Bmat, Ct);
     op.hforward();
     // Ct.Ah left at its zero-initialized default (no downstream 2nd-order
     // seed injected).
@@ -130,7 +142,7 @@ int main() {
     ADMat3x3 At = A;
     for (int i = 0; i < 9; i++) At.Ap[i] = Ap[i];
     ADMat3x3 Ct;
-    ADMat3x3MatMult op(scale, At, B, Ct);
+    ADMat3x3MatMult op(scale, At, Bmat, Ct);
     op.hforward();
     for (int i = 0; i < 9; i++) Ct.Ah[i] = Ch[i];
     op.hreverse();
@@ -166,7 +178,7 @@ int main() {
       A0.A[i] = randReal();
       A0.Ad[i] = randReal();
     }
-    ADMat3x3MatMult op0(A0, B, C0);
+    ADMat3x3MatMult op0(A0, Bmat, C0);
     op0.forward();
     op0.reverse();
   }
