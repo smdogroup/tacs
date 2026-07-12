@@ -216,6 +216,34 @@ class ADVec3Axpy {
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
+  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
+  // 7): v = scale*alpha.value*x + y is bilinear in (alpha, x) and purely
+  // additive (linear) in y -- so hforward is forward()'s own formula with
+  // the p-seed substituted for the tangent, and hreverse is reverse()'s own
+  // formula (using .xh in place of .xd, propagated through the OTHER
+  // bilinear operand's PRIMAL) plus ONE cross term for the (alpha, x)
+  // bilinear pair (the OTHER operand's p-seed contracted against this op's
+  // ordinary first-order downstream weight, v.xd) -- y gets no cross term
+  // since it enters v additively, not multiplicatively (d^2v/d(alpha)dy =
+  // d^2v/dx*dy = 0). Derived by the identical pattern already E7-verified
+  // for ADMat3x3ADMatMult/ADMatTrans3x3ADMatMult, independently verified in
+  // a2d/tests/test_advec3axpy_second_order.cpp (not itself run through E7's
+  // harness, per SPEC-phase-7.md sec 2.2/sec 5).
+  void hforward() {
+    v.xp[0] = scale * (alpha.valuep * x.x[0] + alpha.value * x.xp[0]) + y.xp[0];
+    v.xp[1] = scale * (alpha.valuep * x.x[1] + alpha.value * x.xp[1]) + y.xp[1];
+    v.xp[2] = scale * (alpha.valuep * x.x[2] + alpha.value * x.xp[2]) + y.xp[2];
+  }
+  void hreverse() {
+    alpha.valueh += scale * Vec3DotCore(x.x, v.xh);
+    alpha.valueh += scale * Vec3DotCore(x.xp, v.xd);
+    x.xh[0] += scale * (alpha.value * v.xh[0] + alpha.valuep * v.xd[0]);
+    x.xh[1] += scale * (alpha.value * v.xh[1] + alpha.valuep * v.xd[1]);
+    x.xh[2] += scale * (alpha.value * v.xh[2] + alpha.valuep * v.xd[2]);
+    y.xh[0] += v.xh[0];
+    y.xh[1] += v.xh[1];
+    y.xh[2] += v.xh[2];
+  }
 
   const TacsScalar scale;
   ADScalar &alpha;
