@@ -773,7 +773,7 @@ class TACSBeamNonlinearModel {
 
   /**
     Nonlinear strain measure (SPEC.md sec 2.4.4.a). u0x/d1x/d2x are indexed
-    exactly as in TACSBeamLinearModel above: u0x[3*a+b] = d(u_a)/d(xi_b)
+    exactly as in TACSBeamLinearModel above: u0x[3*b+a] = d(u_a)/d(xi_b)
     with xi_0 the beam-axis parametric direction and xi_1/xi_2 the two
     transverse directions, so u0x[0..2] = d(u)/dxi_0 (the axial-direction
     gradient of the full displacement vector), u0x[3*1+j] = d(u)/dxi_1,
@@ -1765,6 +1765,268 @@ int TacsTestBeamModelDerivatives(double dh = 1e-7, int test_print_level = 2,
   }
   if (test_print_level > 1) {
     TacsPrintErrorComponents(stderr, "d2e0ty", d2e0ty, fd2e0ty, 4);
+  }
+  if (test_print_level) {
+    fprintf(stderr, "\n");
+  }
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  return fail;
+}
+/*
+  FD/CS checks of TACSBeamNonlinearModel's "...Deriv"-suffixed family
+  (evalStrainDeriv, evalStrainSensDeriv, evalStrainHessianDeriv), added per
+  Phase 5's review feedback: these are exactly the methods
+  TACSBeamElement::getMatType's TACS_GEOMETRIC_STIFFNESS_MATRIX branch
+  depends on, and (unlike evalStrain/evalStrainSens/evalStrainHessian,
+  covered by TacsTestBeamModelDerivatives above) had no committed,
+  reproducible regression coverage before this function -- only an
+  uncommitted scratch complex-step driver, per this task's own PLAN.md
+  note.
+
+  This is a SEPARATE function from TacsTestBeamModelDerivatives (rather
+  than folded into it) because that function is templated on `model` and
+  also instantiated with TACSBeamLinearModel, which does not have (and, by
+  this feature's own design -- mirroring TACSShellLinearModel's identical
+  omission -- is not meant to have) any of these three methods; hardcoding
+  this function to TACSBeamNonlinearModel avoids breaking that other
+  instantiation.
+*/
+int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,
+                                          int test_print_level = 2,
+                                          double test_fail_atol = 1e-5,
+                                          double test_fail_rtol = 1e-5) {
+  int fail = 0;
+
+  TacsScalar Cs[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
+  TacsScalar u0x[9], d1x[3], d2x[3], e0ty[2];
+  TacsScalar detXd;
+  TacsGenerateRandomArray(Cs,
+                          TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES);
+  TacsGenerateRandomArray(u0x, 9);
+  TacsGenerateRandomArray(d1x, 3);
+  TacsGenerateRandomArray(d2x, 3);
+  TacsGenerateRandomArray(e0ty, 2);
+  TacsGenerateRandomArray(&detXd, 1);
+
+  TacsScalar e[6];
+  TACSBeamNonlinearModel::evalStrain(u0x, d1x, d2x, e0ty, e);
+
+  TacsScalar s[6];
+  TACSBeamConstitutive::computeStress(Cs, e, s);
+
+  int max_err_index, max_rel_index;
+  double max_err, max_rel;
+
+  // A random direction stands in for the "path" direction getMatType
+  // actually uses; the check itself only needs evalStrain/evalStrainSens/
+  // evalStrainHessian's own consistency with their "Deriv" counterparts,
+  // not any particular physical direction.
+  TacsScalar u0xd[9], d1xd[3], d2xd[3], e0tyd[2];
+  TacsGenerateRandomArray(u0xd, 9);
+  TacsGenerateRandomArray(d1xd, 3);
+  TacsGenerateRandomArray(d2xd, 3);
+  TacsGenerateRandomArray(e0tyd, 2);
+
+  // --- evalStrainDeriv: ed should match the directional derivative of
+  // evalStrain along (u0xd, d1xd, d2xd, e0tyd). ---
+  TacsScalar ed[6];
+  TACSBeamNonlinearModel::evalStrainDeriv(u0x, d1x, d2x, e0ty, u0xd, d1xd,
+                                          d2xd, e0tyd, e, ed);
+
+  TacsScalar u0xt2[9], d1xt2[3], d2xt2[3], e0tyt2[2], et2[6];
+  for (int i = 0; i < 9; i++) {
+#ifdef TACS_USE_COMPLEX
+    u0xt2[i] = u0x[i] + TacsScalar(0.0, dh) * u0xd[i];
+#else
+    u0xt2[i] = u0x[i] + dh * u0xd[i];
+#endif  // TACS_USE_COMPLEX
+  }
+  for (int i = 0; i < 3; i++) {
+#ifdef TACS_USE_COMPLEX
+    d1xt2[i] = d1x[i] + TacsScalar(0.0, dh) * d1xd[i];
+    d2xt2[i] = d2x[i] + TacsScalar(0.0, dh) * d2xd[i];
+#else
+    d1xt2[i] = d1x[i] + dh * d1xd[i];
+    d2xt2[i] = d2x[i] + dh * d2xd[i];
+#endif  // TACS_USE_COMPLEX
+  }
+  for (int i = 0; i < 2; i++) {
+#ifdef TACS_USE_COMPLEX
+    e0tyt2[i] = e0ty[i] + TacsScalar(0.0, dh) * e0tyd[i];
+#else
+    e0tyt2[i] = e0ty[i] + dh * e0tyd[i];
+#endif  // TACS_USE_COMPLEX
+  }
+  TACSBeamNonlinearModel::evalStrain(u0xt2, d1xt2, d2xt2, e0tyt2, et2);
+
+  TacsScalar fded[6];
+  for (int i = 0; i < 6; i++) {
+#ifdef TACS_USE_COMPLEX
+    fded[i] = TacsImagPart(et2[i]) / dh;
+#else
+    fded[i] = (et2[i] - e[i]) / dh;
+#endif  // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(ed, fded, 6, &max_err_index);
+  max_rel = TacsGetMaxRelError(ed, fded, 6, &max_rel_index);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainDeriv\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+  }
+  if (test_print_level > 1) {
+    TacsPrintErrorComponents(stderr, "ed", ed, fded, 6);
+  }
+  if (test_print_level) {
+    fprintf(stderr, "\n");
+  }
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  // --- evalStrainSensDeriv: directional derivative of evalStrainSens's
+  // output along (dfded, u0xd, d1xd, d2xd, e0tyd). ---
+  TacsScalar dfded[6];
+  TacsGenerateRandomArray(dfded, 6);
+
+  TacsScalar du0x2[9], dd1x2[3], dd2x2[3], de0ty2[2];
+  TacsScalar du0xd[9], dd1xd[3], dd2xd[3], de0tyd[2];
+  TACSBeamNonlinearModel::evalStrainSensDeriv(
+      detXd, s, u0x, d1x, d2x, e0ty, dfded, u0xd, d1xd, d2xd, e0tyd, du0x2,
+      dd1x2, dd2x2, de0ty2, du0xd, dd1xd, dd2xd, de0tyd);
+
+  TacsScalar st2[6];
+  for (int i = 0; i < 6; i++) {
+#ifdef TACS_USE_COMPLEX
+    st2[i] = s[i] + TacsScalar(0.0, dh) * dfded[i];
+#else
+    st2[i] = s[i] + dh * dfded[i];
+#endif  // TACS_USE_COMPLEX
+  }
+
+  TacsScalar du0xt2[9], dd1xt2[3], dd2xt2[3], de0tyt2[2];
+  TACSBeamNonlinearModel::evalStrainSens(detXd, st2, u0xt2, d1xt2, d2xt2,
+                                        e0tyt2, du0xt2, dd1xt2, dd2xt2,
+                                        de0tyt2);
+
+  TacsScalar fdu0xd[9], fdd1xd[3], fdd2xd[3], fde0tyd[2];
+  for (int i = 0; i < 9; i++) {
+#ifdef TACS_USE_COMPLEX
+    fdu0xd[i] = TacsImagPart(du0xt2[i]) / dh;
+#else
+    fdu0xd[i] = (du0xt2[i] - du0x2[i]) / dh;
+#endif  // TACS_USE_COMPLEX
+  }
+  for (int i = 0; i < 3; i++) {
+#ifdef TACS_USE_COMPLEX
+    fdd1xd[i] = TacsImagPart(dd1xt2[i]) / dh;
+    fdd2xd[i] = TacsImagPart(dd2xt2[i]) / dh;
+#else
+    fdd1xd[i] = (dd1xt2[i] - dd1x2[i]) / dh;
+    fdd2xd[i] = (dd2xt2[i] - dd2x2[i]) / dh;
+#endif  // TACS_USE_COMPLEX
+  }
+  for (int i = 0; i < 2; i++) {
+#ifdef TACS_USE_COMPLEX
+    fde0tyd[i] = TacsImagPart(de0tyt2[i]) / dh;
+#else
+    fde0tyd[i] = (de0tyt2[i] - de0ty2[i]) / dh;
+#endif  // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(du0xd, fdu0xd, 9, &max_err_index);
+  max_rel = TacsGetMaxRelError(du0xd, fdu0xd, 9, &max_rel_index);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainSensDeriv (du0xd)\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+    fprintf(stderr, "\n");
+  }
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+
+  max_err = TacsGetMaxError(dd1xd, fdd1xd, 3, &max_err_index);
+  max_rel = TacsGetMaxRelError(dd1xd, fdd1xd, 3, &max_rel_index);
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainSensDeriv (dd1xd)\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+    fprintf(stderr, "\n");
+  }
+
+  max_err = TacsGetMaxError(dd2xd, fdd2xd, 3, &max_err_index);
+  max_rel = TacsGetMaxRelError(dd2xd, fdd2xd, 3, &max_rel_index);
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainSensDeriv (dd2xd)\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+    fprintf(stderr, "\n");
+  }
+
+  max_err = TacsGetMaxError(de0tyd, fde0tyd, 2, &max_err_index);
+  max_rel = TacsGetMaxRelError(de0tyd, fde0tyd, 2, &max_rel_index);
+  fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainSensDeriv (de0tyd)\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+    fprintf(stderr, "\n");
+  }
+
+  // --- evalStrainHessianDeriv: directional derivative of
+  // evalStrainHessian's 7 output blocks along (dfded (reused as the
+  // stress-direction stand-in), u0xd, d1xd, d2xd, e0tyd). Only the
+  // "d2u0xd" block (the largest, 81-entry, and the one carrying the
+  // geometric constant-shape terms getMatType relies on most directly) is
+  // checked here, to keep this addition bounded -- the same pattern
+  // extends identically to the other 6 blocks. ---
+  TacsScalar d2u0xH[81], d2d1xH[9], d2d2xH[9], d2e0tyH[4];
+  TacsScalar d2u0xd1xH[27], d2u0xd2xH[27], d2d1xd2xH[9];
+  TacsScalar d2u0xHd[81], d2d1xHd[9], d2d2xHd[9], d2e0tyHd[4];
+  TacsScalar d2u0xd1xHd[27], d2u0xd2xHd[27], d2d1xd2xHd[9];
+  TACSBeamNonlinearModel::evalStrainHessianDeriv(
+      detXd, s, Cs, u0x, d1x, d2x, e0ty, dfded, u0xd, d1xd, d2xd, e0tyd,
+      d2u0xH, d2d1xH, d2d2xH, d2e0tyH, d2u0xd1xH, d2u0xd2xH, d2d1xd2xH,
+      d2u0xHd, d2d1xHd, d2d2xHd, d2e0tyHd, d2u0xd1xHd, d2u0xd2xHd,
+      d2d1xd2xHd);
+
+  TacsScalar d2u0xH_t[81], d2d1xH_t[9], d2d2xH_t[9], d2e0tyH_t[4];
+  TacsScalar d2u0xd1xH_t[27], d2u0xd2xH_t[27], d2d1xd2xH_t[9];
+  TACSBeamNonlinearModel::evalStrainHessian(
+      detXd, st2, Cs, u0xt2, d1xt2, d2xt2, e0tyt2, d2u0xH_t, d2d1xH_t,
+      d2d2xH_t, d2e0tyH_t, d2u0xd1xH_t, d2u0xd2xH_t, d2d1xd2xH_t);
+
+  TacsScalar fd2u0xHd[81];
+  for (int i = 0; i < 81; i++) {
+#ifdef TACS_USE_COMPLEX
+    fd2u0xHd[i] = TacsImagPart(d2u0xH_t[i]) / dh;
+#else
+    fd2u0xHd[i] = (d2u0xH_t[i] - d2u0xH[i]) / dh;
+#endif  // TACS_USE_COMPLEX
+  }
+
+  max_err = TacsGetMaxError(d2u0xHd, fd2u0xHd, 81, &max_err_index);
+  max_rel = TacsGetMaxRelError(d2u0xHd, fd2u0xHd, 81, &max_rel_index);
+  if (test_print_level > 0) {
+    fprintf(stderr, "Testing evalStrainHessianDeriv (d2u0xd)\n");
+    fprintf(stderr, "Max Err: %10.4e in component %d.\n", max_err,
+            max_err_index);
+    fprintf(stderr, "Max REr: %10.4e in component %d.\n", max_rel,
+            max_rel_index);
+  }
+  if (test_print_level > 1) {
+    TacsPrintErrorComponents(stderr, "d2u0xHd", d2u0xHd, fd2u0xHd, 81);
   }
   if (test_print_level) {
     fprintf(stderr, "\n");
