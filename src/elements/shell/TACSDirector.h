@@ -831,6 +831,115 @@ class TACSQuadraticRotation {
   }
 
   /**
+    Standalone per-node extraction of addRotationMatJacobian's own i==j
+    diagonal-block algebra above (TACSDirector.h:806-818), generalized from
+    "qa=qb=q implicit via the surrounding loop" to an explicit bilinear map
+    of two arbitrary caller-supplied directions (SPEC-phase-7.md sec 3.1).
+
+    C(q) = I - q^x + 0.5*(qq^T - q^Tq*I) is EXACTLY quadratic in q, so
+    d^2C/dq^2 is a constant (q-independent) 4th-order tensor. Contracted
+    with dU/dC (built here as outer(dd, t), since d = C(q)*t implies
+    dU/dC_ij = dd_i*t_j), it reduces to the closed-form symmetric 3x3
+    matrix H = -(dd.t)*I + 0.5*(dd (x) t + t (x) dd) -- algebraically
+    identical to the i==j block above (confirmed by direct expansion: e.g.
+    H[0][0] = -(dd.t) + dd[0]*t[0] = -(dC[4]+dC[8]) since dC[4]=dd[1]*t[1],
+    dC[8]=dd[2]*t[2], and dd.t = sum_i dd[i]*t[i]).
+
+    mat[] is treated as a SINGLE scalar accumulator (not a 3x3/system-sized
+    buffer) -- the caller points it at whichever specific output location
+    (e.g. &dfdu[k]) this node's qa^T*H*qb contribution should land in,
+    matching the "psi/phi in place of vars" bilinear-form-inner-product
+    convention this feature already uses elsewhere (main SPEC sec 2.2).
+    qa[]/qb[] use the SAME offset/vars_per_node-strided indexing as vars[]
+    in addRotationMatJacobian (i.e. they ARE full vars-shaped arrays, e.g.
+    psi/phi/a per-DOF basis vector -- not pre-sliced 3-vectors); t[]/dd[]
+    use plain 3*i indexing (matching fn1/fn2/dd's own per-node layout, no
+    vars_per_node stride).
+
+    Regression-safe-refactor oracle (SPEC sec 3.1's required first
+    verification step, before trusting qa != qb): calling this with qa=qb=e_k
+    (basis vectors) over all (k,l) pairs and scattering the returned scalars
+    into a 3x3 block reproduces addRotationMatJacobian's own i==j diagonal
+    block bit-for-bit -- verified in
+    src/elements/shell/tests/test_director_hessian_second_order.cpp.
+
+    TACS_USE_COMPLEX: t[]/dd[]/qa[]/qb[]/mat[] are all TacsScalar; the
+    formula above is a closed-form polynomial with no fabs()/comparison/
+    TacsRealPart()-gated branch, so it is holomorphic and complex-step-safe
+    without modification (SPEC-phase-7.md sec 3.1's binding requirement).
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianProduct(const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar qa[],
+                                        const TacsScalar qb[],
+                                        TacsScalar mat[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+
+      TacsScalar ddt = dd[0] * t[0] + dd[1] * t[1] + dd[2] * t[2];
+      TacsScalar H[9];
+      H[0] = -ddt + dd[0] * t[0];
+      H[4] = -ddt + dd[1] * t[1];
+      H[8] = -ddt + dd[2] * t[2];
+      H[1] = H[3] = 0.5 * (dd[0] * t[1] + dd[1] * t[0]);
+      H[2] = H[6] = 0.5 * (dd[0] * t[2] + dd[2] * t[0]);
+      H[5] = H[7] = 0.5 * (dd[1] * t[2] + dd[2] * t[1]);
+
+      TacsScalar Hqb0 = H[0] * qbi[0] + H[1] * qbi[1] + H[2] * qbi[2];
+      TacsScalar Hqb1 = H[3] * qbi[0] + H[4] * qbi[1] + H[5] * qbi[2];
+      TacsScalar Hqb2 = H[6] * qbi[0] + H[7] * qbi[1] + H[8] * qbi[2];
+
+      mat[0] += qai[0] * Hqb0 + qai[1] * Hqb1 + qai[2] * Hqb2;
+
+      t += 3;
+      dd += 3;
+    }
+  }
+
+  /**
+    Xpts-adjoint of addDirectorHessianProduct above (SPEC-phase-7.md sec
+    3.2, G2). Since H(t,dd) is LINEAR in t for fixed dd, val = qa^T*H*qb is
+    linear in t too, and its gradient w.r.t. t is a closed-form, t-independent
+    3-vector (derived by direct expansion of qa^T*H*qb =
+    -(dd.t)*(qa.qb) + 0.5*(qa.dd)*(t.qb) + 0.5*(qa.t)*(dd.qb)):
+
+      d(val)/dt = -(qa.qb)*dd + 0.5*(qa.dd)*qb + 0.5*(dd.qb)*qa
+
+    Accumulated into dt[] (Xpts-adjoint convention, mirrors
+    addDirectorRefNormalSens's own dfn[]-accumulation shape). t[] is
+    accepted for signature symmetry with addDirectorHessianProduct/SPEC's
+    own declared signature but is not itself referenced (the gradient does
+    not depend on t, since H is linear in it).
+
+    TACS_USE_COMPLEX: same binding rule as addDirectorHessianProduct above
+    -- closed-form, holomorphic, no internal complex-step use.
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianRefNormalSens(const TacsScalar t[],
+                                              const TacsScalar dd[],
+                                              const TacsScalar qa[],
+                                              const TacsScalar qb[],
+                                              TacsScalar dt[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+
+      TacsScalar qadd = qai[0] * dd[0] + qai[1] * dd[1] + qai[2] * dd[2];
+      TacsScalar qbdd = qbi[0] * dd[0] + qbi[1] * dd[1] + qbi[2] * dd[2];
+      TacsScalar qaqb = qai[0] * qbi[0] + qai[1] * qbi[1] + qai[2] * qbi[2];
+
+      dt[0] += -qaqb * dd[0] + 0.5 * qadd * qbi[0] + 0.5 * qbdd * qai[0];
+      dt[1] += -qaqb * dd[1] + 0.5 * qadd * qbi[1] + 0.5 * qbdd * qai[1];
+      dt[2] += -qaqb * dd[2] + 0.5 * qadd * qbi[2] + 0.5 * qbdd * qai[2];
+
+      dd += 3;
+      dt += 3;
+    }
+  }
+
+  /**
     The quadratic rotation matrix is unconstrained
   */
   template <int vars_per_node, int offset, int num_nodes>
@@ -1709,6 +1818,126 @@ class TACSQuaternionRotation {
       m += vars_per_node * size;
       q += vars_per_node;
       dC += 9;
+    }
+  }
+
+  /**
+    Standalone per-node extraction of addRotationMatJacobian's own i==j
+    diagonal-block algebra above (TACSDirector.h:1681-1699), generalized to
+    an explicit bilinear map of two arbitrary caller-supplied directions
+    (SPEC-phase-7.md sec 3.1) -- same rationale/contract/verification oracle
+    as TACSQuadraticRotation::addDirectorHessianProduct above, but for the
+    quaternion's 4x4 (not 3x3) constant Hessian block, since C(q) here is a
+    homogeneous quadratic in the 4-vector q = (q0, q1, q2, q3).
+
+    Writing qa = (qa0, qa_vec[3]) and qb = (qb0, qb_vec[3]) (splitting each
+    4-direction into its scalar and vector parts, matching q[0] vs q[1..3]'s
+    roles in the shipped diagonal block above -- confirmed by direct
+    expansion, e.g. jac[1]=jac[4]=2*(dC[5]-dC[7]) = 2*(dd x t)[0]):
+
+      val = qa^T*H*qb
+          = 2*qa0*((dd x t).qb_vec) + 2*qb0*((dd x t).qa_vec)
+          + 4*[-(dd.t)*(qa_vec.qb_vec) + 0.5*(qa_vec.dd)*(t.qb_vec)
+               + 0.5*(qa_vec.t)*(dd.qb_vec)]
+
+    (the H[0][0]=0 entry contributes nothing; the 3x3 vec-vec sub-block is
+    exactly 4x TACSQuadraticRotation's own H, confirmed by direct expansion
+    of jac[5]=-4*(dC[4]+dC[8]) etc. above).
+
+    mat[]/qa[]/qb[]/t[]/dd[] conventions identical to
+    TACSQuadraticRotation::addDirectorHessianProduct above (mat[] is a
+    single scalar accumulator; qa[]/qb[] are full vars-shaped, offset/
+    vars_per_node-strided arrays; t[]/dd[] are plain 3*i-strided per-node
+    3-vectors). TACS_USE_COMPLEX: closed-form, holomorphic, no internal
+    complex-step use (identical binding rule to the Quadratic-rotation
+    hook above).
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianProduct(const TacsScalar t[],
+                                        const TacsScalar dd[],
+                                        const TacsScalar qa[],
+                                        const TacsScalar qb[],
+                                        TacsScalar mat[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+      const TacsScalar *qa_vec = &qai[1];
+      const TacsScalar *qb_vec = &qbi[1];
+
+      TacsScalar ddxt[3];
+      ddxt[0] = dd[1] * t[2] - dd[2] * t[1];
+      ddxt[1] = dd[2] * t[0] - dd[0] * t[2];
+      ddxt[2] = dd[0] * t[1] - dd[1] * t[0];
+
+      TacsScalar ddt = dd[0] * t[0] + dd[1] * t[1] + dd[2] * t[2];
+      TacsScalar qa_dd = qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd = qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar t_qb = t[0] * qb_vec[0] + t[1] * qb_vec[1] + t[2] * qb_vec[2];
+      TacsScalar t_qa = t[0] * qa_vec[0] + t[1] * qa_vec[1] + t[2] * qa_vec[2];
+      TacsScalar qaqb_vec =
+          qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
+      TacsScalar ddxt_qb = ddxt[0] * qb_vec[0] + ddxt[1] * qb_vec[1] + ddxt[2] * qb_vec[2];
+      TacsScalar ddxt_qa = ddxt[0] * qa_vec[0] + ddxt[1] * qa_vec[1] + ddxt[2] * qa_vec[2];
+
+      mat[0] += 2.0 * qai[0] * ddxt_qb + 2.0 * qbi[0] * ddxt_qa +
+                4.0 * (-ddt * qaqb_vec + 0.5 * qa_dd * t_qb + 0.5 * t_qa * qb_dd);
+
+      t += 3;
+      dd += 3;
+    }
+  }
+
+  /**
+    Xpts-adjoint of addDirectorHessianProduct above (SPEC-phase-7.md sec
+    3.2, G2). val = qa^T*H*qb is linear in t (H's own construction is
+    linear in t); gradient w.r.t. t (derived directly from the val formula
+    above, using the scalar-triple-product identity (dd x t).qb_vec =
+    t.(qb_vec x dd)):
+
+      d(val)/dt = 2*qa0*(qb_vec x dd) + 2*qb0*(qa_vec x dd)
+                + 4*[-(qa_vec.qb_vec)*dd + 0.5*(qa_vec.dd)*qb_vec
+                     + 0.5*(dd.qb_vec)*qa_vec]
+
+    Accumulated into dt[] (Xpts-adjoint convention). t[] is accepted for
+    signature symmetry but not itself referenced (the gradient is
+    t-independent, since H is linear in t). TACS_USE_COMPLEX: closed-form,
+    holomorphic, no internal complex-step use.
+  */
+  template <int vars_per_node, int offset, int num_nodes>
+  static void addDirectorHessianRefNormalSens(const TacsScalar t[],
+                                              const TacsScalar dd[],
+                                              const TacsScalar qa[],
+                                              const TacsScalar qb[],
+                                              TacsScalar dt[]) {
+    for (int i = 0; i < num_nodes; i++) {
+      const TacsScalar *qai = &qa[offset + i * vars_per_node];
+      const TacsScalar *qbi = &qb[offset + i * vars_per_node];
+      const TacsScalar *qa_vec = &qai[1];
+      const TacsScalar *qb_vec = &qbi[1];
+
+      TacsScalar qbxdd[3];
+      qbxdd[0] = qb_vec[1] * dd[2] - qb_vec[2] * dd[1];
+      qbxdd[1] = qb_vec[2] * dd[0] - qb_vec[0] * dd[2];
+      qbxdd[2] = qb_vec[0] * dd[1] - qb_vec[1] * dd[0];
+
+      TacsScalar qaxdd[3];
+      qaxdd[0] = qa_vec[1] * dd[2] - qa_vec[2] * dd[1];
+      qaxdd[1] = qa_vec[2] * dd[0] - qa_vec[0] * dd[2];
+      qaxdd[2] = qa_vec[0] * dd[1] - qa_vec[1] * dd[0];
+
+      TacsScalar qa_dd = qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd = qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar qaqb_vec =
+          qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
+
+      for (int k = 0; k < 3; k++) {
+        dt[k] += 2.0 * qai[0] * qbxdd[k] + 2.0 * qbi[0] * qaxdd[k] +
+                 4.0 * (-qaqb_vec * dd[k] + 0.5 * qa_dd * qb_vec[k] +
+                        0.5 * qb_dd * qa_vec[k]);
+      }
+
+      dd += 3;
+      dt += 3;
     }
   }
 
