@@ -2,22 +2,24 @@
 // (feature-beam-element-methods, SPEC.md sec 1.2/sec 6.6). Standalone,
 // header-only.
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_mattrans3x3admatmult_second_order.cpp -o t18_real && ./t18_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_mattrans3x3admatmult_second_order.cpp -o t18_complex && ./t18_complex
+// clang-format on
 //
 // C = scale*A^T*B is linear in its single active input B (A is a passive
 // Mat3x3) -- same verification shape as ADMat3x3MatMult (Task 1.5).
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 
@@ -91,7 +93,8 @@ int main() {
     op.hreverse();
 
     double maxabs = 0.0;
-    for (int i = 0; i < 9; i++) maxabs = std::max(maxabs, fabs(TacsRealPart(Bt.Ah[i])));
+    for (int i = 0; i < 9; i++)
+      maxabs = std::max(maxabs, fabs(TacsRealPart(Bt.Ah[i])));
     printf(
         "  [MatTrans3x3ADMatMult] zero-self-Hessian check (expect exactly "
         "0.0): %.3e\n",

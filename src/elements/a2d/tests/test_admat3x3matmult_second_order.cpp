@@ -1,12 +1,14 @@
 // Op-level second-order verification for A2D::ADMat3x3MatMult (feature-
 // beam-element-methods, SPEC.md sec 1.2/sec 6.6). Standalone, header-only.
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_admat3x3matmult_second_order.cpp -o t15_real && ./t15_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_admat3x3matmult_second_order.cpp -o t15_complex && ./t15_complex
+// clang-format on
 //
 // C = scale*A*B is LINEAR in its single active input A (B is a passive
 // Mat3x3), so:
@@ -22,12 +24,12 @@
 //       is checked against a central-difference-of-the-exact-adjoint,
 //       exactly as for ADVec3Dot.
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 
@@ -122,7 +124,8 @@ int main() {
   // TransMultAddScaleCore), evaluated on Ah instead of Ad.
   {
     TacsScalar Ch[9];
-    for (int i = 0; i < 9; i++) Ch[i] = randReal();  // downstream 2nd-order seed
+    for (int i = 0; i < 9; i++)
+      Ch[i] = randReal();  // downstream 2nd-order seed
 
     ADMat3x3 At = A;
     for (int i = 0; i < 9; i++) At.Ap[i] = Ap[i];

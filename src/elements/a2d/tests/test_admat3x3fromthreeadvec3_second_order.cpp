@@ -2,12 +2,14 @@
 // (feature-beam-element-methods, SPEC.md sec 1.2/sec 6.6). Standalone,
 // header-only.
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_admat3x3fromthreeadvec3_second_order.cpp -o t17_real && ./t17_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_admat3x3fromthreeadvec3_second_order.cpp -o t17_complex && ./t17_complex
+// clang-format on
 //
 // C's columns are literally x/y/z's components -- a trivial linear
 // assignment (not even a product of two active quantities), so this op's
@@ -15,12 +17,12 @@
 // Tasks 1.5/1.6 (directional-derivative check, bit-exact zero-self-
 // Hessian, hand-computed hreverse formula).
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 

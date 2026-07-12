@@ -2,12 +2,14 @@
 // (feature-beam-element-methods, SPEC.md sec 1.2/sec 6.6). Standalone,
 // header-only.
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_advec3advecscalaraxpy_second_order.cpp -o t16_real && ./t16_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_advec3advecscalaraxpy_second_order.cpp -o t16_complex && ./t16_complex
+// clang-format on
 //
 // v = scale*alpha.value*x + y is LINEAR jointly in the two active inputs
 // (x, y) -- alpha is a fixed passive Scalar. Same verification shape as
@@ -16,12 +18,12 @@
 // hreverse's propagation formula against a hand computation for a nonzero
 // downstream seed.
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 

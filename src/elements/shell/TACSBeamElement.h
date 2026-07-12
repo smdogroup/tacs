@@ -1369,7 +1369,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
     // small-strain shear/tying strain).
     TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
     TACSBeamNonlinearModel::template computeTyingStrainDeriv<vars_per_node,
-                                                              basis>(
+                                                             basis>(
         Xpts, fn1, fn2, zeros, d1, d2, path, dd1, dd2, ety, etyd);
 
     // Director-space accumulators for the (only nonzero, "_d"-suffixed)
@@ -1487,8 +1487,8 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
 
       TacsScalar e[6], ed[6];
       TACSBeamNonlinearModel::evalStrainDeriv(u0x_base, d1x_base, d2x_base,
-                                              e0ty, u0x.A, d1x.x, d2x.x,
-                                              e0tyd, e, ed);
+                                              e0ty, u0x.A, d1x.x, d2x.x, e0tyd,
+                                              e, ed);
 
       TacsScalar s[6], sd[6];
       con->evalStress(elemIndex, pt, X0.x, e, s);
@@ -1556,8 +1556,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         TacsScalar d1col[dsize];
         memset(d1col, 0, dsize * sizeof(TacsScalar));
         basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh,
-                                                           d1col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh, d1col);
         for (int r = 0; r < dsize; r++) {
           d2d1u_g[dsize * r + m] += d1col[r];
         }
@@ -1565,8 +1564,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         TacsScalar d2col[dsize];
         memset(d2col, 0, dsize * sizeof(TacsScalar));
         basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
-                                                           d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
         for (int r = 0; r < dsize; r++) {
           d2d2u_g[dsize * r + m] += d2col[r];
         }
@@ -1604,8 +1602,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         TacsScalar d1col[dsize];
         memset(d1col, 0, dsize * sizeof(TacsScalar));
         basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xh, d1col);
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh,
-                                                           d1col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xh, d1col);
         for (int r = 0; r < dsize; r++) {
           d2d1_g[dsize * r + m] += d1col[r];
         }
@@ -1613,8 +1610,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         TacsScalar d2col[dsize];
         memset(d2col, 0, dsize * sizeof(TacsScalar));
         basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
-                                                           d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
         for (int r = 0; r < dsize; r++) {
           d2d1d2_g[dsize * m + r] += d2col[r];
         }
@@ -1652,8 +1648,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         TacsScalar d2col[dsize];
         memset(d2col, 0, dsize * sizeof(TacsScalar));
         basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xh, d2col);
-        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh,
-                                                           d2col);
+        basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xh, d2col);
         for (int r = 0; r < dsize; r++) {
           d2d2_g[dsize * r + m] += d2col[r];
         }
@@ -3106,7 +3101,7 @@ void TACSBeamElement<quadrature, basis, director,
     // (reused verbatim, not re-derived) applied to psi.
     TacsScalar Gphi[vars_per_node * num_nodes * vars_per_node * num_nodes];
     getMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX, elemIndex, time, Xpts, phi,
-              Gphi);
+               Gphi);
 
     const int nvars = vars_per_node * num_nodes;
     for (int i = 0; i < nvars; i++) {

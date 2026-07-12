@@ -626,7 +626,6 @@ class TACSBeamLinearModel {
   }
 };
 
-
 class TACSBeamNonlinearModel {
  public:
   /*
@@ -818,8 +817,7 @@ class TACSBeamNonlinearModel {
     evalStrain(u0x, d1x, d2x, e0ty, e);
 
     // Directional derivative of the axial strain
-    ed[0] = u0xd[0] +
-            (u0x[0] * u0xd[0] + u0x[1] * u0xd[1] + u0x[2] * u0xd[2]);
+    ed[0] = u0xd[0] + (u0x[0] * u0xd[0] + u0x[1] * u0xd[1] + u0x[2] * u0xd[2]);
 
     // Directional derivative of the torsional strain
     ed[1] = 0.5 * (d1xd[2] - d2xd[1]) +
@@ -829,12 +827,10 @@ class TACSBeamNonlinearModel {
              d2x[1] * u0xd[4] + d2xd[2] * u0x[7] + d2x[2] * u0xd[7]);
 
     // Directional derivative of the bending strains
-    ed[2] = d1xd[0] + (u0xd[0] * d1x[0] + u0x[0] * d1xd[0] +
-                       u0xd[1] * d1x[1] + u0x[1] * d1xd[1] +
-                       u0xd[2] * d1x[2] + u0x[2] * d1xd[2]);
-    ed[3] = d2xd[0] + (u0xd[0] * d2x[0] + u0x[0] * d2xd[0] +
-                       u0xd[1] * d2x[1] + u0x[1] * d2xd[1] +
-                       u0xd[2] * d2x[2] + u0x[2] * d2xd[2]);
+    ed[2] = d1xd[0] + (u0xd[0] * d1x[0] + u0x[0] * d1xd[0] + u0xd[1] * d1x[1] +
+                       u0x[1] * d1xd[1] + u0xd[2] * d1x[2] + u0x[2] * d1xd[2]);
+    ed[3] = d2xd[0] + (u0xd[0] * d2x[0] + u0x[0] * d2xd[0] + u0xd[1] * d2x[1] +
+                       u0x[1] * d2xd[1] + u0xd[2] * d2x[2] + u0x[2] * d2xd[2]);
 
     // Add the tying shear strain components
     ed[4] = e0tyd[0];
@@ -855,12 +851,12 @@ class TACSBeamNonlinearModel {
       const TacsScalar d1x[], const TacsScalar d2x[], const TacsScalar e0ty[],
       TacsScalar du0x[], TacsScalar dd1x[], TacsScalar dd2x[],
       TacsScalar de0ty[]) {
-    du0x[0] = scale * (dfde[0] * (1.0 + u0x[0]) + dfde[2] * d1x[0] +
-                       dfde[3] * d2x[0]);
-    du0x[1] = scale * (dfde[0] * u0x[1] - dfde[1] * d2x[0] +
-                       dfde[2] * d1x[1] + dfde[3] * d2x[1]);
-    du0x[2] = scale * (dfde[0] * u0x[2] + dfde[1] * d1x[0] +
-                       dfde[2] * d1x[2] + dfde[3] * d2x[2]);
+    du0x[0] = scale *
+              (dfde[0] * (1.0 + u0x[0]) + dfde[2] * d1x[0] + dfde[3] * d2x[0]);
+    du0x[1] = scale * (dfde[0] * u0x[1] - dfde[1] * d2x[0] + dfde[2] * d1x[1] +
+                       dfde[3] * d2x[1]);
+    du0x[2] = scale * (dfde[0] * u0x[2] + dfde[1] * d1x[0] + dfde[2] * d1x[2] +
+                       dfde[3] * d2x[2]);
     du0x[3] = 0.0;
     du0x[4] = -scale * dfde[1] * d2x[1];
     du0x[5] = scale * dfde[1] * d1x[1];
@@ -900,14 +896,14 @@ class TACSBeamNonlinearModel {
     du0xd[0] = scale * (dfded[0] * (1.0 + u0x[0]) + dfde[0] * u0xd[0] +
                         dfded[2] * d1x[0] + dfde[2] * d1xd[0] +
                         dfded[3] * d2x[0] + dfde[3] * d2xd[0]);
-    du0xd[1] = scale * (dfded[0] * u0x[1] + dfde[0] * u0xd[1] -
-                        dfded[1] * d2x[0] - dfde[1] * d2xd[0] +
-                        dfded[2] * d1x[1] + dfde[2] * d1xd[1] +
-                        dfded[3] * d2x[1] + dfde[3] * d2xd[1]);
-    du0xd[2] = scale * (dfded[0] * u0x[2] + dfde[0] * u0xd[2] +
-                        dfded[1] * d1x[0] + dfde[1] * d1xd[0] +
-                        dfded[2] * d1x[2] + dfde[2] * d1xd[2] +
-                        dfded[3] * d2x[2] + dfde[3] * d2xd[2]);
+    du0xd[1] =
+        scale * (dfded[0] * u0x[1] + dfde[0] * u0xd[1] - dfded[1] * d2x[0] -
+                 dfde[1] * d2xd[0] + dfded[2] * d1x[1] + dfde[2] * d1xd[1] +
+                 dfded[3] * d2x[1] + dfde[3] * d2xd[1]);
+    du0xd[2] =
+        scale * (dfded[0] * u0x[2] + dfde[0] * u0xd[2] + dfded[1] * d1x[0] +
+                 dfde[1] * d1xd[0] + dfded[2] * d1x[2] + dfde[2] * d1xd[2] +
+                 dfded[3] * d2x[2] + dfde[3] * d2xd[2]);
     du0xd[3] = 0.0;
     du0xd[4] = -scale * (dfded[1] * d2x[1] + dfde[1] * d2xd[1]);
     du0xd[5] = scale * (dfded[1] * d1x[1] + dfde[1] * d1xd[1]);
@@ -1128,8 +1124,7 @@ class TACSBeamNonlinearModel {
       TacsScalar d2d2x[], TacsScalar d2e0ty[], TacsScalar d2u0xd1x[],
       TacsScalar d2u0xd2x[], TacsScalar d2d1xd2x[], TacsScalar d2u0xd[],
       TacsScalar d2d1xd[], TacsScalar d2d2xd[], TacsScalar d2e0tyd[],
-      TacsScalar d2u0xd1xd[], TacsScalar d2u0xd2xd[],
-      TacsScalar d2d1xd2xd[]) {
+      TacsScalar d2u0xd1xd[], TacsScalar d2u0xd2xd[], TacsScalar d2d1xd2xd[]) {
     // Base (unperturbed) Hessian blocks -- identical to evalStrainHessian.
     evalStrainHessian(scale, s, Cs, u0x, d1x, d2x, e0ty, d2u0x, d2d1x, d2d2x,
                       d2e0ty, d2u0xd1x, d2u0xd2x, d2d1xd2x);
@@ -1742,8 +1737,8 @@ int TacsTestBeamModelDerivatives(double dh = 1e-7, int test_print_level = 2,
     TACSBeamConstitutive::computeStress(Cs, et, st);
 
     TacsScalar du0xt[9], dd1xt[3], dd2xt[3], de0tyt[2];
-    model::evalStrainSens(detXd, st, u0x, d1x, d2x, e0tyt, du0xt, dd1xt,
-                          dd2xt, de0tyt);
+    model::evalStrainSens(detXd, st, u0x, d1x, d2x, e0tyt, du0xt, dd1xt, dd2xt,
+                          de0tyt);
 
     for (int j = 0; j < 2; j++) {
 #ifdef TACS_USE_COMPLEX
@@ -1831,8 +1826,8 @@ int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,
   // --- evalStrainDeriv: ed should match the directional derivative of
   // evalStrain along (u0xd, d1xd, d2xd, e0tyd). ---
   TacsScalar ed[6];
-  TACSBeamNonlinearModel::evalStrainDeriv(u0x, d1x, d2x, e0ty, u0xd, d1xd,
-                                          d2xd, e0tyd, e, ed);
+  TACSBeamNonlinearModel::evalStrainDeriv(u0x, d1x, d2x, e0ty, u0xd, d1xd, d2xd,
+                                          e0tyd, e, ed);
 
   TacsScalar u0xt2[9], d1xt2[3], d2xt2[3], e0tyt2[2], et2[6];
   for (int i = 0; i < 9; i++) {
@@ -1907,9 +1902,8 @@ int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,
   }
 
   TacsScalar du0xt2[9], dd1xt2[3], dd2xt2[3], de0tyt2[2];
-  TACSBeamNonlinearModel::evalStrainSens(detXd, st2, u0xt2, d1xt2, d2xt2,
-                                        e0tyt2, du0xt2, dd1xt2, dd2xt2,
-                                        de0tyt2);
+  TACSBeamNonlinearModel::evalStrainSens(
+      detXd, st2, u0xt2, d1xt2, d2xt2, e0tyt2, du0xt2, dd1xt2, dd2xt2, de0tyt2);
 
   TacsScalar fdu0xd[9], fdd1xd[3], fdd2xd[3], fde0tyd[2];
   for (int i = 0; i < 9; i++) {
@@ -1996,16 +1990,15 @@ int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,
   TacsScalar d2u0xHd[81], d2d1xHd[9], d2d2xHd[9], d2e0tyHd[4];
   TacsScalar d2u0xd1xHd[27], d2u0xd2xHd[27], d2d1xd2xHd[9];
   TACSBeamNonlinearModel::evalStrainHessianDeriv(
-      detXd, s, Cs, u0x, d1x, d2x, e0ty, dfded, u0xd, d1xd, d2xd, e0tyd,
-      d2u0xH, d2d1xH, d2d2xH, d2e0tyH, d2u0xd1xH, d2u0xd2xH, d2d1xd2xH,
-      d2u0xHd, d2d1xHd, d2d2xHd, d2e0tyHd, d2u0xd1xHd, d2u0xd2xHd,
-      d2d1xd2xHd);
+      detXd, s, Cs, u0x, d1x, d2x, e0ty, dfded, u0xd, d1xd, d2xd, e0tyd, d2u0xH,
+      d2d1xH, d2d2xH, d2e0tyH, d2u0xd1xH, d2u0xd2xH, d2d1xd2xH, d2u0xHd,
+      d2d1xHd, d2d2xHd, d2e0tyHd, d2u0xd1xHd, d2u0xd2xHd, d2d1xd2xHd);
 
   TacsScalar d2u0xH_t[81], d2d1xH_t[9], d2d2xH_t[9], d2e0tyH_t[4];
   TacsScalar d2u0xd1xH_t[27], d2u0xd2xH_t[27], d2d1xd2xH_t[9];
   TACSBeamNonlinearModel::evalStrainHessian(
-      detXd, st2, Cs, u0xt2, d1xt2, d2xt2, e0tyt2, d2u0xH_t, d2d1xH_t,
-      d2d2xH_t, d2e0tyH_t, d2u0xd1xH_t, d2u0xd2xH_t, d2d1xd2xH_t);
+      detXd, st2, Cs, u0xt2, d1xt2, d2xt2, e0tyt2, d2u0xH_t, d2d1xH_t, d2d2xH_t,
+      d2e0tyH_t, d2u0xd1xH_t, d2u0xd2xH_t, d2d1xd2xH_t);
 
   TacsScalar fd2u0xHd[81];
   for (int i = 0; i < 81; i++) {

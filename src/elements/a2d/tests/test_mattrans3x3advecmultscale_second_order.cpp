@@ -2,12 +2,14 @@
 // (feature-beam-element-methods, SPEC.md sec 1.2/sec 6.6). Standalone,
 // header-only.
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_mattrans3x3advecmultscale_second_order.cpp -o t19_real && ./t19_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_mattrans3x3advecmultscale_second_order.cpp -o t19_complex && ./t19_complex
+// clang-format on
 //
 // y = scale.value*A^T*x is linear in its single active input x (scale and
 // A are both passive). forward()/reverse() (and therefore hforward/
@@ -15,12 +17,12 @@
 // y.xp/x.xh before each accumulating call, mirroring how a caller chaining
 // multiple ops into the same accumulator would.
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 
@@ -92,7 +94,8 @@ int main() {
     op.hreverse();
 
     double maxabs = 0.0;
-    for (int i = 0; i < 3; i++) maxabs = std::max(maxabs, fabs(TacsRealPart(xt.xh[i])));
+    for (int i = 0; i < 3; i++)
+      maxabs = std::max(maxabs, fabs(TacsRealPart(xt.xh[i])));
     printf(
         "  [MatTrans3x3ADVecMultScale] zero-self-Hessian check (expect "
         "exactly 0.0): %.3e\n",

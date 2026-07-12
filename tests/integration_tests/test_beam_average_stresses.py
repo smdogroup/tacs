@@ -50,9 +50,7 @@ class BeamAverageStressesTest(unittest.TestCase):
         d1 = self.d
         self.A = np.pi * (d0**2 - d1**2) / 4.0
 
-        self.con = constitutive.IsoTubeBeamConstitutive(
-            self.props, d=self.d, t=self.t
-        )
+        self.con = constitutive.IsoTubeBeamConstitutive(self.props, d=self.d, t=self.t)
 
         ref_axis = np.array([0.0, 1.0, 1.0], dtype=TACS.dtype)
         self.transform = elements.BeamRefAxisTransform(ref_axis)
@@ -117,7 +115,9 @@ class BeamAverageStressesTest(unittest.TestCase):
 
         expected_axial = self.E * self.A * self.eps
         self.assertAlmostEqual(
-            complex(avg[0]).real, expected_axial, delta=self.atol + self.rtol * abs(expected_axial)
+            complex(avg[0]).real,
+            expected_axial,
+            delta=self.atol + self.rtol * abs(expected_axial),
         )
         # No bending/torsion/shear should appear for a pure axial state.
         for i in range(1, 6):
@@ -174,7 +174,9 @@ class BeamAverageStressesTest(unittest.TestCase):
 
         expected_axial = self.E * self.A * self.eps
         self.assertAlmostEqual(
-            complex(avg[0]).real, expected_axial, delta=self.atol + self.rtol * abs(expected_axial)
+            complex(avg[0]).real,
+            expected_axial,
+            delta=self.atol + self.rtol * abs(expected_axial),
         )
         for i in range(1, 6):
             self.assertAlmostEqual(complex(avg[i]).real, 0.0, delta=self.atol)

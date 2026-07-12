@@ -9,12 +9,14 @@
 // reached); this is a standalone-compilation-only issue, not a defect this
 // feature is responsible for fixing (see PLAN.md's Phase 1 preamble).
 //
+// clang-format off
 // Build (real mode):
 //   mpicxx -std=c++11 -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_advec3dot_second_order.cpp -o t14_real && ./t14_real
 // Build (complex mode):
 //   mpicxx -std=c++11 -DTACS_USE_COMPLEX -I<repo>/src -I<repo>/src/elements/a2d \
 //     test_advec3dot_second_order.cpp -o t14_complex && ./t14_complex
+// clang-format on
 //
 // Verification strategy (SPEC.md sec 6.6, ported from VALIDATION.md's E6):
 //   1. hforward is checked against a directional derivative of the PRIMAL
@@ -29,12 +31,12 @@
 //      "central-difference-of-exact-adjoint" technique, which avoids
 //      needing a nested-complex-step type for a genuine second derivative.
 
-#include "TACSObject.h"
-#include "a2d.h"
-
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include "TACSObject.h"
+#include "a2d.h"
 
 using namespace A2D;
 
@@ -148,9 +150,8 @@ int main() {
       maxerr = std::max(maxerr, fabs(TacsRealPart(xt.xh[i]) - Href[i]));
       maxerr = std::max(maxerr, fabs(TacsRealPart(yt.xh[i]) - Href[3 + i]));
     }
-    printf(
-        "  [ADVec3Dot] hreverse vs central-diff-of-exact-adjoint: %.3e\n",
-        maxerr);
+    printf("  [ADVec3Dot] hreverse vs central-diff-of-exact-adjoint: %.3e\n",
+           maxerr);
     if (maxerr > 1e-6) fail = 1;
   }
 
