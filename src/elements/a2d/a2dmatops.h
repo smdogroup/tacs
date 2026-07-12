@@ -841,6 +841,37 @@ class ADMatTrans3x3ADMatMult {
       Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
+  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
+  // 7): C = scale*A^T*B is bilinear in (A, B); same "reverse-shape +
+  // one-cross-term-per-input" pattern as ADMat3x3ADMatMult above. Formulas
+  // ported from, and verified by, the E7 experiment
+  // (docs/plans/feature-beam-element-methods/scripts/004_e7_zero_seed_role.cpp,
+  // TestADMatTrans3x3ADMatMult), generalized to the scale != 1 branch by the
+  // same TacsRealPart(scale)==1.0 pattern forward()/reverse() above already
+  // use. Verified in
+  // a2d/tests/test_admattrans3x3admatmult_second_order.cpp.
+  void hforward() {
+    if (TacsRealPart(scale) == 1.0) {
+      MatTrans3x3MatMultCore(A.Ap, B.A, C.Ap);
+      MatTrans3x3MatMultAddCore(A.A, B.Ap, C.Ap);
+    } else {
+      MatTrans3x3MatMultScaleCore(scale, A.Ap, B.A, C.Ap);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, B.Ap, C.Ap);
+    }
+  }
+  void hreverse() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatTransMultAddCore(B.A, C.Ah, A.Ah);
+      Mat3x3MatTransMultAddCore(B.Ap, C.Ad, A.Ah);
+      Mat3x3MatMultAddCore(A.A, C.Ah, B.Ah);
+      Mat3x3MatMultAddCore(A.Ap, C.Ad, B.Ah);
+    } else {
+      Mat3x3MatTransMultAddScaleCore(scale, B.A, C.Ah, A.Ah);
+      Mat3x3MatTransMultAddScaleCore(scale, B.Ap, C.Ad, A.Ah);
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ah, B.Ah);
+      Mat3x3MatMultAddScaleCore(scale, A.Ap, C.Ad, B.Ah);
+    }
+  }
 
   const TacsScalar scale;
   ADMat3x3 &A;
