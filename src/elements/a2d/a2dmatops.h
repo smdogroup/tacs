@@ -546,6 +546,44 @@ class ADMat3x3ADMatMult {
       MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
+  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
+  // 7): C = scale*A*B is bilinear in (A, B), so hforward is forward()'s own
+  // formula with Ap/Bp/Cp substituted for Ad/Bd/Cd, and hreverse is
+  // reverse()'s own formula (using .Ah in place of .Ad, propagated through
+  // the OTHER operand's PRIMAL) plus one cross term per input (the OTHER
+  // operand's .Ap contracted against THIS op's ordinary first-order
+  // downstream weight, C.Ad) -- the identical pattern already shipped for
+  // ADVec3Dot/ADMat3x3MatMult. Formulas ported from, and verified by, the E7
+  // experiment (docs/plans/feature-beam-element-methods/scripts/
+  // 004_e7_zero_seed_role.cpp, TestADMat3x3ADMatMult), generalized here to
+  // the scale != 1 branch by the same TacsRealPart(scale)==1.0 pattern
+  // forward()/reverse() above already use (see MatTrans3x3ADMatMult's own
+  // "Deviation note" for why this branch is complex-step-safe: scale is
+  // always a passive, real-literal constructor argument in this feature,
+  // never an active/perturbed quantity). Verified in
+  // a2d/tests/test_admat3x3admatmult_second_order.cpp.
+  void hforward() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
+      Mat3x3MatMultAddCore(A.A, B.Ap, C.Ap);
+    } else {
+      Mat3x3MatMultScaleCore(scale, A.Ap, B.A, C.Ap);
+      Mat3x3MatMultAddScaleCore(scale, A.A, B.Ap, C.Ap);
+    }
+  }
+  void hreverse() {
+    if (TacsRealPart(scale) == 1.0) {
+      Mat3x3MatTransMultAddCore(C.Ah, B.A, A.Ah);
+      Mat3x3MatTransMultAddCore(C.Ad, B.Ap, A.Ah);
+      MatTrans3x3MatMultAddCore(A.A, C.Ah, B.Ah);
+      MatTrans3x3MatMultAddCore(A.Ap, C.Ad, B.Ah);
+    } else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ah, B.A, A.Ah);
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.Ap, A.Ah);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ah, B.Ah);
+      MatTrans3x3MatMultAddScaleCore(scale, A.Ap, C.Ad, B.Ah);
+    }
+  }
 
   const TacsScalar scale;
   ADMat3x3 &A;
