@@ -254,6 +254,55 @@ class ElementTest(unittest.TestCase):
                                 )
                                 self.assertFalse(fail)
 
+    def test_element_mat_sv_sens_nonlinear_director(self):
+        # Task 7.3 (SPEC-phase-7.md sec 4.1/6.3): new test-surface work
+        # bringing a nonlinear-director beam typedef (ModRot, i.e.
+        # TACSQuadraticRotation) into this file's matrix-sens coverage --
+        # a prerequisite for G1/G2's own oracle to exist at all, per
+        # SPEC-phase-7.md sec 6.3. A separate, narrow element list (not
+        # self.elements) since test_element_jacobian/other tests in this
+        # file are NOT yet analytic for this director class (Phase 2 scope)
+        # and adding ModRot to the shared self.elements list would break
+        # them. No TACSBeam*Quaternion typedef exists in this codebase
+        # (confirmed by grep) -- TACSQuaternionRotation's addDirectorHessian*
+        # hooks are covered at the director-hook level instead
+        # (src/elements/shell/tests/test_director_hessian_second_order.cpp).
+        #
+        # CURRENTLY TRIVIALLY-PASSING FD-vs-FD for TACS_STIFFNESS_MATRIX/
+        # TACS_MASS_MATRIX specifically (both still forward to the base
+        # FD/CS fallback for this director class -- see
+        # TACSBeamElement::getMatSVSensInnerProduct's own documented-failure
+        # comment, Task 7.3: a genuine attempt found the third-derivative
+        # recipe SPEC-phase-7.md sec 4.1 describes is missing at least one
+        # term, discovered via this exact test). GEOMETRIC_STIFFNESS_MATRIX
+        # is genuinely analytic here (Task 5.4, TACSLinearizedRotation-only,
+        # unaffected by ModRot -- this subtest exercises ModRot's own
+        # base-FD-fallback path for that matType too, still a legitimate,
+        # if not novel, regression check). This test's own value: it is the
+        # regression net that will make TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX
+        # genuine the moment a future session resolves the documented gap.
+        modrot_elements = [elements.Beam2ModRot, elements.Beam3ModRot]
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in modrot_elements:
+                    with self.subTest(element=element_handle):
+                        element = element_handle(transform, self.con)
+                        for matrix_type in self.matrix_types:
+                            with self.subTest(matrix_type=matrix_type):
+                                fail = elements.TestElementMatSVSens(
+                                    element,
+                                    matrix_type,
+                                    self.elem_index,
+                                    self.time,
+                                    self.xpts,
+                                    self.vars,
+                                    self.dh,
+                                    self.print_level,
+                                    self.atol,
+                                    self.rtol,
+                                )
+                                self.assertFalse(fail)
+
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for transform in self.transforms:

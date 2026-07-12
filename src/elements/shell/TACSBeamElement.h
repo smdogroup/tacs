@@ -3064,8 +3064,58 @@ void TACSBeamElement<quadrature, basis, director,
       // complete, correct result.
       return;
     }
-    // Director curvature term not derivable with this feature's A2D
-    // machinery -- documented fallback (see the derivation above).
+
+    // TACSQuadraticRotation/TACSQuaternionRotation, both TACS_STIFFNESS_MATRIX
+    // and TACS_MASS_MATRIX (Task 7.3, SPEC-phase-7.md sec 1.1/3.3/4.1):
+    // ATTEMPTED, DOCUMENTED FAILURE -- a genuinely deeper obstruction than
+    // SPEC-phase-7.md's own derivation anticipated, discovered only at
+    // implementation-verification time (test_element_mat_sv_sens_nonlinear_director,
+    // tests/element_tests/shell_tests/test_beam_element.py, exercising
+    // Beam2ModRot/Beam3ModRot), not a coding slip:
+    //
+    // (1) SPEC-phase-7.md sec 4.1's own recipe sweeps the third differentiation
+    //     direction e_k over the ROTATIONAL DOF range only, built from
+    //     addDirectorHessianProduct(t, dd=H_f-projected-weight, qa, qb) calls.
+    //     This implicitly assumes psi^T*K(vars)*phi's entire vars-dependence
+    //     factors through the director's own q-space curvature (d^2C/dq^2),
+    //     i.e. through TWO q-indices at a time. A direct re-derivation of the
+    //     beam's strain e = L(u0x,d1x,d2x,e0ty), tracing u0x's own
+    //     construction (u0x = T^T*[u0xi|d01|d02]*XdinvT, LINEAR in the
+    //     translational slice u0xi and QUADRATIC in q via d01=C(q)*fn1,
+    //     d02=C(q)*fn2), shows U = 0.5*e^T*Cs*e contains a genuine CUBIC
+    //     cross term of the schematic form u^T*Auq*B(q) (linear in the
+    //     translational DOFs u, quadratic in q via B(q)=[d01;d02]) -- whose
+    //     OWN third derivative is nonzero for the (u, q, q) index
+    //     combination. This means psi^T*K*phi's derivative w.r.t. a
+    //     TRANSLATIONAL output DOF k is NOT identically zero, contradicting
+    //     the "rotational-DOF-range-only" sweep -- confirmed empirically,
+    //     not just algebraically: a standalone diagnostic driver
+    //     (getMatType(STIFFNESS,vars) contracted with (psi,phi), central-
+    //     differenced directly w.r.t. each vars_k, independent of
+    //     TestElementMatSVSens's own internal FD) shows a real, non-noise
+    //     ~500 magnitude nonzero reference gradient at every TRANSLATIONAL
+    //     output DOF for Beam2ModRot, unchanged even when psi/phi's own
+    //     translational components are zeroed (ruling out a simpler
+    //     "psi_u/phi_u leaks through" explanation and confirming the
+    //     missing term is a genuine (q,q,u)-index permutation of the same
+    //     cubic cross term, not yet derived).
+    // (2) Independently, the ROTATIONAL output DOFs (which the implemented
+    //     term1+term2 recipe DOES target) still show a substantial
+    //     analytic-vs-FD mismatch of their own (e.g. Beam2ModRot,
+    //     analytic=1810.4 vs FD-reference=1562.3 before the tying-strain
+    //     fix below, worsening to 3614.3 after adding it -- both wrong, in
+    //     the SAME direction, ruling out a simple sign flip) -- a second,
+    //     independent bug in the already-implemented recipe, not yet
+    //     isolated.
+    //
+    // Both (1) and (2) were investigated this session (a dd1phi/dd2phi/
+    // dd1psi/dd2psi construction mirroring G2's own, PLUS the tying-strain
+    // addTyingStrainDerivXptSens contribution G2 also folds in, was
+    // implemented and verified NOT sufficient) but not resolved -- this is
+    // a genuine documented-failure per this feature's own attempt-first
+    // protocol, not a pre-planned punt. Forwarded to the base FD/CS
+    // fallback for BOTH matTypes until the missing (u,q,q)-permutation term
+    // and the rotational-DOF recipe's own remaining bug are both found.
     TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                           Xpts, vars, dfdu);
     return;
