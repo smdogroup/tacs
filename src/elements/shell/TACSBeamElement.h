@@ -2507,6 +2507,34 @@ void TACSBeamElement<quadrature, basis, director,
   specific to this branch's larger kinematic chain (u0d/u0x/d1x/d2x/T/
   XdinvT, absent from the simpler TACS_MASS_MATRIX branch) is suspected
   but was not isolated within this session's investigation budget.
+
+  Task 7.4 (G2, SPEC-phase-7.md sec 3.2/4.2) update: TACSDirector.h now has
+  an addDirectorHessianRefNormalSens hook (Task 7.2) meant to close exactly
+  this residual, per SPEC's own recipe ("contract the already-computed
+  spsi/sphi stress-like weights, used as the dd argument, against
+  psi_q/phi_q"). NOT ATTEMPTED with new code this session -- a reasoned
+  non-attempt, not a time-pressure punt, based on a concrete finding from
+  the SAME session's Task 7.3 (G1) work: SPEC's analogous G1 recipe (also
+  "reuse the dd1phi/dd2phi/dd1psi/dd2psi accumulators, weighted by
+  spsi/sphi") turned out to be incomplete in a way only implementation-time
+  verification caught -- a genuine (u,q,q)-permutation cross term entirely
+  absent from the derivation. Re-deriving G2's own needed term by the same
+  rigor (not just trusting "dd=spsi/sphi" literally) shows the missing
+  "(dU/dC):(d^2C/dq^2)" piece needs the model's first-derivative weight
+  EVALUATED AT THE REAL STATE (a stress built from the REAL vars-projected
+  strain, not spsi/sphi, which are built from psi/phi-projected kinematics
+  instead) -- a genuinely NEW third kinematics chain this function does not
+  currently build at all (its own header comment above: "neither
+  corresponds to the real element state, since the bilinear form
+  psi^T*K*phi never references the actual vars-built strain at all").
+  Given G1's directly-analogous "trust the addendum's dd-weight framing
+  literally" attempt produced a wrong, ~130%-off result even AFTER adding
+  the tying-strain correction G2's own code already has, attempting G2's
+  parallel construction without first re-deriving and independently
+  verifying the correct "dd_real" weight (plus checking for an equally
+  hidden cross term) would very likely reproduce the same failure mode with
+  a different function's surface area to debug. Deferred, with this
+  concrete reasoning trail, rather than shipped wrong or guessed at.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
