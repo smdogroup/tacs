@@ -444,7 +444,9 @@ class StructProblem(BaseStructProblem):
                 dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale
             )
 
-    def addConstraintsPyOpt(self, optProb, nonLinear=True, linear=True):
+    def addConstraintsPyOpt(
+        self, optProb, nonLinear=True, linear=True, excludeWRT=None
+    ):
         """
         Add any linear constraints that were generated during setup to
         the specified pyOpt problem.
@@ -457,6 +459,12 @@ class StructProblem(BaseStructProblem):
             Flag to include non-linear constraints.
         linear : bool
             Flag to include linear constraints.
+        excludeWRT : list of str or str, optional
+            Additional DV names to remove from the ``wrt`` list for every
+            constraint.  Useful for DVs whose structural sensitivity is
+            analytically zero and should not contribute a Jacobian block,
+            e.g. geometric DVs when a DVGeo is attached to the StructProblem
+            but the geometric DVs are not part of the optimization.
         """
         fcon = {}
         fconSens = {}
@@ -480,6 +488,17 @@ class StructProblem(BaseStructProblem):
 
                 # Just evaluate the constraint to get the jacobian structure
                 wrt = list(fconSens[conName].keys())
+
+                # we may want to remove specific dvs from the wrt list
+                if excludeWRT is not None:
+                    if isinstance(excludeWRT, str):
+                        excludeWRT = [excludeWRT]
+
+                    for name in excludeWRT:
+                        if name in wrt:
+                            wrt.remove(name)
+                            fconSens[conName].pop(name)
+
                 optProb.addConGroup(
                     conName,
                     nCon,
