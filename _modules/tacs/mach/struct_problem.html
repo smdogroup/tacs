@@ -503,7 +503,9 @@
 
 <div class="viewcode-block" id="StructProblem.addConstraintsPyOpt">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.addConstraintsPyOpt">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">addConstraintsPyOpt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optProb</span><span class="p">,</span> <span class="n">nonLinear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">addConstraintsPyOpt</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">optProb</span><span class="p">,</span> <span class="n">nonLinear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">excludeWRT</span><span class="o">=</span><span class="kc">None</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Add any linear constraints that were generated during setup to</span>
 <span class="sd">        the specified pyOpt problem.</span>
@@ -516,6 +518,12 @@
 <span class="sd">            Flag to include non-linear constraints.</span>
 <span class="sd">        linear : bool</span>
 <span class="sd">            Flag to include linear constraints.</span>
+<span class="sd">        excludeWRT : list of str or str, optional</span>
+<span class="sd">            Additional DV names to remove from the ``wrt`` list for every</span>
+<span class="sd">            constraint.  Useful for DVs whose structural sensitivity is</span>
+<span class="sd">            analytically zero and should not contribute a Jacobian block,</span>
+<span class="sd">            e.g. geometric DVs when a DVGeo is attached to the StructProblem</span>
+<span class="sd">            but the geometric DVs are not part of the optimization.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">fcon</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">fconSens</span> <span class="o">=</span> <span class="p">{}</span>
@@ -539,6 +547,17 @@
 
                 <span class="c1"># Just evaluate the constraint to get the jacobian structure</span>
                 <span class="n">wrt</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fconSens</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+                <span class="c1"># we may want to remove specific dvs from the wrt list</span>
+                <span class="k">if</span> <span class="n">excludeWRT</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">excludeWRT</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                        <span class="n">excludeWRT</span> <span class="o">=</span> <span class="p">[</span><span class="n">excludeWRT</span><span class="p">]</span>
+
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">excludeWRT</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">wrt</span><span class="p">:</span>
+                            <span class="n">wrt</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                            <span class="n">fconSens</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
                 <span class="n">optProb</span><span class="o">.</span><span class="n">addConGroup</span><span class="p">(</span>
                     <span class="n">conName</span><span class="p">,</span>
                     <span class="n">nCon</span><span class="p">,</span>
