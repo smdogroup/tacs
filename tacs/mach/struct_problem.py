@@ -658,16 +658,18 @@ class StructProblem(BaseStructProblem):
 
         Parameters
         ----------
-        optProb : pyoptsparse.Optimization
-            Optimization problem object to add constraints to.
-        nonLinear : bool, optional
-            Include non-linear constraints. Defaults to ``True``.
-        linear : bool, optional
-            Include linear constraints. Defaults to ``True``.
+        optProb : :class:`Optimization <pyoptsparse.pyOpt_optimization.Optimization>` instance
+            Optimization problem object to add constraints to
+        nonLinear : bool
+            Flag to include non-linear constraints.
+        linear : bool
+            Flag to include linear constraints.
         excludeWRT : list of str or str, optional
             Additional DV names to remove from the ``wrt`` list for every
             constraint.  Useful for DVs whose structural sensitivity is
-            analytically zero and should not contribute a Jacobian block.
+            analytically zero and should not contribute a Jacobian block,
+            e.g. geometric DVs when a DVGeo is attached to the StructProblem
+            but the geometric DVs are not part of the optimization.
         """
         fcon = {}
         fconSens = {}
