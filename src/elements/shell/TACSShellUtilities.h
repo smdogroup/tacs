@@ -3,6 +3,7 @@
 
 #include "TACSElementAlgebra.h"
 #include "TACSElementVerification.h"
+#include "TACSShellConstitutive.h"
 #include "TACSShellElementTransform.h"
 
 inline void TacsShellAssembleFrame(const TacsScalar Xxi[], const TacsScalar n[],
@@ -1554,6 +1555,189 @@ void TacsShellAddTyingDispCoupling(const double pt[], const TacsScalar T[],
     for (int kk = 0; kk < basis::NUM_TYING_POINTS; kk++) {
       d2etyd[kk * dsize + k] += t2[kk];
     }
+  }
+}
+
+/*
+  Bilinear contraction of the 6 Hessian blocks returned by
+  model::evalStrainHessian against two directional strain-gradient tuples
+  (psi_u0x,psi_u1x,psi_e0ty) and (phi_u0x,phi_u1x,phi_e0ty).
+
+  Row/column conventions (confirmed by inspection of TacsShellAddDispGradHessian
+  and TacsShellAddTyingDispCoupling, the routines that scatter these same
+  blocks into addJacobian's mat[]):
+    d2u0x, d2u1x: symmetric 9x9 self-blocks - contract once.
+    d2u0xu1x: (row=u0x, col=u1x) cross-block - contract BOTH orderings,
+      since the full assembled Hessian has this block AND its transpose
+      (psi_u0x . d2u0xu1x . phi_u1x) + (phi_u0x . d2u0xu1x . psi_u1x).
+    d2e0ty: symmetric 6x6 self-block - contract once.
+    d2e0tyu0x, d2e0tyu1x: (row=e0ty(6), col=disp(9)) cross-blocks - contract
+      both orderings, same reasoning as d2u0xu1x.
+*/
+static inline TacsScalar TacsShellContractStrainHessian(
+    const TacsScalar d2u0x[], const TacsScalar d2u1x[],
+    const TacsScalar d2u0xu1x[], const TacsScalar d2e0ty[],
+    const TacsScalar d2e0tyu0x[], const TacsScalar d2e0tyu1x[],
+    const TacsScalar psi_u0x[], const TacsScalar psi_u1x[],
+    const TacsScalar psi_e0ty[], const TacsScalar phi_u0x[],
+    const TacsScalar phi_u1x[], const TacsScalar phi_e0ty[]) {
+  TacsScalar val = 0.0;
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      val += psi_u0x[i] * d2u0x[9 * i + j] * phi_u0x[j];
+      val += psi_u1x[i] * d2u1x[9 * i + j] * phi_u1x[j];
+      val += psi_u0x[i] * d2u0xu1x[9 * i + j] * phi_u1x[j];
+      val += phi_u0x[i] * d2u0xu1x[9 * i + j] * psi_u1x[j];
+    }
+  }
+  for (int k = 0; k < 6; k++) {
+    for (int l = 0; l < 6; l++) {
+      val += psi_e0ty[k] * d2e0ty[6 * k + l] * phi_e0ty[l];
+    }
+    for (int j = 0; j < 9; j++) {
+      val += psi_e0ty[k] * d2e0tyu0x[9 * k + j] * phi_u0x[j];
+      val += phi_e0ty[k] * d2e0tyu0x[9 * k + j] * psi_u0x[j];
+      val += psi_e0ty[k] * d2e0tyu1x[9 * k + j] * phi_u1x[j];
+      val += phi_e0ty[k] * d2e0tyu1x[9 * k + j] * psi_u1x[j];
+    }
+  }
+  return val;
+}
+
+/*
+  Compute E''(psi,phi): the strain's own second directional derivative along
+  (psi,phi), i.e. the 9-component vector whose k-th entry is
+  psiU^T * (d^2 e_k / dU^2) * phiU, where U = (u0x,u1x,e0ty).
+
+  model::evalStrainHessian's Hessian blocks are additive in (Cs-quadratic
+  term) + (s-linear term); calling it with Cs=0 kills the Cs-quadratic part,
+  leaving exactly the s-linear part, which is itself linear in the passed-in
+  "stress" argument. Looping over the 8 unit-stress directions therefore
+  extracts E''(psi,phi) component-by-component without any model-class
+  special-casing (linear strain models return exactly zero, since their
+  evalStrainHessian has no s-dependence at all).
+
+  This does NOT capture the tying strain's own vars-curvature (e0ty(vars) is
+  quadratic in vars for the nonlinear model classes, independent of
+  model::evalStrain's u0x/u1x nonlinearity) - see
+  TacsShellAddTyingStrainCurvature below for that additive piece.
+*/
+template <class model>
+void TacsShellAddStrainHessianBilinear(
+    const TacsScalar u0x[], const TacsScalar u1x[], const TacsScalar e0ty[],
+    const TacsScalar psi_u0x[], const TacsScalar psi_u1x[],
+    const TacsScalar psi_e0ty[], const TacsScalar phi_u0x[],
+    const TacsScalar phi_u1x[], const TacsScalar phi_e0ty[],
+    TacsScalar Epp[]) {
+  TacsScalar Cs_zero[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
+  memset(Cs_zero, 0, sizeof(Cs_zero));
+
+  for (int k = 0; k < 8; k++) {
+    TacsScalar sK[9];
+    memset(sK, 0, sizeof(sK));
+    sK[k] = 1.0;
+
+    TacsScalar d2u0x[81], d2u1x[81], d2u0xu1x[81];
+    TacsScalar d2e0ty[36], d2e0tyu0x[54], d2e0tyu1x[54];
+    model::evalStrainHessian(1.0, sK, Cs_zero, u0x, u1x, e0ty, d2u0x, d2u1x,
+                             d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x);
+
+    Epp[k] += TacsShellContractStrainHessian(
+        d2u0x, d2u1x, d2u0xu1x, d2e0ty, d2e0tyu0x, d2e0tyu1x, psi_u0x, psi_u1x,
+        psi_e0ty, phi_u0x, phi_u1x, phi_e0ty);
+  }
+}
+
+/*
+  One-sided Hessian-vector product: out += H*dir, where H is the same
+  block-matrix Hessian TacsShellContractStrainHessian contracts bilinearly
+  (psi^T*H*phi as a scalar) - here instead producing the vector H*dir (one
+  index contracted against "dir", the other left free as the output "out",
+  in (u0x,u1x,e0ty)-space). Row/column/transpose conventions match
+  TacsShellContractStrainHessian exactly (verified by construction: summing
+  psi[.] . out[.] over all three sub-spaces, for out=H*phi, reproduces
+  TacsShellContractStrainHessian(psi,phi) term-for-term).
+
+  ADDS into out_u0x/out_u1x/out_e0ty (does not zero them first), so that two
+  calls (e.g. weighted by s_phi against psi's direction, and by s_psi against
+  phi's direction) can be accumulated into one seed before scattering.
+*/
+static inline void TacsShellAddStrainHessianVector(
+    const TacsScalar d2u0x[], const TacsScalar d2u1x[],
+    const TacsScalar d2u0xu1x[], const TacsScalar d2e0ty[],
+    const TacsScalar d2e0tyu0x[], const TacsScalar d2e0tyu1x[],
+    const TacsScalar dir_u0x[], const TacsScalar dir_u1x[],
+    const TacsScalar dir_e0ty[], TacsScalar out_u0x[], TacsScalar out_u1x[],
+    TacsScalar out_e0ty[]) {
+  for (int i = 0; i < 9; i++) {
+    TacsScalar au0x = 0.0, au1x = 0.0;
+    for (int j = 0; j < 9; j++) {
+      au0x += d2u0x[9 * i + j] * dir_u0x[j] + d2u0xu1x[9 * i + j] * dir_u1x[j];
+      au1x += d2u1x[9 * i + j] * dir_u1x[j] + d2u0xu1x[9 * j + i] * dir_u0x[j];
+    }
+    for (int k = 0; k < 6; k++) {
+      au0x += d2e0tyu0x[9 * k + i] * dir_e0ty[k];
+      au1x += d2e0tyu1x[9 * k + i] * dir_e0ty[k];
+    }
+    out_u0x[i] += au0x;
+    out_u1x[i] += au1x;
+  }
+  for (int k = 0; k < 6; k++) {
+    TacsScalar ae0ty = 0.0;
+    for (int l = 0; l < 6; l++) {
+      ae0ty += d2e0ty[6 * k + l] * dir_e0ty[l];
+    }
+    for (int j = 0; j < 9; j++) {
+      ae0ty += d2e0tyu0x[9 * k + j] * dir_u0x[j] +
+               d2e0tyu1x[9 * k + j] * dir_u1x[j];
+    }
+    out_e0ty[k] += ae0ty;
+  }
+}
+
+/*
+  Compute the tying strain's own vars-curvature: the per-tying-point
+  quantity c[index] = psi^T * (d^2 ety[index] / dvars^2) * phi.
+
+  model::computeTyingStrainDeriv(Xpts,fn,vars,d,varsd,dd,ety,etyd) is, for
+  fixed (varsd,dd), an AFFINE function of (vars,d): a constant term from the
+  varsd-only piece of each tying-strain field's formula, plus a term
+  bilinear in (vars-role,varsd-role) (e.g. g11's 0.5*|Uxi(vars)|^2). The
+  bilinear cross term is recovered exactly - via the polarization identity,
+  not a finite difference, so there is no truncation error or step-size
+  parameter - as:
+     etyd(vars=phi, d=dd_phi; varsd=psi, dd=dd_psi)
+   - etyd(vars=0,   d=0;      varsd=psi, dd=dd_psi)
+  which cancels the constant (varsd-only) term exactly and leaves precisely
+  the bilinear cross-contribution. This generalizes to any model class's
+  tying-strain formula without special-casing: linear models' etyd has no
+  bilinear part at all, so this difference is exactly zero for them.
+*/
+template <int vars_per_node, class basis, class model>
+void TacsShellAddTyingStrainCurvature(const TacsScalar Xpts[],
+                                      const TacsScalar fn[],
+                                      const TacsScalar psi[],
+                                      const TacsScalar dd_psi[],
+                                      const TacsScalar phi[],
+                                      const TacsScalar dd_phi[],
+                                      TacsScalar c_ety[]) {
+  const int dsize = 3 * basis::NUM_NODES;
+  TacsScalar zeros_v[vars_per_node * basis::NUM_NODES];
+  TacsScalar zeros_d[3 * basis::NUM_NODES];
+  memset(zeros_v, 0, vars_per_node * basis::NUM_NODES * sizeof(TacsScalar));
+  memset(zeros_d, 0, dsize * sizeof(TacsScalar));
+
+  TacsScalar ety_fwd[basis::NUM_TYING_POINTS], etyd_fwd[basis::NUM_TYING_POINTS];
+  model::template computeTyingStrainDeriv<vars_per_node, basis>(
+      Xpts, fn, phi, dd_phi, psi, dd_psi, ety_fwd, etyd_fwd);
+
+  TacsScalar ety_base[basis::NUM_TYING_POINTS],
+      etyd_base[basis::NUM_TYING_POINTS];
+  model::template computeTyingStrainDeriv<vars_per_node, basis>(
+      Xpts, fn, zeros_v, zeros_d, psi, dd_psi, ety_base, etyd_base);
+
+  for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
+    c_ety[index] = etyd_fwd[index] - etyd_base[index];
   }
 }
 
