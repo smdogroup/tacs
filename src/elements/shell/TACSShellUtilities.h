@@ -942,7 +942,8 @@ void TacsShellComputeDrillStrain(TACSShellTransform *transform,
   @param Tn The transformation at each node
   @param u0xn The derivative of the displacements at each node
   @param Ctn The rotation matrix at each node
-  @param etn The drill strain penalty value at each node
+  @param etn The drill strain penalty value at each node, or NULL if the
+             caller only needs the derivative etnd
 */
 template <int vars_per_node, int offset, class basis, class director,
           class model>
@@ -996,8 +997,11 @@ void TacsShellComputeDrillStrainDeriv(
     mat3x3MatMult(u0xnd, &XdinvTn[9 * i], tmp);
     mat3x3TransMatMult(&Tn[9 * i], tmp, u0xnd);
 
-    etn[i] = director::evalDrillStrainDeriv(&u0xn[9 * i], &Ctn[9 * i], u0xnd,
-                                            Ctnd, &etnd[i]);
+    TacsScalar et = director::evalDrillStrainDeriv(&u0xn[9 * i], &Ctn[9 * i],
+                                                   u0xnd, Ctnd, &etnd[i]);
+    if (etn) {
+      etn[i] = et;
+    }
   }
 }
 
@@ -1738,6 +1742,110 @@ void TacsShellAddTyingStrainCurvature(const TacsScalar Xpts[],
 
   for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
     c_ety[index] = etyd_fwd[index] - etyd_base[index];
+  }
+}
+
+/*
+  Add the bilinear contraction of a single (gty, de0ty) seed pair into
+  dXdinvT, the sensitivity of e0ty = XdinvT^{T}*gty*XdinvT with respect to
+  XdinvT. Callers with more than one seed pair (e.g. a primal/time-derivative
+  pair, or a psi/phi bilinear pair) call this once per pair, accumulating
+  into the same dXdinvT buffer, before closing it out with
+  TacsShellAddXdinvTTransformSens.
+
+  ADDS into dXdinvT (does not zero it first) - the caller must zero-init it.
+*/
+static inline void TacsShellAddTyingStrainXdinvTSens(const TacsScalar gty[],
+                                                     const TacsScalar de0ty[],
+                                                     const TacsScalar XdinvT[],
+                                                     TacsScalar dXdinvT[]) {
+  TacsScalar gty_full[9], de0ty_full[9];
+  gty_full[0] = gty[0];
+  gty_full[1] = gty[1];
+  gty_full[2] = gty[2];
+  gty_full[3] = gty[1];
+  gty_full[4] = gty[3];
+  gty_full[5] = gty[4];
+  gty_full[6] = gty[2];
+  gty_full[7] = gty[4];
+  gty_full[8] = gty[5];
+
+  de0ty_full[0] = de0ty[0];
+  de0ty_full[1] = 0.5 * de0ty[1];
+  de0ty_full[2] = 0.5 * de0ty[2];
+  de0ty_full[3] = 0.5 * de0ty[1];
+  de0ty_full[4] = de0ty[3];
+  de0ty_full[5] = 0.5 * de0ty[4];
+  de0ty_full[6] = 0.5 * de0ty[2];
+  de0ty_full[7] = 0.5 * de0ty[4];
+  de0ty_full[8] = de0ty[5];
+
+  TacsScalar W[9], dW[9], tmp[9];
+  mat3x3MatMult(gty_full, XdinvT, W);
+  mat3x3MatMult(W, de0ty_full, tmp);
+  for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+  mat3x3MatMult(XdinvT, de0ty_full, dW);
+  mat3x3MatMult(gty_full, dW, tmp);
+  for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
+}
+
+/*
+  Propagate an XdinvT-direction sensitivity dXdinvT (accumulated via one or
+  more calls to TacsShellAddTyingStrainXdinvTSens) back through
+  XdinvT = Xdinv*T, Xdinv = inv3x3(Xd), Xd = assembleFrame(Xxi, n0).
+
+  ADDS into dT, dXxi, dn0 (does not zero them first).
+*/
+static inline void TacsShellAddXdinvTTransformSens(
+    const TacsScalar Xxi[], const TacsScalar n0[], const TacsScalar T[],
+    const TacsScalar XdinvT[], const TacsScalar dXdinvT[], TacsScalar dT[],
+    TacsScalar dXxi[], TacsScalar dn0[]) {
+  TacsScalar Xd[9], Xdinv[9];
+  TacsShellAssembleFrame(Xxi, n0, Xd);
+  inv3x3(Xd, Xdinv);
+
+  TacsScalar tmp[9], dXdinv[9];
+  mat3x3MatTransMult(dXdinvT, T, dXdinv);
+  mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
+  for (int i = 0; i < 9; i++) dT[i] += tmp[i];
+
+  TacsScalar dXd[9];
+  inv3x3Sens(Xdinv, dXdinv, dXd);
+
+  dXxi[0] += dXd[0];
+  dXxi[1] += dXd[1];
+  dXxi[2] += dXd[3];
+  dXxi[3] += dXd[4];
+  dXxi[4] += dXd[6];
+  dXxi[5] += dXd[7];
+
+  dn0[0] += dXd[2];
+  dn0[1] += dXd[5];
+  dn0[2] += dXd[8];
+}
+
+/*
+  Compute the varsd-direction derivative etyd of the tying strain - a thin
+  wrapper around model::computeTyingStrainDeriv, mirroring
+  TacsShellComputeDrillStrainDeriv's nullable-ety convention for call sites
+  that already have the primal ety from a separate (e.g. psi-direction) call
+  and only need a second direction's etyd (e.g. the phi-direction one).
+*/
+template <int vars_per_node, class basis, class model>
+void TacsShellComputeTyingStrainDeriv(const TacsScalar Xpts[],
+                                      const TacsScalar fn[],
+                                      const TacsScalar vars[],
+                                      const TacsScalar d[],
+                                      const TacsScalar varsd[],
+                                      const TacsScalar dd[], TacsScalar ety[],
+                                      TacsScalar etyd[]) {
+  if (ety) {
+    model::template computeTyingStrainDeriv<vars_per_node, basis>(
+        Xpts, fn, vars, d, varsd, dd, ety, etyd);
+  } else {
+    TacsScalar ety_tmp[basis::NUM_TYING_POINTS];
+    model::template computeTyingStrainDeriv<vars_per_node, basis>(
+        Xpts, fn, vars, d, varsd, dd, ety_tmp, etyd);
   }
 }
 

@@ -1328,104 +1328,14 @@ void TACSShellElement<quadrature, basis, director, model>::
         pt, Xpts, vars, fn, d, Xxi, n0, T, XdinvT, XdinvzT, du0x_hess,
         du1x_hess, 0.0, dXxi, dn0, dfn, dT, dd_xpt);
 
-    // ---- XdinvT-direction contribution from the tying-strain transform
-    // (e0ty = XdinvT^{T}*gty*XdinvT, e0tyd = XdinvT^{T}*gtyd*XdinvT) ----
-    // Not captured by TacsShellComputeDispGradXptSens, whose contract is
-    // limited to the u0x/u1x/detXd chain; hand-derived here mirroring the
-    // mat3x3MatMult adjoint rules already used above. NOTE: the seed's
-    // off-diagonal (shear) entries must be halved when expanded from the
-    // compact 6-component symmetric storage to a full 3x3 matrix -- the
-    // compact form counts each off-diagonal term once, but expanding it
-    // symmetrically into both (i,j) and (j,i) slots of the full matrix and
-    // then using the plain (non-symmetric-aware) mat3x3MatMult adjoint rule
-    // would otherwise double-count it (verified numerically in isolation).
-    {
-      TacsScalar gty_full[9], gtyd_full[9], de0ty_full[9], de0tyd_full[9];
-      gty_full[0] = gty[0];
-      gty_full[1] = gty[1];
-      gty_full[2] = gty[2];
-      gty_full[3] = gty[1];
-      gty_full[4] = gty[3];
-      gty_full[5] = gty[4];
-      gty_full[6] = gty[2];
-      gty_full[7] = gty[4];
-      gty_full[8] = gty[5];
-
-      gtyd_full[0] = gtyd[0];
-      gtyd_full[1] = gtyd[1];
-      gtyd_full[2] = gtyd[2];
-      gtyd_full[3] = gtyd[1];
-      gtyd_full[4] = gtyd[3];
-      gtyd_full[5] = gtyd[4];
-      gtyd_full[6] = gtyd[2];
-      gtyd_full[7] = gtyd[4];
-      gtyd_full[8] = gtyd[5];
-
-      de0ty_full[0] = de0ty[0];
-      de0ty_full[1] = 0.5 * de0ty[1];
-      de0ty_full[2] = 0.5 * de0ty[2];
-      de0ty_full[3] = 0.5 * de0ty[1];
-      de0ty_full[4] = de0ty[3];
-      de0ty_full[5] = 0.5 * de0ty[4];
-      de0ty_full[6] = 0.5 * de0ty[2];
-      de0ty_full[7] = 0.5 * de0ty[4];
-      de0ty_full[8] = de0ty[5];
-
-      de0tyd_full[0] = de0tyd[0];
-      de0tyd_full[1] = 0.5 * de0tyd[1];
-      de0tyd_full[2] = 0.5 * de0tyd[2];
-      de0tyd_full[3] = 0.5 * de0tyd[1];
-      de0tyd_full[4] = de0tyd[3];
-      de0tyd_full[5] = 0.5 * de0tyd[4];
-      de0tyd_full[6] = 0.5 * de0tyd[2];
-      de0tyd_full[7] = 0.5 * de0tyd[4];
-      de0tyd_full[8] = de0tyd[5];
-
+    // XdinvT-direction contribution from the tying-strain transform
+    // (e0ty = XdinvT^{T}*gty*XdinvT, e0tyd = XdinvT^{T}*gtyd*XdinvT)
       TacsScalar dXdinvT[9];
       memset(dXdinvT, 0, sizeof(dXdinvT));
-      TacsScalar W[9], dW[9], tmp[9];
-
-      // chain 2: e0ty = XdinvT^{T}*W, W = gty_full*XdinvT
-      mat3x3MatMult(gty_full, XdinvT, W);
-      mat3x3MatMult(W, de0ty_full, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-      mat3x3MatMult(XdinvT, de0ty_full, dW);
-      mat3x3MatMult(gty_full, dW, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-
-      // chain 1: e0tyd = XdinvT^{T}*Wd, Wd = gtyd_full*XdinvT
-      mat3x3MatMult(gtyd_full, XdinvT, W);
-      mat3x3MatMult(W, de0tyd_full, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-      mat3x3MatMult(XdinvT, de0tyd_full, dW);
-      mat3x3MatMult(gtyd_full, dW, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-
-      // Propagate dXdinvT back through XdinvT = Xdinv*T and
-      // Xdinv = inv3x3(Xd), Xd = assembleFrame(Xxi, n0)
-      TacsScalar Xd[9], Xdinv[9];
-      TacsShellAssembleFrame(Xxi, n0, Xd);
-      inv3x3(Xd, Xdinv);
-
-      TacsScalar dXdinv[9];
-      mat3x3MatTransMult(dXdinvT, T, dXdinv);
-      mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
-      for (int i = 0; i < 9; i++) dT[i] += tmp[i];
-
-      TacsScalar dXd[9];
-      inv3x3Sens(Xdinv, dXdinv, dXd);
-
-      dXxi[0] += dXd[0];
-      dXxi[1] += dXd[1];
-      dXxi[2] += dXd[3];
-      dXxi[3] += dXd[4];
-      dXxi[4] += dXd[6];
-      dXxi[5] += dXd[7];
-
-      dn0[0] += dXd[2];
-      dn0[1] += dXd[5];
-      dn0[2] += dXd[8];
-    }
+    TacsShellAddTyingStrainXdinvTSens(gty, de0ty, XdinvT, dXdinvT);
+    TacsShellAddTyingStrainXdinvTSens(gtyd, de0tyd, XdinvT, dXdinvT);
+    TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
+                                    dn0);
 
     // Fold the T-direction seed back onto Xxi/n0
     transform->addTransformSens(Xxi, n0, dT, dXxi, dn0);
@@ -1607,65 +1517,11 @@ void TACSShellElement<quadrature, basis, director, model>::
     // symmetrically into both (i,j) and (j,i) slots of the full matrix and
     // then using the plain (non-symmetric-aware) mat3x3MatMult adjoint rule
     // would otherwise double-count it.
-    {
-      TacsScalar gty_full[9], de0ty_full[9];
-      gty_full[0] = gty[0];
-      gty_full[1] = gty[1];
-      gty_full[2] = gty[2];
-      gty_full[3] = gty[1];
-      gty_full[4] = gty[3];
-      gty_full[5] = gty[4];
-      gty_full[6] = gty[2];
-      gty_full[7] = gty[4];
-      gty_full[8] = gty[5];
-
-      de0ty_full[0] = de0ty[0];
-      de0ty_full[1] = 0.5 * de0ty[1];
-      de0ty_full[2] = 0.5 * de0ty[2];
-      de0ty_full[3] = 0.5 * de0ty[1];
-      de0ty_full[4] = de0ty[3];
-      de0ty_full[5] = 0.5 * de0ty[4];
-      de0ty_full[6] = 0.5 * de0ty[2];
-      de0ty_full[7] = 0.5 * de0ty[4];
-      de0ty_full[8] = de0ty[5];
-
       TacsScalar dXdinvT[9];
       memset(dXdinvT, 0, sizeof(dXdinvT));
-      TacsScalar W[9], dW[9], tmp[9];
-
-      // e0ty = XdinvT^{T}*W, W = gty_full*XdinvT
-      mat3x3MatMult(gty_full, XdinvT, W);
-      mat3x3MatMult(W, de0ty_full, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-      mat3x3MatMult(XdinvT, de0ty_full, dW);
-      mat3x3MatMult(gty_full, dW, tmp);
-      for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-
-      // Propagate dXdinvT back through XdinvT = Xdinv*T and
-      // Xdinv = inv3x3(Xd), Xd = assembleFrame(Xxi, n0)
-      TacsScalar Xd[9], Xdinv[9];
-      TacsShellAssembleFrame(Xxi, n0, Xd);
-      inv3x3(Xd, Xdinv);
-
-      TacsScalar dXdinv[9];
-      mat3x3MatTransMult(dXdinvT, T, dXdinv);
-      mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
-      for (int i = 0; i < 9; i++) dT[i] += tmp[i];
-
-      TacsScalar dXd[9];
-      inv3x3Sens(Xdinv, dXdinv, dXd);
-
-      dXxi[0] += dXd[0];
-      dXxi[1] += dXd[1];
-      dXxi[2] += dXd[3];
-      dXxi[3] += dXd[4];
-      dXxi[4] += dXd[6];
-      dXxi[5] += dXd[7];
-
-      dn0[0] += dXd[2];
-      dn0[1] += dXd[5];
-      dn0[2] += dXd[8];
-    }
+    TacsShellAddTyingStrainXdinvTSens(gty, de0ty, XdinvT, dXdinvT);
+    TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
+                                    dn0);
 
     // Add the contributions from the derivative of the director (the
     // single-seed 4-argument overload -- exact, since only one adjoint
@@ -2319,13 +2175,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-    {
-      TacsScalar etn_tmp[num_nodes];
       TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
                                        model>(transform, Xdn, fn, vars, phi,
-                                              XdinvTn, Tn, u0xn, Ctn, etn_tmp,
+                                            XdinvTn, Tn, u0xn, Ctn, NULL,
                                               etnd_phi);
-    }
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize], dd_phi[dsize];
     director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2339,11 +2192,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    {
-      TacsScalar ety_tmp[basis::NUM_TYING_POINTS];
-      model::template computeTyingStrainDeriv<vars_per_node, basis>(
-          Xpts, fn, vars, d, phi, dd_phi, ety_tmp, etyd_phi);
-    }
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     TacsScalar c_ety[basis::NUM_TYING_POINTS];
     TacsShellAddTyingStrainCurvature<vars_per_node, basis, model>(
@@ -2581,13 +2431,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-    {
-      TacsScalar etn_tmp[num_nodes];
       TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
                                        model>(transform, Xdn, fn, vars, phi,
-                                              XdinvTn, Tn, u0xn, Ctn, etn_tmp,
+                                            XdinvTn, Tn, u0xn, Ctn, NULL,
                                               etnd_phi);
-    }
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize],
         dd_phi[dsize];
@@ -2602,11 +2449,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    {
-      TacsScalar ety_tmp[basis::NUM_TYING_POINTS];
-      model::template computeTyingStrainDeriv<vars_per_node, basis>(
-          Xpts, fn, vars, d, phi, dd_phi, ety_tmp, etyd_phi);
-    }
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     // Xpts-direction accumulators for the two direction chains (psi, phi) -
     // no primal-direction accumulator exists yet (Stage A has no primal
@@ -2733,95 +2577,12 @@ void TACSShellElement<quadrature, basis, director, model>::
 
       // ---- Piece 6: XdinvT-direction correction, applied twice (no
       // "chain 2" sub-block - neither e_psi nor e_phi is primal-e-shaped) ----
-      {
-        TacsScalar gtyd_psi_full[9], gtyd_phi_full[9];
-        TacsScalar de0tyd_psi_full[9], de0tyd_phi_full[9];
-
-        gtyd_psi_full[0] = gtyd_psi[0];
-        gtyd_psi_full[1] = gtyd_psi[1];
-        gtyd_psi_full[2] = gtyd_psi[2];
-        gtyd_psi_full[3] = gtyd_psi[1];
-        gtyd_psi_full[4] = gtyd_psi[3];
-        gtyd_psi_full[5] = gtyd_psi[4];
-        gtyd_psi_full[6] = gtyd_psi[2];
-        gtyd_psi_full[7] = gtyd_psi[4];
-        gtyd_psi_full[8] = gtyd_psi[5];
-
-        gtyd_phi_full[0] = gtyd_phi[0];
-        gtyd_phi_full[1] = gtyd_phi[1];
-        gtyd_phi_full[2] = gtyd_phi[2];
-        gtyd_phi_full[3] = gtyd_phi[1];
-        gtyd_phi_full[4] = gtyd_phi[3];
-        gtyd_phi_full[5] = gtyd_phi[4];
-        gtyd_phi_full[6] = gtyd_phi[2];
-        gtyd_phi_full[7] = gtyd_phi[4];
-        gtyd_phi_full[8] = gtyd_phi[5];
-
-        de0tyd_psi_full[0] = de0tyd_psi[0];
-        de0tyd_psi_full[1] = 0.5 * de0tyd_psi[1];
-        de0tyd_psi_full[2] = 0.5 * de0tyd_psi[2];
-        de0tyd_psi_full[3] = 0.5 * de0tyd_psi[1];
-        de0tyd_psi_full[4] = de0tyd_psi[3];
-        de0tyd_psi_full[5] = 0.5 * de0tyd_psi[4];
-        de0tyd_psi_full[6] = 0.5 * de0tyd_psi[2];
-        de0tyd_psi_full[7] = 0.5 * de0tyd_psi[4];
-        de0tyd_psi_full[8] = de0tyd_psi[5];
-
-        de0tyd_phi_full[0] = de0tyd_phi[0];
-        de0tyd_phi_full[1] = 0.5 * de0tyd_phi[1];
-        de0tyd_phi_full[2] = 0.5 * de0tyd_phi[2];
-        de0tyd_phi_full[3] = 0.5 * de0tyd_phi[1];
-        de0tyd_phi_full[4] = de0tyd_phi[3];
-        de0tyd_phi_full[5] = 0.5 * de0tyd_phi[4];
-        de0tyd_phi_full[6] = 0.5 * de0tyd_phi[2];
-        de0tyd_phi_full[7] = 0.5 * de0tyd_phi[4];
-        de0tyd_phi_full[8] = de0tyd_phi[5];
-
         TacsScalar dXdinvT[9];
         memset(dXdinvT, 0, sizeof(dXdinvT));
-        TacsScalar W[9], dW[9], tmp[9];
-
-        // sub-block 1: (gtyd_psi, de0tyd_psi)
-        mat3x3MatMult(gtyd_psi_full, XdinvT, W);
-        mat3x3MatMult(W, de0tyd_psi_full, tmp);
-        for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-        mat3x3MatMult(XdinvT, de0tyd_psi_full, dW);
-        mat3x3MatMult(gtyd_psi_full, dW, tmp);
-        for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-
-        // sub-block 2: (gtyd_phi, de0tyd_phi)
-        mat3x3MatMult(gtyd_phi_full, XdinvT, W);
-        mat3x3MatMult(W, de0tyd_phi_full, tmp);
-        for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-        mat3x3MatMult(XdinvT, de0tyd_phi_full, dW);
-        mat3x3MatMult(gtyd_phi_full, dW, tmp);
-        for (int i = 0; i < 9; i++) dXdinvT[i] += tmp[i];
-
-        // Propagate dXdinvT back through XdinvT = Xdinv*T and
-        // Xdinv = inv3x3(Xd), Xd = assembleFrame(Xxi, n0)
-        TacsScalar Xd[9], Xdinv[9];
-        TacsShellAssembleFrame(Xxi, n0, Xd);
-        inv3x3(Xd, Xdinv);
-
-        TacsScalar dXdinv[9];
-        mat3x3MatTransMult(dXdinvT, T, dXdinv);
-        mat3x3TransMatMult(Xdinv, dXdinvT, tmp);
-        for (int i = 0; i < 9; i++) dT[i] += tmp[i];
-
-        TacsScalar dXd[9];
-        inv3x3Sens(Xdinv, dXdinv, dXd);
-
-        dXxi[0] += dXd[0];
-        dXxi[1] += dXd[1];
-        dXxi[2] += dXd[3];
-        dXxi[3] += dXd[4];
-        dXxi[4] += dXd[6];
-        dXxi[5] += dXd[7];
-
-        dn0[0] += dXd[2];
-        dn0[1] += dXd[5];
-        dn0[2] += dXd[8];
-      }
+      TacsShellAddTyingStrainXdinvTSens(gtyd_psi, de0tyd_psi, XdinvT, dXdinvT);
+      TacsShellAddTyingStrainXdinvTSens(gtyd_phi, de0tyd_phi, XdinvT, dXdinvT);
+      TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
+                                      dn0);
 
       // Fold the T-direction seed back onto Xxi/n0
       transform->addTransformSens(Xxi, n0, dT, dXxi, dn0);
@@ -3095,13 +2856,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-    {
-      TacsScalar etn_tmp[num_nodes];
       TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
                                        model>(transform, Xdn, fn, vars, phi,
-                                              XdinvTn, Tn, u0xn, Ctn, etn_tmp,
+                                            XdinvTn, Tn, u0xn, Ctn, NULL,
                                               etnd_phi);
-    }
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize], dd_phi[dsize];
     director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -3115,11 +2873,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    {
-      TacsScalar ety_tmp[basis::NUM_TYING_POINTS];
-      model::template computeTyingStrainDeriv<vars_per_node, basis>(
-          Xpts, fn, vars, d, phi, dd_phi, ety_tmp, etyd_phi);
-    }
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     // Task 4.1's tying-strain-curvature term (vars-independent, reused as-is
     // for piece 2's Epp_total)
