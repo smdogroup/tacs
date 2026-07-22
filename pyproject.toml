@@ -2,3 +2,31 @@
 [build-system]
 # Minimum requirements for the build system to execute.
 requires = ['setuptools>=45.0,<72.0', 'wheel', 'cython>=3.0.0', 'numpy>=2.0.0,<3.0.0', 'mpi4py>=4.0.3']
+
+[tool.ruff]
+target-version = "py310"
+
+exclude = [
+    "/**/docs/source/conf.py",
+    "setup.py",
+]
+
+[tool.ruff.lint]
+select = ["B", "D", "E", "F", "W"]
+
+ignore = [
+    "E501", # line length, exceeded by some docstrings
+    "D10",  # D100-107, missing docstring in public function, class etc (yes we should have docstrings for all public methods, but that is a pipe dream)
+    "D200", # One-line docstring should fit on one line, don't like this because it enforces inconsistent formatting between one-line and multi-line docstrings
+    "D202", # No blank lines allowed after function docstring (silly rule, if formatter doesn't enforce it then checks shouldn't either)
+    "D205", # 1 blank line required between summary line and description (Makes same assumption as D400)
+    "D400", # First line of docstring should end with a period (assumes the summary fits on one line, which is not always the case)
+    "D401", # First line of docstring should be in imperative mood (silly rule)
+    "D404", # First word of the docstring should not be "This" (Probably a good rule to follow going forward but it occurs in so many places in our code and it's not a big enough issue to warrant fixing)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.format]
+docstring-code-format = true

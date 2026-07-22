@@ -1,8 +1,6 @@
 from __future__ import print_function
 import numpy as np
-import matplotlib.pyplot as plt
 import argparse
-from pprint import pprint
 from scipy.spatial.transform import Rotation
 
 parser = argparse.ArgumentParser()

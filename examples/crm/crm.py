@@ -3,7 +3,6 @@
 # tacs assembler directly as opposed to using the pyTACS user interface (see analysis.py):
 # loading a mesh, creating elements, evaluating functions, solution, and output
 # Import necessary libraries
-import numpy as np
 import os
 from mpi4py import MPI
 from tacs import TACS, elements, constitutive, functions

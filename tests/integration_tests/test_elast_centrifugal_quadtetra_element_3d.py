@@ -66,7 +66,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
             # For each element type in this component,
             # pass back the appropriate tacs element object
-            elem_list = []
             model = elements.LinearElasticity3D(con)
             basis = elements.QuadraticTetrahedralBasis()
             elem = elements.Element3D(model, basis)

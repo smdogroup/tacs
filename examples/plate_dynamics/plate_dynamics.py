@@ -22,10 +22,9 @@ specifying the quantities, frequency of output and filename/path.
 # ---------------------------------------------------------------------!
 
 import sys
-import numpy as np
 
 from mpi4py import MPI
-from tacs import TACS, elements, constitutive, functions
+from tacs import TACS, elements, constitutive
 
 # TACS Communicator
 comm = MPI.COMM_WORLD

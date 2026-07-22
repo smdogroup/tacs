@@ -3,24 +3,23 @@ import tempfile
 
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, functions
+from test_shell_comp_unbalanced import ProblemTest as PT, ksweight
 
 """
 This case tests pyTACS's `writeBDF` method for composite shell elements.
 We first instantiate pyTACS and structural problems from a provided BDF, as usual.
 Using that instance of pyTACS we then export a BDF file using the `writeBDF` method,
-This should be identical to the original BDF file. We then instantiate a second 
+This should be identical to the original BDF file. We then instantiate a second
 instance of pyTACS from this secondary BDF file and continue the tests with the secondary model.
 This test ensures that `writeBDF` generates a consistent file based on the pyTACS model.
 The test results should be identical to those in test_shell_comp_unbalanced.py
 
-tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions 
+tests KSDisplacement, KSFailure, StructuralMass, and Compliance functions
 and sensitivities.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 orig_bdf_file = os.path.join(base_dir, "./input_files/comp_plate.bdf")
-
-from test_shell_comp_unbalanced import ProblemTest as PT, ksweight
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):

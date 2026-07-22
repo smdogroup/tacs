@@ -3,11 +3,8 @@ This script plots the printout file that contains the convergence history
 of the Jacobi-Davidson eigenvalue solver
 """
 
-import enum
-from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import argparse
 import re
 
@@ -160,7 +157,7 @@ class JDHistoryPlotter:
         ax2.set_ylim(np.min(ritz_converged), np.max(ritz_converged))
 
         lns = l1 + l2 + l3 + l4 + l5
-        labs = [l.get_label() for l in lns]
+        labs = [line.get_label() for line in lns]
         ax.legend(lns, labs, loc="upper right")
 
         if not savefig:

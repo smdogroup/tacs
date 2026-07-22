@@ -83,7 +83,7 @@ TP.evalFunctionsSens(tacs_sens, evalFuncs=function_names)
 TP.writeSolution(baseName="tacs_output", outputDir=tacs_model.analysis_dir)
 
 # print the function outputs
-print(f"\n\nOutputs of TACS unsteady structural analysis...")
+print("\n\nOutputs of TACS unsteady structural analysis...")
 for tacs_key in tacs_funcs:
     # find associated function name for tacs_key=loadset+func_name
     for func_name in function_names:

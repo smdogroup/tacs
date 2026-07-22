@@ -6,7 +6,7 @@ from tacs import pytacs, functions
 """
 3 point masses are rigidly connected to one another using a RBE2 element.
 
-We create a static analysis to compute various mass balance information of 
+We create a static analysis to compute various mass balance information of
 the system (StructuralMass, CenterOfMass, MomentOfInertia) and their sensitivities.
 """
 

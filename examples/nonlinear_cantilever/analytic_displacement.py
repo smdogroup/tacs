@@ -19,23 +19,23 @@ from scipy.special import ellipe, ellipeinc, ellipk, ellipkinc
 # ==============================================================================
 
 
-def analyticCantileverDisplacement(alpha):
-    if len(alpha) > 1:
-        thetaTip = np.zeros_like(alpha)
-        XDispNorm = np.zeros_like(alpha)
-        ZDispNorm = np.zeros_like(alpha)
+def analyticCantileverDisplacement(alphas):
+    if len(alphas) > 1:
+        thetaTip = np.zeros_like(alphas)
+        XDispNorm = np.zeros_like(alphas)
+        ZDispNorm = np.zeros_like(alphas)
     else:
-        alpha = np.array(alpha)
-    for a in range(len(alpha)):
-        if alpha[a] != 0.0:
+        alphas = np.array(alphas)
+    for a in range(len(alphas)):
+        if alphas[a] != 0.0:
             # Use the linear cantilever tip rotation as a good starting guess for the nonlinear rotation
-            def ResidualFun(theta):
-                return tipRotationResidual(theta, alpha[a])
+            def ResidualFun(theta, alpha=alphas[a]):
+                return tipRotationResidual(theta, alpha)
 
             sol = root_scalar(
                 ResidualFun,
                 x0=1e-4,
-                x1=min(alpha[a] / 2.0, 0.5),
+                x1=min(alphas[a] / 2.0, 0.5),
                 xtol=1e-12,
                 rtol=1e-14,
             )
@@ -43,14 +43,14 @@ def analyticCantileverDisplacement(alpha):
 
             mu = (1.0 + np.sin(theta)) / 2.0
             phi = np.arcsin(1.0 / (np.sqrt(2.0 * mu)))
-            XDisp = 1.0 - np.sqrt((2.0 * np.sin(theta)) / alpha[a])
-            ZDisp = 1.0 - 2.0 / np.sqrt(alpha[a]) * (ellipe(mu) - ellipeinc(phi, mu))
+            XDisp = 1.0 - np.sqrt((2.0 * np.sin(theta)) / alphas[a])
+            ZDisp = 1.0 - 2.0 / np.sqrt(alphas[a]) * (ellipe(mu) - ellipeinc(phi, mu))
         else:
             theta = 0.0
             XDisp = 0.0
             ZDisp = 0.0
 
-        if len(alpha) > 1:
+        if len(alphas) > 1:
             thetaTip[a] = theta
             XDispNorm[a] = XDisp
             ZDispNorm[a] = ZDisp

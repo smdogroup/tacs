@@ -93,7 +93,7 @@ for i in range(numFreqs):
     eigVal, _ = modalProb.getVariables(i)
     # Frequency is the sqrt of the eigenvalue
     freq = np.sqrt(eigVal)
-    print(f"Mode {i+1}:")
+    print(f"Mode {i + 1}:")
     print(f"Frequency: {freq} (rad/s)")
     print(" ")
 

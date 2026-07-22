@@ -58,10 +58,10 @@ def get_libraries():
 
 
 # Import pytacs modules
-from . import pytacs
-from . import caps2tacs
-from .pytacs import pyTACS
-from . import problems
-from . import constraints
+from . import pytacs  # noqa: E402
+from . import caps2tacs  # noqa: E402
+from .pytacs import pyTACS  # noqa: E402
+from . import problems  # noqa: E402
+from . import constraints  # noqa: E402
 
-__all__.extend(["caps2tacs", "pytacs", "pyTACS", "problems", "constraints"])
+__all__ += ["caps2tacs", "pytacs", "pyTACS", "problems", "constraints"]
