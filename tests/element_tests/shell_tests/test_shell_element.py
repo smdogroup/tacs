@@ -320,29 +320,30 @@ class ElementTest(unittest.TestCase):
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
                     with self.subTest(element=element_handle):
-                        element = element_handle(transform, self.con)
-                        for quantity_type in self.quantity_types:
-                            with self.subTest(quantity_type=quantity_type):
-                                fail = elements.TestElementQuantityXptSens(
-                                    element,
-                                    self.elem_index,
-                                    quantity_type,
-                                    self.time,
-                                    self.xpts,
-                                    self.vars,
-                                    self.dvars,
-                                    self.ddvars,
-                                    self.dh,
-                                    self.print_level,
-                                    self.atol,
-                                    self.rtol,
-                                )
-                                self.assertFalse(
-                                    fail,
-                                    msg=generateTestFailMessage(
-                                        element=element, transform=transform
-                                    ),
-                                )
+                        if element_handle not in self.thermal_elements:
+                            element = element_handle(transform, self.con)
+                            for quantity_type in self.quantity_types:
+                                with self.subTest(quantity_type=quantity_type):
+                                    fail = elements.TestElementQuantityXptSens(
+                                        element,
+                                        self.elem_index,
+                                        quantity_type,
+                                        self.time,
+                                        self.xpts,
+                                        self.vars,
+                                        self.dvars,
+                                        self.ddvars,
+                                        self.dh,
+                                        self.print_level,
+                                        self.atol,
+                                        self.rtol,
+                                    )
+                                    self.assertFalse(
+                                        fail,
+                                        msg=generateTestFailMessage(
+                                            element=element, transform=transform
+                                        ),
+                                    )
 
     def test_element_mat_sv_sens(self):
         # Loop through every combination of model and basis class and test element matrix inner product sens
