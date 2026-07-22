@@ -1437,10 +1437,10 @@ class pyTACS(BaseUI):
                     mat,
                     A=area,
                     J=J,
-                    ky=k1,
-                    kz=k2,
-                    Iy=0.0,
-                    Iz=0.0,
+                    k2=k1,
+                    k3=k2,
+                    I22=0.0,
+                    I33=0.0,
                 )
 
             else:

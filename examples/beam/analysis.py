@@ -47,7 +47,7 @@ def elemCallBack(dvNum, compID, compDescript, elemDescripts, globalDVs, **kwargs
     # Setup (isotropic) property and constitutive objects
     prop = constitutive.MaterialProperties(rho=rho, E=E, nu=nu, ys=ys)
     con = constitutive.BasicBeamConstitutive(
-        prop, A=A, Iy=Iy, Iz=Iz, J=J, ky=1000, kz=1000
+        prop, A=A, I22=Iy, I33=Iz, J=J, k2=1000, k3=1000
     )
 
     refAxis = np.array([0.0, 1.0, 0.0])

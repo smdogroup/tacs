@@ -2769,7 +2769,11 @@ cdef class BasicBeamConstitutive(BeamConstitutive):
         A = np.real(s[0])
         J = np.real(s[1])
         Iz = np.real(s[2])
-        Iyz = -np.real(s[3])
+        # s[3] here is the internal (signed) product of inertia I23. The PBAR card
+        # is written with the Nastran negative-POI convention below (i12 = -Iyz),
+        # which is the inverse of the reader (I23 = -i12), so a written-then-reread
+        # beam preserves the internal coupling. Do not negate here.
+        Iyz = np.real(s[3])
         e[:] = 0.0
         e[3] = 1.0 / E
         e[4:5] = 1.0 / (G * A)
