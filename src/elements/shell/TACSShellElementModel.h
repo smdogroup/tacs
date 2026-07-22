@@ -172,13 +172,10 @@ class TACSShellLinearModel {
     @param dd The accumulated sensitivity with respect to the director field
   */
   template <int vars_per_node, class basis>
-  static void addTyingStrainXptSens(const TacsScalar Xpts[],
-                                    const TacsScalar fn[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar d[],
-                                    const TacsScalar dety[],
-                                    TacsScalar dfdXpts[], TacsScalar dfn[],
-                                    TacsScalar dd[]) {
+  static void addTyingStrainXptSens(
+      const TacsScalar Xpts[], const TacsScalar fn[], const TacsScalar vars[],
+      const TacsScalar d[], const TacsScalar dety[], TacsScalar dfdXpts[],
+      TacsScalar dfn[], TacsScalar dd[]) {
     for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
       // Get the field index
       const TacsShellTyingStrainComponent field = basis::getTyingField(index);
@@ -1368,13 +1365,10 @@ class TACSShellNonlinearModel {
     @param dd The accumulated sensitivity with respect to the director field
   */
   template <int vars_per_node, class basis>
-  static void addTyingStrainXptSens(const TacsScalar Xpts[],
-                                    const TacsScalar fn[],
-                                    const TacsScalar vars[],
-                                    const TacsScalar d[],
-                                    const TacsScalar dety[],
-                                    TacsScalar dfdXpts[], TacsScalar dfn[],
-                                    TacsScalar dd[]) {
+  static void addTyingStrainXptSens(
+      const TacsScalar Xpts[], const TacsScalar fn[], const TacsScalar vars[],
+      const TacsScalar d[], const TacsScalar dety[], TacsScalar dfdXpts[],
+      TacsScalar dfn[], TacsScalar dd[]) {
     for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
       // Get the field index
       const TacsShellTyingStrainComponent field = basis::getTyingField(index);
@@ -1506,7 +1500,8 @@ class TACSShellNonlinearModel {
   static void addTyingStrainXptSensDeriv(const TacsScalar vars[],
                                          const TacsScalar varsd[],
                                          const TacsScalar detyd[],
-                                         TacsScalar dd[], TacsScalar ddvarsd[]) {
+                                         TacsScalar dd[],
+                                         TacsScalar ddvarsd[]) {
     for (int index = 0; index < basis::NUM_TYING_POINTS; index++) {
       const TacsShellTyingStrainComponent field = basis::getTyingField(index);
 
