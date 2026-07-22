@@ -600,12 +600,6 @@ TacsScalar TacsShellComputeDispGradDeriv(
   @param dT T sensitivity (accumulated)
   @param dd Nodal director-field sensitivity (accumulated)
 
-  Note: SPEC.md's interface table shows this returning TacsScalar, mirroring
-  TacsShellComputeDispGrad's detXd return -- that is a copy-paste artifact
-  from the forward function; there is no natural value for an adjoint
-  function to return here (ddetXd arrives as a seed/input, not something
-  this function produces), and no caller in this feature's data flow ever
-  reads a return value from this call. Declared void intentionally.
 */
 template <int vars_per_node, class basis>
 void TacsShellComputeDispGradXptSens(
@@ -1085,10 +1079,9 @@ template <int vars_per_node, int offset, class basis, class director,
           class model>
 void TacsShellAddDrillStrainXptSens(
     TACSShellTransform *transform, const TacsScalar Xdn[],
-    const TacsScalar fn[], const TacsScalar vars[],
-    const TacsScalar XdinvTn[], const TacsScalar Tn[], const TacsScalar u0xn[],
-    const TacsScalar Ctn[], const TacsScalar detn[], TacsScalar dfdXpts[],
-    TacsScalar dfn[]) {
+    const TacsScalar fn[], const TacsScalar vars[], const TacsScalar XdinvTn[],
+    const TacsScalar Tn[], const TacsScalar u0xn[], const TacsScalar Ctn[],
+    const TacsScalar detn[], TacsScalar dfdXpts[], TacsScalar dfn[]) {
   for (int i = 0; i < basis::NUM_NODES; i++) {
     double pt[2];
     basis::getNodePoint(i, pt);
@@ -1631,8 +1624,7 @@ void TacsShellAddStrainHessianBilinear(
     const TacsScalar u0x[], const TacsScalar u1x[], const TacsScalar e0ty[],
     const TacsScalar psi_u0x[], const TacsScalar psi_u1x[],
     const TacsScalar psi_e0ty[], const TacsScalar phi_u0x[],
-    const TacsScalar phi_u1x[], const TacsScalar phi_e0ty[],
-    TacsScalar Epp[]) {
+    const TacsScalar phi_u1x[], const TacsScalar phi_e0ty[], TacsScalar Epp[]) {
   TacsScalar Cs_zero[TACSShellConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
   memset(Cs_zero, 0, sizeof(Cs_zero));
 
@@ -1692,8 +1684,8 @@ static inline void TacsShellAddStrainHessianVector(
       ae0ty += d2e0ty[6 * k + l] * dir_e0ty[l];
     }
     for (int j = 0; j < 9; j++) {
-      ae0ty += d2e0tyu0x[9 * k + j] * dir_u0x[j] +
-               d2e0tyu1x[9 * k + j] * dir_u1x[j];
+      ae0ty +=
+          d2e0tyu0x[9 * k + j] * dir_u0x[j] + d2e0tyu1x[9 * k + j] * dir_u1x[j];
     }
     out_e0ty[k] += ae0ty;
   }
@@ -1718,20 +1710,18 @@ static inline void TacsShellAddStrainHessianVector(
   bilinear part at all, so this difference is exactly zero for them.
 */
 template <int vars_per_node, class basis, class model>
-void TacsShellAddTyingStrainCurvature(const TacsScalar Xpts[],
-                                      const TacsScalar fn[],
-                                      const TacsScalar psi[],
-                                      const TacsScalar dd_psi[],
-                                      const TacsScalar phi[],
-                                      const TacsScalar dd_phi[],
-                                      TacsScalar c_ety[]) {
+void TacsShellAddTyingStrainCurvature(
+    const TacsScalar Xpts[], const TacsScalar fn[], const TacsScalar psi[],
+    const TacsScalar dd_psi[], const TacsScalar phi[],
+    const TacsScalar dd_phi[], TacsScalar c_ety[]) {
   const int dsize = 3 * basis::NUM_NODES;
   TacsScalar zeros_v[vars_per_node * basis::NUM_NODES];
   TacsScalar zeros_d[3 * basis::NUM_NODES];
   memset(zeros_v, 0, vars_per_node * basis::NUM_NODES * sizeof(TacsScalar));
   memset(zeros_d, 0, dsize * sizeof(TacsScalar));
 
-  TacsScalar ety_fwd[basis::NUM_TYING_POINTS], etyd_fwd[basis::NUM_TYING_POINTS];
+  TacsScalar ety_fwd[basis::NUM_TYING_POINTS],
+      etyd_fwd[basis::NUM_TYING_POINTS];
   model::template computeTyingStrainDeriv<vars_per_node, basis>(
       Xpts, fn, phi, dd_phi, psi, dd_psi, ety_fwd, etyd_fwd);
 
@@ -1832,13 +1822,10 @@ static inline void TacsShellAddXdinvTTransformSens(
   and only need a second direction's etyd (e.g. the phi-direction one).
 */
 template <int vars_per_node, class basis, class model>
-void TacsShellComputeTyingStrainDeriv(const TacsScalar Xpts[],
-                                      const TacsScalar fn[],
-                                      const TacsScalar vars[],
-                                      const TacsScalar d[],
-                                      const TacsScalar varsd[],
-                                      const TacsScalar dd[], TacsScalar ety[],
-                                      TacsScalar etyd[]) {
+void TacsShellComputeTyingStrainDeriv(
+    const TacsScalar Xpts[], const TacsScalar fn[], const TacsScalar vars[],
+    const TacsScalar d[], const TacsScalar varsd[], const TacsScalar dd[],
+    TacsScalar ety[], TacsScalar etyd[]) {
   if (ety) {
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, varsd, dd, ety, etyd);
