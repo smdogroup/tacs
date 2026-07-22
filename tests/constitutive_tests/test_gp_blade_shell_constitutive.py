@@ -12,7 +12,6 @@ class GPConstitutiveMLTest(unittest.TestCase):
     _my_debug = False
 
     def setUp(self):
-
         # fd/cs step size
         if TACS.dtype is complex:
             self.dh = 1e-200

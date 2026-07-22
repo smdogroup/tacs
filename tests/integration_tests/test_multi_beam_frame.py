@@ -76,7 +76,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     }
 
     def setup_tacs_problems(self, comm):
-
         # Overwrite default check values
         if self.dtype == complex:
             self.rtol = 1e-8

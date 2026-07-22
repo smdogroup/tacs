@@ -126,7 +126,8 @@ STATIC_LOAD_DEFINITIONS = [
     ("moment", [0.0, 0.0, 1.0], 60),
 ]
 STATIC_LOADS = [
-    (name, *spec) for name, spec in zip(STATIC_LOAD_NAMES, STATIC_LOAD_DEFINITIONS)
+    (name, *spec)
+    for name, spec in zip(STATIC_LOAD_NAMES, STATIC_LOAD_DEFINITIONS, strict=True)
 ]
 
 # ==============================================================================
