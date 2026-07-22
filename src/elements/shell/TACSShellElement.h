@@ -2192,8 +2192,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     TacsScalar c_ety[basis::NUM_TYING_POINTS];
     TacsShellAddTyingStrainCurvature<vars_per_node, basis, model>(
@@ -2449,8 +2449,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     // Xpts-direction accumulators for the two direction chains (psi, phi) -
     // no primal-direction accumulator exists yet (Stage A has no primal
@@ -2873,8 +2873,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
+    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
 
     // Task 4.1's tying-strain-curvature term (vars-independent, reused as-is
     // for piece 2's Epp_total)
