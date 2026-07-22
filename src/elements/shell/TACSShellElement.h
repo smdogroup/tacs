@@ -1330,8 +1330,8 @@ void TACSShellElement<quadrature, basis, director, model>::
 
     // XdinvT-direction contribution from the tying-strain transform
     // (e0ty = XdinvT^{T}*gty*XdinvT, e0tyd = XdinvT^{T}*gtyd*XdinvT)
-      TacsScalar dXdinvT[9];
-      memset(dXdinvT, 0, sizeof(dXdinvT));
+    TacsScalar dXdinvT[9];
+    memset(dXdinvT, 0, sizeof(dXdinvT));
     TacsShellAddTyingStrainXdinvTSens(gty, de0ty, XdinvT, dXdinvT);
     TacsShellAddTyingStrainXdinvTSens(gtyd, de0tyd, XdinvT, dXdinvT);
     TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
@@ -1517,8 +1517,8 @@ void TACSShellElement<quadrature, basis, director, model>::
     // symmetrically into both (i,j) and (j,i) slots of the full matrix and
     // then using the plain (non-symmetric-aware) mat3x3MatMult adjoint rule
     // would otherwise double-count it.
-      TacsScalar dXdinvT[9];
-      memset(dXdinvT, 0, sizeof(dXdinvT));
+    TacsScalar dXdinvT[9];
+    memset(dXdinvT, 0, sizeof(dXdinvT));
     TacsShellAddTyingStrainXdinvTSens(gty, de0ty, XdinvT, dXdinvT);
     TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
                                     dn0);
@@ -2175,10 +2175,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-      TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
-                                       model>(transform, Xdn, fn, vars, phi,
+    TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                     model>(transform, Xdn, fn, vars, phi,
                                             XdinvTn, Tn, u0xn, Ctn, NULL,
-                                              etnd_phi);
+                                            etnd_phi);
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize], dd_phi[dsize];
     director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2192,8 +2192,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
+    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
 
     TacsScalar c_ety[basis::NUM_TYING_POINTS];
     TacsShellAddTyingStrainCurvature<vars_per_node, basis, model>(
@@ -2431,10 +2431,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-      TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
-                                       model>(transform, Xdn, fn, vars, phi,
+    TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                     model>(transform, Xdn, fn, vars, phi,
                                             XdinvTn, Tn, u0xn, Ctn, NULL,
-                                              etnd_phi);
+                                            etnd_phi);
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize],
         dd_phi[dsize];
@@ -2449,8 +2449,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
+    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
 
     // Xpts-direction accumulators for the two direction chains (psi, phi) -
     // no primal-direction accumulator exists yet (Stage A has no primal
@@ -2577,8 +2577,8 @@ void TACSShellElement<quadrature, basis, director, model>::
 
       // ---- Piece 6: XdinvT-direction correction, applied twice (no
       // "chain 2" sub-block - neither e_psi nor e_phi is primal-e-shaped) ----
-        TacsScalar dXdinvT[9];
-        memset(dXdinvT, 0, sizeof(dXdinvT));
+      TacsScalar dXdinvT[9];
+      memset(dXdinvT, 0, sizeof(dXdinvT));
       TacsShellAddTyingStrainXdinvTSens(gtyd_psi, de0tyd_psi, XdinvT, dXdinvT);
       TacsShellAddTyingStrainXdinvTSens(gtyd_phi, de0tyd_phi, XdinvT, dXdinvT);
       TacsShellAddXdinvTTransformSens(Xxi, n0, T, XdinvT, dXdinvT, dT, dXxi,
@@ -2856,10 +2856,10 @@ void TACSShellElement<quadrature, basis, director, model>::
                                      model>(transform, Xdn, fn, vars, psi,
                                             XdinvTn, Tn, u0xn, Ctn, etn,
                                             etnd_psi);
-      TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
-                                       model>(transform, Xdn, fn, vars, phi,
+    TacsShellComputeDrillStrainDeriv<vars_per_node, offset, basis, director,
+                                     model>(transform, Xdn, fn, vars, phi,
                                             XdinvTn, Tn, u0xn, Ctn, NULL,
-                                              etnd_phi);
+                                            etnd_phi);
 
     TacsScalar d[dsize], ddot[dsize], dddot[dsize], dd_psi[dsize], dd_phi[dsize];
     director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2873,8 +2873,8 @@ void TACSShellElement<quadrature, basis, director, model>::
         etyd_phi[basis::NUM_TYING_POINTS];
     model::template computeTyingStrainDeriv<vars_per_node, basis>(
         Xpts, fn, vars, d, psi, dd_psi, ety, etyd_psi);
-    TacsShellComputeTyingStrainDeriv<vars_per_node, basis, model>(
-        Xpts, fn, vars, d, phi, dd_phi, NULL, etyd_phi);
+    TacsShellComputeTyingStrainDerivOnly<vars_per_node, basis, model>(
+        Xpts, fn, vars, d, phi, dd_phi, etyd_phi);
 
     // Task 4.1's tying-strain-curvature term (vars-independent, reused as-is
     // for piece 2's Epp_total)
