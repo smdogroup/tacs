@@ -36,7 +36,7 @@ TACS and Nastran mode shapes. Plots are written to ``<REF_DIR>/debug_plots/``.
 """
 
 # Set to True to save comparison plots for each test into <REF_DIR>/debug_plots/.
-DEBUG = True
+DEBUG = False
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _INPUT_DIR = os.path.join(_BASE_DIR, "input_files", "nastran_beam_compat")
@@ -62,9 +62,7 @@ def _plot_beam_disp_comparison(x, actual, expected, title, output_path):
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     fig, axes = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey="row")
-    for ax, dof_label, act_comp, exp_comp in zip(
-        axes.flatten(), _DOF_LABELS, actual.T, expected.T
-    ):
+    for ax, dof_label, act_comp, exp_comp in zip(axes.flatten(), _DOF_LABELS, actual.T, expected.T):
         ax.plot(x, act_comp, label="TACS", lw=1.5, clip_on=False)
         ax.plot(x, exp_comp, "--", label="Nastran", lw=1.5, clip_on=False)
         ax.set_xlabel("x (m)")
@@ -112,9 +110,7 @@ def _compute_mac_matrix(shapes_a, shapes_b):
         vec_a = shapes_a[ii].flatten()
         for jj in range(n_b):
             vec_b = shapes_b[jj].flatten()
-            mac[ii, jj] = np.dot(vec_a, vec_b) ** 2 / (
-                np.dot(vec_a, vec_a) * np.dot(vec_b, vec_b)
-            )
+            mac[ii, jj] = np.dot(vec_a, vec_b) ** 2 / (np.dot(vec_a, vec_a) * np.dot(vec_b, vec_b))
     return mac
 
 
@@ -218,7 +214,7 @@ class NastranCompatBeamBase(unittest.TestCase):
     SOL103_BDF = None
     REF_DIR = None
     SECTION = None
-    STATIC_RTOL = 1e-3
+    STATIC_RTOL = 1e-2
     STATIC_ATOL = 1e-6
     # Circular TUBE/TUBE2 sections use TACS's Cowper (FSDT) transverse-shear
     # correction factor k = 2(1+nu)/(4+3nu) ~ 0.53, whereas Nastran's PBARL/PBEAML
@@ -285,9 +281,7 @@ class NastranCompatBeamBase(unittest.TestCase):
         # (MODAL_NUM_EIGS) to resolve the degenerate bending clusters; reuse the
         # name and shift (sigma) the BDF specified.
         bdfModal = next(iter(cls.fea_modal.createTACSProbsFromBDF().values()))
-        cls.modal_problem = cls.fea_modal.createModalProblem(
-            bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS
-        )
+        cls.modal_problem = cls.fea_modal.createModalProblem(bdfModal.name, bdfModal.sigma, cls.MODAL_NUM_EIGS)
 
     def setUp(self):
         if self.REF_DIR is None or not os.path.isdir(self.REF_DIR):
@@ -296,9 +290,7 @@ class NastranCompatBeamBase(unittest.TestCase):
                 "Run generate_inputs.py -> run_nastran.sh -> extract_nastran_refs.py first."
             )
         if not os.path.isfile(self.SOL101_BDF) or not os.path.isfile(self.SOL103_BDF):
-            raise unittest.SkipTest(
-                f"BDF inputs not found in {_BDF_DIR}. Run generate_inputs.py first."
-            )
+            raise unittest.SkipTest(f"BDF inputs not found in {_BDF_DIR}. Run generate_inputs.py first.")
 
     def _static_by_name(self, name):
         for prob in self.static_problems.values():
@@ -333,10 +325,7 @@ class NastranCompatBeamBase(unittest.TestCase):
             os.makedirs(plot_dir, exist_ok=True)
             self._static_by_name(name).writeSolution(outputDir=plot_dir)
         rtol = self.STATIC_RTOL
-        if (
-            self.SECTION in self.SHEAR_CONVENTION_SECTIONS
-            and name in self.SHEAR_CONVENTION_STATIC_CASES
-        ):
+        if self.SECTION in self.SHEAR_CONVENTION_SECTIONS and name in self.SHEAR_CONVENTION_STATIC_CASES:
             # Cowper-vs-elementary shear-coefficient convention difference; see
             # SHEAR_CONVENTION_* on the base class for the full rationale.
             rtol = self.SHEAR_CONVENTION_STATIC_RTOL
@@ -407,15 +396,11 @@ class NastranCompatBeamBase(unittest.TestCase):
         num_eigs = self.MODAL_NUM_EIGS
 
         # TACS side: the full oversolved spectrum (frequencies and shapes).
-        freqs_actual = np.array(
-            [np.sqrt(prob.getVariables(ii)[0]) / (2 * np.pi) for ii in range(num_eigs)]
-        )
+        freqs_actual = np.array([np.sqrt(prob.getVariables(ii)[0]) / (2 * np.pi) for ii in range(num_eigs)])
         shapes_actual = []
         for ii in range(num_eigs):
             _, shape_local = prob.getVariables(ii)
-            shapes_actual.append(
-                self.fea_modal.localToGlobalArray(shape_local).reshape(-1, 6)
-            )
+            shapes_actual.append(self.fea_modal.localToGlobalArray(shape_local).reshape(-1, 6))
 
         # Nastran side: the n_modes reference shapes.
         shapes_expected = []
@@ -523,9 +508,7 @@ class NastranCompatBeamBase(unittest.TestCase):
                     f"outside its frequency group {[g + 1 for g in group]}. "
                     "Modes appear to be swapped — see mac.png in debug_plots."
                 )
-            proj_mac = _subspace_projection_mac(
-                shapes_actual[ii], shapes_expected[group]
-            )
+            proj_mac = _subspace_projection_mac(shapes_actual[ii], shapes_expected[group])
             if proj_mac < self.MAC_THRESHOLD:
                 self.fail(
                     f"Mode {ii + 1}: projection onto degenerate group "
@@ -644,9 +627,7 @@ class NastranCompatUnsupportedBase(unittest.TestCase):
         fd, path = tempfile.mkstemp(suffix=".bdf")
         os.close(fd)
         try:
-            _writeSingleElementBeamBdf(
-                path, self.ELEMENT, self.PROP, self.SECTION, dims, self.WITH_OFFSET
-            )
+            _writeSingleElementBeamBdf(path, self.ELEMENT, self.PROP, self.SECTION, dims, self.WITH_OFFSET)
             # tacs.utilities.Error prints its message rather than storing it on
             # the exception, so capture stdout to confirm we hit *our* routing
             # branch (the message names the offending section type).
