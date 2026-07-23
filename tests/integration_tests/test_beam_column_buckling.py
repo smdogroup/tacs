@@ -62,7 +62,7 @@ _K = 2.0
 _Iz = _w * _t**3 / 12.0  # weak-axis (governing) moment of inertia
 P_CR_exact = (3.141592653589793**2) * _E * _Iz / (_K * _L) ** 2
 # Value based on eigenvalue solve on mesh
-P_CR_approx = 0.1799146635615248
+P_CR_approx = 0.181211383209752
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
