@@ -331,7 +331,7 @@ class pyTACS(BaseUI):
         return len(self.globalDVs)
 
     @preinitialize_method
-    def assignMassDV(self, descript, eIDs, dvName="m"):
+    def assignMassDV(self, descript, eIDs, dvName="m", lower=None, upper=None):
         """
         Assign a global DV to a point mass element.
 
@@ -349,10 +349,46 @@ class pyTACS(BaseUI):
             May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
             Defaults to `m` (mass).
 
+        lower : float or None
+            Lower bound for the DV. For the non-negative properties (`m`, `I11`, `I22`,
+            `I33`) this defaults to `0.0` and a negative value raises an error. For the
+            products of inertia (`I12`, `I13`, `I23`) it defaults to `None` (unbounded)
+            and either sign is allowed.
+
+        upper : float or None
+            Upper bound for the DV. Defaults to `None` (unbounded).
+
         Notes
         -----
         Currently only CONM2 cards are supported.
         """
+        # Mass properties that must be non-negative (mass + diagonal moments of inertia)
+        NON_NEGATIVE_MASS_PROPERTIES = ("m", "I11", "I22", "I33")
+        # Products of inertia (off-diagonal terms) may take either sign
+        SIGNED_MASS_PROPERTIES = ("I12", "I13", "I23")
+        VALID_MASS_PROPERTIES = NON_NEGATIVE_MASS_PROPERTIES + SIGNED_MASS_PROPERTIES
+
+        # Reject an unrecognized mass property name early (mirrors PointMassConstitutive)
+        if dvName not in VALID_MASS_PROPERTIES:
+            raise self._TACSError(
+                f"'{dvName}' is not a valid mass property. Must be one of {VALID_MASS_PROPERTIES}."
+            )
+
+        # The non-negative properties default to a zero lower bound and reject negatives
+        if dvName in NON_NEGATIVE_MASS_PROPERTIES:
+            if lower is None:
+                lower = 0.0
+            elif lower < 0.0:
+                raise self._TACSError(
+                    f"Lower bound for mass property '{dvName}' must be non-negative, got {lower}."
+                )
+
+        # Reject an inverted (empty) range when both bounds are concrete
+        if lower is not None and upper is not None and lower > upper:
+            raise self._TACSError(
+                f"Lower bound ({lower}) for mass property '{dvName}' exceeds upper bound ({upper})."
+            )
+
         # Make sure eID is an array
         eIDs = np.atleast_1d(eIDs)
 
@@ -377,6 +413,11 @@ class pyTACS(BaseUI):
 
         # Flag this global dv as being a mass dv
         dv_dict["isMassDV"] = True
+
+        # assignMassDV is the authority for a mass DV's bounds, so store the
+        # resolved bounds on the global dv entry (overwriting any prior values)
+        dv_dict["lowerBound"] = lower
+        dv_dict["upperBound"] = upper
 
         massDV = dv_dict["num"]
         value = dv_dict["value"]
