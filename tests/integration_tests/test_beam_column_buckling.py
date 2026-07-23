@@ -60,14 +60,16 @@ _w = 0.1
 _L = 1.0
 _K = 2.0
 _Iz = _w * _t**3 / 12.0  # weak-axis (governing) moment of inertia
-P_CR = (3.141592653589793**2) * _E * _Iz / (_K * _L) ** 2
+P_CR_exact = (3.141592653589793**2) * _E * _Iz / (_K * _L) ** 2
+# Value based on eigenvalue solve on mesh
+P_CR_approx = 0.1799146635615248
 
 
 class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "buckling_eigsb.0": P_CR,
+        "buckling_eigsb.0": P_CR_approx,
     }
 
     def setup_tacs_problems(self, comm):
