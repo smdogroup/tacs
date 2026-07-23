@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest import mock
 
 from mpi4py import MPI
 
@@ -63,6 +64,47 @@ class AssignMassDVTest(unittest.TestCase):
         """An inverted (empty) bound range is rejected when both bounds are concrete."""
         with self.assertRaises(TACSError):
             self.fea_assembler.assignMassDV("m1", 1, "m", lower=5.0, upper=1.0)
+
+    def test_scale_stored_on_global_dv(self):
+        """The scale factor is stored on the global DV entry, defaulting to 1.0."""
+        self.fea_assembler.assignMassDV("scaled", 1, "m", scale=3.0)
+        self.fea_assembler.assignMassDV("default", 2, "m")
+        globalDVs = self.fea_assembler.getGlobalDVs()
+        self.assertEqual(globalDVs["scaled"]["scale"], 3.0)
+        self.assertEqual(globalDVs["default"]["scale"], 1.0)
+
+    def test_scale_survives_initialize(self):
+        """A mass DV scale must not be wiped by the default-callback initialize path."""
+        self.fea_assembler.assignMassDV("scaled", 1, "m", scale=4.0)
+        dvNum = self.fea_assembler.getGlobalDVs()["scaled"]["num"]
+        self.fea_assembler.initialize()
+        self.assertEqual(self.fea_assembler.scaleList[dvNum], 4.0)
+
+    def test_unspecified_fields_preserve_prior_addGlobalDV_values(self):
+        """Omitted lower/upper/scale must not clobber values set by a prior addGlobalDV."""
+        self.fea_assembler.addGlobalDV("pre", 10.0, lower=2.0, upper=8.0, scale=2.0)
+        self.fea_assembler.assignMassDV("pre", 1, "m")
+        dv = self.fea_assembler.getGlobalDVs()["pre"]
+        self.assertEqual(dv["lowerBound"], 2.0)
+        self.assertEqual(dv["upperBound"], 8.0)
+        self.assertEqual(dv["scale"], 2.0)
+
+    def test_overriding_prior_bounds_warns_and_applies(self):
+        """Overriding a bound/scale set by a prior addGlobalDV warns but still applies."""
+        self.fea_assembler.addGlobalDV("pre", 10.0, lower=2.0, scale=2.0)
+        with mock.patch.object(self.fea_assembler, "_TACSWarning") as mockWarn:
+            self.fea_assembler.assignMassDV("pre", 1, "m", lower=0.0, scale=5.0)
+        self.assertGreaterEqual(mockWarn.call_count, 1)
+        dv = self.fea_assembler.getGlobalDVs()["pre"]
+        self.assertEqual(dv["lowerBound"], 0.0)
+        self.assertEqual(dv["scale"], 5.0)
+
+    def test_setting_previously_unset_fields_does_not_warn(self):
+        """Setting bounds on a DV that only had a value (no bounds) must not warn."""
+        self.fea_assembler.addGlobalDV("pre", 10.0)
+        with mock.patch.object(self.fea_assembler, "_TACSWarning") as mockWarn:
+            self.fea_assembler.assignMassDV("pre", 1, "m", lower=0.0, upper=100.0)
+        mockWarn.assert_not_called()
 
 
 if __name__ == "__main__":

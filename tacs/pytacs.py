@@ -281,6 +281,7 @@ class pyTACS(BaseUI):
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
+            "scale": scale,
             "isMassDV": False,
         }
         self.dvNum += 1
@@ -331,7 +332,9 @@ class pyTACS(BaseUI):
         return len(self.globalDVs)
 
     @preinitialize_method
-    def assignMassDV(self, descript, eIDs, dvName="m", lower=None, upper=None):
+    def assignMassDV(
+        self, descript, eIDs, dvName="m", lower=None, upper=None, scale=None
+    ):
         """
         Assign a global DV to a point mass element.
 
@@ -350,21 +353,31 @@ class pyTACS(BaseUI):
             Defaults to `m` (mass).
 
         lower : float or None
-            Lower bound for the DV. For the non-negative properties (`m`, `I11`, `I22`,
-            `I33`) this defaults to `0.0` and a negative value raises an error. For the
-            products of inertia (`I12`, `I13`, `I23`) it defaults to `None` (unbounded)
-            and either sign is allowed.
+            Lower bound for the DV. If `None` (unspecified), a newly created global DV
+            uses `0.0` for the non-negative properties (`m`, `I11`, `I22`, `I33`) and
+            `None` (unbounded) for the products of inertia (`I12`, `I13`, `I23`); an
+            existing global DV keeps its current lower bound. A negative value on a
+            non-negative property raises an error.
 
         upper : float or None
-            Upper bound for the DV. Defaults to `None` (unbounded).
+            Upper bound for the DV. If `None` (unspecified), a newly created global DV is
+            unbounded above and an existing global DV keeps its current upper bound.
+
+        scale : float or None
+            Scale factor for the DV. If `None` (unspecified), a newly created global DV
+            uses `1.0` and an existing global DV keeps its current scale.
 
         Notes
         -----
         Currently only CONM2 cards are supported.
+
+        An explicitly supplied `lower`, `upper`, or `scale` overrides the value on an
+        existing global DV, warning if it replaces a value previously set through
+        `addGlobalDV`.
         """
-        # Mass properties that must be non-negative (mass + diagonal moments of inertia)
+        # Mass properties that must be non-negative (mass + diagonal moments of inertia);
+        # the products of inertia (off-diagonal terms) may take either sign
         NON_NEGATIVE_MASS_PROPERTIES = ("m", "I11", "I22", "I33")
-        # Products of inertia (off-diagonal terms) may take either sign
         SIGNED_MASS_PROPERTIES = ("I12", "I13", "I23")
         VALID_MASS_PROPERTIES = NON_NEGATIVE_MASS_PROPERTIES + SIGNED_MASS_PROPERTIES
 
@@ -374,50 +387,74 @@ class pyTACS(BaseUI):
                 f"'{dvName}' is not a valid mass property. Must be one of {VALID_MASS_PROPERTIES}."
             )
 
-        # The non-negative properties default to a zero lower bound and reject negatives
-        if dvName in NON_NEGATIVE_MASS_PROPERTIES:
-            if lower is None:
-                lower = 0.0
-            elif lower < 0.0:
-                raise self._TACSError(
-                    f"Lower bound for mass property '{dvName}' must be non-negative, got {lower}."
-                )
-
-        # Reject an inverted (empty) range when both bounds are concrete
-        if lower is not None and upper is not None and lower > upper:
+        # A negative lower bound is non-physical for the non-negative properties
+        if dvName in NON_NEGATIVE_MASS_PROPERTIES and lower is not None and lower < 0.0:
             raise self._TACSError(
-                f"Lower bound ({lower}) for mass property '{dvName}' exceeds upper bound ({upper})."
+                f"Lower bound for mass property '{dvName}' must be non-negative, got {lower}."
             )
 
         # Make sure eID is an array
         eIDs = np.atleast_1d(eIDs)
 
-        # Check if referenced element ID is a CONM2 element
+        # Only CONM2 elements are supported
         for eID in eIDs:
-            is_mass_element = False
-            if eID in self.bdfInfo.masses:
-                if self.bdfInfo.masses[eID].type in ["CONM2"]:
-                    is_mass_element = True
-
-            if not is_mass_element:
+            isMassElement = (
+                eID in self.bdfInfo.masses and self.bdfInfo.masses[eID].type == "CONM2"
+            )
+            if not isMassElement:
                 raise self._TACSError(
                     f"Element ID '{eID}' does not correspond to a `CONM2` element. "
                     "Only `CONM2` elements are supported for this method."
                 )
 
-        # Check if descript already exists in global dvs, if not add it
         if descript not in self.globalDVs:
-            self.addGlobalDV(descript, None)
+            # Create the global dv, resolving unspecified defaults: a non-negative property
+            # gets a zero lower bound, and every property is unbounded above with unit scale
+            defaultLower = 0.0 if dvName in NON_NEGATIVE_MASS_PROPERTIES else None
+            self.addGlobalDV(
+                descript,
+                None,
+                lower=lower if lower is not None else defaultLower,
+                upper=upper,
+                scale=scale if scale is not None else 1.0,
+            )
+        else:
+            # Apply any explicitly supplied bounds/scale to the existing dv, leaving
+            # unspecified (None) fields untouched and warning when overriding a value that
+            # was meaningfully set (a non-None bound or a non-default scale)
+            dv_dict = self.globalDVs[descript]
+            for field, newValue, unsetValue in [
+                ("lowerBound", lower, None),
+                ("upperBound", upper, None),
+                ("scale", scale, 1.0),
+            ]:
+                if newValue is None:
+                    continue
+                currentValue = dv_dict[field]
+                if currentValue != unsetValue and currentValue != newValue:
+                    self._TACSWarning(
+                        f"assignMassDV is overriding the '{field}' of global DV "
+                        f"'{descript}' (previously {currentValue}) with {newValue}."
+                    )
+                dv_dict[field] = newValue
+            if scale is not None:
+                self.scaleList[dv_dict["num"]] = scale
 
         dv_dict = self.globalDVs[descript]
 
+        # Raise error if lower bound > upper bound
+        if (
+            dv_dict["lowerBound"] is not None
+            and dv_dict["upperBound"] is not None
+            and dv_dict["lowerBound"] > dv_dict["upperBound"]
+        ):
+            raise self._TACSError(
+                f"Lower bound ({dv_dict['lowerBound']}) for mass property '{dvName}' "
+                f"exceeds upper bound ({dv_dict['upperBound']})."
+            )
+
         # Flag this global dv as being a mass dv
         dv_dict["isMassDV"] = True
-
-        # assignMassDV is the authority for a mass DV's bounds, so store the
-        # resolved bounds on the global dv entry (overwriting any prior values)
-        dv_dict["lowerBound"] = lower
-        dv_dict["upperBound"] = upper
 
         massDV = dv_dict["num"]
         value = dv_dict["value"]
@@ -961,6 +998,10 @@ class pyTACS(BaseUI):
             elemDict[propertyID]["dvs"][dvName] = self.bdfInfo.dvprels[dv]
         # Create option for user to specify scale values in BDF
         self.scaleList = [1.0] * self.dvNum
+        # Re-apply scales for any global DVs, since they were registered before this
+        # reset and would otherwise be lost (BDF-defined DV scales are set below)
+        for globalDV in self.globalDVs.values():
+            self.scaleList[globalDV["num"]] = globalDV["scale"]
 
         # Callback function to return appropriate tacs MaterialProperties object
         # For a pynastran mat card
