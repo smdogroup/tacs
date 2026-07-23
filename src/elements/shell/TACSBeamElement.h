@@ -4458,7 +4458,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getAverageStresses(
     }
 
     for (int i = 0; i < 6; i++) {
-      avgStresses[i] += loc_avgStresses[i] / num_vis_nodes;
+      avgStresses[i] += loc_avgStresses[i] / (double)num_vis_nodes;
     }
   }
 }
