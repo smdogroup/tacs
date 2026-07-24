@@ -40,6 +40,8 @@ TACSIsoShellConstitutive::TACSIsoShellConstitutive(
   tOffset = _tOffset;
   kcorr = _kcorr;
   ksWeight = 100.0;
+
+  registerScalarDesignVarGroup("t", &t, &tNum);
 }
 
 TACSIsoShellConstitutive::~TACSIsoShellConstitutive() {
@@ -94,47 +96,6 @@ int TACSIsoShellConstitutive::getDesignVarRange(int elemIndex, int dvLen,
     return 1;
   }
   return 0;
-}
-
-// Get the number of design variable groups
-int TACSIsoShellConstitutive::getNumDesignVarGroups() { return 1; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments
-const char *TACSIsoShellConstitutive::getDesignVarGroupName(int groupIndex) {
-  if (groupIndex == 0) {
-    return "t";
-  }
-  return NULL;
-}
-
-// Get the number of entries in each design variable group
-int TACSIsoShellConstitutive::getDesignVarGroupSize(int groupIndex) {
-  if (groupIndex == 0) {
-    return 1;
-  }
-  return 0;
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSIsoShellConstitutive::isDesignVarGroupScalar(int groupIndex) {
-  return true;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSIsoShellConstitutive::getDesignVarGroupValues(int groupIndex,
-                                                       TacsScalar values[]) {
-  if (groupIndex == 0) {
-    values[0] = t;
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSIsoShellConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                     int dvNums[]) {
-  if (groupIndex == 0) {
-    dvNums[0] = tNum;
-  }
 }
 
 // Evaluate the material density
