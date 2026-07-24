@@ -1712,6 +1712,11 @@
         <span class="c1"># Step 2: Overwrite bdfInfo loads with forceInfo loads</span>
         <span class="n">bdfInfo</span><span class="o">.</span><span class="n">loads</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">forceInfo</span><span class="o">.</span><span class="n">loads</span><span class="p">)</span>
         <span class="n">bdfInfo</span><span class="o">.</span><span class="n">load_combinations</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">forceInfo</span><span class="o">.</span><span class="n">load_combinations</span><span class="p">)</span>
+        <span class="c1"># The newly assigned loads are not cross-referenced (node_ref etc. are None),</span>
+        <span class="c1"># so force a re-cross-reference on the next addLoadFromBDF call. bdfInfo is</span>
+        <span class="c1"># shared across all problems from the same meshLoader, so it may already be</span>
+        <span class="c1"># marked as cross-referenced from a previously constructed problem.</span>
+        <span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># Create a copy of the internal loads already added to model</span>
         <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">F</span>
@@ -1727,7 +1732,10 @@
 
         <span class="c1"># Step 3: Restore original loads back into bdfInfo</span>
         <span class="n">bdfInfo</span><span class="o">.</span><span class="n">loads</span> <span class="o">=</span> <span class="n">originalLoads</span>
-        <span class="n">bdfInfo</span><span class="o">.</span><span class="n">load_combinations</span> <span class="o">=</span> <span class="n">originalLoadCombinations</span></div>
+        <span class="n">bdfInfo</span><span class="o">.</span><span class="n">load_combinations</span> <span class="o">=</span> <span class="n">originalLoadCombinations</span>
+        <span class="c1"># The restored loads are an un-cross-referenced deepcopy, so force a</span>
+        <span class="c1"># re-cross-reference on the next addLoadFromBDF call.</span>
+        <span class="n">bdfInfo</span><span class="o">.</span><span class="n">is_xrefed</span> <span class="o">=</span> <span class="kc">False</span></div>
 </div>
 
 </pre></div>
