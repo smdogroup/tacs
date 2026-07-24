@@ -19,6 +19,8 @@
 #ifndef TACS_CONSTITUTIVE_H
 #define TACS_CONSTITUTIVE_H
 
+#include <vector>  // std::vector
+
 #include "TACSObject.h"
 
 /**
@@ -109,6 +111,7 @@ class TACSConstitutive : public TACSObject {
     return 0;
   }
 
+  // --- Design variable group API (implemented in TACSConstitutive.cpp) ---
   /**
     Get the number of logical design variable groups defined by this
     constitutive object
@@ -128,7 +131,7 @@ class TACSConstitutive : public TACSObject {
 
     @return The number of design variable groups
   */
-  virtual int getNumDesignVarGroups() { return 0; }
+  virtual int getNumDesignVarGroups();
 
   /**
     Get the name of a design variable group
@@ -136,7 +139,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return The group name, or NULL if groupIndex is out of range
   */
-  virtual const char *getDesignVarGroupName(int groupIndex) { return NULL; }
+  virtual const char *getDesignVarGroupName(int groupIndex);
 
   /**
     Get the number of entries in a design variable group
@@ -144,7 +147,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return The number of entries in the group, or 0 if out of range
   */
-  virtual int getDesignVarGroupSize(int groupIndex) { return 0; }
+  virtual int getDesignVarGroupSize(int groupIndex);
 
   /**
     Is this design variable group a scalar quantity?
@@ -156,7 +159,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return True if the group is a scalar quantity
   */
-  virtual bool isDesignVarGroupScalar(int groupIndex) { return true; }
+  virtual bool isDesignVarGroupScalar(int groupIndex);
 
   /**
     Get the values of all entries in a design variable group
@@ -168,7 +171,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @param values The design variable group values
   */
-  virtual void getDesignVarGroupValues(int groupIndex, TacsScalar values[]) {}
+  virtual void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
 
   /**
     Get the design variable numbers of all entries in a design variable
@@ -181,7 +184,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @param dvNums The design variable numbers
   */
-  virtual void getDesignVarGroupNums(int groupIndex, int dvNums[]) {}
+  virtual void getDesignVarGroupNums(int groupIndex, int dvNums[]);
 
   /**
     Evaluate the mass per unit length, area or volume for the element
@@ -680,8 +683,43 @@ class TACSConstitutive : public TACSObject {
                           const TacsScalar y_stress[], TacsScalar x_vals[],
                           TacsScalar y_vals[]);
 
+ protected:
+  /**
+    Register a scalar design variable group backed by single members.
+
+    @param name The group name; must match the Python constructor kwarg
+    @param value Pointer to the group's live value member
+    @param dvNum Pointer to the group's live design variable number member
+  */
+  void registerScalarDesignVarGroup(const char *name, TacsScalar *value,
+                                    int *dvNum);
+
+  /**
+    Register an array design variable group backed by contiguous storage.
+
+    @param name The group name; must match the Python constructor kwarg
+    @param size The number of entries in the group
+    @param values Pointer to the group's live value storage
+    @param dvNums Pointer to the group's live design variable numbers
+  */
+  void registerArrayDesignVarGroup(const char *name, int size,
+                                   TacsScalar *values, int *dvNums);
+
  private:
   static const char *constName;
+
+  // A registered design variable group: a named quantity backed by live
+  // storage in the subclass. Scalar groups have size 1 and isScalar true.
+  struct DesignVarGroup {
+    const char *name;
+    int size;
+    bool isScalar;
+    TacsScalar *values;
+    int *dvNums;
+  };
+
+  // Design variable groups registered by the subclass, in registration order.
+  std::vector<DesignVarGroup> designVarGroups;
 };
 
 #endif  // TACS_CONSTITUTIVE_H
