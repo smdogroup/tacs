@@ -131,7 +131,7 @@ class TACSConstitutive : public TACSObject {
 
     @return The number of design variable groups
   */
-  virtual int getNumDesignVarGroups();
+  int getNumDesignVarGroups();
 
   /**
     Get the name of a design variable group
@@ -139,7 +139,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return The group name, or NULL if groupIndex is out of range
   */
-  virtual const char *getDesignVarGroupName(int groupIndex);
+  const char *getDesignVarGroupName(int groupIndex);
 
   /**
     Get the number of entries in a design variable group
@@ -147,7 +147,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return The number of entries in the group, or 0 if out of range
   */
-  virtual int getDesignVarGroupSize(int groupIndex);
+  int getDesignVarGroupSize(int groupIndex);
 
   /**
     Is this design variable group a scalar quantity?
@@ -159,7 +159,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @return True if the group is a scalar quantity
   */
-  virtual bool isDesignVarGroupScalar(int groupIndex);
+  bool isDesignVarGroupScalar(int groupIndex);
 
   /**
     Get the values of all entries in a design variable group
@@ -171,7 +171,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @param values The design variable group values
   */
-  virtual void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
+  void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
 
   /**
     Get the design variable numbers of all entries in a design variable
@@ -184,7 +184,7 @@ class TACSConstitutive : public TACSObject {
     @param groupIndex The index of the design variable group
     @param dvNums The design variable numbers
   */
-  virtual void getDesignVarGroupNums(int groupIndex, int dvNums[]);
+  void getDesignVarGroupNums(int groupIndex, int dvNums[]);
 
   /**
     Evaluate the mass per unit length, area or volume for the element
