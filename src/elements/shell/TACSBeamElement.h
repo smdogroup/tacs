@@ -705,110 +705,6 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
 }
 
 /*
-  Zero the second-order (.xp/.xh, .Ap/.Ah) fields on every second-order A2D
-  node in addJacobian's forward/reverse chain, ahead of a single per-DOF
-  hforward/hreverse sweep iteration (SPEC.md sec 1.3 step 3). These fields
-  are "+=" accumulators across hforward()/hreverse() calls, not
-  auto-reset, and (unlike the primal/first-order .x/.xd fields) most of
-  them are NOT freshly overwritten by every sweep iteration's own seed
-  step -- e.g. the translational sweep seeds only u0xi.xp, leaving
-  d01/d02/d01xi/d02xi's .xp stale from a previous iteration unless
-  explicitly zeroed here.
-*/
-static inline void TacsBeamZeroSecondOrderNodes(
-    A2D::ADVec3 &u0xi, A2D::ADVec3 &d01, A2D::ADVec3 &d02, A2D::ADVec3 &d01xi,
-    A2D::ADVec3 &d02xi, A2D::ADMat3x3 &u0d, A2D::ADMat3x3 &u0dXdinvT,
-    A2D::ADMat3x3 &u0x, A2D::ADVec3 &d1t, A2D::ADVec3 &d1x, A2D::ADVec3 &d2t,
-    A2D::ADVec3 &d2x) {
-  memset(u0xi.xp, 0, 3 * sizeof(TacsScalar));
-  memset(u0xi.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d01.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d01.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d02.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d02.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d01xi.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d01xi.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d02xi.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d02xi.xh, 0, 3 * sizeof(TacsScalar));
-  memset(u0d.Ap, 0, 9 * sizeof(TacsScalar));
-  memset(u0d.Ah, 0, 9 * sizeof(TacsScalar));
-  memset(u0dXdinvT.Ap, 0, 9 * sizeof(TacsScalar));
-  memset(u0dXdinvT.Ah, 0, 9 * sizeof(TacsScalar));
-  memset(u0x.Ap, 0, 9 * sizeof(TacsScalar));
-  memset(u0x.Ah, 0, 9 * sizeof(TacsScalar));
-  memset(d1t.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d1t.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d1x.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d1x.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d2t.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d2t.xh, 0, 3 * sizeof(TacsScalar));
-  memset(d2x.xp, 0, 3 * sizeof(TacsScalar));
-  memset(d2x.xh, 0, 3 * sizeof(TacsScalar));
-}
-
-/*
-  Contract the fixed, per-quadrature-point material Hessian blocks (from
-  model::evalStrainHessian, SPEC.md sec 1.1) against the forward-propagated
-  seed direction (u0xp/d1xp/d2xp, populated by a preceding hforward() call
-  sweep) to produce the Hessian-vector product at the u0x/d1x/d2x nodes
-  (u0xh/d1xh/d2xh), which the following hreverse() call sweep then
-  propagates back to the vars-space DOFs. This is the "H*p" step of the
-  per-DOF sweep (SPEC.md sec 1.3 step 3) -- a pure linear-algebra
-  contraction, not a differentiation; every array shape/index convention
-  below matches model::evalStrainHessian's own documented layout exactly
-  (row-major, e.g. d2u0xd1x[3*i+j] = d^2/d(u0x_i)d(d1x_j)).
-*/
-static inline void TacsBeamContractStrainHessian(
-    const TacsScalar d2u0x[81], const TacsScalar d2d1x[9],
-    const TacsScalar d2d2x[9], const TacsScalar d2u0xd1x[27],
-    const TacsScalar d2u0xd2x[27], const TacsScalar d2d1xd2x[9],
-    const TacsScalar u0xp[9], const TacsScalar d1xp[3],
-    const TacsScalar d2xp[3], TacsScalar u0xh[9], TacsScalar d1xh[3],
-    TacsScalar d2xh[3]) {
-  for (int i = 0; i < 9; i++) {
-    TacsScalar val = 0.0;
-    for (int j = 0; j < 9; j++) {
-      val += d2u0x[9 * i + j] * u0xp[j];
-    }
-    for (int j = 0; j < 3; j++) {
-      val += d2u0xd1x[3 * i + j] * d1xp[j];
-    }
-    for (int j = 0; j < 3; j++) {
-      val += d2u0xd2x[3 * i + j] * d2xp[j];
-    }
-    u0xh[i] += val;
-  }
-
-  for (int i = 0; i < 3; i++) {
-    TacsScalar val = 0.0;
-    for (int j = 0; j < 3; j++) {
-      val += d2d1x[3 * i + j] * d1xp[j];
-    }
-    for (int j = 0; j < 9; j++) {
-      val += d2u0xd1x[3 * j + i] * u0xp[j];
-    }
-    for (int j = 0; j < 3; j++) {
-      val += d2d1xd2x[3 * i + j] * d2xp[j];
-    }
-    d1xh[i] += val;
-  }
-
-  for (int i = 0; i < 3; i++) {
-    TacsScalar val = 0.0;
-    for (int j = 0; j < 3; j++) {
-      val += d2d2x[3 * i + j] * d2xp[j];
-    }
-    for (int j = 0; j < 9; j++) {
-      val += d2u0xd2x[3 * j + i] * u0xp[j];
-    }
-    for (int j = 0; j < 3; j++) {
-      val += d2d1xd2x[3 * j + i] * d1xp[j];
-    }
-    d2xh[i] += val;
-  }
-}
-
-/*
   Add the Jacobian of the residual (SPEC.md sec 1.3): a second-order
   extension of addResidual's own A2D graph, rather than a hand-coded
   congruence-transform port. Reruns addResidual's own forward pass with
@@ -3132,7 +3028,8 @@ void TACSBeamElement<quadrature, basis, director,
     // and TACS_MASS_MATRIX (Task 7.3, SPEC-phase-7.md sec 1.1/3.3/4.1):
     // ATTEMPTED, DOCUMENTED FAILURE -- a genuinely deeper obstruction than
     // SPEC-phase-7.md's own derivation anticipated, discovered only at
-    // implementation-verification time (test_element_mat_sv_sens_nonlinear_director,
+    // implementation-verification time
+    // (test_element_mat_sv_sens_nonlinear_director,
     // tests/element_tests/shell_tests/test_beam_element.py, exercising
     // Beam2ModRot/Beam3ModRot), not a coding slip:
     //

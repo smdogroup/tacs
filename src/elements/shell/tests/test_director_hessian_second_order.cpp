@@ -49,7 +49,7 @@ static double randReal() { return 2.0 * (double(rand()) / RAND_MAX) - 1.0; }
 // two different code paths (existing addRotationMatJacobian and the new
 // standalone hook), matching bit-for-bit is the actual regression claim.
 static void buildDC(const TacsScalar dd[3], const TacsScalar t[3],
-                     TacsScalar dC[9]) {
+                    TacsScalar dC[9]) {
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       dC[3 * i + j] = dd[i] * t[j];
@@ -100,11 +100,10 @@ int main() {
         qb[offset + l] = 1.0;
         TacsScalar mat[1] = {0.0};
         TACSQuadraticRotation::addDirectorHessianProduct<vars_per_node, offset,
-                                                          num_nodes>(t, dd, qa,
-                                                                     qb, mat);
-        maxerr =
-            std::max(maxerr, fabs(TacsRealPart(mat[0]) -
-                                   TacsRealPart(jacRef[3 * k + l])));
+                                                         num_nodes>(t, dd, qa,
+                                                                    qb, mat);
+        maxerr = std::max(maxerr, fabs(TacsRealPart(mat[0]) -
+                                       TacsRealPart(jacRef[3 * k + l])));
       }
     }
     printf(
@@ -123,7 +122,7 @@ int main() {
     }
     TacsScalar dt[3] = {0, 0, 0};
     TACSQuadraticRotation::addDirectorHessianRefNormalSens<vars_per_node,
-                                                            offset, num_nodes>(
+                                                           offset, num_nodes>(
         t, dd, qa, qb, dt);
 
 #ifdef TACS_USE_COMPLEX
@@ -135,8 +134,8 @@ int main() {
       tph[p] += TacsScalar(0.0, dh);
       TacsScalar matph[1] = {0.0};
       TACSQuadraticRotation::addDirectorHessianProduct<vars_per_node, offset,
-                                                        num_nodes>(tph, dd, qa,
-                                                                   qb, matph);
+                                                       num_nodes>(tph, dd, qa,
+                                                                  qb, matph);
       double ref = TacsImagPart(matph[0]) / dh;
       maxerr2 = std::max(maxerr2, fabs(TacsRealPart(dt[p]) - ref));
     }
@@ -153,13 +152,12 @@ int main() {
       tmh[p] -= dh;
       TacsScalar matph[1] = {0.0}, matmh[1] = {0.0};
       TACSQuadraticRotation::addDirectorHessianProduct<vars_per_node, offset,
-                                                        num_nodes>(tph, dd, qa,
-                                                                   qb, matph);
+                                                       num_nodes>(tph, dd, qa,
+                                                                  qb, matph);
       TACSQuadraticRotation::addDirectorHessianProduct<vars_per_node, offset,
-                                                        num_nodes>(tmh, dd, qa,
-                                                                   qb, matmh);
-      double ref =
-          TacsRealPart((matph[0] - matmh[0]) / (2.0 * dh));
+                                                       num_nodes>(tmh, dd, qa,
+                                                                  qb, matmh);
+      double ref = TacsRealPart((matph[0] - matmh[0]) / (2.0 * dh));
       maxerr2 = std::max(maxerr2, fabs(TacsRealPart(dt[p]) - ref));
     }
 #endif
@@ -204,11 +202,10 @@ int main() {
         qb[qoffset + l] = 1.0;
         TacsScalar mat[1] = {0.0};
         TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node,
-                                                           qoffset, num_nodes>(
+                                                          qoffset, num_nodes>(
             t, dd, qa, qb, mat);
-        maxerr = std::max(
-            maxerr,
-            fabs(TacsRealPart(mat[0]) - TacsRealPart(jacRef[4 * k + l])));
+        maxerr = std::max(maxerr, fabs(TacsRealPart(mat[0]) -
+                                       TacsRealPart(jacRef[4 * k + l])));
       }
     }
     printf(
@@ -225,8 +222,7 @@ int main() {
     }
     TacsScalar dt[3] = {0, 0, 0};
     TACSQuaternionRotation::addDirectorHessianRefNormalSens<vars_per_node,
-                                                             qoffset,
-                                                             num_nodes>(
+                                                            qoffset, num_nodes>(
         t, dd, qa, qb, dt);
 
 #ifdef TACS_USE_COMPLEX
@@ -237,9 +233,9 @@ int main() {
       for (int i = 0; i < 3; i++) tph[i] = t[i];
       tph[p] += TacsScalar(0.0, dh);
       TacsScalar matph[1] = {0.0};
-      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node,
-                                                         qoffset, num_nodes>(
-          tph, dd, qa, qb, matph);
+      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node, qoffset,
+                                                        num_nodes>(tph, dd, qa,
+                                                                   qb, matph);
       double ref = TacsImagPart(matph[0]) / dh;
       maxerr2 = std::max(maxerr2, fabs(TacsRealPart(dt[p]) - ref));
     }
@@ -255,12 +251,12 @@ int main() {
       tph[p] += dh;
       tmh[p] -= dh;
       TacsScalar matph[1] = {0.0}, matmh[1] = {0.0};
-      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node,
-                                                         qoffset, num_nodes>(
-          tph, dd, qa, qb, matph);
-      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node,
-                                                         qoffset, num_nodes>(
-          tmh, dd, qa, qb, matmh);
+      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node, qoffset,
+                                                        num_nodes>(tph, dd, qa,
+                                                                   qb, matph);
+      TACSQuaternionRotation::addDirectorHessianProduct<vars_per_node, qoffset,
+                                                        num_nodes>(tmh, dd, qa,
+                                                                   qb, matmh);
       double ref = TacsRealPart((matph[0] - matmh[0]) / (2.0 * dh));
       maxerr2 = std::max(maxerr2, fabs(TacsRealPart(dt[p]) - ref));
     }

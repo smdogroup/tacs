@@ -81,8 +81,8 @@ int main() {
     }
 #else
     double dh = 1e-6;
-    ADScalar alphaph(alpha.value + dh * alphap), alphamh(alpha.value -
-                                                          dh * alphap);
+    ADScalar alphaph(alpha.value + dh * alphap),
+        alphamh(alpha.value - dh * alphap);
     ADVec3 xph, yph, xmh, ymh;
     for (int i = 0; i < 3; i++) {
       xph.x[i] = x.x[i] + dh * xp[i];
@@ -106,7 +106,8 @@ int main() {
     if (maxerr > 1e-6) fail = 1;
   }
 
-  // --- (2) hreverse (.xh/.valueh) vs hand-computed formula --------------------
+  // --- (2) hreverse (.xh/.valueh) vs hand-computed formula
+  // --------------------
   {
     TacsScalar vd[3], vh_seed[3];
     for (int i = 0; i < 3; i++) {
@@ -136,13 +137,14 @@ int main() {
     //   x.xh = scale*(alpha.value*v.xh + alpha.valuep*v.xd)
     //   y.xh = v.xh
     double s = TacsRealPart(scale);
-    double expectedAlphaH = 0.0, expectedXh[3] = {0, 0, 0}, expectedYh[3] = {
-                                                                 0, 0, 0};
+    double expectedAlphaH = 0.0, expectedXh[3] = {0, 0, 0},
+           expectedYh[3] = {0, 0, 0};
     for (int i = 0; i < 3; i++) {
       expectedAlphaH += s * TacsRealPart(x.x[i]) * TacsRealPart(vh_seed[i]);
       expectedAlphaH += s * TacsRealPart(xp[i]) * TacsRealPart(vd[i]);
-      expectedXh[i] = s * (TacsRealPart(alpha.value) * TacsRealPart(vh_seed[i]) +
-                           TacsRealPart(alphap) * TacsRealPart(vd[i]));
+      expectedXh[i] =
+          s * (TacsRealPart(alpha.value) * TacsRealPart(vh_seed[i]) +
+               TacsRealPart(alphap) * TacsRealPart(vd[i]));
       expectedYh[i] = TacsRealPart(vh_seed[i]);
     }
 

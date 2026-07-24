@@ -82,8 +82,8 @@ int main() {
     }
 #else
     double dh = 1e-6;
-    ADScalar scaleph(scale.value + dh * scalep), scalemh(scale.value -
-                                                          dh * scalep);
+    ADScalar scaleph(scale.value + dh * scalep),
+        scalemh(scale.value - dh * scalep);
     ADMat3x3 Aph, Amh;
     for (int i = 0; i < 9; i++) {
       Aph.A[i] = A.A[i] + dh * Ap[i];
@@ -147,10 +147,11 @@ int main() {
     double expectedAh[9] = {0};
     double expectedScaleH = 0.0;
 
-    // x.xh: scale.value*A.A*y.xh + scale.valuep*A.A*y.xd + scale.value*A.Ap*y.xd
-    // (A applied UN-transposed, matching Mat3x3VecMultAddScaleCore's own
-    // convention -- the pullback of y=scale*A^T*x's linear map back to x is
-    // scale*A, not scale*A^T; confirmed against the shipped reverse()).
+    // x.xh: scale.value*A.A*y.xh + scale.valuep*A.A*y.xd +
+    // scale.value*A.Ap*y.xd (A applied UN-transposed, matching
+    // Mat3x3VecMultAddScaleCore's own convention -- the pullback of
+    // y=scale*A^T*x's linear map back to x is scale*A, not scale*A^T; confirmed
+    // against the shipped reverse()).
     for (int i = 0; i < 3; i++) {
       double s1 = 0.0, s2 = 0.0, s3 = 0.0;
       for (int j = 0; j < 3; j++) {

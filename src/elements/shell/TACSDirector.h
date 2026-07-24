@@ -619,9 +619,9 @@ class TACSLinearizedRotation {
     (this codebase targets C++11). mat[]/dt[] are intentionally left
     untouched (not even zeroed) -- callers of these two hooks always
     initialize their own accumulators before summing node/DOF contributions
-    into them, matching addDirectorHessianProduct/addDirectorHessianRefNormalSens's
-    own accumulate-in-place ("+=") contract on the other two director
-    classes.
+    into them, matching
+    addDirectorHessianProduct/addDirectorHessianRefNormalSens's own
+    accumulate-in-place ("+=") contract on the other two director classes.
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addDirectorHessianProduct(const TacsScalar t[],
@@ -1899,17 +1899,22 @@ class TACSQuaternionRotation {
       ddxt[2] = dd[0] * t[1] - dd[1] * t[0];
 
       TacsScalar ddt = dd[0] * t[0] + dd[1] * t[1] + dd[2] * t[2];
-      TacsScalar qa_dd = qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
-      TacsScalar qb_dd = qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar qa_dd =
+          qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd =
+          qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
       TacsScalar t_qb = t[0] * qb_vec[0] + t[1] * qb_vec[1] + t[2] * qb_vec[2];
       TacsScalar t_qa = t[0] * qa_vec[0] + t[1] * qa_vec[1] + t[2] * qa_vec[2];
       TacsScalar qaqb_vec =
           qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
-      TacsScalar ddxt_qb = ddxt[0] * qb_vec[0] + ddxt[1] * qb_vec[1] + ddxt[2] * qb_vec[2];
-      TacsScalar ddxt_qa = ddxt[0] * qa_vec[0] + ddxt[1] * qa_vec[1] + ddxt[2] * qa_vec[2];
+      TacsScalar ddxt_qb =
+          ddxt[0] * qb_vec[0] + ddxt[1] * qb_vec[1] + ddxt[2] * qb_vec[2];
+      TacsScalar ddxt_qa =
+          ddxt[0] * qa_vec[0] + ddxt[1] * qa_vec[1] + ddxt[2] * qa_vec[2];
 
-      mat[0] += 2.0 * qai[0] * ddxt_qb + 2.0 * qbi[0] * ddxt_qa +
-                4.0 * (-ddt * qaqb_vec + 0.5 * qa_dd * t_qb + 0.5 * t_qa * qb_dd);
+      mat[0] +=
+          2.0 * qai[0] * ddxt_qb + 2.0 * qbi[0] * ddxt_qa +
+          4.0 * (-ddt * qaqb_vec + 0.5 * qa_dd * t_qb + 0.5 * t_qa * qb_dd);
 
       t += 3;
       dd += 3;
@@ -1954,8 +1959,10 @@ class TACSQuaternionRotation {
       qaxdd[1] = qa_vec[2] * dd[0] - qa_vec[0] * dd[2];
       qaxdd[2] = qa_vec[0] * dd[1] - qa_vec[1] * dd[0];
 
-      TacsScalar qa_dd = qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
-      TacsScalar qb_dd = qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
+      TacsScalar qa_dd =
+          qa_vec[0] * dd[0] + qa_vec[1] * dd[1] + qa_vec[2] * dd[2];
+      TacsScalar qb_dd =
+          qb_vec[0] * dd[0] + qb_vec[1] * dd[1] + qb_vec[2] * dd[2];
       TacsScalar qaqb_vec =
           qa_vec[0] * qb_vec[0] + qa_vec[1] * qb_vec[1] + qa_vec[2] * qb_vec[2];
 
