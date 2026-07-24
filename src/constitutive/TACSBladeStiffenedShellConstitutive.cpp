@@ -215,6 +215,22 @@ TACSBladeStiffenedShellConstitutive::TACSBladeStiffenedShellConstitutive(
   // Arrays for storing ply failure sensitivities
   this->panelPlyFailSens = new TacsScalar[2 * this->numPanelPlies];
   this->stiffenerPlyFailSens = new TacsScalar[2 * this->numStiffenerPlies];
+
+  registerScalarDesignVarGroup("panelLength", &this->panelLength,
+                               &this->panelLengthNum);
+  registerScalarDesignVarGroup("stiffenerPitch", &this->stiffenerPitch,
+                               &this->stiffenerPitchNum);
+  registerScalarDesignVarGroup("panelThick", &this->panelThick,
+                               &this->panelThickNum);
+  registerArrayDesignVarGroup("panelPlyFracs", this->numPanelPlies,
+                              this->panelPlyFracs, this->panelPlyFracNums);
+  registerScalarDesignVarGroup("stiffenerHeight", &this->stiffenerHeight,
+                               &this->stiffenerHeightNum);
+  registerScalarDesignVarGroup("stiffenerThick", &this->stiffenerThick,
+                               &this->stiffenerThickNum);
+  registerArrayDesignVarGroup("stiffenerPlyFracs", this->numStiffenerPlies,
+                              this->stiffenerPlyFracs,
+                              this->stiffenerPlyFracNums);
 }
 
 // ==============================================================================
@@ -500,122 +516,6 @@ int TACSBladeStiffenedShellConstitutive::getDesignVarRange(int elemIndex,
     }
   }
   return this->numDesignVars;
-}
-
-// Get the number of design variable groups
-int TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups() { return 7; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments and are reported in the same order the DVs
-// are registered in the constructor
-const char *TACSBladeStiffenedShellConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return "panelLength";
-    case 1:
-      return "stiffenerPitch";
-    case 2:
-      return "panelThick";
-    case 3:
-      return "panelPlyFracs";
-    case 4:
-      return "stiffenerHeight";
-    case 5:
-      return "stiffenerThick";
-    case 6:
-      return "stiffenerPlyFracs";
-    default:
-      return NULL;
-  }
-}
-
-// Get the number of entries in each design variable group
-int TACSBladeStiffenedShellConstitutive::getDesignVarGroupSize(int groupIndex) {
-  switch (groupIndex) {
-    case 3:
-      return this->numPanelPlies;
-    case 6:
-      return this->numStiffenerPlies;
-    case 0:
-    case 1:
-    case 2:
-    case 4:
-    case 5:
-      return 1;
-    default:
-      return 0;
-  }
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSBladeStiffenedShellConstitutive::isDesignVarGroupScalar(
-    int groupIndex) {
-  return groupIndex != 3 && groupIndex != 6;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSBladeStiffenedShellConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  switch (groupIndex) {
-    case 0:
-      values[0] = this->panelLength;
-      break;
-    case 1:
-      values[0] = this->stiffenerPitch;
-      break;
-    case 2:
-      values[0] = this->panelThick;
-      break;
-    case 3:
-      for (int ii = 0; ii < this->numPanelPlies; ii++) {
-        values[ii] = this->panelPlyFracs[ii];
-      }
-      break;
-    case 4:
-      values[0] = this->stiffenerHeight;
-      break;
-    case 5:
-      values[0] = this->stiffenerThick;
-      break;
-    case 6:
-      for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
-        values[ii] = this->stiffenerPlyFracs[ii];
-      }
-      break;
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSBladeStiffenedShellConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                                int dvNums[]) {
-  switch (groupIndex) {
-    case 0:
-      dvNums[0] = this->panelLengthNum;
-      break;
-    case 1:
-      dvNums[0] = this->stiffenerPitchNum;
-      break;
-    case 2:
-      dvNums[0] = this->panelThickNum;
-      break;
-    case 3:
-      for (int ii = 0; ii < this->numPanelPlies; ii++) {
-        dvNums[ii] = this->panelPlyFracNums[ii];
-      }
-      break;
-    case 4:
-      dvNums[0] = this->stiffenerHeightNum;
-      break;
-    case 5:
-      dvNums[0] = this->stiffenerThickNum;
-      break;
-    case 6:
-      for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
-        dvNums[ii] = this->stiffenerPlyFracNums[ii];
-      }
-      break;
-  }
 }
 
 // ==============================================================================
