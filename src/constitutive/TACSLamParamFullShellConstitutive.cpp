@@ -70,6 +70,9 @@ TACSLamParamFullShellConstitutive::TACSLamParamFullShellConstitutive(
   // The invariant coefficients for the shear coefficients
   U6 = (Q44 + Q55) / 2.0;
   U7 = (Q44 - Q55) / 2.0;
+
+  registerScalarDesignVarGroup("t", &t, &tNum);
+  registerArrayDesignVarGroup("lp", NUM_LAM_PARAMS, lp, lpNums);
 }
 
 TACSLamParamFullShellConstitutive::~TACSLamParamFullShellConstitutive() {
@@ -162,65 +165,6 @@ int TACSLamParamFullShellConstitutive::getDesignVarRange(int elemIndex,
     }
   }
   return numDesignVars;
-}
-
-// Get the number of design variable groups
-int TACSLamParamFullShellConstitutive::getNumDesignVarGroups() { return 2; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments. Note the "lp" values cannot be set through
-// the constructor; use setLaminationParameters to restore them.
-const char *TACSLamParamFullShellConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return "t";
-    case 1:
-      return "lp";
-    default:
-      return NULL;
-  }
-}
-
-// Get the number of entries in each design variable group
-int TACSLamParamFullShellConstitutive::getDesignVarGroupSize(int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return 1;
-    case 1:
-      return NUM_LAM_PARAMS;
-    default:
-      return 0;
-  }
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSLamParamFullShellConstitutive::isDesignVarGroupScalar(int groupIndex) {
-  return groupIndex == 0;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSLamParamFullShellConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  if (groupIndex == 0) {
-    values[0] = t;
-  } else if (groupIndex == 1) {
-    for (int k = 0; k < NUM_LAM_PARAMS; k++) {
-      values[k] = lp[k];
-    }
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSLamParamFullShellConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                              int dvNums[]) {
-  if (groupIndex == 0) {
-    dvNums[0] = tNum;
-  } else if (groupIndex == 1) {
-    for (int k = 0; k < NUM_LAM_PARAMS; k++) {
-      dvNums[k] = lpNums[k];
-    }
-  }
 }
 
 /*!

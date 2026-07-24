@@ -552,5 +552,138 @@ class TestPointMassDVGroups(DVGroupTestCase):
         )
 
 
+class TestDesignVarGroupNameContract(DVGroupTestCase):
+    """Group names must be valid Python constructor kwargs (the BDF-card contract).
+
+    Every group name returned by ``getDesignVarGroups()`` is contractually required to match a
+    keyword argument of the owning class's Python constructor, since BDF-card generation feeds
+    the group dict straight back into the constructor. Each test below reconstructs a
+    constitutive object from another instance's group dict and checks that the reconstruction
+    succeeds and the group values round-trip.
+    """
+
+    def test_scalar_group_name_is_constructor_kwarg(self):
+        """
+        Given an IsoShellConstitutive with a single scalar "t" group,
+        when its group dict is fed back into the constructor as kwargs,
+        then reconstruction succeeds and the "t" group round-trips to the same value.
+        """
+        props = makeIsoMaterial()
+        con = constitutive.IsoShellConstitutive(props, t=0.1, tNum=0)
+        groups = con.getDesignVarGroups()
+
+        rebuilt = constitutive.IsoShellConstitutive(props, **groups)
+        rebuiltGroups = rebuilt.getDesignVarGroups()
+
+        self.assertEqual(list(rebuiltGroups.keys()), list(groups.keys()))
+        np.testing.assert_allclose(rebuiltGroups["t"], groups["t"], rtol=1e-12)
+
+    def test_beam_group_names_differing_from_member_names_are_constructor_kwargs(self):
+        """
+        Given an IsoTubeBeamConstitutive whose "d" and "t" group names don't match any
+        underlying member name,
+        when its group dict is fed back into the constructor as kwargs,
+        then reconstruction succeeds and both the "d" and "t" groups round-trip to the same
+        values.
+        """
+        props = makeIsoMaterial()
+        con = constitutive.IsoTubeBeamConstitutive(props, d=1.0, dNum=0, t=0.1, tNum=1)
+        groups = con.getDesignVarGroups()
+
+        rebuilt = constitutive.IsoTubeBeamConstitutive(props, **groups)
+        rebuiltGroups = rebuilt.getDesignVarGroups()
+
+        self.assertEqual(list(rebuiltGroups.keys()), list(groups.keys()))
+        np.testing.assert_allclose(rebuiltGroups["d"], groups["d"], rtol=1e-12)
+        np.testing.assert_allclose(rebuiltGroups["t"], groups["t"], rtol=1e-12)
+
+    def test_array_group_name_is_constructor_kwarg(self):
+        """
+        Given a SmearedCompositeShellConstitutive with a scalar "thickness" group and an array
+        "ply_fractions" group,
+        when its group dict is fed back into the constructor as kwargs,
+        then reconstruction succeeds and both the "thickness" and "ply_fractions" groups
+        round-trip to the same values.
+        """
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        plyAngles = np.deg2rad([0.0, 45.0, 90.0]).astype(self.dtype)
+        plyFracs = np.array([0.5, 0.25, 0.25], dtype=self.dtype)
+        plyFracNums = np.array([1, 2, 3], dtype=np.intc)
+        con = constitutive.SmearedCompositeShellConstitutive(
+            [ply] * 3, 0.1, plyAngles, plyFracs, 0, plyFracNums
+        )
+        groups = con.getDesignVarGroups()
+
+        rebuilt = constitutive.SmearedCompositeShellConstitutive(
+            ply_list=[ply] * 3, ply_angles=plyAngles, **groups
+        )
+        rebuiltGroups = rebuilt.getDesignVarGroups()
+
+        self.assertEqual(list(rebuiltGroups.keys()), list(groups.keys()))
+        np.testing.assert_allclose(
+            rebuiltGroups["thickness"], groups["thickness"], rtol=1e-12
+        )
+        np.testing.assert_allclose(
+            rebuiltGroups["ply_fractions"], groups["ply_fractions"], rtol=1e-12
+        )
+
+    def test_point_mass_group_names_are_constructor_kwargs(self):
+        """
+        Given a PointMassConstitutive with seven scalar mass/inertia groups,
+        when its group dict is fed back into the constructor as kwargs,
+        then reconstruction succeeds and every group round-trips to the same value.
+        """
+        con = constitutive.PointMassConstitutive(
+            m=2.0,
+            I11=1.0,
+            I22=1.0,
+            I33=1.0,
+            I12=0.5,
+            I13=0.5,
+            I23=0.5,
+            mNum=0,
+            I11Num=1,
+            I22Num=2,
+            I33Num=3,
+            I12Num=4,
+            I13Num=5,
+            I23Num=6,
+        )
+        groups = con.getDesignVarGroups()
+
+        rebuilt = constitutive.PointMassConstitutive(**groups)
+        rebuiltGroups = rebuilt.getDesignVarGroups()
+
+        self.assertEqual(list(rebuiltGroups.keys()), list(groups.keys()))
+        for name in groups:
+            np.testing.assert_allclose(
+                rebuiltGroups[name], groups[name], rtol=1e-12, err_msg=name
+            )
+
+    def test_lam_param_full_shell_lp_is_excluded_from_round_trip(self):
+        """
+        Given a LamParamFullShellConstitutive with a scalar "t" group and an array "lp" group,
+        when the DV group API is queried,
+        then "t" is confirmed to be a valid constructor kwarg that round-trips, while "lp" is
+        excluded from the round-trip check because lamination parameters cannot be set through
+        the constructor (they are only restored via setLaminationParameters), even though "lp"
+        is still reported as a group name.
+        """
+        ply = constitutive.OrthotropicPly(0.1, makeOrthoMaterial())
+        lpNums = np.array([1, 2, 3, 4, 5, 6], dtype=np.intc)
+        con = constitutive.LamParamFullShellConstitutive(ply, 0.1, 0, 0.05, 0.2, lpNums)
+        groups = con.getDesignVarGroups()
+
+        self.assertEqual(list(groups.keys()), ["t", "lp"])
+
+        # Only "t" is round-tripped through the constructor here; "lp" is deliberately not
+        # passed back in, since it isn't a valid constructor kwarg despite being a group name.
+        rebuilt = constitutive.LamParamFullShellConstitutive(
+            ply, t=groups["t"], tNum=0, tlb=0.05, tub=0.2, lpNums=lpNums
+        )
+        rebuiltGroups = rebuilt.getDesignVarGroups()
+        np.testing.assert_allclose(rebuiltGroups["t"], groups["t"], rtol=1e-12)
+
+
 if __name__ == "__main__":
     unittest.main()

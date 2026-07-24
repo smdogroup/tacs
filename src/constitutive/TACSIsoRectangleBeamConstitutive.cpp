@@ -34,6 +34,10 @@ TACSIsoRectangleBeamConstitutive::TACSIsoRectangleBeamConstitutive(
   kcorr = 10.0 * (1.0 + nu) / (12.0 + 11.0 * nu);
 
   ks_weight = 100.0;
+
+  registerScalarDesignVarGroup("w", &width, &width_num);
+  registerScalarDesignVarGroup("t", &thickness, &thickness_num);
+  registerScalarDesignVarGroup("Lb", &buckle_length, &buckle_length_num);
 }
 
 TACSIsoRectangleBeamConstitutive::~TACSIsoRectangleBeamConstitutive() {
@@ -121,71 +125,6 @@ int TACSIsoRectangleBeamConstitutive::getDesignVarRange(int elemIndex,
     index++;
   }
   return index;
-}
-
-// Get the number of design variable groups
-int TACSIsoRectangleBeamConstitutive::getNumDesignVarGroups() { return 3; }
-
-// Get the name of each design variable group. Group names match the Python
-// constructor keyword arguments, which differ from the C++ member names here
-// ("w" is `width`, "t" is `thickness`, "Lb" is `buckle_length`)
-const char *TACSIsoRectangleBeamConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return "w";
-    case 1:
-      return "t";
-    case 2:
-      return "Lb";
-    default:
-      return NULL;
-  }
-}
-
-// Get the number of entries in each design variable group
-int TACSIsoRectangleBeamConstitutive::getDesignVarGroupSize(int groupIndex) {
-  if (groupIndex >= 0 && groupIndex < 3) {
-    return 1;
-  }
-  return 0;
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSIsoRectangleBeamConstitutive::isDesignVarGroupScalar(int groupIndex) {
-  return true;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSIsoRectangleBeamConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  switch (groupIndex) {
-    case 0:
-      values[0] = width;
-      break;
-    case 1:
-      values[0] = thickness;
-      break;
-    case 2:
-      values[0] = buckle_length;
-      break;
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSIsoRectangleBeamConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                             int dvNums[]) {
-  switch (groupIndex) {
-    case 0:
-      dvNums[0] = width_num;
-      break;
-    case 1:
-      dvNums[0] = thickness_num;
-      break;
-    case 2:
-      dvNums[0] = buckle_length_num;
-      break;
-  }
 }
 
 void TACSIsoRectangleBeamConstitutive::evalMassMoments(int elemIndex,

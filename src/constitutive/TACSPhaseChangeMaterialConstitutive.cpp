@@ -63,6 +63,8 @@ TACSPhaseChangeMaterialConstitutive::TACSPhaseChangeMaterialConstitutive(
              // Tm+dT]
   b = 2.0 * tan(0.99 * M_PI /
                 2.0);  // constant used to evaluate transition boundaries
+
+  registerScalarDesignVarGroup("t", &t, &tNum);
 }
 
 TACSPhaseChangeMaterialConstitutive::~TACSPhaseChangeMaterialConstitutive() {
@@ -124,49 +126,6 @@ int TACSPhaseChangeMaterialConstitutive::getDesignVarRange(int elemIndex,
     return 1;
   }
   return 0;
-}
-
-// Get the number of design variable groups
-int TACSPhaseChangeMaterialConstitutive::getNumDesignVarGroups() { return 1; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments
-const char *TACSPhaseChangeMaterialConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  if (groupIndex == 0) {
-    return "t";
-  }
-  return NULL;
-}
-
-// Get the number of entries in each design variable group
-int TACSPhaseChangeMaterialConstitutive::getDesignVarGroupSize(int groupIndex) {
-  if (groupIndex == 0) {
-    return 1;
-  }
-  return 0;
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSPhaseChangeMaterialConstitutive::isDesignVarGroupScalar(
-    int groupIndex) {
-  return true;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSPhaseChangeMaterialConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  if (groupIndex == 0) {
-    values[0] = t;
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSPhaseChangeMaterialConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                                int dvNums[]) {
-  if (groupIndex == 0) {
-    dvNums[0] = tNum;
-  }
 }
 
 // Compute the phase change coefficient

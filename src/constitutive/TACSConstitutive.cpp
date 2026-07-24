@@ -135,3 +135,76 @@ void TACSConstitutive::getFailureEnvelope(
   delete[] y_strain;
   delete[] C;
 }
+
+void TACSConstitutive::registerScalarDesignVarGroup(const char *name,
+                                                    TacsScalar *value,
+                                                    int *dvNum) {
+  DesignVarGroup group;
+  group.name = name;
+  group.size = 1;
+  group.isScalar = true;
+  group.values = value;
+  group.dvNums = dvNum;
+  designVarGroups.push_back(group);
+}
+
+void TACSConstitutive::registerArrayDesignVarGroup(const char *name, int size,
+                                                   TacsScalar *values,
+                                                   int *dvNums) {
+  DesignVarGroup group;
+  group.name = name;
+  group.size = size;
+  group.isScalar = false;
+  group.values = values;
+  group.dvNums = dvNums;
+  designVarGroups.push_back(group);
+}
+
+int TACSConstitutive::getNumDesignVarGroups() {
+  return static_cast<int>(designVarGroups.size());
+}
+
+const char *TACSConstitutive::getDesignVarGroupName(int groupIndex) {
+  if (groupIndex >= 0 &&
+      groupIndex < static_cast<int>(designVarGroups.size())) {
+    return designVarGroups[groupIndex].name;
+  }
+  return NULL;
+}
+
+int TACSConstitutive::getDesignVarGroupSize(int groupIndex) {
+  if (groupIndex >= 0 &&
+      groupIndex < static_cast<int>(designVarGroups.size())) {
+    return designVarGroups[groupIndex].size;
+  }
+  return 0;
+}
+
+bool TACSConstitutive::isDesignVarGroupScalar(int groupIndex) {
+  if (groupIndex >= 0 &&
+      groupIndex < static_cast<int>(designVarGroups.size())) {
+    return designVarGroups[groupIndex].isScalar;
+  }
+  return true;
+}
+
+void TACSConstitutive::getDesignVarGroupValues(int groupIndex,
+                                               TacsScalar values[]) {
+  if (groupIndex >= 0 &&
+      groupIndex < static_cast<int>(designVarGroups.size())) {
+    const DesignVarGroup &group = designVarGroups[groupIndex];
+    for (int ii = 0; ii < group.size; ii++) {
+      values[ii] = group.values[ii];
+    }
+  }
+}
+
+void TACSConstitutive::getDesignVarGroupNums(int groupIndex, int dvNums[]) {
+  if (groupIndex >= 0 &&
+      groupIndex < static_cast<int>(designVarGroups.size())) {
+    const DesignVarGroup &group = designVarGroups[groupIndex];
+    for (int ii = 0; ii < group.size; ii++) {
+      dvNums[ii] = group.dvNums[ii];
+    }
+  }
+}

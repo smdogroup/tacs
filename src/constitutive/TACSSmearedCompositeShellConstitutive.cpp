@@ -85,6 +85,10 @@ TACSSmearedCompositeShellConstitutive::TACSSmearedCompositeShellConstitutive(
   for (int i = 0; i < nfvals; i++) {
     dfvals[i] = new TacsScalar[NUM_STRESSES];
   }
+
+  registerScalarDesignVarGroup("thickness", &thickness, &thickness_dv_num);
+  registerArrayDesignVarGroup("ply_fractions", num_plies, ply_fractions,
+                              ply_fraction_dv_nums);
 }
 
 TACSSmearedCompositeShellConstitutive::
@@ -178,66 +182,6 @@ int TACSSmearedCompositeShellConstitutive::getDesignVarRange(int elemIndex,
     }
   }
   return index;
-}
-
-// Get the number of design variable groups
-int TACSSmearedCompositeShellConstitutive::getNumDesignVarGroups() { return 2; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments
-const char *TACSSmearedCompositeShellConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return "thickness";
-    case 1:
-      return "ply_fractions";
-    default:
-      return NULL;
-  }
-}
-
-// Get the number of entries in each design variable group
-int TACSSmearedCompositeShellConstitutive::getDesignVarGroupSize(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return 1;
-    case 1:
-      return num_plies;
-    default:
-      return 0;
-  }
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSSmearedCompositeShellConstitutive::isDesignVarGroupScalar(
-    int groupIndex) {
-  return groupIndex == 0;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSSmearedCompositeShellConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  if (groupIndex == 0) {
-    values[0] = thickness;
-  } else if (groupIndex == 1) {
-    for (int i = 0; i < num_plies; i++) {
-      values[i] = ply_fractions[i];
-    }
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSSmearedCompositeShellConstitutive::getDesignVarGroupNums(
-    int groupIndex, int dvNums[]) {
-  if (groupIndex == 0) {
-    dvNums[0] = thickness_dv_num;
-  } else if (groupIndex == 1) {
-    for (int i = 0; i < num_plies; i++) {
-      dvNums[i] = ply_fraction_dv_nums[i];
-    }
-  }
 }
 
 // Evaluate the material density
