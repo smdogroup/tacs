@@ -119,6 +119,13 @@ TACSLamParamSmearedShellConstitutive::TACSLamParamSmearedShellConstitutive(
   // The invariant coefficients for the shear coefficients
   U6 = (Q44 + Q55) / 2.0;
   U7 = (Q44 - Q55) / 2.0;
+
+  registerScalarDesignVarGroup("t", &t, &tNum);
+  registerScalarDesignVarGroup("f0", &f0, &n0);
+  registerScalarDesignVarGroup("f45", &f45, &n45);
+  registerScalarDesignVarGroup("f90", &f90, &n90);
+  registerScalarDesignVarGroup("W1", &W1, &nW1);
+  registerScalarDesignVarGroup("W3", &W3, &nW3);
 }
 
 TACSLamParamSmearedShellConstitutive::~TACSLamParamSmearedShellConstitutive() {
@@ -255,96 +262,6 @@ int TACSLamParamSmearedShellConstitutive::getDesignVarRange(int elemIndex,
     i++;
   }
   return numDesignVars;
-}
-
-// Get the number of design variable groups
-int TACSLamParamSmearedShellConstitutive::getNumDesignVarGroups() { return 6; }
-
-// Get the name of each design variable group; group names match the Python
-// constructor keyword arguments
-const char *TACSLamParamSmearedShellConstitutive::getDesignVarGroupName(
-    int groupIndex) {
-  switch (groupIndex) {
-    case 0:
-      return "t";
-    case 1:
-      return "f0";
-    case 2:
-      return "f45";
-    case 3:
-      return "f90";
-    case 4:
-      return "W1";
-    case 5:
-      return "W3";
-    default:
-      return NULL;
-  }
-}
-
-// Get the number of entries in each design variable group
-int TACSLamParamSmearedShellConstitutive::getDesignVarGroupSize(
-    int groupIndex) {
-  if (groupIndex >= 0 && groupIndex < 6) {
-    return 1;
-  }
-  return 0;
-}
-
-// Is the design variable group a scalar quantity?
-bool TACSLamParamSmearedShellConstitutive::isDesignVarGroupScalar(
-    int groupIndex) {
-  return true;
-}
-
-// Get the values of a design variable group, whether active or not
-void TACSLamParamSmearedShellConstitutive::getDesignVarGroupValues(
-    int groupIndex, TacsScalar values[]) {
-  switch (groupIndex) {
-    case 0:
-      values[0] = t;
-      break;
-    case 1:
-      values[0] = f0;
-      break;
-    case 2:
-      values[0] = f45;
-      break;
-    case 3:
-      values[0] = f90;
-      break;
-    case 4:
-      values[0] = W1;
-      break;
-    case 5:
-      values[0] = W3;
-      break;
-  }
-}
-
-// Get the design variable numbers of a design variable group
-void TACSLamParamSmearedShellConstitutive::getDesignVarGroupNums(int groupIndex,
-                                                                 int dvNums[]) {
-  switch (groupIndex) {
-    case 0:
-      dvNums[0] = tNum;
-      break;
-    case 1:
-      dvNums[0] = n0;
-      break;
-    case 2:
-      dvNums[0] = n45;
-      break;
-    case 3:
-      dvNums[0] = n90;
-      break;
-    case 4:
-      dvNums[0] = nW1;
-      break;
-    case 5:
-      dvNums[0] = nW3;
-      break;
-  }
 }
 
 /*!
