@@ -8,10 +8,22 @@ import pyNastran.bdf as pn
 import tacs.constitutive
 from tacs.utilities import Error
 
-# pynastran defaults PBAR/PBEAM shear stiffness factors (k1/k2) to 1e8, which
-# can lead to scaling issues in the stiffness matrix. We truncate this value
-# to prevent this.
+# Ceiling used to truncate PBAR/PBEAM shear stiffness factors (k1/k2); see _truncateShearStiffnessFactor.
 _SHEAR_STIFFNESS_FACTOR_CEILING = 1e3
+
+
+def _truncateShearStiffnessFactor(k):
+    """Truncate a PBAR/PBEAM shear stiffness factor (k1/k2) to ``_SHEAR_STIFFNESS_FACTOR_CEILING``.
+
+    pynastran defaults PBAR/PBEAM shear stiffness factors (k1/k2) to 1e8, which
+    can lead to scaling issues in the stiffness matrix. We truncate this value
+    to prevent this.
+    """
+    return (
+        _SHEAR_STIFFNESS_FACTOR_CEILING
+        if k is None or k > _SHEAR_STIFFNESS_FACTOR_CEILING
+        else k
+    )
 
 
 def isoTubeBeamDims(sectionType, dims):
@@ -121,11 +133,8 @@ def _translatePBAR(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
     k2 = propInfo.k2
     nsm = propInfo.nsm
 
-    if k1 is None or k1 > _SHEAR_STIFFNESS_FACTOR_CEILING:
-        k1 = _SHEAR_STIFFNESS_FACTOR_CEILING
-
-    if k2 is None or k2 > _SHEAR_STIFFNESS_FACTOR_CEILING:
-        k2 = _SHEAR_STIFFNESS_FACTOR_CEILING
+    k1 = _truncateShearStiffnessFactor(k1)
+    k2 = _truncateShearStiffnessFactor(k2)
 
     # All section reference points (mass, centroid, shear, NSM) are assumed
     # coincident and placed at the WA/WB offset from the nodes.
@@ -217,9 +226,9 @@ def _translatePBARL(
     else:
         raise Error(
             "pyTACS",
-            f"Unsupported PBARL section type '{propInfo.Type}'. TACS supports "
-            "BAR, ROD, TUBE, and TUBE2. pyNastran does not compute a correct "
-            "torsion constant J for other section types.",
+            f"Unsupported PBARL section type '{propInfo.Type}' for property number "
+            f"{propInfo.pid}. TACS supports BAR, ROD, TUBE, and TUBE2. pyNastran does "
+            "not compute a correct torsion constant J for other section types.",
         )
 
 
@@ -263,11 +272,8 @@ def _translatePBEAM(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
         neutralAxisZOffsetA + neutralAxisZOffsetB
     ) / 2 + shearCenterZOffset
 
-    if k1 is None or k1 > _SHEAR_STIFFNESS_FACTOR_CEILING:
-        k1 = _SHEAR_STIFFNESS_FACTOR_CEILING
-
-    if k2 is None or k2 > _SHEAR_STIFFNESS_FACTOR_CEILING:
-        k2 = _SHEAR_STIFFNESS_FACTOR_CEILING
+    k1 = _truncateShearStiffnessFactor(k1)
+    k2 = _truncateShearStiffnessFactor(k2)
 
     averaged = averageStationProps(
         {"A": area, "I1": I1, "I2": I2, "I12": I12, "J": J, "nsm": nsm}, propInfo.xxb
@@ -340,19 +346,19 @@ def _translatePBEAML(
         # this combination is unsupported.
         raise Error(
             "pyTACS",
-            f"PBEAML section type '{sectionType}' with a shear-center "
-            "(WA/WB) offset is unsupported: IsoTubeBeamConstitutive cannot "
-            "carry an offset, and pyNastran does not compute a torsion "
-            "constant J for PBEAML, so there is no J for the "
-            "BasicBeamConstitutive fallback.",
+            f"PBEAML section type '{sectionType}' with a shear-center (WA/WB) offset "
+            f"is unsupported for property number {propInfo.pid}: IsoTubeBeamConstitutive "
+            "cannot carry an offset, and pyNastran does not compute a torsion constant J "
+            "for PBEAML, so there is no J for the BasicBeamConstitutive fallback.",
         )
 
     else:
         raise Error(
             "pyTACS",
-            f"Unsupported PBEAML section type '{sectionType}'. TACS supports "
-            "BAR, ROD, TUBE, and TUBE2 (circular types without WA/WB offsets). "
-            "pyNastran does not compute a correct J for other section types.",
+            f"Unsupported PBEAML section type '{sectionType}' for property number "
+            f"{propInfo.pid}. TACS supports BAR, ROD, TUBE, and TUBE2 (circular types "
+            "without WA/WB offsets). pyNastran does not compute a correct J for other "
+            "section types.",
         )
 
     # Whatever properties we're going to pass to the TACS
