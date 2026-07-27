@@ -609,19 +609,12 @@ class TACSLinearizedRotation {
   }
 
   /**
-    Trivially-zeroing stubs for template uniformity (SPEC-phase-7.md sec
-    3.1/3.2): C(q) = I - q^x is EXACTLY linear in q, so d^2C/dq^2 = 0
-    identically -- these hooks have nothing to expose. Provided (rather
-    than omitted) so call sites that must compile generically across all
-    three director classes (e.g. TACSBeamElement::getMatSVSensInnerProduct's
-    G1 branch, typeid-guarded at runtime to skip this director class
-    entirely) do not need an if constexpr/typeid-based compile-time branch
-    (this codebase targets C++11). mat[]/dt[] are intentionally left
-    untouched (not even zeroed) -- callers of these two hooks always
-    initialize their own accumulators before summing node/DOF contributions
-    into them, matching
-    addDirectorHessianProduct/addDirectorHessianRefNormalSens's own
-    accumulate-in-place ("+=") contract on the other two director classes.
+    No-op hooks provided for template uniformity across the three director
+    classes. C(q) = I - q^x is exactly linear in q, so d^2C/dq^2 = 0 and
+    these second-order hooks have nothing to contribute. mat[]/dt[] are left
+    untouched (callers initialize their own accumulators before summing
+    contributions in, matching the "+=" contract of the other classes'
+    implementations).
   */
   template <int vars_per_node, int offset, int num_nodes>
   static void addDirectorHessianProduct(const TacsScalar t[],

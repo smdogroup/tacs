@@ -313,12 +313,9 @@ class ADMat3x3FromThreeADVec3 {
     z.xd[1] += C.Ad[5];
     z.xd[2] += C.Ad[8];
   }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C's
-  // columns are literally the components of x/y/z -- a trivial LINEAR
-  // assignment, not even a product, so hforward/hreverse are exactly
-  // forward()/reverse()'s formulas with Ap/xp (resp. Ah/xh) substituted
-  // for Ad/xd -- no cross term. Verified in
-  // a2d/tests/test_admat3x3fromthreeadvec3_second_order.cpp.
+  // C's columns are just the components of x/y/z -- a linear assignment,
+  // so hforward/hreverse are forward()/reverse()'s formulas with Ap/xp
+  // (resp. Ah/xh) in place of Ad/xd, with no cross term.
   void hforward() {
     C.Ap[0] = x.xp[0];
     C.Ap[3] = x.xp[1];
@@ -446,24 +443,7 @@ class ADMat3x3MatMult {
       Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
     }
   }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C =
-  // scale*A*B is LINEAR in its one active input A (B is a passive Mat3x3),
-  // so hforward/hreverse are exactly forward()/reverse()'s formulas with
-  // Ap/Ah substituted for Ad -- no additional cross term, since there is
-  // only one active input and the op is linear in it (E6's zero-self-
-  // Hessian finding for this op-class; verified in
-  // a2d/tests/test_admat3x3matmult_second_order.cpp).
-  //
-  // Deviation note (Phase 1 review): the TacsRealPart(scale)==1.0 branch
-  // below mirrors forward()/reverse()'s pre-existing branch verbatim and
-  // is a literal instance of the pattern SPEC.md sec 1.2.4 binds against
-  // ("no TacsRealPart()-gated branching... breaks complex-step
-  // differentiability"). It is safe here: scale is a passive TacsScalar
-  // constructor argument (always a real literal, e.g. 1.0 or -1.0, at
-  // every call site in this feature), never an active/complex-step-
-  // perturbed quantity -- branching on it cannot discard a perturbation
-  // that scale never carries. Not restructured, since it exactly mirrors
-  // the identical, already-accepted branch in forward()/reverse() above.
+  
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
@@ -546,22 +526,7 @@ class ADMat3x3ADMatMult {
       MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
-  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
-  // 7): C = scale*A*B is bilinear in (A, B), so hforward is forward()'s own
-  // formula with Ap/Bp/Cp substituted for Ad/Bd/Cd, and hreverse is
-  // reverse()'s own formula (using .Ah in place of .Ad, propagated through
-  // the OTHER operand's PRIMAL) plus one cross term per input (the OTHER
-  // operand's .Ap contracted against THIS op's ordinary first-order
-  // downstream weight, C.Ad) -- the identical pattern already shipped for
-  // ADVec3Dot/ADMat3x3MatMult. Formulas ported from, and verified by, the E7
-  // experiment (docs/plans/feature-beam-element-methods/scripts/
-  // 004_e7_zero_seed_role.cpp, TestADMat3x3ADMatMult), generalized here to
-  // the scale != 1 branch by the same TacsRealPart(scale)==1.0 pattern
-  // forward()/reverse() above already use (see MatTrans3x3ADMatMult's own
-  // "Deviation note" for why this branch is complex-step-safe: scale is
-  // always a passive, real-literal constructor argument in this feature,
-  // never an active/perturbed quantity). Verified in
-  // a2d/tests/test_admat3x3admatmult_second_order.cpp.
+
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
@@ -773,24 +738,7 @@ class MatTrans3x3ADMatMult {
       Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): C =
-  // scale*A^T*B is LINEAR in its one active input B (A is a passive
-  // Mat3x3), so hforward/hreverse are exactly forward()/reverse()'s
-  // formulas with Bp/Cp (resp. Bh/Ch) substituted for Bd/Cd -- no
-  // additional cross term (same structural reasoning as ADMat3x3MatMult,
-  // Task 1.5). Verified in
-  // a2d/tests/test_mattrans3x3admatmult_second_order.cpp.
-  //
-  // Deviation note (Phase 1 review): the TacsRealPart(scale)==1.0 branch
-  // below mirrors forward()/reverse()'s pre-existing branch verbatim and
-  // is a literal instance of the pattern SPEC.md sec 1.2.4 binds against
-  // ("no TacsRealPart()-gated branching... breaks complex-step
-  // differentiability"). It is safe here: scale is a passive TacsScalar
-  // constructor argument (always a real literal at every call site in
-  // this feature), never an active/complex-step-perturbed quantity --
-  // branching on it cannot discard a perturbation that scale never
-  // carries. Not restructured, since it exactly mirrors the identical,
-  // already-accepted branch in forward()/reverse() above.
+  
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       MatTrans3x3MatMultCore(A.A, B.Ap, C.Ap);
@@ -841,15 +789,7 @@ class ADMatTrans3x3ADMatMult {
       Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
-  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
-  // 7): C = scale*A^T*B is bilinear in (A, B); same "reverse-shape +
-  // one-cross-term-per-input" pattern as ADMat3x3ADMatMult above. Formulas
-  // ported from, and verified by, the E7 experiment
-  // (docs/plans/feature-beam-element-methods/scripts/004_e7_zero_seed_role.cpp,
-  // TestADMatTrans3x3ADMatMult), generalized to the scale != 1 branch by the
-  // same TacsRealPart(scale)==1.0 pattern forward()/reverse() above already
-  // use. Verified in
-  // a2d/tests/test_admattrans3x3admatmult_second_order.cpp.
+
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       MatTrans3x3MatMultCore(A.Ap, B.A, C.Ap);

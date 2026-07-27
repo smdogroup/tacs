@@ -163,13 +163,6 @@ class ADVec3ADVecScalarAxpy {
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): v =
-  // scale*alpha.value*x + y is LINEAR jointly in the two active inputs
-  // (x, y) -- alpha is a fixed passive Scalar, not itself an AD variable,
-  // so there is no bilinear coupling between x and y (unlike ADVec3Dot).
-  // hforward/hreverse are exactly forward()/reverse()'s formulas with
-  // xp/yp/vp (resp. xh/yh/vh) substituted for xd/yd/vd -- no cross term.
-  // Verified in a2d/tests/test_advec3advecscalaraxpy_second_order.cpp.
   void hforward() {
     v.xp[0] = scale * (alpha.value * x.xp[0]) + y.xp[0];
     v.xp[1] = scale * (alpha.value * x.xp[1]) + y.xp[1];
@@ -216,19 +209,6 @@ class ADVec3Axpy {
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
-  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
-  // 7): v = scale*alpha.value*x + y is bilinear in (alpha, x) and purely
-  // additive (linear) in y -- so hforward is forward()'s own formula with
-  // the p-seed substituted for the tangent, and hreverse is reverse()'s own
-  // formula (using .xh in place of .xd, propagated through the OTHER
-  // bilinear operand's PRIMAL) plus ONE cross term for the (alpha, x)
-  // bilinear pair (the OTHER operand's p-seed contracted against this op's
-  // ordinary first-order downstream weight, v.xd) -- y gets no cross term
-  // since it enters v additively, not multiplicatively (d^2v/d(alpha)dy =
-  // d^2v/dx*dy = 0). Derived by the identical pattern already E7-verified
-  // for ADMat3x3ADMatMult/ADMatTrans3x3ADMatMult, independently verified in
-  // a2d/tests/test_advec3axpy_second_order.cpp (not itself run through E7's
-  // harness, per SPEC-phase-7.md sec 2.2/sec 5).
   void hforward() {
     v.xp[0] = scale * (alpha.valuep * x.x[0] + alpha.value * x.xp[0]) + y.xp[0];
     v.xp[1] = scale * (alpha.valuep * x.x[1] + alpha.value * x.xp[1]) + y.xp[1];
@@ -313,19 +293,9 @@ class ADVec3Dot {
     y.xd[1] += s * x.x[1];
     y.xd[2] += s * x.x[2];
   }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): alpha =
-  // scale*(x.x . y.x) is bilinear in (x, y), so both hforward and hreverse
-  // carry cross terms between the two active inputs.
-  //
-  // hforward: product-rule directional derivative of forward()'s formula,
-  // seed (xp/yp) substituted for the tangent (xd/yd).
   void hforward() {
     alpha.valuep = scale * (Vec3DotCore(x.x, y.xp) + Vec3DotCore(x.xp, y.x));
   }
-  // hreverse: reverse()'s adjoint shape (using the second-order valueh
-  // accumulator) plus one seed-cross-term per input, reflecting the
-  // bilinear coupling between x and y (see SPEC.md sec 1.2.2's ADVec3Dot
-  // worked example; verified in a2d/tests/test_advec3dot_second_order.cpp).
   void hreverse() {
     TacsScalar sh = scale * alpha.valueh;
     TacsScalar sd = scale * alpha.valued;
@@ -767,13 +737,6 @@ class MatTrans3x3ADVecMultScale {
     MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
   }
   void reverse() { Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd); }
-  // Second-order (feature-beam-element-methods, SPEC.md sec 1.2.2): y =
-  // scale.value*A^T*x is LINEAR in its single active input x (scale and A
-  // are both passive), so hforward/hreverse are exactly forward()/
-  // reverse()'s formulas with xp/yp (resp. xh/yh) substituted for xd/yd --
-  // no additional cross term (same structural reasoning as
-  // ADMat3x3MatMult, Task 1.5, and MatTrans3x3ADMatMult, Task 1.8).
-  // Verified in a2d/tests/test_mattrans3x3advecmultscale_second_order.cpp.
   void hforward() {
     MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);
   }
@@ -884,24 +847,6 @@ class ADMatTrans3x3ADVecMultADScale {
     Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
     scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
   }
-  // Second-order (feature-beam-element-methods, SPEC-phase-7.md sec 2.2/sec
-  // 7): y = scale.value*A^T*x is TRILINEAR in (scale, A, x) (unlike every
-  // other op extended in this feature, which is at most bilinear) -- so
-  // hforward is forward()'s own formula with the p-seed substituted for the
-  // tangent (safe regardless of arity, since it is just the primal's own
-  // p-directional derivative), but hreverse needs reverse()'s own formula
-  // (using .xh in place of .xd, the ordinary "propagate through the
-  // Jacobian" term) PLUS TWO cross terms per input -- one per OTHER factor,
-  // since a trilinear form has two other factors to pair with, generalizing
-  // the bilinear ops' single cross term. Derived by the identical
-  // product-rule/reverse-shape-plus-cross-term(s) pattern E7 verified for
-  // ADMat3x3ADMatMult/ADMatTrans3x3ADMatMult, NOT itself run through E7's
-  // harness (SPEC-phase-7.md sec 2.2/sec 5) -- independently verified in
-  // a2d/tests/test_admattrans3x3advecmultadscale_second_order.cpp with all
-  // three operands genuinely seeded (the actual G4 usage seeds only x; scale
-  // and A stay Xpts-role-only there, per SPEC's own classification, so most
-  // of these cross terms are numerically zero in that specific call site --
-  // this general formula is verified independent of that restriction).
   void hforward() {
     MatTrans3x3VecMultScaleCore(scale.value, A.Ap, x.x, y.xp);
     MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xp, y.xp);

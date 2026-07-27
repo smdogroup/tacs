@@ -303,9 +303,8 @@ class TACSBeamElement : public TACSElement {
   static const int dsize = 3 * basis::NUM_NODES;
   static const int csize = 9 * basis::NUM_NODES;
 
-  // Helper for addMatXptSensInnerProduct's TACS_STIFFNESS_MATRIX branch
-  // (Task 4.3, SPEC.md sec 2.3.1) -- split out of the dispatcher for
-  // readability given its size.
+  // Helper for addMatXptSensInnerProduct's TACS_STIFFNESS_MATRIX branch --
+  // split out of the dispatcher for readability given its size.
   void addMatXptSensInnerProductStiffness(
       int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
       const TacsScalar phi[], const TacsScalar Xpts[], const TacsScalar vars[],
@@ -705,22 +704,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
 }
 
 /*
-  Add the Jacobian of the residual (SPEC.md sec 1.3): a second-order
-  extension of addResidual's own A2D graph, rather than a hand-coded
-  congruence-transform port. Reruns addResidual's own forward pass with
-  the 6 load-bearing A2D types upgraded to their second-order variants
-  (SPEC.md sec 1.2.2), then for each of 3*dsize state-DOF directions (the
-  "translational", "d1" and "d2" sweeps, SPEC.md sec 1.3 step 3,
-  VALIDATION.md E6) calls hforward()/hreverse() in the same order
-  addResidual's forward()/reverse() calls already use, extracting one
-  column of mat[] (or one column of the director-space Hessian
-  accumulators d2d1/d2d2/d2d1u/d2d2u/d2d1d2) per sweep iteration. The
-  post-loop closures (model::addComputeTyingStrainHessian, "Gap 1", SPEC.md
-  sec 1.3.1; TacsBeamAddCrossDirectorJacobian, "Gap 2", SPEC.md sec 1.3.2;
-  director::addDirectorJacobian x2) then convert those director-space
-  accumulators into mat[]'s vars-space entries, mirroring how
-  model::addComputeTyingStrainTranspose/director::addDirectorResidual
-  already convert the analogous first-order buffers for addResidual's res.
+  Add the Jacobian of the residual
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
@@ -730,13 +714,13 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     TacsScalar mat[]) {
   const int nvars = vars_per_node * num_nodes;
 
-  // Zero the output buffers (SPEC.md sec 1.3 step 1).
+  // Zero the output buffers.
   memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
   if (res) {
     memset(res, 0, nvars * sizeof(TacsScalar));
   }
 
-  // Setup identical to addResidual's own (SPEC.md sec 1.3 step 2).
+  // Setup identical to addResidual's own.
   const int nquad = quadrature::getNumQuadraturePoints();
 
   const A2D::Vec3 &axis = transform->getRefAxis();
@@ -764,8 +748,8 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
   TacsScalar dety[basis::NUM_TYING_POINTS];
   memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
 
-  // Second-order accumulators (SPEC.md sec 1.3 step 3/4, sec 1.3.1/1.3.2).
-  // d2ety: tying-point-space tying-strain Hessian (Gap 1's input).
+  // Second-order accumulators.
+  // d2ety: tying-point-space tying-strain Hessian.
   TacsScalar d2ety[basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS];
   memset(
       d2ety, 0,
@@ -773,7 +757,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
 
   // d2d1/d2d2: director-space self-Hessians (fed to addDirectorJacobian).
   // d2d1u/d2d2u: (director, u0xi) cross-Hessians (also addDirectorJacobian).
-  // d2d1d2: (d1, d2) cross-Hessian, the new Gap 2 accumulator.
+  // d2d1d2: (d1, d2) cross-Hessian.
   TacsScalar d2d1[dsize * dsize], d2d2[dsize * dsize];
   TacsScalar d2d1u[dsize * dsize], d2d2u[dsize * dsize];
   TacsScalar d2d1d2[dsize * dsize];
@@ -786,7 +770,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
   // Unscaled dynamics (mass-moment) Hessian accumulators -- gamma is
   // applied internally by director::addDirectorJacobian (matching its
   // documented contract), except for d2Tdotd1d2, which this closure
-  // gamma-scales itself before folding into d2d1d2 (SPEC.md sec 1.3.2).
+  // gamma-scales itself before folding into d2d1d2.
   TacsScalar d2Tdotd1[dsize * dsize], d2Tdotd2[dsize * dsize];
   TacsScalar d2Tdotu1[dsize * dsize], d2Tdotu2[dsize * dsize];
   TacsScalar d2Tdotd1d2[dsize * dsize];
@@ -867,10 +851,9 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     TacsScalar s[6];
     con->evalStress(elemIndex, pt, X0.x, e, s);
 
-    // NEW: materialize the tangent stiffness (SPEC.md sec 1.3 step 3's
-    // model-layer-coupling bullet) -- neither addResidual nor
-    // computeEnergies ever call this; it is consumed starting Task 2.2
-    // by model::evalStrainHessian, not by this scaffold task.
+    // Materialize the tangent stiffness -- neither addResidual nor
+    // computeEnergies computes this; it is consumed below by
+    // model::evalStrainHessian.
     TacsScalar Cs[TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES];
     con->evalTangentStiffness(elemIndex, pt, X0.x, Cs);
 
@@ -938,8 +921,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddot.xd, d1d);
     basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddot.xd, d2d);
 
-    // --- Second-order: material Hessian blocks (SPEC.md sec 1.3 step 3's
-    // model-layer-coupling bullet; Task 2.2). ---
+    // --- Second-order: material Hessian blocks. ---
     TacsScalar d2u0x[81], d2d1x[9], d2d2x[9], d2e0ty[4];
     TacsScalar d2u0xd1x[27], d2u0xd2x[27], d2d1xd2x[9];
     model::evalStrainHessian(alpha * detXd.value, s, Cs, u0x.A, d1x.x, d2x.x,
@@ -947,9 +929,8 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
                              d2u0xd2x, d2d1xd2x);
 
     // Tying-strain Hessian: accumulate this quadrature point's contribution
-    // to the tying-point-space Hessian d2ety (SPEC.md sec 1.3.1's own
-    // per-quadrature-point seeding note). e0ty[k] = 2*XdinvT.A[0]*gty[k] is
-    // a fixed linear map, so d2gty = (2*XdinvT.A[0])^2 * d2e0ty.
+    // to the tying-point-space Hessian d2ety. e0ty[k] = 2*XdinvT.A[0]*gty[k]
+    // is a fixed linear map, so d2gty = (2*XdinvT.A[0])^2 * d2e0ty.
     TacsScalar coef = 2.0 * XdinvT.A[0];
     TacsScalar d2gty[4];
     d2gty[0] = coef * coef * d2e0ty[0];
@@ -958,11 +939,9 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     d2gty[3] = coef * coef * d2e0ty[3];
     basis::addInterpTyingStrainHessian(pt, d2gty, d2ety);
 
-    // --- Dynamics (mass-moment) Hessian blocks (SPEC.md sec 1.3 step 3's
-    // dynamics bullet; Task 2.3). These are fixed-coefficient outer
-    // products of the basis shape functions -- no hforward/hreverse sweep
-    // needed, mirroring TACSShellElement::addJacobian's identical
-    // mass-diagonal-block pattern (TACSShellElement.h:605-617). ---
+    // --- Dynamics (mass-moment) Hessian blocks. These are fixed-coefficient
+    // outer products of the basis shape functions -- no hforward/hreverse
+    // sweep needed
     TacsScalar d2mass[9];
     memset(d2mass, 0, 9 * sizeof(TacsScalar));
     d2mass[0] = d2mass[4] = d2mass[8] = gamma * detXd.value * rho[0];
@@ -985,12 +964,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
     basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2mass,
                                                             d2Tdotd1d2);
 
-    // --- Per-DOF hforward/hreverse sweep (SPEC.md sec 1.3 step 3,
-    // VALIDATION.md E6): one sweep per compact "translational"/"d1"/"d2"
-    // state-DOF direction, 3*dsize sweeps total per quadrature point (this
-    // is NOT nvars-many sweeps -- see the feature's phase-2 handoff for why
-    // the literal "for k in 0..nvars" reading of the SPEC text is subtly
-    // incomplete for a directored element). ---
+    // --- Per-DOF hforward/hreverse sweep: one sweep per compact
+    // "translational"/"d1"/"d2" state-DOF direction, 3*dsize sweeps total
+    // per quadrature point. A directored element needs a sweep per compact
+    // DOF direction, not one per vars entry. ---
     TacsScalar seed[dsize];
 
     // (A) Translational sweep: seeds u0xi only. Captures the (u0xi, u0xi)
@@ -1053,10 +1030,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
 
     // (B) d1 sweep: seeds d01/d01xi together. Captures the (d1, d1) self
     // block (into d2d1) and the (d1, d2) cross block (into d2d1d2) --
-    // capturing this cross leakage, rather than discarding it, is exactly
-    // Gap 2's static contribution (SPEC.md sec 1.3.2); the (u0xi, d1)
-    // block is intentionally NOT re-scattered here (already captured by
-    // sweep (A), avoiding double-counting).
+    // capturing this cross leakage rather than discarding it is the static
+    // cross-director contribution; the (u0xi, d1) block is intentionally
+    // NOT re-scattered here (already captured by sweep (A), avoiding
+    // double-counting).
     for (int m = 0; m < dsize; m++) {
       TacsBeamZeroSecondOrderNodes(u0xi, d01, d02, d01xi, d02xi, u0d, u0dXdinvT,
                                    u0x, d1t, d1x, d2t, d2x);
@@ -1150,10 +1127,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
         Xpts, fn1, fn2, vars, d1, d2, dety, res, d1d, d2d);
   }
 
-  // Gap 1 (SPEC.md sec 1.3.1): convert the tying-point-space Hessian d2ety
-  // into mat[]'s (u0xi, u0xi) block plus the director-space accumulators
-  // d2d1/d2d2/d2d1u/d2d2u. Beam's Cs has no e0ty cross-coupling with
-  // (u0x, d1x, d2x) for the constitutive models this feature exercises
+  // Convert the tying-point-space Hessian d2ety into mat[]'s (u0xi, u0xi)
+  // block plus the director-space accumulators d2d1/d2d2/d2d1u/d2d2u.
+  // Beam's Cs has no e0ty cross-coupling with (u0x, d1x, d2x) for the
+  // constitutive models exercised here
   // (TACSIsoTubeBeamConstitutive::evalTangentStiffness never sets a
   // cross-shear entry), so the corresponding cross-Hessian inputs are
   // zero-filled placeholders (see TACSBeamElementModel.h's own comment).
@@ -1167,11 +1144,11 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
       alpha, Xpts, fn1, fn2, vars, d1, d2, dety, d2ety, d2etyu, d2etyd1,
       d2etyd2, mat, d2d1, d2d2, d2d1u, d2d2u);
 
-  // Gap 2 (SPEC.md sec 1.3.2): fold the dynamics (rho[5]) cross-director
-  // contribution (unscaled) into the already alpha-scaled static one
-  // (TacsBeamAddCrossDirectorJacobian expects an already-fully-scaled
-  // buffer, mirroring director::addDirectorJacobian's own
-  // "caller pre-scales d2d/d2du" contract), then scatter into mat[].
+  // Fold the dynamics (rho[5]) cross-director contribution (unscaled) into
+  // the already alpha-scaled static one (TacsBeamAddCrossDirectorJacobian
+  // expects an already-fully-scaled buffer, mirroring
+  // director::addDirectorJacobian's own "caller pre-scales d2d/d2du"
+  // contract), then scatter into mat[].
   for (int i = 0; i < dsize * dsize; i++) {
     d2d1d2[i] += gamma * d2Tdotd1d2[i];
   }
@@ -1183,10 +1160,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addJacobian(
   TacsBeamAddCrossDirectorJacobian<vars_per_node, offset, num_nodes>(
       vars, fn1, fn2, d2d1d2, mat);
 
-  // Per-director Jacobian closures (SPEC.md sec 1.3 step 4) -- each of
-  // these also updates res internally (mirroring addDirectorResidual's own
-  // formula), so the separate addDirectorResidual calls Task 2.1's res-only
-  // scaffold used are intentionally removed here to avoid double-counting.
+  // Per-director Jacobian closures -- each of these also updates res
+  // internally (mirroring addDirectorResidual's own formula), so no
+  // separate addDirectorResidual call is made here (that would
+  // double-count res).
   director::template addDirectorJacobian<vars_per_node, offset, num_nodes>(
       alpha, beta, gamma, vars, dvars, ddvars, fn1, d1d, d2Tdotd1, d2Tdotu1,
       d2d1, d2d1u, res, mat);
@@ -1214,26 +1191,21 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
   } else if (matType == TACS_MASS_MATRIX) {
     gamma = 1.0;
   } else {  // TACS_GEOMETRIC_STIFFNESS_MATRIX
-    // Analytic port (Task 5.2, Phase 5), scoped to TACSLinearizedRotation
-    // -- same documented-fallback scope every prior director-Jacobian
-    // closure in this feature already uses (TacsBeamAddCrossDirectorJacobian,
-    // director::addDirectorJacobian's own vars/dd-independence relied on
-    // below both hold only for this director class; TACSQuadraticRotation/
-    // TACSQuaternionRotation's addDirectorJacobian overloads DO depend on
-    // the real vars for mat[] itself, confirmed by reading TACSDirector.h
-    // directly, so this typeid guard is a correctness requirement, not
-    // caution for its own sake).
+    // Analytic, scoped to TACSLinearizedRotation -- the vars/dd-independence
+    // of TacsBeamAddCrossDirectorJacobian and director::addDirectorJacobian
+    // relied on below holds only for this director class;
+    // TACSQuadraticRotation/TACSQuaternionRotation's addDirectorJacobian
+    // overloads DO depend on the real vars for mat[] itself, so this typeid
+    // guard is a correctness requirement, not caution for its own sake.
     if (typeid(director) != typeid(TACSLinearizedRotation)) {
       TACSElement::getMatType(matType, elemIndex, time, Xpts, vars, mat);
       return;
     }
 
-    // Resolution (PLAN.md's Phase 5 "Kg-vs-Ku+Kg" note, cross-verified
-    // against src/TACSBuckling.cpp and origin/master's
-    // TACSShellElement::getMatType): report Ku+Kg combined, computed as
-    // the directional derivative of the (otherwise state-independent)
-    // material Hessian along path=vars, linearized about a ZERO reference
-    // state -- not a separate closed-form Kg-only term.
+    // Report Ku+Kg combined, computed as the directional
+    // derivative of the (otherwise state-independent) material Hessian
+    // along path=vars, linearized about a ZERO reference state -- not a
+    // separate closed-form Kg-only term.
     alpha = 1.0;
     const TacsScalar *path = vars;
 
@@ -1249,7 +1221,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
     // Base director state (zero) and its directional derivative along
     // path=vars (dd1/dd2 -- for TACSLinearizedRotation's linear director
     // map, this equals exactly what computeDirectorRates(vars) would give
-    // directly, confirmed algebraically in PLAN.md's progress note).
+    // directly).
     TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], dd1[dsize];
     TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], dd2[dsize];
     director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -1260,30 +1232,16 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
         zeros, zeros, zeros, path, fn2, d2, d2dot, d2ddot, dd2);
 
     // Tying strain at the zero base state (ety, identically zero -- e0ty
-    // is an exactly-linear functional of (Uxi, d), confirmed in Task 5.1)
-    // and its directional derivative along path (etyd, the real
-    // small-strain shear/tying strain).
+    // is an exactly-linear functional of (Uxi, d)) and its directional
+    // derivative along path (etyd, the real small-strain shear/tying
+    // strain).
     TacsScalar ety[basis::NUM_TYING_POINTS], etyd[basis::NUM_TYING_POINTS];
     TACSBeamNonlinearModel::template computeTyingStrainDeriv<vars_per_node,
                                                              basis>(
         Xpts, fn1, fn2, zeros, d1, d2, path, dd1, dd2, ety, etyd);
 
     // Director-space accumulators for the (only nonzero, "_d"-suffixed)
-    // path-direction contribution. The BASE (non-"_d") Hessian family is
-    // deliberately never scattered anywhere (confirmed by directly
-    // reading origin/master's TACSShellElement::getMatType: its own
-    // analogous base accumulators, d2d/d2du, are computed but never
-    // passed to addDirectorJacobian -- only the "_d" family is) since it
-    // reduces to the pure material stiffness TACS_STIFFNESS_MATRIX
-    // already reports; re-including it here would double-count K inside
-    // G. This also means beam needs no addComputeTyingStrainHessianDeriv-
-    // style helper at all (unlike shell): beam's e0ty is exactly linear
-    // in both models (Task 5.1), so its own Hessian block (d2e0ty) is a
-    // Cs-only constant with an identically-zero directional derivative
-    // (d2e0tyd below) -- the tying-strain contribution to G is provably
-    // zero, so no tying-strain-Hessian scatter is needed for this matType
-    // at all (only the tying-strain *value*, etyd, still feeds e0tyd into
-    // the strain vector and hence the real stress sd).
+    // path-direction contribution.
     TacsScalar d2d1_g[dsize * dsize], d2d2_g[dsize * dsize];
     TacsScalar d2d1u_g[dsize * dsize], d2d2u_g[dsize * dsize];
     TacsScalar d2d1d2_g[dsize * dsize];
@@ -1330,18 +1288,6 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
       A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
       A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
 
-      // Path-direction kinematics graph: build u0d/u0x/d1t/d1x/d2t/d2x
-      // using the SAME A2D ops addJacobian uses, but with vars/d1/d2
-      // replaced by path/dd1/dd2 -- since u0d/u0x/d1t/d1x/d2t/d2x are
-      // each an exactly-linear function of (u0xi, d01, d02, d01xi, d02xi)
-      // for fixed Xpts (T/Xdinv/XdinvT/s0/sz1/sz2 above never depend on
-      // vars), the graph's own forward VALUE fields (u0x.A/d1x.x/d2x.x),
-      // when fed path/dd1/dd2 in place of the real per-node fields,
-      // equal exactly the linearized (small-strain) strain-displacement
-      // gradients under path=vars -- no separate AD "directional" sweep
-      // is needed to get this; it is the plain forward value of the same
-      // linear map, verified via the standalone complex-step scratch
-      // check this task's PLAN.md progress note records.
       A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
       basis::template interpFieldsGrad<vars_per_node, 3>(pt, path, u0xi.x);
       basis::template interpFields<3, 3>(pt, dd1, d01.x);
@@ -2104,11 +2050,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
 
 /*
   Add the derivative of the matrix inner product psi^T * mat * phi with
-  respect to the design variables (SPEC.md sec 2.2/2.3). TACS_STIFFNESS_MATRIX
-  and TACS_MASS_MATRIX are analytic; TACS_GEOMETRIC_STIFFNESS_MATRIX is a
-  permanent documented-failure fallback (Task 5.3 attempted a
-  strain-through-Cs reformulation and root-caused why it fails -- see the
-  branch comment below -- not an interim punt awaiting a later phase).
+  respect to the design variables.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director,
@@ -2123,71 +2065,14 @@ void TACSBeamElement<quadrature, basis, director,
                                                       int dvLen,
                                                       TacsScalar dfdx[]) {
   if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
-    // Documented failure (Task 5.3, SPEC.md sec 2.4.4.c's protocol), not a
-    // pre-planned punt: attempted a strain-vector-through-Cs
-    // reformulation of d(psi^T*G(vars)*phi)/dx (analogous in shape to
-    // TACS_STIFFNESS_MATRIX's own branch just below), built from the
-    // psi/phi-direction kinematics chains that branch already computes
-    // plus a Task-5.2-style zero-base/path(=vars)-direction chain.
-    // elements.TestElementMatDVSens failed with analytic-vs-FD/CS
-    // mismatches in both sign and magnitude (not a near-miss); a targeted
-    // value-level diagnostic (independent of any DV-differentiation)
-    // showed the reformulation's own hand-derived contraction disagrees
-    // with a direct getMatType-based contraction before any
-    // differentiation at all. Root cause: the reformulation only
-    // captures the direct u0x/d1x/d2x-to-DOF-basis contraction of the
-    // geometric Hessian; it omits getMatType's SEPARATE
-    // director-Jacobian-closure scatter path
-    // (TacsBeamAddCrossDirectorJacobian/director::addDirectorJacobian),
-    // which routes the SAME Cs-dependent director-space accumulators
-    // through the rotation parametrization's own kinematics
-    // (mat3x3SkewMatSkewTransform-style contractions, TACSDirector.h) --
-    // not reducible to a simple strain-pair-through-Cs contraction the
-    // way the direct contribution is. Full diagnostic recorded in
-    // PLAN.md's Phase 5 section (Task 5.3's own entry). Forwarding to the
-    // base class here is therefore the permanent fallback for this
-    // matType until that director-closure DV-sensitivity is derived.
-    //
-    // Task 7.5 (G3, SPEC-phase-7.md sec 4.3) update: re-derived the
-    // "direct" piece from scratch this session (not just re-reading Task
-    // 5.3's note) by tracing getMatType's GEOMETRIC branch precisely: with
-    // TACSLinearizedRotation's u0x_base/d1x_base/d2x_base identically zero
-    // (getMatType's own "base=0, path=vars" convention), the Ju0x/Jd1x/Jd2x
-    // Jacobian rows evalStrainHessianDeriv builds collapse to FIXED
-    // constants, and the resulting 4-vector contraction
-    // "Ju0x.u0x_psi + Jd1x.d1x_psi + Jd2x.d2x_psi" reduces EXACTLY to
-    // epsi[0:4] (TACSBeamNonlinearModel::evalStrain's own axial/torsion/
-    // bending components, confirmed by direct comparison of the two
-    // formulas) -- i.e. the "direct" piece's DV-sens is expressible in ONE
-    // addGeometricTangentStressDVSens call using epsi/ephi with entries
-    // [4],[5] zeroed (mirroring the padding needed since C4 is only the
-    // upper-left 4x4 block of the packed Cs). This CONFIRMS (does not just
-    // repeat) Task 5.3's own finding, from a different angle: this
-    // "direct piece" formula is the SAME shape Task 5.3 already tried and
-    // found insufficient, and the closure piece
-    // (TacsBeamAddCrossDirectorJacobian/director::addDirectorJacobian) is a
-    // genuinely SEPARATE contribution -- specifically, it is the pullback
-    // of a (u0xi, d01, d02)-LEVEL Hessian block (built by getMatType's own
-    // per-DOF "m" sweep, BEFORE projecting through the director map J(q))
-    // through J(q) itself, i.e. a SECOND, independent "J(q)-congruence"
-    // nonlinearity beyond the one already implicit in d1x_psi/d2x_psi's own
-    // construction (which projects through J(q) exactly once, at the
-    // director-RATE level, not the closure's own director-VALUE level).
-    // Given the demonstrated pattern this same session (Task 7.3/7.4: a
-    // recipe that looked complete on paper turned out to have a second,
-    // independent missing/wrong term only caught by implementation-time
-    // verification), attempting this closure piece without a full,
-    // independently re-verified re-derivation (a nontrivial undertaking in
-    // its own right, likely comparable in size to Task 7.3's own attempt)
-    // was not started this session -- deferred with this added precision
-    // rather than guessed at. G4 (SPEC-phase-7.md sec 4.4), which hard-
-    // depends on this piece landing first, remains correspondingly blocked.
+    // TACS_GEOMETRIC_STIFFNESS_MATRIX DV-sensitivity is not implemented
+    // analytically.
     TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
                                           phi, Xpts, vars, dvLen, dfdx);
     return;
   } else if (matType != TACS_STIFFNESS_MATRIX && matType != TACS_MASS_MATRIX) {
-    // Unsupported matType beyond the enumerated set (SPEC.md sec 4.3):
-    // explicit-forward, never silent.
+    // Unsupported matType beyond the enumerated set: explicit-forward,
+    // never silent.
     TACSElement::addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi,
                                           phi, Xpts, vars, dvLen, dfdx);
     return;
@@ -2201,23 +2086,8 @@ void TACSBeamElement<quadrature, basis, director,
   TacsBeamComputeNodeNormals<basis>(Xpts, axis, fn1, fn2);
 
   // Build the psi-direction and phi-direction director fields, both
-  // linearized about the REAL state vars (SPEC.md sec 2.2's "psi/phi in
-  // place of vars" kinematics substitution). computeDirectorRatesDeriv's
-  // dpsi output is the exact director-map Jacobian-vector product at the
-  // given vars, for any director class (confirmed directly from
-  // TACSDirector.h's per-class implementations) -- dvars/ddvars are passed
-  // as vars here since this method's own signature has no dvars/ddvars, and
-  // the ddot/dddot outputs they would feed are discarded, unused.
-  //
-  // Efficiency note (review-flagged, minor): the two calls below (one
-  // seeded with psi, one with phi) each recompute the identical,
-  // direction-independent d1/d1dot/d1ddot outputs redundantly --
-  // computeDirectorRatesDeriv has no lighter-weight overload that accepts
-  // precomputed d/ddot/dddot and returns only the direction-seeded dpsi
-  // output, so avoiding the redundant work would require an API change to
-  // TACSDirector.h (a shared header also used by shell elements) rather
-  // than a local contortion; left as-is (this is a duplicated O(num_nodes)
-  // computation per call site, not an algorithmic complexity issue).
+  // linearized about the REAL state vars (psi/phi substituted in place of
+  // vars).
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2237,7 +2107,7 @@ void TACSBeamElement<quadrature, basis, director,
   // tying-strain map (computeTyingStrainDeriv), substituting psi/phi for
   // vars/d1/d2 in place of the real state (the map is linear, so this
   // substitution gives exactly the psi-direction/phi-direction tying
-  // strains -- SPEC.md sec 2.3.1's "psi/phi in place of vars" reuse).
+  // strains).
   TacsScalar etypsi[basis::NUM_TYING_POINTS], etyphi[basis::NUM_TYING_POINTS];
   model::template computeTyingStrainDeriv<vars_per_node, basis>(
       Xpts, fn1, fn2, psi, d1psi, d2psi, phi, d1phi, d2phi, etypsi, etyphi);
@@ -2322,7 +2192,7 @@ void TACSBeamElement<quadrature, basis, director,
 
     // Interpolate the psi-direction and phi-direction tying strains and
     // transform them to the local coordinates (identical formula to the
-    // real e0ty, SPEC.md sec 1.2.1).
+    // real e0ty).
     TacsScalar gtypsi[2], gtyphi[2];
     basis::interpTyingStrain(pt, etypsi, gtypsi);
     basis::interpTyingStrain(pt, etyphi, gtyphi);
@@ -2335,12 +2205,11 @@ void TACSBeamElement<quadrature, basis, director,
 
     if (matType == TACS_STIFFNESS_MATRIX) {
       // e_psi/e_phi via the SAME linear strain map vars/psi/phi share
-      // (SPEC.md sec 2.3.1's "beam's strain is linear unconditionally"
-      // simplification) -- reduces psi^T*K*phi to e_psi^T*Cs*e_phi, whose
-      // DV-derivative is the SAME generic hook addAdjResProduct already
-      // calls (con->addStressDVSens), reused with a bilinear pair of
-      // strains instead of a single adjoint-direction strain (SPEC.md sec
-      // 2.2).
+      // (beam's strain is linear unconditionally) -- reduces psi^T*K*phi to
+      // e_psi^T*Cs*e_phi, whose DV-derivative is the SAME generic hook
+      // addAdjResProduct already calls (con->addStressDVSens), reused with
+      // a bilinear pair of strains instead of a single adjoint-direction
+      // strain.
       TacsScalar epsi[6], ephi[6];
       model::evalStrainDeriv(u0xpsi.A, d1xpsi.x, d2xpsi.x, e0typsi, u0xphi.A,
                              d1xphi.x, d2xphi.x, e0typhi, epsi, ephi);
@@ -2348,11 +2217,11 @@ void TACSBeamElement<quadrature, basis, director,
       con->addStressDVSens(elemIndex, scale * detXd.value, pt, X0.x, ephi, epsi,
                            dvLen, dfdx);
     } else {  // TACS_MASS_MATRIX
-      // No strain/stiffness path (SPEC.md sec 2.2/2.3): only the mass
-      // moments' own DV-sens, contracted against the bilinear (psi, phi)
-      // dot products the mass matrix's dynamics blocks are built from
-      // (mirrors addAdjResProduct's dynamics section, TACSBeamElement.h,
-      // but bilinear in (psi, phi) rather than (ddvars, psi)).
+      // No strain/stiffness path: only the mass moments' own DV-sens,
+      // contracted against the bilinear (psi, phi) dot products the mass
+      // matrix's dynamics blocks are built from (mirrors addAdjResProduct's
+      // dynamics section, but bilinear in (psi, phi) rather than
+      // (ddvars, psi)).
       TacsScalar u0psi[3], u0phi[3];
       basis::template interpFields<vars_per_node, 3>(pt, psi, u0psi);
       basis::template interpFields<vars_per_node, 3>(pt, phi, u0phi);
@@ -2387,85 +2256,7 @@ void TACSBeamElement<quadrature, basis, director,
 }
 
 /*
-  addMatXptSensInnerProduct's TACS_STIFFNESS_MATRIX branch (Task 4.3,
-  SPEC.md sec 2.3.1): dfdXpts += scale * d(psi^T*K*phi)/d(Xpts).
-
-  f(Xpts) = scale * sum_quad w * detXd(Xpts) * (e_psi(Xpts)^T * Cs *
-  e_phi(Xpts))
-
-  Beam's strain is linear in state unconditionally (only one active model
-  class, TACSBeamNonlinearModel is commented out), so e_psi/e_phi are
-  exactly what model::evalStrain produces when psi/phi are substituted for
-  vars through the same forward kinematics chain -- no separate
-  strain-Hessian term is needed. This mirrors addAdjResXptProduct's own
-  Xpts-adjoint chain almost exactly (TacsBeamAddNodeNormalsSens,
-  director::addDirectorRefNormalSens, model::addTyingStrainXptSens-family
-  machinery), with BOTH "state" directions replaced by pure test directions
-  (psi, phi) -- neither corresponds to the real element state, since the
-  bilinear form psi^T*K*phi never references the actual vars-built strain
-  at all. The decomposition (SPEC.md sec 2.3.1):
-    1. detXd-direction term: seed detXd.valued = scale*(e_psi . s_phi), where
-       s_phi = Cs*e_phi (routes through the existing detXd-Xpts-adjoint
-       machinery unchanged).
-    2. psi-direction chain: seed weight s_phi = Cs*e_phi against the
-       psi-direction kinematics chain (mirrors addAdjResXptProduct's
-       psi-chain).
-    3. phi-direction chain: seed weight s_psi = Cs*e_psi against the
-       phi-direction kinematics chain (mirrors addAdjResXptProduct's
-       real/vars-chain, with phi substituted for vars).
-    4. e0ty/XdinvT-direction correction: e0ty = 2*XdinvT.A[0]*gty is a
-       state-independent scalar product, so its Xpts-adjoint is a plain
-       two-term product-rule expression (same machinery
-       addAdjResXptProduct already exercises for this term).
-    5. No tying-curvature term (beam's tying strain is linear -- omitted,
-       not derived-and-discarded).
-
-  Director-class scope: exact for TACSLinearizedRotation, confirmed via
-  the un-skipped test file (Beam2/Beam3) and a machine-precision
-  TACSBeam2ModRot-style cross-check (see PLAN.md). This function is ONLY
-  called for TACSLinearizedRotation -- its caller (addMatXptSensInnerProduct)
-  typeid-guards TACSQuadraticRotation/TACSQuaternionRotation to the base
-  FD/CS fallback, per a documented, review-flagged, currently-unresolved
-  finding: the director-field Xpts-adjoint fix below (the 6-arg
-  addDirectorRefNormalSens overload's ddpsi-only term, zeroed dd,
-  evaluated at the REAL vars) is CONFIRMED CORRECT and sufficient for
-  addMatXptSensInnerProduct's TACS_MASS_MATRIX branch (machine-precision
-  match against TACSBeam2ModRot) but does NOT fully resolve this
-  STIFFNESS_MATRIX branch's nonlinear-director discrepancy (~9% residual
-  at full rotation magnitude for TACSBeam2ModRot, confirmed non-FD-noise
-  via a dh-convergence check and confirmed genuinely q-dependent via a
-  vars-magnitude-scaling check) -- an additional, unidentified term
-  specific to this branch's larger kinematic chain (u0d/u0x/d1x/d2x/T/
-  XdinvT, absent from the simpler TACS_MASS_MATRIX branch) is suspected
-  but was not isolated within this session's investigation budget.
-
-  Task 7.4 (G2, SPEC-phase-7.md sec 3.2/4.2) update: TACSDirector.h now has
-  an addDirectorHessianRefNormalSens hook (Task 7.2) meant to close exactly
-  this residual, per SPEC's own recipe ("contract the already-computed
-  spsi/sphi stress-like weights, used as the dd argument, against
-  psi_q/phi_q"). NOT ATTEMPTED with new code this session -- a reasoned
-  non-attempt, not a time-pressure punt, based on a concrete finding from
-  the SAME session's Task 7.3 (G1) work: SPEC's analogous G1 recipe (also
-  "reuse the dd1phi/dd2phi/dd1psi/dd2psi accumulators, weighted by
-  spsi/sphi") turned out to be incomplete in a way only implementation-time
-  verification caught -- a genuine (u,q,q)-permutation cross term entirely
-  absent from the derivation. Re-deriving G2's own needed term by the same
-  rigor (not just trusting "dd=spsi/sphi" literally) shows the missing
-  "(dU/dC):(d^2C/dq^2)" piece needs the model's first-derivative weight
-  EVALUATED AT THE REAL STATE (a stress built from the REAL vars-projected
-  strain, not spsi/sphi, which are built from psi/phi-projected kinematics
-  instead) -- a genuinely NEW third kinematics chain this function does not
-  currently build at all (its own header comment above: "neither
-  corresponds to the real element state, since the bilinear form
-  psi^T*K*phi never references the actual vars-built strain at all").
-  Given G1's directly-analogous "trust the addendum's dd-weight framing
-  literally" attempt produced a wrong, ~130%-off result even AFTER adding
-  the tying-strain correction G2's own code already has, attempting G2's
-  parallel construction without first re-deriving and independently
-  verifying the correct "dd_real" weight (plus checking for an equally
-  hidden cross term) would very likely reproduce the same failure mode with
-  a different function's surface area to debug. Deferred, with this
-  concrete reasoning trail, rather than shipped wrong or guessed at.
+  addMatXptSensInnerProduct's TACS_STIFFNESS_MATRIX branch
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
@@ -2486,8 +2277,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
 
   // psi-direction and phi-direction director fields, linearized about the
-  // real vars (same reuse as Tasks 4.1/4.2; see Task 4.1's own comment for
-  // the redundant-recomputation efficiency note, unchanged here).
+  // real vars.
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2504,8 +2294,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
       vars, vars, vars, phi, fn2, d2, d2dot, d2ddot, d2phi);
 
   // psi-direction/phi-direction tying strains via the SAME linear tying-
-  // strain map, substituting psi/phi for vars/d1/d2 (SPEC.md sec 2.3.1
-  // piece 2/3's "psi/phi in place of vars" reuse).
+  // strain map, substituting psi/phi for vars/d1/d2.
   TacsScalar etypsi[basis::NUM_TYING_POINTS], etyphi[basis::NUM_TYING_POINTS];
   model::template computeTyingStrainDeriv<vars_per_node, basis>(
       Xpts, fn1, fn2, psi, d1psi, d2psi, phi, d1phi, d2phi, etypsi, etyphi);
@@ -2709,16 +2498,15 @@ void TACSBeamElement<quadrature, basis, director, model>::
   // Add the contributions from the derivative of the director, via the
   // 6-arg addDirectorRefNormalSens overload's "ddpsi" (perturbation-
   // direction) term with a zeroed "dd" (base-term) buffer, evaluated at
-  // the REAL vars (review fix: see the identical fix/rationale in
-  // addMatXptSensInnerProduct's TACS_MASS_MATRIX branch -- the earlier
-  // single-arg-with-phi/psi-as-"vars" calls silently dropped the q-qpsi
-  // cross term TACSQuadraticRotation/TACSQuaternionRotation's nonlinear
-  // director maps require). This isolated fix is verified EXACT for
-  // TACS_MASS_MATRIX (spot-checked against TACSBeam2ModRot, see PLAN.md)
-  // but this STIFFNESS_MATRIX branch retains a separate, unresolved
-  // residual for the nonlinear director classes even after this fix --
-  // see this function's own typeid guard at its call site
-  // (addMatXptSensInnerProduct) and PLAN.md's documented-failure note.
+  // the REAL vars (see the identical rationale in
+  // addMatXptSensInnerProduct's TACS_MASS_MATRIX branch -- a single-arg-
+  // with-phi/psi-as-"vars" call silently drops the q-qpsi cross term
+  // TACSQuadraticRotation/TACSQuaternionRotation's nonlinear director maps
+  // require). This fix is exact for TACS_MASS_MATRIX (verified against
+  // complex step) but this STIFFNESS_MATRIX branch retains a separate,
+  // unresolved residual for the nonlinear director classes even after it --
+  // see this function's typeid guard at its call site
+  // (addMatXptSensInnerProduct).
   TacsScalar zero_dd[dsize];
   memset(zero_dd, 0, dsize * sizeof(TacsScalar));
   director::template addDirectorRefNormalSens<vars_per_node, offset,
@@ -2740,26 +2528,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
 /*
   Add the derivative of the matrix inner product psi^T * mat * phi with
-  respect to the nodal coordinates (SPEC.md sec 2.2/2.3/2.3.1).
-  TACS_STIFFNESS_MATRIX (Task 4.3) and TACS_MASS_MATRIX (Task 4.2) are
-  analytic for TACSLinearizedRotation; TACS_MASS_MATRIX is additionally
-  confirmed analytic-exact for TACSQuadraticRotation/TACSQuaternionRotation
-  too (spot-checked against TACSBeam2ModRot). TACS_STIFFNESS_MATRIX's
-  analytic branch is exact for TACSLinearizedRotation but retains an
-  unresolved residual discrepancy for the two nonlinear director classes
-  (documented failure, review-flagged -- see
-  addMatXptSensInnerProductStiffness's own header comment and PLAN.md):
-  fixing the director-Xpts-adjoint misuse the review caught (the same fix
-  that made TACS_MASS_MATRIX exact) measurably improves but does not fully
-  resolve the STIFFNESS_MATRIX case, indicating a further, unidentified
-  term specific to this branch's larger kinematic chain (u0d/u0x/d1x/d2x/
-  T/XdinvT) that further investigation within this session could not
-  isolate -- forwarded to the base FD/CS implementation for
-  TACSQuadraticRotation/TACSQuaternionRotation specifically, per the
-  documented-failure-only fallback rule. TACS_GEOMETRIC_STIFFNESS_MATRIX
-  is a permanent reasoned-deferral fallback (Task 5.5, deferred pending
-  Task 5.3's director-closure root cause -- see the branch comment below
-  -- not an interim punt awaiting a later phase).
+  respect to the nodal coordinates.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::
@@ -2770,9 +2539,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
                               TacsScalar dfdXpts[]) {
   if (matType == TACS_STIFFNESS_MATRIX) {
     if (typeid(director) != typeid(TACSLinearizedRotation)) {
-      // Documented-failure fallback (see this function's header comment):
-      // the analytic derivation is exact for TACSLinearizedRotation but
-      // has an unresolved residual for the nonlinear director classes.
+      // Fallback: the analytic derivation is exact for TACSLinearizedRotation 
+      // but has not been implemented for the nonlinear director classes.
       TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
                                              psi, phi, Xpts, vars, dfdXpts);
       return;
@@ -2781,28 +2549,13 @@ void TACSBeamElement<quadrature, basis, director, model>::
                                        vars, dfdXpts);
     return;
   } else if (matType != TACS_MASS_MATRIX) {
-    // TACS_GEOMETRIC_STIFFNESS_MATRIX: reasoned deferral (Task 5.5), not
-    // attempted with new code this session -- not "deferred for time"
-    // alone. Task 5.3's own addMatDVSensInnerProduct attempt (this
-    // file, its own header comment) found that a strain-vector-through-
-    // Cs reformulation of the analogous DV-sensitivity bilinear form
-    // misses getMatType's SEPARATE director-Jacobian-closure scatter
-    // path (TacsBeamAddCrossDirectorJacobian/
-    // director::addDirectorJacobian), which is not reducible to a simple
-    // strain-pair contraction. This Xpts-sensitivity would need that
-    // SAME director-closure complexity resolved first, plus additional
-    // Xpts-specific bookkeeping (a triple-direction psi/phi/Xpts
-    // extension, a new nonlinear tying-strain Xpts-adjoint-Deriv helper,
-    // extended T/XdinvT/XdinvzT Xpts-adjoint terms) on top of it -- see
-    // PLAN.md's Phase 5 section (Task 5.5's own entry) for the full
-    // record. Any future matType beyond the enumerated set also lands
-    // here (SPEC.md sec 4.1/4.2/4.3).
+    // TACS_GEOMETRIC_STIFFNESS_MATRIX: not implemented analytically.
     TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale, psi,
                                            phi, Xpts, vars, dfdXpts);
     return;
   }
 
-  // TACS_MASS_MATRIX: no strain/stiffness path (SPEC.md sec 2.2 point 3) --
+  // TACS_MASS_MATRIX: no strain/stiffness path --
   // the mass matrix's Xpts-dependence flows through detXd(Xpts) (direct)
   // and through the psi/phi-direction director fields' own dependence on
   // Xpts via fn1/fn2 (the director map's reference-normal argument,
@@ -2823,9 +2576,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
 
   // psi-direction and phi-direction director fields, linearized about the
-  // real vars (same reuse as Task 4.1's DV-sens branch; see its own
-  // comment for the redundant-recomputation efficiency note, unchanged
-  // here).
+  // real vars
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize], d1phi[dsize];
   TacsScalar d2[dsize], d2dot[dsize], d2ddot[dsize], d2psi[dsize], d2phi[dsize];
   director::template computeDirectorRatesDeriv<vars_per_node, offset,
@@ -2936,21 +2687,18 @@ void TACSBeamElement<quadrature, basis, director, model>::
   // Route the psi-direction/phi-direction director fields' own Xpts-sens
   // through the reference normal, via the 6-arg addDirectorRefNormalSens
   // overload's "ddpsi" (perturbation-direction) term with a zeroed "dd"
-  // (base-term) buffer, evaluated at the REAL vars (review fix: an
-  // earlier revision called the 4-arg single-direction overload with
-  // phi/psi themselves substituted for the "vars" argument -- exact only
-  // by accident for TACSLinearizedRotation, whose director-map Jacobian
-  // is constant and independent of the linearization point, but silently
-  // wrong for TACSQuadraticRotation/TACSQuaternionRotation, whose
-  // Jacobian-vector-product sensitivity genuinely depends on the REAL q,
-  // not on phi/psi treated as if they were the state -- confirmed via a
-  // TACSBeam2ModRot spot-check, see PLAN.md). Zeroing "dd" isolates
-  // exactly the q-qpsi cross term (TACSDirector.h's own Cd/tmp-based
-  // blocks), which is precisely the Jacobian-vector-product's own
-  // Xpts-adjoint for a fixed real q and perturbation direction qpsi=phi
-  // (or psi) -- this is the SAME reusable machinery
-  // addAdjResXptProduct's own 6-arg call already exercises, not new
-  // algebra.
+  // (base-term) buffer, evaluated at the REAL vars (a 4-arg single-
+  // direction overload with phi/psi substituted for the "vars" argument
+  // would be exact only by accident for TACSLinearizedRotation, whose
+  // director-map Jacobian is constant and independent of the linearization
+  // point, but wrong for TACSQuadraticRotation/TACSQuaternionRotation,
+  // whose Jacobian-vector-product sensitivity genuinely depends on the REAL
+  // q, not on phi/psi treated as if they were the state; verified against
+  // complex step). Zeroing "dd" isolates exactly the q-qpsi cross term
+  // (TACSDirector.h's own Cd/tmp-based blocks), which is precisely the
+  // Jacobian-vector-product's own Xpts-adjoint for a fixed real q and
+  // perturbation direction qpsi=phi (or psi) -- the SAME reusable machinery
+  // addAdjResXptProduct's own 6-arg call already exercises, not new algebra.
   TacsScalar zero_dd[dsize];
   memset(zero_dd, 0, dsize * sizeof(TacsScalar));
   director::template addDirectorRefNormalSens<vars_per_node, offset,
@@ -2971,39 +2719,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
 /*
   Compute the derivative of the matrix inner product psi^T * mat * phi with
-  respect to the state variables (SPEC.md sec 0/2.2/3.3) -- assignment
-  (dfdu =), not accumulation.
-
-  psi^T*mat*phi = e_psi(vars)^T * Cs * e_phi(vars), where e_psi(vars) =
-  L(J_dir(vars)*psi) (L = model::evalStrain's fixed linear strain map,
-  J_dir(vars) = the director map's own Jacobian at vars, per
-  computeDirectorRatesDeriv). Differentiating w.r.t. vars again produces a
-  term proportional to H_dir(vars)[., psi] (the director map's SECOND
-  derivative, i.e. its own curvature) -- a genuinely different quantity
-  from evalStrainHessian's (u0x, d1x, d2x, e0ty)-space blocks (SPEC.md sec
-  1.1), which govern the strain map L's linearity, not the director map's.
-  L is unconditionally linear for TACSBeamLinearModel (the only active
-  model class), so this reduction is always valid; whether H_dir itself is
-  zero depends only on the director class:
-
-  - TACSLinearizedRotation: d(q,t) = q^x*t is linear in q -- its Jacobian
-    is the constant matrix -[t]^x, independent of q, so H_dir = 0
-    identically and psi^T*mat*phi does not depend on vars at all for
-    TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX. The memset below already
-    produces the correct (exactly zero) answer; no further computation is
-    needed or performed.
-  - TACSQuadraticRotation/TACSQuaternionRotation: their director maps are
-    genuinely nonlinear in q, so H_dir is generically nonzero (confirmed
-    via the mandatory complex-step self-check, SPEC.md sec 6.4, against
-    TACSBeam2ModRot -- see PLAN.md's Task 4.4 notes). This feature's A2D
-    machinery only extends to second order (SPEC.md sec 1.2), which
-    covers addJacobian's state-Hessian but not a third-order quantity like
-    this one; deriving/implementing the missing H_dir term is out of this
-    feature's scope. Forwarded to the base FD/CS fallback for these two
-    director classes specifically, per SPEC.md sec 2.2/3.3's documented-
-    failure-only fallback rule -- an honest, typeid-guarded routing
-    between the analytically-exact-zero case and the genuinely-unresolved
-    case, not a special-case forcing zero.
+  respect to the state variables
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director,
@@ -3025,67 +2741,18 @@ void TACSBeamElement<quadrature, basis, director,
     }
 
     // TACSQuadraticRotation/TACSQuaternionRotation, both TACS_STIFFNESS_MATRIX
-    // and TACS_MASS_MATRIX (Task 7.3, SPEC-phase-7.md sec 1.1/3.3/4.1):
-    // ATTEMPTED, DOCUMENTED FAILURE -- a genuinely deeper obstruction than
-    // SPEC-phase-7.md's own derivation anticipated, discovered only at
-    // implementation-verification time
-    // (test_element_mat_sv_sens_nonlinear_director,
-    // tests/element_tests/shell_tests/test_beam_element.py, exercising
-    // Beam2ModRot/Beam3ModRot), not a coding slip:
-    //
-    // (1) SPEC-phase-7.md sec 4.1's own recipe sweeps the third differentiation
-    //     direction e_k over the ROTATIONAL DOF range only, built from
-    //     addDirectorHessianProduct(t, dd=H_f-projected-weight, qa, qb) calls.
-    //     This implicitly assumes psi^T*K(vars)*phi's entire vars-dependence
-    //     factors through the director's own q-space curvature (d^2C/dq^2),
-    //     i.e. through TWO q-indices at a time. A direct re-derivation of the
-    //     beam's strain e = L(u0x,d1x,d2x,e0ty), tracing u0x's own
-    //     construction (u0x = T^T*[u0xi|d01|d02]*XdinvT, LINEAR in the
-    //     translational slice u0xi and QUADRATIC in q via d01=C(q)*fn1,
-    //     d02=C(q)*fn2), shows U = 0.5*e^T*Cs*e contains a genuine CUBIC
-    //     cross term of the schematic form u^T*Auq*B(q) (linear in the
-    //     translational DOFs u, quadratic in q via B(q)=[d01;d02]) -- whose
-    //     OWN third derivative is nonzero for the (u, q, q) index
-    //     combination. This means psi^T*K*phi's derivative w.r.t. a
-    //     TRANSLATIONAL output DOF k is NOT identically zero, contradicting
-    //     the "rotational-DOF-range-only" sweep -- confirmed empirically,
-    //     not just algebraically: a standalone diagnostic driver
-    //     (getMatType(STIFFNESS,vars) contracted with (psi,phi), central-
-    //     differenced directly w.r.t. each vars_k, independent of
-    //     TestElementMatSVSens's own internal FD) shows a real, non-noise
-    //     ~500 magnitude nonzero reference gradient at every TRANSLATIONAL
-    //     output DOF for Beam2ModRot, unchanged even when psi/phi's own
-    //     translational components are zeroed (ruling out a simpler
-    //     "psi_u/phi_u leaks through" explanation and confirming the
-    //     missing term is a genuine (q,q,u)-index permutation of the same
-    //     cubic cross term, not yet derived).
-    // (2) Independently, the ROTATIONAL output DOFs (which the implemented
-    //     term1+term2 recipe DOES target) still show a substantial
-    //     analytic-vs-FD mismatch of their own (e.g. Beam2ModRot,
-    //     analytic=1810.4 vs FD-reference=1562.3 before the tying-strain
-    //     fix below, worsening to 3614.3 after adding it -- both wrong, in
-    //     the SAME direction, ruling out a simple sign flip) -- a second,
-    //     independent bug in the already-implemented recipe, not yet
-    //     isolated.
-    //
-    // Both (1) and (2) were investigated this session (a dd1phi/dd2phi/
-    // dd1psi/dd2psi construction mirroring G2's own, PLUS the tying-strain
-    // addTyingStrainDerivXptSens contribution G2 also folds in, was
-    // implemented and verified NOT sufficient) but not resolved -- this is
-    // a genuine documented-failure per this feature's own attempt-first
-    // protocol, not a pre-planned punt. Forwarded to the base FD/CS
-    // fallback for BOTH matTypes until the missing (u,q,q)-permutation term
-    // and the rotational-DOF recipe's own remaining bug are both found.
+    // and TACS_MASS_MATRIX: not implemented analytically.
+    // Forwarded to the base FD/CS fallback for BOTH matTypes.
     TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                           Xpts, vars, dfdu);
     return;
   }
 
   if (matType == TACS_GEOMETRIC_STIFFNESS_MATRIX) {
-    // Analytic (Task 5.4), scoped to TACSLinearizedRotation like Task
-    // 5.2's getMatType port it reuses directly (same typeid-guard
-    // reason: the other two director classes' addDirectorJacobian
-    // overloads genuinely depend on vars for mat[] itself).
+    // Analytic, scoped to TACSLinearizedRotation like the getMatType port
+    // it reuses directly (same typeid-guard reason: the other two director
+    // classes' addDirectorJacobian overloads genuinely depend on vars for
+    // mat[] itself).
     if (typeid(director) != typeid(TACSLinearizedRotation)) {
       TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                             Xpts, vars, dfdu);
@@ -3124,8 +2791,7 @@ void TACSBeamElement<quadrature, basis, director,
     return;
   }
 
-  // Any future matType beyond the enumerated set: interim
-  // explicit-forward-to-base (SPEC.md sec 4.1/4.2/4.3).
+  // Any future matType beyond the enumerated set: explicit-forward-to-base.
   TACSElement::getMatSVSensInnerProduct(matType, elemIndex, time, psi, phi,
                                         Xpts, vars, dfdu);
 }
@@ -3893,19 +3559,6 @@ void TACSBeamElement<quadrature, basis, director, model>::
       n2.xd[i] = -mass_moment[1] * dfdq[i];
     }
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
-    // Analytic Xpts-sensitivity (SPEC.md sec 3.1; PLAN.md Phase 3 Task
-    // 3.2). Differentiates evalPointQuantity's own forward formula
-    // (TACSBeamElement.h:1939-1968) directly -- moments =
-    // con->evalMassMoments(...) and hence I0[3..5] are Xpts-independent
-    // (a per-quadrature-point constitutive evaluation, not a function of
-    // node location), so quantity = T*I0*T^T + parallel_axis(dXcg) has
-    // exactly two independent Xpts-dependent paths: T (via X0xi) and
-    // dXcg (via X0/n1/n2). No new algebra primitive is needed for
-    // either -- both reduce to plain 3x3 matrix arithmetic plus the
-    // EXISTING T (T is already an A2D::ADMat3x3 participating in this
-    // function's shared forward/reverse graph below) and
-    // transform->addTransformSens machinery the common tail already
-    // calls (TACSBeamElement.h:2638, unchanged).
     TacsScalar moments[6];
     con->evalMassMoments(elemIndex, pt, X0.x, moments);
     TacsScalar density = moments[0];
@@ -3915,30 +3568,6 @@ void TACSBeamElement<quadrature, basis, director, model>::
     I0[4] = -moments[5] + moments[1] * moments[2] / density;
     I0[5] = moments[3] - moments[1] * moments[1] / density;
 
-    // (1) T-dependent path: quantity_self = T*I0*T^T (I0 fixed, since it
-    // has no Xpts-dependence). For f = D:quantity_self (D the packed-
-    // symmetric adjoint dfdq, unpacked to a full 3x3), matrix calculus
-    // gives df/dT = 2*D*T*I0 -- seed this directly into T.Ad (T already
-    // participates in the shared A2D graph below; transform-
-    // >addTransformSens(X0xi.x, T.Ad, X0xi.xd) in the common tail
-    // converts T.Ad into the X0xi (hence Xpts) adjoint, unchanged).
-    //
-    // dfdq is packed-symmetric (6 slots: xx,xy,xz,yy,yz,zz), with
-    // f = sum_k dfdq[k]*quantity[k] -- each off-diagonal slot counted
-    // ONCE (matching every other quantity type in this function, e.g.
-    // TACS_ELEMENT_DENSITY_MOMENT's plain per-component dfdq[i] usage
-    // above). Unpacking dfdq into a full symmetric 3x3 matrix D such
-    // that sum_ij D_ij*A_ij reproduces that same packed sum requires
-    // HALVING the off-diagonal entries (verified via a standalone FD
-    // check before wiring this in: mirroring dfdq[1] into BOTH D[0][1]
-    // and D[1][0] at full value double-counts the off-diagonal
-    // contribution by a factor of 2).
-    // Every dfdq-driven contribution below is additionally scaled by
-    // "scale" (TacsTestElementQuantityXptSens draws a random, generically
-    // nonzero scale and folds it into its own FD reference exactly this
-    // way, TACSElementVerification.cpp:1678-1707 -- confirmed by reading
-    // the harness directly after an initial 2x-ish-looking mismatch
-    // turned out to be 1/scale, not a sign/formula error).
     TacsScalar Dmat[9] = {
         scale * dfdq[0],       scale * 0.5 * dfdq[1], scale * 0.5 * dfdq[2],
         scale * 0.5 * dfdq[1], scale * dfdq[3],       scale * 0.5 * dfdq[4],
@@ -3952,15 +3581,6 @@ void TACSBeamElement<quadrature, basis, director, model>::
       T.Ad[i] += 2.0 * DTI0[i];
     }
 
-    // (2) dXcg-dependent path: the parallel-axis contribution is the
-    // point-mass inertia tensor of a point of mass "density" located at
-    // dXcg = X0 - (moments[1]*n1 + moments[2]*n2)/density:
-    // quantity_parallel = density*(|dXcg|^2*Identity - dXcg (x) dXcg).
-    // For f = D:quantity_parallel, df/d(dXcg) =
-    // 2*density*(tr(D)*dXcg - D*dXcg); dXcg is linear in X0/n1/n2, so
-    // this seeds X0.xd/n1.xd/n2.xd directly (mirroring the existing
-    // TACS_ELEMENT_DENSITY_MOMENT branch's identical seed-then-fall-
-    // through pattern just above).
     TacsScalar dXcg[3];
     for (int i = 0; i < 3; i++) {
       dXcg[i] =
@@ -4237,23 +3857,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
 
 /*
   Compute the averaged stress resultants over the element's visualization
-  nodes (SPEC.md sec 1.5). Forward-only value computation, not a
-  sensitivity -- reuses the same state-independent geometry chain and
-  strain/stress evaluation addResidual/computeEnergies/getOutputData
-  already use, unchanged. Mirrors TACSShellElement::getAverageStresses
-  (TACSShellElement.h:1455-1540) and TACSBeamElement::getOutputData's own
-  per-vis-node loop above, with the same e0ty = 2*XdinvT.A[0]*gty
-  transform addResidual/addJacobian use (getOutputData's own copy of this
-  loop omits the "2*XdinvT.A[0]*" factor -- a pre-existing inconsistency
-  in getOutputData, out of scope for this task; this new function uses
-  the confirmed-correct formula).
-
-  Beam's stress vector has only TACSBeamConstitutive::NUM_STRESSES = 6
-  components (SPEC.md sec 1.1) -- avgStresses[0..5] receive the averaged
-  stress, and avgStresses[6..8] are deliberately left untouched (not
-  zeroed), matching the base class's own no-op-leaves-untouched
-  convention for any slot this element doesn't know how to fill (SPEC.md
-  sec 1.5).
+  nodes.
 */
 template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::getAverageStresses(

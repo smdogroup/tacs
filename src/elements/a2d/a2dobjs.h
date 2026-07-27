@@ -18,17 +18,6 @@ class Scalar {
 
 /*
   Active scalar type
-
-  Second-order extension (feature-beam-element-methods, SPEC.md sec 1.2.2):
-  valuep/valueh are additive fields for the forward-over-reverse
-  hforward()/hreverse() scheme -- valuep is a caller-chosen forward "seed"
-  direction, valueh is the resulting (projected) second-order reverse
-  accumulator. Extended in place rather than via a new parallel type: every
-  existing ADScalar construction call site in this codebase (grepped across
-  TACSBeamElement.h/TACSBeamUtilities.h) uses only the (), (TacsScalar), or
-  (TacsScalar, TacsScalar) constructors, none of which change shape here --
-  the new fields are simply zero-initialized alongside value/valued, so no
-  first-order call site is affected.
 */
 class ADScalar {
  public:
@@ -94,18 +83,6 @@ class Vec3 {
 
 /*
   Active vector type
-
-  Second-order extension (feature-beam-element-methods, SPEC.md sec 1.2.2):
-  xp[3]/xh[3] are additive fields for the forward-over-reverse
-  hforward()/hreverse() scheme -- xp is a caller-chosen forward "seed"
-  direction, xh is the resulting (projected) second-order reverse
-  accumulator, mirroring the existing x/xd (primal/first-order-adjoint)
-  convention. Extended in place rather than via a new parallel type: every
-  existing ADVec3 construction call site in this codebase (grepped across
-  TACSBeamElement.h/TACSBeamUtilities.h) uses only the default constructor,
-  so the new fields (zero-initialized everywhere, including inside the
-  existing 1-2 array-argument constructors) cannot affect any first-order
-  call site.
 */
 class ADVec3 {
  public:
@@ -338,18 +315,6 @@ class Mat3x3 {
 
 /*
   Active 3x3 matrix class
-
-  Second-order extension (feature-beam-element-methods, SPEC.md sec 1.2.2):
-  Ap[9]/Ah[9] are additive fields for the forward-over-reverse
-  hforward()/hreverse() scheme -- Ap is a caller-chosen forward "seed"
-  direction, Ah is the resulting (projected) second-order reverse
-  accumulator, mirroring the existing A/Ad (primal/first-order-adjoint)
-  convention. Extended in place rather than via a new parallel type: every
-  existing ADMat3x3 construction call site in this codebase (grepped across
-  TACSBeamElement.h/TACSBeamUtilities.h) uses only the default constructor,
-  so the new fields (zero-initialized everywhere, including inside the
-  existing 1-2 array-argument constructors) cannot affect any first-order
-  call site.
 */
 class ADMat3x3 {
  public:

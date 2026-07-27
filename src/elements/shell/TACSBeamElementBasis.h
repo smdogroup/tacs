@@ -139,20 +139,7 @@ class TACSBeamBasis {
       }
 
       // Skip the (nbrows - njrows) leftover row-components of THIS node's
-      // block once per outer node jx (not once per jm) -- found and fixed
-      // during Phase 2 (Task 2.3): the "mat += (nbrows-njrows)*ncols"
-      // pointer skip was previously placed *inside* the jm loop above,
-      // executing njrows times per jx instead of once, which walks mat[]
-      // out of bounds whenever nbrows != njrows (confirmed via a standalone
-      // Python simulation of the pointer arithmetic: for a 2-node element
-      // with nbrows=6/njrows=3, the old code touched flat index 248 against
-      // a 144-entry buffer). This exact call pattern (nbrows=vars_per_node
-      // != njrows=3) was never exercised before this feature -- beam's
-      // addResidual/computeEnergies never called this helper -- so the bug
-      // was latent. Mirrors TACSShellElementQuadBasis::
-      // addInterpFieldsOuterProduct's structurally-equivalent (and
-      // correct) placement of this same skip once per outer node,
-      // TACSShellElementQuadBasis.h:298-300.
+      // block once per outer node jx (not once per jm)
       mat += (nbrows - njrows) * ncols;
     }
   }
