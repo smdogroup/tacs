@@ -1,3 +1,3 @@
-from .properties import isoTubeBeamDims
+from .properties import beamPropertyToConstitutive, isoTubeBeamDims
 
-__all__ = ["isoTubeBeamDims"]
+__all__ = ["beamPropertyToConstitutive", "isoTubeBeamDims"]
