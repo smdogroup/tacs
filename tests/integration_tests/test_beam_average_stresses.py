@@ -6,19 +6,17 @@ from mpi4py import MPI
 from tacs import TACS, constitutive, elements
 
 """
-Regression test for TACSBeamElement::getAverageStresses (SPEC.md sec 1.5,
-PLAN.md Phase 3 Task 3.1).
+Regression test for TACSBeamElement::getAverageStresses.
 
-No existing harness covers getAverageStresses for any element type in the
-repo (it is a forward-only value computation exposed through
-Assembler.getAverageStresses, not a sensitivity, so the TacsTestElement*
-FD/CS harnesses do not apply). This test builds a single straight 2-node
-beam element directly via the low-level TACSAssembler interface (no
-Creator/BDF needed -- a single element, single process, does not need
-mesh partitioning), prescribes a KNOWN uniform axial-strain state directly
-via the state vector (bypassing solving entirely, since only the forward
-stress computation is under test), and checks the assembler-level average
-stress against the closed-form axial stress resultant s[0] = E*A*eps.
+getAverageStresses is a forward-only value computation exposed through
+Assembler.getAverageStresses (not a sensitivity), so the TacsTestElement*
+FD/CS harnesses do not apply. This test builds a single straight 2-node
+beam element directly via the low-level TACSAssembler interface (a single
+element does not need mesh partitioning), prescribes a known uniform
+axial-strain state directly via the state vector (bypassing solving, since
+only the forward stress computation is under test), and checks the
+assembler-level average stress against the closed-form axial stress
+resultant s[0] = E*A*eps.
 """
 
 
@@ -122,16 +120,11 @@ class BeamAverageStressesTest(unittest.TestCase):
         # No bending/torsion/shear should appear for a pure axial state.
         for i in range(1, 6):
             self.assertAlmostEqual(complex(avg[i]).real, 0.0, delta=self.atol)
-        # Beam's stress vector has only 6 components (SPEC.md sec 1.1) --
-        # avgStresses[6:9] (shell-only drill/extra slots) must stay
-        # untouched, not zeroed, matching the base class's no-op-leaves-
-        # untouched convention. Since Assembler.getAverageStresses always
-        # allocates a fresh zero buffer, this assertion (all exactly 0.0)
-        # cannot by itself distinguish "left untouched" from "explicitly
-        # zeroed" -- verified by code inspection that the implementation
-        # never writes to indices 6..8 (matching TACSShellElement's own
-        # convention, which is similarly untested at this level of
-        # precision today).
+        # The beam's stress vector has only 6 components; avgStresses[6:9]
+        # (shell-only drill/extra slots) are left untouched. Since
+        # Assembler.getAverageStresses allocates a fresh zero buffer, this
+        # assertion cannot distinguish "left untouched" from "explicitly
+        # zeroed", but the implementation never writes to indices 6..8.
         for i in range(6, 9):
             self.assertEqual(complex(avg[i]).real, 0.0)
 

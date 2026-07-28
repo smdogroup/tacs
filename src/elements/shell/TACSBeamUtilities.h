@@ -108,80 +108,37 @@ void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3 &axis,
 }
 
 /*
-  Add the cross-Hessian contribution between the two director fields (d1,
-  d2) to the element Jacobian matrix (SPEC.md sec 1.3.2, "Gap 2" -- the
-  feature's first genuinely novel derivation; no shell precedent, since
-  shell has only one director).
+  Add the cross-Hessian contribution between the two director fields (d1, d2)
+  to the element Jacobian. Shell elements have a single director, so there is
+  no precedent: director::addDirectorJacobian handles each director's own
+  self-Hessian and its coupling to the translational DOFs, but has no slot for
+  a cross term between the two directors.
 
-  director::addDirectorJacobian handles each director's own self-Hessian
-  (and its coupling to the translational DOFs) but is called once per
-  director and has no parameter slot for a genuine CROSS term between the
-  two directors -- this closure fills that gap.
+  Beam's two directors share the same per-node rotation vector q but use
+  different reference normals fn1/fn2. For TACSLinearizedRotation the director
+  map is d = crossProduct(q, t) = -skew(t)*q, so d(d_node)/d(q_node) =
+  -skew(t_node), a fixed per-node congruence factor. Propagating the
+  director-space cross-Hessian d2d1d2 through this congruence on both sides
+  gives, per node pair (i, j):
 
-  Beam's two directors are both parametrized by the SAME per-node
-  rotational sub-vector q (vars[offset..offset+NUM_PARAMETERS-1]), via
-  DIFFERENT reference normals fn1/fn2 (TACSBeamElementModel::
-  computeTyingStrain's own d1/d2 arrays are each produced by a separate
-  director::computeDirectorRates call sharing the same q). For
-  TACSLinearizedRotation (the only director class test_beam_element.py
-  exercises), TACSDirector.h's computeDirectorRates computes
-  d = crossProduct(q, t) = -skew(t)*q, so d(d_node)/d(q_node) = -skew(t_node)
-  exactly -- a fixed, state-independent per-node congruence factor (no
-  chain-rule re-derivation needed elsewhere; do not duplicate this
-  derivative inline, it belongs to the director class).
+    mat_block(q_i, q_j) -= skew(fn1_i) * d2d1d2[i,j] * skew(fn2_j)
 
-  Propagating d2d1d2 (the (d1-index, d2-index) cross-Hessian in raw
-  "director space", dsize x dsize row-major -- row = d1's compact index,
-  col = d2's compact index -- fed by the per-DOF hforward/hreverse sweep
-  in addJacobian, capturing the leakage that occurs because u0d's column
-  assembly couples u0xi/d01/d02 together) through this congruence on BOTH
-  sides gives, per node pair (i, j):
+  computed via mat3x3SkewMatSkewTransform (TACSElementAlgebra.h). Both
+  directors share q, so this accumulates additively into the same
+  (rotational, rotational) sub-block that the two director::addDirectorJacobian
+  calls also write into.
 
-    mat_block(q_i, q_j) += (-skew(fn1_i))^T * d2d1d2[i,j] * (-skew(fn2_j))
-                          = -skew(fn1_i) * d2d1d2[i,j] * skew(fn2_j)
-
-  (the two minus signs from the congruence factors cancel one of the two
-  transposes, leaving a single overall minus sign -- this is the identical
-  sign structure TACSDirector.h's own addDirectorJacobian uses for the
-  analogous SAME-director self term, "jac1 -= mat3x3SkewMatSkewTransform(
-  ti, d, tj, ...)", TACSDirector.h:406-418, confirming this derivation
-  against existing, tested code rather than a fresh, unverified sign
-  convention). mat3x3SkewMatSkewTransform(a, B, c, D) computes
-  D = skew(a)*B*skew(c) directly (TACSElementAlgebra.h) -- negate its
-  output to get the formula above.
-
-  Because both directors share the SAME per-node q, this block
-  accumulates ADDITIVELY into the SAME (rotational, rotational) sub-block
-  of mat[] that the two separate director::addDirectorJacobian calls (for
-  d1/fn1 and d2/fn2) also write into -- this is expected, not a collision:
-  the total Hessian w.r.t. (q_i, q_j) receives contributions from every
-  path (via d1 and via d2), all correctly combined via +=.
-
-  Location note: placed here (TACSBeamUtilities.h) rather than
-  TACSDirector.h because this closure needs BOTH director classes' chain
-  rules simultaneously (fn1's and fn2's), not one class's own method --
-  TACSDirector.h's per-director-class structure has no natural home for a
-  cross-class operation.
-
-  Scope boundary (SPEC.md sec 1.3.2, explicit and documented, not a silent
-  omission): this closure is EXACT only for TACSLinearizedRotation, where
-  d(director)/d(rotation param) is a fixed linear congruence. For
-  TACSQuadraticRotation/TACSQuaternionRotation this map is itself nonlinear
-  in the state (TACSDirector.h:621-/1481-), so an additional
-  "cross-director curvature" correction would be needed for exactness on
-  those two director classes -- test_beam_element.py does not exercise
-  them today. Do not silently extend this closure to other director
-  classes without adding that correction.
+  Exact only for TACSLinearizedRotation, where the director-to-rotation map is
+  a fixed linear congruence. TACSQuadraticRotation/TACSQuaternionRotation make
+  this map state-dependent and would need an additional cross-director
+  curvature correction.
 
   @param vars The full variable vector (unused for TACSLinearizedRotation's
-  fixed congruence factor; retained in the signature for parity with a
-  possible future nonlinear-director extension, per SPEC.md sec 1.3.2)
+  fixed congruence factor; retained for a possible nonlinear-director extension)
   @param fn1 The first reference normal direction at each node
   @param fn2 The second reference normal direction at each node
   @param d2d1d2 The (d1-index, d2-index) cross-Hessian, dsize x dsize
-  row-major, already alpha/gamma-scaled by the caller (mirroring
-  director::addDirectorJacobian's own "caller pre-scales d2d/d2du by
-  alpha" contract)
+  row-major, already alpha/gamma-scaled by the caller
   @param mat The element Jacobian matrix
 */
 template <int vars_per_node, int offset, int num_nodes>
@@ -213,14 +170,13 @@ void TacsBeamAddCrossDirectorJacobian(const TacsScalar vars[],
 
           // Reusing the SAME D[3*p+q] value (rather than a separately
           // computed transpose) for the (j,i) slot is valid only because
-          // this model's d2d1d2 3x3 node-pair blocks are themselves always
-          // symmetric (block[p,q] == block[q,p]): the static contribution
-          // is a rank-1 t1 (tangent) outer product with itself (SPEC.md
-          // sec 1.3.2's derivation), and the dynamics contribution is
-          // rho[5]*I3 -- both trivially symmetric 3x3 blocks. A future
-          // kinematics change that made d2d1d2's node-pair blocks
-          // non-symmetric would need a genuinely separate transposed
-          // computation here, not this shortcut.
+          // this model's d2d1d2 3x3 node-pair blocks are always symmetric
+          // (block[p,q] == block[q,p]): the static contribution is a
+          // rank-1 t1 (tangent) outer product with itself, and the
+          // dynamics contribution is rho[5]*I3 -- both symmetric 3x3
+          // blocks. A kinematics change that made d2d1d2's node-pair blocks
+          // non-symmetric would need a separate transposed computation
+          // here, not this shortcut.
           int rowT = offset + vars_per_node * j + q;
           int colT = offset + vars_per_node * i + p;
           mat[rowT * nvars + colT] -= D[3 * p + q];
@@ -232,14 +188,23 @@ void TacsBeamAddCrossDirectorJacobian(const TacsScalar vars[],
 
 /*
   Zero the second-order (.xp/.xh, .Ap/.Ah) fields on every second-order A2D
-  node in addJacobian's forward/reverse chain, ahead of a single per-DOF
-  hforward/hreverse sweep iteration (SPEC.md sec 1.3 step 3). These fields
-  are "+=" accumulators across hforward()/hreverse() calls, not
-  auto-reset, and (unlike the primal/first-order .x/.xd fields) most of
-  them are NOT freshly overwritten by every sweep iteration's own seed
-  step -- e.g. the translational sweep seeds only u0xi.xp, leaving
-  d01/d02/d01xi/d02xi's .xp stale from a previous iteration unless
-  explicitly zeroed here.
+  node before a per-DOF hforward/hreverse sweep iteration. These fields are
+  "+=" accumulators that are not auto-reset, and most are not overwritten by
+  each iteration's own seed step (e.g. the translational sweep seeds only
+  u0xi.xp), so stale values from a previous iteration must be cleared here.
+
+  @param u0xi The beam-axis displacement gradient (du0/dxi) node
+  @param d01 The first director node
+  @param d02 The second director node
+  @param d01xi The parametric gradient of the first director node
+  @param d02xi The parametric gradient of the second director node
+  @param u0d The displacement gradient matrix node
+  @param u0dXdinvT The displacement gradient matrix times XdinvT node
+  @param u0x The displacement gradient in the local frame node
+  @param d1t The first director rate before the frame transform node
+  @param d1x The first director gradient in the local frame node
+  @param d2t The second director rate before the frame transform node
+  @param d2x The second director gradient in the local frame node
 */
 static inline void TacsBeamZeroSecondOrderNodes(
     A2D::ADVec3 &u0xi, A2D::ADVec3 &d01, A2D::ADVec3 &d02, A2D::ADVec3 &d01xi,
@@ -273,16 +238,27 @@ static inline void TacsBeamZeroSecondOrderNodes(
 }
 
 /*
-  Contract the fixed, per-quadrature-point material Hessian blocks (from
-  model::evalStrainHessian, SPEC.md sec 1.1) against the forward-propagated
-  seed direction (u0xp/d1xp/d2xp, populated by a preceding hforward() call
-  sweep) to produce the Hessian-vector product at the u0x/d1x/d2x nodes
-  (u0xh/d1xh/d2xh), which the following hreverse() call sweep then
-  propagates back to the vars-space DOFs. This is the "H*p" step of the
-  per-DOF sweep (SPEC.md sec 1.3 step 3) -- a pure linear-algebra
-  contraction, not a differentiation; every array shape/index convention
-  below matches model::evalStrainHessian's own documented layout exactly
-  (row-major, e.g. d2u0xd1x[3*i+j] = d^2/d(u0x_i)d(d1x_j)).
+  Contract the fixed, per-quadrature-point material Hessian blocks
+  against the forward-propagated seed direction (u0xp/d1xp/d2xp) 
+  to produce the Hessian-vector product at the u0x/d1x/d2x
+  nodes (u0xh/d1xh/d2xh), which the following hreverse() sweep propagates back
+  to the vars-space DOFs. This is the "H*p" step of the per-DOF sweep: a pure
+  linear-algebra contraction, not a differentiation. All array shapes and
+  indices are row-major and match model::evalStrainHessian's layout, e.g.
+  d2u0xd1x[3*i+j] = d^2/d(u0x_i)d(d1x_j).
+
+  @param d2u0x The u0x self-Hessian block (9x9, row-major)
+  @param d2d1x The d1x self-Hessian block (3x3, row-major)
+  @param d2d2x The d2x self-Hessian block (3x3, row-major)
+  @param d2u0xd1x The mixed u0x-d1x Hessian block (9x3, row-major)
+  @param d2u0xd2x The mixed u0x-d2x Hessian block (9x3, row-major)
+  @param d2d1xd2x The mixed d1x-d2x Hessian block (3x3, row-major)
+  @param u0xp The forward-propagated u0x seed direction (input)
+  @param d1xp The forward-propagated d1x seed direction (input)
+  @param d2xp The forward-propagated d2x seed direction (input)
+  @param u0xh The u0x Hessian-vector product, accumulated (output)
+  @param d1xh The d1x Hessian-vector product, accumulated (output)
+  @param d2xh The d2x Hessian-vector product, accumulated (output)
 */
 static inline void TacsBeamContractStrainHessian(
     const TacsScalar d2u0x[81], const TacsScalar d2d1x[9],

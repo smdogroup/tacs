@@ -178,13 +178,10 @@ class ElementTest(unittest.TestCase):
 
     def test_quantity_xpt_sens(self):
         # Loop through every combination of transform type and beam element
-        # class and test the point-quantity Xpts-sensitivity (SPEC.md sec
-        # 3.1, Phase 3 Task 3.2). TACS_ELEMENT_MOMENT_OF_INERTIA is the only
-        # quantity type this feature brings in scope for
-        # addPointQuantityXptSens; the other quantity types
-        # (TACS_ELEMENT_DENSITY_MOMENT, TACS_FAILURE_INDEX,
-        # TACS_STRAIN_ENERGY_DENSITY) were already analytic before this
-        # feature and are not re-verified here.
+        # class and test the point-quantity Xpts-sensitivity.
+        # TACS_ELEMENT_MOMENT_OF_INERTIA is the only quantity type covered
+        # here; the others (TACS_ELEMENT_DENSITY_MOMENT, TACS_FAILURE_INDEX,
+        # TACS_STRAIN_ENERGY_DENSITY) are already analytic and not re-tested.
         for transform in self.transforms:
             with self.subTest(transform=transform):
                 for element_handle in self.elements:
@@ -255,32 +252,21 @@ class ElementTest(unittest.TestCase):
                                 self.assertFalse(fail)
 
     def test_element_mat_sv_sens_nonlinear_director(self):
-        # Task 7.3 (SPEC-phase-7.md sec 4.1/6.3): new test-surface work
-        # bringing a nonlinear-director beam typedef (ModRot, i.e.
-        # TACSQuadraticRotation) into this file's matrix-sens coverage --
-        # a prerequisite for G1/G2's own oracle to exist at all, per
-        # SPEC-phase-7.md sec 6.3. A separate, narrow element list (not
-        # self.elements) since test_element_jacobian/other tests in this
-        # file are NOT yet analytic for this director class (Phase 2 scope)
-        # and adding ModRot to the shared self.elements list would break
-        # them. No TACSBeam*Quaternion typedef exists in this codebase
-        # (confirmed by grep) -- TACSQuaternionRotation's addDirectorHessian*
-        # hooks are covered at the director-hook level instead
-        # (src/elements/shell/tests/test_director_hessian_second_order.cpp).
+        # Matrix-sensitivity coverage for the nonlinear-director beam typedef
+        # (ModRot, i.e. TACSQuadraticRotation). Uses a separate, narrow
+        # element list rather than self.elements because the other tests in
+        # this file are not yet analytic for this director class, so adding
+        # ModRot to the shared list would break them. TACSQuaternionRotation
+        # is not covered here (no TACSBeam*Quaternion typedef exists); its
+        # addDirectorHessian* hooks are covered at the director-hook level in
+        # src/elements/shell/tests/test_director_hessian_second_order.cpp.
         #
-        # CURRENTLY TRIVIALLY-PASSING FD-vs-FD for TACS_STIFFNESS_MATRIX/
-        # TACS_MASS_MATRIX specifically (both still forward to the base
-        # FD/CS fallback for this director class -- see
-        # TACSBeamElement::getMatSVSensInnerProduct's own documented-failure
-        # comment, Task 7.3: a genuine attempt found the third-derivative
-        # recipe SPEC-phase-7.md sec 4.1 describes is missing at least one
-        # term, discovered via this exact test). GEOMETRIC_STIFFNESS_MATRIX
-        # is genuinely analytic here (Task 5.4, TACSLinearizedRotation-only,
-        # unaffected by ModRot -- this subtest exercises ModRot's own
-        # base-FD-fallback path for that matType too, still a legitimate,
-        # if not novel, regression check). This test's own value: it is the
-        # regression net that will make TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX
-        # genuine the moment a future session resolves the documented gap.
+        # For TACS_STIFFNESS_MATRIX/TACS_MASS_MATRIX this currently exercises
+        # the base FD/CS fallback for this director class (analytic
+        # matrix-sens for ModRot is not yet implemented). For
+        # GEOMETRIC_STIFFNESS_MATRIX the sensitivity is analytic
+        # (TACSLinearizedRotation-only, unaffected by ModRot). Serves as a
+        # regression net either way.
         modrot_elements = [elements.Beam2ModRot, elements.Beam3ModRot]
         for transform in self.transforms:
             with self.subTest(transform=transform):

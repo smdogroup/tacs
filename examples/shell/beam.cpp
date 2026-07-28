@@ -27,18 +27,12 @@ int main(int argc, char *argv[]) {
   int model_deriv_fail = 0;
   model_deriv_fail +=
       TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>, TACSBeamLinearModel>();
-  // Committed instantiation exercising TACSBeamNonlinearModel through this
-  // harness (Phase 5 review feedback): this is the only committed,
-  // re-runnable regression check for evalStrain/evalStrainSens/
-  // evalStrainDeriv/evalStrainSensDeriv/evalStrainHessian/
-  // evalStrainHessianDeriv -- the "Deriv" family in particular has no
-  // other committed test, and is exactly what
-  // TACSBeamElement::getMatType's TACS_GEOMETRIC_STIFFNESS_MATRIX branch
-  // depends on. Not part of the automated pytest/testflo suite (this file
-  // is a standalone manual example, confirmed in Phase 5's own handoff),
-  // so still requires running this executable manually to exercise it,
-  // but is at least committed and reproducible rather than living only in
-  // an uncommitted scratch driver.
+  // Exercises TACSBeamNonlinearModel: the regression check for
+  // evalStrain/evalStrainSens/evalStrainDeriv/evalStrainSensDeriv/
+  // evalStrainHessian/evalStrainHessianDeriv. The "Deriv" family in
+  // particular is what TACSBeamElement::getMatType's
+  // TACS_GEOMETRIC_STIFFNESS_MATRIX branch depends on. This is a standalone
+  // manual example, so run the executable directly to exercise it.
   model_deriv_fail += TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>,
                                                    TACSBeamNonlinearModel>();
   // Covers the "...Deriv"-suffixed family (evalStrainDeriv,

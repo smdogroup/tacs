@@ -403,18 +403,6 @@ class TACSBeamLinearModel {
     f = 0.5*s.e (s = Cs*e via TACSBeamConstitutive::computeStress) with
     respect to the four strain-map inputs (u0x, d1x, d2x, e0ty).
 
-    Because e = L(u0x, d1x, d2x, e0ty) (see evalStrain, unchanged) is a
-    fixed *linear* map with constant coefficients, this Hessian is a pure
-    algebraic pullback of the packed-symmetric Cs[21] through L -- no
-    differentiation is performed at runtime, and the result does not
-    depend on the values of s/u0x/d1x/d2x/e0ty, only on Cs and scale (they
-    remain in the signature to match the call-site contract and shell's
-    analogous evalStrainHessian). Every Cs row/col index below was derived
-    directly from TACSBeamConstitutive::computeStress's packed-symmetric
-    index arithmetic (TACSBeamConstitutive.h:73-87), not transcribed from
-    SPEC.md a second time; each of the seven blocks is verified
-    independently against a central-difference-of-f ground truth (exact
-    for this quadratic f) in the Task 1.2 op-level scratch check.
   */
   static void evalStrainHessian(const TacsScalar scale, const TacsScalar s[],
                                 const TacsScalar Cs[], const TacsScalar u0x[],
@@ -472,36 +460,7 @@ class TACSBeamLinearModel {
     strain Hessian) into mat[]'s vars-space entries, plus the director-
     space Hessian accumulators (d2d1/d2d2) and their cross terms with the
     translational field (d2d1u/d2d2u) that director::addDirectorJacobian
-    consumes (SPEC.md sec 1.3.1, "Gap 1" -- found missing during Phase 2
-    implementation; mirrors TACSShellElementModel::addComputeTyingStrainHessian,
-    TACSShellElementModel.h:159-390, adapted to beam's two-director shape).
-
-    Beam's version is simpler than shell's template: beam has exactly two
-    tying fields (G12, G13), and -- confirmed directly from
-    computeTyingStrain's formula above -- G12 depends only on d1/fn1 and
-    G13 depends only on d2/fn2; the two fields never cross-couple in their
-    FIRST derivative structure. Shell's arbitrary-tying-field-pair double
-    loop therefore reduces, for beam, to a per-field loop (i1, i2 both G12,
-    or both G13); cross-field (G12, G13) pairs are skipped. This relies on
-    d2ety being genuinely zero for cross-field pairs, which in turn
-    requires Cs's e0ty-e0ty off-diagonal entry (Cs[19], the G12-G13 shear
-    coupling term feeding evalStrainHessian's d2e0ty[1]/d2e0ty[2]) to be
-    zero -- confirmed directly from TACSIsoTubeBeamConstitutive::
-    evalTangentStiffness (TACSIsoTubeBeamConstitutive.cpp:190-212, the only
-    constitutive class test_beam_element.py exercises), which memsets Cs
-    to zero and never sets index 19 (a circular/symmetric tube has no
-    shear-direction coupling). A future constitutive model with nonzero
-    Cs[19] would need this loop extended back to shell's full arbitrary-
-    pair structure -- not needed today.
-
-    Shell's more general version also takes external tying-strain-vs-
-    other-strain cross-Hessian inputs (d2etyu/d2etyd, populated from a real
-    material coupling via TacsShellAddTyingDispCoupling). Beam's
-    evalStrainHessian above never produces any cross term between e0ty and
-    (u0x, d1x, d2x) -- so beam's analogous d2etyu/d2etyd1/d2etyd2 inputs
-    are always zero-filled placeholders at every call site in this
-    feature, kept in the signature only for structural parity with
-    shell's template (and possible future extensibility).
+    consumes.
 
     @param alpha Unused (kept for signature parity with shell's template;
     every scale factor entering this closure is already baked into d2ety
@@ -554,8 +513,7 @@ class TACSBeamLinearModel {
       basis::template interpFieldsGrad<3, 3>(pt1, Xpts, Xxi1);
 
       // Accumulate the i2-summed (d2ety[i1, :]-weighted) gradients for the
-      // matching field only -- cross-field (G12, G13) pairs are skipped
-      // (see the class-level comment above).
+      // matching field only -- cross-field (G12, G13) pairs are skipped.
       TacsScalar du2[dsize], dd2[dsize];
       memset(du2, 0, dsize * sizeof(TacsScalar));
       memset(dd2, 0, dsize * sizeof(TacsScalar));
@@ -630,17 +588,14 @@ class TACSBeamNonlinearModel {
  public:
   /*
     Tying strain (shear g12/g13) is left in its LINEAR form for this
-    nonlinear model, byte-identical to TACSBeamLinearModel's own
+    nonlinear model, identical to TACSBeamLinearModel's
     computeTyingStrain/addComputeTyingStrainTranspose/computeTyingStrainDeriv
-    above -- confirmed directly from this (formerly commented-out) block's
-    own computeTyingStrain body, which was already an exact copy of the
-    linear model's before this task touched anything. Only evalStrain's
-    axial/torsion/bending components pick up the geometric (u0x-quadratic
-    and u0x-director-bilinear) nonlinearity; e0ty stays a linear function
-    of (Xxi, Uxi, d, fn) throughout. computeTyingStrainDeriv is duplicated
-    here (rather than shared) only so `model::computeTyingStrainDeriv` is
-    callable identically for either model class from generic templated
-    call sites (Task 5.2), per PLAN.md Task 5.1's explicit instruction.
+    above. Only evalStrain's axial/torsion/bending components pick up the
+    geometric (u0x-quadratic and u0x-director-bilinear) nonlinearity; e0ty
+    stays a linear function of (Xxi, Uxi, d, fn) throughout.
+    computeTyingStrainDeriv is duplicated here (rather than shared) so that
+    `model::computeTyingStrainDeriv` is callable identically for either
+    model class from generic templated call sites.
   */
   template <int vars_per_node, class basis>
   static void computeTyingStrain(const TacsScalar Xpts[],
@@ -771,8 +726,8 @@ class TACSBeamNonlinearModel {
   }
 
   /**
-    Nonlinear strain measure (SPEC.md sec 2.4.4.a). u0x/d1x/d2x are indexed
-    exactly as in TACSBeamLinearModel above: u0x[3*b+a] = d(u_a)/d(xi_b)
+    Nonlinear strain measure. u0x/d1x/d2x are indexed exactly as in
+    TACSBeamLinearModel above: u0x[3*b+a] = d(u_a)/d(xi_b)
     with xi_0 the beam-axis parametric direction and xi_1/xi_2 the two
     transverse directions, so u0x[0..2] = d(u)/dxi_0 (the axial-direction
     gradient of the full displacement vector), u0x[3*1+j] = d(u)/dxi_1,
@@ -809,6 +764,12 @@ class TACSBeamNonlinearModel {
     e[5] = e0ty[1];
   }
 
+  /**
+    Strain (e) and its directional derivative (ed) along
+    (u0xd, d1xd, d2xd, e0tyd) -- the directional derivative of evalStrain
+    above, differentiated term by term. e0ty enters linearly, so ed[4]/ed[5]
+    are just e0tyd.
+  */
   static inline void evalStrainDeriv(
       const TacsScalar u0x[], const TacsScalar d1x[], const TacsScalar d2x[],
       const TacsScalar e0ty[], const TacsScalar u0xd[], const TacsScalar d1xd[],
@@ -838,13 +799,9 @@ class TACSBeamNonlinearModel {
   }
 
   /**
-    Sensitivity of f = scale*dfde.e w.r.t. (u0x, d1x, d2x, e0ty). Widened
-    to take/produce e0ty/de0ty (unlike this class's pre-Task-5.1 empty
-    stub, which had neither in its signature) to match
-    TACSBeamLinearModel::evalStrainSens's own shape -- confirmed necessary
-    by this signature mismatch surfacing as a real compile error against
-    TacsTestBeamModelDerivatives's existing (unchanged) call site, this
-    task's RED step.
+    Sensitivity of f = scale*dfde.e w.r.t. (u0x, d1x, d2x, e0ty). Takes and
+    produces e0ty/de0ty to match TACSBeamLinearModel::evalStrainSens's
+    signature, as required by the TacsTestBeamModelDerivatives call site.
   */
   static inline void evalStrainSens(
       const TacsScalar scale, const TacsScalar dfde[], const TacsScalar u0x[],
@@ -880,8 +837,7 @@ class TACSBeamNonlinearModel {
     Directional derivative (along u0xd/d1xd/d2xd/e0tyd, with dfde also
     perturbed by dfded) of evalStrainSens's output -- mechanical product-
     rule differentiation of every term in evalStrainSens above, verified
-    against complex-step in the Task 5.1 scratch check (see PLAN.md's
-    progress note for this task).
+    against complex step.
   */
   static inline void evalStrainSensDeriv(
       const TacsScalar scale, const TacsScalar dfde[], const TacsScalar u0x[],
@@ -931,10 +887,10 @@ class TACSBeamNonlinearModel {
 
   /**
     Hessian of f = 0.5*s.e (s = Cs*e) w.r.t. (u0x, d1x, d2x, e0ty), for the
-    genuinely nonlinear e[0..3] above. Unlike TACSBeamLinearModel's
-    evalStrainHessian (a pure algebraic pullback of Cs, independent of the
-    strain-state values, since e is linear there), this Hessian has two
-    parts everywhere e is not linear:
+    nonlinear e[0..3] above. Unlike TACSBeamLinearModel's evalStrainHessian
+    (a pure algebraic pullback of Cs, independent of the strain-state
+    values, since e is linear there), this Hessian has two parts everywhere
+    e is not linear:
       (1) the "material" part J^T*Cs*J, where J = de/dx is now
           state-dependent (e.g. de[0]/du0x[0] = 1+u0x[0]); and
       (2) a "geometric" part sum_i s[i]*(d2e[i]/dx2), nonzero only where
@@ -943,21 +899,16 @@ class TACSBeamNonlinearModel {
           e[1..3] are bilinear cross terms between u0x and d1x/d2x, with
           no self-quadratic d1x/d1x, d2x/d2x, or d1x/d2x term at all),
           means every one of these second derivatives is a CONSTANT
-          matrix, independent of the current state (confirmed directly:
-          differentiating evalStrain's e[0..3] twice never reproduces any
-          of u0x/d1x/d2x). This is what makes evalStrainHessianDeriv below
-          tractable without a third round of state-dependent algebra: only
-          the *weights* (s vs. sd) change, never the constant geometric
-          shape.
+          matrix, independent of the current state. This makes
+          evalStrainHessianDeriv below tractable without a third round of
+          state-dependent algebra: only the weights (s vs. sd) change,
+          never the constant geometric shape.
 
     Implemented via small (<=9-wide) local Jacobian-row loops rather than
-    fully unrolled scalar assignments (a deviation from
-    TACSBeamLinearModel::evalStrainHessian's fully-unrolled style,
-    documented here per this feature's convention of flagging style
-    deviations at their point of introduction): the nonlinear u0x block is
-    9x9 (81 entries after the cross-blocks), an order of magnitude larger
-    than the linear model's, and the loop form is verified directly
-    against complex-step rather than transcribed by hand.
+    fully unrolled scalar assignments (unlike TACSBeamLinearModel::
+    evalStrainHessian): the nonlinear u0x block is 9x9 (81 entries after
+    the cross-blocks), an order of magnitude larger than the linear
+    model's. Verified against complex step.
   */
   static void evalStrainHessian(const TacsScalar scale, const TacsScalar s[],
                                 const TacsScalar Cs[], const TacsScalar u0x[],
@@ -1104,16 +1055,15 @@ class TACSBeamNonlinearModel {
   /**
     Directional derivative (along the "path" direction u0xd/d1xd/d2xd,
     with the stress itself also perturbed to sd = Cs*ed) of
-    evalStrainHessian's output. Per the class comment on evalStrainHessian,
-    every geometric-term shape above is a CONSTANT matrix -- so its
-    directional derivative needs only s -> sd, no new shape derivation.
-    The material term J^T*Cs*J does need differentiating, via
+    evalStrainHessian's output. Per the comment on evalStrainHessian, every
+    geometric-term shape above is a CONSTANT matrix -- so its directional
+    derivative needs only s -> sd, no new shape derivation. The material
+    term J^T*Cs*J does need differentiating, via
     d(J^T*Cs*J)/dh = Jd^T*Cs*J + J^T*Cs*Jd, where Jd (the Jacobian rows'
-    own directional derivatives) is exactly the same row structure as J
+    own directional derivatives) has exactly the same row structure as J
     with each state variable replaced by its "d"-direction counterpart
-    (mechanical, since every J entry above is at most linear in the
-    state) -- verified against complex-step in the Task 5.1/5.2 scratch
-    checks, not hand-verified term-by-term a second time.
+    (since every J entry above is at most linear in the state). Verified
+    against complex step.
   */
   static void evalStrainHessianDeriv(
       const TacsScalar scale, const TacsScalar s[], const TacsScalar Cs[],
@@ -1519,10 +1469,7 @@ int TacsTestBeamModelDerivatives(double dh = 1e-7, int test_print_level = 2,
 
   fail = fail || (max_err > test_fail_atol || max_rel > test_fail_rtol);
 
-  // Compute the analytic Hessian blocks (ported from
-  // TacsTestShellModelDerivatives's structure, ~TACSShellElementModel.h:4110
-  // onward, adapted to beam's smaller 4-nonlinear-strain kinematics -- see
-  // PLAN.md Task 5.1).
+  // Compute the analytic Hessian blocks.
   TacsScalar d2u0x[81], d2d1x[9], d2d2x[9], d2e0ty[4], d2u0xd1x[27],
       d2u0xd2x[27], d2d1xd2x[9];
   model::evalStrainHessian(detXd, s, Cs, u0x, d1x, d2x, e0ty, d2u0x, d2d1x,
@@ -1770,22 +1717,17 @@ int TacsTestBeamModelDerivatives(double dh = 1e-7, int test_print_level = 2,
 }
 /*
   FD/CS checks of TACSBeamNonlinearModel's "...Deriv"-suffixed family
-  (evalStrainDeriv, evalStrainSensDeriv, evalStrainHessianDeriv), added per
-  Phase 5's review feedback: these are exactly the methods
-  TACSBeamElement::getMatType's TACS_GEOMETRIC_STIFFNESS_MATRIX branch
-  depends on, and (unlike evalStrain/evalStrainSens/evalStrainHessian,
-  covered by TacsTestBeamModelDerivatives above) had no committed,
-  reproducible regression coverage before this function -- only an
-  uncommitted scratch complex-step driver, per this task's own PLAN.md
-  note.
+  (evalStrainDeriv, evalStrainSensDeriv, evalStrainHessianDeriv): these are
+  the methods TACSBeamElement::getMatType's TACS_GEOMETRIC_STIFFNESS_MATRIX
+  branch depends on, and (unlike evalStrain/evalStrainSens/evalStrainHessian,
+  covered by TacsTestBeamModelDerivatives above) had no other regression
+  coverage.
 
   This is a SEPARATE function from TacsTestBeamModelDerivatives (rather
   than folded into it) because that function is templated on `model` and
-  also instantiated with TACSBeamLinearModel, which does not have (and, by
-  this feature's own design -- mirroring TACSShellLinearModel's identical
-  omission -- is not meant to have) any of these three methods; hardcoding
-  this function to TACSBeamNonlinearModel avoids breaking that other
-  instantiation.
+  also instantiated with TACSBeamLinearModel, which does not have any of 
+  these three methods; hardcoding this function to TACSBeamNonlinearModel 
+  avoids breaking that other instantiation.
 */
 int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,
                                           int test_print_level = 2,

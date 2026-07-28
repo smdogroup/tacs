@@ -4,50 +4,37 @@ from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive
 
 """
-Euler-column buckling test for TACSBeamElement (Phase 5, Task 5.7) -- the
-first beam buckling correctness oracle in this repository, and (per this
-feature's own SPEC pass) arguably the first direct
-getMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX) oracle for any element in the
-repo, shell included.
+Euler-column buckling test for TACSBeamElement -- a beam buckling
+correctness oracle and a direct
+getMatType(TACS_GEOMETRIC_STIFFNESS_MATRIX) check.
 
 Model: the same 1m-long, 5-element rectangular-cross-section beam mesh
 used by test_rectangle_beam_buckling.py (beam_model_translated.bdf,
 t=0.05m thick, w=0.1m wide, E=70e3, rho=2700 -- a self-consistent, not
-SI, unit system already exercised by that passing test), fixed at node 1
-(all 6 dof, an SPC1 in the BDF) and axially loaded at the free end (node
-6) via BDF LOAD case 3 ("x-axial"), a unit +x force. This is a classic
-CANTILEVER (fixed-free) Euler column: end-condition factor K=2.
+SI, unit system), fixed at node 1 (all 6 dof, an SPC1 in the BDF) and
+axially loaded at the free end (node 6) via BDF LOAD case 3 ("x-axial"),
+a unit +x force. This is a classic cantilever (fixed-free) Euler column:
+end-condition factor K=2.
 
 Closed-form check: P_cr = pi^2 * E * I_min / (K*L)^2, where I_min is the
 weaker-axis area moment of inertia (buckling occurs about the weak axis
-first). For a solid rectangle, TACSIsoRectangleBeamConstitutive's own
-evalMomentsOfInertia (src/constitutive/TACSIsoRectangleBeamConstitutive.cpp)
-gives Iz = w*t^3/12 (bending stiffness Cs[11], beam's "bend1"/e[2] strain
-component) and Iy = t*w^3/12 (Cs[15], "bend2"/e[3]) -- confirmed directly
-from that file's evalTangentStiffness. With t=0.05 < w=0.1, Iz = I_min =
-0.1*0.05**3/12 = 1.041666...e-6 is the governing (weak-axis) moment of
-inertia, so:
+first). For a solid rectangle, TACSIsoRectangleBeamConstitutive gives
+Iz = w*t^3/12 (bending stiffness Cs[11], beam's "bend1"/e[2] strain
+component) and Iy = t*w^3/12 (Cs[15], "bend2"/e[3]). With t=0.05 < w=0.1,
+Iz = I_min = 0.1*0.05**3/12 = 1.041666...e-6 is the governing (weak-axis)
+moment of inertia, so:
 
     P_cr = pi**2 * 70e3 * (0.1*0.05**3/12) / (2*1.0)**2 ~= 0.17990
 
-The eigenvalue reported by TACS's buckling analysis is the load factor
-on the applied reference load (a unit +x force per the BDF's FORCE card,
-scale=1.0 via addLoadFromBDF's own default), so the lowest buckling
-eigenvalue should equal P_cr directly (no additional scaling needed).
+The eigenvalue reported by TACS's buckling analysis is the load factor on
+the applied reference load, so the lowest buckling eigenvalue should equal
+P_cr directly.
 
-Since the sensitivity checks (test_total_dv_sensitivities/
-test_total_xpt_sensitivities, run automatically by PyTACSTestCase for
-every function listed in FUNC_REFS) route the GEOMETRIC_STIFFNESS_MATRIX
-matrix-sens methods through whichever path Tasks 5.3/5.4/5.5 land in
-(analytic or the base class's own generic FD-based fallback --
-TACSElement::addMatDVSensInnerProduct/addMatXptSensInnerProduct/
-getMatSVSensInnerProduct are genuine FD wrappers around getMatType
-itself, confirmed by reading src/elements/TACSElement.cpp directly, not
-"return 0" stubs), this test's sensitivity checks are a real,
-independent, physically-grounded exercise of getMatType regardless of
-whether 5.3-5.5 land analytically or via documented fallback -- this is
-why this test was written before Tasks 5.3-5.5, per the coordinator's
-suggestion, rather than only at the very end of the phase.
+The sensitivity checks (test_total_dv_sensitivities/
+test_total_xpt_sensitivities, run automatically by PyTACSTestCase for every
+function listed in FUNC_REFS) route the GEOMETRIC_STIFFNESS_MATRIX
+matrix-sens methods through TACSElement's FD wrappers around getMatType,
+giving an independent, physically-grounded exercise of getMatType.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -77,13 +64,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         Setup pytacs object for problems we will be testing.
         """
 
-        # Overwrite default check values -- mirrors
-        # test_shell_tri_buckling_axial.py's own real/complex split; real
-        # mode is loose (2e-1) there for a much coarser/stiffer tri mesh,
-        # this beam mesh (5 quadratic elements on the first Euler mode)
-        # should do noticeably better, but keep some margin for
-        # discretization error rather than hard-coding an arbitrarily
-        # tight tolerance without a convergence study.
+        # Overwrite default check values. Real mode keeps some margin for
+        # discretization error (5 quadratic elements on the first Euler
+        # mode) rather than an arbitrarily tight tolerance.
         if self.dtype == complex:
             self.rtol = 1e-8
             self.atol = 1e-8
@@ -135,17 +118,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         )
         buckle_prob.setOption("L2Convergence", 1e-20)
         buckle_prob.setOption("L2ConvergenceRel", 1e-20)
-        # BDF LOAD case 3 is a unit +x force at the free end (node 6);
-        # since node 6 sits at higher x than the fixed node 1, +x is
-        # TENSION, not compression. Confirmed this session: using it
-        # unscaled gives a buckling eigenvalue of the correct magnitude
-        # but negative sign (TACS's K + lambda*G convention reports the
-        # scale factor, of either sign, needed on the REFERENCE load to
-        # reach the critical state -- a tensile reference load needs a
-        # negative multiple, i.e. reversed into compression, to buckle).
-        # scale=-1.0 applies the load in compression directly, so the
-        # reported eigenvalue is directly comparable to the positive
-        # closed-form P_cr.
+        # BDF LOAD case 3 is a unit +x force at the free end (node 6); since
+        # node 6 sits at higher x than the fixed node 1, +x is tension, not
+        # compression. Applied unscaled it gives a buckling eigenvalue of
+        # the correct magnitude but negative sign (TACS's K + lambda*G
+        # convention reports the scale factor, of either sign, needed on the
+        # reference load to reach the critical state). scale=-1.0 applies
+        # the load in compression directly, so the reported eigenvalue is
+        # directly comparable to the positive closed-form P_cr.
         buckle_prob.addLoadFromBDF(loadID=3, scale=-1.0)
 
         return [buckle_prob], fea_assembler
