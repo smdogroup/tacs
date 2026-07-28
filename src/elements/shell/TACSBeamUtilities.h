@@ -239,7 +239,7 @@ static inline void TacsBeamZeroSecondOrderNodes(
 
 /*
   Contract the fixed, per-quadrature-point material Hessian blocks
-  against the forward-propagated seed direction (u0xp/d1xp/d2xp) 
+  against the forward-propagated seed direction (u0xp/d1xp/d2xp)
   to produce the Hessian-vector product at the u0x/d1x/d2x
   nodes (u0xh/d1xh/d2xh), which the following hreverse() sweep propagates back
   to the vars-space DOFs. This is the "H*p" step of the per-DOF sweep: a pure

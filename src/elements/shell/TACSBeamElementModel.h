@@ -1725,8 +1725,8 @@ int TacsTestBeamModelDerivatives(double dh = 1e-7, int test_print_level = 2,
 
   This is a SEPARATE function from TacsTestBeamModelDerivatives (rather
   than folded into it) because that function is templated on `model` and
-  also instantiated with TACSBeamLinearModel, which does not have any of 
-  these three methods; hardcoding this function to TACSBeamNonlinearModel 
+  also instantiated with TACSBeamLinearModel, which does not have any of
+  these three methods; hardcoding this function to TACSBeamNonlinearModel
   avoids breaking that other instantiation.
 */
 int TacsTestBeamNonlinearModelDerivFamily(double dh = 1e-7,

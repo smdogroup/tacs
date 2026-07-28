@@ -927,7 +927,8 @@ class TACSQuadraticRotation {
     Reference-normal (Xpts) adjoint of addDirectorHessianProduct above.
     Since H(t,dd) is linear in t for fixed dd, val = qa^T*H*qb is linear in
     t and its gradient w.r.t. t is a closed-form, t-independent 3-vector
-    (from qa^T*H*qb = -(dd.t)*(qa.qb) + 0.5*(qa.dd)*(t.qb) + 0.5*(qa.t)*(dd.qb)):
+    (from qa^T*H*qb = -(dd.t)*(qa.qb) + 0.5*(qa.dd)*(t.qb) +
+    0.5*(qa.t)*(dd.qb)):
 
       d(val)/dt = -(qa.qb)*dd + 0.5*(qa.dd)*qb + 0.5*(dd.qb)*qa
 

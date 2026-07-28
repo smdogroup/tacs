@@ -2539,7 +2539,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                               TacsScalar dfdXpts[]) {
   if (matType == TACS_STIFFNESS_MATRIX) {
     if (typeid(director) != typeid(TACSLinearizedRotation)) {
-      // Fallback: the analytic derivation is exact for TACSLinearizedRotation 
+      // Fallback: the analytic derivation is exact for TACSLinearizedRotation
       // but has not been implemented for the nonlinear director classes.
       TACSElement::addMatXptSensInnerProduct(matType, elemIndex, time, scale,
                                              psi, phi, Xpts, vars, dfdXpts);
