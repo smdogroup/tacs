@@ -443,7 +443,7 @@ class ADMat3x3MatMult {
       Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
     }
   }
-  
+
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       Mat3x3MatMultCore(A.Ap, B.A, C.Ap);
@@ -738,7 +738,7 @@ class MatTrans3x3ADMatMult {
       Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
     }
   }
-  
+
   void hforward() {
     if (TacsRealPart(scale) == 1.0) {
       MatTrans3x3MatMultCore(A.A, B.Ap, C.Ap);
