@@ -54,7 +54,6 @@ rel_inc_dirs = [
     "src/elements/dynamics",
     "src/elements/shell",
     "src/elements/basis",
-    "src/elements/a2d",
     "src/constitutive",
     "src/functions",
     "src/io",

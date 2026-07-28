@@ -28,7 +28,6 @@ def get_include():
         "src/elements/dynamics",
         "src/elements/basis",
         "src/elements/shell",
-        "src/elements/a2d",
         "src/constitutive",
         "src/functions",
         "src/io",
