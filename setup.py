@@ -68,7 +68,12 @@ lib_dirs.extend(get_global_dir(rel_lib_dirs))
 
 # This should be made more general so that you can specify alternate
 # locations for the installation of AMD/METIS
-default_ext_inc = ["extern/AMD/Include", "extern/UFconfig", "extern/metis/include"]
+default_ext_inc = [
+    "extern/AMD/Include",
+    "extern/UFconfig",
+    "extern/metis/include",
+    "extern/a2d/include",
+]
 inc_dirs.extend(get_global_dir(default_ext_inc))
 
 # Add the numpy/mpi4py directories
@@ -84,7 +89,7 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
             libraries=libs,
             library_dirs=lib_dirs,
             runtime_library_dirs=runtime_lib_dirs,
-            extra_compile_args=["-std=c++11"],
+            extra_compile_args=["-std=c++17"],
         )
     )
 

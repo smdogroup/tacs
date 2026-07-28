@@ -27,12 +27,15 @@ def get_include():
         "src/elements",
         "src/elements/dynamics",
         "src/elements/basis",
+        "src/elements/shell",
+        "src/elements/a2d",
         "src/constitutive",
         "src/functions",
         "src/io",
         "extern/AMD/Include",
         "extern/UFconfig",
         "extern/metis/include",
+        "extern/a2d/include",
     ]
 
     inc_dirs = []
