@@ -61,7 +61,13 @@ This will generate a .plt or .vtk file respectively.
 
 # Setting up and installing TACS from source #
 
-In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1.0 for mesh partitioning. The 5.1.0 version of Metis can be obtained [here](https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file.
+In addition to a working implementation of MPI, BLAS and LAPACK, TACS requires Metis 5.1.0 for mesh partitioning. The 5.1.0 version of Metis can be obtained [here](https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/). TACS can optionally use the approximate minimum degree ordering routines from AMD/UFConfig. These were distributed separately, but can now be obtained from SuiteSparse package. If you use AMD, be sure to define the TACS_HAS_AMD_LIBRARY flag within the Makefile.in configuration file. A C++17 compliant compiler is required.
+
+TACS also bundles the [A2D](https://github.com/smdogroup/a2d) header-only automatic differentiation library as a git submodule at `extern/a2d`. Clone TACS with `git clone --recurse-submodules`, or if you have already cloned it, populate the submodule by running:
+
+    git submodule update --init
+
+from the root TACS directory.
 
 To convert TACS FH5 output files to tecplot-compatible files, you must install [TecIO](https://tecplot.azureedge.net/products/tecio/2021r2/tecio.tgz). This can be placed in the tacs/extern directory. There is also a FH5 to VTK converter as well that produces (large) ASCII files.
 

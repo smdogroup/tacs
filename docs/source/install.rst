@@ -58,17 +58,21 @@ Optional packages:
 Basic steps to compile TACS
 ---------------------------
 
-#. Clone the TACS git repository tacs_
+#. Clone the TACS git repository tacs_ (use ``git clone --recurse-submodules``
+   to also fetch the A2D submodule, or run ``git submodule update --init``
+   afterwards)
 #. In the base 'tacs' directory, copy the Makefile.in.info to Makefile.in. Edit
    the Makefile.in and follow the directions within to set the variables. Set
    the following:
 
     * ``TACS_DIR``: the root director of TACS
-    * ``CXX``: the C++ compiler, must be MPI-enabled
+    * ``CXX``: the C++ compiler, must be MPI-enabled and support C++17
     * ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
     * ``METIS_DIR``: set the location of METIS
     * ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
     * ``TECIO_DIR``: *optional* set location of TecIO
+    * ``A2D_DIR``: *optional* set the location of A2D (defaults to the git
+      submodule at ``extern/a2d``)
 
 #. To compile, from the base directory, run ``make`` then ``make interface``
 #. To set up the Python interface, run ``python setup.py develop --user``
@@ -99,18 +103,27 @@ Using git checkout the source
 
 ::
 
-    git clone https://github.com/smdogroup/tacs
+    git clone --recurse-submodules https://github.com/smdogroup/tacs
+
+The ``--recurse-submodules`` flag also fetches the `A2D <https://github.com/smdogroup/a2d>`_
+header-only automatic differentiation library, which TACS bundles as a git
+submodule at ``extern/a2d``. If you cloned without it, populate the submodule with
+
+::
+
+    git submodule update --init
 
 After you have cloned TACS, copy the file ``Makefile.in.info`` to a file called ``Makefile.in``.
 When compiling, TACS will look for the paths and settings in ``Makefile.in``.
 Make sure to set the following:
 
 #. ``TACS_DIR``: the root director of TACS
-#. ``CXX``: the C++ compiler, must be MPI-enabled
+#. ``CXX``: the C++ compiler, must be MPI-enabled and support C++17
 #. ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
 #. ``METIS_DIR``: set the location of METIS
 #. ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
 #. ``TECIO_DIR``: *optional* set location of TecIO (note you can use either the ``teciosrc`` or ``teciompisrc`` implementations)
+#. ``A2D_DIR``: *optional* set the location of A2D (defaults to the git submodule at ``extern/a2d``)
 
 In addition, it is recommended to copy the default python settings by copying ``setup.cfg.info`` to ``setup.cfg``.
 The settings in ``setup.cfg.info`` are intended for development, if you are just going to use the code as-is,
