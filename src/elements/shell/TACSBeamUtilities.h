@@ -80,7 +80,7 @@ void TacsBeamAddNodeNormalsSens(const TacsScalar Xpts[], const A2D::Vec3 &axis,
 
     // t2_dir = axis - dot(t1, axis) * t1
     A2D::ADVec3 t2_dir;
-    A2D::ADScalar dot;
+    A2D::TacsADScalar dot;
     A2D::Vec3ADVecDot dott1(axis, t1, dot);
     A2D::ADVec3VecADScalarAxpy axpy(-1.0, dot, t1, axis, t2_dir);
 

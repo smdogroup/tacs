@@ -1,5 +1,5 @@
-#ifndef A2D_MAT_CORE_H
-#define A2D_MAT_CORE_H
+#ifndef TACS_A2D_MAT_CORE_H
+#define TACS_A2D_MAT_CORE_H
 
 namespace A2D {
 
@@ -817,4 +817,4 @@ inline void Symm3x3IsotropicConstitutiveReverseCore(const TacsScalar mu,
 
 }  // namespace A2D
 
-#endif  // A2D_MAT_CORE_H
+#endif  // TACS_A2D_MAT_CORE_H

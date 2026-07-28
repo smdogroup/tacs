@@ -1,5 +1,5 @@
-#ifndef A2D_MAT_OPS_H
-#define A2D_MAT_OPS_H
+#ifndef TACS_A2D_MAT_OPS_H
+#define TACS_A2D_MAT_OPS_H
 
 #include "a2dmatcore.h"
 #include "a2dobjs.h"
@@ -18,7 +18,7 @@ class Symm3x3Trace {
 
 class ADSymm3x3Trace {
  public:
-  ADSymm3x3Trace(ADSymm3x3 &A, ADScalar &alpha) : A(A), alpha(alpha) {
+  ADSymm3x3Trace(ADSymm3x3 &A, TacsADScalar &alpha) : A(A), alpha(alpha) {
     alpha.value = A.A[0] + A.A[3] + A.A[5];
   }
   void forward() { alpha.valued = A.Ad[0] + A.Ad[3] + A.Ad[5]; }
@@ -29,7 +29,7 @@ class ADSymm3x3Trace {
   }
 
   ADSymm3x3 &A;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 class Mat3x3Trace {
@@ -41,7 +41,7 @@ class Mat3x3Trace {
 
 class ADMat3x3Trace {
  public:
-  ADMat3x3Trace(ADMat3x3 &A, ADScalar &alpha) : A(A), alpha(alpha) {
+  ADMat3x3Trace(ADMat3x3 &A, TacsADScalar &alpha) : A(A), alpha(alpha) {
     alpha.value = A.A[0] + A.A[4] + A.A[8];
   }
   void forward() { alpha.valued = A.Ad[0] + A.Ad[4] + A.Ad[8]; }
@@ -52,7 +52,7 @@ class ADMat3x3Trace {
   }
 
   ADMat3x3 &A;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 /*
@@ -67,13 +67,13 @@ class Symm3x3Det {
 
 class ADSymm3x3Det {
  public:
-  ADSymm3x3Det(ADSymm3x3 &A, ADScalar &alpha) : A(A), alpha(alpha) {
+  ADSymm3x3Det(ADSymm3x3 &A, TacsADScalar &alpha) : A(A), alpha(alpha) {
     alpha.value = Symm3x3DetCore(A.A);
   }
   void forward() { alpha.valued = Symm3x3DetDerivForwardCore(A.A, A.Ad); }
   void reverse() { Symm3x3DetDerivReverseCore(alpha.valued, A.A, A.Ad); }
   ADSymm3x3 &A;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 class Mat3x3Det {
@@ -88,10 +88,10 @@ class Mat3x3Det {
 
 class ADMat3x3Det {
  public:
-  ADMat3x3Det(ADMat3x3 &A, ADScalar &alpha) : scale(1.0), A(A), alpha(alpha) {
+  ADMat3x3Det(ADMat3x3 &A, TacsADScalar &alpha) : scale(1.0), A(A), alpha(alpha) {
     alpha.value = Mat3x3DetCore(A.A);
   }
-  ADMat3x3Det(const TacsScalar scale, ADMat3x3 &A, ADScalar &alpha)
+  ADMat3x3Det(const TacsScalar scale, ADMat3x3 &A, TacsADScalar &alpha)
       : scale(scale), A(A), alpha(alpha) {
     alpha.value = scale * Mat3x3DetCore(A.A);
   }
@@ -102,7 +102,7 @@ class ADMat3x3Det {
 
   const TacsScalar scale;
   ADMat3x3 &A;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 /*
@@ -1328,7 +1328,7 @@ class Symm3x3SymmMultTrace {
 
 class ADSymm3x3ADSymmMultTrace {
  public:
-  ADSymm3x3ADSymmMultTrace(ADSymm3x3 &S, ADSymm3x3 &T, ADScalar &alpha)
+  ADSymm3x3ADSymmMultTrace(ADSymm3x3 &S, ADSymm3x3 &T, TacsADScalar &alpha)
       : S(S), T(T), alpha(alpha) {
     alpha.value = Symm3x3MatMultTraceCore(S.A, T.A);
   }
@@ -1343,7 +1343,7 @@ class ADSymm3x3ADSymmMultTrace {
 
   ADSymm3x3 &S;
   ADSymm3x3 &T;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 class Symm3x3SymmMultTraceScale {
@@ -1357,7 +1357,7 @@ class Symm3x3SymmMultTraceScale {
 class ADSymm3x3ADSymmMultTraceScale {
  public:
   ADSymm3x3ADSymmMultTraceScale(Scalar &scale, ADSymm3x3 &S, ADSymm3x3 &T,
-                                ADScalar &alpha)
+                                TacsADScalar &alpha)
       : scale(scale), S(S), T(T), alpha(alpha) {
     alpha.value = scale.value * Symm3x3MatMultTraceCore(S.A, T.A);
   }
@@ -1373,13 +1373,13 @@ class ADSymm3x3ADSymmMultTraceScale {
   Scalar &scale;
   ADSymm3x3 &S;
   ADSymm3x3 &T;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 class ADSymm3x3ADSymmMultTraceADScale {
  public:
-  ADSymm3x3ADSymmMultTraceADScale(ADScalar &scale, ADSymm3x3 &S, ADSymm3x3 &T,
-                                  ADScalar &alpha)
+  ADSymm3x3ADSymmMultTraceADScale(TacsADScalar &scale, ADSymm3x3 &S, ADSymm3x3 &T,
+                                  TacsADScalar &alpha)
       : scale(scale), S(S), T(T), alpha(alpha) {
     tr = Symm3x3MatMultTraceCore(S.A, T.A);
     alpha.value = scale.value * tr;
@@ -1396,10 +1396,10 @@ class ADSymm3x3ADSymmMultTraceADScale {
   }
 
   TacsScalar tr;
-  ADScalar &scale;
+  TacsADScalar &scale;
   ADSymm3x3 &S;
   ADSymm3x3 &T;
-  ADScalar &alpha;
+  TacsADScalar &alpha;
 };
 
 /*
@@ -1435,4 +1435,4 @@ class ADSymm3x3IsotropicConstitutive {
 
 }  // namespace A2D
 
-#endif  // A2D_MAT_OPS_H
+#endif  // TACS_A2D_MAT_OPS_H

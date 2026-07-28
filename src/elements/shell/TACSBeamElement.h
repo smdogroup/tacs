@@ -627,7 +627,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
     basis::template interpFields<3, 3>(pt, d2ddot, d02ddot.x);
 
     // dot{u}(xi, z1, z2) = dot{u0} + z1 * dot{d1} + z2 * dot{d2}
-    A2D::ADScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    A2D::TacsADScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
     A2D::ADVec3Dot u0ddot0(u0ddot, u0ddot, u0d0);
     A2D::ADVec3Dot u0d1dot(u0ddot, d01ddot, u0d10);
     A2D::ADVec3Dot u0d2dot(u0ddot, d02ddot, u0d20);
@@ -999,7 +999,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
     A2D::ADMat3x3Inverse invXd(Xd, Xdinv);
 
     // Compute the determinant of the transform
-    A2D::ADScalar detXd;
+    A2D::TacsADScalar detXd;
     A2D::ADMat3x3Det computedetXd(weight, Xd, detXd);
 
     // Compute XdinvT = Xdinv * T
@@ -1023,7 +1023,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
     A2D::ADMatTrans3x3ADMatMult multu0xpsi(T, u0dXdinvTpsi, u0xpsi);
 
     // Compute s0, sz1 and sz2
-    A2D::ADScalar s0, sz1, sz2;
+    A2D::TacsADScalar s0, sz1, sz2;
     A2D::Vec3 e1(1.0, 0.0, 0.0);
     A2D::ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
     A2D::ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
@@ -1106,14 +1106,14 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
     basis::template interpFields<3, 3>(pt, d2psi, d02ddotpsi.x);
 
     // Compute the dot-products
-    A2D::ADScalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
+    A2D::TacsADScalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
     A2D::ADVec3Dot dot1(u0ddot, u0ddotpsi, u0psi);
     A2D::ADVec3Dot dot2(u0ddotpsi, d01ddot, u0psid1);
     A2D::ADVec3Dot dot3(u0ddot, d01ddotpsi, u0d1psi);
     A2D::ADVec3Dot dot4(u0ddotpsi, d02ddot, u0psid2);
     A2D::ADVec3Dot dot5(u0ddot, d02ddotpsi, u0d2psi);
 
-    A2D::ADScalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
+    A2D::TacsADScalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
     A2D::ADVec3Dot dot6(d01ddot, d01ddotpsi, d1d1psi);
     A2D::ADVec3Dot dot7(d02ddot, d02ddotpsi, d2d2psi);
     A2D::ADVec3Dot dot8(d01ddotpsi, d02ddot, d1psid2);
@@ -1922,7 +1922,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   A2D::ADMat3x3Inverse invXd(Xd, Xdinv);
 
   // Compute the determinant of the transform
-  A2D::ADScalar detXd;
+  A2D::TacsADScalar detXd;
   A2D::ADMat3x3Det computedetXd(Xd, detXd);
 
   // Compute XdinvT = Xdinv * T
@@ -1939,7 +1939,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   A2D::ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
 
   // Compute s0, sz1 and sz2
-  A2D::ADScalar s0, sz1, sz2;
+  A2D::TacsADScalar s0, sz1, sz2;
   A2D::Vec3 e1(1.0, 0.0, 0.0);
   A2D::ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
   A2D::ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);

@@ -1,5 +1,5 @@
-#ifndef A2D_VEC_CORE_H
-#define A2D_VEC_CORE_H
+#ifndef TACS_A2D_VEC_CORE_H
+#define TACS_A2D_VEC_CORE_H
 
 namespace A2D {
 
@@ -163,4 +163,4 @@ inline TacsScalar Mat3x3InnerProductCore(const TacsScalar A[],
 
 }  // namespace A2D
 
-#endif  // A2D_VEC_CORE_H
+#endif  // TACS_A2D_VEC_CORE_H

@@ -1,5 +1,5 @@
-#ifndef A2D_OBJS_H
-#define A2D_OBJS_H
+#ifndef TACS_A2D_OBJS_H
+#define TACS_A2D_OBJS_H
 
 #include "TACSObject.h"
 
@@ -18,22 +18,26 @@ class Scalar {
 
 /*
   Active scalar type
+
+  Named TacsADScalar (not ADScalar) so this legacy vendored copy can coexist
+  in one translation unit with the upstream A2D library at extern/a2d, which
+  defines a templated A2D::ADScalar.
 */
-class ADScalar {
+class TacsADScalar {
  public:
-  ADScalar() {
+  TacsADScalar() {
     value = 0.0;
     valued = 0.0;
   }
-  ADScalar(const TacsScalar &a) {
+  TacsADScalar(const TacsScalar &a) {
     value = a;
     valued = 0.0;
   }
-  ADScalar(const TacsScalar &a, const TacsScalar &ad) {
+  TacsADScalar(const TacsScalar &a, const TacsScalar &ad) {
     value = a;
     valued = ad;
   }
-  ADScalar(const ADScalar &a) {
+  TacsADScalar(const TacsADScalar &a) {
     value = a.value;
     valued = a.valued;
   }
@@ -340,4 +344,4 @@ class ADMat3x3 {
 
 }  // namespace A2D
 
-#endif  // A2D_OBJS_H
+#endif  // TACS_A2D_OBJS_H

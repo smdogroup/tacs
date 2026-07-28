@@ -1,8 +1,8 @@
-#ifndef A2D_H
-#define A2D_H
+#ifndef TACS_A2D_H
+#define TACS_A2D_H
 
 #include "a2dmatops.h"
 #include "a2dobjs.h"
 #include "a2dvecops.h"
 
-#endif  // A2D_H
+#endif  // TACS_A2D_H
