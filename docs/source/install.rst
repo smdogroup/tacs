@@ -58,9 +58,7 @@ Optional packages:
 Basic steps to compile TACS
 ---------------------------
 
-#. Clone the TACS git repository tacs_ (use ``git clone --recurse-submodules``
-   to also fetch the A2D submodule, or run ``git submodule update --init``
-   afterwards)
+#. Clone the TACS git repository tacs_
 #. In the base 'tacs' directory, copy the Makefile.in.info to Makefile.in. Edit
    the Makefile.in and follow the directions within to set the variables. Set
    the following:
@@ -103,11 +101,13 @@ Using git checkout the source
 
 ::
 
-    git clone --recurse-submodules https://github.com/smdogroup/tacs
+    git clone https://github.com/smdogroup/tacs
 
-The ``--recurse-submodules`` flag also fetches the `A2D <https://github.com/smdogroup/a2d>`_
-header-only automatic differentiation library, which TACS bundles as a git
-submodule at ``extern/a2d``. If you cloned without it, populate the submodule with
+TACS bundles the `A2D <https://github.com/smdogroup/a2d>`_ header-only automatic
+differentiation library as a git submodule at ``extern/a2d``. The build fetches
+it automatically the first time you run ``make`` (or install the Python
+interface), so no extra clone flags are needed. To populate or update it
+manually, run
 
 ::
 

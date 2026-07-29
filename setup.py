@@ -1,5 +1,5 @@
 import os
-from subprocess import check_output
+from subprocess import check_call, check_output
 import sys
 
 # Numpy/mpi4py must be installed prior to installing TACS
@@ -74,6 +74,21 @@ default_ext_inc = [
     "extern/a2d/include",
 ]
 inc_dirs.extend(get_global_dir(default_ext_inc))
+
+# A2D is a header-only library bundled as a git submodule at extern/a2d;
+# fetch it if it hasn't been initialized (e.g. a non-recursive clone)
+if not os.path.exists(get_global_dir(["extern/a2d/include/a2dcore.h"])[0]):
+    tacs_root = os.path.abspath(os.path.dirname(__file__))
+    if os.path.exists(os.path.join(tacs_root, ".git")):
+        check_call(
+            ["git", "submodule", "update", "--init", "extern/a2d"], cwd=tacs_root
+        )
+    else:
+        raise RuntimeError(
+            "A2D headers not found at extern/a2d/include and this is not a git "
+            "checkout, so the submodule cannot be fetched automatically. Download "
+            "https://github.com/smdogroup/a2d into extern/a2d."
+        )
 
 # Add the numpy/mpi4py directories
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
