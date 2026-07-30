@@ -69,7 +69,7 @@ class StructProblem(BaseStructProblem):
             Names of global DVs (registered via ``pyTACS.addGlobalDV``) that
             should be promoted to the problem level.  Each promoted DV is
             exposed to the optimizer as a separate scalar variable keyed
-            ``"{problemName}_{dvName}"`` so that multiple StructProblems can
+            ``"{dvName}_{problemName}"`` so that multiple StructProblems can
             carry independent values (e.g. fuel mass, load factor) without
             key collisions.  All remaining DVs — element-level sizing
             variables and any non-promoted global DVs — are grouped together
@@ -98,7 +98,7 @@ class StructProblem(BaseStructProblem):
         # where "num" is the index of that DV in the flat TACS design vector.
         #
         # promotedDVDict collects every global DV that should be promoted to
-        # the problem level.  Keys are namespaced as "{problemName}_{dvName}"
+        # the problem level.  Keys are namespaced as "{dvName}_{problemName}"
         # so that multiple StructProblems can coexist in the same optimisation
         # without key collisions.  This covers both classic mass DVs
         # (isMassDV=True) and auxiliary DVs such as load-factor variables
@@ -114,7 +114,7 @@ class StructProblem(BaseStructProblem):
             )
 
         self.promotedDVDict = {
-            f"{self.name}_{dvName}": globalDVs[dvName] for dvName in namesToPromote
+            f"{dvName}_{self.name}": globalDVs[dvName] for dvName in namesToPromote
         }
 
         # structDVList holds the flat-vector indices of every DV that is NOT
@@ -400,7 +400,7 @@ class StructProblem(BaseStructProblem):
         The optimizer sees two groups of variables:
 
         * One scalar entry per promoted global DV, keyed
-          ``"{problemName}_{dvName}"`` (e.g. ``"cruise_fuelMass"``).
+          ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
         * A single array of structural DVs, keyed ``self.varName``
           (e.g. ``"struct"``).
 
@@ -441,7 +441,7 @@ class StructProblem(BaseStructProblem):
         is split into:
 
         * One scalar entry per promoted global DV, keyed
-          ``"{problemName}_{dvName}"`` (e.g. ``"cruise_fuelMass"``).
+          ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
         * A single array of structural DVs, keyed ``self.varName``
           (e.g. ``"struct"``).
 
@@ -487,7 +487,7 @@ class StructProblem(BaseStructProblem):
         Returns
         -------
         list of str
-            Keys of the form ``"{problemName}_{dvName}"`` for every DV that
+            Keys of the form ``"{dvName}_{problemName}"`` for every DV that
             was promoted to the problem level at construction time.
         """
         return list(self.promotedDVDict.keys())
@@ -585,7 +585,7 @@ class StructProblem(BaseStructProblem):
         The flat TACS design vector is split into two groups (see class docstring):
 
         * **Mass DVs** — each registered as a scalar variable group named
-          ``"{problemName}_{dvName}"``.
+          ``"{dvName}_{problemName}"``.
         * **Structural DVs** — registered as a single vector variable group named
           ``self.varName`` (``"struct"``).  Skipped if the group already
           exists in ``optProb`` (prevents duplicate registration when multiple
@@ -601,7 +601,7 @@ class StructProblem(BaseStructProblem):
             Optimization problem to which variables are added.
         excludeDVs : list of str or None, optional
             DV names to skip.  Accepts both mass DV keys
-            (``"{problemName}_{dvName}"``) and the structural DV key
+            (``"{dvName}_{problemName}"``) and the structural DV key
             (``self.varName``).  Defaults to ``None`` (register everything).
         """
         if excludeDVs is None:
