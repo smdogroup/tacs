@@ -232,9 +232,12 @@ class MACHStructProblemTestCase:
                             func_key = prob.name + "_" + func_name
                             if func_key in self.FUNC_REFS:
                                 # Sum projected sens over all promoted DVs for this problem
+                                # (np.sum gives the dot product for array-valued DVs)
                                 dfddv_proj = sum(
-                                    func_sens[func_key][promoted_key]
-                                    * self.dv_pert[promoted_key]
+                                    np.sum(
+                                        func_sens[func_key][promoted_key]
+                                        * self.dv_pert[promoted_key]
+                                    )
                                     for promoted_key in promoted_keys
                                     if promoted_key in func_sens[func_key]
                                 )

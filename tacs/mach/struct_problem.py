@@ -120,7 +120,9 @@ class StructProblem(BaseStructProblem):
         # structDVList holds the flat-vector indices of every DV that is NOT
         # promoted.  Use set-subtraction so the result is correct regardless
         # of how many DVs are promoted or where they sit in the flat vector.
-        promoted_nums = {info["num"] for info in self.promotedDVDict.values()}
+        promoted_nums = set()
+        for info in self.promotedDVDict.values():
+            promoted_nums.update(int(num) for num in np.atleast_1d(info["num"]))
         self.structDVList = [
             i
             for i in range(FEAAssembler.getTotalNumDesignVars())
@@ -399,7 +401,7 @@ class StructProblem(BaseStructProblem):
 
         The optimizer sees two groups of variables:
 
-        * One scalar entry per promoted global DV, keyed
+        * One entry (scalar or array) per promoted global DV, keyed
           ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
         * A single array of structural DVs, keyed ``self.varName``
           (e.g. ``"struct"``).
@@ -424,7 +426,7 @@ class StructProblem(BaseStructProblem):
         # dvDict are left at their existing values rather than zeroed out.
         xnew = self.staticProblem.getDesignVars()
         if self.comm.rank == 0:
-            # Write each promoted DV scalar into its reserved index.
+            # Write each promoted DV into its reserved index (or indices).
             for dvName in self.promotedDVDict:
                 if dvName in dvDict:
                     xnew[self.promotedDVDict[dvName]["num"]] = dvDict[dvName]
@@ -440,7 +442,7 @@ class StructProblem(BaseStructProblem):
         This is the inverse of :meth:`_convertDesignDictToVec`.  The flat vector
         is split into:
 
-        * One scalar entry per promoted global DV, keyed
+        * One entry (scalar or array) per promoted global DV, keyed
           ``"{dvName}_{problemName}"`` (e.g. ``"fuelMass_cruise"``).
         * A single array of structural DVs, keyed ``self.varName``
           (e.g. ``"struct"``).
@@ -461,7 +463,7 @@ class StructProblem(BaseStructProblem):
 
         dvDict = {}
         if self.comm.rank == 0:
-            # Extract each promoted DV scalar from its reserved index.
+            # Extract each promoted DV from its reserved index (or indices).
             for dvName in self.promotedDVDict:
                 dvDict[dvName] = dvVec[..., self.promotedDVDict[dvName]["num"]]
             # Extract the structural DV block from the remaining indices.
@@ -613,13 +615,13 @@ class StructProblem(BaseStructProblem):
         lbDict, ubDict = self.getDesignVarRange()
         scaleDict = self.getDesignVarScales()
 
-        # Register each promoted DV as its own scalar variable group so it can
+        # Register each promoted DV as its own variable group so it can
         # be identified and shared with other disciplines in a coupled optimisation.
         for dvName in self.promotedDVDict:
             if dvName not in excludeDVs:
                 optProb.addVarGroup(
                     dvName,
-                    1,
+                    np.atleast_1d(valueDict[dvName]).size,
                     "c",
                     value=valueDict[dvName],
                     lower=lbDict[dvName],

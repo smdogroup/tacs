@@ -807,6 +807,9 @@ class StaticProblem(TACSProblem):
             Optional array of global design variable numbers (length must match
             inertiaVector) controlling each entry of the inertia vector. Use negative values
             for components that should not be treated as design variables.
+            The dv num array returned by an array-valued
+            :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` call
+            can be passed directly.
         """
         self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
 

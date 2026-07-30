@@ -213,6 +213,10 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
             stiffenerPitchScale,
         )
 
+        # Add gravity vector as an array-valued global DV
+        g = np.array([0.0, 0.0, -9.81])
+        gDV = FEAAssembler.addGlobalDV("g", g, lower=-20.0, upper=20.0, scale=0.1)
+
         def elem_call_back(
             dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
         ):
@@ -353,8 +357,7 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         compIDs = FEAAssembler.selectCompIDs(["WING_L_SKIN"])
         staticProblem.addPressureToComponents(compIDs, -10e3)
 
-        g = np.array([0.0, 0.0, -9.81])
-        staticProblem.addInertialLoad(g)
+        staticProblem.addInertialLoad(g, inertiaVecDVNums=gDV)
 
         failureGroups = {"SPAR_RIB": ["SPAR", "RIB", "CAP"], "SKIN": ["SKIN"]}
 
@@ -394,7 +397,10 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # Create MACH StructProblem
         # ==============================================================================
         structProb = StructProblem(
-            staticProblem, FEAAssembler, DVGeo=DVGeo, promotedGlobalDVs=["fuelMass"]
+            staticProblem,
+            FEAAssembler,
+            DVGeo=DVGeo,
+            promotedGlobalDVs=["fuelMass", "g"],
         )
         structProb.addConstraint(panelLengthCon)
 

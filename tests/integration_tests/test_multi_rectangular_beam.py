@@ -97,16 +97,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
-        # Add global dvs from gravity components
-        gxDV = fea_assembler.addGlobalDV("gx", g_vec[0])
-        gyDV = fea_assembler.addGlobalDV("gy", g_vec[1])
-        gzDV = fea_assembler.addGlobalDV("gz", g_vec[2])
+        # Add gravity vector as a single array-valued global DV
+        gDV = fea_assembler.addGlobalDV("g", g_vec)
+        assert np.array_equal(gDV, [0, 1, 2])
+        assert fea_assembler.getGlobalDVNums() == [0, 1, 2]
+        assert fea_assembler.getTotalNumGlobalDVs() == 3
 
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
         grav_prob = fea_assembler.createStaticProblem("gravity")
-        grav_prob.addInertialLoad(g_vec, inertiaVecDVNums=[gxDV, gyDV, gzDV])
+        grav_prob.addInertialLoad(g_vec, inertiaVecDVNums=gDV)
         grav_prob.getJacobian()
 
         tacs_probs = [grav_prob]

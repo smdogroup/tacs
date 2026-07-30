@@ -267,30 +267,77 @@ class pyTACS(BaseUI):
         descript : str
             A user-supplied string that can be used to retrieve the
             variable number and value elemCallBackFunction.
-        value : float
-            Initial value for variable.
-        lower : float
-            Lower bound. This may be None for unbounded
-        upper : float
-            Upper bound. This may be None for unbounded
-        scale : float
-            Scale factor for variable
+        value : float or array-like
+            Initial value for variable. If array-like, one design variable
+            is created per entry, numbered consecutively.
+        lower : float or array-like
+            Lower bound. Scalars are broadcast to all entries.
+            This may be None for unbounded
+        upper : float or array-like
+            Upper bound. Scalars are broadcast to all entries.
+            This may be None for unbounded
+        scale : float or array-like
+            Scale factor for variable. Scalars are broadcast to all entries.
 
         Returns
         -------
-        int
-            The design variable number assigned to the global design variable.
+        int or numpy.ndarray[int]
+            The design variable number(s) assigned to the global design variable.
+            An int if `value` was a scalar, an array of consecutive dv nums if
+            `value` was array-like.
         """
+        isArrayDV = np.ndim(value) > 0
+        if isArrayDV:
+            value = np.atleast_1d(np.asarray(value))
+            if value.ndim > 1:
+                raise self._TACSError(
+                    f"Value for global DV '{descript}' must be a scalar or 1D array, "
+                    f"but has {value.ndim} dimensions."
+                )
+            if len(value) == 0:
+                raise self._TACSError(
+                    f"Value array for global DV '{descript}' cannot be empty."
+                )
+            numDVs = len(value)
+            num = np.arange(self.dvNum, self.dvNum + numDVs, dtype=np.intc)
+        else:
+            numDVs = 1
+            num = self.dvNum
+
+        def _broadcastToGroup(inputVal, inputName):
+            """Normalize lower/upper/scale to None, a scalar (scalar DV), or a length-numDVs array."""
+            if inputVal is None or np.ndim(inputVal) == 0:
+                if isArrayDV and inputVal is not None:
+                    return np.full(numDVs, inputVal)
+                return inputVal
+            if not isArrayDV:
+                raise self._TACSError(
+                    f"'{inputName}' for global DV '{descript}' cannot be array-like "
+                    "when 'value' is a scalar."
+                )
+            inputVal = np.atleast_1d(np.asarray(inputVal))
+            if inputVal.ndim > 1 or len(inputVal) != numDVs:
+                raise self._TACSError(
+                    f"'{inputName}' for global DV '{descript}' must be a scalar "
+                    f"or a 1D array of length {numDVs} (the length of 'value')."
+                )
+            return inputVal
+
+        lower = _broadcastToGroup(lower, "lower")
+        upper = _broadcastToGroup(upper, "upper")
+        scale = _broadcastToGroup(scale, "scale")
+
         self.globalDVs[descript] = {
-            "num": self.dvNum,
+            "num": num,
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
-            "isMassDV": False,
+            # Array DVs track mass DV assignment per entry
+            "isMassDV": np.zeros(numDVs, dtype=bool) if isArrayDV else False,
         }
-        self.dvNum += 1
-        self.scaleList.append(scale)
-        return self.globalDVs[descript]["num"]
+        self.dvNum += numDVs
+        self.scaleList.extend(np.atleast_1d(scale).tolist())
+        return num.copy() if isArrayDV else num
 
     def getGlobalDVs(self):
         """
@@ -323,7 +370,11 @@ class pyTACS(BaseUI):
         globalDVNums : list[int]
             List holding dv nums corresponding to global DVs.
         """
-        return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
+        return [
+            int(num)
+            for descript in self.globalDVs
+            for num in np.atleast_1d(self.globalDVs[descript]["num"])
+        ]
 
     def getTotalNumGlobalDVs(self):
         """
@@ -331,21 +382,23 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVs : dict
-            Dictionary holding global dv information.
+        numGlobalDVs : int
+            Total number of global DVs (array-valued keys count once per entry).
         """
-        return len(self.globalDVs)
+        return sum(
+            np.atleast_1d(dv_info["num"]).size for dv_info in self.globalDVs.values()
+        )
 
     @preinitialize_method
-    def assignMassDV(self, descript, eIDs, dvName="m"):
+    def assignMassDV(self, descript, eIDs, dvName="m", index=None):
         """
         Assign a global DV to a point mass element.
 
         Parameters
         ----------
         descript : str
-            Global DV key to assign mass design variable to. If the key is does not exist,
-            it will automatically be created and added to global DVs.
+            Global DV key to assign mass design variable to. If the key does not exist,
+            it will automatically be created and added to global DVs as a scalar DV.
 
         eIDs : int or list[int]
             Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
@@ -354,6 +407,11 @@ class pyTACS(BaseUI):
             Name of mass property to apply DV to.
             May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
             Defaults to `m` (mass).
+
+        index : int or None
+            Entry of an array-valued global DV to assign as the mass DV.
+            Required if `descript` refers to an array-valued global DV,
+            must be None (default) for scalar global DVs.
 
         Notes
         -----
@@ -377,17 +435,49 @@ class pyTACS(BaseUI):
 
         # Check if descript already exists in global dvs, if not add it
         if descript not in self.globalDVs:
+            if index is not None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' does not exist, so 'index' cannot be used. "
+                    "Add it through `addGlobalDV` first, or call without 'index' "
+                    "to automatically create a scalar global DV."
+                )
             self.addGlobalDV(descript, None)
 
         dv_dict = self.globalDVs[descript]
 
-        # Flag this global dv as being a mass dv
-        dv_dict["isMassDV"] = True
+        # Mass DVs modify a single scalar element property, so for array-valued
+        # global DVs a single entry must be selected through 'index'
+        if np.ndim(dv_dict["num"]) > 0:
+            numDVs = len(dv_dict["num"])
+            if index is None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' is array-valued, 'index' must be specified "
+                    "to select which entry to assign as a mass DV."
+                )
+            if not -numDVs <= index < numDVs:
+                raise self._TACSError(
+                    f"'index' {index} is out of range for array-valued global DV "
+                    f"'{descript}' of length {numDVs}."
+                )
+            # Flag this entry of the global dv as being a mass dv
+            dv_dict["isMassDV"][index] = True
 
-        massDV = dv_dict["num"]
-        value = dv_dict["value"]
-        ub = dv_dict["upperBound"]
-        lb = dv_dict["lowerBound"]
+            massDV = int(dv_dict["num"][index])
+            value = dv_dict["value"][index]
+            ub = None if dv_dict["upperBound"] is None else dv_dict["upperBound"][index]
+            lb = None if dv_dict["lowerBound"] is None else dv_dict["lowerBound"][index]
+        else:
+            if index is not None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' is scalar, 'index' is not applicable."
+                )
+            # Flag this global dv as being a mass dv
+            dv_dict["isMassDV"] = True
+
+            massDV = dv_dict["num"]
+            value = dv_dict["value"]
+            ub = dv_dict["upperBound"]
+            lb = dv_dict["lowerBound"]
 
         for eID in eIDs:
             # If the element ID hasn't already been added to massDVs, add it
@@ -815,7 +905,7 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
-        global_dv_nums = [dv_info["num"] for dv_info in self.globalDVs.values()]
+        global_dv_nums = self.getGlobalDVNums()
         self.assembler = self.meshLoader.createTACSAssembler(
             self.varsPerNode, self.massDVs, self.dvNum, globalDVNums=global_dv_nums
         )
@@ -833,8 +923,8 @@ class pyTACS(BaseUI):
         global_dv_vals = []
         for dv_info in self.globalDVs.values():
             if dv_info["value"] is not None:
-                global_dv_nums.append(dv_info["num"])
-                global_dv_vals.append(dv_info["value"])
+                global_dv_nums.extend(np.atleast_1d(dv_info["num"]))
+                global_dv_vals.extend(np.atleast_1d(dv_info["value"]))
         self._setGlobalDVValues(self.x0, global_dv_nums, global_dv_vals)
 
         # Store design variable upper/lower-bounds
@@ -848,11 +938,11 @@ class pyTACS(BaseUI):
         global_dv_vals_lb = []
         for dv_info in self.globalDVs.values():
             if dv_info["upperBound"] is not None:
-                global_dv_nums_ub.append(dv_info["num"])
-                global_dv_vals_ub.append(dv_info["upperBound"])
+                global_dv_nums_ub.extend(np.atleast_1d(dv_info["num"]))
+                global_dv_vals_ub.extend(np.atleast_1d(dv_info["upperBound"]))
             if dv_info["lowerBound"] is not None:
-                global_dv_nums_lb.append(dv_info["num"])
-                global_dv_vals_lb.append(dv_info["lowerBound"])
+                global_dv_nums_lb.extend(np.atleast_1d(dv_info["num"]))
+                global_dv_vals_lb.extend(np.atleast_1d(dv_info["lowerBound"]))
         self._setGlobalDVValues(self.xub, global_dv_nums_ub, global_dv_vals_ub)
         self._setGlobalDVValues(self.xlb, global_dv_nums_lb, global_dv_vals_lb)
 
