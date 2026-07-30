@@ -282,7 +282,7 @@ cdef extern from "TACSElement.h":
         TACSElement* createElementTraction(int, const TacsScalar*, const int*)
         TACSElement* createElementPressure(int, TacsScalar, int)
         TACSElement* createElementInertialForce(const TacsScalar*, const int*)
-        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool)
+        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool, const int*, const int*)
 
 cdef extern from "TACSFunction.h":
     cdef cppclass TACSFunction(TACSObject):

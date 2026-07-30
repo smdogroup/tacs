@@ -203,11 +203,12 @@ class TACSBeamElement : public TACSElement {
         transform, con, inertiaVec, inertiaVecDVNums);
   }
 
-  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
-                                             const TacsScalar rotCenter[],
-                                             const bool first_order = false) {
+  TACSElement *createElementCentrifugalForce(
+      const TacsScalar omegaVec[], const TacsScalar rotCenter[],
+      const bool first_order = false, const int *omegaDVNums = NULL,
+      const int *rotCenterDVNums = NULL) {
     return new TACSBeamCentrifugalForce<vars_per_node, quadrature, basis>(
-        transform, con, omegaVec, rotCenter);
+        transform, con, omegaVec, rotCenter, omegaDVNums, rotCenterDVNums);
   }
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],

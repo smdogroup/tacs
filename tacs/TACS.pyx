@@ -390,12 +390,31 @@ cdef class Element:
 
     def createElementCentrifugalForce(self, np.ndarray[TacsScalar, ndim=1] omegaVec,
                                       np.ndarray[TacsScalar, ndim=1] rotCenter,
-                                      bool firstOrder=False):
+                                      bool firstOrder=False,
+                                      np.ndarray[int, ndim=1, mode='c'] omegaDVNums=None,
+                                      np.ndarray[int, ndim=1, mode='c'] rotCenterDVNums=None):
         cdef TACSElement *centrifugalElem = NULL
+        cdef int *omegaNums = NULL
+        cdef int *rotCenterNums = NULL
+        if omegaDVNums is not None:
+            if len(omegaDVNums) != len(omegaVec):
+                raise ValueError(
+                    f"omegaDVNums length ({len(omegaDVNums)}) must match "
+                    f"omegaVec length ({len(omegaVec)})"
+                )
+            omegaNums = <int*>omegaDVNums.data
+        if rotCenterDVNums is not None:
+            if len(rotCenterDVNums) != len(rotCenter):
+                raise ValueError(
+                    f"rotCenterDVNums length ({len(rotCenterDVNums)}) must match "
+                    f"rotCenter length ({len(rotCenter)})"
+                )
+            rotCenterNums = <int*>rotCenterDVNums.data
         if self.ptr:
             centrifugalElem = self.ptr.createElementCentrifugalForce(<TacsScalar*>omegaVec.data,
                                                                      <TacsScalar*>rotCenter.data,
-                                                                     firstOrder)
+                                                                     firstOrder, omegaNums,
+                                                                     rotCenterNums)
             if centrifugalElem != NULL:
                 return _init_Element(centrifugalElem)
         return None

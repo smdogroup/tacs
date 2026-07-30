@@ -120,11 +120,12 @@ class TACSShellElement : public TACSElement {
         con, inertiaVec, inertiaVecDVNums);
   }
 
-  TACSElement *createElementCentrifugalForce(const TacsScalar omega[],
-                                             const TacsScalar rotCenter[],
-                                             const bool first_order = false) {
+  TACSElement *createElementCentrifugalForce(
+      const TacsScalar omega[], const TacsScalar rotCenter[],
+      const bool first_order = false, const int *omegaDVNums = NULL,
+      const int *rotCenterDVNums = NULL) {
     return new TACSShellCentrifugalForce<vars_per_node, quadrature, basis>(
-        con, omega, rotCenter, first_order);
+        con, omega, rotCenter, first_order, omegaDVNums, rotCenterDVNums);
   }
 
   void computeEnergies(int elemIndex, double time, const TacsScalar Xpts[],

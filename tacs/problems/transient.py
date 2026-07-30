@@ -787,7 +787,15 @@ class TransientProblem(TACSProblem):
 
         self._addInertialLoad(self.auxElems[timeIndex], inertiaVector, inertiaVecDVNums)
 
-    def addCentrifugalLoad(self, timeStep, omegaVector, rotCenter, timeStage=None):
+    def addCentrifugalLoad(
+        self,
+        timeStep,
+        omegaVector,
+        rotCenter,
+        timeStage=None,
+        omegaDVNums=None,
+        rotCenterDVNums=None,
+    ):
         """
         This method is used to add a fixed centrifugal load at at specified time step
         due to a uniform rotational velocity over the entire model.
@@ -808,6 +816,19 @@ class TransientProblem(TACSProblem):
             Time stage index to apply load to. Default is None, which is applicable only for
             multi-step methods like BDF. For multi-stage methods like DIRK, this index must
             be specified.
+
+        omegaDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            omegaVector) controlling each entry of the rotational velocity vector.
+            Use negative values for components that should not be treated as design variables.
+            The dv num array returned by an array-valued
+            :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` call
+            can be passed directly.
+
+        rotCenterDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            rotCenter) controlling each entry of the rotation center location.
+            Use negative values for components that should not be treated as design variables.
         """
         timeIndex = 0
         if self.numStages is None:
@@ -819,7 +840,13 @@ class TransientProblem(TACSProblem):
             )
             timeIndex = timeStep * self.numStages + timeStage
 
-        self._addCentrifugalLoad(self.auxElems[timeIndex], omegaVector, rotCenter)
+        self._addCentrifugalLoad(
+            self.auxElems[timeIndex],
+            omegaVector,
+            rotCenter,
+            omegaDVNums=omegaDVNums,
+            rotCenterDVNums=rotCenterDVNums,
+        )
 
     def addLoadFromBDF(self, timeStep, loadID, timeStage=None, scale=1.0):
         """

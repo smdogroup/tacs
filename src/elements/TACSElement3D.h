@@ -41,9 +41,10 @@ class TACSElement3D : public TACSElement {
                                      int pressureDVNum = -1);
   TACSElement *createElementInertialForce(const TacsScalar inertiaVec[],
                                           const int *inertiaVecDVNums = NULL);
-  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
-                                             const TacsScalar rotCenter[],
-                                             const bool first_order = false);
+  TACSElement *createElementCentrifugalForce(
+      const TacsScalar omegaVec[], const TacsScalar rotCenter[],
+      const bool first_order = false, const int *omegaDVNums = NULL,
+      const int *rotCenterDVNums = NULL);
   int getNumQuadraturePoints();
   double getQuadratureWeight(int n);
   double getQuadraturePoint(int n, double pt[]);

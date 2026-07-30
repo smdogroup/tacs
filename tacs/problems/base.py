@@ -803,7 +803,15 @@ class TACSProblem(TACSSystem):
                 # Add new inertial force to auxiliary element object
                 auxElems.addElement(elemID, inertiaObj)
 
-    def _addCentrifugalLoad(self, auxElems, omegaVector, rotCenter, firstOrder=False):
+    def _addCentrifugalLoad(
+        self,
+        auxElems,
+        omegaVector,
+        rotCenter,
+        firstOrder=False,
+        omegaDVNums=None,
+        rotCenterDVNums=None,
+    ):
         """
         This is an internal helper function for doing the addCentrifugalLoad method for
         inherited TACSProblem classes. The function should NOT be called by the user should
@@ -825,17 +833,34 @@ class TACSProblem(TACSSystem):
         firstOrder : bool, optional
             Whether to use first order approximation for centrifugal load,
             which computes the force in the displaced position. By default False
+
+        omegaDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            omegaVector) controlling each entry of the rotational velocity vector.
+            Use negative values for components that should not be treated as design variables.
+
+        rotCenterDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            rotCenter) controlling each entry of the rotation center.
+            Use negative values for components that should not be treated as design variables.
         """
         # Make sure vector is right type
         omegaVector = np.atleast_1d(omegaVector).astype(self.dtype)
         rotCenter = np.atleast_1d(rotCenter).astype(self.dtype)
+        # Make sure any dv nums are valid
+        omegaDVNums = self._checkDVNums(omegaDVNums)
+        rotCenterDVNums = self._checkDVNums(rotCenterDVNums)
         # Get elements on this processor
         localElements = self.assembler.getElements()
         # Loop through every element and apply centrifugal load
         for elemID, elemObj in enumerate(localElements):
             # Create appropriate centrifugal force object for this element type
             centrifugalObj = elemObj.createElementCentrifugalForce(
-                omegaVector, rotCenter, firstOrder=firstOrder
+                omegaVector,
+                rotCenter,
+                firstOrder=firstOrder,
+                omegaDVNums=omegaDVNums,
+                rotCenterDVNums=rotCenterDVNums,
             )
             # Centrifugal force is implemented for element
             if centrifugalObj is not None:

@@ -813,7 +813,14 @@ class StaticProblem(TACSProblem):
         """
         self._addInertialLoad(self.auxElems, inertiaVector, inertiaVecDVNums)
 
-    def addCentrifugalLoad(self, omegaVector, rotCenter, firstOrder=False):
+    def addCentrifugalLoad(
+        self,
+        omegaVector,
+        rotCenter,
+        firstOrder=False,
+        omegaDVNums=None,
+        rotCenterDVNums=None,
+    ):
         """
         This method is used to add a fixed centrifugal load due to a
         uniform rotational velocity over the entire model.
@@ -830,8 +837,28 @@ class StaticProblem(TACSProblem):
         firstOrder : bool, optional
             Whether to use first order approximation for centrifugal load,
             which computes the force in the displaced position. By default False
+
+        omegaDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            omegaVector) controlling each entry of the rotational velocity vector.
+            Use negative values for components that should not be treated as design variables.
+            The dv num array returned by an array-valued
+            :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` call
+            can be passed directly.
+
+        rotCenterDVNums : numpy.ndarray or None
+            Optional array of global design variable numbers (length must match
+            rotCenter) controlling each entry of the rotation center location.
+            Use negative values for components that should not be treated as design variables.
         """
-        self._addCentrifugalLoad(self.auxElems, omegaVector, rotCenter, firstOrder)
+        self._addCentrifugalLoad(
+            self.auxElems,
+            omegaVector,
+            rotCenter,
+            firstOrder,
+            omegaDVNums,
+            rotCenterDVNums,
+        )
 
     def addLoadFromBDF(self, loadID, scale=1.0):
         """

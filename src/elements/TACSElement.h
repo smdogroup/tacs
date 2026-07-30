@@ -243,7 +243,8 @@ class TACSElement : public TACSObject {
   */
   virtual TACSElement *createElementCentrifugalForce(
       const TacsScalar omega[], const TacsScalar rotCenter[],
-      const bool first_order = false) {
+      const bool first_order = false, const int *omegaDVNums = NULL,
+      const int *rotCenterDVNums = NULL) {
     return NULL;
   }
 
