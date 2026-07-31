@@ -578,6 +578,8 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
     // check is required here.
     F12 = -0.5 * sqrt(F11 * F22);
   } else {
+    // TODO: This branch doesn't do anything right now because C is hard-coded
+    // to be zero above.
     if (TacsRealPart(C) != 0.0) {
       F12 = 0.5 * (1.0 - (F1 + F2) * C - (F11 + F22) * C * C) / (C * C);
     } else {
