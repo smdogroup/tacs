@@ -56,10 +56,11 @@ class TACSMassElement : public TACSElement {
     @return The TACSElement centrifugal force class associated with this
     element. Possibly NULL.
   */
-  TACSElement *createElementCentrifugalForce(
-      const TacsScalar omegaVec[], const TacsScalar rotCenter[],
-      const bool first_order = false, const int *omegaDVNums = NULL,
-      const int *rotCenterDVNums = NULL);
+  TACSElement *createElementCentrifugalForce(const TacsScalar omegaVec[],
+                                             const TacsScalar rotCenter[],
+                                             const bool first_order = false,
+                                             const int *omegaDVNums = NULL,
+                                             const int *rotCenterDVNums = NULL);
 
   // Functions for analysis
   // ----------------------
