@@ -7,14 +7,6 @@ from tacs import TACS, constitutive
 """
 Verify that the Tsai-Wu failure criterion reduces to the von Mises criterion
 for isotropic materials.
-
-TACSOrthotropicPly documents that its default TSAI_WU_MODIFIED criterion
-"becomes equivalent to the von-Mises criterion when the material properties are
-isotropic". These tests pin that claim down by comparing the failure envelope of
-a single-ply smeared composite shell against an isotropic shell built from the
-same material. Both constitutive models aggregate failure over the same two
-through-thickness points with the same KS weight, so their envelopes coincide
-only if the underlying pointwise failure criteria agree.
 """
 
 # Indices of the in-plane stress resultants in the shell stress vector
