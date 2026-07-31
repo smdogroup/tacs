@@ -49,7 +49,8 @@ TACSMaterialProperties::TACSMaterialProperties(
   T1 = C1 = ys;
   T2 = C2 = ys;
   T3 = C3 = ys;
-  S12 = S13 = S23 = sqrt(3.0) * ys;
+  // Von Mises yielding in pure shear occurs at ys / sqrt(3)
+  S12 = S13 = S23 = ys / sqrt(3.0);
 
   // Set the coefficients of thermal expansion
   alpha1 = alpha;
