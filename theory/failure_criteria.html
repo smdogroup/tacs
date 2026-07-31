@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html lang="python" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Composite failure criteria &#8212; TACS  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=34905f61" />
+    <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+    <script src="../_static/documentation_options.js?v=d048f138"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Core modules" href="../core/core.html" />
+    <link rel="prev" title="Beam and shell elements in TACS" href="shell_element.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../core/core.html" title="Core modules"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="shell_element.html" title="Beam and shell elements in TACS"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="theory.html" accesskey="U">Theory</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Composite failure criteria</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="composite-failure-criteria">
+<h1>Composite failure criteria<a class="headerlink" href="#composite-failure-criteria" title="Link to this heading">¶</a></h1>
+<p><a class="reference internal" href="../core/constitutive.html#tacs.constitutive.OrthotropicPly" title="tacs.constitutive.OrthotropicPly"><code class="xref py py-class docutils literal notranslate"><span class="pre">OrthotropicPly</span></code></a> supports five failure criteria, selected with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion</span></code>.
+In every case the returned value <code class="docutils literal notranslate"><span class="pre">fail</span></code> is interpreted as</p>
+<div class="math notranslate nohighlight">
+\[\text{fail} &lt; 1 \Rightarrow \text{no failure}, \qquad \text{fail} \geq 1 \Rightarrow \text{failure}\]</div>
+<p>The ply strains are first rotated into the ply coordinate system, and for the stress-based criteria the ply stresses <span class="math notranslate nohighlight">\(\mathbf{s} = [s_1, s_2, s_{12}]\)</span> follow from the ply stiffness.</p>
+<section id="tsai-wu">
+<h2>Tsai-Wu<a class="headerlink" href="#tsai-wu" title="Link to this heading">¶</a></h2>
+<p>The Tsai-Wu criterion is a quadratic tensor polynomial in the ply stresses,</p>
+<div class="math notranslate nohighlight">
+\[F(\mathbf{s}) = F_1 s_1 + F_2 s_2 + F_{11} s_1^2 + F_{22} s_2^2 + 2 F_{12} s_1 s_2 + F_{66} s_{12}^2 \leq 1\]</div>
+<p>Select it with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion(CompositeFailureCriterion.TSAI_WU)</span></code>.</p>
+<p>The coefficients are derived from the ply strengths, where <span class="math notranslate nohighlight">\(X_t, X_c\)</span> are the tensile and compressive strengths along the fibre direction, <span class="math notranslate nohighlight">\(Y_t, Y_c\)</span> the transverse strengths, and <span class="math notranslate nohighlight">\(S_{12}\)</span> the in-plane shear strength:</p>
+<div class="math notranslate nohighlight">
+\[F_1 = \frac{X_c - X_t}{X_t X_c}, \quad
+F_2 = \frac{Y_c - Y_t}{Y_t Y_c}, \quad
+F_{11} = \frac{1}{X_t X_c}, \quad
+F_{22} = \frac{1}{Y_t Y_c}, \quad
+F_{66} = \frac{1}{S_{12}^2}\]</div>
+<p>The interaction coefficient <span class="math notranslate nohighlight">\(F_{12}\)</span> cannot be derived from the uniaxial strengths alone.
+For orthotropic materials TACS sets <span class="math notranslate nohighlight">\(F_{12} = 0\)</span>, matching the default of the Nastran <code class="docutils literal notranslate"><span class="pre">MAT8</span></code> card.
+For isotropic materials it is set to the value that recovers the von Mises criterion, as derived below.</p>
+<p>Any value of <span class="math notranslate nohighlight">\(F_{12}\)</span> must satisfy the stability criterion</p>
+<div class="math notranslate nohighlight">
+\[F_{12}^2 &lt; F_{11} F_{22}\]</div>
+<p>which ensures the failure surface is a closed ellipsoid rather than an open hyperboloid.</p>
+</section>
+<section id="modified-tsai-wu-strength-ratio">
+<h2>Modified Tsai-Wu (strength ratio)<a class="headerlink" href="#modified-tsai-wu-strength-ratio" title="Link to this heading">¶</a></h2>
+<p>This is the default criterion, selected with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion(CompositeFailureCriterion.TSAI_WU_MODIFIED)</span></code>.
+Writing <span class="math notranslate nohighlight">\(b\)</span> for the linear part and <span class="math notranslate nohighlight">\(a\)</span> for the quadratic part of the Tsai-Wu polynomial, it returns</p>
+<div class="math notranslate nohighlight">
+\[\text{fail} = \frac{1}{2} \left( b + \sqrt{b^2 + 4a} \right)\]</div>
+<p>This is equivalent to the standard form at the failure boundary, but scales linearly when the stress state is scaled uniformly.
+It can therefore be used directly to compute safety factors, which is not true of the quadratic form.</p>
+<section id="equivalence-with-von-mises-for-isotropic-materials">
+<h3>Equivalence with von Mises for isotropic materials<a class="headerlink" href="#equivalence-with-von-mises-for-isotropic-materials" title="Link to this heading">¶</a></h3>
+<p>For an isotropic material with yield stress <span class="math notranslate nohighlight">\(\sigma_y\)</span>, TACS derives the ply strengths as</p>
+<div class="math notranslate nohighlight">
+\[X_t = X_c = Y_t = Y_c = \sigma_y, \qquad S_{12} = \frac{\sigma_y}{\sqrt{3}}\]</div>
+<p>The shear strength follows from von Mises: in pure shear <span class="math notranslate nohighlight">\(\sigma_{vm} = \sqrt{3}\,\tau\)</span>, so yielding occurs at <span class="math notranslate nohighlight">\(\tau = \sigma_y/\sqrt{3}\)</span>.
+The Tsai-Wu coefficients then become</p>
+<div class="math notranslate nohighlight">
+\[F_1 = F_2 = 0, \qquad
+F_{11} = F_{22} = \frac{1}{\sigma_y^2}, \qquad
+F_{66} = \frac{3}{\sigma_y^2}\]</div>
+<p>and the interaction coefficient is set to</p>
+<div class="math notranslate nohighlight">
+\[F_{12} = -\frac{1}{2}\sqrt{F_{11} F_{22}} = -\frac{1}{2\sigma_y^2}\]</div>
+<p>which is the normalised value <span class="math notranslate nohighlight">\(F_{12}^* = F_{12}/\sqrt{F_{11}F_{22}} = -1/2\)</span>.
+It satisfies the stability criterion by construction, since <span class="math notranslate nohighlight">\(F_{12}^2 = \tfrac{1}{4} F_{11} F_{22} &lt; F_{11} F_{22}\)</span>.</p>
+<p>Because <span class="math notranslate nohighlight">\(F_1 = F_2 = 0\)</span> the linear part <span class="math notranslate nohighlight">\(b\)</span> vanishes, so the modified Tsai-Wu value reduces to the square root of the quadratic part:</p>
+<div class="math notranslate nohighlight">
+\[\text{fail} = \sqrt{a}
+            = \frac{1}{\sigma_y}\sqrt{s_1^2 + s_2^2 - s_1 s_2 + 3 s_{12}^2}\]</div>
+<p>which is exactly the plane-stress von Mises failure index.</p>
+<p>Note that the equivalence is exact in <em>value</em> only for the modified form.
+The standard <code class="docutils literal notranslate"><span class="pre">TSAI_WU</span></code> criterion returns <span class="math notranslate nohighlight">\(a\)</span>, the square of the von Mises index — the same failure surface at <span class="math notranslate nohighlight">\(\text{fail} = 1\)</span>, but a different value elsewhere.</p>
+</section>
+</section>
+<section id="cuntze">
+<h2>Cuntze<a class="headerlink" href="#cuntze" title="Link to this heading">¶</a></h2>
+<p>The Cuntze Failure Mode Concept computes a global material stressing effort <span class="math notranslate nohighlight">\(\text{Eff}\)</span> by interacting several independent failure modes through an exponent <span class="math notranslate nohighlight">\(m\)</span>.
+Fibre failure modes are labelled <code class="docutils literal notranslate"><span class="pre">FF</span></code> and inter-fibre failure modes <code class="docutils literal notranslate"><span class="pre">IFF</span></code>.
+If any mode reaches <span class="math notranslate nohighlight">\(\text{Eff} \geq 1\)</span> the material fails in that mode; the global effort reflects the interaction of simultaneously active modes.</p>
+<p>The concept is defined for general 3D stress states; the plane-stress specialisations implemented in TACS are given below.</p>
+<section id="unidirectional-plies">
+<h3>Unidirectional plies<a class="headerlink" href="#unidirectional-plies" title="Link to this heading">¶</a></h3>
+<p>Select with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion(CompositeFailureCriterion.CUNTZE_UD)</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[\text{Eff} = \left( \text{Eff}_{FF1}^m + \text{Eff}_{FF2}^m + \text{Eff}_{IFF1}^m
+             + \text{Eff}_{IFF2}^m + \text{Eff}_{IFF3}^m \right)^{1/m} \leq 1\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{Eff}_{FF1} &amp;= \frac{e_1 E_1}{X_t} \quad (e_1 \geq 0) \\
+\text{Eff}_{FF2} &amp;= \frac{-e_1 E_1}{X_c} \quad (e_1 &lt; 0) \\
+\text{Eff}_{IFF1} &amp;= \frac{s_2}{Y_t} \quad (s_2 \geq 0) \\
+\text{Eff}_{IFF2} &amp;= \frac{-s_2}{Y_c} \quad (s_2 &lt; 0) \\
+\text{Eff}_{IFF3} &amp;= \sqrt{\frac{s_{12}^2 \left( b_{tl} s_2
+                     + \sqrt{b_{tl}^2 s_2^2 + S_{12}^2} \right)}{S_{12}^3}}\end{split}\]</div>
+<p>The plane-stress equations are derived from the 3D formulation presented in
+E. Petersen, R. G. Cuntze, and C. Huehne, &quot;Experimental determination of material parameters in
+Cuntze's Failure-Mode-Concept-based UD strength failure conditions,&quot;
+<em>Compos. Sci. Technol.</em>, vol. 134, pp. 12-25, Oct. 2016,
+doi: <a class="reference external" href="https://doi.org/10.1016/j.compscitech.2016.08.006">10.1016/j.compscitech.2016.08.006</a>.</p>
+</section>
+<section id="woven-plies">
+<h3>Woven plies<a class="headerlink" href="#woven-plies" title="Link to this heading">¶</a></h3>
+<p>Select with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion(CompositeFailureCriterion.CUNTZE_WOVEN)</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{Eff} = \Big( \text{Eff}_{FF1}^m + \text{Eff}_{FF2}^m + \text{Eff}_{FF3}^m
+             + \text{Eff}_{FF4}^m + \text{Eff}_{IFF1}^m + \text{Eff}_{IFF2}^m \\
+             + \text{Eff}_{IFF3}^m + \text{Eff}_{IFF4}^m + \text{Eff}_{IFF5}^m \Big)^{1/m} \leq 1\end{split}\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\text{Eff}_{FF1} &amp;= \frac{e_1 E_1}{X_t} \quad (e_1 \geq 0) \\
+\text{Eff}_{FF2} &amp;= \frac{-e_1 E_1}{X_c} \quad (e_1 &lt; 0) \\
+\text{Eff}_{FF3} &amp;= \frac{e_2 E_2}{Y_t} \quad (e_2 \geq 0) \\
+\text{Eff}_{FF4} &amp;= \frac{-e_2 E_2}{Y_c} \quad (e_2 &lt; 0) \\
+\text{Eff}_{IFF3} &amp;= \frac{|s_{12}|}{S_{12} - \mu_{WF}(s_1 + s_2)}\end{split}\]</div>
+<p>For a plane stress state <span class="math notranslate nohighlight">\(\text{Eff}_{IFF1} = \text{Eff}_{IFF2} = \text{Eff}_{IFF4} = \text{Eff}_{IFF5} = 0\)</span>.</p>
+<p>Adapted from J. Bold, &quot;Vergleich des Impaktverhaltens von monolithischer und hybrider CFK-Platte
+unter Verwendung eines neuen Werkstoffmodells,&quot; Dr.-Ing. dissertation,
+Technische Universitaet Braunschweig, Braunschweig, Germany, 2018.</p>
+</section>
+</section>
+<section id="maximum-strain">
+<h2>Maximum strain<a class="headerlink" href="#maximum-strain" title="Link to this heading">¶</a></h2>
+<p>Select with <code class="docutils literal notranslate"><span class="pre">setFailureCriterion(CompositeFailureCriterion.MAX_STRAIN)</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[\text{KS}\left( \frac{e_i}{e_{i,\max}^{\pm}}, \rho \right) \leq 1\]</div>
+<p>where <span class="math notranslate nohighlight">\(e_{i,\max}^{\pm}\)</span> are the positive and negative strains at failure for component <span class="math notranslate nohighlight">\(i\)</span>, and <span class="math notranslate nohighlight">\(\rho\)</span> is the KS aggregation weight set by <code class="docutils literal notranslate"><span class="pre">setKSWeight</span></code>.
+The KS aggregation gives a smooth, conservative approximation to the maximum of the six ratios, which is desirable for gradient-based optimisation.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+  <div>
+    <h3><a href="../index.html">Table of Contents</a></h3>
+    <ul>
+<li><a class="reference internal" href="#">Composite failure criteria</a><ul>
+<li><a class="reference internal" href="#tsai-wu">Tsai-Wu</a></li>
+<li><a class="reference internal" href="#modified-tsai-wu-strength-ratio">Modified Tsai-Wu (strength ratio)</a><ul>
+<li><a class="reference internal" href="#equivalence-with-von-mises-for-isotropic-materials">Equivalence with von Mises for isotropic materials</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#cuntze">Cuntze</a><ul>
+<li><a class="reference internal" href="#unidirectional-plies">Unidirectional plies</a></li>
+<li><a class="reference internal" href="#woven-plies">Woven plies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#maximum-strain">Maximum strain</a></li>
+</ul>
+</li>
+</ul>
+
+  </div>
+  <div>
+    <h4>Previous topic</h4>
+    <p class="topless"><a href="shell_element.html"
+                          title="previous chapter">Beam and shell elements in TACS</a></p>
+  </div>
+  <div>
+    <h4>Next topic</h4>
+    <p class="topless"><a href="../core/core.html"
+                          title="next chapter">Core modules</a></p>
+  </div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../core/core.html" title="Core modules"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="shell_element.html" title="Beam and shell elements in TACS"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">TACS  documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="theory.html" >Theory</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Composite failure criteria</a></li> 
+      </ul>
+    </div>
+ <script type="text/javascript">
+    $(document).ready(function() {
+        $(".toggle > *").hide();
+        $(".toggle .header").show();
+        $(".toggle .header").click(function() {
+            $(this).parent().children().not(".header").toggle(400);
+            $(this).parent().children(".header").toggleClass("open");
+        })
+    });
+</script>
+
+  </body>
+</html>
