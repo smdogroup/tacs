@@ -569,24 +569,32 @@ TACSOrthotropicPly::TACSOrthotropicPly(TacsScalar _plyThickness,
   F11 = 1.0 / (Xt * Xc);
   F22 = 1.0 / (Yt * Yc);
   F66 = 1.0 / (S12 * S12);
-  if (TacsRealPart(C) != 0.0) {
-    F12 = 0.5 * (1.0 - (F1 + F2) * C - (F11 + F22) * C * C) / (C * C);
+  if (properties->getMaterialType() == TACS_ISOTROPIC_MATERIAL) {
+    // For an isotropic material this interaction coefficient makes the Tsai-Wu
+    // criterion equivalent to the von Mises criterion. It satisfies the
+    // stability criterion by construction, since F12^2 = 0.25*F11*F22, so no
+    // check is required here.
+    F12 = -0.5 * sqrt(F11 * F22);
   } else {
-    F12 = 0.0;  // Assume no interaction
-  }
+    if (TacsRealPart(C) != 0.0) {
+      F12 = 0.5 * (1.0 - (F1 + F2) * C - (F11 + F22) * C * C) / (C * C);
+    } else {
+      F12 = 0.0;  // Assume no interaction
+    }
 
-  // Check the stability criterion
-  if (TacsRealPart(F12 * F12) >= TacsRealPart(F11 * F22)) {
-    fprintf(stderr,
-            "TACSOrthotropicPly: Value of C = %e results in "
-            "non-physical F12 = %e. Setting F12 = 0.\n",
-            TacsRealPart(C), TacsRealPart(F12));
-    fprintf(stderr,
-            "TACSOrthotropicPly: Tsai-Wu coefficients: F11: "
-            "%e, F22: %e, F66: %e, F1: %e, F2: %e\n",
-            TacsRealPart(F11), TacsRealPart(F22), TacsRealPart(F66),
-            TacsRealPart(F1), TacsRealPart(F2));
-    F12 = 0.0;
+    // Check the stability criterion
+    if (TacsRealPart(F12 * F12) >= TacsRealPart(F11 * F22)) {
+      fprintf(stderr,
+              "TACSOrthotropicPly: Value of C = %e results in "
+              "non-physical F12 = %e. Setting F12 = 0.\n",
+              TacsRealPart(C), TacsRealPart(F12));
+      fprintf(stderr,
+              "TACSOrthotropicPly: Tsai-Wu coefficients: F11: "
+              "%e, F22: %e, F66: %e, F1: %e, F2: %e\n",
+              TacsRealPart(F11), TacsRealPart(F22), TacsRealPart(F66),
+              TacsRealPart(F1), TacsRealPart(F2));
+      F12 = 0.0;
+    }
   }
 
   // Set the default value of the KS penalty
