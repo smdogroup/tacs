@@ -514,7 +514,9 @@ TacsScalar TACSMaterialProperties::vonMisesFailure2DStressSens(
   Xt, Xc = Tensile and compressive fiber-aligned failure loads
   Yt, Yc = Tensile and compressive off-axis failure loads
   S12 = In plane shear failure load
-  C = Interaction strength such that sigma_1 = sigma_2 = C
+  C = Interaction strength such that sigma_1 = sigma_2 = C. Currently always
+      zero; the Tsai-Wu interaction coefficient F12 is derived from the
+      material type instead.
   b_tl = material friction parameter for the failure mode IFF3
          in the Cuntze failure criterion for UD material
   muWF = material friction value for the failure mode IFF_WF
@@ -833,87 +835,21 @@ void TACSOrthotropicPly::calculateStress(TacsScalar angle,
   fail <  1.0 ==> Okay
   fail >= 1.0 ==> Material failure
 
-  One of three failure criteria are used:
+  One of five criteria is used, selected via setFailureCriterion():
 
-  1a. The Tsai-Wu failure criterion:
+  TSAI_WU           Quadratic tensor polynomial in the ply stresses.
+  TSAI_WU_MODIFIED  Strength-ratio form of Tsai-Wu (the default). Scales
+                    linearly with the stress state, so it can be used
+                    directly as a safety factor. For an isotropic material
+                    this returns exactly the von Mises failure index.
+  CUNTZE_UD         Cuntze Failure Mode Concept for unidirectional plies.
+  CUNTZE_WOVEN      Cuntze Failure Mode Concept for woven plies.
+  MAX_STRAIN        KS-smoothed maximum strain criterion.
 
-  F(s) =
-  F1*s[0] + F2*s[1]
-  F11*s[0]**2 + F22*s[1]**2 +
-  2.0*F12*s[0]*s[1] + F66*s[2]**2 <= 1.0
-
-  To enable this method, call `setFailureCriterion(TSAI_WU)`
-
-  1b. The Tsai-Wu strength ratio:
-
-  This is similar to the Tsai-Wu criterion, except that the value
-  returned is actually 1/2 * (b + sqrt(b^2 + 4a)) where "b"
-  is the linear part of the Tsai-Wu criterion and "a" is the quadratic
-  part. This form is equivalent to the original form at the failure
-  boundary but has the advantage that it scales lineary when the stress
-  state is uniformly scaled. This means that the failure criterion can be
-  used to compute safety factors which is not true of the original quadratic
-  form. It also means that the failure criterion becomes equivalent to the
-  von-Mises criterion when the material properties are isotropic.
-
-  This is the default method
-
-  2a. The Failure Mode Concept from Cuntze for UD plies:
-
-  The global material stressing effort Eff is equivalent to the
-  strength ratio, if the strength ratio is derived by factoring
-  each stress by 1/SR, except for the failure mode IFF3, where
-  only the failure driving shear stresses are factored.
-
-  If any failure mode reaches a material stressing effort Eff
-  of >=1, the material will fail according to this failure mode.
-  The interaction of multiple active failure modes is reflected
-  by the global material stressing effort.
-
-  The Failure Mode Concept is suitable for 3D stress states,
-  however, the equations for the plane stress state are shown here.
-  They are derived from the 3D stress state equations presented in
-  E. Petersen, R. G. Cuntze, and C. Huehne, “Experimental determination of
-  material parameters in Cuntze’s Failure-Mode-Concept-based UD strength failure
-  conditions,” Compos. Sci. Technol., vol. 134, pp. 12–25, Oct. 2016,
-  doi: 10.1016/j.compscitech.2016.08.006.
-
-  Eff = (Eff_FF1**m + Eff_FF2**m + Eff_IFF1**m + Eff_IFF2**m +
-  Eff_IFF3**m)**(1/m) <= 1.0
-
-  with
-  (if e[0] >= 0):   Eff_FF1 = e[0] * E1 / Xt
-  (if e[0] < 0):    Eff_FF2 = -e[0] * E1 / Xc
-  (if s[1] >= 0):   Eff_IFF1 = s[1] / Yt
-  (if s[1] < 0):    Eff_IFF2 = -s[1] / Yc
-  Eff_IFF3 = sqrt(s[2]**2 * (b_tl * s[1] + sqrt(b_tl**2 * s[1]**2 + S12**2)) /
-  S12**3)
-
-  2b. The Failure Mode Concept from Cuntze for woven plies:
-
-  Adapted from J. Bold, "Vergleich des Impaktverhaltens von monolithischer und
-  hybrider CFK-Platte unter Verwendung eines neuen Werkstoffmodells," Dr.-Ing.
-  dissertation, Technische Universitaet Braunschweig, Braunschweig, Germany,
-  2018.
-
-  Eff = (Eff_FF1**m + Eff_FF2**m + Eff_FF3**m + Eff_FF4**m + Eff_IFF1**m +
-  Eff_IFF2**m + Eff_IFF3**m + Eff_IFF4**m + Eff_IFF5**m)**(1/m) <= 1.0
-
-  with
-  (if e[0] >= 0):   Eff_FF1 = e[0] * E1 / Xt
-  (if e[0] < 0):    Eff_FF2 = -e[0] * E1 / Xc
-  (if e[1] >= 0):   Eff_FF3 = e[1] * E2 / Yt
-  (if e[1] < 0):    Eff_FF4 = -e[1] * E2 / Yc
-  Eff_IFF3 = abs(s[2]) / (S12 - muWF * (s[0] + s[1]))
-  Eff_IFF1 = Eff_IFF2 = Eff_IFF4 = Eff_IFF5 = 0 for plane stress state
-
-  3. The maximum strain failure criteria:
-
-  KS(e_{i}/e_max^{+/-}, ksWeight) <= 1.0
-
-  where e_max^{+/-} are the postive and negative strains at failure
-  for component i. This ensures that the ratio of the maximum strain
-  over the strain at failure is below 1.
+  The governing equations, the coefficient definitions, the literature
+  references for the Cuntze criteria, and the derivation of the isotropic
+  von Mises equivalence are documented in
+  docs/source/theory/failure_criteria.rst.
 */
 TacsScalar TACSOrthotropicPly::failure(TacsScalar angle,
                                        const TacsScalar strain[]) {
