@@ -6,3 +6,5 @@ bd57c9dacc67766233118f73f34b655569e4737f
 9ea615a9db08d29760425f7689df5f2d0f813ac1
 # Clang format updates (#416)
 85fd18d06011edba02e86f66d38f7459b8d69ca5
+# Add ruff workflow and enforce stricter linting rules (#433)
+f0170177c0bfc3ad51d78228ac77c9bedfcde206

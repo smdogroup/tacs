@@ -29,7 +29,7 @@ class AflrAim:
 
     @property
     def aim(self):
-        """surface mesher aim aka aflr4 aim"""
+        """Surface mesher aim aka aflr4 aim"""
         return self._aim
 
     @property
@@ -89,14 +89,14 @@ class AflrAim:
         dictOptions = self._dictOptions
 
         if self.root_proc:
-            for ind, option in enumerate(dictOptions["aflr4AIM"]):
-                self.aim.input[option].value = dictOptions["aflr4AIM"][option]
+            for option, value in dictOptions["aflr4AIM"].items():
+                self.aim.input[option].value = value
 
         return self
 
     def register_to(self, tacs_aim):
         """
-        cascade method to register the egads aim to the tacs aim wrapper class
+        Cascade method to register the egads aim to the tacs aim wrapper class
         """
         tacs_aim.register(self)
         return self

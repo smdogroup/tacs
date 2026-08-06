@@ -42,7 +42,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "point_load_cgy": 0.5000000000000041,
         "point_load_cgz": -0.0035714285714285696,
         "point_load_compliance": 72.89406192461088,
-        "point_load_ks_failure": 1.5271816916601026,
+        "point_load_ks_failure": 1.527181598106537,
         "point_load_mass": 17.49999999999987,
         "pressure_Ixx": 1.4589304315475893,
         "pressure_Ixy": 3.552713678800501e-14,
@@ -54,7 +54,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "pressure_cgy": 0.5000000000000041,
         "pressure_cgz": -0.0035714285714285696,
         "pressure_compliance": 386.08932419333286,
-        "pressure_ks_failure": 2.0650026254455125,
+        "pressure_ks_failure": 2.065001799997708,
         "pressure_mass": 17.49999999999987,
         "gravity_Ixx": 1.4589304315475893,
         "gravity_Ixy": 3.552713678800501e-14,
@@ -66,7 +66,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "gravity_cgy": 0.5000000000000041,
         "gravity_cgz": -0.0035714285714285696,
         "gravity_compliance": 11.378942561176144,
-        "gravity_ks_failure": 0.35047628416141674,
+        "gravity_ks_failure": 0.35009983638179604,
         "gravity_mass": 17.49999999999987,
         "no_load_Ixx": 1.4589304315475893,
         "no_load_Ixy": 3.552713678800501e-14,
@@ -78,7 +78,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         "no_load_cgy": 0.5000000000000041,
         "no_load_cgz": -0.0035714285714285696,
         "no_load_compliance": 0j,
-        "no_load_ks_failure": 0.027465307216701942,
+        "no_load_ks_failure": 0.027465307216702806,
         "no_load_mass": 17.49999999999987,
         "modal_eigsm.0": 721146.5245587686,
         "modal_eigsm.1": 1566963.722841484,
@@ -129,7 +129,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
             # Set up constitutive model
             plyAngles = np.zeros(1)
-            plyFractions = stiffenerPlyFractions = np.ones(1)
+            plyFractions = np.ones(1)
 
             con = constitutive.BladeStiffenedShellConstitutive(
                 panelPly=ply,

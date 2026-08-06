@@ -98,6 +98,6 @@ if __name__ == "__main__":
             all_dt[-1].append(tf / num_steps)
 
     plt.figure()
-    for err, dt in zip(all_error, all_dt):
+    for err, dt in zip(all_error, all_dt, strict=True):
         plt.loglog(dt, err)
     plt.show()

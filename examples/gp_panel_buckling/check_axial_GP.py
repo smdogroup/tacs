@@ -7,8 +7,6 @@ Use the repo https://github.com/smdogroup/ml_buckling
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-import niceplots
 from tacs import TACS, constitutive
 import ml_buckling as mlb
 
@@ -31,6 +29,6 @@ Xtest[1] = np.log(rho0)
 Xtest[2] = np.log(1.0 + gamma)
 Xtest[3] = np.log(1.0 + 1000.0 * zeta)
 pred = axialGP.predict_mean_test_data(Xtest)
-print(f"\n", flush=True)
+print("\n", flush=True)
 print(f"Xtest = {Xtest}")
 print(f"pred = {pred}")

@@ -7,7 +7,6 @@ Also covers the deprecated ftype= kwarg and the deprecated setKS*Type setters.
 import os
 import unittest
 
-import numpy as np
 from mpi4py import MPI
 from tacs import constitutive, elements, functions, pytacs
 from tacs._testing import fails_at_version

@@ -10,8 +10,6 @@ The problem is identical to test_mach_beam_dvgeo, so reference values should mat
 
 import os
 import numpy as np
-from mpi4py import MPI
-import unittest
 
 from tacs import pyTACS
 from tacs import elements, constitutive, functions
@@ -33,10 +31,16 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     N_PROCS = 2
 
-    # Reference values for regression testing
+    # Reference values for regression testing.
+    # The second problem is identical to the first (same load file, same assembler),
+    # so it should produce the same function values. It exists to guard against a
+    # regression where loading forces from a file only worked for the first
+    # StructProblem sharing a given assembler/meshLoader (see readExternalForceFile).
     FUNC_REFS = {
         "tip_shear_ks_vmfailure": 2.492124644887184,
         "tip_shear_mass": 2.7799999999999963,
+        "tip_shear_2_ks_vmfailure": 2.492124644887184,
+        "tip_shear_2_mass": 2.7799999999999963,
     }
 
     def setup_struct_problems(self, comm):
@@ -83,4 +87,18 @@ class TestMACHBeamExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # Create MACH StructProblem
         structProb = StructProblem(staticProb, FEAAssembler, loadFile=load_file)
 
-        return [structProb]
+        # Create a second, identical static problem from the same assembler and
+        # wrap it in another StructProblem that also loads forces from a file.
+        # Because the bdfInfo is shared across problems from the same meshLoader,
+        # this exercises the code path where the load file must be applied to more
+        # than one StructProblem.
+        staticProb2 = FEAAssembler.createStaticProblem("tip_shear_2")
+        staticProb2.addFunction("mass", functions.StructuralMass)
+        staticProb2.addFunction(
+            "ks_vmfailure", functions.KSFailure, safetyFactor=1.0, ksWeight=ksweight
+        )
+        staticProb2.setOption("L2Convergence", 1e-20)
+        staticProb2.setOption("L2ConvergenceRel", 1e-20)
+        structProb2 = StructProblem(staticProb2, FEAAssembler, loadFile=load_file)
+
+        return [structProb, structProb2]

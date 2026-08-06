@@ -7,7 +7,7 @@ To call mpi version use (e.g. with 4 procs):
     mpirun -n 4 python 7_multiproc_post_analysis.py
 * For local machine I use conda-mpirun alias instead of mpirun to point to my mpich from conda-forge mpi4py
 
-Timing data comparison for different # of procs to show speedup 
+Timing data comparison for different # of procs to show speedup
     of optimization iterations with shape derivative on multi-procs:
     but use different # of active procs in the TacsModel inputs
 The # of parallel tacsAIMs is controlled through the active_procs input to the TacsModel i.e. if len(active_procs) == 3
@@ -20,7 +20,7 @@ post_analysis time (4 shape variables, 4 procs)
 3 tacsAIMs - 1.157 mins
 4 tacsAIMs - 0.591 mins
 
-NOTE : with 2 tacsAIMs - both tacsAIMs have 2 shape vars while 
+NOTE : with 2 tacsAIMs - both tacsAIMs have 2 shape vars while
     with 3 tacsAIMs - 2 AIMs have 1 shape var and 1 has 2 shape vars
     so the runtime for 2 or 3 instances is the same. It's not until 4 instances
     that we reach full 4x speedup.
@@ -45,9 +45,7 @@ tacs_model.mesh_aim.set_mesh(  # need a refined-enough mesh for the derivative t
     global_mesh_size=0.01,
     max_surf_offset=0.01,
     max_dihedral_angle=5,
-).register_to(
-    tacs_model
-)
+).register_to(tacs_model)
 tacs_aim = tacs_model.tacs_aim
 
 aluminum = caps2tacs.Isotropic.aluminum().register_to(tacs_model)
@@ -117,4 +115,6 @@ mins_elapsed = (time.time() - start_time1) / 60.0
 naims = len(tacs_model.active_procs)
 if comm.rank == 0:
     print(f"Elapsed time with {naims} procs is {mins_elapsed} mins using 4 shape vars.")
-    print(f"Also each post analysis took {post_analysis_time/60.0:.4f} min", flush=True)
+    print(
+        f"Also each post analysis took {post_analysis_time / 60.0:.4f} min", flush=True
+    )

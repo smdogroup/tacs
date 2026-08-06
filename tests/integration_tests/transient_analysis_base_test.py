@@ -9,18 +9,18 @@ from tacs import TACS
 This is a base class for transient problem unit test cases.
 This base class will test function evaluations and total
 sensitivities for the user-specified problem that inherits from it.
-When the user creates a new test based on this class four 
-methods are required to be defined in the child class. 
+When the user creates a new test based on this class four
+methods are required to be defined in the child class.
 
     1. setup_assembler
     2. setup_integrator
     3. setup_tacs_vecs
     4. setup_funcs
-    
-See the virtual method implementations for each method 
+
+See the virtual method implementations for each method
 below for more details.
 
-NOTE: The child class must NOT implement its own setUp method 
+NOTE: The child class must NOT implement its own setUp method
 for the unittest class. This is handled in the base class.
 """
 

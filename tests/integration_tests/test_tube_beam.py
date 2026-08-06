@@ -11,7 +11,7 @@ from tacs import TACS, constitutive, elements, functions, pytacs
 The cross-section is a hollow tube with the following properties:
     d = 0.1
     t = 0.01
-We apply apply various tip loads test KSDisplacement, KSFailure, 
+We apply apply various tip loads test KSDisplacement, KSFailure,
 StructuralMass, and Compliance functions and sensitivities.
 """
 

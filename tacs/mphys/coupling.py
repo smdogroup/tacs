@@ -60,7 +60,7 @@ class TacsCouplingGroup(om.Group):
         if self.coupled:
             self.rhs_name_masked = f"{self.rhs_name}_masked"
             input_metadata = []
-            for i, load_name in enumerate(self.coupling_loads):
+            for load_name in self.coupling_loads:
                 var_desc = DistributedVariableDescription(
                     name=load_name,
                     shape=(nnodes - nmult) * vpn,

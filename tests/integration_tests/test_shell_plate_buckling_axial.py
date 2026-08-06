@@ -5,7 +5,7 @@ from tacs import pytacs, elements, constitutive
 
 """"
 The nominal case is a 4m x 3m flat plate under a buckling analysis. The
-perimeter of the plate is pinned and loaded in compression on its horizontal edges. 
+perimeter of the plate is pinned and loaded in compression on its horizontal edges.
 This tests the eigenvalues and eigenvalue sensitivities
 """
 

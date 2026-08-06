@@ -604,11 +604,12 @@ cdef class OrthotropicPly:
     properties for an orthotropic ply. This class is used by several
     constitutive classes within TACS.
 
-    The interaction coefficient for the Tsai-Wu failure criterion is set
-    to zero by default. If a value of C, the failure stress under
-    combined in-plane loading, is supplied, the interaction coefficient
-    is determined. Be careful - the value can easily fall outside
-    acceptable bounds - these are tested during initialization.
+    The Tsai-Wu interaction coefficient F12 is set to zero for orthotropic
+    materials, matching the default of the Nastran MAT8 card. For isotropic
+    materials it is set so that the criterion is equivalent to von Mises: with
+    the default ``TSAI_WU_MODIFIED`` criterion an isotropic ply returns exactly
+    the von Mises failure index, while ``TSAI_WU`` returns its square. See the
+    Failure criteria page in the theory documentation for the derivation.
 
     Args:
         plyThickness (float or complex): The ply thickness.
@@ -1104,19 +1105,21 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         tOffset (float or complex, optional): Offset distance of reference plane (where nodes are located) relative to thickness mid-plane.
             Measured in fraction of shell thickness. A value of 0.5 places the reference plane at the top of the plate,
             a value of 0.0 at the plate mid-plane, and a value of -0.5 at the bottom of the plate. Defaults to 0.0.
+        kcorr (float or complex, optional): FSDT shear correction factor. Defaults to 5.0/6.0.
     """
     def __cinit__(self, *args, **kwargs):
         _check_constitutive_kwargs(
             self, IsoShellConstitutive, kwargs,
             required_keys=["t"],
-            valid_keys=["tNum", "tlb", "tub", "tOffset"],
+            valid_keys=["tNum", "tlb", "tub", "tOffset", "kcorr"],
         )
         cdef TACSMaterialProperties *props = NULL
         cdef TacsScalar t = 1.0
         cdef int tNum = -1
         cdef TacsScalar tlb = 0.0
         cdef TacsScalar tub = 10.0
-        cdef TacsScalar tOff = 0.0
+        cdef TacsScalar tOffset = 0.0
+        cdef TacsScalar kcorr = 5.0/6.0
 
         if len(args) >= 1:
             props = (<MaterialProperties>args[0]).ptr
@@ -1130,11 +1133,13 @@ cdef class IsoShellConstitutive(ShellConstitutive):
         if 'tub' in kwargs:
             tub = kwargs['tub']
         if 'tOffset' in kwargs:
-            tOff = kwargs['tOffset']
+            tOffset = kwargs['tOffset']
+        if 'kcorr' in kwargs:
+            kcorr = kwargs['kcorr']
 
         if props is not NULL:
             self.cptr = new TACSIsoShellConstitutive(props, t, tNum,
-                                                     tlb, tub, tOff)
+                                                     tlb, tub, tOffset, kcorr)
             self.ptr = self.cptr
             self.ptr.incref()
         else:

@@ -9,7 +9,6 @@ This tests the MACH StructProblem object's DVGeo and design variable sensitiviti
 
 import os
 import numpy as np
-from mpi4py import MPI
 import unittest
 
 from tacs import pyTACS
@@ -38,8 +37,8 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     # Reference values for regression testing
     FUNC_REFS = {
-        "2.5gload_SKIN_ksFailure": 2.691412638786663,
-        "2.5gload_SPAR_RIB_ksFailure": 0.9914913955971043,
+        "2.5gload_SKIN_ksFailure": 2.3675176011386587,
+        "2.5gload_SPAR_RIB_ksFailure": 0.9114569503482862,
         "panel_length_con_ALL": np.array(
             [
                 0.03177571,
@@ -148,8 +147,6 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # Design variable values, bounds, and scaling factors
         # ==============================================================================
         # Panel length
-        panelLengthMax = np.inf
-        panelLengthMin = 0.0
         panelLengthScale = 1.0
 
         # Stiffener pitch
@@ -248,7 +245,6 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
             # Always use the 0-deg biased layup for the stiffeners
             stiffenerPlyFractions = panelPlyFractions
-            numPlies = len(plyAngles)
 
             # --- Setup DV numbering and scaling ---
 

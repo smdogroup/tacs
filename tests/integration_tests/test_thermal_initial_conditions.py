@@ -73,7 +73,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs = []
 
         # Create static problem, loads are already applied through BCs
-        sp = fea_assembler.createStaticProblem(name="steady_state")
+        sp = fea_assembler.createStaticProblem(
+            name="steady_state", options=struct_options
+        )
         tacs_probs.append(sp)
 
         # Create transient problem, loads are already applied through BCs

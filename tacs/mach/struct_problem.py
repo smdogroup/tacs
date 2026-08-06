@@ -71,6 +71,7 @@ class StructProblem(BaseStructProblem):
         self.ptSetName = None
         self.loadFile = loadFile
         self.constraints = []
+        self.solveFailed = False
 
         if self.staticProblem.assembler != self.FEAAssembler.assembler:
             raise RuntimeError(
@@ -337,7 +338,7 @@ class StructProblem(BaseStructProblem):
         if more than 1 pytacs object is used in an optimization
 
         Returns
-        ----------
+        -------
         varName : str
             Name of the design variables used in setDesignVars() dict.
         """
@@ -443,7 +444,9 @@ class StructProblem(BaseStructProblem):
                 dvName, ndv, "c", value=value, lower=lb, upper=ub, scale=scale
             )
 
-    def addConstraintsPyOpt(self, optProb, nonLinear=True, linear=True):
+    def addConstraintsPyOpt(
+        self, optProb, nonLinear=True, linear=True, excludeWRT=None
+    ):
         """
         Add any linear constraints that were generated during setup to
         the specified pyOpt problem.
@@ -456,6 +459,12 @@ class StructProblem(BaseStructProblem):
             Flag to include non-linear constraints.
         linear : bool
             Flag to include linear constraints.
+        excludeWRT : list of str or str, optional
+            Additional DV names to remove from the ``wrt`` list for every
+            constraint.  Useful for DVs whose structural sensitivity is
+            analytically zero and should not contribute a Jacobian block,
+            e.g. geometric DVs when a DVGeo is attached to the StructProblem
+            but the geometric DVs are not part of the optimization.
         """
         fcon = {}
         fconSens = {}
@@ -479,6 +488,17 @@ class StructProblem(BaseStructProblem):
 
                 # Just evaluate the constraint to get the jacobian structure
                 wrt = list(fconSens[conName].keys())
+
+                # we may want to remove specific dvs from the wrt list
+                if excludeWRT is not None:
+                    if isinstance(excludeWRT, str):
+                        excludeWRT = [excludeWRT]
+
+                    for name in excludeWRT:
+                        if name in wrt:
+                            wrt.remove(name)
+                            fconSens[conName].pop(name)
+
                 optProb.addConGroup(
                     conName,
                     nCon,
@@ -528,7 +548,7 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.getVariables(u0)
 
         # Solve static problem w/o damping
-        successFlag = self.staticProblem.solve(Fext=self._Fext)
+        self.solveFailed = not self.staticProblem.solve(Fext=self._Fext)
 
         # Compute undamped update
         self.staticProblem.getVariables(self.update)
@@ -564,6 +584,21 @@ class StructProblem(BaseStructProblem):
         self.staticProblem.setLoadScale(loadScale0)
 
         return damp
+
+    def checkSolutionFailure(self, funcs: dict) -> None:
+        """
+        Check whether the last structural solve failed and accumulate into funcs.
+
+        Parameters
+        ----------
+        funcs : dict
+            Dictionary of functions. A ``"fail"`` key is set (or OR-ed) with the
+            failure flag from the most recent call to :meth:`solve`.
+        """
+        if "fail" in funcs:
+            funcs["fail"] = funcs["fail"] or self.solveFailed
+        else:
+            funcs["fail"] = self.solveFailed
 
     @updateDVGeo
     def evalFunctions(self, funcs, evalFuncs=None, ignoreMissing=False):
@@ -691,7 +726,6 @@ class StructProblem(BaseStructProblem):
         # Compute the DVGeo sensitivities if requested
         if self.DVGeo is not None:
             coordName = self.staticProblem.getCoordName()
-            self.DVGeo.computeTotalJacobian(self.ptSetName, config=self.name)
             for conKey in sens:
                 if coordName in sens[conKey]:
                     # Pop out the constraint sensitivities wrt TACS coords
@@ -701,16 +735,14 @@ class StructProblem(BaseStructProblem):
                     if total_nnz == 0:
                         # if so, skip DVGeo sensitivities
                         continue
-                    # Get the Jacobian
-                    Jacobian = self.DVGeo.JT[self.ptSetName]
-                    # Compute the local Jacobian product
-                    dIdx_local = dIdpt.dot(Jacobian.T)
-                    # Add dvgeo contribution across all procs
-                    dIdx = self.comm.allreduce(dIdx_local.toarray(), op=MPI.SUM)
-                    # Convert to dict
-                    dIdx_dict = self.DVGeo.convertSensitivityToDict(np.atleast_2d(dIdx))
-                    # Update sensitivity dict with new DVGeo sensitivities
-                    sens[conKey].update(dIdx_dict)
+
+                    # pyGeo expects dIdpt to be a 3D array for multiple constraints, can only do this if we make it dense.
+                    dIdpt = dIdpt.toarray().reshape((dIdpt.shape[0], -1, 3))
+                    sens[conKey].update(
+                        self.DVGeo.totalSensitivity(
+                            dIdpt, self.ptSetName, comm=self.comm, config=self.name
+                        )
+                    )
 
         fconSens.update(sens)
 
@@ -1492,6 +1524,11 @@ class StructProblem(BaseStructProblem):
         # Step 2: Overwrite bdfInfo loads with forceInfo loads
         bdfInfo.loads = copy.deepcopy(forceInfo.loads)
         bdfInfo.load_combinations = copy.deepcopy(forceInfo.load_combinations)
+        # The newly assigned loads are not cross-referenced (node_ref etc. are None),
+        # so force a re-cross-reference on the next addLoadFromBDF call. bdfInfo is
+        # shared across all problems from the same meshLoader, so it may already be
+        # marked as cross-referenced from a previously constructed problem.
+        bdfInfo.is_xrefed = False
 
         # Create a copy of the internal loads already added to model
         F = self.staticProblem.F
@@ -1508,3 +1545,6 @@ class StructProblem(BaseStructProblem):
         # Step 3: Restore original loads back into bdfInfo
         bdfInfo.loads = originalLoads
         bdfInfo.load_combinations = originalLoadCombinations
+        # The restored loads are an un-cross-referenced deepcopy, so force a
+        # re-cross-reference on the next addLoadFromBDF call.
+        bdfInfo.is_xrefed = False

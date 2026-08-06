@@ -381,7 +381,14 @@ class ContinuationSolver(BaseSolver):
             self.innerSolver.setConvergenceTolerance(absTol=atol, relTol=rtol)
 
             # Before calling the inner solver we need to create a callback function so that we can store data in this solver's history file at every iteration of the inner solver
-            def continuationcallBack(solver, u, res, monitorVars):
+            def continuationcallBack(
+                solver,
+                u,
+                res,
+                monitorVars,
+                increment=increment,
+                currentLambda=currentLambda,
+            ):
                 monitorVars["SubIter"] = solver.iterationCount
                 monitorVars["Increment"] = increment
                 monitorVars["Lambda"] = currentLambda

@@ -281,7 +281,7 @@ class TransientProblem(TACSProblem):
         Get the number of time steps used in time integration for this problem.
 
         Returns
-        ----------
+        -------
         numSteps : int
             Number of time steps.
         """
@@ -293,7 +293,7 @@ class TransientProblem(TACSProblem):
         Get the discrete time step slices used in time integration.
 
         Returns
-        ----------
+        -------
         timeSteps : numpy.ndarray[float]
             Discrete time step slices used in time integration.
         """
@@ -305,7 +305,7 @@ class TransientProblem(TACSProblem):
         Get the number of time stages used for multi-stage time integration for this problem.
 
         Returns
-        ----------
+        -------
         numStages : int
             Number of time stages.
         """
@@ -321,12 +321,11 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to get stage times for.
 
         Returns
-        ----------
+        -------
         timeStages : numpy.ndarray[float]
             Time step slices used to discretize this time step.
         """
@@ -358,7 +357,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -381,7 +379,6 @@ class TransientProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -421,7 +418,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -443,7 +439,6 @@ class TransientProblem(TACSProblem):
 
         Notes
         -----
-
         The units of the entries of the 'force' vector F are not
         necessarily physical forces and their interpretation depends
         on the physics problem being solved and the dofs included
@@ -490,7 +485,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -525,7 +519,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -576,7 +569,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -624,7 +616,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -675,7 +666,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -720,7 +710,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -752,7 +741,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -787,7 +775,6 @@ class TransientProblem(TACSProblem):
 
         Parameters
         ----------
-
         timeStep : int
             Time step index to apply load to.
 
@@ -956,11 +943,11 @@ class TransientProblem(TACSProblem):
         >>> transientProblem.prepIterativeSolve()
         >>> for step in range(transientProblem.numSteps + 1):
         >>>     for stage in range(transientProblem.numStages):
-        >>>         # assume load array comes from an external CFD solver...
+        >>> # assume load array comes from an external CFD solver...
         >>>         Fext = externalCFDSolver.solve(step, stage)
-        >>>         # iterate the transient problem in TACS
+        >>> # iterate the transient problem in TACS
         >>>         transientProblem.iterate(timeStep=step, timeStage=stage, Fext=Fext)
-        >>>         # get the necessary structural states for coupling
+        >>> # get the necessary structural states for coupling
         >>>         time, states, dstates, ddstates = transientProblem.getVariables(timeStep=step, timeStage=stage)
         """
         # evaluate the time index
@@ -968,9 +955,9 @@ class TransientProblem(TACSProblem):
             timeIndex = timeStep
         else:
             # check that the integrator is multistage
-            assert (
-                self.numStages is not None
-            ), f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK','ESDIRK']}"
+            assert self.numStages is not None, (
+                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
+            )
             timeIndex = timeStep * self.numStages + timeStage
 
         # set the loads - do not change self.F[timeIndex] in place
@@ -1054,7 +1041,7 @@ class TransientProblem(TACSProblem):
         --------
         >>> funcs = {}
         >>> transientProblem.solve()
-        >>> transientProblem.evalFunctions(funcs, ['mass'])
+        >>> transientProblem.evalFunctions(funcs, ["mass"])
         >>> funcs
         >>> # Result will look like (if TransientProblem has name of 'c1'):
         >>> # {'cl_mass':12354.10}
@@ -1146,7 +1133,7 @@ class TransientProblem(TACSProblem):
         Examples
         --------
         >>> funcsSens = {}
-        >>> transientProblem.evalFunctionsSens(funcsSens, ['mass'])
+        >>> transientProblem.evalFunctionsSens(funcsSens, ["mass"])
         >>> funcsSens
         >>> # Result will look like (if TransientProblem has name of 'c1'):
         >>> # {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}
@@ -1165,7 +1152,7 @@ class TransientProblem(TACSProblem):
         for f in evalFuncs:
             if f not in self.functionList:
                 raise self._TACSError(
-                    "Supplied function has not been added " "using addFunction()"
+                    "Supplied function has not been added using addFunction()"
                 )
 
         # Fast parallel function evaluation of structural funcs:
@@ -1244,7 +1231,7 @@ class TransientProblem(TACSProblem):
             If ddstates is not None, place the second time derivative of the state variables into this array (optional).
 
         Returns
-        --------
+        -------
         time: float
             The time at specified time instance
 
@@ -1264,9 +1251,9 @@ class TransientProblem(TACSProblem):
             time, q, qdot, qddot = self.integrator.getStates(timeStep)
         else:
             # check that the integrator is multistage
-            assert (
-                self.numStages is not None
-            ), f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK','ESDIRK']}"
+            assert self.numStages is not None, (
+                f"current integrator type {self.getOption('timeIntegrator').upper()} is not multistage, choose a multistage integrator from {['DIRK', 'ESDIRK']}"
+            )
             time, q, qdot, qddot = self.integrator.getStageStates(timeStep, timeStage)
 
         # Convert to arrays

@@ -27,7 +27,7 @@ const char *TACSIsoShellConstitutive::constName = "TACSIsoShellConstitutive";
 */
 TACSIsoShellConstitutive::TACSIsoShellConstitutive(
     TACSMaterialProperties *props, TacsScalar _t, int _tNum, TacsScalar _tlb,
-    TacsScalar _tub, TacsScalar _tOffset) {
+    TacsScalar _tub, TacsScalar _tOffset, TacsScalar _kcorr) {
   properties = props;
   if (properties) {
     properties->incref();
@@ -38,7 +38,7 @@ TACSIsoShellConstitutive::TACSIsoShellConstitutive(
   tlb = _tlb;
   tub = _tub;
   tOffset = _tOffset;
-  kcorr = 5.0 / 6.0;
+  kcorr = _kcorr;
   ksWeight = 100.0;
 }
 
@@ -174,7 +174,7 @@ void TACSIsoShellConstitutive::evalStress(int elemIndex, const double pt[],
     }
 
     // Set the through-thickness shear stiffness
-    As[0] = As[2] = (5.0 / 6.0) * A[5];
+    As[0] = As[2] = kcorr * A[5];
     As[1] = 0.0;
 
     drill = 0.5 * DRILLING_REGULARIZATION * (As[0] + As[2]);
@@ -216,7 +216,7 @@ void TACSIsoShellConstitutive::evalTangentStiffness(int elemIndex,
     }
 
     // Set the through-thickness shear stiffness
-    As[0] = As[2] = (5.0 / 6.0) * A[5];
+    As[0] = As[2] = kcorr * A[5];
     As[1] = 0.0;
 
     C[21] = 0.5 * DRILLING_REGULARIZATION * (As[0] + As[2]);
@@ -244,7 +244,7 @@ void TACSIsoShellConstitutive::addStressDVSens(int elemIndex, TacsScalar scale,
                  dI * mat3x3SymmInner(A, &psi[3], &e[3]) +
                  -2.0 * tOffset * t * mat3x3SymmInner(A, &psi[0], &e[3]) +
                  -2.0 * tOffset * t * mat3x3SymmInner(A, &psi[3], &e[0]) +
-                 (5.0 / 6.0) * A[5] *
+                 kcorr * A[5] *
                      (psi[6] * e[6] + psi[7] * e[7] +
                       DRILLING_REGULARIZATION * psi[8] * e[8]));
   }
