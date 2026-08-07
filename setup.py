@@ -132,7 +132,7 @@ setup(
         "mpi4py>=4.0.3,<5.0.0",
         "scipy>=1.2.1",
         # pin pynastran against last commit that supports python 3.10
-        "pynastran @ git+https://github.com/smdogroup/pyNastran.git@ba6a3c460f65fd4083b08579e462de40c6b0cf84",
+        "pynastran @ git+https://github.com/smdogroup/pyNastran.git@e76ee3bebcf44abff38a6475f34bf61d750789d6",
         "numba",
         "packaging",
     ],
