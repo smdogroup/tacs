@@ -1731,6 +1731,11 @@ class StructProblem(BaseStructProblem):
         # Step 2: Overwrite bdfInfo loads with forceInfo loads
         bdfInfo.loads = copy.deepcopy(forceInfo.loads)
         bdfInfo.load_combinations = copy.deepcopy(forceInfo.load_combinations)
+        # The newly assigned loads are not cross-referenced (node_ref etc. are None),
+        # so force a re-cross-reference on the next addLoadFromBDF call. bdfInfo is
+        # shared across all problems from the same meshLoader, so it may already be
+        # marked as cross-referenced from a previously constructed problem.
+        bdfInfo.is_xrefed = False
 
         # Create a copy of the internal loads already added to model
         F = self.staticProblem.F
@@ -1747,3 +1752,6 @@ class StructProblem(BaseStructProblem):
         # Step 3: Restore original loads back into bdfInfo
         bdfInfo.loads = originalLoads
         bdfInfo.load_combinations = originalLoadCombinations
+        # The restored loads are an un-cross-referenced deepcopy, so force a
+        # re-cross-reference on the next addLoadFromBDF call.
+        bdfInfo.is_xrefed = False

@@ -604,11 +604,12 @@ cdef class OrthotropicPly:
     properties for an orthotropic ply. This class is used by several
     constitutive classes within TACS.
 
-    The interaction coefficient for the Tsai-Wu failure criterion is set
-    to zero by default. If a value of C, the failure stress under
-    combined in-plane loading, is supplied, the interaction coefficient
-    is determined. Be careful - the value can easily fall outside
-    acceptable bounds - these are tested during initialization.
+    The Tsai-Wu interaction coefficient F12 is set to zero for orthotropic
+    materials, matching the default of the Nastran MAT8 card. For isotropic
+    materials it is set so that the criterion is equivalent to von Mises: with
+    the default ``TSAI_WU_MODIFIED`` criterion an isotropic ply returns exactly
+    the von Mises failure index, while ``TSAI_WU`` returns its square. See the
+    Failure criteria page in the theory documentation for the derivation.
 
     Args:
         plyThickness (float or complex): The ply thickness.

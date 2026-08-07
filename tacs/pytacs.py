@@ -1058,6 +1058,11 @@ class pyTACS(BaseUI):
         def matCallBack(matInfo):
             # Nastran isotropic material card
             if matInfo.type == "MAT1":
+                if matInfo.St == 0:
+                    self._TACSWarning(
+                        f"MAT1 card {matInfo.mid} has a zero tensile strength, check St. "
+                        "Otherwise the failure criterion is undefined or infinity."
+                    )
                 mat = tacs.constitutive.MaterialProperties(
                     rho=matInfo.rho,
                     E=matInfo.e,
@@ -1087,7 +1092,7 @@ class pyTACS(BaseUI):
 
                 if S12 == 0 or Xt == 0 or Xc == 0 or Yt == 0 or Yc == 0:
                     self._TACSWarning(
-                        f"MAT8 card {matInfo.mid} has a zero strength, check Xc, Xt, Yc, Yt, and S12."
+                        f"MAT8 card {matInfo.mid} has a zero strength, check Xc, Xt, Yc, Yt, and S12. "
                         "Otherwise Tsai-Wu Failure criterion is undefined or infinity."
                     )
 
