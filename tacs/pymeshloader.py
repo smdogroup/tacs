@@ -851,7 +851,7 @@ class pyMeshLoader(BaseUI):
         elemObj = self.elemObjects[elemObjNum]
         return elemObj
 
-    def createTACSAssembler(self, varsPerNode, massDVs, numDVs, globalDVNums=None):
+    def createTACSAssembler(self, varsPerNode, massDVs, globalDVNums=None):
         """
         Setup TACSCreator object responsible for creating TACSAssembler
 
@@ -862,9 +862,6 @@ class pyMeshLoader(BaseUI):
 
         massDVs : dict
             Dictionary holding dv info for point masses.
-
-        numDVs : int
-            Total number of design variables for the model.
 
         globalDVNums : array-like of int, optional
             DV indices that must be available on every MPI rank (e.g. indices

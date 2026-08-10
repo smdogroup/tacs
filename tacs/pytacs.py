@@ -907,7 +907,7 @@ class pyTACS(BaseUI):
 
         global_dv_nums = self.getGlobalDVNums()
         self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs, self.dvNum, globalDVNums=global_dv_nums
+            self.varsPerNode, self.massDVs, globalDVNums=global_dv_nums
         )
         self._createOutputViewer()
 
