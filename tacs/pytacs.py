@@ -970,13 +970,27 @@ class pyTACS(BaseUI):
         system.setDesignVarRange(self.xlb.getArray(), self.xub.getArray())
 
     def _setGlobalDVValues(self, vec, dv_nums, dv_vals):
-        """Insert global DV values into a distributed design vec."""
+        """Insert global DV values into a distributed design vec.
+
+        Every proc holds the full list of global DV numbers and values, so every
+        proc calls setValues with INSERT_VALUES. The owning proc of each index
+        therefore writes the exact value locally, including an exact zero -- an
+        INSERT_NONZERO_VALUES insert here would silently skip zeros and leave
+        the value or bound at whatever the elements reported.
+
+        The reverse communication in begin/endSetValues must stay on
+        INSERT_NONZERO_VALUES. It ships each proc's *entire* external array, and
+        that array is zeroed after every set cycle, so an INSERT_VALUES reverse
+        op would overwrite every other proc's owned design variables with zeros.
+        The non-owning procs' contributions are redundant with the owner's local
+        insert, so dropping their zeros loses nothing.
+        """
         if not dv_nums:
             return
         vec.setValues(
             np.array(dv_nums, dtype=np.intc),
             np.array(dv_vals, dtype=self.dtype),
-            op=tacs.TACS.INSERT_NONZERO_VALUES,
+            op=tacs.TACS.INSERT_VALUES,
         )
         vec.beginSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
         vec.endSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)

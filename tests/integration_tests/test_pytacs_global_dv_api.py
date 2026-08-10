@@ -147,6 +147,62 @@ class GlobalDVAPITest(unittest.TestCase):
         self.assertTrue(dv_dict["isMassDV"])
 
 
+class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
+    """
+    The bounds and values registered with addGlobalDV are only pushed into the
+    design vectors during initialize, so these checks have to run on an
+    initialized assembler. Zero-valued entries are the interesting case: they
+    used to be dropped on the way into the vector, leaving the bound at whatever
+    the elements reported.
+    """
+
+    N_PROCS = 1
+
+    def test_scalar_zero_bounds_are_applied(self):
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        # A mass dv gets its bounds from the constitutive object (+/-1e20 by
+        # default), so a dropped zero bound here is visible
+        dvNum = fea_assembler.addGlobalDV("point_mass", 20.0, lower=0.0, upper=0.0)
+        fea_assembler.assignMassDV("point_mass", 1, "m")
+        fea_assembler.initialize()
+
+        xlb, xub = fea_assembler.getDesignVarRange()
+        self.assertEqual(np.real(xlb[dvNum]), 0.0)
+        self.assertEqual(np.real(xub[dvNum]), 0.0)
+
+    def test_array_zero_bounds_and_values_are_applied(self):
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        dvNums = fea_assembler.addGlobalDV(
+            "g", [0.0, 0.0, -9.81], lower=[0.0, -1.0, -20.0], upper=[0.0, 1.0, 0.0]
+        )
+        fea_assembler.initialize()
+
+        xlb, xub = fea_assembler.getDesignVarRange()
+        np.testing.assert_array_equal(np.real(xlb[dvNums]), [0.0, -1.0, -20.0])
+        np.testing.assert_array_equal(np.real(xub[dvNums]), [0.0, 1.0, 0.0])
+        # A zero initial value must survive the same round trip
+        x0 = fea_assembler.getOrigDesignVars()
+        np.testing.assert_array_equal(np.real(x0[dvNums]), [0.0, 0.0, -9.81])
+
+    def test_zero_overwrites_a_nonzero_entry(self):
+        """
+        The two tests above only pin the observable behaviour; they cannot tell
+        an insert from a non-zero insert, because an unclaimed global dv entry
+        already defaults to zero. This checks the insert directly: a zero value
+        has to overwrite whatever the elements put in the vector, which is what
+        breaks if the values are inserted with INSERT_NONZERO_VALUES.
+        """
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        dvNum = fea_assembler.addGlobalDV("point_mass", 20.0)
+        fea_assembler.assignMassDV("point_mass", 1, "m")
+        fea_assembler.initialize()
+
+        vec = fea_assembler.assembler.createDesignVec()
+        vec.getArray()[:] = -1e20
+        fea_assembler._setGlobalDVValues(vec, [dvNum], [0.0])
+        self.assertEqual(np.real(vec.getArray()[dvNum]), 0.0)
+
+
 @unittest.skipIf(om is None, "openmdao is not installed")
 class TacsDVCompArrayMassTest(unittest.TestCase):
     N_PROCS = 1
