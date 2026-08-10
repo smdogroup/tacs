@@ -1,5 +1,5 @@
 [![Build, unit tests, and docs](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/smdogroup/tacs/actions/workflows/unit_tests.yml)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [![Anaconda-Server Badge](https://anaconda.org/smdogroup/tacs/badges/version.svg)](https://anaconda.org/smdogroup/tacs)
@@ -133,8 +133,14 @@ Testflo can be run by calling the following command from TACS' root directory:
    ```
    clang-format --style=Google -i filename.cpp
    ```
-5. Run formatting checks on any modified Python code using [Black](https://black.readthedocs.io/en/stable/). We use version 24.
+5. Run linting and formatting checks on any modified Python code using [Ruff](https://docs.astral.sh/ruff/). The configuration (selected rules, ignores, and formatter settings) lives in the `[tool.ruff]` section of `pyproject.toml`, and both checks are enforced in CI. Run the linter (with autofixes applied) and the formatter from TACS' root directory:
    ```
-   python -m black filename.py
+   ruff check --fix
+   ruff format
+   ```
+   You can check without modifying files (as CI does) by adding `--check` to the format command and omitting `--fix` from the check command:
+   ```
+   ruff check
+   ruff format --check
    ```
 6. If the change is a new feature, make sure that its expected use is described through a docstring and that it is added in a relevant section of the docs
