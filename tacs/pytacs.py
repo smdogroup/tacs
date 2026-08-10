@@ -951,6 +951,24 @@ class pyTACS(BaseUI):
         # Vector used to store temporarily store state variables
         self.tempVec = self.assembler.createVec()
 
+    def _initializeSystem(self, system):
+        """Apply this pyTACS object's state to a newly created problem/constraint.
+
+        Sets the original design variables and node coordinates, in case they
+        have changed since the assembler was created, and hands over the design
+        variable bounds. The bounds have to be passed explicitly because bounds
+        supplied to addGlobalDV are not stored in any element, so the system
+        cannot recover them from the assembler.
+
+        Parameters
+        ----------
+        system : tacs.system.TACSSystem
+            The problem or constraint object to initialize.
+        """
+        system.setDesignVars(self.x0)
+        system.setNodes(self.Xpts0)
+        system.setDesignVarRange(self.xlb.getArray(), self.xub.getArray())
+
     def _setGlobalDVValues(self, vec, dv_nums, dv_vals):
         """Insert global DV values into a distributed design vec."""
         if not dv_nums:
@@ -1704,9 +1722,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1747,9 +1763,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1788,9 +1802,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1829,9 +1841,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -2296,9 +2306,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2335,9 +2343,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2365,9 +2371,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2395,9 +2399,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2425,9 +2427,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2463,9 +2463,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2496,9 +2494,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     def getNumComponents(self):
