@@ -923,15 +923,11 @@ class TransientProblem(TACSProblem):
         c2 = self.getOption("RBEArtificialStiffness")
         tacs.elements.RBE2.setScalingParameters(c1, c2)
         tacs.elements.RBE3.setScalingParameters(c1, c2)
-        # Update design variables on all auxiliary elements
-        for auxElemObj in self.auxElems:
-            elems = auxElemObj.getAuxElements()
-            nums = auxElemObj.getAuxElementNums()
-            for elem, compNum in zip(elems, nums, strict=True):
-                dvNums = elem.getDesignVarNums(compNum)
-                if len(dvNums) > 0:
-                    dvVals = self.x.getValues(dvNums)
-                    elem.setDesignVars(compNum, dvVals)
+        # Update design variables on all auxiliary elements. This problem holds
+        # one auxiliary element object per time step, so the single object
+        # attached to the assembler cannot be relied on here. The loop over
+        # elements itself is done in the C++ layer.
+        self._updateAuxElemDesignVars()
 
     def solve(self):
         """

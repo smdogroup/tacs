@@ -732,15 +732,16 @@ class BucklingProblem(TACSProblem):
         the input variables associated with this problem
         """
 
-        self.assembler.setDesignVars(self.x)
+        # Attach the auxiliary elements (which also removes any previously
+        # attached ones) and set the design variables. The order of these two
+        # operations matters, see TACSProblem._setAssemblerAuxElemsAndDVs.
+        self._setAssemblerAuxElemsAndDVs()
         self.assembler.setNodes(self.Xpts)
         # Set state variables
         self.assembler.setVariables(self.u0)
         # Zero any time derivative terms
         self.assembler.zeroDotVariables()
         self.assembler.zeroDDotVariables()
-        # Make sure previous auxiliary loads are removed
-        self.assembler.setAuxElements(self.auxElems)
         # Set artificial stiffness factors in rbe class
         c1 = self.getOption("RBEStiffnessScaleFactor")
         c2 = self.getOption("RBEArtificialStiffness")

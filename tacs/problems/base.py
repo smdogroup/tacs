@@ -363,6 +363,40 @@ class TACSProblem(TACSSystem):
             rhsArray = Frhs.getArray()
             rhsArray[:] = rhsArray[:] + Fapplied[:]
 
+    def _setAssemblerAuxElemsAndDVs(self):
+        """
+        Attach this problem's auxiliary elements to the assembler and push the
+        current design variables into them.
+
+        The order of these two calls matters and should not be swapped:
+        ``TACSAssembler::setDesignVars`` only updates the auxiliary elements
+        that are attached to the assembler at the time it is called, so any
+        problem that sets its design variables before attaching its auxiliary
+        elements will leave stale load design variable values in those
+        elements. Problems that own more than one auxiliary element object
+        (see :meth:`_updateAuxElemDesignVars`) cannot use this helper.
+        """
+        self.assembler.setAuxElements(self.auxElems)
+        self.assembler.setDesignVars(self.x)
+
+    def _updateAuxElemDesignVars(self):
+        """
+        Push the current design variables into every auxiliary element owned by
+        this problem, whether or not it is attached to the assembler.
+
+        This is for problems such as :class:`~tacs.problems.TransientProblem`
+        that hold a separate auxiliary element object per time step and so
+        cannot rely on the single object attached to the assembler.
+        """
+        if self.auxElems is None:
+            return
+        if isinstance(self.auxElems, (list, tuple)):
+            auxElemList = self.auxElems
+        else:
+            auxElemList = [self.auxElems]
+        for auxElemObj in auxElemList:
+            auxElemObj.setDesignVars(self.x)
+
     def _checkDVNums(self, dvNums):
         """
         Check that all design variable numbers passed to auxiliary elements are

@@ -883,8 +883,9 @@ class StaticProblem(TACSProblem):
         the input variables associated with this problem
         """
 
-        self.assembler.setAuxElements(self.auxElems)
-        self.assembler.setDesignVars(self.x)
+        # Attach the auxiliary elements and set the design variables (in that
+        # order, see TACSProblem._setAssemblerAuxElemsAndDVs)
+        self._setAssemblerAuxElemsAndDVs()
         self.assembler.setNodes(self.Xpts)
         # Set state variables
         self.assembler.setVariables(self.u)
