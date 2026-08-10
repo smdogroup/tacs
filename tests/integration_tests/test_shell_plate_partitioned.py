@@ -105,8 +105,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
             scale = [100.0]
             return elem, scale
 
-        # Register global DV for pressure magnitude before initializing assembler
+        # Register global DVs for the pressure magnitude and the traction vector
+        # before initializing assembler
         pressure_dv_num = fea_assembler.addGlobalDV("pressure", P)
+        traction_dv_nums = fea_assembler.addGlobalDV("traction", trac)
 
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
@@ -128,7 +130,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Add traction to upper right quadrant of plate
         sp = fea_assembler.createStaticProblem(name="traction")
         compIDs = fea_assembler.selectCompIDs(include="PLATE.02")
-        sp.addTractionToComponents(compIDs, trac)
+        sp.addTractionToComponents(compIDs, trac, tractionDVNums=traction_dv_nums)
         tacs_probs.append(sp)
 
         # Add Functions
