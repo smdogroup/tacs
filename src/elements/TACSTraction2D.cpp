@@ -14,6 +14,8 @@
 
 #include "TACSTraction2D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSTraction2D::TACSTraction2D(int _varsPerNode, int _faceIndex,
@@ -28,9 +30,9 @@ TACSTraction2D::TACSTraction2D(int _varsPerNode, int _faceIndex,
   tractionCoordinateComponent = _tractionCoordinateComponent;
   getTractionComponents = NULL;
   if (tractionCoordinateComponent) {
-    memcpy(trac, _trac, varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, varsPerNode, trac);
   } else {
-    memcpy(trac, _trac, 2 * varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, 2 * varsPerNode, trac);
   }
   initTracDVNums(_tracDVNums);
 }
@@ -50,7 +52,7 @@ TACSTraction2D::TACSTraction2D(
 
 void TACSTraction2D::initTracDVNums(const int *_tracDVNums) {
   if (_tracDVNums) {
-    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
+    std::copy_n(_tracDVNums, varsPerNode, tracDVNums);
   } else {
     for (int i = 0; i < varsPerNode; i++) {
       tracDVNums[i] = -1;

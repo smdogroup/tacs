@@ -14,15 +14,17 @@
 
 #include "TACSMassInertialForce.h"
 
+#include <algorithm>
+
 TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
                                              const TacsScalar _inertiaVec[],
                                              const int *_inertiaVecDVNums) {
   con = _con;
   con->incref();
   memset(inertiaVec, 0, NUM_DISPS * sizeof(TacsScalar));
-  memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  std::copy_n(_inertiaVec, 3, inertiaVec);
   if (_inertiaVecDVNums) {
-    memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+    std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
   } else {
     inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
   }

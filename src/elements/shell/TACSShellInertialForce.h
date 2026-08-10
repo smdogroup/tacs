@@ -2,6 +2,8 @@
 #ifndef TACS_SHELL_INERTIAL_FORCE_H
 #define TACS_SHELL_INERTIAL_FORCE_H
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 #include "TACSShellConstitutive.h"
 #include "TACSShellUtilities.h"
@@ -14,9 +16,9 @@ class TACSShellInertialForce : public TACSElement {
                          const int *_inertiaVecDVNums = NULL) {
     con = _con;
     con->incref();
-    memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+    std::copy_n(_inertiaVec, 3, inertiaVec);
     if (_inertiaVecDVNums) {
-      memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+      std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
     } else {
       inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
     }

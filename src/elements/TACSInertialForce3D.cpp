@@ -14,6 +14,8 @@
 
 #include "TACSInertialForce3D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce3D::TACSInertialForce3D(int _varsPerNode,
@@ -26,9 +28,9 @@ TACSInertialForce3D::TACSInertialForce3D(int _varsPerNode,
   con->incref();
   basis = _basis;
   basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+  std::copy_n(_inertiaVec, 3, inertiaVec);
   if (_inertiaVecDVNums) {
-    memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+    std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
   } else {
     inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
   }

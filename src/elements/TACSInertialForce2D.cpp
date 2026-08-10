@@ -14,6 +14,8 @@
 
 #include "TACSInertialForce2D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSInertialForce2D::TACSInertialForce2D(int _varsPerNode,
@@ -26,9 +28,9 @@ TACSInertialForce2D::TACSInertialForce2D(int _varsPerNode,
   con->incref();
   basis = _basis;
   basis->incref();
-  memcpy(inertiaVec, _inertiaVec, 2 * sizeof(TacsScalar));
+  std::copy_n(_inertiaVec, 2, inertiaVec);
   if (_inertiaVecDVNums) {
-    memcpy(inertiaVecDVNums, _inertiaVecDVNums, 2 * sizeof(int));
+    std::copy_n(_inertiaVecDVNums, 2, inertiaVecDVNums);
   } else {
     inertiaVecDVNums[0] = inertiaVecDVNums[1] = -1;
   }

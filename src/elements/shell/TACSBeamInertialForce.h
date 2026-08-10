@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_INERTIAL_FORCE_H
 #define TACS_BEAM_INERTIAL_FORCE_H
 
+#include <algorithm>
+
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
@@ -25,9 +27,9 @@ class TACSBeamInertialForce : public TACSElement {
     con = _con;
     con->incref();
 
-    memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
+    std::copy_n(_inertiaVec, 3, inertiaVec);
     if (_inertiaVecDVNums) {
-      memcpy(inertiaVecDVNums, _inertiaVecDVNums, 3 * sizeof(int));
+      std::copy_n(_inertiaVecDVNums, 3, inertiaVecDVNums);
     } else {
       inertiaVecDVNums[0] = inertiaVecDVNums[1] = inertiaVecDVNums[2] = -1;
     }

@@ -14,6 +14,8 @@
 
 #include "TACSCreator.h"
 
+#include <algorithm>
+
 #include "TacsUtilities.h"
 #include "tacsmetis.h"
 
@@ -306,7 +308,7 @@ void TACSCreator::setGlobalDVIndices(int n, const int *dvNums) {
   delete[] globalDVNums;
   numGlobalDVs = n;
   globalDVNums = new int[n];
-  memcpy(globalDVNums, dvNums, n * sizeof(int));
+  std::copy_n(dvNums, n, globalDVNums);
 }
 
 /*

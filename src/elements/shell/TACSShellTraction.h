@@ -2,7 +2,7 @@
 #ifndef TACS_SHELL_TRACTION_H
 #define TACS_SHELL_TRACTION_H
 
-#include <string.h>
+#include <algorithm>
 
 #include "TACSElementAlgebra.h"
 #include "TACSShellUtilities.h"
@@ -27,7 +27,7 @@ class TACSShellTraction : public TACSElement {
       }
     }
     if (_tDVNums) {
-      memcpy(tDVNums, _tDVNums, 3 * sizeof(int));
+      std::copy_n(_tDVNums, 3, tDVNums);
     } else {
       tDVNums[0] = tDVNums[1] = tDVNums[2] = -1;
     }

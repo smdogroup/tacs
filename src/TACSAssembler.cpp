@@ -18,6 +18,8 @@
 
 #include "TACSAssembler.h"
 
+#include <algorithm>
+
 #include "TACSElementVerification.h"
 #include "TacsUtilities.h"
 
@@ -3123,7 +3125,7 @@ void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
   delete[] globalDVNums;
   numGlobalDVs = n;
   globalDVNums = new int[n];
-  memcpy(globalDVNums, dvNums, n * sizeof(int));
+  std::copy_n(dvNums, n, globalDVNums);
 }
 
 /**

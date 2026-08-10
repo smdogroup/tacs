@@ -1,7 +1,7 @@
 #ifndef TACS_BEAM_TRACTION_H
 #define TACS_BEAM_TRACTION_H
 
-#include <string.h>
+#include <algorithm>
 
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
@@ -33,7 +33,7 @@ class TACSBeamTraction : public TACSElement {
       }
     }
     if (_tDVNums) {
-      memcpy(tDVNums, _tDVNums, 3 * sizeof(int));
+      std::copy_n(_tDVNums, 3, tDVNums);
     } else {
       tDVNums[0] = tDVNums[1] = tDVNums[2] = -1;
     }

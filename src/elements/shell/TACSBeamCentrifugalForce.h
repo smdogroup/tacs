@@ -1,6 +1,8 @@
 #ifndef TACS_BEAM_CENTRIFUGAL_FORCE_H
 #define TACS_BEAM_CENTRIFUGAL_FORCE_H
 
+#include <algorithm>
+
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
@@ -25,15 +27,15 @@ class TACSBeamCentrifugalForce : public TACSElement {
     transform->incref();
     con = _con;
     con->incref();
-    memcpy(omegaVec, _omegaVec, 3 * sizeof(TacsScalar));
-    memcpy(rotCenter, _rotCenter, 3 * sizeof(TacsScalar));
+    std::copy_n(_omegaVec, 3, omegaVec);
+    std::copy_n(_rotCenter, 3, rotCenter);
     if (_omegaDVNums) {
-      memcpy(omegaDVNums, _omegaDVNums, 3 * sizeof(int));
+      std::copy_n(_omegaDVNums, 3, omegaDVNums);
     } else {
       omegaDVNums[0] = omegaDVNums[1] = omegaDVNums[2] = -1;
     }
     if (_rotCenterDVNums) {
-      memcpy(rotCenterDVNums, _rotCenterDVNums, 3 * sizeof(int));
+      std::copy_n(_rotCenterDVNums, 3, rotCenterDVNums);
     } else {
       rotCenterDVNums[0] = rotCenterDVNums[1] = rotCenterDVNums[2] = -1;
     }
