@@ -582,7 +582,9 @@ class BucklingProblem(TACSProblem):
             tractionDVNums,
         )
 
-    def addPressureToComponents(self, compIDs, pressures, faceIndex=0):
+    def addPressureToComponents(
+        self, compIDs, pressures, faceIndex=0, pressureDVNums=None
+    ):
         """
         This method is used to add a *FIXED TOTAL PRESSURE* on one or more
         components, defined by COMPIds. The purpose of this routine is
@@ -601,11 +603,23 @@ class BucklingProblem(TACSProblem):
         faceIndex : int
             Indicates which face (side) of element to apply pressure to.
             Note: not required for certain elements (i.e. shells)
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
-        self._addPressureToComponents(self.auxElems, compIDs, pressures, faceIndex)
+        self._addPressureToComponents(
+            self.auxElems, compIDs, pressures, faceIndex, pressureDVNums
+        )
 
     def addPressureToElements(
-        self, elemIDs, pressures, faceIndex=0, nastranOrdering=False
+        self,
+        elemIDs,
+        pressures,
+        faceIndex=0,
+        nastranOrdering=False,
+        pressureDVNums=None,
     ):
         """
         This method is used to add a fixed presure to the
@@ -628,10 +642,20 @@ class BucklingProblem(TACSProblem):
         nastranOrdering : bool
             Flag signaling whether elemIDs are in TACS (default)
             or NASTRAN ordering
+
+        pressureDVNums : int or array_like length 1 or elemIDs
+            Global design variable number(s) controlling the pressure magnitude for each element.
+            Must be registered via pyTACS.addGlobalDV before problem initialization.
+            Use None if the pressure should not be a design variable.
         """
 
         self._addPressureToElements(
-            self.auxElems, elemIDs, pressures, faceIndex, nastranOrdering
+            self.auxElems,
+            elemIDs,
+            pressures,
+            faceIndex,
+            nastranOrdering,
+            pressureDVNums,
         )
 
     def addInertialLoad(self, inertiaVector, inertiaVecDVNums=None):
