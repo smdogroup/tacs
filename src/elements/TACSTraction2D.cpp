@@ -32,13 +32,7 @@ TACSTraction2D::TACSTraction2D(int _varsPerNode, int _faceIndex,
   } else {
     memcpy(trac, _trac, 2 * varsPerNode * sizeof(TacsScalar));
   }
-  if (_tracDVNums) {
-    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
-  } else {
-    for (int i = 0; i < varsPerNode; i++) {
-      tracDVNums[i] = -1;
-    }
-  }
+  initTracDVNums(_tracDVNums);
 }
 
 TACSTraction2D::TACSTraction2D(
@@ -51,6 +45,17 @@ TACSTraction2D::TACSTraction2D(
   basis->incref();
   tractionCoordinateComponent = 0;
   getTractionComponents = _getTractionComponents;
+  initTracDVNums(NULL);
+}
+
+void TACSTraction2D::initTracDVNums(const int *_tracDVNums) {
+  if (_tracDVNums) {
+    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
+  } else {
+    for (int i = 0; i < varsPerNode; i++) {
+      tracDVNums[i] = -1;
+    }
+  }
 }
 
 TACSTraction2D::~TACSTraction2D() { basis->decref(); }

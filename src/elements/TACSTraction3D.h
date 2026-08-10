@@ -79,6 +79,13 @@ class TACSTraction3D : public TACSElement {
                    const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
  private:
+  /**
+    Copy the traction design variable numbers, defaulting to -1 (not a design
+    variable) when none are supplied. Called from every constructor so that
+    tracDVNums is never left uninitialized.
+  */
+  void initTracDVNums(const int *_tracDVNums);
+
   int varsPerNode, faceIndex;
   TACSElementBasis *basis;
   int tractionCoordinateComponent;

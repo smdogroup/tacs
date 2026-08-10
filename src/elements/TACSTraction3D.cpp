@@ -32,13 +32,7 @@ TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
   } else {
     memcpy(trac, _trac, 3 * varsPerNode * sizeof(TacsScalar));
   }
-  if (_tracDVNums) {
-    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
-  } else {
-    for (int i = 0; i < varsPerNode; i++) {
-      tracDVNums[i] = -1;
-    }
-  }
+  initTracDVNums(_tracDVNums);
 }
 
 TACSTraction3D::TACSTraction3D(
@@ -51,6 +45,17 @@ TACSTraction3D::TACSTraction3D(
   basis->incref();
   tractionCoordinateComponent = 0;
   getTractionComponents = _getTractionComponents;
+  initTracDVNums(NULL);
+}
+
+void TACSTraction3D::initTracDVNums(const int *_tracDVNums) {
+  if (_tracDVNums) {
+    memcpy(tracDVNums, _tracDVNums, varsPerNode * sizeof(int));
+  } else {
+    for (int i = 0; i < varsPerNode; i++) {
+      tracDVNums[i] = -1;
+    }
+  }
 }
 
 TACSTraction3D::~TACSTraction3D() { basis->decref(); }
