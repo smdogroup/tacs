@@ -38,6 +38,9 @@ TACSAuxElements::TACSAuxElements(int _num_elems) {
   aux = new TACSAuxElem[max_elements];
   num_elements = 0;
   is_sorted = 0;
+  dv_buffer_size = 0;
+  dv_nums = NULL;
+  dv_vals = NULL;
 }
 
 /*
@@ -48,6 +51,8 @@ TACSAuxElements::~TACSAuxElements() {
     aux[i].elem->decref();
   }
   delete[] aux;
+  delete[] dv_nums;
+  delete[] dv_vals;
 }
 
 /*
@@ -141,29 +146,49 @@ int TACSAuxElements::getAuxElements(TACSAuxElem **_elems) {
 }
 
 /*
-  Get the design variables from all auxiliary elements
-*/
-void TACSAuxElements::getDesignVars(int numDVs, TacsScalar dvs[]) {
-  for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->getDesignVars(i, numDVs, dvs);
-  }
-}
+  Set the design variables in all auxiliary elements from a design vector
 
-/*
-  Set the design variables from all auxiliary elements
-*/
-void TACSAuxElements::setDesignVars(int numDVs, const TacsScalar dvs[]) {
-  for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->setDesignVars(i, numDVs, dvs);
-  }
-}
+  This performs the same work as the auxiliary element loop in
+  TACSAssembler::setDesignVars, but on this object alone. It is needed for
+  problems that own several TACSAuxElements objects (for instance one per time
+  step of a transient problem) and therefore cannot rely on the single
+  TACSAuxElements instance currently attached to the assembler.
 
-/*
-  Get the range of design variable values from all auxiliary elements
+  input:
+  dvs:  the design variable vector
 */
-void TACSAuxElements::getDesignVarRange(int numDVs, TacsScalar lb[],
-                                        TacsScalar ub[]) {
+void TACSAuxElements::setDesignVars(TACSBVec *dvs) {
+  if (num_elements == 0) {
+    return;
+  }
+
+  // Distribute the non-local design variable values
+  dvs->beginDistributeValues();
+  dvs->endDistributeValues();
+
+  // Make sure the scratch arrays are large enough to hold the design variables
+  // of any one of the auxiliary elements
+  int maxDVs = 0;
   for (int i = 0; i < num_elements; i++) {
-    aux[i].elem->getDesignVarRange(i, numDVs, lb, ub);
+    int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, 0, NULL);
+    if (numDVs > maxDVs) {
+      maxDVs = numDVs;
+    }
+  }
+  if (maxDVs > dv_buffer_size) {
+    delete[] dv_nums;
+    delete[] dv_vals;
+    dv_buffer_size = maxDVs;
+    dv_nums = new int[dv_buffer_size];
+    dv_vals = new TacsScalar[dv_buffer_size];
+  }
+
+  for (int i = 0; i < num_elements; i++) {
+    int numDVs =
+        aux[i].elem->getDesignVarNums(aux[i].num, dv_buffer_size, dv_nums);
+    if (numDVs > 0) {
+      dvs->getValues(numDVs, dv_nums, dv_vals);
+      aux[i].elem->setDesignVars(aux[i].num, numDVs, dv_vals);
+    }
   }
 }

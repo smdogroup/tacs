@@ -308,6 +308,7 @@ cdef extern from "TACSAuxElements.h":
         TACSAuxElements(int)
         void addElement(int, TACSElement*)
         int getAuxElements(TACSAuxElem **elems)
+        void setDesignVars(TACSBVec*)
 
 cdef extern from "TACSAssembler.h":
     enum OrderingType"TACSAssembler::OrderingType":

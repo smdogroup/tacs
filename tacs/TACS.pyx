@@ -980,6 +980,23 @@ cdef class AuxElements:
             nums.append(aux_elems[i].num)
         return nums
 
+    def setDesignVars(self, Vec dvs):
+        """Update the design variables held by every auxiliary element.
+
+        This does the same work as ``Assembler.setDesignVars`` does for the
+        auxiliary elements currently attached to the assembler, but for this
+        object alone. It is needed by problems that own more than one
+        AuxElements object, such as transient problems which keep one per time
+        step.
+
+        Parameters
+        ----------
+        dvs : tacs.TACS.Vec
+            Design variable vector to pull values from.
+        """
+        self.ptr.setDesignVars(dvs.getBVecPtr())
+        return
+
 cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
     cdef int bsize = 0
     cdef int nrows = 0
