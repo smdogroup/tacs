@@ -91,8 +91,8 @@ class TACSShellPressure : public TACSElement {
     int num = 0;
     if (pressureDVNum >= 0) {
       if (num < dvLen) {
-        lb[num] = -1e20;
-        ub[num] = 1e20;
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
       }
       num++;
     }

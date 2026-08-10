@@ -135,8 +135,8 @@ int TACSTraction2D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
   for (int i = 0; i < varsPerNode; i++) {
     if (tracDVNums[i] >= 0) {
       if (num < dvLen) {
-        lb[num] = -1e20;
-        ub[num] = 1e20;
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
       }
       num++;
     }

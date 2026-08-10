@@ -127,8 +127,8 @@ int TACSInertialForce3D::getDesignVarRange(int elemIndex, int dvLen,
   for (int i = 0; i < 3; i++) {
     if (inertiaVecDVNums[i] >= 0) {
       if (num < dvLen) {
-        lb[num] = -1e20;
-        ub[num] = 1e20;
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
       }
       num++;
     }

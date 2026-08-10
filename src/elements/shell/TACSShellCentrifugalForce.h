@@ -135,8 +135,8 @@ class TACSShellCentrifugalForce : public TACSElement {
     for (int i = 0; i < 3; i++) {
       if (omegaDVNums[i] >= 0) {
         if (num < dvLen) {
-          lb[num] = -1e20;
-          ub[num] = 1e20;
+          lb[num] = -TACS_LARGE_DV_BOUND;
+          ub[num] = TACS_LARGE_DV_BOUND;
         }
         num++;
       }
@@ -144,8 +144,8 @@ class TACSShellCentrifugalForce : public TACSElement {
     for (int i = 0; i < 3; i++) {
       if (rotCenterDVNums[i] >= 0) {
         if (num < dvLen) {
-          lb[num] = -1e20;
-          ub[num] = 1e20;
+          lb[num] = -TACS_LARGE_DV_BOUND;
+          ub[num] = TACS_LARGE_DV_BOUND;
         }
         num++;
       }
