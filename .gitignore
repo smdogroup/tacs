@@ -6,6 +6,15 @@ syntax: glob
 !*.*
 !*/
 
+# Claude code related files
+.claude/
+.superpowers/
+.serena/
+CLAUDE.md
+CONTEXT.md
+docs/superpowers/*
+docs/adr/*
+
 extern/*
 !extern/Makefile*
 !extern/f5to*/
