@@ -13,11 +13,23 @@ SHEAR_STIFFNESS_FACTOR_CEILING = 1e3
 
 
 def _truncateShearStiffnessFactor(k):
-    """Truncate a PBAR/PBEAM shear stiffness factor (k1/k2) to ``_SHEAR_STIFFNESS_FACTOR_CEILING``.
+    """Truncate a PBAR/PBEAM shear stiffness factor (k1/k2) to ``SHEAR_STIFFNESS_FACTOR_CEILING``.
 
-    pynastran defaults PBAR/PBEAM shear stiffness factors (k1/k2) to 1e8, which
+    pyNastran defaults PBAR/PBEAM shear stiffness factors (k1/k2) to 1e8, which
     can lead to scaling issues in the stiffness matrix. We truncate this value
     to prevent this.
+
+    Parameters
+    ----------
+    k : float or None
+        The raw shear stiffness factor from the property card. ``None`` is
+        treated as an unset/defaulted value.
+
+    Returns
+    -------
+    float
+        ``k`` unchanged when it is finite and at or below
+        ``SHEAR_STIFFNESS_FACTOR_CEILING``, otherwise the ceiling value.
     """
     return (
         SHEAR_STIFFNESS_FACTOR_CEILING
@@ -29,15 +41,36 @@ def _truncateShearStiffnessFactor(k):
 def tubeBeamDims(sectionType, dims):
     """Map a circular Nastran section's dims to IsoTubeBeamConstitutive inputs.
 
-    Returns ``(innerDiameter, wallThickness)`` for ROD/TUBE/TUBE2. The math is
-    elementwise, so ``dims`` may hold scalars (PBARL, a 1-D dim list) or
-    per-station arrays (PBEAML, pass ``propInfo.dim.T`` so ``dims[i]`` is the
-    i-th dimension across all stations).
+    The math is elementwise, so ``dims`` may hold scalars (PBARL, a 1-D dim
+    list) or per-station arrays (PBEAML, pass ``propInfo.dim.T`` so ``dims[i]``
+    is the i-th dimension across all stations).
+
+    The per-section dim conventions are:
 
     - ROD is a solid circle (a tube with inner diameter zero); ``dims[0]`` is the
       radius.
     - TUBE dims are ``[r_outer, r_inner]``.
     - TUBE2 dims are ``[r_outer, wall_thickness]``.
+
+    Parameters
+    ----------
+    sectionType : str
+        The circular section type, one of ``"ROD"``, ``"TUBE"``, or ``"TUBE2"``.
+    dims : sequence of float or ndarray
+        The section dimensions, either as scalars or per-station arrays (see
+        above).
+
+    Returns
+    -------
+    innerDiameter : float or ndarray
+        The inner diameter of the section (zero for a solid ROD).
+    wallThickness : float or ndarray
+        The wall thickness of the section (the full radius for a solid ROD).
+
+    Raises
+    ------
+    ValueError
+        If ``sectionType`` is not one of the supported circular types.
     """
     if sectionType == "ROD":
         wallThickness = dims[0]
@@ -56,9 +89,20 @@ def tubeBeamDims(sectionType, dims):
 def cowperHollowCircleShearFactor(m, nu):
     """Cowper's (1966) transverse-shear correction factor for a hollow circular section.
 
-    ``m`` is the inner/outer diameter ratio and ``nu`` is Poisson's ratio.
     Reduces to the solid-circle value ``6(1+nu)/(7+6nu)`` as ``m -> 0`` and to
     the thin-wall value ``2(1+nu)/(4+3nu)`` as ``m -> 1``.
+
+    Parameters
+    ----------
+    m : float or ndarray
+        The inner/outer diameter ratio of the section, in ``[0, 1]``.
+    nu : float
+        Poisson's ratio of the material.
+
+    Returns
+    -------
+    float or ndarray
+        The transverse-shear correction factor.
     """
     return (
         6.0
@@ -71,22 +115,19 @@ def cowperHollowCircleShearFactor(m, nu):
 def shearCentreOffset(elem, bdfInfo):
     """Extract the shear-centre (WA/WB) offset of a Nastran CBAR/CBEAM element.
 
-    ``elem0`` is the pyNastran element card and ``bdfInfo`` is the pyNastran
-    BDF object (needed by ``elem0.get_axes``).
+    Parameters
+    ----------
+    elem : pyNastran element card
+        The CBAR/CBEAM element card whose WA/WB offsets are read.
+    bdfInfo : pyNastran.bdf.BDF
+        The pyNastran BDF object (needed by ``elem.get_axes``).
 
     Returns
     -------
-    shearCenterYOffset, shearCenterZOffset : float
-        The averaged WA/WB offset vector projected onto the element's local
-        y/z section axes.
-    hasShearCenterOffset : bool
-        True if either projected offset is non-zero.
-    yElem, zElem : ndarray
-        The element's local y/z section axes, returned so callers that need
-        to project onto per-station section axes (PBARL/PBEAML BAR sections)
-        don't have to call ``get_axes`` again.
-    offset_vector : ndarray
-        The averaged WA/WB offset vector itself, before projection.
+    shearCenterYOffset : float
+        The averaged WA/WB offset vector projected onto the element's local y section axis.
+    shearCenterZOffset : float
+        The averaged WA/WB offset vector projected onto the element's local z section axis.
     """
     _, (_, _, yElem, zElem, wa, wb) = elem.get_axes(bdfInfo)
     # Take the average of the offset vectors at either end of bar
@@ -103,6 +144,18 @@ def _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset):
     Single source of truth for the offset/no-offset branch decision shared by
     the PBARL and PBEAML translators, so the flag can never disagree with the
     offset values it is derived from.
+
+    Parameters
+    ----------
+    shearCenterYOffset : float
+        The shear-centre y offset projected onto the local section axis.
+    shearCenterZOffset : float
+        The shear-centre z offset projected onto the local section axis.
+
+    Returns
+    -------
+    bool
+        True if either projected offset is non-zero.
     """
     return shearCenterYOffset != 0.0 or shearCenterZOffset != 0.0
 
@@ -110,13 +163,21 @@ def _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset):
 def averageStationProps(props, xxb):
     """Collapse a dict of per-station beam property arrays into single averaged values.
 
-    ``props`` is a dict ``{name: array}`` of per-station values; ``xxb`` is
-    ``propInfo.xxb``, the station fraction-of-length coordinates.
+    ``xxb`` spans ``[0, 1]``, so ``np.trapezoid(value, xxb)`` naturally computes the length-average of each property
+    along the element.
 
-    ``xxb`` spans ``[0, 1]``, so ``np.trapezoid(value, xxb)`` integrates over a
-    UNIT interval: it is therefore the length-average of ``value`` along the
-    beam, NOT a raw integral. If there is only one station, there is nothing
-    to average and the sole value is used directly.
+    Parameters
+    ----------
+    props : dict of {str: ndarray}
+        A mapping from property name to its per-station values.
+    xxb : ndarray
+        ``propInfo.xxb``, the station fraction-of-length coordinates spanning ``[0, 1]``.
+
+    Returns
+    -------
+    dict of {str: float}
+        The same keys as ``props``, each mapped to its length-average along
+        the beam.
     """
     if len(xxb) == 1:
         return {name: value[0] for name, value in props.items()}
@@ -124,7 +185,26 @@ def averageStationProps(props, xxb):
 
 
 def _translatePBAR(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
-    """Translate a PBAR card (section constants given directly, constant along the element)."""
+    """Translate a PBAR card (section constants given directly, constant along the element).
+
+    Parameters
+    ----------
+    propInfo : pyNastran PBAR card
+        The property card to translate.
+    mat : tacs.constitutive.MaterialProperties
+        The TACS material properties object for this property's material.
+    shearCenterYOffset : float
+        The shear-centre y offset from the nodes, used for all section
+        reference points.
+    shearCenterZOffset : float
+        The shear-centre z offset from the nodes, used for all section
+        reference points.
+
+    Returns
+    -------
+    tacs.constitutive.BasicBeamConstitutive
+        The translated beam constitutive object.
+    """
     area = propInfo.A
     I1 = propInfo.i1
     I2 = propInfo.i2
@@ -162,7 +242,38 @@ def _translatePBAR(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
 
 
 def _translatePBARL(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
-    """Translate a PBARL card (a standard cross-section type, constant along the element)."""
+    """Translate a PBARL card (a standard cross-section type, constant along the element).
+
+    The target constitutive class depends on the section type and whether a
+    shear-centre offset is present:
+
+    - BAR sections map to ``IsoRectangleBeamConstitutive``.
+    - TUBE/TUBE2 without an offset map to ``IsoTubeBeamConstitutive``.
+    - ROD (any case) and offset tubes map to ``BasicBeamConstitutive`` with a Cowper (1966) shear-correction factor computed here.
+
+    Parameters
+    ----------
+    propInfo : pyNastran PBARL card
+        The property card to translate.
+    mat : tacs.constitutive.MaterialProperties
+        The TACS material properties object for this property's material.
+    shearCenterYOffset : float
+        The shear-centre y offset from the nodes.
+    shearCenterZOffset : float
+        The shear-centre z offset from the nodes.
+
+    Returns
+    -------
+    tacs.constitutive.IsoRectangleBeamConstitutive or \
+tacs.constitutive.IsoTubeBeamConstitutive or \
+tacs.constitutive.BasicBeamConstitutive
+        The translated beam constitutive object, chosen per the rules above.
+
+    Raises
+    ------
+    tacs.utilities.Error
+        If the PBARL section type is not one of BAR, ROD, TUBE, or TUBE2.
+    """
     nsm = propInfo.nsm
     hasShearCenterOffset = _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset)
     if propInfo.Type == "BAR":
@@ -235,7 +346,29 @@ def _translatePBARL(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
 
 
 def _translatePBEAM(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
-    """Translate a PBEAM card (section constants given directly, tapered across stations)."""
+    """Translate a PBEAM card to a TACS constitutive object.
+
+    Section constants and offsets may be given per station; they are averaged
+    along the element. Nastran's neutral-axis and NSM offsets are relative to
+    the shear centre, so the shear-centre offset is added back to express them
+    in TACS' node-relative convention.
+
+    Parameters
+    ----------
+    propInfo : pyNastran PBEAM card
+        The property card to translate.
+    mat : tacs.constitutive.MaterialProperties
+        The TACS material properties object for this property's material.
+    shearCenterYOffset : float
+        The shear-centre y offset from the nodes.
+    shearCenterZOffset : float
+        The shear-centre z offset from the nodes.
+
+    Returns
+    -------
+    tacs.constitutive.BasicBeamConstitutive
+        The translated beam constitutive object.
+    """
     area = propInfo.A
     I1 = propInfo.i1
     I2 = propInfo.i2
@@ -309,7 +442,39 @@ def _translatePBEAM(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
 
 
 def _translatePBEAML(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
-    """Translate a PBEAML card (a standard cross-section type, tapered across stations)."""
+    """Translate a PBEAML card (a standard cross-section type, tapered across stations).
+
+    The per-station section properties are averaged along the element before
+    being passed to the constitutive model. BAR sections map to
+    ``IsoRectangleBeamConstitutive`` and circular sections without a
+    shear-centre offset map to ``IsoTubeBeamConstitutive``; circular sections
+    with an offset are unsupported (see Raises).
+
+    Parameters
+    ----------
+    propInfo : pyNastran PBEAML card
+        The property card to translate.
+    mat : tacs.constitutive.MaterialProperties
+        The TACS material properties object for this property's material.
+    shearCenterYOffset : float
+        The shear-centre y offset from the nodes.
+    shearCenterZOffset : float
+        The shear-centre z offset from the nodes.
+
+    Returns
+    -------
+    tacs.constitutive.BasicBeamConstitutive or \
+        tacs.constitutive.IsoRectangleBeamConstitutive or \
+        tacs.constitutive.IsoTubeBeamConstitutive
+        The translated beam constitutive object.
+
+    Raises
+    ------
+    tacs.utilities.Error
+        If the section is a circular type with a shear-centre offset, or if the PBEAML section type is not one
+        of BAR, ROD, TUBE, or TUBE2. Both these scenarios would require computing the torsion constant J, to pass to
+        BasicBeamConstitutive, which pyNastran does not do for PBEAML.
+    """
     sectionType = propInfo.beam_type
     hasShearCenterOffset = _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset)
     sectionProps = {}
@@ -364,13 +529,31 @@ def _translatePBEAML(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
 def beamPropertyToConstitutive(propInfo, elem0, bdfInfo, mat):
     """Translate a Nastran beam property card to a TACS beam constitutive object.
 
-    propInfo : the pyNastran property card (PBAR/PBARL/PBEAM/PBEAML)
-    elem0    : the first pyNastran element card referencing this property (a CBAR/CBEAM),
-               used for the WA/WB shear-centre offset
-    bdfInfo  : the pyNastran BDF object (needed by elem0.get_axes)
-    mat      : the TACS MaterialProperties object for this property's material
-    returns  : a tacs.constitutive beam constitutive object (BasicBeam / IsoRectangleBeam / IsoTubeBeam)
-    raises   : tacs.utilities.Error for unsupported card/section/offset combinations
+    Dispatches to the per-card translator (PBAR/PBARL/PBEAM/PBEAML) after
+    extracting the shear-centre offset from the associated element card.
+
+    Parameters
+    ----------
+    propInfo : pyNastran property card
+        The beam property card to translate (PBAR, PBARL, PBEAM, or PBEAML).
+    elem0 : pyNastran element card
+        The first element card referencing this property (a CBAR/CBEAM), used
+        for the WA/WB shear-centre offset.
+    bdfInfo : pyNastran.bdf.BDF
+        The pyNastran BDF object (needed by ``elem0.get_axes``).
+    mat : tacs.constitutive.MaterialProperties
+        The TACS material properties object for this property's material.
+
+    Returns
+    -------
+    tacs.constitutive.BasicBeamConstitutive or \
+        tacs.constitutive.IsoRectangleBeamConstitutive or tacs.constitutive.IsoTubeBeamConstitutive
+        The translated beam constitutive object.
+
+    Raises
+    ------
+    tacs.utilities.Error
+        For unsupported card, section, or offset combinations.
     """
     # Get shear center offset from the associated element card
     shearCenterYOffset, shearCenterZOffset = shearCentreOffset(elem0, bdfInfo)
