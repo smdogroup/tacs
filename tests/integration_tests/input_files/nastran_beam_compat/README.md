@@ -17,5 +17,5 @@ python generate_inputs.py
 python extract_nastran_refs.py
 ```
 
-The `.op2` / `.f06` / `.log` Nastran outputs land in `_nastran_outputs/` (gitignored).
+The `.op2` / `.f06` / `.log` Nastran outputs land in `nastran_outputs/` (gitignored).
 Only the CSV reference files and BDFs are committed.
