@@ -159,8 +159,8 @@ jobs:
           if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]] && [[ -f ${TACS_DIR}/extern/ESP122/ESPenv.sh ]]; then
             source ${TACS_DIR}/extern/ESP122/ESPenv.sh
           fi
+          echo "Python packages installed:"
           pip list
-          python3 -c "import numpy as np; print(f'NumPy version: {np.__version__}\nhasattr(trapezoid): {hasattr(np, \"trapezoid\")}')"
           testflo -v --timeout 420 .;
       - name: Build docs
         run: |
