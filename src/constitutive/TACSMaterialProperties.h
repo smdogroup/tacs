@@ -161,11 +161,11 @@ class TACSMaterialProperties : public TACSObject {
   or a smoothed maximum strain failure criterion, where the smoothing
   is performed using a KS function.
 
-  The interaction coefficient for the Tsai-Wu failure criterion is set
-  to zero by default. If a value of C, the failure stress under
-  combined in-plane loading, is supplied, the interaction coefficient
-  is determined. Be careful - the value can easily fall outside
-  acceptable bounds - these are tested during initialization.
+  The interaction coefficient F12 for the Tsai-Wu failure criterion is set
+  to zero for orthotropic materials, matching the default of the Nastran
+  MAT8 card. For isotropic materials it is set to -0.5*sqrt(F11*F22), which
+  makes the criterion equivalent to von Mises. See
+  docs/source/theory/failure_criteria.rst for the derivation.
 */
 class TACSOrthotropicPly : public TACSObject {
  public:
