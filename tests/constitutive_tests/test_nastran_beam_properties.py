@@ -15,7 +15,7 @@ import numpy as np
 from tacs.nastran.properties import (
     averageStationProps,
     cowperHollowCircleShearFactor,
-    isoTubeBeamDims,
+    tubeBeamDims,
     shearCentreOffset,
 )
 
@@ -58,7 +58,7 @@ class IsoTubeBeamDimsTest(unittest.TestCase):
         thickness equal to the radius.
         """
         radius = 0.05
-        innerDiameter, wallThickness = isoTubeBeamDims("ROD", [radius])
+        innerDiameter, wallThickness = tubeBeamDims("ROD", [radius])
         self.assertAlmostEqual(innerDiameter, 0.0)
         self.assertAlmostEqual(wallThickness, radius)
 
@@ -68,9 +68,7 @@ class IsoTubeBeamDimsTest(unittest.TestCase):
         """
         outerRadius = 0.05
         innerRadius = 0.03
-        innerDiameter, wallThickness = isoTubeBeamDims(
-            "TUBE", [outerRadius, innerRadius]
-        )
+        innerDiameter, wallThickness = tubeBeamDims("TUBE", [outerRadius, innerRadius])
         self.assertAlmostEqual(innerDiameter, 2.0 * innerRadius)
         self.assertAlmostEqual(wallThickness, outerRadius - innerRadius)
 
@@ -80,14 +78,14 @@ class IsoTubeBeamDimsTest(unittest.TestCase):
         """
         outerRadius = 0.05
         wall = 0.02
-        innerDiameter, wallThickness = isoTubeBeamDims("TUBE2", [outerRadius, wall])
+        innerDiameter, wallThickness = tubeBeamDims("TUBE2", [outerRadius, wall])
         self.assertAlmostEqual(wallThickness, wall)
         self.assertAlmostEqual(innerDiameter, 2.0 * (outerRadius - wall))
 
     def test_nonCircularSectionRaisesValueError(self):
         """Assert that a non-circular section type (e.g. BAR) raises a ValueError."""
         with self.assertRaises(ValueError):
-            isoTubeBeamDims("BAR", [0.05, 0.02])
+            tubeBeamDims("BAR", [0.05, 0.02])
 
     def test_tubeAndTube2AgreeOnSamePhysicalTube(self):
         """
@@ -100,8 +98,8 @@ class IsoTubeBeamDimsTest(unittest.TestCase):
         innerRadius = 0.03
         wall = outerRadius - innerRadius
 
-        tubeDims = isoTubeBeamDims("TUBE", [outerRadius, innerRadius])
-        tube2Dims = isoTubeBeamDims("TUBE2", [outerRadius, wall])
+        tubeDims = tubeBeamDims("TUBE", [outerRadius, innerRadius])
+        tube2Dims = tubeBeamDims("TUBE2", [outerRadius, wall])
 
         self.assertAlmostEqual(tubeDims[0], tube2Dims[0])
         self.assertAlmostEqual(tubeDims[1], tube2Dims[1])
@@ -153,44 +151,29 @@ class ShearCentreOffsetTest(unittest.TestCase):
         elem0 = bdfInfo.elements[1]
         return elem0, bdfInfo
 
-    def test_zeroOffsetGivesNoShearCentreOffset(self):
-        """Assert that a CBAR with no WA/WB offset yields zero projected offsets and
-        hasShearCenterOffset == False.
+    def test_zeroOffsetGivesZeroShearCentreOffset(self):
+        """Assert that a CBAR with no WA/WB offset yields zero projected shear-centre
+        offsets in both the y and z section directions.
         """
         elem0, bdfInfo = self._buildCbar()
-        (
-            shearCenterYOffset,
-            shearCenterZOffset,
-            hasShearCenterOffset,
-            _yElem,
-            _zElem,
-            _offsetVector,
-        ) = shearCentreOffset(elem0, bdfInfo)
+        shearCenterYOffset, shearCenterZOffset = shearCentreOffset(elem0, bdfInfo)
         self.assertAlmostEqual(shearCenterYOffset, 0.0)
         self.assertAlmostEqual(shearCenterZOffset, 0.0)
-        self.assertFalse(hasShearCenterOffset)
 
     def test_knownOffsetProjectsOntoSectionAxes(self):
         """
         Given a CBAR with identical WA/WB offset vectors,
         when shearCentreOffset projects the averaged offset onto the element's local y/z
         section axes,
-        then it returns those known projected components and hasShearCenterOffset == True.
+        then it returns those known projected components.
         """
         offset = [0.0, 0.05, 0.02]
         elem0, bdfInfo = self._buildCbar(wa=offset, wb=offset)
-        (
-            shearCenterYOffset,
-            shearCenterZOffset,
-            hasShearCenterOffset,
-            yElem,
-            zElem,
-            offsetVector,
-        ) = shearCentreOffset(elem0, bdfInfo)
+        shearCenterYOffset, shearCenterZOffset = shearCentreOffset(elem0, bdfInfo)
+        # Recover the local section axes to form the expected projections
+        _, (_, _, yElem, zElem, _wa, _wb) = elem0.get_axes(bdfInfo)
         self.assertAlmostEqual(shearCenterYOffset, np.dot(yElem, offset))
         self.assertAlmostEqual(shearCenterZOffset, np.dot(zElem, offset))
-        np.testing.assert_allclose(offsetVector, offset)
-        self.assertTrue(hasShearCenterOffset)
 
 
 if __name__ == "__main__":

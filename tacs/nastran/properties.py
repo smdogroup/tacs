@@ -9,7 +9,7 @@ import tacs.constitutive
 from tacs.utilities import Error
 
 # Ceiling used to truncate PBAR/PBEAM shear stiffness factors (k1/k2); see _truncateShearStiffnessFactor.
-_SHEAR_STIFFNESS_FACTOR_CEILING = 1e3
+SHEAR_STIFFNESS_FACTOR_CEILING = 1e3
 
 
 def _truncateShearStiffnessFactor(k):
@@ -20,13 +20,13 @@ def _truncateShearStiffnessFactor(k):
     to prevent this.
     """
     return (
-        _SHEAR_STIFFNESS_FACTOR_CEILING
-        if k is None or k > _SHEAR_STIFFNESS_FACTOR_CEILING
+        SHEAR_STIFFNESS_FACTOR_CEILING
+        if k is None or k > SHEAR_STIFFNESS_FACTOR_CEILING
         else k
     )
 
 
-def isoTubeBeamDims(sectionType, dims):
+def tubeBeamDims(sectionType, dims):
     """Map a circular Nastran section's dims to IsoTubeBeamConstitutive inputs.
 
     Returns ``(innerDiameter, wallThickness)`` for ROD/TUBE/TUBE2. The math is
@@ -49,7 +49,7 @@ def isoTubeBeamDims(sectionType, dims):
         wallThickness = dims[1]
         innerDiameter = 2.0 * (dims[0] - dims[1])
     else:
-        raise ValueError(f"isoTubeBeamDims: non-circular section type '{sectionType}'")
+        raise ValueError(f"tubeBeamDims: non-circular section type '{sectionType}'")
     return innerDiameter, wallThickness
 
 
@@ -68,7 +68,7 @@ def cowperHollowCircleShearFactor(m, nu):
     )
 
 
-def shearCentreOffset(elem0, bdfInfo):
+def shearCentreOffset(elem, bdfInfo):
     """Extract the shear-centre (WA/WB) offset of a Nastran CBAR/CBEAM element.
 
     ``elem0`` is the pyNastran element card and ``bdfInfo`` is the pyNastran
@@ -88,21 +88,23 @@ def shearCentreOffset(elem0, bdfInfo):
     offset_vector : ndarray
         The averaged WA/WB offset vector itself, before projection.
     """
-    _, (_, _, yElem, zElem, wa, wb) = elem0.get_axes(bdfInfo)
+    _, (_, _, yElem, zElem, wa, wb) = elem.get_axes(bdfInfo)
     # Take the average of the offset vectors at either end of bar
     offset_vector = (wa + wb) / 2.0
     # Project the offset vector onto the local section axes
     shearCenterYOffset = np.dot(yElem, offset_vector)
     shearCenterZOffset = np.dot(zElem, offset_vector)
-    hasShearCenterOffset = shearCenterYOffset != 0.0 or shearCenterZOffset != 0.0
-    return (
-        shearCenterYOffset,
-        shearCenterZOffset,
-        hasShearCenterOffset,
-        yElem,
-        zElem,
-        offset_vector,
-    )
+    return shearCenterYOffset, shearCenterZOffset
+
+
+def _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset):
+    """Return whether a beam section has a non-zero shear-centre (WA/WB) offset.
+
+    Single source of truth for the offset/no-offset branch decision shared by
+    the PBARL and PBEAML translators, so the flag can never disagree with the
+    offset values it is derived from.
+    """
+    return shearCenterYOffset != 0.0 or shearCenterZOffset != 0.0
 
 
 def averageStationProps(props, xxb):
@@ -159,11 +161,10 @@ def _translatePBAR(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
     )
 
 
-def _translatePBARL(
-    propInfo, mat, shearCenterYOffset, shearCenterZOffset, hasShearCenterOffset
-):
+def _translatePBARL(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
     """Translate a PBARL card (a standard cross-section type, constant along the element)."""
     nsm = propInfo.nsm
+    hasShearCenterOffset = _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset)
     if propInfo.Type == "BAR":
         w = propInfo.dim[0]
         t = propInfo.dim[1]
@@ -178,7 +179,7 @@ def _translatePBARL(
         # Hollow circular sections without a shear-center offset go
         # to IsoTubeBeamConstitutive, which computes its own
         # (correct) J. TUBE/TUBE2 differ only in dim convention.
-        innerDiameter, wallThickness = isoTubeBeamDims(propInfo.Type, propInfo.dim)
+        innerDiameter, wallThickness = tubeBeamDims(propInfo.Type, propInfo.dim)
         return tacs.constitutive.IsoTubeBeamConstitutive(
             mat, d=innerDiameter, t=wallThickness, nsm=nsm
         )
@@ -198,7 +199,7 @@ def _translatePBARL(
             "PBARL", propInfo.Type, propInfo.dim, propInfo
         )
         J = propInfo.J()
-        innerDiameter, wallThickness = isoTubeBeamDims(propInfo.Type, propInfo.dim)
+        innerDiameter, wallThickness = tubeBeamDims(propInfo.Type, propInfo.dim)
         outerDiameter = innerDiameter + 2.0 * wallThickness
         m = innerDiameter / outerDiameter
         nu = propInfo.mid_ref.nu
@@ -226,9 +227,10 @@ def _translatePBARL(
     else:
         raise Error(
             "pyTACS",
-            f"Unsupported PBARL section type '{propInfo.Type}' for property number "
-            f"{propInfo.pid}. TACS supports BAR, ROD, TUBE, and TUBE2. pyNastran does "
-            "not compute a correct torsion constant J for other section types.",
+            f"PBARL property card {propInfo.pid} has '{propInfo.Type}' section type. "
+            "This is unsupported: TACS only supports BAR, ROD, TUBE, and TUBE2, "
+            "because pyNastran does not compute a correct torsion constant J for "
+            "other section types.",
         )
 
 
@@ -306,59 +308,50 @@ def _translatePBEAM(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
     )
 
 
-def _translatePBEAML(
-    propInfo,
-    mat,
-    shearCenterYOffset,
-    shearCenterZOffset,
-    hasShearCenterOffset,
-    yElem,
-    zElem,
-    offset_vector,
-):
+def _translatePBEAML(propInfo, mat, shearCenterYOffset, shearCenterZOffset):
     """Translate a PBEAML card (a standard cross-section type, tapered across stations)."""
     sectionType = propInfo.beam_type
+    hasShearCenterOffset = _hasShearCenterOffset(shearCenterYOffset, shearCenterZOffset)
     sectionProps = {}
     if sectionType == "BAR":
         sectionProps["w"] = propInfo.dim[:, 0]
         sectionProps["t"] = propInfo.dim[:, 1]
         sectionProps["nsm"] = propInfo.nsm
-        # Project the offset vector onto the width and thickness axes
-        sectionProps["wOffset"] = -np.dot(zElem, offset_vector) / sectionProps["w"]
-        sectionProps["tOffset"] = -np.dot(yElem, offset_vector) / sectionProps["t"]
+        # Normalize the offsets by the per-station section dimensions to get
+        # non-dimensional offsets for TACS (identical to the PBARL BAR branch;
+        # shearCenterZ/YOffset are already the offset projected onto the local
+        # section axes).
+        sectionProps["wOffset"] = -shearCenterZOffset / sectionProps["w"]
+        sectionProps["tOffset"] = -shearCenterYOffset / sectionProps["t"]
         conType = tacs.constitutive.IsoRectangleBeamConstitutive
     elif sectionType in ("ROD", "TUBE", "TUBE2") and (not hasShearCenterOffset):
         # Circular sections without a shear-center offset go to
         # IsoTubeBeamConstitutive, which computes its own (correct)
         # J. dims are per-station, so transpose so the helper sees
         # one dimension across all stations.
-        innerDiameter, wallThickness = isoTubeBeamDims(sectionType, propInfo.dim.T)
+        innerDiameter, wallThickness = tubeBeamDims(sectionType, propInfo.dim.T)
         sectionProps["d"] = innerDiameter
         sectionProps["t"] = wallThickness
         sectionProps["nsm"] = propInfo.nsm
         conType = tacs.constitutive.IsoTubeBeamConstitutive
 
     elif sectionType in ("ROD", "TUBE", "TUBE2"):
-        # Circular section with a shear-center offset.
-        # IsoTubeBeamConstitutive cannot carry the offset, and the
-        # BasicBeamConstitutive fallback needs a J that PBEAML cannot
-        # provide (pyNastran's PBEAML.J() always returns None), so
-        # this combination is unsupported.
         raise Error(
             "pyTACS",
-            f"PBEAML section type '{sectionType}' with a shear-center (WA/WB) offset "
-            f"is unsupported for property number {propInfo.pid}: IsoTubeBeamConstitutive "
-            "cannot carry an offset, and pyNastran does not compute a torsion constant J "
-            "for PBEAML, so there is no J for the BasicBeamConstitutive fallback.",
+            f"PBEAML property card {propInfo.pid} has '{sectionType}' section type and a "
+            "non-zero shear-center offset (WA/WB). This is unsupported: "
+            "IsoTubeBeamConstitutive cannot carry an offset, and pyNastran does not "
+            "compute a torsion constant J for PBEAML, so there is no J for the "
+            "BasicBeamConstitutive fallback.",
         )
 
     else:
         raise Error(
             "pyTACS",
-            f"Unsupported PBEAML section type '{sectionType}' for property number "
-            f"{propInfo.pid}. TACS supports BAR, ROD, TUBE, and TUBE2 (circular types "
-            "without WA/WB offsets). pyNastran does not compute a correct J for other "
-            "section types.",
+            f"PBEAML property card {propInfo.pid} has '{sectionType}' section type. "
+            "This is unsupported: TACS supports BAR, ROD, TUBE, and TUBE2 (circular "
+            "types without WA/WB offsets), because pyNastran does not compute a correct "
+            "J for other section types.",
         )
 
     # Whatever properties we're going to pass to the TACS
@@ -380,42 +373,24 @@ def beamPropertyToConstitutive(propInfo, elem0, bdfInfo, mat):
     raises   : tacs.utilities.Error for unsupported card/section/offset combinations
     """
     # Get shear center offset from the associated element card
-    (
-        shearCenterYOffset,
-        shearCenterZOffset,
-        hasShearCenterOffset,
-        yElem,
-        zElem,
-        offset_vector,
-    ) = shearCentreOffset(elem0, bdfInfo)
+    shearCenterYOffset, shearCenterZOffset = shearCentreOffset(elem0, bdfInfo)
 
     if propInfo.type == "PBAR":  # Nastran bar
         return _translatePBAR(propInfo, mat, shearCenterYOffset, shearCenterZOffset)
 
     elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
-        return _translatePBARL(
-            propInfo, mat, shearCenterYOffset, shearCenterZOffset, hasShearCenterOffset
-        )
+        return _translatePBARL(propInfo, mat, shearCenterYOffset, shearCenterZOffset)
 
     elif propInfo.type == "PBEAM":
         return _translatePBEAM(propInfo, mat, shearCenterYOffset, shearCenterZOffset)
 
     elif propInfo.type == "PBEAML":
-        return _translatePBEAML(
-            propInfo,
-            mat,
-            shearCenterYOffset,
-            shearCenterZOffset,
-            hasShearCenterOffset,
-            yElem,
-            zElem,
-            offset_vector,
-        )
+        return _translatePBEAML(propInfo, mat, shearCenterYOffset, shearCenterZOffset)
 
     else:
         # Should not happen: the caller only dispatches here for PBAR/PBARL/PBEAM/PBEAML.
         raise Error(
             "pyTACS",
-            f"Unsupported beam property type '{propInfo.type}'. Expected one of "
-            "PBAR, PBARL, PBEAM, PBEAML.",
+            f"Property card {propInfo.pid} has '{propInfo.type}' type. This is "
+            "unsupported: expected one of PBAR, PBARL, PBEAM, PBEAML.",
         )
