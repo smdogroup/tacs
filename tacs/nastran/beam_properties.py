@@ -85,16 +85,20 @@ def tubeBeamDims(sectionType, dims):
     return innerDiameter, wallThickness
 
 
-def cowperHollowCircleShearFactor(m, nu):
+def cowperHollowCircleShearFactor(innerDiameter, outerDiameter, nu):
     """Cowper's (1966) transverse-shear correction factor for a hollow circular section.
 
-    Reduces to the solid-circle value ``6(1+nu)/(7+6nu)`` as ``m -> 0`` and to
-    the thin-wall value ``2(1+nu)/(4+3nu)`` as ``m -> 1``.
+    The factor depends on the section only through the inner/outer diameter
+    ratio ``m = innerDiameter / outerDiameter``. It reduces to the solid-circle
+    value ``6(1+nu)/(7+6nu)`` as ``m -> 0`` (solid rod) and to the thin-wall
+    value ``2(1+nu)/(4+3nu)`` as ``m -> 1``.
 
     Parameters
     ----------
-    m : float or ndarray
-        The inner/outer diameter ratio of the section, in ``[0, 1]``.
+    innerDiameter : float or ndarray
+        The inner diameter of the section (zero for a solid rod).
+    outerDiameter : float or ndarray
+        The outer diameter of the section.
     nu : float
         Poisson's ratio of the material.
 
@@ -103,6 +107,7 @@ def cowperHollowCircleShearFactor(m, nu):
     float or ndarray
         The transverse-shear correction factor.
     """
+    m = innerDiameter / outerDiameter
     return (
         6.0
         * (1.0 + nu)
@@ -311,9 +316,8 @@ tacs.constitutive.BasicBeamConstitutive
         J = propInfo.J()
         innerDiameter, wallThickness = tubeBeamDims(propInfo.Type, propInfo.dim)
         outerDiameter = innerDiameter + 2.0 * wallThickness
-        m = innerDiameter / outerDiameter
         nu = propInfo.mid_ref.nu
-        kShear = cowperHollowCircleShearFactor(m, nu)
+        kShear = cowperHollowCircleShearFactor(innerDiameter, outerDiameter, nu)
         return tacs.constitutive.BasicBeamConstitutive(
             mat,
             A=A,

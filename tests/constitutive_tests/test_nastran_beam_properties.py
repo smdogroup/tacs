@@ -22,32 +22,32 @@ from tacs.nastran.beam_properties import (
 
 class CowperHollowCircleShearFactorTest(unittest.TestCase):
     def test_solidCircleLimit(self):
-        """Assert that `cowperHollowCircleShearFactor(0.0, nu)` equals the solid-circle
+        """Assert that a solid section (zero inner diameter) gives the solid-circle
         correction factor 6(1+nu)/(7+6nu).
         """
         nu = 0.33
         expected = 6.0 * (1.0 + nu) / (7.0 + 6.0 * nu)
-        self.assertAlmostEqual(cowperHollowCircleShearFactor(0.0, nu), expected)
+        self.assertAlmostEqual(cowperHollowCircleShearFactor(0.0, 1.0, nu), expected)
 
     def test_thinWallLimit(self):
-        """Assert that `cowperHollowCircleShearFactor(1.0, nu)` equals the thin-wall
-        correction factor 2(1+nu)/(4+3nu).
+        """Assert that a vanishingly thin wall (inner diameter equal to outer diameter)
+        gives the thin-wall correction factor 2(1+nu)/(4+3nu).
         """
         nu = 0.33
         expected = 2.0 * (1.0 + nu) / (4.0 + 3.0 * nu)
-        self.assertAlmostEqual(cowperHollowCircleShearFactor(1.0, nu), expected)
+        self.assertAlmostEqual(cowperHollowCircleShearFactor(1.0, 1.0, nu), expected)
 
     def test_midValueBetweenLimits(self):
         """
-        Given a diameter ratio strictly between the solid-circle (m=0) and thin-wall (m=1)
-        cases,
-        when cowperHollowCircleShearFactor is evaluated at m=0.5,
+        Given an inner/outer diameter ratio strictly between the solid-circle (m=0) and
+        thin-wall (m=1) cases,
+        when cowperHollowCircleShearFactor is evaluated at a mid ratio (m=0.5),
         then the result lies strictly between the two limiting values.
         """
         nu = 0.33
-        solidLimit = cowperHollowCircleShearFactor(0.0, nu)
-        thinWallLimit = cowperHollowCircleShearFactor(1.0, nu)
-        midValue = cowperHollowCircleShearFactor(0.5, nu)
+        solidLimit = cowperHollowCircleShearFactor(0.0, 1.0, nu)
+        thinWallLimit = cowperHollowCircleShearFactor(1.0, 1.0, nu)
+        midValue = cowperHollowCircleShearFactor(0.5, 1.0, nu)
         self.assertGreater(midValue, min(solidLimit, thinWallLimit))
         self.assertLess(midValue, max(solidLimit, thinWallLimit))
 
