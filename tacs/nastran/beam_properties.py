@@ -47,8 +47,7 @@ def tubeBeamDims(sectionType, dims):
 
     The per-section dim conventions are:
 
-    - ROD is a solid circle (a tube with inner diameter zero); ``dims[0]`` is the
-      radius.
+    - ROD is a solid circle (a tube with inner diameter zero); ``dims[0]`` is the radius.
     - TUBE dims are ``[r_outer, r_inner]``.
     - TUBE2 dims are ``[r_outer, wall_thickness]``.
 

@@ -1,6 +1,6 @@
 """
 Fast, numbers-only unit tests for the pure Nastran beam-card translation helpers in
-``tacs.nastran.properties``.
+``tacs.nastran.beam_properties``.
 
 These tests exercise the helper functions directly with plain Python/numpy inputs, so they
 require no BDF file and no MPI. The end-to-end Nastran-to-TACS beam translation (building a
@@ -12,7 +12,7 @@ import unittest
 
 import numpy as np
 
-from tacs.nastran.properties import (
+from tacs.nastran.beam_properties import (
     averageStationProps,
     cowperHollowCircleShearFactor,
     tubeBeamDims,

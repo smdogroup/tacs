@@ -39,7 +39,7 @@ import tacs.elements
 import tacs.functions
 import tacs.problems
 import tacs.TACS
-from tacs.nastran.properties import beamPropertyToConstitutive
+from tacs.nastran.beam_properties import beamPropertyToConstitutive
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI, preinitialize_method, postinitialize_method
 
