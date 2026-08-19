@@ -158,11 +158,9 @@ int TACSAuxElements::getAuxElements(TACSAuxElem **_elems) {
   dvs:  the design variable vector
 */
 void TACSAuxElements::setDesignVars(TACSBVec *dvs) {
-  if (num_elements == 0) {
-    return;
-  }
-
-  // Distribute the non-local design variable values
+  // Distribute the non-local design variable values. These calls are
+  // collective, so every rank must make them even if it has no auxiliary
+  // elements of its own.
   dvs->beginDistributeValues();
   dvs->endDistributeValues();
 
