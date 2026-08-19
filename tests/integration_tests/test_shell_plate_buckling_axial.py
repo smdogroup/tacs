@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 from pytacs_analysis_base_test import PyTACSTestCase
 from tacs import pytacs, elements, constitutive
 
@@ -88,6 +89,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
+
+        # The load DVs were registered without bounds, so initialize must give
+        # them the unbounded defaults rather than the zeros of an empty design
+        # vector, and every initial value must sit inside its own bounds
+        lb, ub = fea_assembler.getDesignVarRange()
+        lb = np.concatenate(comm.allgather(np.real(lb)))
+        ub = np.concatenate(comm.allgather(np.real(ub)))
+        load_dv_nums = np.append(traction_dv_nums, pressure_dv_num)
+        np.testing.assert_array_equal(lb[load_dv_nums], -1e20)
+        np.testing.assert_array_equal(ub[load_dv_nums], 1e20)
+        x0 = np.concatenate(comm.allgather(np.real(fea_assembler.getOrigDesignVars())))
+        self.assertTrue(np.all(lb <= x0))
+        self.assertTrue(np.all(x0 <= ub))
 
         buckle_prob = fea_assembler.createBucklingProblem("buckling", 10.0, 10)
         buckle_prob.addLoadFromBDF(loadID=1)

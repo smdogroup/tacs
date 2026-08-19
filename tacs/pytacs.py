@@ -931,18 +931,45 @@ class pyTACS(BaseUI):
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+        # getDesignVarRange only fills in entries held by regular elements.
+        # Global DVs that are only consumed by aux element loads (which don't
+        # exist yet) would otherwise keep lb = ub = 0 from createDesignVec, so
+        # find every DV num some regular element holds and fall back to the
+        # unbounded default for global DVs outside that set.
+        local_held_dvs = set()
+        for elem_index, elem in enumerate(self.assembler.getElements()):
+            local_held_dvs.update(int(num) for num in elem.getDesignVarNums(elem_index))
+        held_dvs = set().union(*self.comm.allgather(local_held_dvs))
         # Overwrite with any global DV bounds specified by the user
         global_dv_nums_ub = []
         global_dv_vals_ub = []
         global_dv_nums_lb = []
         global_dv_vals_lb = []
         for dv_info in self.globalDVs.values():
-            if dv_info["upperBound"] is not None:
-                global_dv_nums_ub.extend(np.atleast_1d(dv_info["num"]))
-                global_dv_vals_ub.extend(np.atleast_1d(dv_info["upperBound"]))
-            if dv_info["lowerBound"] is not None:
-                global_dv_nums_lb.extend(np.atleast_1d(dv_info["num"]))
-                global_dv_vals_lb.extend(np.atleast_1d(dv_info["lowerBound"]))
+            dv_nums = np.atleast_1d(dv_info["num"])
+            for bound_name, dv_nums_out, dv_vals_out, default_bound in (
+                (
+                    "upperBound",
+                    global_dv_nums_ub,
+                    global_dv_vals_ub,
+                    tacs.TACS.LARGE_DV_BOUND,
+                ),
+                (
+                    "lowerBound",
+                    global_dv_nums_lb,
+                    global_dv_vals_lb,
+                    -tacs.TACS.LARGE_DV_BOUND,
+                ),
+            ):
+                if dv_info[bound_name] is not None:
+                    dv_nums_out.extend(dv_nums)
+                    dv_vals_out.extend(np.atleast_1d(dv_info[bound_name]))
+                else:
+                    # Unbounded: element-held entries keep the range the
+                    # elements reported, the rest get the unbounded default
+                    unheld = [num for num in dv_nums if num not in held_dvs]
+                    dv_nums_out.extend(unheld)
+                    dv_vals_out.extend([default_bound] * len(unheld))
         self._setGlobalDVValues(self.xub, global_dv_nums_ub, global_dv_vals_ub)
         self._setGlobalDVValues(self.xlb, global_dv_nums_lb, global_dv_vals_lb)
 

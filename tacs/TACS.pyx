@@ -135,6 +135,9 @@ SEP_LARGEST_MAGNITUDE = LARGEST_MAGNITUDE
 ISOTROPIC_MATERIAL = TACS_ISOTROPIC_MATERIAL
 ANISOTROPIC_MATERIAL = TACS_ANISOTROPIC_MATERIAL
 
+# Default bound magnitude used for design variables with no specified bounds
+LARGE_DV_BOUND = TACS_LARGE_DV_BOUND
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):

@@ -113,6 +113,19 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
+        # The load DVs were registered without bounds, so initialize must give
+        # them the unbounded defaults rather than the zeros of an empty design
+        # vector, and every initial value must sit inside its own bounds
+        lb, ub = fea_assembler.getDesignVarRange()
+        lb = np.concatenate(comm.allgather(np.real(lb)))
+        ub = np.concatenate(comm.allgather(np.real(ub)))
+        load_dv_nums = np.append(pressure_dv_num, traction_dv_nums)
+        np.testing.assert_array_equal(lb[load_dv_nums], -1e20)
+        np.testing.assert_array_equal(ub[load_dv_nums], 1e20)
+        x0 = np.concatenate(comm.allgather(np.real(fea_assembler.getOrigDesignVars())))
+        self.assertTrue(np.all(lb <= x0))
+        self.assertTrue(np.all(x0 <= ub))
+
         tacs_probs = []
 
         # Distribute point force over all nodes in bottom left quadrant of plate

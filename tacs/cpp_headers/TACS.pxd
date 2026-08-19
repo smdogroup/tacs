@@ -110,6 +110,8 @@ cdef extern from "TACSObject.h":
 
     cdef MPI_Datatype TACS_MPI_TYPE
 
+    const double TACS_LARGE_DV_BOUND
+
 cdef extern from "KSM.h":
     cdef cppclass TACSVec(TACSObject):
         TacsScalar norm()

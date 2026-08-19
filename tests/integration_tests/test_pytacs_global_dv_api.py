@@ -184,6 +184,46 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
         x0 = fea_assembler.getOrigDesignVars()
         np.testing.assert_array_equal(np.real(x0[dvNums]), [0.0, 0.0, -9.81])
 
+    def test_unheld_dv_without_bounds_gets_unbounded_defaults(self):
+        """
+        A global dv consumed only by aux element loads is held by no regular
+        element at initialize, so getDesignVarRange leaves its entries at the
+        zeros of createDesignVec. The unbounded defaults have to be filled in
+        explicitly, otherwise the initial value violates its own bounds.
+        """
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        dvNum = fea_assembler.addGlobalDV("pressure", 100e5)
+        fea_assembler.initialize()
+
+        xlb, xub = fea_assembler.getDesignVarRange()
+        self.assertEqual(np.real(xlb[dvNum]), -1e20)
+        self.assertEqual(np.real(xub[dvNum]), 1e20)
+        x0 = np.real(fea_assembler.getOrigDesignVars())
+        self.assertLessEqual(np.real(xlb[dvNum]), x0[dvNum])
+        self.assertLessEqual(x0[dvNum], np.real(xub[dvNum]))
+
+    def test_unheld_dv_with_one_sided_bound_defaults_the_other_side(self):
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        dvNum = fea_assembler.addGlobalDV("pressure", 100e5, lower=0.0)
+        fea_assembler.initialize()
+
+        xlb, xub = fea_assembler.getDesignVarRange()
+        self.assertEqual(np.real(xlb[dvNum]), 0.0)
+        self.assertEqual(np.real(xub[dvNum]), 1e20)
+
+    def test_partially_held_array_dv_without_bounds(self):
+        # Entry 0 is held by the point mass element, which reports its own
+        # range (mass constitutive lower bound is 0, not -1e20), while entry 1
+        # is held by nothing and needs the unbounded defaults
+        fea_assembler = pytacs.pyTACS(bdf_file)
+        dvNums = fea_assembler.addGlobalDV("point_dvs", [20.0, 30.0])
+        fea_assembler.assignMassDV("point_dvs", 1, "m", index=0)
+        fea_assembler.initialize()
+
+        xlb, xub = fea_assembler.getDesignVarRange()
+        np.testing.assert_array_equal(np.real(xlb[dvNums]), [0.0, -1e20])
+        np.testing.assert_array_equal(np.real(xub[dvNums]), [1e20, 1e20])
+
     def test_zero_overwrites_a_nonzero_entry(self):
         """
         The two tests above only pin the observable behaviour; they cannot tell
