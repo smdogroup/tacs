@@ -82,7 +82,7 @@ complex_debug: TACS_IS_COMPLEX=true
 complex_debug: debug
 
 clean:
-	${RM} lib/libtacs.a lib/libtacs.s${SO_EXT}
+	${RM} lib/libtacs.a lib/libtacs.${SO_EXT}
 	${RM} tacs/*.${SO_EXT} tacs/*.cpp
 	@for subdir in $(TACS_SUBDIRS) ; do \
 	  echo "making $@ in $$subdir"; \
