@@ -129,6 +129,20 @@ jobs:
           echo "::group::solve probe: tecio + numpy>=2 (what CI actually asks for)"
           mamba install -c smdogroup -c conda-forge tecio "numpy>=2" --dry-run -y || true
           echo "::endgroup::"
+          # Force the channel so the solver must report WHY it cannot use smdogroup's
+          # tecio, instead of silently substituting the same-named conda-forge package.
+          echo "::group::solve probe: smdogroup::tecio + numpy>=2 (expect a conflict report)"
+          mamba install -c smdogroup -c conda-forge smdogroup::tecio "numpy>=2" --dry-run -y || true
+          echo "::endgroup::"
+          echo "::group::solve probe: smdogroup::tecio alone, channel forced"
+          mamba install -c smdogroup -c conda-forge smdogroup::tecio --dry-run -y || true
+          echo "::endgroup::"
+          echo "::group::solve probe: smdogroup::tecio in a fresh env (candidate fix)"
+          mamba create -n tecio_probe -c smdogroup -c conda-forge smdogroup::tecio --dry-run -y || true
+          echo "::endgroup::"
+          echo "::group::repoquery: what smdogroup::tecio pulls in"
+          mamba repoquery depends -c smdogroup -c conda-forge smdogroup::tecio --recursive || true
+          echo "::endgroup::"
           # --- END TEMPORARY CI DEBUGGING ---
           # Sometimes needed for macos runner to prevent it from pulling numpy 2 when installing tecio later
           # Dropped -q and added set -e so a failed solve fails here, loudly, instead of
