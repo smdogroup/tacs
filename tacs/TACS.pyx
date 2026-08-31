@@ -135,6 +135,9 @@ SEP_LARGEST_MAGNITUDE = LARGEST_MAGNITUDE
 ISOTROPIC_MATERIAL = TACS_ISOTROPIC_MATERIAL
 ANISOTROPIC_MATERIAL = TACS_ANISOTROPIC_MATERIAL
 
+# Default bound magnitude used for design variables with no specified bounds
+LARGE_DV_BOUND = TACS_LARGE_DV_BOUND
+
 # This wraps a C++ array with a numpy array for later useage
 cdef inplace_array_1d(int nptype, int dim1, void *data_ptr,
                       PyObject *ptr):
@@ -345,38 +348,76 @@ cdef class Element:
             return self.ptr.getElementType()
         return ELEMENT_NONE
 
-    def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac):
+    def createElementTraction(self, int faceIndex, np.ndarray[TacsScalar, ndim=1] trac,
+                              np.ndarray[int, ndim=1, mode='c'] tracDVNums=None):
         cdef TACSElement *tracElem = NULL
+        cdef int *dvNums = NULL
+        if tracDVNums is not None:
+            if len(tracDVNums) != len(trac):
+                raise ValueError(
+                    f"tracDVNums length ({len(tracDVNums)}) must match "
+                    f"trac length ({len(trac)})"
+                )
+            dvNums = <int*>tracDVNums.data
         if self.ptr:
-            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data)
+            tracElem = self.ptr.createElementTraction(faceIndex, <TacsScalar*>trac.data, dvNums)
             if tracElem != NULL:
                 return _init_Element(tracElem)
         return None
 
-    def createElementPressure(self, int faceIndex, TacsScalar p):
+    def createElementPressure(self, int faceIndex, TacsScalar p,
+                              int pressureDVNum=-1):
         cdef TACSElement *pressElem = NULL
         if self.ptr:
-            pressElem = self.ptr.createElementPressure(faceIndex, p)
+            pressElem = self.ptr.createElementPressure(faceIndex, p, pressureDVNum)
             if pressElem != NULL:
                 return _init_Element(pressElem)
         return None
 
-    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec):
+    def createElementInertialForce(self, np.ndarray[TacsScalar, ndim=1] inertiaVec,
+                                   np.ndarray[int, ndim=1, mode='c'] inertiaVecDVNums=None):
         cdef TACSElement *inertiaElem = NULL
+        cdef int *dvNums = NULL
+        if inertiaVecDVNums is not None:
+            if len(inertiaVecDVNums) != len(inertiaVec):
+                raise ValueError(
+                    f"inertiaVecDVNums length ({len(inertiaVecDVNums)}) must match "
+                    f"inertiaVec length ({len(inertiaVec)})"
+                )
+            dvNums = <int*>inertiaVecDVNums.data
         if self.ptr:
-            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data)
+            inertiaElem = self.ptr.createElementInertialForce(<TacsScalar*>inertiaVec.data, dvNums)
             if inertiaElem != NULL:
                 return _init_Element(inertiaElem)
         return None
 
     def createElementCentrifugalForce(self, np.ndarray[TacsScalar, ndim=1] omegaVec,
                                       np.ndarray[TacsScalar, ndim=1] rotCenter,
-                                      bool firstOrder=False):
+                                      bool firstOrder=False,
+                                      np.ndarray[int, ndim=1, mode='c'] omegaDVNums=None,
+                                      np.ndarray[int, ndim=1, mode='c'] rotCenterDVNums=None):
         cdef TACSElement *centrifugalElem = NULL
+        cdef int *omegaNums = NULL
+        cdef int *rotCenterNums = NULL
+        if omegaDVNums is not None:
+            if len(omegaDVNums) != len(omegaVec):
+                raise ValueError(
+                    f"omegaDVNums length ({len(omegaDVNums)}) must match "
+                    f"omegaVec length ({len(omegaVec)})"
+                )
+            omegaNums = <int*>omegaDVNums.data
+        if rotCenterDVNums is not None:
+            if len(rotCenterDVNums) != len(rotCenter):
+                raise ValueError(
+                    f"rotCenterDVNums length ({len(rotCenterDVNums)}) must match "
+                    f"rotCenter length ({len(rotCenter)})"
+                )
+            rotCenterNums = <int*>rotCenterDVNums.data
         if self.ptr:
             centrifugalElem = self.ptr.createElementCentrifugalForce(<TacsScalar*>omegaVec.data,
                                                                      <TacsScalar*>rotCenter.data,
-                                                                     firstOrder)
+                                                                     firstOrder, omegaNums,
+                                                                     rotCenterNums)
             if centrifugalElem != NULL:
                 return _init_Element(centrifugalElem)
         return None
@@ -922,6 +963,41 @@ cdef class AuxElements:
 
     def addElement(self, int num, Element elem):
         self.ptr.addElement(num, elem.ptr)
+        return
+
+    def getAuxElements(self):
+        """Return a list of Element objects for all auxiliary elements."""
+        cdef TACSAuxElem *aux_elems = NULL
+        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
+        elems = []
+        for i in range(num_elems):
+            elems.append(_init_Element(aux_elems[i].elem))
+        return elems
+
+    def getAuxElementNums(self):
+        """Return a list of component numbers corresponding to each auxiliary element."""
+        cdef TACSAuxElem *aux_elems = NULL
+        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
+        nums = []
+        for i in range(num_elems):
+            nums.append(aux_elems[i].num)
+        return nums
+
+    def setDesignVars(self, Vec dvs):
+        """Update the design variables held by every auxiliary element.
+
+        This does the same work as ``Assembler.setDesignVars`` does for the
+        auxiliary elements currently attached to the assembler, but for this
+        object alone. It is needed by problems that own more than one
+        AuxElements object, such as transient problems which keep one per time
+        step.
+
+        Parameters
+        ----------
+        dvs : tacs.TACS.Vec
+            Design variable vector to pull values from.
+        """
+        self.ptr.setDesignVars(dvs.getBVecPtr())
         return
 
 cdef _convertBCSRMat(BCSRMat *mat, PyObject *ptr):
@@ -1877,6 +1953,63 @@ cdef class Assembler:
         """
         self.ptr.setDesignVars(x.getBVecPtr())
         return
+
+    def setDesignNodeMap(self, int designVarsPerNode, NodeMap nmap=None):
+        """
+        Set the design variable mapping.
+
+        Must be called before initialize(). Indicates the number of
+        design variables per node and optionally the NodeMap describing
+        ownership of design variable nodes across processes.
+
+        Args:
+            designVarsPerNode: Number of design variables per design node.
+            nmap: TACSNodeMap describing the design variable distribution
+                  (optional, defaults to None).
+        """
+        cdef TACSNodeMap *nmap_ptr = NULL
+        if nmap is not None:
+            nmap_ptr = nmap.ptr
+        self.ptr.setDesignNodeMap(designVarsPerNode, nmap_ptr)
+        return
+
+    def setGlobalDVIndices(self, np.ndarray[int, ndim=1, mode='c'] dv_nums):
+        """
+        Register global design variable indices that must be available on all
+        MPI ranks, regardless of which elements reference them.
+
+        Must be called before initialize(). Typically used for DVs attached to
+        auxiliary elements (e.g. gravity loads) that are added after initialize().
+
+        Args:
+            dv_nums: 1-D integer array of global DV indices.
+        """
+        self.ptr.setGlobalDVIndices(dv_nums.shape[0], <int*>dv_nums.data)
+        return
+
+    def getGlobalDVIndices(self):
+        """
+        Retrieve the global DV indices previously registered via setGlobalDVIndices().
+
+        Returns:
+            numpy.ndarray: 1-D integer array of registered global DV indices.
+                           Empty array if setGlobalDVIndices was never called.
+        """
+        cdef const int *dv_nums = NULL
+        n = self.ptr.getGlobalDVIndices(&dv_nums)
+        result = np.zeros(n, dtype=np.intc)
+        for i in range(n):
+            result[i] = dv_nums[i]
+        return result
+
+    def getDesignVarsPerNode(self):
+        """
+        Get the number of design variables per design node.
+
+        Returns:
+            int: Number of design variables at each design node.
+        """
+        return self.ptr.getDesignVarsPerNode()
 
     def getDesignVarRange(self, Vec lb, Vec ub):
         """
@@ -2964,6 +3097,21 @@ cdef class Creator:
     def setDependentNodes(self, np.ndarray[int, ndim=1, mode='c'] dep_ptr,
                           np.ndarray[int, ndim=1, mode='c'] dep_conn,
                           np.ndarray[double, ndim=1, mode='c'] dep_weights):
+        return
+
+    def setGlobalDVIndices(self, np.ndarray[int, ndim=1, mode='c'] dv_nums):
+        """
+        Register global design variable indices that must be available on all
+        MPI ranks, regardless of which elements reference them.
+
+        Call before createTACS(). Typically used for design variables that are
+        attached to auxiliary elements (e.g. gravity loads) added after
+        TACSAssembler.initialize().
+
+        Args:
+            dv_nums: 1-D integer array of global DV indices.
+        """
+        self.ptr.setGlobalDVIndices(dv_nums.shape[0], <int*>dv_nums.data)
         return
 
     def setElements(self, elements):

@@ -43,6 +43,10 @@ class ElementTest(unittest.TestCase):
         self.omega = np.array([1.0, 2.0, 3.0], dtype=self.dtype)
         self.rotCenter = np.array([4.0, 5.0, 6.0], dtype=self.dtype)
 
+        # Set design vars numbers
+        self.omegaDVNums = np.array([0, 1, 2], dtype=np.intc)
+        self.rotCenterDVNums = np.array([3, 4, 5], dtype=np.intc)
+
         # Create the isotropic material
         rho = 2700.0
         specific_heat = 921.096
@@ -65,7 +69,7 @@ class ElementTest(unittest.TestCase):
         transform = elements.BeamRefAxisTransform(ref_axis)
         # Create stiffness (need class)
         con = constitutive.IsoTubeBeamConstitutive(
-            self.props, d=1.0, t=0.01, dNum=0, tNum=1
+            self.props, d=1.0, t=0.01, dNum=6, tNum=7
         )
 
         # TACS shell elements of various orders and types
@@ -86,7 +90,10 @@ class ElementTest(unittest.TestCase):
         for element in self.elements:
             with self.subTest(element=element):
                 force = element.createElementCentrifugalForce(
-                    self.omega, self.rotCenter
+                    self.omega,
+                    self.rotCenter,
+                    omegaDVNums=self.omegaDVNums,
+                    rotCenterDVNums=self.rotCenterDVNums,
                 )
                 fail = elements.TestElementJacobian(
                     force,
@@ -109,9 +116,12 @@ class ElementTest(unittest.TestCase):
         for element in self.elements:
             with self.subTest(element=element):
                 force = element.createElementCentrifugalForce(
-                    self.omega, self.rotCenter
+                    self.omega,
+                    self.rotCenter,
+                    omegaDVNums=self.omegaDVNums,
+                    rotCenterDVNums=self.rotCenterDVNums,
                 )
-                dvs = element.getDesignVars(self.elem_index)
+                dvs = force.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(
                     force,
                     self.elem_index,
@@ -133,7 +143,10 @@ class ElementTest(unittest.TestCase):
         for element in self.elements:
             with self.subTest(element=element):
                 force = element.createElementCentrifugalForce(
-                    self.omega, self.rotCenter
+                    self.omega,
+                    self.rotCenter,
+                    omegaDVNums=self.omegaDVNums,
+                    rotCenterDVNums=self.rotCenterDVNums,
                 )
                 fail = elements.TestAdjResXptProduct(
                     force,
@@ -155,9 +168,12 @@ class ElementTest(unittest.TestCase):
         for element in self.elements:
             with self.subTest(element=element):
                 force = element.createElementCentrifugalForce(
-                    self.omega, self.rotCenter
+                    self.omega,
+                    self.rotCenter,
+                    omegaDVNums=self.omegaDVNums,
+                    rotCenterDVNums=self.rotCenterDVNums,
                 )
-                dvs = element.getDesignVars(self.elem_index)
+                dvs = force.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
                         fail = elements.TestElementMatDVSens(
@@ -180,7 +196,10 @@ class ElementTest(unittest.TestCase):
         for element in self.elements:
             with self.subTest(element=element):
                 force = element.createElementCentrifugalForce(
-                    self.omega, self.rotCenter
+                    self.omega,
+                    self.rotCenter,
+                    omegaDVNums=self.omegaDVNums,
+                    rotCenterDVNums=self.rotCenterDVNums,
                 )
                 fail = elements.TestElementMatSVSens(
                     force,

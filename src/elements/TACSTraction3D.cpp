@@ -14,12 +14,15 @@
 
 #include "TACSTraction3D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
                                TACSElementBasis *_basis,
                                const TacsScalar _trac[],
-                               int _tractionCoordinateComponent) {
+                               int _tractionCoordinateComponent,
+                               const int *_tracDVNums) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -27,10 +30,11 @@ TACSTraction3D::TACSTraction3D(int _varsPerNode, int _faceIndex,
   tractionCoordinateComponent = _tractionCoordinateComponent;
   getTractionComponents = NULL;
   if (tractionCoordinateComponent) {
-    memcpy(trac, _trac, varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, varsPerNode, trac);
   } else {
-    memcpy(trac, _trac, 3 * varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, 3 * varsPerNode, trac);
   }
+  initTracDVNums(_tracDVNums);
 }
 
 TACSTraction3D::TACSTraction3D(
@@ -43,6 +47,17 @@ TACSTraction3D::TACSTraction3D(
   basis->incref();
   tractionCoordinateComponent = 0;
   getTractionComponents = _getTractionComponents;
+  initTracDVNums(NULL);
+}
+
+void TACSTraction3D::initTracDVNums(const int *_tracDVNums) {
+  if (_tracDVNums) {
+    std::copy_n(_tracDVNums, varsPerNode, tracDVNums);
+  } else {
+    for (int i = 0; i < varsPerNode; i++) {
+      tracDVNums[i] = -1;
+    }
+  }
 }
 
 TACSTraction3D::~TACSTraction3D() { basis->decref(); }
@@ -79,6 +94,61 @@ int TACSTraction3D::getNumFaceQuadraturePoints(int face) {
 double TACSTraction3D::getFaceQuadraturePoint(int face, int n, double pt[],
                                               double tangent[]) {
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
+}
+
+int TACSTraction3D::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = tracDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::setDesignVars(int elemIndex, int dvLen,
+                                  const TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        trac[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = trac[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction3D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                                      TacsScalar ub[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 /*

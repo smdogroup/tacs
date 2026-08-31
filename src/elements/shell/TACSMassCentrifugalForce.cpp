@@ -14,15 +14,28 @@
 
 #include "TACSMassCentrifugalForce.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSMassCentrifugalForce::TACSMassCentrifugalForce(
     TACSGeneralMassConstitutive *_con, const TacsScalar _omegaVec[],
-    const TacsScalar _rotCenter[]) {
+    const TacsScalar _rotCenter[], const int *_omegaDVNums,
+    const int *_rotCenterDVNums) {
   con = _con;
   con->incref();
-  memcpy(omegaVec, _omegaVec, 3 * sizeof(TacsScalar));
-  memcpy(rotCenter, _rotCenter, 3 * sizeof(TacsScalar));
+  std::copy_n(_omegaVec, 3, omegaVec);
+  std::copy_n(_rotCenter, 3, rotCenter);
+  if (_omegaDVNums) {
+    std::copy_n(_omegaDVNums, 3, omegaDVNums);
+  } else {
+    omegaDVNums[0] = omegaDVNums[1] = omegaDVNums[2] = -1;
+  }
+  if (_rotCenterDVNums) {
+    std::copy_n(_rotCenterDVNums, 3, rotCenterDVNums);
+  } else {
+    rotCenterDVNums[0] = rotCenterDVNums[1] = rotCenterDVNums[2] = -1;
+  }
 }
 
 TACSMassCentrifugalForce::~TACSMassCentrifugalForce() { con->decref(); }
@@ -103,4 +116,43 @@ void TACSMassCentrifugalForce::addAdjResProduct(
 
   // Add the product of the derivative of the inertial force
   con->addInertiaDVSens(elemIndex, scale, pt, X, ac, psi, dvLen, dfdx);
+
+  // We need to find out how many dvs are associated with the constitutive
+  // class and append any omega/rotCenter dvs after those
+  int index = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
+  // res[i] += f[i] where f = M * ac, so the adjoint product for a dv x is
+  // scale * psi^T * M * d(ac)/dx = scale * (M*psi) . d(ac)/dx by symmetry of M
+  TacsScalar g[NUM_DISPS];
+  con->evalInertia(elemIndex, pt, X, psi, g);
+
+  for (int i = 0; i < 3; i++) {
+    if (omegaDVNums[i] >= 0) {
+      if (index < dvLen) {
+        // d(ac)/d(omega_i) = e_i x (omega x r) + omega x (e_i x r)
+        TacsScalar ei[3] = {0.0, 0.0, 0.0};
+        ei[i] = 1.0;
+        TacsScalar eixr[3], dac[3];
+        crossProduct(ei, wxr, dac);
+        crossProduct(ei, r, eixr);
+        crossProductAdd(1.0, omegaVec, eixr, dac);
+        dfdx[index] += scale * (g[0] * dac[0] + g[1] * dac[1] + g[2] * dac[2]);
+      }
+      index++;
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    if (rotCenterDVNums[i] >= 0) {
+      if (index < dvLen) {
+        // d(ac)/d(rotCenter_i) = -omega x (omega x e_i)
+        TacsScalar ei[3] = {0.0, 0.0, 0.0};
+        ei[i] = 1.0;
+        TacsScalar wxe[3], dac[3];
+        crossProduct(omegaVec, ei, wxe);
+        crossProduct(omegaVec, wxe, dac);
+        dfdx[index] -= scale * (g[0] * dac[0] + g[1] * dac[1] + g[2] * dac[2]);
+      }
+      index++;
+    }
+  }
 }

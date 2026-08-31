@@ -22,7 +22,9 @@ class TACSCentrifugalForce3D : public TACSElement {
  public:
   TACSCentrifugalForce3D(int _varsPerNode, TACSConstitutive *_con,
                          TACSElementBasis *_basis, const TacsScalar _omegaVec[],
-                         const TacsScalar _rotCenter[]);
+                         const TacsScalar _rotCenter[],
+                         const int *_omegaDVNums = NULL,
+                         const int *_rotCenterDVNums = NULL);
   ~TACSCentrifugalForce3D();
 
   // Get the layout properties of the element
@@ -79,6 +81,7 @@ class TACSCentrifugalForce3D : public TACSElement {
   TACSConstitutive *con;
   TACSElementBasis *basis;
   TacsScalar omegaVec[3], rotCenter[3];
+  int omegaDVNums[3], rotCenterDVNums[3];
 };
 
 #endif  // TACS_CENTRIFUGAL_FORCE_3D_H

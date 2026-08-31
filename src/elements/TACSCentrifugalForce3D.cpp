@@ -14,20 +14,31 @@
 
 #include "TACSCentrifugalForce3D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
-TACSCentrifugalForce3D::TACSCentrifugalForce3D(int _varsPerNode,
-                                               TACSConstitutive *_con,
-                                               TACSElementBasis *_basis,
-                                               const TacsScalar _omegaVec[],
-                                               const TacsScalar _rotCenter[]) {
+TACSCentrifugalForce3D::TACSCentrifugalForce3D(
+    int _varsPerNode, TACSConstitutive *_con, TACSElementBasis *_basis,
+    const TacsScalar _omegaVec[], const TacsScalar _rotCenter[],
+    const int *_omegaDVNums, const int *_rotCenterDVNums) {
   varsPerNode = _varsPerNode;
   con = _con;
   con->incref();
   basis = _basis;
   basis->incref();
-  memcpy(omegaVec, _omegaVec, 3 * sizeof(TacsScalar));
-  memcpy(rotCenter, _rotCenter, 3 * sizeof(TacsScalar));
+  std::copy_n(_omegaVec, 3, omegaVec);
+  std::copy_n(_rotCenter, 3, rotCenter);
+  if (_omegaDVNums) {
+    std::copy_n(_omegaDVNums, 3, omegaDVNums);
+  } else {
+    omegaDVNums[0] = omegaDVNums[1] = omegaDVNums[2] = -1;
+  }
+  if (_rotCenterDVNums) {
+    std::copy_n(_rotCenterDVNums, 3, rotCenterDVNums);
+  } else {
+    rotCenterDVNums[0] = rotCenterDVNums[1] = rotCenterDVNums[2] = -1;
+  }
 }
 
 TACSCentrifugalForce3D::~TACSCentrifugalForce3D() {
@@ -78,23 +89,93 @@ double TACSCentrifugalForce3D::getFaceQuadraturePoint(int face, int n,
 
 int TACSCentrifugalForce3D::getDesignVarNums(int elemIndex, int dvLen,
                                              int dvNums[]) {
-  return con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  int num = con->getDesignVarNums(elemIndex, dvLen, dvNums);
+  for (int i = 0; i < 3; i++) {
+    if (omegaDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = omegaDVNums[i];
+      }
+      num++;
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    if (rotCenterDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = rotCenterDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSCentrifugalForce3D::setDesignVars(int elemIndex, int dvLen,
                                           const TacsScalar dvs[]) {
-  return con->setDesignVars(elemIndex, dvLen, dvs);
+  int num = con->setDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (omegaDVNums[i] >= 0) {
+      if (num < dvLen) {
+        omegaVec[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    if (rotCenterDVNums[i] >= 0) {
+      if (num < dvLen) {
+        rotCenter[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSCentrifugalForce3D::getDesignVars(int elemIndex, int dvLen,
                                           TacsScalar dvs[]) {
-  return con->getDesignVars(elemIndex, dvLen, dvs);
+  int num = con->getDesignVars(elemIndex, dvLen, dvs);
+  for (int i = 0; i < 3; i++) {
+    if (omegaDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = omegaVec[i];
+      }
+      num++;
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    if (rotCenterDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = rotCenter[i];
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 int TACSCentrifugalForce3D::getDesignVarRange(int elemIndex, int dvLen,
                                               TacsScalar lb[],
                                               TacsScalar ub[]) {
-  return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  int num = con->getDesignVarRange(elemIndex, dvLen, lb, ub);
+  for (int i = 0; i < 3; i++) {
+    if (omegaDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  for (int i = 0; i < 3; i++) {
+    if (rotCenterDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  return num;
 }
 
 /*

@@ -139,6 +139,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        # Register rotational velocity and rotation center as global DVs
+        omegaDV = fea_assembler.addGlobalDV("omega", omega)
+        rotCenterDV = fea_assembler.addGlobalDV("rotCenter", rotCenter)
+
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
@@ -149,11 +153,23 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Create problem with centrifugal loads, both zeroth and first_order
         static_prob = fea_assembler.createStaticProblem("Centrifugal")
-        static_prob.addCentrifugalLoad(omega, rotCenter, firstOrder=False)
+        static_prob.addCentrifugalLoad(
+            omega,
+            rotCenter,
+            firstOrder=False,
+            omegaDVNums=omegaDV,
+            rotCenterDVNums=rotCenterDV,
+        )
         tacs_probs.append(static_prob)
 
         static_prob = fea_assembler.createStaticProblem("Centrifugal_firstOrder")
-        static_prob.addCentrifugalLoad(omega, rotCenter, firstOrder=True)
+        static_prob.addCentrifugalLoad(
+            omega,
+            rotCenter,
+            firstOrder=True,
+            omegaDVNums=omegaDV,
+            rotCenterDVNums=rotCenterDV,
+        )
         tacs_probs.append(static_prob)
 
         # Add Functions

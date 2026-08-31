@@ -23,6 +23,7 @@
   TACSAuxElements implementation
 */
 
+#include "TACSBVec.h"
 #include "TACSElement.h"
 #include "TACSObject.h"
 
@@ -70,11 +71,9 @@ class TACSAuxElements : public TACSObject {
   // --------------------------------------------------------
   int getAuxElements(TACSAuxElem **elems);
 
-  // Functions to control the design variables
-  // -----------------------------------------
-  void getDesignVars(int numDVs, TacsScalar dvs[]);
-  void setDesignVars(int numDVs, const TacsScalar dvs[]);
-  void getDesignVarRange(int numDVs, TacsScalar lb[], TacsScalar ub[]);
+  // Set the design variables in all auxiliary elements from a design vector
+  // ----------------------------------------------------------------------
+  void setDesignVars(TACSBVec *dvs);
 
   // Print the name of the TACSObject
   // --------------------------------
@@ -93,6 +92,12 @@ class TACSAuxElements : public TACSObject {
 
   // The auxiliary elements
   TACSAuxElem *aux;
+
+  // Scratch arrays used by setDesignVars, grown on demand so that repeated
+  // calls (e.g. once per time step) do not allocate
+  int dv_buffer_size;
+  int *dv_nums;
+  TacsScalar *dv_vals;
 
   // The auxiliary object name
   static const char *auxName;

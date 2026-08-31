@@ -30,6 +30,11 @@ class ElementTest(unittest.TestCase):
         # Set the simulation time
         self.time = 0.0
 
+        # Set design vars numbers
+        self.gDVNums = np.array([0, 1, 2], dtype=np.intc)
+        self.dDVNum = 3
+        self.tDVNum = 4
+
         # Set the variable arrays
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.xpts = np.random.rand(3 * max_nodes).astype(self.dtype)
@@ -64,7 +69,7 @@ class ElementTest(unittest.TestCase):
         transform = elements.BeamRefAxisTransform(ref_axis)
         # Create stiffness (need class)
         con = constitutive.IsoTubeBeamConstitutive(
-            self.props, d=1.0, t=0.01, dNum=0, tNum=1
+            self.props, d=1.0, t=0.01, dNum=self.dDVNum, tNum=self.tDVNum
         )
 
         # TACS shell elements of various orders and types
@@ -84,7 +89,7 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test Jacobian
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestElementJacobian(
                     force,
                     self.elem_index,
@@ -105,8 +110,8 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test adjoint residual-dvsens product
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
-                dvs = element.getDesignVars(self.elem_index)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
+                dvs = force.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(
                     force,
                     self.elem_index,
@@ -127,7 +132,7 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test adjoint residual-xptsens product
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestAdjResXptProduct(
                     force,
                     self.elem_index,
@@ -147,8 +152,8 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and element matrix inner product sens
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
-                dvs = element.getDesignVars(self.elem_index)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
+                dvs = force.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
                         fail = elements.TestElementMatDVSens(
@@ -170,7 +175,7 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestElementMatSVSens(
                     force,
                     TACS.GEOMETRIC_STIFFNESS_MATRIX,
