@@ -136,9 +136,11 @@ class TACSBeamBasis {
 
           mat += nbcols;
         }
-
-        mat += (nbrows - njrows) * ncols;
       }
+
+      // Skip the (nbrows - njrows) leftover row-components of THIS node's
+      // block once per outer node jx (not once per jm)
+      mat += (nbrows - njrows) * ncols;
     }
   }
 

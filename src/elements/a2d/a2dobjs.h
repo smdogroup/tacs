@@ -24,22 +24,32 @@ class ADScalar {
   ADScalar() {
     value = 0.0;
     valued = 0.0;
+    valuep = 0.0;
+    valueh = 0.0;
   }
   ADScalar(const TacsScalar &a) {
     value = a;
     valued = 0.0;
+    valuep = 0.0;
+    valueh = 0.0;
   }
   ADScalar(const TacsScalar &a, const TacsScalar &ad) {
     value = a;
     valued = ad;
+    valuep = 0.0;
+    valueh = 0.0;
   }
   ADScalar(const ADScalar &a) {
     value = a.value;
     valued = a.valued;
+    valuep = a.valuep;
+    valueh = a.valueh;
   }
 
   TacsScalar value;
   TacsScalar valued;
+  TacsScalar valuep;
+  TacsScalar valueh;
 };
 
 /*
@@ -80,6 +90,8 @@ class ADVec3 {
     for (int i = 0; i < 3; i++) {
       x[i] = 0.0;
       xd[i] = 0.0;
+      xp[i] = 0.0;
+      xh[i] = 0.0;
     }
   }
   ADVec3(const TacsScalar vx, const TacsScalar vy, const TacsScalar vz) {
@@ -87,11 +99,15 @@ class ADVec3 {
     x[1] = vy;
     x[2] = vz;
     xd[0] = xd[1] = xd[2] = 0.0;
+    xp[0] = xp[1] = xp[2] = 0.0;
+    xh[0] = xh[1] = xh[2] = 0.0;
   }
   ADVec3(const TacsScalar a[]) {
     for (int i = 0; i < 3; i++) {
       x[i] = a[i];
       xd[i] = 0.0;
+      xp[i] = 0.0;
+      xh[i] = 0.0;
     }
   }
   ADVec3(const TacsScalar a[], const TacsScalar ad[]) {
@@ -113,15 +129,21 @@ class ADVec3 {
         xd[i] = 0.0;
       }
     }
+    for (int i = 0; i < 3; i++) {
+      xp[i] = 0.0;
+      xh[i] = 0.0;
+    }
   }
   ADVec3(const ADVec3 &a) {
     for (int i = 0; i < 3; i++) {
       x[i] = a.x[i];
       xd[i] = a.xd[i];
+      xp[i] = a.xp[i];
+      xh[i] = a.xh[i];
     }
   }
 
-  TacsScalar x[3], xd[3];
+  TacsScalar x[3], xd[3], xp[3], xh[3];
 };
 
 /*
@@ -300,12 +322,16 @@ class ADMat3x3 {
     for (int i = 0; i < 9; i++) {
       A[i] = 0.0;
       Ad[i] = 0.0;
+      Ap[i] = 0.0;
+      Ah[i] = 0.0;
     }
   }
   ADMat3x3(const TacsScalar a[]) {
     for (int i = 0; i < 9; i++) {
       A[i] = a[i];
       Ad[i] = 0.0;
+      Ap[i] = 0.0;
+      Ah[i] = 0.0;
     }
   }
   ADMat3x3(const TacsScalar a[], const TacsScalar ad[]) {
@@ -327,15 +353,21 @@ class ADMat3x3 {
         Ad[i] = 0.0;
       }
     }
+    for (int i = 0; i < 9; i++) {
+      Ap[i] = 0.0;
+      Ah[i] = 0.0;
+    }
   }
   ADMat3x3(const ADMat3x3 &a) {
     for (int i = 0; i < 9; i++) {
       A[i] = a.A[i];
       Ad[i] = a.Ad[i];
+      Ap[i] = a.Ap[i];
+      Ah[i] = a.Ah[i];
     }
   }
 
-  TacsScalar A[9], Ad[9];
+  TacsScalar A[9], Ad[9], Ap[9], Ah[9];
 };
 
 }  // namespace A2D
