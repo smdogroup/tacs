@@ -71,3 +71,10 @@ METIS_LIB = ${METIS_DIR}/lib/libmetis.a
 
 # This may be need to be added to build f5totec with openmpi
 # TECIO_LIB += -lopen-pal
+
+# A2D is a header-only automatic differentiation library used by newer TACS
+# elements. By default it is taken from the git submodule at extern/a2d,
+# which make fetches automatically on the first build. Only uncomment and
+# edit the lines below if your A2D checkout lives elsewhere.
+# A2D_DIR = ${TACS_DIR}/extern/a2d
+# A2D_INCLUDE = -I${A2D_DIR}/include

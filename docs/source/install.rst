@@ -64,11 +64,13 @@ Basic steps to compile TACS
    the following:
 
     * ``TACS_DIR``: the root director of TACS
-    * ``CXX``: the C++ compiler, must be MPI-enabled
+    * ``CXX``: the C++ compiler, must be MPI-enabled and support C++17
     * ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
     * ``METIS_DIR``: set the location of METIS
     * ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
     * ``TECIO_DIR``: *optional* set location of TecIO
+    * ``A2D_DIR``: *optional* set the location of A2D (defaults to the git
+      submodule at ``extern/a2d``)
 
 #. To compile, from the base directory, run ``make`` then ``make interface``
 #. To set up the Python interface, run ``python setup.py develop --user``
@@ -101,16 +103,27 @@ Using git checkout the source
 
     git clone https://github.com/smdogroup/tacs
 
+TACS bundles the `A2D <https://github.com/smdogroup/a2d>`_ header-only automatic
+differentiation library as a git submodule at ``extern/a2d``. The build fetches
+it automatically the first time you run ``make`` (or install the Python
+interface), so no extra clone flags are needed. To populate or update it
+manually, run
+
+::
+
+    git submodule update --init
+
 After you have cloned TACS, copy the file ``Makefile.in.info`` to a file called ``Makefile.in``.
 When compiling, TACS will look for the paths and settings in ``Makefile.in``.
 Make sure to set the following:
 
 #. ``TACS_DIR``: the root director of TACS
-#. ``CXX``: the C++ compiler, must be MPI-enabled
+#. ``CXX``: the C++ compiler, must be MPI-enabled and support C++17
 #. ``LAPACK_LIBS``: linking arguments for the LAPACK libraries
 #. ``METIS_DIR``: set the location of METIS
 #. ``SUITESPARSE_DIR``: *optional* set location of SuiteSparse
 #. ``TECIO_DIR``: *optional* set location of TecIO (note you can use either the ``teciosrc`` or ``teciompisrc`` implementations)
+#. ``A2D_DIR``: *optional* set the location of A2D (defaults to the git submodule at ``extern/a2d``)
 
 In addition, it is recommended to copy the default python settings by copying ``setup.cfg.info`` to ``setup.cfg``.
 The settings in ``setup.cfg.info`` are intended for development, if you are just going to use the code as-is,
