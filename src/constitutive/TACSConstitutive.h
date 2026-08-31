@@ -110,6 +110,80 @@ class TACSConstitutive : public TACSObject {
   }
 
   /**
+    Get the number of logical design variable groups defined by this
+    constitutive object
+
+    A design variable group is a single logical quantity exposed as one or
+    more design variables, e.g. a panel thickness (a scalar group of size 1)
+    or a set of ply fractions (an array group). Groups are reported in the
+    same order that their entries appear in the arrays used by
+    setDesignVars/getDesignVars/getDesignVarNums/getDesignVarRange. Unlike
+    those methods, the group API always describes every group, whether or
+    not its entries are active design variables (i.e. have design variable
+    numbers >= 0).
+
+    Group names match the keyword arguments of the corresponding Python
+    constitutive class constructor so that values retrieved through this
+    API can be passed straight back to the constructor.
+
+    @return The number of design variable groups
+  */
+  virtual int getNumDesignVarGroups() { return 0; }
+
+  /**
+    Get the name of a design variable group
+
+    @param groupIndex The index of the design variable group
+    @return The group name, or NULL if groupIndex is out of range
+  */
+  virtual const char *getDesignVarGroupName(int groupIndex) { return NULL; }
+
+  /**
+    Get the number of entries in a design variable group
+
+    @param groupIndex The index of the design variable group
+    @return The number of entries in the group, or 0 if out of range
+  */
+  virtual int getDesignVarGroupSize(int groupIndex) { return 0; }
+
+  /**
+    Is this design variable group a scalar quantity?
+
+    Scalar groups always have size 1, but a size-1 group is not necessarily
+    scalar (e.g. the ply fractions of a single-ply laminate form a size-1
+    array group).
+
+    @param groupIndex The index of the design variable group
+    @return True if the group is a scalar quantity
+  */
+  virtual bool isDesignVarGroupScalar(int groupIndex) { return true; }
+
+  /**
+    Get the values of all entries in a design variable group
+
+    All entries are written, whether or not they are active design
+    variables. The values array must have length at least
+    getDesignVarGroupSize(groupIndex).
+
+    @param groupIndex The index of the design variable group
+    @param values The design variable group values
+  */
+  virtual void getDesignVarGroupValues(int groupIndex, TacsScalar values[]) {}
+
+  /**
+    Get the design variable numbers of all entries in a design variable
+    group
+
+    Entries that are not active design variables have a design variable
+    number < 0. The dvNums array must have length at least
+    getDesignVarGroupSize(groupIndex).
+
+    @param groupIndex The index of the design variable group
+    @param dvNums The design variable numbers
+  */
+  virtual void getDesignVarGroupNums(int groupIndex, int dvNums[]) {}
+
+  /**
     Evaluate the mass per unit length, area or volume for the element
 
     @param elemIndex The local element index
