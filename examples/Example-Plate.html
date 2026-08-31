@@ -63,7 +63,7 @@ We consider a static case where a 10 kN point force is applied at the plate cent
 <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> acts as an assembler for all of the TACS submodules.
 It's purpose is to read in mesh files, setup TACS element objects, and create TACS problems for analysis.
 To create a <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyTACS</span></code></a> class, at minimum, a NASTRAN bdf defining nodes, elements, and boundary conditions is required.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdfFile</span> <span class="o">=</span> <span class="s1">&#39;./plate.bdf&#39;</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdfFile</span> <span class="o">=</span> <span class="s1">'./plate.bdf'</span>
 <span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -81,8 +81,8 @@ For this example, we will take the first approach. Our <a class="reference inter
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">elemCallBack</span><span class="p">(</span><span class="n">dvNum</span><span class="p">,</span> <span class="n">compID</span><span class="p">,</span> <span class="n">compDescript</span><span class="p">,</span> <span class="n">elemDescripts</span><span class="p">,</span> <span class="n">specialDVs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="c1"># Material properties</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>        <span class="c1"># density kg/m^3</span>
-    <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span>            <span class="c1"># Young&#39;s modulus (Pa)</span>
-    <span class="n">nu</span> <span class="o">=</span> <span class="mf">0.3</span>            <span class="c1"># Poisson&#39;s ratio</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span>            <span class="c1"># Young's modulus (Pa)</span>
+    <span class="n">nu</span> <span class="o">=</span> <span class="mf">0.3</span>            <span class="c1"># Poisson's ratio</span>
     <span class="n">ys</span> <span class="o">=</span> <span class="mf">464.0e6</span>        <span class="c1"># yield stress</span>
 
     <span class="c1"># Plate geometry</span>
@@ -95,13 +95,13 @@ For this example, we will take the first approach. Our <a class="reference inter
     <span class="c1"># Set the transform used to define shell stresses, None defaults to NaturalShellTransform</span>
     <span class="n">transform</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># Set up tacs element for every entry in elemDescripts</span>
-    <span class="c1"># According to the bdf file, elemDescripts should always be [&quot;CQUAD4&quot;]</span>
+    <span class="c1"># According to the bdf file, elemDescripts should always be ["CQUAD4"]</span>
     <span class="n">elemList</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">descript</span> <span class="ow">in</span> <span class="n">elemDescripts</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">descript</span> <span class="o">==</span> <span class="s1">&#39;CQUAD4&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">descript</span> <span class="o">==</span> <span class="s1">'CQUAD4'</span><span class="p">:</span>
             <span class="n">elem</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">Quad4Shell</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">con</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span> <span class="c1"># Add a catch for any unexpected element types</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected element of type </span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unexpected element of type </span><span class="si">{</span><span class="n">descript</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">elemList</span>
 </pre></div>
 </div>
@@ -121,7 +121,7 @@ functions of interests, and computing gradients.
 To create our <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> we can use the
 <a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS.createStaticProblem" title="tacs.pytacs.pyTACS.createStaticProblem"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.createStaticProblem</span></code></a> method.
 This method requires at minimum a name for our problem.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s1">&#39;point_force&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s1">'point_force'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Next, we'll add some functions of interest to our problem that we can evaluate after we've solved it.
@@ -130,8 +130,8 @@ This method takes a user-defined name and any uninitialized TACS <a class="refer
 setup the function class (minus the <a class="reference internal" href="../core/TACS.html#TACS.Assembler" title="TACS.Assembler"><code class="xref py py-class docutils literal notranslate"><span class="pre">Assembler</span></code></a>) can be passed as keyword arguments to <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem.addFunction" title="tacs.problems.StaticProblem.addFunction"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.addFunction</span></code></a>.
 For now let's add a function to evaluate the mass of the plate using <a class="reference internal" href="../core/functions.html#tacs.functions.StructuralMass" title="tacs.functions.StructuralMass"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralMass</span></code></a>
 and a function to evaluate the maximum vonMises-based failure criteria using <a class="reference internal" href="../core/functions.html#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;mass&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
-<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">&#39;ks_vmfailure&#39;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">'mass'</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s1">'ks_vmfailure'</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now let's add our point load to the problem. We can do this by using the

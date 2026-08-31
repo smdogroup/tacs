@@ -62,38 +62,40 @@ Each iteration of the continuation solver consists of three steps:</p>
 <p>Options can be set using the <a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOption" title="tacs.solvers.ContinuationSolver.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.setOption</span></code></a> and <a class="reference internal" href="#tacs.solvers.ContinuationSolver.setOptions" title="tacs.solvers.ContinuationSolver.setOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.setOptions</span></code></a> methods.
 Current option values for a class instance can be printed out using the <a class="reference internal" href="#tacs.solvers.ContinuationSolver.printOptions" title="tacs.solvers.ContinuationSolver.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ContinuationSolver.printOptions</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1788210447.302093] [runnervmgx7h7:14655:0]      ucp_worker.c:1492 UCX  ERROR uct_iface_open(ud_verbs/mana_0:1) failed: Address not valid
+[runnervmgx7h7:14655] pml_ucx.c:319  Error: Failed to create UCP worker
++----------------------------------------+
 |  ContinuationSolver default options:   |
 +----------------------------------------+
-&#39;MaxLambda&#39;: 1.0
+'MaxLambda': 1.0
 	 Final continuation parameter value to aim for.
-&#39;AbsTol&#39;: 1e-08
+'AbsTol': 1e-08
 	 Convergence criteria for the nonlinear residual norm.
-&#39;RelTol&#39;: 1e-08
+'RelTol': 1e-08
 	 Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.
-&#39;CoarseAbsTol&#39;: 0.0001
+'CoarseAbsTol': 0.0001
 	 Residual norm criteria for intermediate continuation steps, making this larger may speed up the nonlinear solver by allowing it to only partially converge intermediate steps.
-&#39;CoarseRelTol&#39;: 0.0001
+'CoarseRelTol': 0.0001
 	 Relative residual norm criteria for intermediate load increments.
-&#39;TargetIter&#39;: 8
+'TargetIter': 8
 	 Target number of Newton iterations for each continuation increment.
-&#39;MaxIter&#39;: 30
+'MaxIter': 30
 	 Maximum number of continuation steps.
-&#39;InitialStep&#39;: 0.2
+'InitialStep': 0.2
 	 Initial continuation step size.
-&#39;MinStep&#39;: 0.0001
+'MinStep': 0.0001
 	 Minimum continuation step size.
-&#39;MaxStep&#39;: inf
+'MaxStep': inf
 	 Maximum continuation step size.
-&#39;MinStepFactor&#39;: 0.5
+'MinStepFactor': 0.5
 	 The minimum factor by which the continuation step size can decrease in a single step.
-&#39;MaxStepFactor&#39;: 2.0
+'MaxStepFactor': 2.0
 	 The maximum factor by which the continuation step size can increase in a single step.
-&#39;RetractionFactor&#39;: 0.5
+'RetractionFactor': 0.5
 	 The factor by which the continuation step size is reduced when the Newton solver fails to converge.
-&#39;UsePredictor&#39;: False
+'UsePredictor': False
 	 Flag for using predictor step in continuation.
-&#39;NumPredictorStates&#39;: 2
+'NumPredictorStates': 2
 	 Number of previous equilibrium states to use in computing the predictor step.
 </pre></div>
 </div>

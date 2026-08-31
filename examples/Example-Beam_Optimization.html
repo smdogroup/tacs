@@ -80,7 +80,7 @@ can be found independently using:</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsBuilder</span>
 
 <span class="c1"># BDF file containing mesh</span>
-<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;beam_opt.bdf&quot;</span><span class="p">)</span>
+<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"beam_opt.bdf"</span><span class="p">)</span>
 
 <span class="c1"># Beam thickness (initial)</span>
 <span class="n">t</span> <span class="o">=</span> <span class="mf">0.05</span>  <span class="c1"># m</span>
@@ -91,8 +91,8 @@ can be found independently using:</p>
 
 <span class="c1"># Material properties</span>
 <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span>  <span class="c1"># density kg/m^3</span>
-<span class="n">E</span> <span class="o">=</span> <span class="mf">70.0e9</span>  <span class="c1"># Young&#39;s modulus (Pa)</span>
-<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># Poisson&#39;s ratio</span>
+<span class="n">E</span> <span class="o">=</span> <span class="mf">70.0e9</span>  <span class="c1"># Young's modulus (Pa)</span>
+<span class="n">nu</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># Poisson's ratio</span>
 <span class="n">ys</span> <span class="o">=</span> <span class="mf">350e6</span>  <span class="c1"># yield stress</span>
 
 <span class="c1"># Shear force applied at tip</span>
@@ -124,15 +124,15 @@ This function is called each time a new MPhys Scenario is created.
 This function sets up the <a class="reference internal" href="../pytacs/static.html#tacs.problems.StaticProblem" title="tacs.problems.StaticProblem"><code class="xref py py-class docutils literal notranslate"><span class="pre">StaticProblem</span></code></a> by adding fixed loads, modifying options, and adding eval functions.
 Here we specify the beam mass (<a class="reference internal" href="../core/functions.html#tacs.functions.StructuralMass" title="tacs.functions.StructuralMass"><code class="xref py py-class docutils literal notranslate"><span class="pre">StructuralMass</span></code></a>) and aggregated failure (<a class="reference internal" href="../core/functions.html#tacs.functions.KSFailure" title="tacs.functions.KSFailure"><code class="xref py py-class docutils literal notranslate"><span class="pre">KSFailure</span></code></a>) as outputs for our analysis and add our 1 kN shear load.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to add fixed forces and eval functions</span>
 <span class="sd">    to structural problems used in tacs builder</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Add TACS Functions</span>
-    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;mass&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">"mass"</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
     <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span>
-        <span class="s2">&quot;ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
+        <span class="s2">"ks_vmfailure"</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
     <span class="p">)</span>
 
     <span class="c1"># Add forces to static problem</span>
@@ -156,21 +156,21 @@ We use this builder to create an MPhys <code class="xref py py-class docutils li
         <span class="n">dv_array</span> <span class="o">=</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_initial_dvs</span><span class="p">()</span>
 
         <span class="c1"># Create independent variable component to control design variables for problem</span>
-        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;dvs&quot;</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">])</span>
-        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
+        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">"dvs"</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">"*"</span><span class="p">])</span>
+        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
 
         <span class="c1"># Add mesh component</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">"mesh"</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mphys_add_scenario</span><span class="p">(</span>
-            <span class="s2">&quot;tip_shear&quot;</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
+            <span class="s2">"tip_shear"</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;tip_shear.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"tip_shear.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># Connect dv component to input of structural scenario</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="s2">&quot;tip_shear.dv_struct&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="s2">"tip_shear.dv_struct"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>At this point we setup the OpenMDAO <code class="docutils literal notranslate"><span class="pre">Problem</span></code> class that we will use to perform our optimization.
@@ -183,19 +183,19 @@ Finally we run the problem driver to optimize the problem.</p>
 <span class="n">model</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">model</span>
 
 <span class="c1"># Declare design variables, objective, and constraint</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">&quot;tip_shear.mass&quot;</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">&quot;tip_shear.ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">"tip_shear.mass"</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">"tip_shear.ks_vmfailure"</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
 <span class="c1"># Configure optimizer</span>
-<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;objs&quot;</span><span class="p">,</span> <span class="s2">&quot;nl_cons&quot;</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
-<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;SLSQP&quot;</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">"objs"</span><span class="p">,</span> <span class="s2">"nl_cons"</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SLSQP"</span>
 
 <span class="c1"># Setup OpenMDAO problem</span>
 <span class="n">prob</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
 
 <span class="c1"># Output N2 representation of OpenMDAO model</span>
-<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">&quot;beam_opt_n2.html&quot;</span><span class="p">)</span>
+<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">"beam_opt_n2.html"</span><span class="p">)</span>
 
 <span class="c1"># Run optimization</span>
 <span class="n">prob</span><span class="o">.</span><span class="n">run_driver</span><span class="p">()</span>
@@ -216,17 +216,17 @@ We can write our optimized beam model to a BDF file so they can
 be processed in other commonly used FEM software.
 The <code class="docutils literal notranslate"><span class="pre">f5</span></code> solution file at each optimization iteration can also be converted to a Tecplot or Paraview files using <code class="docutils literal notranslate"><span class="pre">f5totec</span></code> or <code class="docutils literal notranslate"><span class="pre">f5tovtk</span></code>, respectively.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Write optimized structure to BDF</span>
-<span class="n">bdf_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;beam_sol.bdf&quot;</span><span class="p">)</span>
+<span class="n">bdf_out</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"beam_sol.bdf"</span><span class="p">)</span>
 <span class="n">prob</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tip_shear</span><span class="o">.</span><span class="n">coupling</span><span class="o">.</span><span class="n">write_bdf</span><span class="p">(</span><span class="n">bdf_out</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Finally, we can plot the optimized thickness distribution using matplotlib and compare against the expected optimal result from beam theory.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get optimized solution variables</span>
-<span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">get_val</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">get_remote</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">get_val</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">get_remote</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span>
   <span class="p">:</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span><span class="mi">3</span>
 <span class="p">]</span>
-<span class="n">t_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">]</span>
-<span class="n">m_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">&quot;tip_shear.mass&quot;</span><span class="p">]</span>
+<span class="n">t_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">"dv_struct"</span><span class="p">]</span>
+<span class="n">m_opt</span> <span class="o">=</span> <span class="n">prob</span><span class="p">[</span><span class="s2">"tip_shear.mass"</span><span class="p">]</span>
 
 <span class="c1"># Get analytical solution</span>
 <span class="n">t_exact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">V</span> <span class="o">/</span> <span class="n">w</span> <span class="o">/</span> <span class="n">ys</span><span class="p">)</span>
@@ -235,12 +235,12 @@ The <code class="docutils literal notranslate"><span class="pre">f5</span></code
 <span class="n">t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">6</span> <span class="o">*</span> <span class="n">L</span> <span class="o">*</span> <span class="n">V</span> <span class="o">/</span> <span class="n">w</span> <span class="o">/</span> <span class="n">ys</span><span class="p">)</span>
 
 <span class="c1"># Plot results for solution</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">L</span><span class="p">,</span> <span class="n">t_opt</span> <span class="o">/</span> <span class="n">t0</span><span class="p">,</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t_exact</span> <span class="o">/</span> <span class="n">t0</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;optimized&quot;</span><span class="p">,</span> <span class="s2">&quot;analytical&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\frac{t(x)}</span><span class="si">{t_0}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\frac</span><span class="si">{x}{L}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Optimal beam thickness profile&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$t_0 = \sqrt{\frac</span><span class="si">{6VL}</span><span class="s2">{w\sigma_y}}$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="n">L</span><span class="p">,</span> <span class="n">t_opt</span> <span class="o">/</span> <span class="n">t0</span><span class="p">,</span> <span class="s2">"o"</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t_exact</span> <span class="o">/</span> <span class="n">t0</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">"optimized"</span><span class="p">,</span> <span class="s2">"analytical"</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\frac{t(x)}</span><span class="si">{t_0}</span><span class="s2">$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\frac</span><span class="si">{x}{L}</span><span class="s2">$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=-</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Optimal beam thickness profile"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$t_0 = \sqrt{\frac</span><span class="si">{6VL}</span><span class="s2">{w\sigma_y}}$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>

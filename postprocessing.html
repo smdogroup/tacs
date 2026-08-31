@@ -61,7 +61,7 @@
 <h3>Creating F5 Files<a class="headerlink" href="#creating-f5-files" title="Link to this heading">¶</a></h3>
 <p><strong>Method 1: Using the Direct (C++) Interface</strong></p>
 <p>To create an f5 file from a TACS analysis, use the <code class="docutils literal notranslate"><span class="pre">TACSToFH5</span></code> class. This should be done after solving your analysis but before cleaning up the assembler object.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;TACSToFH5.h&quot;</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">"TACSToFH5.h"</span>
 
 <span class="c1">// After solving your analysis</span>
 <span class="c1">// Create an TACSToFH5 object for writing output to files</span>
@@ -71,7 +71,7 @@
 <span class="w">                  </span><span class="n">TACS_OUTPUT_STRESSES</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">TACS_OUTPUT_EXTRAS</span><span class="p">);</span>
 <span class="n">TACSToFH5</span><span class="w"> </span><span class="o">*</span><span class="n">f5</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TACSToFH5</span><span class="p">(</span><span class="n">assembler</span><span class="p">,</span><span class="w"> </span><span class="n">etype</span><span class="p">,</span><span class="w"> </span><span class="n">write_flag</span><span class="p">);</span>
 <span class="n">f5</span><span class="o">-&gt;</span><span class="n">incref</span><span class="p">();</span>
-<span class="n">f5</span><span class="o">-&gt;</span><span class="n">writeToFile</span><span class="p">(</span><span class="s">&quot;solution.f5&quot;</span><span class="p">);</span>
+<span class="n">f5</span><span class="o">-&gt;</span><span class="n">writeToFile</span><span class="p">(</span><span class="s">"solution.f5"</span><span class="p">);</span>
 <span class="n">f5</span><span class="o">-&gt;</span><span class="n">decref</span><span class="p">();</span>
 </pre></div>
 </div>
@@ -88,22 +88,22 @@
 <p>To create an f5 file from a TACS analysis, use the <cite>writeSolution</cite> method of any <a class="reference internal" href="pytacs/problems.html"><span class="doc">problem class</span></a>
 after solving the problem.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tacs</span><span class="w"> </span><span class="kn">import</span> <span class="n">pyTACS</span><span class="p">,</span> <span class="n">TACS</span>
-<span class="n">bdfFile</span> <span class="o">=</span> <span class="s2">&quot;input.bdf&quot;</span>
+<span class="n">bdfFile</span> <span class="o">=</span> <span class="s2">"input.bdf"</span>
 <span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="c1"># Specify the element type to output in f5 file</span>
            <span class="c1"># If not specified, pyTACS will choose this option automatically</span>
            <span class="c1"># based on first element type in model</span>
-           <span class="s2">&quot;outputElement&quot;</span><span class="p">:</span> <span class="n">TACS</span><span class="o">.</span><span class="n">BEAM_OR_SHELL_ELEMENT</span><span class="p">,</span>
+           <span class="s2">"outputElement"</span><span class="p">:</span> <span class="n">TACS</span><span class="o">.</span><span class="n">BEAM_OR_SHELL_ELEMENT</span><span class="p">,</span>
            <span class="c1"># Output flags</span>
-           <span class="s2">&quot;writeConnectivity&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-           <span class="s2">&quot;writeNodes&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-           <span class="s2">&quot;writeDisplacements&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-           <span class="s2">&quot;writeStrains&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-           <span class="s2">&quot;writeStresses&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-           <span class="s2">&quot;writeExtras&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+           <span class="s2">"writeConnectivity"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">"writeNodes"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">"writeDisplacements"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">"writeStrains"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">"writeStresses"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+           <span class="s2">"writeExtras"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 <span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">pyTACS</span><span class="p">(</span><span class="n">bdfFile</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">options</span><span class="p">)</span>
 <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
 <span class="c1"># Creata a pytacs problem</span>
-<span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">&quot;grav&quot;</span><span class="p">)</span>
+<span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">"grav"</span><span class="p">)</span>
 <span class="n">staticProb</span><span class="o">.</span><span class="n">addInertialLoad</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">9.81</span><span class="p">])</span>
 <span class="c1"># Solve</span>
 <span class="n">staticProb</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
@@ -522,16 +522,16 @@ at points where shell elements meet at very different orientations.</p>
 <section id="tecplot-macro">
 <h4>Tecplot Macro<a class="headerlink" href="#tecplot-macro" title="Link to this heading">¶</a></h4>
 <p>You can also automate this process using a Tecplot macro. Place this code in your <cite>tecplot.mcr</cite> file to make it available as a quick macro in the Tecplot GUI:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$!MACROFUNCTION NAME = &quot;TACS - Apply Deformations&quot;
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$!MACROFUNCTION NAME = "TACS - Apply Deformations"
 $!PromptForTextString |DefFactor|
-  Instructions = &quot;Enter scaling factor for deformations&quot;
+  Instructions = "Enter scaling factor for deformations"
 
 $!AlterData
-  Equation = &quot;{X}={X}+|DefFactor|*{u}&quot;
+  Equation = "{X}={X}+|DefFactor|*{u}"
 $!AlterData
-  Equation = &quot;{Y}={Y}+|DefFactor|*{v}&quot;
+  Equation = "{Y}={Y}+|DefFactor|*{v}"
 $!AlterData
-  Equation = &quot;{Z}={Z}+|DefFactor|*{w}&quot;
+  Equation = "{Z}={Z}+|DefFactor|*{w}"
 $!ENDMACROFUNCTION
 </pre></div>
 </div>

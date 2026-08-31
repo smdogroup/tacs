@@ -35,7 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.constraints.adjacency</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">The main purpose of this class is to constrain design variables step sizes across adjacent components.</span>
 <span class="sd">The formulation is a linear constraint that takes the following form:</span>
 
@@ -49,7 +49,7 @@
 
 <span class="sd">.. note:: This class should be created using the</span>
 <span class="sd">    :meth:`pyTACS.createAdjacencyConstraint &lt;tacs.pytacs.pyTACS.createAdjacencyConstraint&gt;` method.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
@@ -69,11 +69,11 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">AdjacencyConstraint</span><span class="p">(</span><span class="n">TACSConstraint</span><span class="p">):</span>
     <span class="c1"># Default options for class</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"outputDir"</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">"./"</span><span class="p">,</span> <span class="s2">"Output directory for F5 file writer."</span><span class="p">],</span>
+        <span class="s2">"numberSolutions"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for attaching solution counter index to f5 files."</span><span class="p">,</span>
         <span class="p">],</span>
     <span class="p">}</span>
     <span class="c1"># Flag determining whether constraint is linear wrt dvs or nodes</span>
@@ -88,7 +88,7 @@
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
 <span class="sd">        Use pyTACS.createAdjacencyConstraint instead.</span>
 
@@ -111,7 +111,7 @@
 
 <span class="sd">        options : dict</span>
 <span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -128,9 +128,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initializeAdjacencyList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a list of all components with common edges.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># First, create a dictionary of common edges shared by components</span>
@@ -160,7 +160,7 @@
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span>
                     <span class="n">elemInfo</span><span class="p">,</span> <span class="p">(</span><span class="n">CROD</span><span class="p">,</span> <span class="n">CONROD</span><span class="p">,</span> <span class="n">CBEND</span><span class="p">,</span> <span class="n">CBAR</span><span class="p">,</span> <span class="n">CBEAM</span><span class="p">,</span> <span class="n">CGAP</span><span class="p">,</span> <span class="n">CTUBE</span><span class="p">)</span>
                 <span class="p">):</span>
-                    <span class="c1"># In this case our &quot;edge&quot; is 0D (just a node)</span>
+                    <span class="c1"># In this case our "edge" is 0D (just a node)</span>
                     <span class="n">nodeID1</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="n">nodeID2</span> <span class="o">=</span> <span class="n">elemConn</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">nodeID1</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">edgeToFace</span><span class="p">:</span>
@@ -198,7 +198,7 @@
 <div class="viewcode-block" id="AdjacencyConstraint.addConstraint">
 <a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.addConstraint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conName</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">1e20</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1e20</span><span class="p">,</span> <span class="n">dvIndex</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generic method to adding a new constraint set for TACS.</span>
 
 <span class="sd">        Parameters</span>
@@ -219,7 +219,7 @@
 <span class="sd">        dvIndex : int</span>
 <span class="sd">            Index number of element DV to be used in constraint. Defaults to 0.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">compIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Make sure CompIDs is flat and get element numbers on each proc corresponding to specified compIDs</span>
             <span class="n">compIDs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">compIDs</span><span class="p">)</span>
@@ -233,7 +233,7 @@
             <span class="n">success</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No adjacent components found in `compIDs`. Skipping </span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"No adjacent components found in `compIDs`. Skipping </span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
             <span class="n">success</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -241,7 +241,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_createConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dvIndex</span><span class="p">,</span> <span class="n">compIDs</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a new constraint object for TACS.</span>
 
 <span class="sd">        Parameters</span>
@@ -263,7 +263,7 @@
 <span class="sd">        constraint : tacs.constraints.base.SparseLinearConstraint or None</span>
 <span class="sd">            Constraint object if successful, None otherwise.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">size</span>
         <span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span>
         <span class="c1"># Gather the dv mapping from each proc</span>
@@ -332,7 +332,7 @@
 <div class="viewcode-block" id="AdjacencyConstraint.evalConstraints">
 <a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.evalConstraints">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        evalCons are evaluated and updated into the provided</span>
 <span class="sd">        dictionary.</span>
@@ -350,18 +350,18 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
-<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraints(funcs, &quot;LE_SPAR&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraints(funcs, "LE_SPAR")</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
-<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
-<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;: array([12354.10])}</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of 'c1'):</span>
+<span class="sd">        &gt;&gt;&gt; # {'c1_LE_SPAR': array([12354.10])}</span>
+<span class="sd">        """</span>
         <span class="c1"># Check if user specified which constraints to output</span>
         <span class="c1"># Otherwise, output them all</span>
         <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="p">)</span>
 
         <span class="c1"># Loop through each requested constraint set</span>
         <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span><span class="o">.</span><span class="n">evalCon</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">())</span>
 
         <span class="c1"># Update call counter</span>
@@ -373,7 +373,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraintsSens</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">includeDVSens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">includeXptSens</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from constraint. The derivatives of the constraints</span>
 <span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
@@ -394,18 +394,18 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, &quot;LE_SPAR&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; adjConstraint.evalConstraintsSens(funcsSens, "LE_SPAR")</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
-<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
-<span class="sd">        &gt;&gt;&gt; # {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if AdjacencyConstraint has name of 'c1'):</span>
+<span class="sd">        &gt;&gt;&gt; # {'c1_LE_SPAR':{'struct':&lt;50x242 sparse matrix of type '&lt;class 'numpy.float64'&gt;' with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="sd">        """</span>
         <span class="c1"># Check if user specified which constraints to output</span>
         <span class="c1"># Otherwise, output them all</span>
         <span class="n">evalCons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_processEvalCons</span><span class="p">(</span><span class="n">evalCons</span><span class="p">)</span>
 
         <span class="c1"># Loop through each requested constraint set</span>
         <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">conName</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
                 <span class="c1"># Get sparse Jacobian for dv sensitivity</span>
@@ -425,7 +425,7 @@
 <div class="viewcode-block" id="AdjacencyConstraint.writeVisualization">
 <a class="viewcode-back" href="../../../pytacs/adjacency.html#tacs.constraints.AdjacencyConstraint.writeVisualization">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeVisualization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This function can be used to write a tecplot file for</span>
 <span class="sd">        the purposes of visualization.</span>
 
@@ -439,10 +439,10 @@
 <span class="sd">        number : int or None</span>
 <span class="sd">            Use the user supplied number to index output. Again, only</span>
 <span class="sd">            typically used from an external solver</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check input</span>
         <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"outputDir"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
@@ -451,18 +451,18 @@
         <span class="c1"># calls, add the call number</span>
         <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># We need number based on the provided number:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%3.3d</span><span class="s2">"</span> <span class="o">%</span> <span class="n">number</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># if number is none, i.e. standalone, but we need to</span>
             <span class="c1"># number solutions, use internal counter</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
-                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"numberSolutions"</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%3.3d</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
 
-        <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.dat&quot;</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">".dat"</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;VARIABLES = &quot;X&quot;, &quot;Y&quot;, &quot;Z&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'VARIABLES = "X", "Y", "Z"</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
 
         <span class="c1"># Get current node locations</span>
         <span class="n">Xpts_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
@@ -471,7 +471,7 @@
         <span class="k">for</span> <span class="n">constrName</span><span class="p">,</span> <span class="n">constrObj</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraintList</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">compPair</span> <span class="ow">in</span> <span class="n">constrObj</span><span class="o">.</span><span class="n">compPairs</span><span class="p">:</span>
-                <span class="c1"># Get the &#39;average&#39; location for each component in the dvGroup</span>
+                <span class="c1"># Get the 'average' location for each component in the dvGroup</span>
                 <span class="n">compCenters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">compID</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">compPair</span><span class="p">):</span>
                     <span class="n">nodeIDsGlobal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getGlobalNodeIDsForComps</span><span class="p">(</span>
@@ -488,19 +488,19 @@
                     <span class="n">compCenters</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">/=</span> <span class="n">nnodes</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Zone T=</span><span class="si">{</span><span class="n">constrName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Nodes = 2, Elements = 1 ZONETYPE=FELINESEG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;DATAPACKING=POINT</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Zone T=</span><span class="si">{</span><span class="n">constrName</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"Nodes = 2, Elements = 1 ZONETYPE=FELINESEG</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"DATAPACKING=POINT</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
                     <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
                         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                            <span class="s2">&quot;</span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="se">\n</span><span class="s2">&quot;</span>
+                            <span class="s2">"</span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="s2"> </span><span class="si">%g</span><span class="se">\n</span><span class="s2">"</span>
                             <span class="o">%</span> <span class="p">(</span>
                                 <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
                                 <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
                                 <span class="n">compCenters</span><span class="p">[</span><span class="n">ii</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
                             <span class="p">)</span>
                         <span class="p">)</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;1 2</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Connectivity</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"1 2</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># Connectivity</span>
 
                 <span class="c1"># Wait for root</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>

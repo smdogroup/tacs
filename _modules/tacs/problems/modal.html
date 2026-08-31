@@ -35,13 +35,13 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.problems.modal</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">The main purpose of this class is to represent all relevant</span>
 <span class="sd">information for a modal analysis.</span>
 
 <span class="sd">.. note:: This class should be created using the</span>
 <span class="sd">    :meth:`pyTACS.createModalProblem &lt;tacs.pytacs.pyTACS.createModalProblem&gt;` method.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
@@ -60,59 +60,59 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">ModalProblem</span><span class="p">(</span><span class="n">TACSProblem</span><span class="p">):</span>
     <span class="c1"># Default Option List</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;outputDir&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;./&quot;</span><span class="p">,</span> <span class="s2">&quot;Output directory for F5 file writer.&quot;</span><span class="p">],</span>
+        <span class="s2">"outputDir"</span><span class="p">:</span> <span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">"./"</span><span class="p">,</span> <span class="s2">"Output directory for F5 file writer."</span><span class="p">],</span>
         <span class="c1"># Solution Options</span>
-        <span class="s2">&quot;L2Convergence&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"L2Convergence"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-12</span><span class="p">,</span>
-            <span class="s2">&quot;Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+            <span class="s2">"Absolute convergence tolerance for Eigenvalue solver based on l2 norm of residual."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"L2ConvergenceRel"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-12</span><span class="p">,</span>
-            <span class="s2">&quot;Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual.&quot;</span><span class="p">,</span>
+            <span class="s2">"Relative convergence tolerance for Eigenvalue solver based on l2 norm of residual."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"RBEStiffnessScaleFactor"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e3</span><span class="p">,</span>
-            <span class="s2">&quot;Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.&quot;</span><span class="p">,</span>
+            <span class="s2">"Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"RBEArtificialStiffness"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-3</span><span class="p">,</span>
-            <span class="s2">&quot;Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix </span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> to stabilize preconditioner.&quot;</span><span class="p">,</span>
+            <span class="s2">"Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix </span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\t</span><span class="s2"> to stabilize preconditioner."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;subSpaceSize&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"subSpaceSize"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">10</span><span class="p">,</span>
-            <span class="s2">&quot;Subspace size for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+            <span class="s2">"Subspace size for Krylov solver used by Eigenvalue solver."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;nRestarts&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"nRestarts"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">15</span><span class="p">,</span>
-            <span class="s2">&quot;Max number of resets for Krylov solver used by Eigenvalue solver.&quot;</span><span class="p">,</span>
+            <span class="s2">"Max number of resets for Krylov solver used by Eigenvalue solver."</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="c1"># Output Options</span>
-        <span class="s2">&quot;writeSolution&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;Flag for suppressing all f5 file writing.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;numberSolutions&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"writeSolution"</span><span class="p">:</span> <span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"Flag for suppressing all f5 file writing."</span><span class="p">],</span>
+        <span class="s2">"numberSolutions"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for attaching solution counter index to f5 files.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for attaching solution counter index to f5 files."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;printTiming&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"printTiming"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for printing out timing information for class procedures.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for printing out timing information for class procedures."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;printLevel&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"printLevel"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> Accepts:</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   0 : No printing.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">   1 : Print major iterations.</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2"> &gt; 1 : Print major + minor iterations.&quot;</span><span class="p">,</span>
+            <span class="s2">"Print level for Eigenvalue solver.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\t</span><span class="s2"> Accepts:</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\t\t</span><span class="s2">   0 : No printing.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\t\t</span><span class="s2">   1 : Print major iterations.</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\t\t</span><span class="s2"> &gt; 1 : Print major + minor iterations."</span><span class="p">,</span>
         <span class="p">],</span>
     <span class="p">}</span>
 
@@ -128,7 +128,7 @@
         <span class="n">isNonlinear</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
 <span class="sd">        Use pyTACS.createModalProblem instead.</span>
 
@@ -157,7 +157,7 @@
 
 <span class="sd">        options : dict</span>
 <span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Problem name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -172,16 +172,16 @@
         <span class="p">)</span>
 
         <span class="c1"># String name used in evalFunctions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">&quot;eigsm&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="s2">"eigsm"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span>
 
         <span class="c1"># Create problem-specific variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_createVariables</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_createVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal to create the objects required by TACS Integrator</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
@@ -192,8 +192,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pc</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Pc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
 
         <span class="c1"># Set artificial stiffness factors in rbe class</span>
-        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">)</span>
-        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">)</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RBEStiffnessScaleFactor"</span><span class="p">)</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RBEArtificialStiffness"</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
 
@@ -202,12 +202,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleMatType</span><span class="p">(</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">STIFFNESS_MATRIX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">assembleMatType</span><span class="p">(</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">MASS_MATRIX</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">M</span><span class="p">)</span>
 
-        <span class="n">subspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;subSpaceSize&quot;</span><span class="p">)</span>
-        <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;nRestarts&quot;</span><span class="p">)</span>
+        <span class="n">subspace</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"subSpaceSize"</span><span class="p">)</span>
+        <span class="n">restarts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"nRestarts"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">gmres</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">KSM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pc</span><span class="p">,</span> <span class="n">subspace</span><span class="p">,</span> <span class="n">restarts</span><span class="p">)</span>
 
-        <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2Convergence&quot;</span><span class="p">)</span>
-        <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;L2ConvergenceRel&quot;</span><span class="p">)</span>
+        <span class="n">atol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"L2Convergence"</span><span class="p">)</span>
+        <span class="n">rtol</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"L2ConvergenceRel"</span><span class="p">)</span>
 
         <span class="c1"># Create the frequency analysis object</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span> <span class="o">=</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">FrequencyAnalysis</span><span class="p">(</span>
@@ -223,18 +223,18 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initializeFunctionList</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create FunctionList dict which maps eigenvalue strings</span>
 <span class="sd">        to mode indices used in evalFunctions method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">mode_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valName</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mode_i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_i</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">valName</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">mode_i</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mode_i</span>
 
 <div class="viewcode-block" id="ModalProblem.setOption">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setOption">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set a solver option value. The name is not case sensitive.</span>
 
 <span class="sd">        Parameters</span>
@@ -244,16 +244,16 @@
 
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Default setOption for common problem class objects</span>
         <span class="n">TACSProblem</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># No need to reset solver for output options</span>
         <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span>
-            <span class="s2">&quot;writesolution&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;printtiming&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;numbersolutions&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;outputdir&quot;</span><span class="p">,</span>
+            <span class="s2">"writesolution"</span><span class="p">,</span>
+            <span class="s2">"printtiming"</span><span class="p">,</span>
+            <span class="s2">"numbersolutions"</span><span class="p">,</span>
+            <span class="s2">"outputdir"</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="k">pass</span>
         <span class="c1"># Reset solver for all other option changes</span>
@@ -264,7 +264,7 @@
 <div class="viewcode-block" id="ModalProblem.setValName">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.setValName">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setValName</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valName</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set a name for the eigenvalues. Only needs</span>
 <span class="sd">        to be changed if more than 1 pytacs object is used in an</span>
 <span class="sd">        optimization</span>
@@ -273,7 +273,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        valName : str</span>
 <span class="sd">            Name of the eigenvalue output used in evalFunctions().</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">valName</span> <span class="o">=</span> <span class="n">valName</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initializeFunctionList</span><span class="p">()</span></div>
 
@@ -281,30 +281,30 @@
 <div class="viewcode-block" id="ModalProblem.getNumEigs">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getNumEigs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getNumEigs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the number of eigenvalues requested from solver for this problem.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numEigs : int</span>
 <span class="sd">            Number of eigenvalues.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span></div>
 
 
 <div class="viewcode-block" id="ModalProblem.addFunction">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.addFunction">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">addFunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcName</span><span class="p">,</span> <span class="n">funcHandle</span><span class="p">,</span> <span class="n">compIDs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        NOT SUPPORTED FOR THIS PROBLEM</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">&quot;addFunction method not supported for this class.&quot;</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span><span class="s2">"addFunction method not supported for this class."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModalProblem.evalFunctions">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.evalFunctions">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate eigenvalues for problem. The functions corresponding to</span>
 <span class="sd">        the integers in evalFuncs are evaluated and updated into</span>
 <span class="sd">        the provided dictionary.</span>
@@ -323,11 +323,11 @@
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcs = {}</span>
 <span class="sd">        &gt;&gt;&gt; modalProblem.solve()</span>
-<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctions(funcs, &quot;eigsm.0&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctions(funcs, "eigsm.0")</span>
 <span class="sd">        &gt;&gt;&gt; funcs</span>
-<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
-<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:12354.10}</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of 'c1'):</span>
+<span class="sd">        &gt;&gt;&gt; # {'c1_eigsm.0':12354.10}</span>
+<span class="sd">        """</span>
         <span class="c1"># Make sure assembler variables are up to date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
@@ -346,14 +346,14 @@
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_TACSError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Supplied function &#39;</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">&#39; has not been added &quot;</span>
-                        <span class="s2">&quot;using addFunction().&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Supplied function '</span><span class="si">{</span><span class="n">f</span><span class="si">}</span><span class="s2">' has not been added "</span>
+                        <span class="s2">"using addFunction()."</span>
                     <span class="p">)</span>
 
         <span class="c1"># Loop through each requested eigenvalue</span>
         <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
             <span class="n">mode_i</span> <span class="o">=</span> <span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">funcs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">mode_i</span><span class="p">)</span></div>
 
 
@@ -362,7 +362,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">includeDVSens</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">includeXptSens</span><span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from problem. The derivatives of the functions</span>
 <span class="sd">        corresponding to the strings in evalFuncs are evaluated and</span>
@@ -383,11 +383,11 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens = {}</span>
-<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctionsSens(funcsSens, &quot;eigsm.0&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; modalProblem.evalFunctionsSens(funcsSens, "eigsm.0")</span>
 <span class="sd">        &gt;&gt;&gt; funcsSens</span>
-<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of &#39;c1&#39;):</span>
-<span class="sd">        &gt;&gt;&gt; # {&#39;c1_eigsm.0&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; # Result will look like (if ModalProblem has name of 'c1'):</span>
+<span class="sd">        &gt;&gt;&gt; # {'c1_eigsm.0':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}</span>
+<span class="sd">        """</span>
         <span class="c1"># Make sure assembler variables are up to date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
@@ -410,7 +410,7 @@
         <span class="c1"># Loop through each requested eigenvalue</span>
         <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
             <span class="n">mode_i</span> <span class="o">=</span> <span class="n">evalFuncs</span><span class="p">[</span><span class="n">funcName</span><span class="p">]</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">funcsSens</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="n">includeDVSens</span><span class="p">:</span>
                 <span class="c1"># Evaluate dv sens</span>
@@ -425,27 +425,27 @@
     <span class="c1">####### Modal solver methods ########</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_updateAssemblerVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Make sure that the assembler is using</span>
 <span class="sd">        the input variables associated with this problem</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setNodes</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Xpts</span><span class="p">)</span>
         <span class="c1"># Make sure previous auxiliary loads are removed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setAuxElements</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
         <span class="c1"># Set artificial stiffness factors in rbe class</span>
-        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEStiffnessScaleFactor&quot;</span><span class="p">)</span>
-        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RBEArtificialStiffness&quot;</span><span class="p">)</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RBEStiffnessScaleFactor"</span><span class="p">)</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RBEArtificialStiffness"</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE2</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
         <span class="n">tacs</span><span class="o">.</span><span class="n">elements</span><span class="o">.</span><span class="n">RBE3</span><span class="o">.</span><span class="n">setScalingParameters</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ModalProblem.solve">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.solve">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Solve the eigenvalue problem.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">startTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -459,36 +459,36 @@
 
         <span class="c1"># Solve the frequency analysis problem</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span>
-            <span class="n">print_flag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">),</span>
-            <span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printLevel&quot;</span><span class="p">),</span>
+            <span class="n">print_flag</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"printLevel"</span><span class="p">),</span>
+            <span class="n">print_level</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"printLevel"</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="n">solveTime</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="c1"># If timing was was requested print it, if the solution is nonlinear</span>
         <span class="c1"># print this information automatically if prinititerations was requested.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;printTiming&quot;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;| TACS Solve Times:&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"printTiming"</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"+--------------------------------------------------+"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"| TACS Solve Times:"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Setup Time&quot;</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+                <span class="s2">"| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec"</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">"TACS Setup Time"</span><span class="p">,</span> <span class="n">setupProblemTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Init Time&quot;</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
+                <span class="s2">"| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec"</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">"TACS Solve Init Time"</span><span class="p">,</span> <span class="n">initSolveTime</span> <span class="o">-</span> <span class="n">setupProblemTime</span><span class="p">)</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Solve Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
+                <span class="s2">"| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec"</span> <span class="o">%</span> <span class="p">(</span><span class="s2">"TACS Solve Time"</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">initSolveTime</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;|&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"|"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span>
-                <span class="s2">&quot;| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec&quot;</span>
-                <span class="o">%</span> <span class="p">(</span><span class="s2">&quot;TACS Total Solution Time&quot;</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
+                <span class="s2">"| </span><span class="si">%-30s</span><span class="s2">: </span><span class="si">%10.3f</span><span class="s2"> sec"</span>
+                <span class="o">%</span> <span class="p">(</span><span class="s2">"TACS Total Solution Time"</span><span class="p">,</span> <span class="n">solveTime</span> <span class="o">-</span> <span class="n">startTime</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">&quot;+--------------------------------------------------+&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pp</span><span class="p">(</span><span class="s2">"+--------------------------------------------------+"</span><span class="p">)</span>
 
         <span class="k">return</span></div>
 
@@ -496,7 +496,7 @@
 <div class="viewcode-block" id="ModalProblem.getVariables">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.getVariables">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the current state values for one mode of the current problem</span>
 
 <span class="sd">        Parameters</span>
@@ -514,7 +514,7 @@
 
 <span class="sd">        states : numpy.ndarray</span>
 <span class="sd">            Eigenvector for mode</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">eigVal</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">extractEigenvalue</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
         <span class="n">eigVector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">freqSolver</span><span class="o">.</span><span class="n">extractEigenvector</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">eigVector</span><span class="p">)</span>
@@ -527,7 +527,7 @@
 <div class="viewcode-block" id="ModalProblem.writeSolution">
 <a class="viewcode-back" href="../../../pytacs/modal.html#tacs.problems.ModalProblem.writeSolution">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
 <span class="sd">        call this function and pyTACS writes all the files that the</span>
@@ -549,13 +549,13 @@
 <span class="sd">            Mode index or indices to get state variables for.</span>
 <span class="sd">            If None, returns a solution for all modes.</span>
 <span class="sd">            Defaults to None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Make sure assembler variables are up-to-date</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_updateAssemblerVars</span><span class="p">()</span>
 
         <span class="c1"># Check input</span>
         <span class="k">if</span> <span class="n">outputDir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;outputDir&quot;</span><span class="p">)</span>
+            <span class="n">outputDir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"outputDir"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
@@ -564,15 +564,15 @@
         <span class="c1"># calls, add the call number</span>
         <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># We need number based on the provided number:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">number</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%3.3d</span><span class="s2">"</span> <span class="o">%</span> <span class="n">number</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># if number is none, i.e. standalone, but we need to</span>
             <span class="c1"># number solutions, use internal counter</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;numberSolutions&quot;</span><span class="p">):</span>
-                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"numberSolutions"</span><span class="p">):</span>
+                <span class="n">baseName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%3.3d</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">callCounter</span>
 
         <span class="c1"># Unless the writeSolution option is off write actual file:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;writeSolution&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"writeSolution"</span><span class="p">):</span>
             <span class="c1"># If indices is None, output all modes</span>
             <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">numEigs</span><span class="p">)</span>
@@ -586,8 +586,8 @@
                 <span class="c1"># Set eigen mode in assembler</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>
                 <span class="c1"># Write out mode shape as f5 file</span>
-                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%3.3d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">index</span>
-                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.f5&quot;</span>
+                <span class="n">modeName</span> <span class="o">=</span> <span class="n">baseName</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%3.3d</span><span class="s2">"</span> <span class="o">%</span> <span class="n">index</span>
+                <span class="n">fileName</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">modeName</span><span class="p">)</span> <span class="o">+</span> <span class="s2">".f5"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">outputViewer</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="n">fileName</span><span class="p">)</span></div>
 </div>
 

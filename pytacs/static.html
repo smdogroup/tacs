@@ -63,18 +63,20 @@ other pieces of information.</p>
 <a class="reference internal" href="#tacs.problems.StaticProblem.setOption" title="tacs.problems.StaticProblem.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.setOption</span></code></a> method. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.problems.StaticProblem.printOptions" title="tacs.problems.StaticProblem.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">StaticProblem.printOption</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1788210453.634783] [runnervmgx7h7:14687:0]      ucp_worker.c:1492 UCX  ERROR uct_iface_open(ud_verbs/mana_0:1) failed: Address not valid
+[runnervmgx7h7:14687] pml_ucx.c:319  Error: Failed to create UCP worker
++----------------------------------------+
 |     StaticProblem default options:     |
 +----------------------------------------+
-&#39;outputDir&#39;: &#39;./&#39;
+'outputDir': './'
 	 Output directory for F5 file writer.
-&#39;resetBeforeSolve&#39;: False
+'resetBeforeSolve': False
 	 Reset the states before every solve, this can be useful for avoiding issues when testing derivatives against finite-difference/complex-step
-&#39;linearSolver&#39;: &#39;GMRES&#39;
-	 Krylov subspace method to use for linear solver. Currently only supports &#39;GMRES&#39;
-&#39;nonlinearSolver&#39;: &#39;Continuation&#39;
-	 Convergence method to use for nonlinear solver. Currently only supports &#39;Continuation&#39;
-&#39;orderingType&#39;: 3
+'linearSolver': 'GMRES'
+	 Krylov subspace method to use for linear solver. Currently only supports 'GMRES'
+'nonlinearSolver': 'Continuation'
+	 Convergence method to use for nonlinear solver. Currently only supports 'Continuation'
+'orderingType': 3
 	 Ordering type to use for matrix partitioning.
 	 Acceptable values are:
 		 tacs.TACS.NATURAL_ORDER = 0
@@ -82,38 +84,38 @@ The following options, their default values and descriptions are listed below:</
 		 tacs.TACS.ND_ORDER = 3
 		 tacs.TACS.TACS_AMD_ORDER = 4
 		 tacs.TACS.MULTICOLOR_ORDER = 5
-&#39;PCFillLevel&#39;: 1000
+'PCFillLevel': 1000
 	 Preconditioner fill level.
-&#39;PCFillRatio&#39;: 20.0
+'PCFillRatio': 20.0
 	 Preconditioner fill ratio.
-&#39;subSpaceSize&#39;: 10
+'subSpaceSize': 10
 	 Subspace size for Krylov solver.
-&#39;nRestarts&#39;: 15
+'nRestarts': 15
 	 Max number of restarts for Krylov solver.
-&#39;flexible&#39;: True
+'flexible': True
 	 Flag for whether the preconditioner is flexible.
-&#39;L2Convergence&#39;: 1e-12
+'L2Convergence': 1e-12
 	 Absolute convergence tolerance for linear solver based on l2 norm of residual.
-&#39;L2ConvergenceRel&#39;: 1e-12
+'L2ConvergenceRel': 1e-12
 	 Relative convergence tolerance for linear solver based on l2 norm of residual.
-&#39;RBEStiffnessScaleFactor&#39;: 1000.0
+'RBEStiffnessScaleFactor': 1000.0
 	 Constraint matrix scaling factor used in RBE Lagrange multiplier stiffness matrix.
-&#39;RBEArtificialStiffness&#39;: 0.001
+'RBEArtificialStiffness': 0.001
 	 Artificial constant added to diagonals of RBE Lagrange multiplier stiffness matrix 
 	 to stabilize preconditioner.
-&#39;useMonitor&#39;: False
+'useMonitor': False
 	 Flag for whether to attach a debug monitor to the linear solver.
-&#39;monitorFrequency&#39;: 10
+'monitorFrequency': 10
 	 Print frequency for sub iterations of linear solver.
-&#39;writeSolution&#39;: True
+'writeSolution': True
 	 Flag for suppressing all f5 file writing.
-&#39;writeNLIterSolutions&#39;: False
+'writeNLIterSolutions': False
 	 Flag to save a solution file at every nonlinear solver iterations.
-&#39;numberSolutions&#39;: True
+'numberSolutions': True
 	 Flag for attaching solution counter index to f5 files.
-&#39;printTiming&#39;: False
+'printTiming': False
 	 Flag for printing out timing information for class procedures.
-&#39;printLevel&#39;: 0
+'printLevel': 0
 	 Print level for nonlinear solver.
 	 Accepts:
 		   0 : No printing.
@@ -540,10 +542,10 @@ this option with caution.</p></li>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;mass&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctions</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="p">[</span><span class="s2">"mass"</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;cl_mass&#39;:12354.10}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'cl_mass':12354.10}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -568,10 +570,10 @@ respect to all design variables and node locations are computed.</p>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;mass&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">staticProblem</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="p">[</span><span class="s2">"mass"</span><span class="p">])</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_mass&#39;:{&#39;struct&#39;:[1.234, ..., 7.89], &#39;Xpts&#39;:[3.14, ..., 1.59]}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if StaticProblem has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'c1_mass':{'struct':[1.234, ..., 7.89], 'Xpts':[3.14, ..., 1.59]}}</span>
 </pre></div>
 </div>
 </dd></dl>

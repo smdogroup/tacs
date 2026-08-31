@@ -35,7 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.constraints.panel_width</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">Author:</span>
 <span class="sd">    - Sean P Engelstad, Alasdair Christison Gray</span>
 
@@ -46,7 +46,7 @@
 
 <span class="sd">.. note:: This class should be created using the</span>
 <span class="sd">    :meth:`pyTACS.createPanelWidthConstraint &lt;tacs.pytacs.pyTACS.createPanelWidthConstraint&gt;` method.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Standard Python modules</span>
@@ -75,7 +75,7 @@
         <span class="n">meshLoader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        NOTE: This class should not be initialized directly by the user.</span>
 <span class="sd">        Use pyTACS.createPanelWidthConstraint instead.</span>
 
@@ -98,7 +98,7 @@
 
 <span class="sd">        options : dict</span>
 <span class="sd">            Dictionary holding problem-specific option parameters (case-insensitive).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">(</span><span class="n">PanelWidthConstraint</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">name</span><span class="p">,</span> <span class="n">assembler</span><span class="p">,</span> <span class="n">comm</span><span class="p">,</span> <span class="n">outputViewer</span><span class="p">,</span> <span class="n">meshLoader</span><span class="p">,</span> <span class="n">options</span>
@@ -107,7 +107,7 @@
 <div class="viewcode-block" id="PanelWidthConstraint.computeRefAxis">
 <a class="viewcode-back" href="../../../pytacs/panel_width.html#tacs.constraints.PanelWidthConstraint.computeRefAxis">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">computeRefAxis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">refAxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">comp_bndry_node_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove the panelNormal from the refAxis</span>
 
 <span class="sd">        Parameters</span>
@@ -121,10 +121,10 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            an array of size (3,) for xyz coords of the panel width axis in the panel</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># For a more accurate length calculation, roject the ref axis</span>
-        <span class="c1"># onto the &quot;average&quot; plane of the baseline panel geometry by</span>
+        <span class="c1"># onto the "average" plane of the baseline panel geometry by</span>
         <span class="c1"># using an SVD to compute a normal vector</span>
         <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">comp_bndry_node_coords</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">centredPoints</span> <span class="o">=</span> <span class="n">comp_bndry_node_coords</span> <span class="o">-</span> <span class="n">centroid</span>

@@ -78,12 +78,14 @@ for setting loads and functions, performing analysis, and gradient computations.
 <a class="reference internal" href="#tacs.pytacs.pyTACS.setOption" title="tacs.pytacs.pyTACS.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.setOption</span></code></a>. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.pytacs.pyTACS.printOptions" title="tacs.pytacs.pyTACS.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pyTACS.printOption</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1788210452.002048] [runnervmgx7h7:14679:0]      ucp_worker.c:1492 UCX  ERROR uct_iface_open(ud_verbs/mana_0:1) failed: Address not valid
+[runnervmgx7h7:14679] pml_ucx.c:319  Error: Failed to create UCP worker
++----------------------------------------+
 |        pyTACS default options:         |
 +----------------------------------------+
-&#39;printDebug&#39;: False
+'printDebug': False
 	 Flag for whether to print debug information while loading file.
-&#39;outputElement&#39;: None
+'outputElement': None
 	 Specifies which element type should be written out in the f5 file.
 	 If None, the type will be inferred from the first element in the model.
 	 Acceptable values are:
@@ -97,29 +99,29 @@ The following options, their default values and descriptions are listed below:</
 		 tacs.TACS.MASS_ELEMENT = 8
 		 tacs.TACS.SPRING_ELEMENT = 9
 		 tacs.TACS.PCM_ELEMENT = 10
-&#39;writeConnectivity&#39;: True
+'writeConnectivity': True
 	 Flag for whether to include element connectivity in f5 file.
-&#39;writeNodes&#39;: True
+'writeNodes': True
 	 Flag for whether to include nodes in f5 file.
-&#39;writeDisplacements&#39;: True
+'writeDisplacements': True
 	 Flag for whether to include nodal displacements in f5 file.
-&#39;writeStrains&#39;: True
+'writeStrains': True
 	 Flag for whether to include element strains in f5 file.
-&#39;writeStresses&#39;: True
+'writeStresses': True
 	 Flag for whether to include element stresses in f5 file.
-&#39;writeExtras&#39;: True
+'writeExtras': True
 	 Flag for whether to include element extra variables in f5 file.
-&#39;writeLoads&#39;: True
+'writeLoads': True
 	 Flag for whether to include external nodal loads in f5 file.
-&#39;writeReactions&#39;: True
+'writeReactions': True
 	 Flag for whether to include reaction forces in f5 file.
-&#39;writeCoordinateFrame&#39;: False
+'writeCoordinateFrame': False
 	 Flag for whether to include element coordinate frames in f5 file.
-&#39;familySeparator&#39;: &#39;/&#39;
+'familySeparator': '/'
 	 Family separator character used for condensing groups in f5 file.
-&#39;printTiming&#39;: False
+'printTiming': False
 	 Flag for printing out timing information for class procedures.
-&#39;linearityTol&#39;: 1e-14
+'linearityTol': 1e-14
 	 When created, pyTACS will check if the model is linear or nonlinear by checking whether (res(2*u) - res(0)) - 2 * (res(u) - res(0)) == 0 this tolerance controls how close to zero the residual must be to be considered linear.
 </pre></div>
 </div>
@@ -293,11 +295,11 @@ CROD           4       2    6310    6320
 The string comment should start with <code class="docutils literal notranslate"><span class="pre">$HMNAME</span> <span class="pre">PROP</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">i</span></code> (where <code class="docutils literal notranslate"><span class="pre">i</span></code> is replaced with the property number the label is referencing)
 followed by the component name in double quotes. Any other comment lines above the property card (ex. <code class="docutils literal notranslate"><span class="pre">$HWCOLOR</span> <span class="pre">PROP...</span></code>) will be ignored by the mesh loader.
 An example of this format is provided below:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$HMNAME PROP                   1&quot;Rib1&quot; 4
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>$HMNAME PROP                   1"Rib1" 4
 $HWCOLOR PROP                  1      28
 PSHELL         1       0               0               0
 $
-$HMNAME PROP                   2&quot;Rib2&quot; 4
+$HMNAME PROP                   2"Rib2" 4
 $HWCOLOR PROP                  2      29
 PSHELL         2       0               0               0
 </pre></div>
@@ -463,16 +465,16 @@ name, or a list containing a combination of both.</p>
 <span class="c1"># Select the first and fifth component</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
 
-<span class="c1"># Select any component containing &#39;rib.00&#39;</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s2">&quot;rib.00&quot;</span><span class="p">)</span>
+<span class="c1"># Select any component containing 'rib.00'</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s2">"rib.00"</span><span class="p">)</span>
 
-<span class="c1"># Select any components containing &#39;rib.00&#39; and &#39;rib.10&#39;</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;rib.00&quot;</span><span class="p">,</span> <span class="s2">&quot;rib.10&quot;</span><span class="p">])</span>
+<span class="c1"># Select any components containing 'rib.00' and 'rib.10'</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">"rib.00"</span><span class="p">,</span> <span class="s2">"rib.10"</span><span class="p">])</span>
 
-<span class="c1"># Select any component containing &#39;rib.00&#39;, the 11th</span>
-<span class="c1"># component and any component containing &#39;spar&#39;</span>
+<span class="c1"># Select any component containing 'rib.00', the 11th</span>
+<span class="c1"># component and any component containing 'spar'</span>
 <span class="c1"># (This is probably not advisable!)</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;rib.00&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;spar&quot;</span><span class="p">])</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s2">"rib.00"</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"spar"</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>2. Exclude, operates similarly to 'include'.
@@ -489,10 +491,10 @@ compID's EXCEPT the those in exclude.</p>
 <span class="c1"># This will return [0, 1, 4, 5, ..., nComp-1]</span>
 <span class="n">selectCompIDs</span><span class="p">(</span><span class="n">exclude</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span> <span class="n">will</span> <span class="k">return</span>
 
-<span class="c1"># This will return components that have &#39;ribs&#39; in the</span>
-<span class="c1"># component ID, but not those that have &#39;le_ribs&#39; in the</span>
+<span class="c1"># This will return components that have 'ribs' in the</span>
+<span class="c1"># component ID, but not those that have 'le_ribs' in the</span>
 <span class="c1"># component id.</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;ribs&#39;</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="s1">&#39;le_ribs&#39;</span><span class="p">)</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">'ribs'</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="s1">'le_ribs'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>3. includeBounds, list of components defining a region inside
@@ -506,8 +508,8 @@ Use multiple calls to selectCompIDs to accumulate multiple regions.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># This will select upper skin components between the</span>
 <span class="c1"># leading and trailing edge spars and between ribs 1 and 4.</span>
 <span class="n">selectCompIDs</span><span class="p">(</span>
-    <span class="n">include</span><span class="o">=</span><span class="s2">&quot;U_SKIN&quot;</span><span class="p">,</span>
-    <span class="n">includeBound</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;LE_SPAR&quot;</span><span class="p">,</span> <span class="s2">&quot;TE_SPAR&quot;</span><span class="p">,</span> <span class="s2">&quot;RIB.01&quot;</span><span class="p">,</span> <span class="s2">&quot;RIB.04&quot;</span><span class="p">],</span>
+    <span class="n">include</span><span class="o">=</span><span class="s2">"U_SKIN"</span><span class="p">,</span>
+    <span class="n">includeBound</span><span class="o">=</span><span class="p">[</span><span class="s2">"LE_SPAR"</span><span class="p">,</span> <span class="s2">"TE_SPAR"</span><span class="p">,</span> <span class="s2">"RIB.01"</span><span class="p">,</span> <span class="s2">"RIB.04"</span><span class="p">],</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -516,12 +518,12 @@ into.
 Generally this will be 1. However, in certain cases, it
 is convenient to create multiple groups in one pass.</p>
 <p>For example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># This will &#39;evenly&#39; create 10 groups on all components</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># This will 'evenly' create 10 groups on all components</span>
 <span class="c1"># containing LE_SPAR.</span>
 <span class="n">Note</span> <span class="n">that</span> <span class="n">once</span> <span class="n">the</span> <span class="n">components</span> <span class="n">are</span>
 <span class="c1"># selected, they are sorted **alphabetically** and assigned</span>
 <span class="c1"># sequentially.</span>
-<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">&#39;LE_SPAR&#39;</span><span class="p">,</span> <span class="n">nGroup</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">selectCompIDs</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="s1">'LE_SPAR'</span><span class="p">,</span> <span class="n">nGroup</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>nGroup can also be negative.

@@ -35,9 +35,9 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.mach.struct_problem</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">pyBase_problem</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># =============================================================================</span>
 <span class="c1"># Imports</span>
@@ -72,9 +72,9 @@
 <div class="viewcode-block" id="StructProblem">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">StructProblem</span><span class="p">(</span><span class="n">BaseStructProblem</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    MACH StructProblem wrapper for pyTACS StaticProblem class</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -83,7 +83,7 @@
         <span class="n">DVGeo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">loadFile</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the StructProblem.</span>
 
 <span class="sd">        Parameters</span>
@@ -101,7 +101,7 @@
 <span class="sd">        loadFile : str, optional</span>
 <span class="sd">            Filename of the (static) external load file. Should be</span>
 <span class="sd">            generated from pyAerostructure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span> <span class="o">=</span> <span class="n">staticProblem</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span> <span class="o">=</span> <span class="n">FEAAssembler</span>
@@ -114,7 +114,7 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">assembler</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">assembler</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="s2">&quot;Provided StaticProblem does not correspond to pyTACS assembler object.&quot;</span>
+                <span class="s2">"Provided StaticProblem does not correspond to pyTACS assembler object."</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">comm</span>
@@ -145,79 +145,79 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the name of the structural problem.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        str</span>
 <span class="sd">            Name of the structural problem.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">name</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">callCounter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the call counter for the underlying static problem.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        int</span>
-<span class="sd">            Number of times the static problem&#39;s solve method has been called.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            Number of times the static problem's solve method has been called.</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">callCounter</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Fext</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the external aerodynamic force vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            External aerodynamic force vector as a numpy array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@Fext</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">Fext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the external aerodynamic force vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray</span>
 <span class="sd">            External aerodynamic force vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the adjoint vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Adjoint vector as a numpy array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_phi</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@phi</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the adjoint vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray</span>
 <span class="sd">            Adjoint vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_phi</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">pLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        The contribution of the aerodynamic adjoint to the structural</span>
 <span class="sd">        adjoint RHS. This term is given by dAdu^T*psi and is subtracted</span>
 <span class="sd">        from the structural adjoint RHS.</span>
@@ -226,12 +226,12 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Aerodynamic adjoint contribution to the structural adjoint RHS.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pLoad</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@pLoad</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">pLoad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the aerodynamic adjoint contribution to the structural</span>
 <span class="sd">        adjoint RHS. This term is given by dAdu^T*psi and is subtracted</span>
 <span class="sd">        from the structural adjoint RHS.</span>
@@ -240,12 +240,12 @@
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray</span>
 <span class="sd">            Aerodynamic adjoint contribution to the structural adjoint RHS.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pLoad</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dSdu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the product of the derivative of structural residual with</span>
 <span class="sd">        respect to state variables and the structural adjoint vector.</span>
 
@@ -255,12 +255,12 @@
 <span class="sd">            Product of the derivative of structural residual with</span>
 <span class="sd">            respect to state variables and the structural adjoint</span>
 <span class="sd">            vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dSdu</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@dSdu</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dSdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the product of the derivative of structural residual with</span>
 <span class="sd">        respect to state variables and the structural adjoint vector.</span>
 
@@ -270,111 +270,111 @@
 <span class="sd">            Product of the derivative of structural residual with</span>
 <span class="sd">            respect to state variables and the structural adjoint</span>
 <span class="sd">            vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dSdu</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">adjRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the adjoint right-hand side vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Adjoint RHS vector as a numpy array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adjRHS</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@adjRHS</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">adjRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the adjoint right-hand side vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Adjoint RHS vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adjRHS</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dIdu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the derivative of the function with respect to state variables.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Derivative vector as a numpy array with boundary conditions applied.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">applyBCsToVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@dIdu</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dIdu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the derivative of the function with respect to state variables.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Derivative vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">applyBCsToVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">matVecRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the matrix-vector product right-hand side vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Matrix-vector RHS vector as a numpy array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matVecRHS</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@matVecRHS</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">matVecRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the matrix-vector product right-hand side vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Matrix-vector RHS vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_matVecRHS</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">matVecSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the matrix-vector solve vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Matrix-vector solve vector as a numpy array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matVecSolve</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
     <span class="nd">@matVecSolve</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">matVecSolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the matrix-vector solve vector.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        value : numpy.ndarray or tacs.TACS.Vec</span>
 <span class="sd">            Matrix-vector solve vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_matVecSolve</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">value</span>
 
 <div class="viewcode-block" id="StructProblem.getVarName">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getVarName">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getVarName</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get name for the design variables in pyOpt. Only needed</span>
 <span class="sd">        if more than 1 pytacs object is used in an optimization</span>
 
@@ -382,15 +382,15 @@
 <span class="sd">        -------</span>
 <span class="sd">        varName : str</span>
 <span class="sd">            Name of the design variables used in setDesignVars() dict.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVarName</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.setDVGeo">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setDVGeo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setDVGeo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">DVGeo</span><span class="p">,</span> <span class="n">pointSetKwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Set the DVGeometry object that will manipulate &#39;geometry&#39; in</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Set the DVGeometry object that will manipulate 'geometry' in</span>
 <span class="sd">        this object. Note that TACS doe not **strictly** need a</span>
 <span class="sd">        DVGeometry object, but if optimization with geometric</span>
 <span class="sd">        changes is desired, then it is required.</span>
@@ -408,9 +408,9 @@
 <span class="sd">        Examples</span>
 <span class="sd">        --------</span>
 <span class="sd">        &gt;&gt;&gt; StructProblem.setDVGeo(DVGeo)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;DVGeo has already been set.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"DVGeo has already been set."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">pointSetKwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">pointSetKwargs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -419,7 +419,7 @@
         <span class="c1"># Get the number of geometry variables</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">numGeoDV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">getNDV</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span> <span class="o">=</span> <span class="s2">&quot;tacs_</span><span class="si">%s</span><span class="s2">_coords&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span> <span class="o">=</span> <span class="s2">"tacs_</span><span class="si">%s</span><span class="s2">_coords"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
         <span class="n">coords0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getNodes</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">addPointSet</span><span class="p">(</span><span class="n">coords0</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptSetName</span><span class="p">,</span> <span class="o">**</span><span class="n">pointSetKwargs</span><span class="p">)</span></div>
 
@@ -427,21 +427,21 @@
 <div class="viewcode-block" id="StructProblem.getDVGeo">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getDVGeo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getDVGeo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the DVGeometry object.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        DVGeometry: pygeo.parameterization.BaseDVGeometry or None</span>
 <span class="sd">            DVGeometry object.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.setDesignVars">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setDesignVars">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the variables in the x-dict for this object.</span>
 
 <span class="sd">        Parameters</span>
@@ -449,7 +449,7 @@
 <span class="sd">        x : dict</span>
 <span class="sd">            Dictionary of variables which may or may not contain the</span>
 <span class="sd">            design variable names this object needs</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">rank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -461,18 +461,18 @@
 <div class="viewcode-block" id="StructProblem.addConstraint">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.addConstraint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">addConstraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constr</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add pyTACS constraint object to StructProblem.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        constr : tacs.constraints.TACSConstraint</span>
 <span class="sd">            pyTACS Constraint object</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">assembler</span> <span class="o">!=</span> <span class="n">constr</span><span class="o">.</span><span class="n">assembler</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;TACSConstraint object &#39;</span><span class="si">{</span><span class="n">constr</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; and StaticProblem &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; &quot;</span>
-                <span class="s2">&quot;were not created by same pyTACS assembler&quot;</span>
+                <span class="sa">f</span><span class="s2">"TACSConstraint object '</span><span class="si">{</span><span class="n">constr</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' and StaticProblem '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' "</span>
+                <span class="s2">"were not created by same pyTACS assembler"</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span></div>
@@ -481,14 +481,14 @@
 <div class="viewcode-block" id="StructProblem.addVariablesPyOpt">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.addVariablesPyOpt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">addVariablesPyOpt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optProb</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add the current set of variables to the optProb object.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        optProb : pyOpt_optimization class</span>
 <span class="sd">            Optimization problem definition to which variables are added</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ndv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">getTotalNumDesignVars</span><span class="p">()</span>
         <span class="n">dvName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVarName</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">ndv</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dvName</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">optProb</span><span class="o">.</span><span class="n">variables</span><span class="p">:</span>
@@ -497,7 +497,7 @@
             <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getDesignVarScales</span><span class="p">()</span>
 
             <span class="n">optProb</span><span class="o">.</span><span class="n">addVarGroup</span><span class="p">(</span>
-                <span class="n">dvName</span><span class="p">,</span> <span class="n">ndv</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="n">lb</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">ub</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span>
+                <span class="n">dvName</span><span class="p">,</span> <span class="n">ndv</span><span class="p">,</span> <span class="s2">"c"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="n">lb</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="n">ub</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">scale</span>
             <span class="p">)</span></div>
 
 
@@ -506,7 +506,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">addConstraintsPyOpt</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">optProb</span><span class="p">,</span> <span class="n">nonLinear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">excludeWRT</span><span class="o">=</span><span class="kc">None</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add any linear constraints that were generated during setup to</span>
 <span class="sd">        the specified pyOpt problem.</span>
 
@@ -524,7 +524,7 @@
 <span class="sd">            analytically zero and should not contribute a Jacobian block,</span>
 <span class="sd">            e.g. geometric DVs when a DVGeo is attached to the StructProblem</span>
 <span class="sd">            but the geometric DVs are not part of the optimization.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">fcon</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">fconSens</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">conSizes</span> <span class="o">=</span> <span class="p">{}</span>
@@ -537,7 +537,7 @@
             <span class="n">constr</span><span class="o">.</span><span class="n">getConstraintBounds</span><span class="p">(</span><span class="n">conBounds</span><span class="p">)</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="n">constr</span><span class="o">.</span><span class="n">getConstraintKeys</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-                <span class="n">conIsLinear</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">constr</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constr</span><span class="o">.</span><span class="n">isLinear</span>
+                <span class="n">conIsLinear</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">constr</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">constr</span><span class="o">.</span><span class="n">isLinear</span>
 
         <span class="k">for</span> <span class="n">conName</span> <span class="ow">in</span> <span class="n">fcon</span><span class="p">:</span>
             <span class="n">nCon</span> <span class="o">=</span> <span class="n">conSizes</span><span class="p">[</span><span class="n">conName</span><span class="p">]</span>
@@ -573,7 +573,7 @@
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getNodes">[docs]</a>
     <span class="nd">@updateDVGeo</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">getNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the mesh coordinates of this problem.</span>
 
 <span class="sd">        Returns</span>
@@ -581,7 +581,7 @@
 <span class="sd">        coords : numpy.ndarray</span>
 <span class="sd">            Structural coordinate in array of size (N * 3) where N is</span>
 <span class="sd">            the number of structural nodes on this processor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getNodes</span><span class="p">()</span></div>
 
 
@@ -589,7 +589,7 @@
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.solve">[docs]</a>
     <span class="nd">@updateDVGeo</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">useAitkenAcceleration</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dampLB</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">loadScale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Solution of the static problem for current load set. The</span>
 <span class="sd">        forces must already be set.</span>
 
@@ -603,7 +603,7 @@
 <span class="sd">            Lower bound for the damping parameter used in Aitken acceleration.</span>
 <span class="sd">        loadScale : float</span>
 <span class="sd">            Value to scale external loads by. Only useful for load step approach on nonlinear problems.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Save old load scale and update with user-defined one</span>
         <span class="n">loadScale0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getLoadScale</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">setLoadScale</span><span class="p">(</span><span class="n">loadScale</span><span class="p">)</span>
@@ -654,26 +654,26 @@
 <div class="viewcode-block" id="StructProblem.checkSolutionFailure">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.checkSolutionFailure">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">checkSolutionFailure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check whether the last structural solve failed and accumulate into funcs.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        funcs : dict</span>
-<span class="sd">            Dictionary of functions. A ``&quot;fail&quot;`` key is set (or OR-ed) with the</span>
+<span class="sd">            Dictionary of functions. A ``"fail"`` key is set (or OR-ed) with the</span>
 <span class="sd">            failure flag from the most recent call to :meth:`solve`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s2">&quot;fail&quot;</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
-            <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="s2">"fail"</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">:</span>
+            <span class="n">funcs</span><span class="p">[</span><span class="s2">"fail"</span><span class="p">]</span> <span class="o">=</span> <span class="n">funcs</span><span class="p">[</span><span class="s2">"fail"</span><span class="p">]</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">funcs</span><span class="p">[</span><span class="s2">&quot;fail&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span></div>
+            <span class="n">funcs</span><span class="p">[</span><span class="s2">"fail"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solveFailed</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.evalFunctions">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.evalFunctions">[docs]</a>
     <span class="nd">@updateDVGeo</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate the current functions</span>
 
 <span class="sd">        Parameters</span>
@@ -682,7 +682,7 @@
 <span class="sd">            Dictionary into which the functions are save</span>
 <span class="sd">        evalFuncs : iterable object containing strings</span>
 <span class="sd">            The functions that the user wants evaluated</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evalFuncs</span>
 
@@ -695,7 +695,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">evalConstraints</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">fcon</span><span class="p">,</span> <span class="n">evalCons</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignoreMissing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">nonLinear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">False</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate values for constraints. The constraints corresponding to the strings in</span>
 <span class="sd">        evalCons are evaluated and updated into the provided</span>
 <span class="sd">        dictionary.</span>
@@ -713,7 +713,7 @@
 <span class="sd">            Flag to include non-linear constraints.</span>
 <span class="sd">        linear : bool</span>
 <span class="sd">            Flag to include linear constraints.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">evalCons</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">constr</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">linear</span> <span class="ow">and</span> <span class="n">constr</span><span class="o">.</span><span class="n">isLinear</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">nonLinear</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">constr</span><span class="o">.</span><span class="n">isLinear</span><span class="p">):</span>
@@ -724,7 +724,7 @@
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.evalFunctionsSens">[docs]</a>
     <span class="nd">@updateDVGeo</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">evalFunctionsSens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate the sensitivity of the desired functions</span>
 
 <span class="sd">        Parameters</span>
@@ -733,7 +733,7 @@
 <span class="sd">            Dictionary into which the function sensitivities are saved</span>
 <span class="sd">        evalFuncs : iterable object containing strings</span>
 <span class="sd">            The functions that the user wants evaluated</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">evalFuncs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">evalFuncs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evalFuncs</span>
 
@@ -742,7 +742,7 @@
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-            <span class="n">funcKey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">funcKey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">"</span>
             <span class="n">dvKey</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVarName</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">dvKey</span> <span class="ow">in</span> <span class="n">funcsSens</span><span class="p">[</span><span class="n">funcKey</span><span class="p">]:</span>
                 <span class="n">funcsSens</span><span class="p">[</span><span class="n">funcKey</span><span class="p">][</span><span class="n">dvKey</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">bcast</span><span class="p">(</span>
@@ -753,7 +753,7 @@
         <span class="n">coordName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getCoordName</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">funcName</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-                <span class="n">funcKey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">funcKey</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">funcName</span><span class="si">}</span><span class="s2">"</span>
                 <span class="k">if</span> <span class="n">coordName</span> <span class="ow">in</span> <span class="n">funcsSens</span><span class="p">[</span><span class="n">funcKey</span><span class="p">]:</span>
                     <span class="n">dIdpt</span> <span class="o">=</span> <span class="n">funcsSens</span><span class="p">[</span><span class="n">funcKey</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">coordName</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
                     <span class="n">dIdx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">totalSensitivity</span><span class="p">(</span>
@@ -772,7 +772,7 @@
         <span class="n">nonLinear</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">linear</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is the main routine for returning useful (sensitivity)</span>
 <span class="sd">        information from constraint. The derivatives of the constraints</span>
 <span class="sd">        corresponding to the strings in evalCons are evaluated and</span>
@@ -789,7 +789,7 @@
 <span class="sd">            Flag to include non-linear constraints.</span>
 <span class="sd">        linear : bool</span>
 <span class="sd">            Flag to include linear constraints.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">sens</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">constr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraints</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">evalCons</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">constr</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">evalCons</span><span class="p">:</span>
@@ -830,47 +830,47 @@
 <div class="viewcode-block" id="StructProblem.getVarsPerNode">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getVarsPerNode">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getVarsPerNode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        The number of degrees of freedom used at each output location.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        int</span>
 <span class="sd">            Number of degrees of freedom of each node in the domain.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVarsPerNode</span><span class="p">()</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_includeXptSens</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Check if nodal sensitivities should be included (i.e. if DVGeo is set).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        bool</span>
 <span class="sd">            True if nodal sensitivities should be included, False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="StructProblem.getNumNodes">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getNumNodes">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getNumNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the number of nodes on this processor.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        int</span>
 <span class="sd">            Number of nodes on this processor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getNumOwnedNodes</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.getOrigDesignVars">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getOrigDesignVars">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getOrigDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get an array holding the original values for all design</span>
 <span class="sd">        variables added to TACS at time of initialization.</span>
 
@@ -878,7 +878,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Array containing all design variable values across all processors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">local_dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">getOrigDesignVars</span><span class="p">()</span>
         <span class="n">all_local_dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_dvs</span><span class="p">)</span>
         <span class="n">global_dvs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_local_dvs</span><span class="p">)</span>
@@ -888,7 +888,7 @@
 <div class="viewcode-block" id="StructProblem.getDesignVarRange">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getDesignVarRange">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getDesignVarRange</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get arrays containing the lower and upper bounds for the design variables,</span>
 <span class="sd">        in the form needed by pyoptsparse.</span>
 
@@ -896,7 +896,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        tuple of numpy.ndarray</span>
 <span class="sd">            Lower and upper bounds for the design variables.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">local_lb</span><span class="p">,</span> <span class="n">local_ub</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">getDesignVarRange</span><span class="p">()</span>
         <span class="n">all_lb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">allgather</span><span class="p">(</span><span class="n">local_lb</span><span class="p">)</span>
         <span class="n">global_lbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_lb</span><span class="p">)</span>
@@ -908,7 +908,7 @@
 <div class="viewcode-block" id="StructProblem.getDesignVarScales">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getDesignVarScales">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getDesignVarScales</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get an array containing the scaling factors for the design</span>
 <span class="sd">        variables, in the form needed by pyoptsparse.</span>
 <span class="sd">        method.</span>
@@ -917,28 +917,28 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Scaling values for design variables.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">scaleList</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.getNumDesignVars">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getNumDesignVars">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getNumDesignVars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get total number of structural design variables across all processors.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        int</span>
 <span class="sd">            Total number of structural design variables.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">getTotalNumDesignVars</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.getStates">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getStates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getStates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the current state values for the problem.</span>
 
 <span class="sd">        Parameters</span>
@@ -950,28 +950,28 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Current state vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">states</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.setStates">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setStates">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setStates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the current state values for the problem.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        states : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            Vector to replace current state variables with.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">setVariables</span><span class="p">(</span><span class="n">states</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.getExternalForce">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getExternalForce">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getExternalForce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the current external coupling force vector for the problem.</span>
 
 <span class="sd">        Parameters</span>
@@ -983,7 +983,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Current external coupling force vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
             <span class="n">Fext</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -995,14 +995,14 @@
 <div class="viewcode-block" id="StructProblem.setExternalForce">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setExternalForce">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setExternalForce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fext</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the external coupling force vector for the problem.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        Fext : tacs.TACS.Vec or numpy.ndarray</span>
 <span class="sd">            External coupling force vector to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="n">Fext</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Fext</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -1012,14 +1012,14 @@
 <div class="viewcode-block" id="StructProblem.getStateNorm">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getStateNorm">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getStateNorm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the norm of the current state vector.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        float</span>
 <span class="sd">            Norm of the current state vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">u</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getVariables</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span></div>
@@ -1028,7 +1028,7 @@
 <div class="viewcode-block" id="StructProblem.getResidual">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getResidual">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getResidual</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This routine is used to evaluate directly the structural</span>
 <span class="sd">        residual. Only typically used with aerostructural analysis.</span>
 
@@ -1036,7 +1036,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Computed residuals for problem.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getResidual</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">Fext</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_Fext</span><span class="p">)</span>
         <span class="n">resArray</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -1047,7 +1047,7 @@
 <div class="viewcode-block" id="StructProblem.getResNorms">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getResNorms">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getResNorms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the initial, starting and final residual norms. Note that</span>
 <span class="sd">        the same norms are used for both solution and adjoint</span>
 <span class="sd">        computations.</span>
@@ -1056,7 +1056,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        tuple of float</span>
 <span class="sd">            Initial, starting, and final residual norms.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">initNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">initNorm</span><span class="p">)</span>
         <span class="n">startNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">startNorm</span><span class="p">)</span>
         <span class="n">finalNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">finalNorm</span><span class="p">)</span>
@@ -1067,7 +1067,7 @@
 <div class="viewcode-block" id="StructProblem.setResNorms">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setResNorms">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setResNorms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initNorm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">startNorm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">finalNorm</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set one of these norms if not None.</span>
 <span class="sd">        This is typically only used with aerostructural analysis.</span>
 
@@ -1079,7 +1079,7 @@
 <span class="sd">            Starting residual norm to set.</span>
 <span class="sd">        finalNorm : float, optional</span>
 <span class="sd">            Final residual norm to set.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">initNorm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">initNorm</span> <span class="o">=</span> <span class="n">initNorm</span>
         <span class="k">if</span> <span class="n">startNorm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1091,29 +1091,29 @@
 <div class="viewcode-block" id="StructProblem.zeroVectors">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.zeroVectors">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">zeroVectors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Zero all the TACS b-vectors.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">zeroVariables</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span></div>
 
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">evalFuncs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get strings for added evaluation functions.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list of str</span>
 <span class="sd">            List of function names that can be evaluated.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getFunctionKeys</span><span class="p">())</span>
 
 <div class="viewcode-block" id="StructProblem.getAdjoint">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getAdjoint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return the adjoint values for func if they exist. Otherwise just return zeros.</span>
 
 <span class="sd">        Parameters</span>
@@ -1125,7 +1125,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Adjoint values for the specified function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjoints</span><span class="p">:</span>
             <span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjoints</span><span class="p">[</span><span class="n">func</span><span class="p">]</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1136,7 +1136,7 @@
 <div class="viewcode-block" id="StructProblem.setAdjoint">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setAdjoint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adjoint</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set externally supplied adjoint values.</span>
 
 <span class="sd">        Parameters</span>
@@ -1146,7 +1146,7 @@
 <span class="sd">            be copied to the structural adjoint variables</span>
 <span class="sd">        func : str</span>
 <span class="sd">            Name of function to set adjoint for</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">adjoint</span>
         <span class="k">if</span> <span class="n">func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">func</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjoints</span><span class="p">:</span>
@@ -1157,14 +1157,14 @@
 <div class="viewcode-block" id="StructProblem.setAdjointRHS">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.setAdjointRHS">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setAdjointRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set the adjoint right-hand side for given function.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        func : str</span>
 <span class="sd">            Name of the function to set adjoint RHS for.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">functionList</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addSVSens</span><span class="p">([</span><span class="n">func</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="p">])</span></div>
@@ -1173,7 +1173,7 @@
 <div class="viewcode-block" id="StructProblem.getdSduVec">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdSduVec">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdSduVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate the direct residual.</span>
 
 <span class="sd">        Parameters</span>
@@ -1185,7 +1185,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Direct residual vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">inVec</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">mult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span><span class="p">)</span>
         <span class="n">outVec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -1197,7 +1197,7 @@
 <div class="viewcode-block" id="StructProblem.getdSduTVec">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdSduTVec">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdSduTVec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Evaluate the adjoint residual.</span>
 
 <span class="sd">        Parameters</span>
@@ -1209,7 +1209,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Adjoint residual vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">inVec</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addJacVecProduct</span><span class="p">(</span>
@@ -1225,7 +1225,7 @@
 <div class="viewcode-block" id="StructProblem.getdIdXpt">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdIdXpt">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdIdXpt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the (partial) derivative of the structural function</span>
 <span class="sd">        with respect to all structural nodes for the current</span>
 <span class="sd">        structProblem.</span>
@@ -1239,7 +1239,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        tacs.TACS.Vec</span>
 <span class="sd">            Derivative vector with respect to structural nodes.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">dIdXpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span>
         <span class="c1"># Check to see if func is actually a valid TACS function</span>
         <span class="k">if</span> <span class="n">func</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">evalFuncs</span><span class="p">:</span>
@@ -1251,7 +1251,7 @@
 <div class="viewcode-block" id="StructProblem.getdIdXdv">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdIdXdv">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdIdXdv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get the (partial) derivative of the structural function</span>
 <span class="sd">        with respect to all structural design variables.</span>
 
@@ -1264,7 +1264,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        tacs.TACS.Vec</span>
 <span class="sd">            Derivative vector with respect to structural design variables.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">dIdXdv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span>
 
         <span class="c1"># Check to see if func is actually a valid TACS function</span>
@@ -1279,7 +1279,7 @@
 <div class="viewcode-block" id="StructProblem.getdIduTransProd">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdIduTransProd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdIduTransProd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vecT</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Perform the transpose matvec of the getdIduProd function and</span>
 <span class="sd">        return a TACS vector. The result is stored locally.</span>
 
@@ -1296,13 +1296,13 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Transpose matrix-vector product result.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># The old way (for testing purposes)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_matVecRHS</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
         <span class="n">svList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addSVSens</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">,</span> <span class="n">svList</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evalFuncs</span><span class="p">):</span>
-            <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">f</span>
+            <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">f</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_matVecRHS</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="n">vecT</span><span class="p">[</span><span class="n">f_mangled</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">svList</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">matVecRHS</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
@@ -1311,7 +1311,7 @@
 <div class="viewcode-block" id="StructProblem.getdIdXdvTransProd">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdIdXdvTransProd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdIdXdvTransProd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vecT</span><span class="p">,</span> <span class="n">evalFuncs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Perform the transpose matvec of the getdIdXdvProd function and</span>
 <span class="sd">        return a vector.</span>
 
@@ -1331,11 +1331,11 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing transpose matrix-vector product results.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># # The old way (for testing purposes)</span>
         <span class="n">prodDV</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-            <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">f</span>
+            <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">f</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addDVSens</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">prodDV</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">vecT</span><span class="p">[</span><span class="n">f_mangled</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="c1"># Convert result back into a dictionary</span>
@@ -1344,7 +1344,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">prodXpt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">evalFuncs</span><span class="p">:</span>
-                <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">f</span>
+                <span class="n">f_mangled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"_</span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="n">f</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addXptSens</span><span class="p">([</span><span class="n">f</span><span class="p">],</span> <span class="p">[</span><span class="n">prodXpt</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="n">vecT</span><span class="p">[</span><span class="n">f_mangled</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
             <span class="n">xArray</span> <span class="o">=</span> <span class="n">prodXpt</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
             <span class="n">xdot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DVGeo</span><span class="o">.</span><span class="n">totalSensitivity</span><span class="p">(</span>
@@ -1358,7 +1358,7 @@
 <div class="viewcode-block" id="StructProblem.globalNKPreCon">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.globalNKPreCon">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">globalNKPreCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This function is ONLY used as a preconditioner to the</span>
 <span class="sd">        global Aero-Structural system.</span>
 
@@ -1371,7 +1371,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Preconditioned output vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Place the in_vec into the residual vector</span>
         <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span>
         <span class="n">update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp1</span>
@@ -1391,7 +1391,7 @@
 <div class="viewcode-block" id="StructProblem.globalAdjointPreCon">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.globalAdjointPreCon">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">globalAdjointPreCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This function is ONLY used as a preconditioner to the</span>
 <span class="sd">        global Aero-Structural adjoint system. For the linear</span>
 <span class="sd">        symmetric case this is actually identical to the NKPreCon</span>
@@ -1406,7 +1406,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Preconditioned output vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Place the in_vec into the residual vector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span><span class="o">.</span><span class="n">getArray</span><span class="p">()[:]</span> <span class="o">=</span> <span class="n">inVec</span><span class="p">[:]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">applyBCsToVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">temp0</span><span class="p">)</span>
@@ -1426,7 +1426,7 @@
 <div class="viewcode-block" id="StructProblem.globalDirectPreCon">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.globalDirectPreCon">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">globalDirectPreCon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This function is ONLY used as a preconditioner to the</span>
 <span class="sd">        global Aero-Structural direct system. For the linear</span>
 <span class="sd">        symmetric case this is actually identical to the NKPreCon</span>
@@ -1441,17 +1441,17 @@
 <span class="sd">        -------</span>
 <span class="sd">        numpy.ndarray</span>
 <span class="sd">            Preconditioned output vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">globalAdjointPreCon</span><span class="p">(</span><span class="n">inVec</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.assembleAdjointRHS">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.assembleAdjointRHS">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">assembleAdjointRHS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute the final adjoint RHS:</span>
 <span class="sd">        Adjoint RHS should be: dIdu - dAdu^T*psi - dSdu^T*phi</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Set RHS to dIdu</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adjRHS</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dIdu</span><span class="p">)</span>
 
@@ -1469,7 +1469,7 @@
 <div class="viewcode-block" id="StructProblem.solveAdjoint">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.solveAdjoint">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">solveAdjoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">damp</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Solve the structural adjoint.</span>
 
 <span class="sd">        Parameters</span>
@@ -1477,7 +1477,7 @@
 <span class="sd">        damp : float</span>
 <span class="sd">            A damping variable for adjoint update. Typically only used</span>
 <span class="sd">            in multidisciplinary analysis</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temp0</span>
         <span class="n">res</span><span class="o">.</span><span class="n">zeroEntries</span><span class="p">()</span>
 
@@ -1509,7 +1509,7 @@
 <div class="viewcode-block" id="StructProblem.getdRdXptPhi">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdRdXptPhi">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdRdXptPhi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Get the result of :math:`[dR/dX_{nodes}]^T \phi` for each of the functions in the function list.</span>
 
 <span class="sd">        This is the total sensitivity calculation.</span>
@@ -1523,7 +1523,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        list of tacs.TACS.Vec</span>
 <span class="sd">            List of sensitivity products for each function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createNodeVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
         <span class="n">phiList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">getAdjoint</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addAdjointResXptSensProducts</span><span class="p">(</span><span class="n">phiList</span><span class="p">,</span> <span class="n">products</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1534,7 +1534,7 @@
 <div class="viewcode-block" id="StructProblem.getdRdXdvPhi">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdRdXdvPhi">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdRdXdvPhi</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">funcs</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Get the result of :math:`[dR/dX_{dv}]^T \phi` for the total sensitivity calculation.</span>
 
 <span class="sd">        Parameters</span>
@@ -1546,7 +1546,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        list of tacs.TACS.Vec</span>
 <span class="sd">            List of sensitivity products for each function.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">products</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">()</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
         <span class="n">phiList</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">getAdjoint</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="k">for</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">funcs</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addAdjointResProducts</span><span class="p">(</span><span class="n">phiList</span><span class="p">,</span> <span class="n">products</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
@@ -1558,7 +1558,7 @@
 <div class="viewcode-block" id="StructProblem.getdRdXdvTransProd">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.getdRdXdvTransProd">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getdRdXdvTransProd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Perform the transpose matvec of getdRdXdvProd. The result is</span>
 <span class="sd">        returned as a dict of numpy arrays.</span>
 
@@ -1566,7 +1566,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing transpose matrix-vector product results.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">dvProd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createDesignVec</span><span class="p">(</span><span class="n">asBVec</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">addAdjointResProducts</span><span class="p">(</span>
             <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_matVecSolve</span><span class="p">],</span> <span class="p">[</span><span class="n">dvProd</span><span class="p">],</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span>
@@ -1591,7 +1591,7 @@
 <div class="viewcode-block" id="StructProblem.convertDesignVecToDict">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.convertDesignVecToDict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">convertDesignVecToDict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dvVec</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert a design vector to a dictionary format.</span>
 
 <span class="sd">        Parameters</span>
@@ -1603,7 +1603,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Dictionary containing the design vector with variable name as key.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dvVec</span><span class="p">,</span> <span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">):</span>
             <span class="n">dvVec</span> <span class="o">=</span> <span class="n">dvVec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
 
@@ -1616,7 +1616,7 @@
 <div class="viewcode-block" id="StructProblem.writeSolution">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.writeSolution">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeSolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This is a generic shell function that writes the output</span>
 <span class="sd">        file(s).  The intent is that the user or calling program can</span>
 <span class="sd">        call this function and pyTACS writes all the files that the</span>
@@ -1634,14 +1634,14 @@
 <span class="sd">        number : int or None</span>
 <span class="sd">            Use the user supplied number to index solution. Again, only</span>
 <span class="sd">            typically used from an external solver</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">writeSolution</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="StructProblem.writeExternalForceFile">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.writeExternalForceFile">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">writeExternalForceFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputDir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">baseName</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        This function writes the external coupling loads stored in Fext to a file.</span>
 <span class="sd">        This is typically used to save aero loads from an aerostructural run.</span>
 
@@ -1650,15 +1650,15 @@
 <span class="sd">        outputDir : str, optional</span>
 <span class="sd">            Output directory for the force file.</span>
 <span class="sd">        baseName : str, optional</span>
-<span class="sd">            Base name for the force file. If None, uses problem name + &quot;_external_forces&quot;.</span>
+<span class="sd">            Base name for the force file. If None, uses problem name + "_external_forces".</span>
 <span class="sd">        number : int, optional</span>
 <span class="sd">            Number to append to the filename.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">baseName</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;_external_forces&quot;</span>
+            <span class="n">baseName</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">"_external_forces"</span>
         <span class="c1"># Figure out the output file base name</span>
         <span class="n">fileName</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getOutputFileName</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;.dat&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">getOutputFileName</span><span class="p">(</span><span class="n">outputDir</span><span class="p">,</span> <span class="n">baseName</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="o">+</span> <span class="s2">".dat"</span>
         <span class="p">)</span>
         <span class="c1"># We want to isolate only the external aero loads before writing the loads out</span>
         <span class="n">F</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">staticProblem</span><span class="o">.</span><span class="n">F</span>
@@ -1691,7 +1691,7 @@
 <div class="viewcode-block" id="StructProblem.readExternalForceFile">
 <a class="viewcode-back" href="../../../mach/mach.html#tacs.mach.struct_problem.StructProblem.readExternalForceFile">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">readExternalForceFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileName</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Reads in a force file and sets the external forces in the structural problem.</span>
 <span class="sd">        This is typically used to read in loads saved from an aerostructural run.</span>
 
@@ -1699,7 +1699,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        fileName : str</span>
 <span class="sd">            Filename for force file. Should have .dat or .bdf extension.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">forceInfo</span> <span class="o">=</span> <span class="n">pn</span><span class="o">.</span><span class="n">bdf</span><span class="o">.</span><span class="n">read_bdf</span><span class="p">(</span>
             <span class="n">fileName</span><span class="p">,</span> <span class="n">validate</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">xref</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">punch</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>

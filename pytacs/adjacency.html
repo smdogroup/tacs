@@ -69,12 +69,14 @@ The formulation is a linear constraint that takes the following form:</p>
 <a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.setOption" title="tacs.constraints.AdjacencyConstraint.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AdjacencyConstraint.setOption</span></code></a> method. Current option values for a class
 instance can be printed out using the <a class="reference internal" href="#tacs.constraints.AdjacencyConstraint.printOptions" title="tacs.constraints.AdjacencyConstraint.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">AdjacencyConstraint.printOption</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1788210444.395122] [runnervmgx7h7:14637:0]      ucp_worker.c:1492 UCX  ERROR uct_iface_open(ud_verbs/mana_0:1) failed: Address not valid
+[runnervmgx7h7:14637] pml_ucx.c:319  Error: Failed to create UCP worker
++----------------------------------------+
 |  AdjacencyConstraint default options:  |
 +----------------------------------------+
-&#39;outputDir&#39;: &#39;./&#39;
+'outputDir': './'
 	 Output directory for F5 file writer.
-&#39;numberSolutions&#39;: True
+'numberSolutions': True
 	 Flag for attaching solution counter index to f5 files.
 </pre></div>
 </div>
@@ -134,10 +136,10 @@ this option with caution.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraints</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraints</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="s2">"LE_SPAR"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcs</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: array([12354.10])}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'c1_LE_SPAR': array([12354.10])}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -162,10 +164,10 @@ respect to all design variables and node locations are computed.</p>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraintsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adjConstraint</span><span class="o">.</span><span class="n">evalConstraintsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">,</span> <span class="s2">"LE_SPAR"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funcsSens</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;:{&#39;struct&#39;:&lt;50x242 sparse matrix of type &#39;&lt;class &#39;numpy.float64&#39;&gt;&#39; with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if AdjacencyConstraint has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'c1_LE_SPAR':{'struct':&lt;50x242 sparse matrix of type '&lt;class 'numpy.float64'&gt;' with 100 stored elements in Compressed Sparse Row format&gt;}}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -239,10 +241,10 @@ Bounds will be saved as a tuple: (lower, upper)</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conBounds</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintBounds</span><span class="p">(</span><span class="n">conBounds</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintBounds</span><span class="p">(</span><span class="n">conBounds</span><span class="p">,</span> <span class="s2">"LE_SPAR"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">conBounds</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: (array([-1e20]), array([1e20]))}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'c1_LE_SPAR': (array([-1e20]), array([1e20]))}</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -277,10 +279,10 @@ are evaluated and updated into the provided dictionary.</p>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conSizes</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintSizes</span><span class="p">(</span><span class="n">conSizes</span><span class="p">,</span> <span class="s2">&quot;LE_SPAR&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tacsConstraint</span><span class="o">.</span><span class="n">getConstraintSizes</span><span class="p">(</span><span class="n">conSizes</span><span class="p">,</span> <span class="s2">"LE_SPAR"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">funconSizescs</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of &#39;c1&#39;):</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {&#39;c1_LE_SPAR&#39;: 10}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Result will look like (if TACSConstraint has name of 'c1'):</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># {'c1_LE_SPAR': 10}</span>
 </pre></div>
 </div>
 </dd></dl>

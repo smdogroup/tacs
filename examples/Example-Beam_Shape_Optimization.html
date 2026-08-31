@@ -93,8 +93,8 @@ TACS' adjoint solver through the <a class="reference internal" href="../mach/mac
 </pre></div>
 </div>
 <p>Next, define the problem parameters and file paths:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;Slender_Beam.bdf&quot;</span><span class="p">)</span>
-<span class="n">ffd_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;ffd_8_linear.fmt&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"Slender_Beam.bdf"</span><span class="p">)</span>
+<span class="n">ffd_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"ffd_8_linear.fmt"</span><span class="p">)</span>
 
 <span class="c1"># Beam thickness</span>
 <span class="n">t</span> <span class="o">=</span> <span class="mf">0.01</span>  <span class="c1"># m</span>
@@ -133,18 +133,18 @@ TACS' adjoint solver through the <a class="reference internal" href="../mach/mac
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">DVGeo</span> <span class="o">=</span> <span class="n">DVGeometry</span><span class="p">(</span><span class="n">fileName</span><span class="o">=</span><span class="n">ffd_file</span><span class="p">)</span>
 <span class="c1"># Create reference axis</span>
 <span class="n">nRefAxPts</span> <span class="o">=</span> <span class="n">DVGeo</span><span class="o">.</span><span class="n">addRefAxis</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;centerline&quot;</span><span class="p">,</span> <span class="n">alignIndex</span><span class="o">=</span><span class="s2">&quot;i&quot;</span><span class="p">,</span> <span class="n">yFraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">"centerline"</span><span class="p">,</span> <span class="n">alignIndex</span><span class="o">=</span><span class="s2">"i"</span><span class="p">,</span> <span class="n">yFraction</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 
 
 <span class="c1"># Set up global design variables</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">depth</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">geo</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nRefAxPts</span><span class="p">):</span>
-        <span class="n">geo</span><span class="o">.</span><span class="n">scale_y</span><span class="p">[</span><span class="s2">&quot;centerline&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">coef</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">scale_y</span><span class="p">[</span><span class="s2">"centerline"</span><span class="p">]</span><span class="o">.</span><span class="n">coef</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
 
 
 <span class="n">DVGeo</span><span class="o">.</span><span class="n">addGlobalDV</span><span class="p">(</span>
-    <span class="n">dvName</span><span class="o">=</span><span class="s2">&quot;depth&quot;</span><span class="p">,</span>
+    <span class="n">dvName</span><span class="o">=</span><span class="s2">"depth"</span><span class="p">,</span>
     <span class="n">value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nRefAxPts</span><span class="p">),</span>
     <span class="n">func</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
     <span class="n">lower</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
@@ -154,11 +154,11 @@ TACS' adjoint solver through the <a class="reference internal" href="../mach/mac
 </pre></div>
 </div>
 <p>Create the static problem and add functions of interest:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">&quot;tip_shear&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">staticProb</span> <span class="o">=</span> <span class="n">FEAAssembler</span><span class="o">.</span><span class="n">createStaticProblem</span><span class="p">(</span><span class="s2">"tip_shear"</span><span class="p">)</span>
 <span class="c1"># Add TACS Functions</span>
-<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;mass&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
+<span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">"mass"</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">StructuralMass</span><span class="p">)</span>
 <span class="n">staticProb</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span>
-    <span class="s2">&quot;ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
+    <span class="s2">"ks_vmfailure"</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">KSFailure</span><span class="p">,</span> <span class="n">safetyFactor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ksWeight</span><span class="o">=</span><span class="mf">100.0</span>
 <span class="p">)</span>
 <span class="c1"># Add forces to static problem</span>
 <span class="n">staticProb</span><span class="o">.</span><span class="n">addLoadToNodes</span><span class="p">(</span><span class="mi">1112</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">nastranOrdering</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -172,7 +172,7 @@ nodes are updated automatically before each solve when design variables change:<
 </div>
 <p>Define the objective and constraint evaluation function:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">structObj</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the objective and constraints&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Evaluate the objective and constraints"""</span>
     <span class="n">funcs</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">structProb</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="n">DVGeo</span><span class="o">.</span><span class="n">setDesignVars</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -194,11 +194,11 @@ chain-rule term automatically, producing sensitivities keyed by the geometric DV
 (<code class="docutils literal notranslate"><span class="pre">&quot;depth&quot;</span></code>).  The structural DV sensitivity (keyed <code class="docutils literal notranslate"><span class="pre">&quot;struct&quot;</span></code>) is
 popped out because it is not used in the pyoptsparse optimization problem:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">structSens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">funcs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the objective and constraint sensitivities&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Evaluate the objective and constraint sensitivities"""</span>
     <span class="n">funcsSens</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">structProb</span><span class="o">.</span><span class="n">evalFunctionsSens</span><span class="p">(</span><span class="n">funcsSens</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">funcsSens</span><span class="p">:</span>
-        <span class="n">funcsSens</span><span class="p">[</span><span class="n">func</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;struct&quot;</span><span class="p">)</span>
+        <span class="n">funcsSens</span><span class="p">[</span><span class="n">func</span><span class="p">]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"struct"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">funcsSens</span><span class="p">,</span> <span class="kc">False</span>
 
 
@@ -210,20 +210,20 @@ structural design variables (none in this case, since <code class="docutils lite
 <code class="docutils literal notranslate"><span class="pre">DVGeo.addVariablesPyOpt</span></code> registers the FFD <code class="docutils literal notranslate"><span class="pre">&quot;depth&quot;</span></code> DVs.
 The stress constraint is added as a nonlinear inequality using the KS failure aggregation:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now we create the structural optimization problem:</span>
-<span class="n">optProb</span> <span class="o">=</span> <span class="n">Optimization</span><span class="p">(</span><span class="s2">&quot;Mass min&quot;</span><span class="p">,</span> <span class="n">structObj</span><span class="p">)</span>
-<span class="n">optProb</span><span class="o">.</span><span class="n">addObj</span><span class="p">(</span><span class="s2">&quot;tip_shear_mass&quot;</span><span class="p">)</span>
+<span class="n">optProb</span> <span class="o">=</span> <span class="n">Optimization</span><span class="p">(</span><span class="s2">"Mass min"</span><span class="p">,</span> <span class="n">structObj</span><span class="p">)</span>
+<span class="n">optProb</span><span class="o">.</span><span class="n">addObj</span><span class="p">(</span><span class="s2">"tip_shear_mass"</span><span class="p">)</span>
 <span class="n">structProb</span><span class="o">.</span><span class="n">addVariablesPyOpt</span><span class="p">(</span><span class="n">optProb</span><span class="p">)</span>
 <span class="n">DVGeo</span><span class="o">.</span><span class="n">addVariablesPyOpt</span><span class="p">(</span><span class="n">optProb</span><span class="p">)</span>
-<span class="n">optProb</span><span class="o">.</span><span class="n">addCon</span><span class="p">(</span><span class="s2">&quot;tip_shear_ks_vmfailure&quot;</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">optProb</span><span class="o">.</span><span class="n">addCon</span><span class="p">(</span><span class="s2">"tip_shear_ks_vmfailure"</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
 <span class="n">optProb</span><span class="o">.</span><span class="n">printSparsity</span><span class="p">()</span>
 
 <span class="n">opt</span> <span class="o">=</span> <span class="n">OPT</span><span class="p">(</span>
-    <span class="s2">&quot;SLSQP&quot;</span><span class="p">,</span>
+    <span class="s2">"SLSQP"</span><span class="p">,</span>
     <span class="n">options</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;MAXIT&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
-        <span class="s2">&quot;IPRINT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;IFILE&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;SLSQP.out&quot;</span><span class="p">),</span>
+        <span class="s2">"MAXIT"</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="s2">"IPRINT"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"IFILE"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"SLSQP.out"</span><span class="p">),</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>

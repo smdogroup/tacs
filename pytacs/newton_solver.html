@@ -60,53 +60,55 @@ described on page 50 of <a class="reference external" href="https://doi.org/10.1
 <p>Options can be set using the <a class="reference internal" href="#tacs.solvers.NewtonSolver.setOption" title="tacs.solvers.NewtonSolver.setOption"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.setOption</span></code></a> and <a class="reference internal" href="#tacs.solvers.NewtonSolver.setOptions" title="tacs.solvers.NewtonSolver.setOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.setOptions</span></code></a> methods.
 Current option values for a class instance can be printed out using the <a class="reference internal" href="#tacs.solvers.NewtonSolver.printOptions" title="tacs.solvers.NewtonSolver.printOptions"><code class="xref py py-meth docutils literal notranslate"><span class="pre">NewtonSolver.printOptions</span></code></a> method.
 The following options, their default values and descriptions are listed below:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+----------------------------------------+
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>[1788210450.223713] [runnervmgx7h7:14671:0]      ucp_worker.c:1492 UCX  ERROR uct_iface_open(ud_verbs/mana_0:1) failed: Address not valid
+[runnervmgx7h7:14671] pml_ucx.c:319  Error: Failed to create UCP worker
++----------------------------------------+
 |     NewtonSolver default options:      |
 +----------------------------------------+
-&#39;MaxIter&#39;: 40
+'MaxIter': 40
 	 Maximum number of Newton iterations.
-&#39;ForceFirstIter&#39;: False
+'ForceFirstIter': False
 	 Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.
-&#39;AbsTol&#39;: 1e-08
+'AbsTol': 1e-08
 	 Convergence criteria for the nonlinear residual norm.
-&#39;RelTol&#39;: 1e-08
+'RelTol': 1e-08
 	 Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.
-&#39;DivergenceTol&#39;: 10000000000.0
+'DivergenceTol': 10000000000.0
 	 Residual norm at which the nonlinear solver is jugded to have diverged
-&#39;AbsLinTol&#39;: 1e-12
+'AbsLinTol': 1e-12
 	 Linear solver residual tolerance.
-&#39;RelLinTol&#39;: 1e-12
+'RelLinTol': 1e-12
 	 Linear solver relative residual tolerance.
-&#39;MaxLinIters&#39;: 0
+'MaxLinIters': 0
 	 If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.
-&#39;UseEW&#39;: False
+'UseEW': False
 	 Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method.
-&#39;EWMaxTol&#39;: 0.01
+'EWMaxTol': 0.01
 	 Eisenstat-Walker max allowable linear solver tolerance.
-&#39;EWGamma&#39;: 1.0
+'EWGamma': 1.0
 	 Eisenstat-Walker gamma parameter.
-&#39;EWAlpha&#39;: 1.618033988749895
+'EWAlpha': 1.618033988749895
 	 Eisenstat-Walker alpha parameter.
-&#39;UseLineSearch&#39;: True
+'UseLineSearch': True
 	 Flag for using line search in the nonlinear solver.
-&#39;PrintLineSearchIters&#39;: False
+'PrintLineSearchIters': False
 	 Flag for printing out line search information.
-&#39;SkipFirstNLineSearch&#39;: 0
+'SkipFirstNLineSearch': 0
 	 Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness
-&#39;LineSearchMaxIter&#39;: 25
+'LineSearchMaxIter': 25
 	 Maximum number of linesearch iterations.
-&#39;LineSearchExpectedDecrease&#39;: 0.0001
+'LineSearchExpectedDecrease': 0.0001
 	 Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.
-&#39;LineSearchMaxStep&#39;: 2.0
+'LineSearchMaxStep': 2.0
 	 Maximum step size for the linesearch, as a fraction of the Newton step
-&#39;LineSearchMinStep&#39;: 0.01
+'LineSearchMinStep': 0.01
 	 Minimum step size for the linesearch, as a fraction of the Newton step
-&#39;LineSearchMaxStepChange&#39;: 0.5
+'LineSearchMaxStepChange': 0.5
 	 Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.
-&#39;LineSearchFallbackStepLimit&#39;: 0.9
+'LineSearchFallbackStepLimit': 0.9
 	 Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.
-&#39;monitorVars&#39;: [&#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;lineSearchIters&#39;]
-	 List of variables to include in nonlinear solver monitor output. Choose from &#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;EWTol&#39;, and &#39;lineSearchIters&#39;.
+'monitorVars': ['linSolverIters', 'linSolverRes', 'lineSearchStep', 'lineSearchIters']
+	 List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'lineSearchStep', 'EWTol', and 'lineSearchIters'.
 </pre></div>
 </div>
 </section>

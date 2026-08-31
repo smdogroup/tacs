@@ -80,7 +80,7 @@ A diagram of the problem is shown below.</p>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tacs.mphys</span><span class="w"> </span><span class="kn">import</span> <span class="n">TacsBuilder</span>
 
 <span class="c1"># BDF file containing mesh</span>
-<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">&quot;partitioned_plate.bdf&quot;</span><span class="p">)</span>
+<span class="n">bdf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">),</span> <span class="s2">"partitioned_plate.bdf"</span><span class="p">)</span>
 
 <span class="c1"># Material properties</span>
 <span class="n">rho</span> <span class="o">=</span> <span class="mf">1550.0</span>
@@ -159,13 +159,13 @@ assign four design variable numbers to each element (one for each ply fraction),
 Here we specify the plate compliance energy (<a class="reference internal" href="../core/functions.html#tacs.functions.Compliance" title="tacs.functions.Compliance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Compliance</span></code></a>) as an output for our analysis
 and add our 100 kPa pressure load.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">problem_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">problem</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to add fixed forces and eval functions</span>
 <span class="sd">    to structural problems used in tacs builder</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Add TACS Functions</span>
-    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">&quot;compliance&quot;</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">Compliance</span><span class="p">)</span>
+    <span class="n">problem</span><span class="o">.</span><span class="n">addFunction</span><span class="p">(</span><span class="s2">"compliance"</span><span class="p">,</span> <span class="n">functions</span><span class="o">.</span><span class="n">Compliance</span><span class="p">)</span>
 
     <span class="c1"># Add forces to static problem</span>
     <span class="n">allComponents</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">()</span>
@@ -177,13 +177,13 @@ This function can be used to add additional relational constraints to the design
 In particular, we want to enforce a new constraint (100 in total) such that the ply fractions within each element should sum to unity.
 We can accomplish this by utilizing the <a class="reference internal" href="../pytacs/dvcon.html#tacs.constraints.DVConstraint" title="tacs.constraints.DVConstraint"><code class="xref py py-class docutils literal notranslate"><span class="pre">DVConstraint</span></code></a> class.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">constraint_setup</span><span class="p">(</span><span class="n">scenario_name</span><span class="p">,</span> <span class="n">fea_assembler</span><span class="p">,</span> <span class="n">constraint_list</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to setup tacs constraint classes</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">constr</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">createDVConstraint</span><span class="p">(</span><span class="s2">&quot;ply_fractions&quot;</span><span class="p">)</span>
+<span class="sd">    """</span>
+    <span class="n">constr</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">createDVConstraint</span><span class="p">(</span><span class="s2">"ply_fractions"</span><span class="p">)</span>
     <span class="n">allComponents</span> <span class="o">=</span> <span class="n">fea_assembler</span><span class="o">.</span><span class="n">selectCompIDs</span><span class="p">()</span>
     <span class="n">constr</span><span class="o">.</span><span class="n">addConstraint</span><span class="p">(</span>
-        <span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="n">allComponents</span><span class="p">,</span> <span class="n">dvIndices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dvWeights</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+        <span class="s2">"sum"</span><span class="p">,</span> <span class="n">allComponents</span><span class="p">,</span> <span class="n">dvIndices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dvWeights</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="n">constraint_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">constr</span><span class="p">)</span>
 </pre></div>
@@ -204,19 +204,19 @@ We use this builder to create an MPhys <code class="xref py py-class docutils li
         <span class="n">struct_builder</span><span class="o">.</span><span class="n">initialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>
         <span class="n">dv_array</span> <span class="o">=</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_initial_dvs</span><span class="p">()</span>
 
-        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;dvs&quot;</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;*&quot;</span><span class="p">])</span>
-        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
+        <span class="n">dvs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">"dvs"</span><span class="p">,</span> <span class="n">om</span><span class="o">.</span><span class="n">IndepVarComp</span><span class="p">(),</span> <span class="n">promotes</span><span class="o">=</span><span class="p">[</span><span class="s2">"*"</span><span class="p">])</span>
+        <span class="n">dvs</span><span class="o">.</span><span class="n">add_output</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="n">dv_array</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">&quot;mesh&quot;</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_subsystem</span><span class="p">(</span><span class="s2">"mesh"</span><span class="p">,</span> <span class="n">struct_builder</span><span class="o">.</span><span class="n">get_mesh_coordinate_subsystem</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mphys_add_scenario</span><span class="p">(</span>
-            <span class="s2">&quot;pressure_load&quot;</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
+            <span class="s2">"pressure_load"</span><span class="p">,</span> <span class="n">ScenarioStructural</span><span class="p">(</span><span class="n">struct_builder</span><span class="o">=</span><span class="n">struct_builder</span><span class="p">)</span>
         <span class="p">)</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
-          <span class="sa">f</span><span class="s2">&quot;mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-          <span class="sa">f</span><span class="s2">&quot;pressure_load.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+          <span class="sa">f</span><span class="s2">"mesh.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">Mesh</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+          <span class="sa">f</span><span class="s2">"pressure_load.</span><span class="si">{</span><span class="n">MPhysVariables</span><span class="o">.</span><span class="n">Structures</span><span class="o">.</span><span class="n">COORDINATES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
       <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="s2">&quot;pressure_load.dv_struct&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="s2">"pressure_load.dv_struct"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>At this point we setup the OpenMDAO <code class="docutils literal notranslate"><span class="pre">Problem</span></code> class that we will use to perform our optimization.
@@ -228,19 +228,19 @@ Finally, we run the problem driver to optimize the problem.</p>
 <span class="n">model</span> <span class="o">=</span> <span class="n">prob</span><span class="o">.</span><span class="n">model</span>
 
 <span class="c1"># Declare design variables, objective, and constraint</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">&quot;dv_struct&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">&quot;pressure_load.compliance&quot;</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">&quot;pressure_load.ply_fractions.sum&quot;</span><span class="p">,</span> <span class="n">equals</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_design_var</span><span class="p">(</span><span class="s2">"dv_struct"</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_objective</span><span class="p">(</span><span class="s2">"pressure_load.compliance"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">add_constraint</span><span class="p">(</span><span class="s2">"pressure_load.ply_fractions.sum"</span><span class="p">,</span> <span class="n">equals</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">linear</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="c1"># Configure optimizer</span>
-<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;objs&quot;</span><span class="p">,</span> <span class="s2">&quot;nl_cons&quot;</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
-<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;SLSQP&quot;</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span> <span class="o">=</span> <span class="n">om</span><span class="o">.</span><span class="n">ScipyOptimizeDriver</span><span class="p">(</span><span class="n">debug_print</span><span class="o">=</span><span class="p">[</span><span class="s2">"objs"</span><span class="p">,</span> <span class="s2">"nl_cons"</span><span class="p">],</span> <span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">prob</span><span class="o">.</span><span class="n">driver</span><span class="o">.</span><span class="n">options</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"SLSQP"</span>
 
 <span class="c1"># Setup OpenMDAO problem</span>
 <span class="n">prob</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
 
 <span class="c1"># Output N2 representation of OpenMDAO model</span>
-<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">&quot;tacs_struct.html&quot;</span><span class="p">)</span>
+<span class="n">om</span><span class="o">.</span><span class="n">n2</span><span class="p">(</span><span class="n">prob</span><span class="p">,</span> <span class="n">show_browser</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">outfile</span><span class="o">=</span><span class="s2">"tacs_struct.html"</span><span class="p">)</span>
 
 <span class="c1"># Run optimization</span>
 <span class="n">prob</span><span class="o">.</span><span class="n">run_driver</span><span class="p">()</span>

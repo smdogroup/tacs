@@ -35,7 +35,7 @@
           <div class="body" role="main">
             
   <h1>Source code for tacs.solvers.newton</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">==============================================================================</span>
 <span class="sd">TACS Nonlinear Newton Solver</span>
 <span class="sd">==============================================================================</span>
@@ -45,7 +45,7 @@
 <span class="sd">adaptively using the Eisenstat-Walker method (specifically variant (b)</span>
 <span class="sd">described on page 50 of `this paper</span>
 <span class="sd">&lt;https://doi.org/10.1016/j.cam.2005.12.030&gt;`_ by An, Mo and Liu)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="c1"># ==============================================================================</span>
 <span class="c1"># Standard Python modules</span>
@@ -69,109 +69,109 @@
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">NewtonSolver</span><span class="p">(</span><span class="n">BaseSolver</span><span class="p">):</span>
     <span class="n">defaultOptions</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;MaxIter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">&quot;Maximum number of Newton iterations.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;ForceFirstIter&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"MaxIter"</span><span class="p">:</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="s2">"Maximum number of Newton iterations."</span><span class="p">],</span>
+        <span class="s2">"ForceFirstIter"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point.&quot;</span><span class="p">,</span>
+            <span class="s2">"Force the solver to perform the first Newton iteration, even if the convergence criteria are satisfied at the initial point."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;AbsTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"AbsTol"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-8</span><span class="p">,</span>
-            <span class="s2">&quot;Convergence criteria for the nonlinear residual norm.&quot;</span><span class="p">,</span>
+            <span class="s2">"Convergence criteria for the nonlinear residual norm."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;RelTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"RelTol"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-8</span><span class="p">,</span>
-            <span class="s2">&quot;Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector.&quot;</span><span class="p">,</span>
+            <span class="s2">"Relative convergence criteria for the nonlinear residual norm, norm is measured relative to that of the external load vector."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;DivergenceTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"DivergenceTol"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e10</span><span class="p">,</span>
-            <span class="s2">&quot;Residual norm at which the nonlinear solver is jugded to have diverged&quot;</span><span class="p">,</span>
+            <span class="s2">"Residual norm at which the nonlinear solver is jugded to have diverged"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;AbsLinTol&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="s2">&quot;Linear solver residual tolerance.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;RelLinTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"AbsLinTol"</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="s2">"Linear solver residual tolerance."</span><span class="p">],</span>
+        <span class="s2">"RelLinTol"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-12</span><span class="p">,</span>
-            <span class="s2">&quot;Linear solver relative residual tolerance.&quot;</span><span class="p">,</span>
+            <span class="s2">"Linear solver relative residual tolerance."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;MaxLinIters&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"MaxLinIters"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;If the linear solver takes more than this number of iterations to converge, the preconditioner is updated.&quot;</span><span class="p">,</span>
+            <span class="s2">"If the linear solver takes more than this number of iterations to converge, the preconditioner is updated."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;UseEW&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"UseEW"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for enabling use of adaptive linear solver convergence using the Eisenstat-Walker method."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;EWMaxTol&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"EWMaxTol"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">0.01</span><span class="p">,</span>
-            <span class="s2">&quot;Eisenstat-Walker max allowable linear solver tolerance.&quot;</span><span class="p">,</span>
+            <span class="s2">"Eisenstat-Walker max allowable linear solver tolerance."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;EWGamma&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;Eisenstat-Walker gamma parameter.&quot;</span><span class="p">],</span>
-        <span class="s2">&quot;EWAlpha&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"EWGamma"</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">"Eisenstat-Walker gamma parameter."</span><span class="p">],</span>
+        <span class="s2">"EWAlpha"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">5</span><span class="p">)),</span>
-            <span class="s2">&quot;Eisenstat-Walker alpha parameter.&quot;</span><span class="p">,</span>
+            <span class="s2">"Eisenstat-Walker alpha parameter."</span><span class="p">,</span>
         <span class="p">],</span>
         <span class="c1"># Line search options</span>
-        <span class="s2">&quot;UseLineSearch&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"UseLineSearch"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for using line search in the nonlinear solver.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for using line search in the nonlinear solver."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;PrintLineSearchIters&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"PrintLineSearchIters"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">bool</span><span class="p">,</span>
             <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;Flag for printing out line search information.&quot;</span><span class="p">,</span>
+            <span class="s2">"Flag for printing out line search information."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;SkipFirstNLineSearch&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"SkipFirstNLineSearch"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness&quot;</span><span class="p">,</span>
+            <span class="s2">"Skip the first N line searches. Setting this to 1 can improve the convergence speed of Newton solver, but also decreases robustness"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchMaxIter&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchMaxIter"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">int</span><span class="p">,</span>
             <span class="mi">25</span><span class="p">,</span>
-            <span class="s2">&quot;Maximum number of linesearch iterations.&quot;</span><span class="p">,</span>
+            <span class="s2">"Maximum number of linesearch iterations."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchExpectedDecrease&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchExpectedDecrease"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-4</span><span class="p">,</span>
-            <span class="s2">&quot;Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time.&quot;</span><span class="p">,</span>
+            <span class="s2">"Minimum fraction of the expected decrease in the energy gradient during the linesearch. Should be between 0 and 1. Higher values should improve robustness at the expense of solution time."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchMaxStep&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchMaxStep"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">2.0</span><span class="p">,</span>
-            <span class="s2">&quot;Maximum step size for the linesearch, as a fraction of the Newton step&quot;</span><span class="p">,</span>
+            <span class="s2">"Maximum step size for the linesearch, as a fraction of the Newton step"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchMinStep&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchMinStep"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">1e-2</span><span class="p">,</span>
-            <span class="s2">&quot;Minimum step size for the linesearch, as a fraction of the Newton step&quot;</span><span class="p">,</span>
+            <span class="s2">"Minimum step size for the linesearch, as a fraction of the Newton step"</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchMaxStepChange&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchMaxStepChange"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">0.5</span><span class="p">,</span>
-            <span class="s2">&quot;Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds.&quot;</span><span class="p">,</span>
+            <span class="s2">"Maximum change in the step size from one linesearch iteration to the next, can be useful in cases where secant method bounces between upper and lower step bounds."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;LineSearchFallbackStepLimit&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"LineSearchFallbackStepLimit"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">float</span><span class="p">,</span>
             <span class="mf">0.9</span><span class="p">,</span>
-            <span class="s2">&quot;Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver.&quot;</span><span class="p">,</span>
+            <span class="s2">"Often, the value of the merit function at the Newton step (alpha = 1.0), is orders of magnitude greater than at the start point. In these situations, the linesearch then tries to evaluate a point with a very small step size, which usually meets the expected decrease criteria but results in very slow progress of the Newton solver. To combat this, this value limits how far the linesearch can backtrack on the first iteration after evaluating alpha = 1. This has the effect of encouraging the linesearch to find larger steps that meet the expected decrease criterion, which results in faster convergence of the Newton solver."</span><span class="p">,</span>
         <span class="p">],</span>
-        <span class="s2">&quot;monitorVars&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"monitorVars"</span><span class="p">:</span> <span class="p">[</span>
             <span class="nb">list</span><span class="p">,</span>
             <span class="p">[</span>
-                <span class="s2">&quot;linSolverIters&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;linSolverRes&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;lineSearchStep&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;lineSearchIters&quot;</span><span class="p">,</span>
+                <span class="s2">"linSolverIters"</span><span class="p">,</span>
+                <span class="s2">"linSolverRes"</span><span class="p">,</span>
+                <span class="s2">"lineSearchStep"</span><span class="p">,</span>
+                <span class="s2">"lineSearchIters"</span><span class="p">,</span>
             <span class="p">],</span>
-            <span class="s2">&quot;List of variables to include in nonlinear solver monitor output. Choose from &#39;linSolverIters&#39;, &#39;linSolverRes&#39;, &#39;lineSearchStep&#39;, &#39;EWTol&#39;, and &#39;lineSearchIters&#39;.&quot;</span><span class="p">,</span>
+            <span class="s2">"List of variables to include in nonlinear solver monitor output. Choose from 'linSolverIters', 'linSolverRes', 'lineSearchStep', 'EWTol', and 'lineSearchIters'."</span><span class="p">,</span>
         <span class="p">],</span>
     <span class="p">}</span>
 
@@ -188,12 +188,12 @@
         <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">comm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">mpi4py</span><span class="o">.</span><span class="n">MPI</span><span class="o">.</span><span class="n">Comm</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Newton solver instance</span>
+<span class="w">        </span><span class="sd">"""Create a Newton solver instance</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        assembler : tacs.TACS.Assembler</span>
-<span class="sd">            TACS assembler object related to the problem being solved, required in order for the solver to create it&#39;s own vectors</span>
+<span class="sd">            TACS assembler object related to the problem being solved, required in order for the solver to create it's own vectors</span>
 <span class="sd">        setStateFunc : function</span>
 <span class="sd">            Function to set the state vector, with signature setStateFunc(stateVec: tacs.TACS.Vec) -&gt; None</span>
 <span class="sd">        resFunc : function</span>
@@ -205,14 +205,14 @@
 <span class="sd">        linearSolver : tacs.TACS.KSM</span>
 <span class="sd">            TACS linear solver object to use for the Newton solve, the linear solver owns the matrix and preconditioner</span>
 <span class="sd">        stateVec : tacs.TACS.Vec, optional</span>
-<span class="sd">            Vector to store the state in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">            Vector to store the state in, by default the solver will create it's own but these can be passed to save additional allocations</span>
 <span class="sd">        resVec : tacs.TACS.Vec, optional</span>
-<span class="sd">            Vector to store the residual in, by default the solver will create it&#39;s own but these can be passed to save additional allocations</span>
+<span class="sd">            Vector to store the residual in, by default the solver will create it's own but these can be passed to save additional allocations</span>
 <span class="sd">        options : dict, optional</span>
 <span class="sd">            Dictionary holding solver-specific option parameters (case-insensitive)., by default None</span>
 <span class="sd">        comm : mpi4py.MPI.Intracomm, optional</span>
 <span class="sd">            The comm object on which to create the pyTACS object., by default mpi4py.MPI.COMM_WORLD</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">BaseSolver</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span>
             <span class="n">assembler</span><span class="o">=</span><span class="n">assembler</span><span class="p">,</span>
@@ -233,7 +233,7 @@
 <div class="viewcode-block" id="NewtonSolver.setOption">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.setOption">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;A thin wrapper around the base setOption method that makes necessary changes when certain options are changed</span>
+<span class="w">        </span><span class="sd">"""A thin wrapper around the base setOption method that makes necessary changes when certain options are changed</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -241,12 +241,12 @@
 <span class="sd">            Name of option to modify</span>
 <span class="sd">        value : depends on option</span>
 <span class="sd">            New option value to set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">BaseSolver</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># May need to re-create the solver history if the monitor variables have changed, if not then we still need to clear the options we set as metadata</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;monitorvars&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"monitorvars"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_createSolverHistory</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">clearMetadata</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
@@ -255,45 +255,45 @@
 <div class="viewcode-block" id="NewtonSolver.getHistoryVariables">
 <a class="viewcode-back" href="../../../pytacs/newton_solver.html#tacs.solvers.NewtonSolver.getHistoryVariables">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">getHistoryVariables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the variables to be stored in the solver history</span>
+<span class="w">        </span><span class="sd">"""Get the variables to be stored in the solver history</span>
 
 <span class="sd">        This method allows for implementation of any logic that dictates any changes in the stored variables depending on the current options.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        Dict[str, Dict]</span>
-<span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys &quot;type&quot; and &quot;print&quot;, where &quot;type&quot; is the data type of the variable and &quot;print&quot; is a boolean indicating whether or not to print the variable to the screen</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            Dictionary of solver variables, keys are the variable names, value is another dictionary with keys "type" and "print", where "type" is the data type of the variable and "print" is a boolean indicating whether or not to print the variable to the screen</span>
+<span class="sd">        """</span>
         <span class="n">variables</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">numType</span> <span class="o">=</span> <span class="nb">float</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span> <span class="k">else</span> <span class="nb">complex</span>
 
-        <span class="n">monitorVars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;monitorVars&quot;</span><span class="p">)]</span>
+        <span class="n">monitorVars</span> <span class="o">=</span> <span class="p">[</span><span class="n">var</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"monitorVars"</span><span class="p">)]</span>
 
         <span class="c1"># Einstat walker linear solver tolerance</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseEW&quot;</span><span class="p">):</span>
-            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;EW Tol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;ewtol&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"UseEW"</span><span class="p">):</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">"EW Tol"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="s2">"ewtol"</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
         <span class="c1"># Number of linear solver iterations</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Lin iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linsolveriters&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"Lin iters"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="s2">"linsolveriters"</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
         <span class="c1"># Linear solver residual norm</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Lin res&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linsolverres&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"Lin res"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="s2">"linsolverres"</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">}</span>
         <span class="c1"># Residual norm (absolute and relative)</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Res norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Rel res norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"Res norm"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"Rel res norm"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
         <span class="c1"># state norm</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;U norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseLineSearch&quot;</span><span class="p">):</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"U norm"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="n">numType</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"UseLineSearch"</span><span class="p">):</span>
             <span class="c1"># Line search step size</span>
-            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;LS step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-                <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linesearchstep&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">"LS step"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s2">"print"</span><span class="p">:</span> <span class="s2">"linesearchstep"</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="c1"># Num line search iterations</span>
-            <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;LS iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="s2">&quot;linesearchiters&quot;</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
+            <span class="n">variables</span><span class="p">[</span><span class="s2">"LS iters"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s2">"print"</span><span class="p">:</span> <span class="s2">"linesearchiters"</span> <span class="ow">in</span> <span class="n">monitorVars</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="c1"># Flags</span>
-        <span class="n">variables</span><span class="p">[</span><span class="s2">&quot;Flags&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;print&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">variables</span><span class="p">[</span><span class="s2">"Flags"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"print"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="n">variables</span></div>
 
@@ -303,7 +303,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">setConvergenceTolerance</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">absTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relTol</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the convergence tolerance of the solver</span>
+<span class="w">        </span><span class="sd">"""Set the convergence tolerance of the solver</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -311,11 +311,11 @@
 <span class="sd">            Absolute tolerance, not changed if no value is provided</span>
 <span class="sd">        relTol : float, optional</span>
 <span class="sd">            Relative tolerance, not changed if no value is provided</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">absTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">,</span> <span class="n">absTol</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">"AbsTol"</span><span class="p">,</span> <span class="n">absTol</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">relTol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">,</span> <span class="n">relTol</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="s2">"RelTol"</span><span class="p">,</span> <span class="n">relTol</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 
@@ -324,7 +324,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">u0</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tacs</span><span class="o">.</span><span class="n">TACS</span><span class="o">.</span><span class="n">Vec</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve the residual equations r(u) = 0</span>
+<span class="w">        </span><span class="sd">"""Solve the residual equations r(u) = 0</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -332,29 +332,29 @@
 <span class="sd">            Initial guess, by default uses the current state</span>
 <span class="sd">        result : TACS vector, optional</span>
 <span class="sd">            Vector in which to store the solution, by default None.</span>
-<span class="sd">            The problem&#39;s state is updated with the solution whether or not this is provided.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">USE_LINESEARCH</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseLineSearch&quot;</span><span class="p">)</span>
-        <span class="n">LINESEARCH_SKIP_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;SkipFirstNLineSearch&quot;</span><span class="p">)</span>
-        <span class="n">MAX_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxIter&quot;</span><span class="p">)</span>
-        <span class="n">MAX_RES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;DivergenceTol&quot;</span><span class="p">)</span>
-        <span class="n">MAX_LIN_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;MaxLinIters&quot;</span><span class="p">)</span>
-        <span class="n">FORCE_FIRST_ITER</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;ForceFirstIter&quot;</span><span class="p">)</span>
+<span class="sd">            The problem's state is updated with the solution whether or not this is provided.</span>
+<span class="sd">        """</span>
+        <span class="n">USE_LINESEARCH</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"UseLineSearch"</span><span class="p">)</span>
+        <span class="n">LINESEARCH_SKIP_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"SkipFirstNLineSearch"</span><span class="p">)</span>
+        <span class="n">MAX_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"MaxIter"</span><span class="p">)</span>
+        <span class="n">MAX_RES</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"DivergenceTol"</span><span class="p">)</span>
+        <span class="n">MAX_LIN_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"MaxLinIters"</span><span class="p">)</span>
+        <span class="n">FORCE_FIRST_ITER</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"ForceFirstIter"</span><span class="p">)</span>
 
         <span class="c1"># Linear solver convergence options</span>
-        <span class="n">USE_EW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;UseEW&quot;</span><span class="p">)</span>
-        <span class="n">LIN_SOLVE_TOL_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWMaxTol&quot;</span><span class="p">)</span>
-        <span class="n">LIN_SOLVE_TOL_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RelLinTol&quot;</span><span class="p">)</span>
-        <span class="n">EW_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWAlpha&quot;</span><span class="p">)</span>
-        <span class="n">EW_GAMMA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;EWGamma&quot;</span><span class="p">)</span>
+        <span class="n">USE_EW</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"UseEW"</span><span class="p">)</span>
+        <span class="n">LIN_SOLVE_TOL_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"EWMaxTol"</span><span class="p">)</span>
+        <span class="n">LIN_SOLVE_TOL_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RelLinTol"</span><span class="p">)</span>
+        <span class="n">EW_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"EWAlpha"</span><span class="p">)</span>
+        <span class="n">EW_GAMMA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"EWGamma"</span><span class="p">)</span>
         <span class="n">linCovergenceRel</span> <span class="o">=</span> <span class="n">LIN_SOLVE_TOL_MAX</span> <span class="k">if</span> <span class="n">USE_EW</span> <span class="k">else</span> <span class="n">LIN_SOLVE_TOL_MIN</span>
 
-        <span class="n">ABS_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;AbsTol&quot;</span><span class="p">)</span>
-        <span class="n">REL_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;RelTol&quot;</span><span class="p">)</span>
+        <span class="n">ABS_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"AbsTol"</span><span class="p">)</span>
+        <span class="n">REL_TOL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"RelTol"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initializeSolve</span><span class="p">(</span><span class="n">u0</span><span class="p">)</span>
 
-        <span class="n">flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">flags</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="n">resNorm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
         <span class="n">linearSolveIterations</span> <span class="o">=</span> <span class="kc">None</span>
@@ -381,24 +381,24 @@
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_fatalFailure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MAX_RES</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">resNorm</span><span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hasConverged</span><span class="p">:</span>
-                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;C&quot;</span>
+                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">"C"</span>
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fatalFailure</span><span class="p">:</span>
-                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;D&quot;</span>
+                    <span class="n">flags</span> <span class="o">+=</span> <span class="s2">"D"</span>
 
             <span class="c1"># Write data to history</span>
             <span class="n">monitorVars</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;Res norm&quot;</span><span class="p">:</span> <span class="n">resNorm</span><span class="p">,</span>
-                <span class="s2">&quot;Rel res norm&quot;</span><span class="p">:</span> <span class="n">resNorm</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span><span class="p">,</span>
-                <span class="s2">&quot;U norm&quot;</span><span class="p">:</span> <span class="n">uNorm</span><span class="p">,</span>
-                <span class="s2">&quot;Flags&quot;</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
+                <span class="s2">"Res norm"</span><span class="p">:</span> <span class="n">resNorm</span><span class="p">,</span>
+                <span class="s2">"Rel res norm"</span><span class="p">:</span> <span class="n">resNorm</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">refNorm</span><span class="p">,</span>
+                <span class="s2">"U norm"</span><span class="p">:</span> <span class="n">uNorm</span><span class="p">,</span>
+                <span class="s2">"Flags"</span><span class="p">:</span> <span class="n">flags</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lin iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">linearSolveIterations</span>
-                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;Lin res&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">linearSolveResNorm</span><span class="p">)</span>
-                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;LS step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
-                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;LS iters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lineSearchIters</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">"Lin iters"</span><span class="p">]</span> <span class="o">=</span> <span class="n">linearSolveIterations</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">"Lin res"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">linearSolveResNorm</span><span class="p">)</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">"LS step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">alpha</span>
+                <span class="n">monitorVars</span><span class="p">[</span><span class="s2">"LS iters"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lineSearchIters</span>
                 <span class="k">if</span> <span class="n">USE_EW</span><span class="p">:</span>
-                    <span class="n">monitorVars</span><span class="p">[</span><span class="s2">&quot;EW Tol&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prevLinCovergenceRel</span>
+                    <span class="n">monitorVars</span><span class="p">[</span><span class="s2">"EW Tol"</span><span class="p">]</span> <span class="o">=</span> <span class="n">prevLinCovergenceRel</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">monitorVars</span><span class="p">)</span>
@@ -406,7 +406,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">userCallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stateVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="n">monitorVars</span><span class="p">)</span>
 
-            <span class="n">flags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">flags</span> <span class="o">=</span> <span class="s2">""</span>
 
             <span class="c1"># exit if converged/diverged</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hasConverged</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">fatalFailure</span><span class="p">:</span>
@@ -419,7 +419,7 @@
             <span class="k">if</span> <span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">linearSolveIterations</span> <span class="o">&lt;=</span> <span class="n">MAX_LIN_ITERS</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;P&quot;</span>
+                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">"P"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span><span class="p">()</span>
 
             <span class="c1"># Update linear solver convergence tolerance using Einstat-Walker method b)</span>
@@ -435,17 +435,17 @@
                     <span class="n">linCovergenceRel</span><span class="p">,</span> <span class="n">LIN_SOLVE_TOL_MIN</span><span class="p">,</span> <span class="n">LIN_SOLVE_TOL_MAX</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span>
-                    <span class="nb">float</span><span class="p">(</span><span class="n">linCovergenceRel</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;AbsLinTol&quot;</span><span class="p">)</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">linCovergenceRel</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"AbsLinTol"</span><span class="p">)</span>
                 <span class="p">)</span>
 
             <span class="c1"># Compute Newton step</span>
             <span class="n">linSolveConverged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
             <span class="n">linSolveConverged</span> <span class="o">=</span> <span class="n">linSolveConverged</span> <span class="o">==</span> <span class="mi">1</span>
 
-            <span class="c1"># If we didn&#39;t converge because the preconditioner isn&#39;t up to date, update preconditioner and try again</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">linSolveConverged</span> <span class="ow">and</span> <span class="s2">&quot;P&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
+            <span class="c1"># If we didn't converge because the preconditioner isn't up to date, update preconditioner and try again</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">linSolveConverged</span> <span class="ow">and</span> <span class="s2">"P"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flags</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">pcUpdateFunc</span><span class="p">()</span>
-                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">&quot;P&quot;</span>
+                <span class="n">flags</span> <span class="o">+=</span> <span class="s2">"P"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">)</span>
@@ -470,13 +470,13 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">energyLineSearch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">,</span> <span class="n">slope</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">MAX_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxIter&quot;</span><span class="p">)</span>
-        <span class="n">LINESEARCH_MU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchExpectedDecrease&quot;</span><span class="p">)</span>
-        <span class="n">LINESEARCH_ALPHA_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMinStep&quot;</span><span class="p">)</span>
-        <span class="n">LINESEARCH_ALPHA_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxStep&quot;</span><span class="p">)</span>
-        <span class="n">LINESEARCH_MAX_STEP_CHANGE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchMaxStepChange&quot;</span><span class="p">)</span>
-        <span class="n">FALLBACK_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;LineSearchFallbackStepLimit&quot;</span><span class="p">)</span>
-        <span class="n">PRINT_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">&quot;PrintLineSearchIters&quot;</span><span class="p">)</span>
+        <span class="n">MAX_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchMaxIter"</span><span class="p">)</span>
+        <span class="n">LINESEARCH_MU</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchExpectedDecrease"</span><span class="p">)</span>
+        <span class="n">LINESEARCH_ALPHA_MIN</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchMinStep"</span><span class="p">)</span>
+        <span class="n">LINESEARCH_ALPHA_MAX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchMaxStep"</span><span class="p">)</span>
+        <span class="n">LINESEARCH_MAX_STEP_CHANGE</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchMaxStepChange"</span><span class="p">)</span>
+        <span class="n">FALLBACK_ALPHA</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"LineSearchFallbackStepLimit"</span><span class="p">)</span>
+        <span class="n">PRINT_LINESEARCH_ITERS</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getOption</span><span class="p">(</span><span class="s2">"PrintLineSearchIters"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">slope</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">slope</span> <span class="o">=</span> <span class="mf">1.0</span>
 
@@ -489,7 +489,7 @@
         <span class="n">uNorm</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">PRINT_LINESEARCH_ITERS</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Line search iter  0: alpha = </span><span class="si">{</span><span class="mi">0</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">,   f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Line search iter  0: alpha = </span><span class="si">{</span><span class="mi">0</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">,   f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="c1"># 3. Set $\alpha = 1$</span>
@@ -506,12 +506,12 @@
             <span class="c1"># 6. Compute merit function,  $f(\alpha)=f(u, r, \Delta u)$</span>
             <span class="n">fNew</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resVec</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">stepDir</span><span class="p">))</span>
 
-            <span class="c1"># 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f&#39;_0$:</span>
+            <span class="c1"># 7. if $abs(f(\alpha)) \leq \mu f_0 + \alpha f'_0$:</span>
             <span class="c1">#     exit</span>
             <span class="n">uNorm</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">norm</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">PRINT_LINESEARCH_ITERS</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Line search iter </span><span class="si">{</span><span class="p">(</span><span class="n">iteration</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: alpha = </span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, f/f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">fNew</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Line search iter </span><span class="si">{</span><span class="p">(</span><span class="n">iteration</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">2d</span><span class="si">}</span><span class="s2">: alpha = </span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, f/f0 = </span><span class="si">{</span><span class="p">(</span><span class="n">fNew</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">f0</span><span class="p">)</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">, uNorm = </span><span class="si">{</span><span class="n">uNorm</span><span class="si">:</span><span class="s2"> 11e</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
             <span class="n">u</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="n">alpha</span><span class="p">,</span> <span class="n">stepDir</span><span class="p">)</span>
             <span class="n">fReduction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fNew</span> <span class="o">/</span> <span class="n">f0</span><span class="p">)</span>

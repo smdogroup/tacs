@@ -62,7 +62,7 @@ problem to be optimized.</p>
         <span class="c1"># Set constitutive properties</span>
         <span class="n">rho</span> <span class="o">=</span> <span class="mf">2500.0</span> <span class="c1"># density, kg/m^3</span>
         <span class="n">E</span> <span class="o">=</span> <span class="mf">70e9</span> <span class="c1"># elastic modulus, Pa</span>
-        <span class="n">nu</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="c1"># poisson&#39;s ratio</span>
+        <span class="n">nu</span> <span class="o">=</span> <span class="mf">0.3</span> <span class="c1"># poisson's ratio</span>
         <span class="n">kcorr</span> <span class="o">=</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="mf">6.0</span> <span class="c1"># shear correction factor</span>
         <span class="n">ys</span> <span class="o">=</span> <span class="mf">350e6</span> <span class="c1"># yield stress, Pa</span>
 
@@ -90,7 +90,7 @@ problem to be optimized.</p>
 
             <span class="c1"># Create the element object and assign the</span>
             <span class="c1"># constitutive object</span>
-            <span class="k">if</span> <span class="n">descriptor</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;CQUAD&quot;</span><span class="p">,</span> <span class="s2">&quot;CQUADR&quot;</span><span class="p">,</span> <span class="s2">&quot;CQUAD4&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">descriptor</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"CQUAD"</span><span class="p">,</span> <span class="s2">"CQUADR"</span><span class="p">,</span> <span class="s2">"CQUAD4"</span><span class="p">]:</span>
                 <span class="n">element</span> <span class="o">=</span> <span class="n">elements</span><span class="o">.</span><span class="n">MITCShell</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">stiff</span><span class="p">,</span>
                         <span class="n">component_num</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
             <span class="c1"># Set the element into the MeshLoader</span>
@@ -245,7 +245,7 @@ functions with respect to the design variables.</p>
 
     <span class="c1"># Write out the solution file every 10 iterations</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter_count</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">f5</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="s1">&#39;ucrm_iter</span><span class="si">%d</span><span class="s1">.f5&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iter_count</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f5</span><span class="o">.</span><span class="n">writeToFile</span><span class="p">(</span><span class="s1">'ucrm_iter</span><span class="si">%d</span><span class="s1">.f5'</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iter_count</span><span class="p">))</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">iter_count</span> <span class="o">+=</span> <span class="mi">1</span>
 
     <span class="k">return</span> <span class="n">fail</span>
@@ -256,14 +256,14 @@ the model and set optimization parameters. Finally, call the
 <code class="xref py py-func docutils literal notranslate"><span class="pre">optimize()</span></code> function on the <code class="xref py py-class docutils literal notranslate"><span class="pre">pyParOpt</span></code> problem.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load structural mesh from BDF file</span>
 <span class="n">tacs_comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
-<span class="n">bdf_name</span> <span class="o">=</span> <span class="s1">&#39;CRM_box_2nd.bdf&#39;</span>
+<span class="n">bdf_name</span> <span class="o">=</span> <span class="s1">'CRM_box_2nd.bdf'</span>
 
 <span class="n">crm_opt</span> <span class="o">=</span> <span class="n">uCRM_VonMisesMassMin</span><span class="p">(</span><span class="n">tacs_comm</span><span class="p">,</span> <span class="n">bdf_name</span><span class="p">)</span>
 
 <span class="c1"># Set up the optimization problem</span>
 <span class="n">max_lbfgs</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">opt</span> <span class="o">=</span> <span class="n">ParOpt</span><span class="o">.</span><span class="n">pyParOpt</span><span class="p">(</span><span class="n">crm_opt</span><span class="p">,</span> <span class="n">max_lbfgs</span><span class="p">,</span> <span class="n">ParOpt</span><span class="o">.</span><span class="n">BFGS</span><span class="p">)</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">setOutputFile</span><span class="p">(</span><span class="s1">&#39;crm_opt.out&#39;</span><span class="p">)</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">setOutputFile</span><span class="p">(</span><span class="s1">'crm_opt.out'</span><span class="p">)</span>
 
 <span class="c1"># Set optimization parameters</span>
 <span class="n">opt</span><span class="o">.</span><span class="n">checkGradients</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>

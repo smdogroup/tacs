@@ -54,7 +54,7 @@ won't work until after the full install so you can ignore that if you source it 
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export ESP_ROOT=~/packages/ESP123/EngSketchPad
 export PYTHONPATH=${PYTHONPATH}:$ESP_ROOT/pyESP
 source $ESP_ROOT/ESPenv.sh
-alias csm=&#39;$ESP_ROOT/bin/serveCSM&#39;
+alias csm='$ESP_ROOT/bin/serveCSM'
 </pre></div>
 </div>
 <p>The installation on a Linux machine proceeds as follows. Note if the ESP/OpenCASCADE version changes
@@ -106,7 +106,7 @@ Important things to include in your CSM file are included below (for reference s
 <p>The main <code class="docutils literal notranslate"><span class="pre">TacsModel</span></code> object supervises the process of TACS analysis and geometry updates for optimization.
 Caps2tacs supports MPI / parallel processing which is a feature not directly available in ESP/CAPS.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">comm</span> <span class="o">=</span> <span class="n">MPI</span><span class="o">.</span><span class="n">COMM_WORLD</span>
-<span class="n">tacs_model</span> <span class="o">=</span> <span class="n">caps2tacs</span><span class="o">.</span><span class="n">TacsModel</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">csm_file</span><span class="o">=</span><span class="s2">&quot;simple_naca_wing.csm&quot;</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
+<span class="n">tacs_model</span> <span class="o">=</span> <span class="n">caps2tacs</span><span class="o">.</span><span class="n">TacsModel</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">csm_file</span><span class="o">=</span><span class="s2">"simple_naca_wing.csm"</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="n">comm</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Next, the user must specify the auto mesh generation settings for the structure geometry that will be
