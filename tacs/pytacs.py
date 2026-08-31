@@ -39,6 +39,7 @@ import tacs.elements
 import tacs.functions
 import tacs.problems
 import tacs.TACS
+from tacs.nastran.beam_properties import beamPropertyToConstitutive
 from tacs.pymeshloader import pyMeshLoader
 from tacs.utilities import BaseUI, preinitialize_method, postinitialize_method
 
@@ -1150,65 +1151,9 @@ class pyTACS(BaseUI):
                         k[j] = propInfo.Ki[j]
                 con = tacs.constitutive.DOFSpringConstitutive(k=k)
 
-            elif propInfo.type == "PBAR":  # Nastran bar
-                area = propInfo.A
-                I1 = propInfo.i1
-                I2 = propInfo.i2
-                # Nastran uses negative convention for POI's
-                I12 = -propInfo.i12
-                J = propInfo.j
-                k1 = propInfo.k1
-                k2 = propInfo.k2
-
-                # pynastran defaults these values to 1e8,
-                # which can lead to scaling issues in the stiffness matrix
-                # We truncate this value to 1e3 to prevent this
-                if k1 is None or k1 > 1e3:
-                    k1 = 1e3
-
-                if k2 is None or k2 > 1e3:
-                    k2 = 1e3
-
-                con = tacs.constitutive.BasicBeamConstitutive(
-                    mat, A=area, Iy=I2, Iz=I1, Iyz=I12, J=J, ky=k1, kz=k2
-                )
-
-            elif propInfo.type == "PBARL":  # Nastran bar w/ cross-section
-                if propInfo.Type == "BAR":
-                    w = propInfo.dim[0]
-                    t = propInfo.dim[1]
-                    elem0 = elemDict[propertyID]["elements"][0]
-                    # Get element axes and offset vectors
-                    _, (_, _, jhat, khat, wa, wb) = elem0.get_axes(self.bdfInfo)
-                    # Take the average of the offset vectors at either end of bar
-                    offset_vector = (wa + wb) / 2.0
-                    # Project the offset vector onto the width and thickness axes
-                    wOffset = -np.dot(khat, offset_vector) / w
-                    tOffset = -np.dot(jhat, offset_vector) / t
-                    con = tacs.constitutive.IsoRectangleBeamConstitutive(
-                        mat, w=w, t=t, tOffset=tOffset, wOffset=wOffset
-                    )
-
-                elif propInfo.Type == "TUBE":
-                    r1 = propInfo.dim[0]
-                    r0 = propInfo.dim[1]
-                    d_inner = 2 * r0
-                    t_wall = r1 - r0
-                    con = tacs.constitutive.IsoTubeBeamConstitutive(
-                        mat, d=d_inner, t=t_wall
-                    )
-
-                else:
-                    # We use the pynastran API to get the area, moments of inertia, and torsional constant
-                    # The built in methods for I1, I2, etc. don't support a number of cross section types so we use
-                    # this more general method
-                    A, I1, I2, I12 = pn.cards.properties.bars._bar_areaL(
-                        "PBARL", propInfo.Type, propInfo.dim, propInfo
-                    )
-                    J = propInfo.J()
-                    con = tacs.constitutive.BasicBeamConstitutive(
-                        mat, A=A, J=J, Iy=I2, Iz=I1, Iyz=-I12
-                    )
+            elif propInfo.type in ["PBAR", "PBARL", "PBEAM", "PBEAML"]:
+                elem0 = elemDict[propertyID]["elements"][0]
+                con = beamPropertyToConstitutive(propInfo, elem0, self.bdfInfo, mat)
 
             elif propInfo.type == "PROD":  # Nastran rod
                 area = propInfo.A
@@ -1220,10 +1165,10 @@ class pyTACS(BaseUI):
                     mat,
                     A=area,
                     J=J,
-                    ky=k1,
-                    kz=k2,
-                    Iy=0.0,
-                    Iz=0.0,
+                    k2=k1,
+                    k3=k2,
+                    I22=0.0,
+                    I33=0.0,
                 )
 
             else:
@@ -1238,7 +1183,7 @@ class pyTACS(BaseUI):
                 if elem0.theta_mcid is not None:
                     _, _, refAxis, _, _ = elem0.material_coordinate_system()
                     transform = tacs.elements.ShellRefAxisTransform(refAxis)
-            elif propInfo.type in ["PBAR", "PBARL"]:
+            elif propInfo.type in ["PBAR", "PBARL", "PBEAM", "PBEAML"]:
                 refAxis = elemDict[propertyID]["elements"][0].g0_vector
                 transform = tacs.elements.BeamRefAxisTransform(refAxis)
             elif propInfo.type == "PROD":
@@ -1279,7 +1224,7 @@ class pyTACS(BaseUI):
                     elem = tacs.elements.Quad9Shell(transform, con)
                 elif descript in ["CTRIA3", "CTRIAR"]:
                     elem = tacs.elements.Tri3Shell(transform, con)
-                elif descript in ["CBAR", "CROD"]:
+                elif descript in ["CBAR", "CROD", "CBEAM"]:
                     elem = tacs.elements.Beam2(transform, con)
                 elif "CTETRA" in descript:
                     # May have variable number of nodes in card

@@ -1,0 +1,248 @@
+NASTRAN BARMASS=1
+$EXECUTIVE CONTROL DECK
+SOL 101
+CEND
+$CASE CONTROL DECK
+DISPLACEMENT = ALL
+SPC = 100
+STRESS = ALL
+TITLE = cbeam_pbeaml_tube2_taper static analysis
+SUBCASE 1
+    LOAD = 10
+    SUBTITLE = static_fx
+SUBCASE 2
+    LOAD = 20
+    SUBTITLE = static_fy
+SUBCASE 3
+    LOAD = 30
+    SUBTITLE = static_fz
+SUBCASE 4
+    LOAD = 40
+    SUBTITLE = static_mx
+SUBCASE 5
+    LOAD = 50
+    SUBTITLE = static_my
+SUBCASE 6
+    LOAD = 60
+    SUBTITLE = static_mz
+BEGIN BULK
+$PARAMS
+PARAM   COUPMASS       1
+PARAM       POST       1
+$NODES
+GRID           1              0.      0.      0.
+GRID           2             .02      0.      0.
+GRID           3             .04      0.      0.
+GRID           4             .06      0.      0.
+GRID           5             .08      0.      0.
+GRID           6              .1      0.      0.
+GRID           7             .12      0.      0.
+GRID           8             .14      0.      0.
+GRID           9             .16      0.      0.
+GRID          10             .18      0.      0.
+GRID          11              .2      0.      0.
+GRID          12             .22      0.      0.
+GRID          13             .24      0.      0.
+GRID          14             .26      0.      0.
+GRID          15             .28      0.      0.
+GRID          16              .3      0.      0.
+GRID          17             .32      0.      0.
+GRID          18             .34      0.      0.
+GRID          19             .36      0.      0.
+GRID          20             .38      0.      0.
+GRID          21              .4      0.      0.
+GRID          22             .42      0.      0.
+GRID          23             .44      0.      0.
+GRID          24             .46      0.      0.
+GRID          25             .48      0.      0.
+GRID          26              .5      0.      0.
+GRID          27             .52      0.      0.
+GRID          28             .54      0.      0.
+GRID          29             .56      0.      0.
+GRID          30             .58      0.      0.
+GRID          31              .6      0.      0.
+GRID          32             .62      0.      0.
+GRID          33             .64      0.      0.
+GRID          34             .66      0.      0.
+GRID          35             .68      0.      0.
+GRID          36              .7      0.      0.
+GRID          37             .72      0.      0.
+GRID          38             .74      0.      0.
+GRID          39             .76      0.      0.
+GRID          40             .78      0.      0.
+GRID          41              .8      0.      0.
+GRID          42             .82      0.      0.
+GRID          43             .84      0.      0.
+GRID          44             .86      0.      0.
+GRID          45             .88      0.      0.
+GRID          46              .9      0.      0.
+GRID          47             .92      0.      0.
+GRID          48             .94      0.      0.
+GRID          49             .96      0.      0.
+GRID          50             .98      0.      0.
+GRID          51              1.      0.      0.
+$ELEMENTS
+CBEAM          1       1       1       2      0.      1.      0.
+CBEAM          2       2       2       3      0.      1.      0.
+CBEAM          3       3       3       4      0.      1.      0.
+CBEAM          4       4       4       5      0.      1.      0.
+CBEAM          5       5       5       6      0.      1.      0.
+CBEAM          6       6       6       7      0.      1.      0.
+CBEAM          7       7       7       8      0.      1.      0.
+CBEAM          8       8       8       9      0.      1.      0.
+CBEAM          9       9       9      10      0.      1.      0.
+CBEAM         10      10      10      11      0.      1.      0.
+CBEAM         11      11      11      12      0.      1.      0.
+CBEAM         12      12      12      13      0.      1.      0.
+CBEAM         13      13      13      14      0.      1.      0.
+CBEAM         14      14      14      15      0.      1.      0.
+CBEAM         15      15      15      16      0.      1.      0.
+CBEAM         16      16      16      17      0.      1.      0.
+CBEAM         17      17      17      18      0.      1.      0.
+CBEAM         18      18      18      19      0.      1.      0.
+CBEAM         19      19      19      20      0.      1.      0.
+CBEAM         20      20      20      21      0.      1.      0.
+CBEAM         21      21      21      22      0.      1.      0.
+CBEAM         22      22      22      23      0.      1.      0.
+CBEAM         23      23      23      24      0.      1.      0.
+CBEAM         24      24      24      25      0.      1.      0.
+CBEAM         25      25      25      26      0.      1.      0.
+CBEAM         26      26      26      27      0.      1.      0.
+CBEAM         27      27      27      28      0.      1.      0.
+CBEAM         28      28      28      29      0.      1.      0.
+CBEAM         29      29      29      30      0.      1.      0.
+CBEAM         30      30      30      31      0.      1.      0.
+CBEAM         31      31      31      32      0.      1.      0.
+CBEAM         32      32      32      33      0.      1.      0.
+CBEAM         33      33      33      34      0.      1.      0.
+CBEAM         34      34      34      35      0.      1.      0.
+CBEAM         35      35      35      36      0.      1.      0.
+CBEAM         36      36      36      37      0.      1.      0.
+CBEAM         37      37      37      38      0.      1.      0.
+CBEAM         38      38      38      39      0.      1.      0.
+CBEAM         39      39      39      40      0.      1.      0.
+CBEAM         40      40      40      41      0.      1.      0.
+CBEAM         41      41      41      42      0.      1.      0.
+CBEAM         42      42      42      43      0.      1.      0.
+CBEAM         43      43      43      44      0.      1.      0.
+CBEAM         44      44      44      45      0.      1.      0.
+CBEAM         45      45      45      46      0.      1.      0.
+CBEAM         46      46      46      47      0.      1.      0.
+CBEAM         47      47      47      48      0.      1.      0.
+CBEAM         48      48      48      49      0.      1.      0.
+CBEAM         49      49      49      50      0.      1.      0.
+CBEAM         50      50      50      51      0.      1.      0.
+$PROPERTIES
+PBEAML         1       1           TUBE2
+           .0125 .000625      0.     YES      1. .0123756.1875-4      0.
+PBEAML         2       1           TUBE2
+         .0123756.1875-4      0.     YES      1.  .01225.0006125      0.
+PBEAML         3       1           TUBE2
+          .01225.0006125      0.     YES      1. .0121256.0625-4      0.
+PBEAML         4       1           TUBE2
+         .0121256.0625-4      0.     YES      1.    .012   .0006      0.
+PBEAML         5       1           TUBE2
+            .012   .0006      0.     YES      1. .0118755.9375-4      0.
+PBEAML         6       1           TUBE2
+         .0118755.9375-4      0.     YES      1.  .01175.0005875      0.
+PBEAML         7       1           TUBE2
+          .01175.0005875      0.     YES      1. .0116255.8125-4      0.
+PBEAML         8       1           TUBE2
+         .0116255.8125-4      0.     YES      1.   .0115 .000575      0.
+PBEAML         9       1           TUBE2
+           .0115 .000575      0.     YES      1. .0113755.6875-4      0.
+PBEAML        10       1           TUBE2
+         .0113755.6875-4      0.     YES      1.  .01125.0005625      0.
+PBEAML        11       1           TUBE2
+          .01125.0005625      0.     YES      1. .0111255.5625-4      0.
+PBEAML        12       1           TUBE2
+         .0111255.5625-4      0.     YES      1.    .011  .00055      0.
+PBEAML        13       1           TUBE2
+            .011  .00055      0.     YES      1. .0108755.4375-4      0.
+PBEAML        14       1           TUBE2
+         .0108755.4375-4      0.     YES      1.  .01075.0005375      0.
+PBEAML        15       1           TUBE2
+          .01075.0005375      0.     YES      1. .0106255.3125-4      0.
+PBEAML        16       1           TUBE2
+         .0106255.3125-4      0.     YES      1.   .0105 .000525      0.
+PBEAML        17       1           TUBE2
+           .0105 .000525      0.     YES      1. .0103755.1875-4      0.
+PBEAML        18       1           TUBE2
+         .0103755.1875-4      0.     YES      1.  .01025.0005125      0.
+PBEAML        19       1           TUBE2
+          .01025.0005125      0.     YES      1. .0101255.0625-4      0.
+PBEAML        20       1           TUBE2
+         .0101255.0625-4      0.     YES      1.     .01   .0005      0.
+PBEAML        21       1           TUBE2
+             .01   .0005      0.     YES      1. .0098754.9375-4      0.
+PBEAML        22       1           TUBE2
+         .0098754.9375-4      0.     YES      1.  .00975.0004875      0.
+PBEAML        23       1           TUBE2
+          .00975.0004875      0.     YES      1. .0096254.8125-4      0.
+PBEAML        24       1           TUBE2
+         .0096254.8125-4      0.     YES      1.   .0095 .000475      0.
+PBEAML        25       1           TUBE2
+           .0095 .000475      0.     YES      1. .0093754.6875-4      0.
+PBEAML        26       1           TUBE2
+         .0093754.6875-4      0.     YES      1.  .00925.0004625      0.
+PBEAML        27       1           TUBE2
+          .00925.0004625      0.     YES      1. .0091254.5625-4      0.
+PBEAML        28       1           TUBE2
+         .0091254.5625-4      0.     YES      1.    .009  .00045      0.
+PBEAML        29       1           TUBE2
+            .009  .00045      0.     YES      1. .0088754.4375-4      0.
+PBEAML        30       1           TUBE2
+         .0088754.4375-4      0.     YES      1.  .00875.0004375      0.
+PBEAML        31       1           TUBE2
+          .00875.0004375      0.     YES      1. .0086254.3125-4      0.
+PBEAML        32       1           TUBE2
+         .0086254.3125-4      0.     YES      1.   .0085 .000425      0.
+PBEAML        33       1           TUBE2
+           .0085 .000425      0.     YES      1. .0083754.1875-4      0.
+PBEAML        34       1           TUBE2
+         .0083754.1875-4      0.     YES      1.  .00825.0004125      0.
+PBEAML        35       1           TUBE2
+          .00825.0004125      0.     YES      1. .0081254.0625-4      0.
+PBEAML        36       1           TUBE2
+         .0081254.0625-4      0.     YES      1.    .008   .0004      0.
+PBEAML        37       1           TUBE2
+            .008   .0004      0.     YES      1. .0078753.9375-4      0.
+PBEAML        38       1           TUBE2
+         .0078753.9375-4      0.     YES      1.  .00775.0003875      0.
+PBEAML        39       1           TUBE2
+          .00775.0003875      0.     YES      1. .0076253.8125-4      0.
+PBEAML        40       1           TUBE2
+         .0076253.8125-4      0.     YES      1.   .0075 .000375      0.
+PBEAML        41       1           TUBE2
+           .0075 .000375      0.     YES      1. .0073753.6875-4      0.
+PBEAML        42       1           TUBE2
+         .0073753.6875-4      0.     YES      1.  .00725.0003625      0.
+PBEAML        43       1           TUBE2
+          .00725.0003625      0.     YES      1. .0071253.5625-4      0.
+PBEAML        44       1           TUBE2
+         .0071253.5625-4      0.     YES      1.    .007  .00035      0.
+PBEAML        45       1           TUBE2
+            .007  .00035      0.     YES      1. .0068753.4375-4      0.
+PBEAML        46       1           TUBE2
+         .0068753.4375-4      0.     YES      1.  .00675.0003375      0.
+PBEAML        47       1           TUBE2
+          .00675.0003375      0.     YES      1. .0066253.3125-4      0.
+PBEAML        48       1           TUBE2
+         .0066253.3125-4      0.     YES      1.   .0065 .000325      0.
+PBEAML        49       1           TUBE2
+           .0065 .000325      0.     YES      1. .0063753.1875-4      0.
+PBEAML        50       1           TUBE2
+         .0063753.1875-4      0.     YES      1.  .00625.0003125      0.
+$MATERIALS
+$Aluminium 7075
+MAT1           1 7.17+10             .33   2810.
+$LOADS
+FORCE         10      51        34315.76      1.      0.      0.
+FORCE         20      51        76.50673      0.      1.      0.
+FORCE         30      51        76.50673      0.      0.      1.
+MOMENT        40      51        50.19903      1.      0.      0.
+MOMENT        50      51        51.00448      0.      1.      0.
+MOMENT        60      51        51.00448      0.      0.      1.
+$SPCs
+SPC1         100  123456       1
+ENDDATA
