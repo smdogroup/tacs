@@ -62,6 +62,18 @@ class EPOperator : public TACSObject {
   // Convert the shifted spectrum back to the regular spectrum
   // ---------------------------------------------------------
   virtual TacsScalar convertEigenvalue(TacsScalar value) { return value; }
+
+  /*
+    Does this transformed eigenvalue correspond to a finite eigenvalue of the
+    original problem?
+
+    Spectral transforms have poles: transformed eigenvalues that are the images
+    of infinite eigenvalues of the original pencil. They are artefacts of the
+    transform rather than solutions, convertEigenvalue() cannot map them back,
+    and they must never be returned among the requested eigenvalues. The
+    identity transform has no pole, so the default accepts everything.
+  */
+  virtual int isFiniteEigenvalue(TacsScalar value) { return 1; }
 };
 
 /*!
@@ -154,6 +166,7 @@ class EPBucklingShiftInvert : public EPOperator {
   TacsScalar dot(TACSVec *x, TACSVec *y);  // Compute <x,y> = x^{T}*inner*y
   TacsScalar errorNorm(TACSVec *x);
   TacsScalar convertEigenvalue(TacsScalar value);
+  int isFiniteEigenvalue(TacsScalar value);
 
  private:
   TacsScalar sigma;
