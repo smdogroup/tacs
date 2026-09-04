@@ -244,24 +244,18 @@ TacsScalar EPBucklingShiftInvert::convertEigenvalue(TacsScalar value) {
 }
 
 /*
-  The transform above has a pole at value == 1. That is exactly the image of an
-  infinite eigenvalue of the pencil (mu = lambda/(lambda + sigma) -> 1 as
-  lambda -> infinity), i.e. a mode carrying no geometric stiffness such as a
-  constrained degree of freedom. It is not a physical buckling load, and
-  convertEigenvalue() cannot map it back.
+  The transform above has a pole at value == 1: the image of an infinite
+  eigenvalue of the pencil, i.e. a mode with no geometric stiffness such as a
+  constrained degree of freedom.
 
-  Away from the pole the transform protects itself: any non-zero real part of
-  (1 - value) drives the real part of lambda to a large magnitude, so those
-  values sort to the end of the spectrum and are never returned among the
-  smallest eigenvalues. The pole itself does not. In real arithmetic it
-  evaluates to +/-infinity, which also sorts to the end, but under complex-step
-  arithmetic the infinitesimal imaginary part regularises the quotient into a
-  finite value whose real part is exactly sigma - which then sorts ahead of
-  every finite eigenvalue and displaces the whole spectrum.
+  Any non-zero real part of (1 - value) makes |lambda| large, so those values
+  sort to the end and are never selected. The pole does not. Real arithmetic
+  gives +/-infinity, which also sorts away, but under complex step the
+  infinitesimal imaginary part leaves a finite value whose real part is exactly
+  sigma, which sorts ahead of every finite eigenvalue.
 
-  The cutoff therefore only has to catch a denominator that is zero to working
-  precision; its exact value is not critical. Everything 1e-12 rejects satisfies
-  |lambda| >= 1e12*sigma, which is not a buckling load factor.
+  The cutoff need only catch a denominator that is zero to working precision;
+  1e-12 rejects |lambda| >= 1e12*sigma.
 */
 int EPBucklingShiftInvert::isFiniteEigenvalue(TacsScalar value) {
   const double pole_tol = 1e-12;
@@ -715,15 +709,12 @@ void SEP::printOrthogonality() {
   match. The permutation array is altered so that the array indexed by
   p[i] => eigs[ p[i] ] is sorted in ascending order.
 
-  Poles of the spectral transform - the images of infinite eigenvalues of the
-  pencil, which are not solutions - are partitioned to the end of p and are not
-  sorted, so they can never be selected among the requested eigenvalues.
+  Poles of the spectral transform - images of infinite eigenvalues, which are
+  not solutions - are partitioned to the end of p and left unsorted.
 */
 void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
-  // Partition the indices in a single pass: eigenvalues of the original problem
-  // at the front, poles of the spectral transform at the back. Only the front
-  // block is sorted below, so a pole can never be selected as one of the
-  // smallest eigenvalues.
+  // Partition in one pass: finite eigenvalues at the front, poles of the
+  // spectral transform at the back. Only the front block is sorted.
   int nfinite = 0;
   int npole = neigs - 1;
   for (int i = 0; i < neigs; i++) {
@@ -745,8 +736,7 @@ void SEP::sortEigenvalues(TacsScalar *values, int neigs, int *p) {
 
   // Sort the physical eigenvalues using insertion sort
   for (int i = 1; i < nfinite; i++) {
-    // The index being placed. Note this must be read from p[i] rather than
-    // assumed to be i: the partition above means p is no longer the identity.
+    // Must be read from p[i]: the partition means p is no longer the identity.
     int key = p[i];
 
     // Convert the transformed eigenvalue into the correct

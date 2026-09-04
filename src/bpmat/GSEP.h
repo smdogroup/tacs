@@ -64,14 +64,11 @@ class EPOperator : public TACSObject {
   virtual TacsScalar convertEigenvalue(TacsScalar value) { return value; }
 
   /*
-    Does this transformed eigenvalue correspond to a finite eigenvalue of the
-    original problem?
+    Does this transformed eigenvalue map back to a finite eigenvalue?
 
-    Spectral transforms have poles: transformed eigenvalues that are the images
-    of infinite eigenvalues of the original pencil. They are artefacts of the
-    transform rather than solutions, convertEigenvalue() cannot map them back,
-    and they must never be returned among the requested eigenvalues. The
-    identity transform has no pole, so the default accepts everything.
+    Poles of the spectral transform are the images of infinite eigenvalues of
+    the pencil. convertEigenvalue() cannot map them back, so they must never be
+    selected. The identity transform has no pole.
   */
   virtual int isFiniteEigenvalue(TacsScalar value) { return 1; }
 };
