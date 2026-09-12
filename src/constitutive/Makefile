@@ -25,6 +25,7 @@ CXX_OBJS = TACSMaterialProperties.o \
 	TACSBasicBeamConstitutive.o \
 	TACSIsoTubeBeamConstitutive.o \
 	TACSIsoRectangleBeamConstitutive.o \
+	TACSCompositeTubeBeamConstitutive.o \
 	TACSPhaseChangeMaterialConstitutive.o \
 	TACSBladeStiffenedShellConstitutive.o \
 	TACSSmearedCompositeShellConstitutive.o \
