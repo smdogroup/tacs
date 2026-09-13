@@ -41,18 +41,22 @@ class TacsDVComp(om.ExplicitComponent):
             g_dvs = self.fea_assembler.getGlobalDVs()
             for dv_name in g_dvs:
                 dv_dict = g_dvs[dv_name]
-                if dv_dict["isMassDV"]:
-                    dv_num = dv_dict["num"]
-                    mass_val = vals[dv_num]
-                    # Store mass dv num with user-defined dv name
-                    self.mass_dvs[f"dv_mass_{dv_name}"] = dv_num
-                    # Remove mass dv from struct list
-                    self.struct_dvs.remove(dv_num)
+                # For array-valued global DVs, "isMassDV" is a per-entry bool mask;
+                # only the entries assigned through pyTACS.assignMassDV are mass dvs
+                if np.any(dv_dict["isMassDV"]):
+                    mass_mask = np.atleast_1d(dv_dict["isMassDV"])
+                    dv_nums = np.atleast_1d(dv_dict["num"])[mass_mask]
+                    mass_vals = vals[dv_nums]
+                    # Store mass dv nums with user-defined dv name
+                    self.mass_dvs[f"dv_mass_{dv_name}"] = dv_nums
+                    # Remove mass dvs from struct list
+                    for dv_num in dv_nums:
+                        self.struct_dvs.remove(dv_num)
                     # Add user-defined dv name as input
                     self.add_input(
                         f"dv_mass_{dv_name}",
-                        desc="serial mass design variable holding one mass design variable instance for tacs",
-                        val=mass_val,
+                        desc="serial mass design variable holding mass design variable instances for tacs",
+                        val=mass_vals,
                         distributed=False,
                         tags=["mphys_input"],
                     )
@@ -75,9 +79,16 @@ class TacsDVComp(om.ExplicitComponent):
             tags=["mphys_coupling"],
         )
 
+    def get_tot_ndv(self):
+        """
+        Get total number of serial design variables (struct + mass)
+        """
+        num_mass_dvs = sum(len(dv_nums) for dv_nums in self.mass_dvs.values())
+        return len(self.struct_dvs) + num_mass_dvs
+
     def compute(self, inputs, outputs):
         # Create serial array to holding all dv vals
-        tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
+        tot_ndv = self.get_tot_ndv()
         full_dv_array = np.zeros(tot_ndv, dtype=inputs["dv_struct"].dtype)
         # Place struct dvs in full array
         full_dv_array[self.struct_dvs] = inputs["dv_struct"]
@@ -88,7 +99,7 @@ class TacsDVComp(om.ExplicitComponent):
         outputs["tacs_dvs"] = full_dv_array[self.src_indices]
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-        tot_ndv = len(self.struct_dvs) + len(self.mass_dvs)
+        tot_ndv = self.get_tot_ndv()
         dfull_dv_array = np.zeros(tot_ndv, dtype=inputs["dv_struct"].dtype)
         if mode == "fwd":
             if "tacs_dvs" in d_outputs:

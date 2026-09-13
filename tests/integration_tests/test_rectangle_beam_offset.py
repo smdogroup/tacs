@@ -115,6 +115,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
 
+        # Register rotational velocity and rotation center as global DVs
+        omegaDV = fea_assembler.addGlobalDV("omega", [10.0, 3.0, 5.0])
+        rotCenterDV = fea_assembler.addGlobalDV("rotCenter", [0.5, -0.025, 0.05])
+
         # Set up constitutive objects and elements
         fea_assembler.initialize(elem_call_back)
 
@@ -122,7 +126,12 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         grav_prob.addInertialLoad([-10.0, 3.0, 5.0])
 
         rot_prob = fea_assembler.createStaticProblem("centrifugal")
-        rot_prob.addCentrifugalLoad([10.0, 3.0, 5.0], [0.5, -0.025, 0.05])
+        rot_prob.addCentrifugalLoad(
+            [10.0, 3.0, 5.0],
+            [0.5, -0.025, 0.05],
+            omegaDVNums=omegaDV,
+            rotCenterDVNums=rotCenterDV,
+        )
 
         probs = [grav_prob, rot_prob]
 

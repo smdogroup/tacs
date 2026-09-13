@@ -267,24 +267,77 @@ class pyTACS(BaseUI):
         descript : str
             A user-supplied string that can be used to retrieve the
             variable number and value elemCallBackFunction.
-        value : float
-            Initial value for variable.
-        lower : float
-            Lower bound. This may be None for unbounded
-        upper : float
-            Upper bound. This may be None for unbounded
-        scale : float
-            Scale factor for variable
+        value : float or array-like
+            Initial value for variable. If array-like, one design variable
+            is created per entry, numbered consecutively.
+        lower : float or array-like
+            Lower bound. Scalars are broadcast to all entries.
+            This may be None for unbounded
+        upper : float or array-like
+            Upper bound. Scalars are broadcast to all entries.
+            This may be None for unbounded
+        scale : float or array-like
+            Scale factor for variable. Scalars are broadcast to all entries.
+
+        Returns
+        -------
+        int or numpy.ndarray[int]
+            The design variable number(s) assigned to the global design variable.
+            An int if `value` was a scalar, an array of consecutive dv nums if
+            `value` was array-like.
         """
+        isArrayDV = np.ndim(value) > 0
+        if isArrayDV:
+            value = np.atleast_1d(np.asarray(value))
+            if value.ndim > 1:
+                raise self._TACSError(
+                    f"Value for global DV '{descript}' must be a scalar or 1D array, "
+                    f"but has {value.ndim} dimensions."
+                )
+            if len(value) == 0:
+                raise self._TACSError(
+                    f"Value array for global DV '{descript}' cannot be empty."
+                )
+            numDVs = len(value)
+            num = np.arange(self.dvNum, self.dvNum + numDVs, dtype=np.intc)
+        else:
+            numDVs = 1
+            num = self.dvNum
+
+        def _broadcastToGroup(inputVal, inputName):
+            """Normalize lower/upper/scale to None, a scalar (scalar DV), or a length-numDVs array."""
+            if inputVal is None or np.ndim(inputVal) == 0:
+                if isArrayDV and inputVal is not None:
+                    return np.full(numDVs, inputVal)
+                return inputVal
+            if not isArrayDV:
+                raise self._TACSError(
+                    f"'{inputName}' for global DV '{descript}' cannot be array-like "
+                    "when 'value' is a scalar."
+                )
+            inputVal = np.atleast_1d(np.asarray(inputVal))
+            if inputVal.ndim > 1 or len(inputVal) != numDVs:
+                raise self._TACSError(
+                    f"'{inputName}' for global DV '{descript}' must be a scalar "
+                    f"or a 1D array of length {numDVs} (the length of 'value')."
+                )
+            return inputVal
+
+        lower = _broadcastToGroup(lower, "lower")
+        upper = _broadcastToGroup(upper, "upper")
+        scale = _broadcastToGroup(scale, "scale")
+
         self.globalDVs[descript] = {
-            "num": self.dvNum,
+            "num": num,
             "value": value,
             "lowerBound": lower,
             "upperBound": upper,
-            "isMassDV": False,
+            # Array DVs track mass DV assignment per entry
+            "isMassDV": np.zeros(numDVs, dtype=bool) if isArrayDV else False,
         }
-        self.dvNum += 1
-        self.scaleList.append(scale)
+        self.dvNum += numDVs
+        self.scaleList.extend(np.atleast_1d(scale).tolist())
+        return num.copy() if isArrayDV else num
 
     def getGlobalDVs(self):
         """
@@ -317,7 +370,11 @@ class pyTACS(BaseUI):
         globalDVNums : list[int]
             List holding dv nums corresponding to global DVs.
         """
-        return [self.globalDVs[descript]["num"] for descript in self.globalDVs]
+        return [
+            int(num)
+            for descript in self.globalDVs
+            for num in np.atleast_1d(self.globalDVs[descript]["num"])
+        ]
 
     def getTotalNumGlobalDVs(self):
         """
@@ -325,21 +382,23 @@ class pyTACS(BaseUI):
 
         Returns
         -------
-        globalDVs : dict
-            Dictionary holding global dv information.
+        numGlobalDVs : int
+            Total number of global DVs (array-valued keys count once per entry).
         """
-        return len(self.globalDVs)
+        return sum(
+            np.atleast_1d(dv_info["num"]).size for dv_info in self.globalDVs.values()
+        )
 
     @preinitialize_method
-    def assignMassDV(self, descript, eIDs, dvName="m"):
+    def assignMassDV(self, descript, eIDs, dvName="m", index=None):
         """
         Assign a global DV to a point mass element.
 
         Parameters
         ----------
         descript : str
-            Global DV key to assign mass design variable to. If the key is does not exist,
-            it will automatically be created and added to global DVs.
+            Global DV key to assign mass design variable to. If the key does not exist,
+            it will automatically be created and added to global DVs as a scalar DV.
 
         eIDs : int or list[int]
             Element IDs of concentrated mass to assign DV to (NASTRAN ordering)
@@ -348,6 +407,11 @@ class pyTACS(BaseUI):
             Name of mass property to apply DV to.
             May be `m` for mass, `I11`, `I22`, `I12`, etc. for moment of inertia components.
             Defaults to `m` (mass).
+
+        index : int or None
+            Entry of an array-valued global DV to assign as the mass DV.
+            Required if `descript` refers to an array-valued global DV,
+            must be None (default) for scalar global DVs.
 
         Notes
         -----
@@ -371,17 +435,49 @@ class pyTACS(BaseUI):
 
         # Check if descript already exists in global dvs, if not add it
         if descript not in self.globalDVs:
+            if index is not None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' does not exist, so 'index' cannot be used. "
+                    "Add it through `addGlobalDV` first, or call without 'index' "
+                    "to automatically create a scalar global DV."
+                )
             self.addGlobalDV(descript, None)
 
         dv_dict = self.globalDVs[descript]
 
-        # Flag this global dv as being a mass dv
-        dv_dict["isMassDV"] = True
+        # Mass DVs modify a single scalar element property, so for array-valued
+        # global DVs a single entry must be selected through 'index'
+        if np.ndim(dv_dict["num"]) > 0:
+            numDVs = len(dv_dict["num"])
+            if index is None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' is array-valued, 'index' must be specified "
+                    "to select which entry to assign as a mass DV."
+                )
+            if not -numDVs <= index < numDVs:
+                raise self._TACSError(
+                    f"'index' {index} is out of range for array-valued global DV "
+                    f"'{descript}' of length {numDVs}."
+                )
+            # Flag this entry of the global dv as being a mass dv
+            dv_dict["isMassDV"][index] = True
 
-        massDV = dv_dict["num"]
-        value = dv_dict["value"]
-        ub = dv_dict["upperBound"]
-        lb = dv_dict["lowerBound"]
+            massDV = int(dv_dict["num"][index])
+            value = dv_dict["value"][index]
+            ub = None if dv_dict["upperBound"] is None else dv_dict["upperBound"][index]
+            lb = None if dv_dict["lowerBound"] is None else dv_dict["lowerBound"][index]
+        else:
+            if index is not None:
+                raise self._TACSError(
+                    f"Global DV '{descript}' is scalar, 'index' is not applicable."
+                )
+            # Flag this global dv as being a mass dv
+            dv_dict["isMassDV"] = True
+
+            massDV = dv_dict["num"]
+            value = dv_dict["value"]
+            ub = dv_dict["upperBound"]
+            lb = dv_dict["lowerBound"]
 
         for eID in eIDs:
             # If the element ID hasn't already been added to massDVs, add it
@@ -809,8 +905,9 @@ class pyTACS(BaseUI):
         self._createOutputGroups()
         self._createElements(elemCallBack)
 
+        global_dv_nums = self.getGlobalDVNums()
         self.assembler = self.meshLoader.createTACSAssembler(
-            self.varsPerNode, self.massDVs
+            self.varsPerNode, self.massDVs, globalDVNums=global_dv_nums
         )
         self._createOutputViewer()
 
@@ -821,16 +918,110 @@ class pyTACS(BaseUI):
         # Store initial design variable values
         self.x0 = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x0)
+        # Overwrite with any global DV initial values specified by the user
+        global_dv_nums = []
+        global_dv_vals = []
+        for dv_info in self.globalDVs.values():
+            if dv_info["value"] is not None:
+                global_dv_nums.extend(np.atleast_1d(dv_info["num"]))
+                global_dv_vals.extend(np.atleast_1d(dv_info["value"]))
+        self._setGlobalDVValues(self.x0, global_dv_nums, global_dv_vals)
 
         # Store design variable upper/lower-bounds
         self.xub = self.assembler.createDesignVec()
         self.xlb = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(self.xlb, self.xub)
+        # getDesignVarRange only fills in entries held by regular elements.
+        # Global DVs that are only consumed by aux element loads (which don't
+        # exist yet) would otherwise keep lb = ub = 0 from createDesignVec, so
+        # find every DV num some regular element holds and fall back to the
+        # unbounded default for global DVs outside that set.
+        local_held_dvs = set()
+        for elem_index, elem in enumerate(self.assembler.getElements()):
+            local_held_dvs.update(int(num) for num in elem.getDesignVarNums(elem_index))
+        held_dvs = set().union(*self.comm.allgather(local_held_dvs))
+        # Overwrite with any global DV bounds specified by the user
+        global_dv_nums_ub = []
+        global_dv_vals_ub = []
+        global_dv_nums_lb = []
+        global_dv_vals_lb = []
+        for dv_info in self.globalDVs.values():
+            dv_nums = np.atleast_1d(dv_info["num"])
+            for bound_name, dv_nums_out, dv_vals_out, default_bound in (
+                (
+                    "upperBound",
+                    global_dv_nums_ub,
+                    global_dv_vals_ub,
+                    tacs.TACS.LARGE_DV_BOUND,
+                ),
+                (
+                    "lowerBound",
+                    global_dv_nums_lb,
+                    global_dv_vals_lb,
+                    -tacs.TACS.LARGE_DV_BOUND,
+                ),
+            ):
+                if dv_info[bound_name] is not None:
+                    dv_nums_out.extend(dv_nums)
+                    dv_vals_out.extend(np.atleast_1d(dv_info[bound_name]))
+                else:
+                    # Unbounded: element-held entries keep the range the
+                    # elements reported, the rest get the unbounded default
+                    unheld = [num for num in dv_nums if num not in held_dvs]
+                    dv_nums_out.extend(unheld)
+                    dv_vals_out.extend([default_bound] * len(unheld))
+        self._setGlobalDVValues(self.xub, global_dv_nums_ub, global_dv_vals_ub)
+        self._setGlobalDVValues(self.xlb, global_dv_nums_lb, global_dv_vals_lb)
 
         self._isNonlinear = self._checkNonlinearity()
 
         # Vector used to store temporarily store state variables
         self.tempVec = self.assembler.createVec()
+
+    def _initializeSystem(self, system):
+        """Apply this pyTACS object's state to a newly created problem/constraint.
+
+        Sets the original design variables and node coordinates, in case they
+        have changed since the assembler was created, and hands over the design
+        variable bounds. The bounds have to be passed explicitly because bounds
+        supplied to addGlobalDV are not stored in any element, so the system
+        cannot recover them from the assembler.
+
+        Parameters
+        ----------
+        system : tacs.system.TACSSystem
+            The problem or constraint object to initialize.
+        """
+        system.setDesignVars(self.x0)
+        system.setNodes(self.Xpts0)
+        system.setDesignVarRange(self.xlb.getArray(), self.xub.getArray())
+
+    def _setGlobalDVValues(self, vec, dv_nums, dv_vals):
+        """Insert global DV values into a distributed design vec.
+
+        Every proc holds the full list of global DV numbers and values, so every
+        proc calls setValues with INSERT_VALUES. The owning proc of each index
+        therefore writes the exact value locally, including an exact zero -- an
+        INSERT_NONZERO_VALUES insert here would silently skip zeros and leave
+        the value or bound at whatever the elements reported.
+
+        The reverse communication in begin/endSetValues must stay on
+        INSERT_NONZERO_VALUES. It ships each proc's *entire* external array, and
+        that array is zeroed after every set cycle, so an INSERT_VALUES reverse
+        op would overwrite every other proc's owned design variables with zeros.
+        The non-owning procs' contributions are redundant with the owner's local
+        insert, so dropping their zeros loses nothing.
+        """
+        if not dv_nums:
+            return
+        vec.setValues(
+            np.array(dv_nums, dtype=np.intc),
+            np.array(dv_vals, dtype=self.dtype),
+            op=tacs.TACS.INSERT_VALUES,
+        )
+        vec.beginSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
+        vec.endSetValues(op=tacs.TACS.INSERT_NONZERO_VALUES)
+        vec.distributeValues()
 
     @postinitialize_method
     def _checkNonlinearity(self) -> bool:
@@ -1572,9 +1763,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1615,9 +1804,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1656,9 +1843,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -1697,9 +1882,7 @@ class pyTACS(BaseUI):
             self.isNonlinear,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        problem.setDesignVars(self.x0)
-        problem.setNodes(self.Xpts0)
+        self._initializeSystem(problem)
         return problem
 
     @postinitialize_method
@@ -2164,9 +2347,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2203,9 +2384,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2233,9 +2412,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2263,9 +2440,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2293,9 +2468,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2331,9 +2504,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     @postinitialize_method
@@ -2364,9 +2535,7 @@ class pyTACS(BaseUI):
             self.meshLoader,
             options,
         )
-        # Set with original design vars and coordinates, in case they have changed
-        constr.setDesignVars(self.x0)
-        constr.setNodes(self.Xpts0)
+        self._initializeSystem(constr)
         return constr
 
     def getNumComponents(self):

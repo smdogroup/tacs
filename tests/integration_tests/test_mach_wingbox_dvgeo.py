@@ -1,8 +1,9 @@
 """
 This tests TACS MACH structural optimization capabilities.
 The wingbox model that we will be using for this problem is based on the MDOLab tutorial wingbox example,
-cantilevered, with a pressure load applied on the skin and a shear load applied at the tip. The wingbox is
-discretized using one shell element per panel. This tests the KSFailure function and the panel length constraint.
+cantilevered, with a pressure load applied on the skin and a shear load applied at the tip and a gravity load. The wingbox is
+discretized using one shell element per panel. A fuel mass is modeled using a concentrated mass element tied to
+the lower skin using an RBE3. This tests the KSFailure function and the panel length constraint.
 
 This tests the MACH StructProblem object's DVGeo and design variable sensitivities.
 """
@@ -37,8 +38,8 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
     # Reference values for regression testing
     FUNC_REFS = {
-        "2.5gload_SKIN_ksFailure": 2.3675176011386587,
-        "2.5gload_SPAR_RIB_ksFailure": 0.9114569503482862,
+        "2.5gload_SKIN_ksFailure": 2.3750300643115363,
+        "2.5gload_SPAR_RIB_ksFailure": 0.9114431213989546,
         "panel_length_con_ALL": np.array(
             [
                 0.03177571,
@@ -143,6 +144,9 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
 
         FEAAssembler = pyTACS(bdf_file, comm=comm)
 
+        # Add mass design variable to fuel mass element
+        FEAAssembler.assignMassDV("fuelMass", eIDs=9999)
+
         # ==============================================================================
         # Design variable values, bounds, and scaling factors
         # ==============================================================================
@@ -208,6 +212,10 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
             stiffenerPitchMax,
             stiffenerPitchScale,
         )
+
+        # Add gravity vector as an array-valued global DV
+        g = np.array([0.0, 0.0, -9.81])
+        gDV = FEAAssembler.addGlobalDV("g", g, lower=-20.0, upper=20.0, scale=0.1)
 
         def elem_call_back(
             dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
@@ -349,6 +357,8 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         compIDs = FEAAssembler.selectCompIDs(["WING_L_SKIN"])
         staticProblem.addPressureToComponents(compIDs, -10e3)
 
+        staticProblem.addInertialLoad(g, inertiaVecDVNums=gDV)
+
         failureGroups = {"SPAR_RIB": ["SPAR", "RIB", "CAP"], "SKIN": ["SKIN"]}
 
         for failName in failureGroups:
@@ -386,7 +396,12 @@ class TestMACHWingboxExample(MACHStructProblemTestCase.MACHStructProblemTest):
         # ==============================================================================
         # Create MACH StructProblem
         # ==============================================================================
-        structProb = StructProblem(staticProblem, FEAAssembler, DVGeo=DVGeo)
+        structProb = StructProblem(
+            staticProblem,
+            FEAAssembler,
+            DVGeo=DVGeo,
+            promotedGlobalDVs=["fuelMass", "g"],
+        )
         structProb.addConstraint(panelLengthCon)
 
         return [structProb]

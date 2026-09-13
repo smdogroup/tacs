@@ -86,7 +86,7 @@ void TACSConvectiveTraction2D::addResidual(
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar X[3], Xd[6], normal[3];
     TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
 
     // Get the field value
@@ -132,7 +132,7 @@ void TACSConvectiveTraction2D::addJacobian(
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar X[3], Xd[6], normal[3];
     TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
 
     // Get the field value

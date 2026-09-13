@@ -48,7 +48,11 @@ The ``elemCallBack`` function should have the following structure:
            Example: ['CQUAD4', CTRIA3'].
   :type elemDescripts: list[str]
   :param globalDVs: Dictionary containing information about any
-           global DVs that have been added.
+           global DVs that have been added. Each entry holds the DV's
+           ``num``, ``value``, and bounds. For global DVs registered with an
+           array-like value through :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>`,
+           ``num`` and ``value`` are int and float arrays, respectively,
+           rather than scalars.
   :type globalDVs: dict
   :returns: List containing as many TACS element
            objects as there are element types in `elemDescripts` (one for each).

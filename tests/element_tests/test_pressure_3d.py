@@ -40,6 +40,7 @@ class ElementTest(unittest.TestCase):
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.press = 10.0
         self.faceIndex = 0
+        self.pressureDVNum = np.intc(1)
 
         # Create the isotropic material
         rho = 2700.0
@@ -101,7 +102,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element3D(model, basis)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         fail = elements.TestElementJacobian(
                             pressure,
@@ -132,7 +133,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element3D(model, basis)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         dvs = pressure.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
@@ -164,7 +165,7 @@ class ElementTest(unittest.TestCase):
                             )
                         element = elements.Element3D(model, basis)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         fail = elements.TestAdjResXptProduct(
                             pressure,
@@ -189,7 +190,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(basis=basis):
                         element = elements.Element3D(model, basis)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         dvs = pressure.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
@@ -222,7 +223,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(basis=basis):
                         element = elements.Element3D(model, basis)
                         pressure = element.createElementPressure(
-                            self.faceIndex, self.press
+                            self.faceIndex, self.press, self.pressureDVNum
                         )
                         if self.print_level > 0:
                             print(

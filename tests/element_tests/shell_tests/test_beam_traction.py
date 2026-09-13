@@ -39,8 +39,9 @@ class ElementTest(unittest.TestCase):
         self.ddvars = self.vars.copy()
         # Traction vector and selected element face
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
-        # Traction vector
-        self.t = 100.0 * np.array([1.0, 1.0, 1.0], dtype=self.dtype)
+        self.trac_vec = np.random.rand(3).astype(self.dtype)
+        self.faceIndex = 0
+        self.tDVNums = np.array([2, 3, 4], dtype=np.intc)
 
         # Create the isotropic material
         rho = 2700.0
@@ -84,9 +85,11 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test Jacobian
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.t)
+                traction = element.createElementTraction(
+                    self.faceIndex, self.trac_vec, self.tDVNums
+                )
                 fail = elements.TestElementJacobian(
-                    force,
+                    traction,
                     self.elem_index,
                     self.time,
                     self.xpts,
@@ -105,10 +108,12 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test adjoint residual-dvsens product
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.t)
-                dvs = element.getDesignVars(self.elem_index)
+                traction = element.createElementTraction(
+                    self.faceIndex, self.trac_vec, self.tDVNums
+                )
+                dvs = traction.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(
-                    force,
+                    traction,
                     self.elem_index,
                     self.time,
                     self.xpts,
@@ -127,9 +132,11 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and test adjoint residual-xptsens product
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.t)
+                traction = element.createElementTraction(
+                    self.faceIndex, self.trac_vec, self.tDVNums
+                )
                 fail = elements.TestAdjResXptProduct(
-                    force,
+                    traction,
                     self.elem_index,
                     self.time,
                     self.xpts,
@@ -147,12 +154,14 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of shell element class and element matrix inner product sens
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.t)
-                dvs = element.getDesignVars(self.elem_index)
+                traction = element.createElementTraction(
+                    self.faceIndex, self.trac_vec, self.tDVNums
+                )
+                dvs = traction.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
                         fail = elements.TestElementMatDVSens(
-                            force,
+                            traction,
                             matrix_type,
                             self.elem_index,
                             self.time,
@@ -170,9 +179,11 @@ class ElementTest(unittest.TestCase):
         # Loop through every combination of model and basis class and test element matrix inner product sens
         for element in self.elements:
             with self.subTest(element=element):
-                force = element.createElementInertialForce(self.t)
+                traction = element.createElementTraction(
+                    self.faceIndex, self.trac_vec, self.tDVNums
+                )
                 fail = elements.TestElementMatSVSens(
-                    force,
+                    traction,
                     TACS.GEOMETRIC_STIFFNESS_MATRIX,
                     self.elem_index,
                     self.time,
