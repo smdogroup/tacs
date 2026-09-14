@@ -1,6 +1,7 @@
 #ifndef TACS_BEAM_ELEMENT_H
 #define TACS_BEAM_ELEMENT_H
 
+#include "TACSA2DUtilities.h"
 #include "TACSBeamCentrifugalForce.h"
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
@@ -14,7 +15,6 @@
 #include "TACSElementAlgebra.h"
 #include "TACSElementTypes.h"
 #include "TACSGaussQuadrature.h"
-#include "a2d.h"
 
 /*
   The position in the beam is parametrized using the coordinates d =
@@ -301,7 +301,7 @@ void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -328,79 +328,89 @@ void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
     // The transformation to the local beam coordinates
-    A2D::Mat3x3 T;
+    A2D::Mat<TacsScalar, 3, 3> T;
 
     // Parametric location
-    A2D::Vec3 X0;
+    A2D::Vec<TacsScalar, 3> X0;
 
     // Tangent to the beam
-    A2D::Vec3 X0xi;
+    A2D::Vec<TacsScalar, 3> X0xi;
 
     // Interpolated normal directions
-    A2D::Vec3 n1, n2;
+    A2D::Vec<TacsScalar, 3> n1, n2;
 
     // Derivatives of the interpolated normal directions
-    A2D::Vec3 n1xi, n2xi;
+    A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
     // The values of the director fields and their derivatives
-    A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
+    A2D::Vec<TacsScalar, 3> u0xi, d01, d02, d01xi, d02xi;
 
     // Interpolate the solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-    basis::template interpFields<3, 3>(pt, d1, d01.x);
-    basis::template interpFields<3, 3>(pt, d2, d02.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                       A2D::get_data(u0xi));
+    basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+    basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+    basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
     // Interpolate the geometry fields
-    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-    basis::template interpFields<3, 3>(pt, fn1, n1.x);
-    basis::template interpFields<3, 3>(pt, fn2, n2.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+    basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+    basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
     // Compute the transformation at the quadrature point
-    transform->computeTransform(X0xi.x, T.A);
+    transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
     // Compute the inverse
-    A2D::Mat3x3 Xd, Xdinv;
-    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+    A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+    A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+    A2D::MatInv(Xd, Xdinv);
 
     // Compute the determinant of the transform
-    A2D::Scalar detXd;
-    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+    TacsScalar detXd;
+    A2D::MatDet(Xd, detXd);
+    detXd *= weight;
 
     // Compute XdinvT = Xdinv * T
-    A2D::Mat3x3 XdinvT;
-    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+    A2D::Mat<TacsScalar, 3, 3> XdinvT;
+    A2D::MatMatMult(Xdinv, T, XdinvT);
 
     // Assemble u0d
-    A2D::Mat3x3 u0d;
-    A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
+    A2D::Mat<TacsScalar, 3, 3> u0d;
+    A2D::MatFromThreeVec(u0xi, d01, d02, u0d);
 
     // Compute u0x = T^{T} * u0d * XdinvT
-    A2D::Mat3x3 u0dXdinvT, u0x;
-    A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-    A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+    A2D::Mat<TacsScalar, 3, 3> u0dXdinvT, u0x;
+    A2D::MatMatMult(u0d, XdinvT, u0dXdinvT);
+    A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                               u0x);
 
-    // Compute s0, sz1 and sz2
-    A2D::Scalar s0, sz1, sz2;
-    A2D::Vec3 e1(1.0, 0.0, 0.0);
-    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+    // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+    // and sz2 = e1^{T} * Xdinv * n2xi
+    const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+    A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+    TacsScalar s0, sz1, sz2;
+    A2D::MatVecMult(XdinvT, e1, ts0);
+    A2D::VecDot(e1, ts0, s0);
+    A2D::MatVecMult(Xdinv, n1xi, tsz1);
+    A2D::VecDot(e1, tsz1, sz1);
+    A2D::MatVecMult(Xdinv, n2xi, tsz2);
+    A2D::VecDot(e1, tsz2, sz2);
 
     // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-    A2D::Vec3 d1t, d1x;
-    A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-    A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+    A2D::Vec<TacsScalar, 3> d1t, d1s, d1x;
+    A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s);
+    A2D::VecScale(s0, d1s, d1x);
 
     // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-    A2D::Vec3 d2t, d2x;
-    A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-    A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+    A2D::Vec<TacsScalar, 3> d2t, d2s, d2x;
+    A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s);
+    A2D::VecScale(s0, d2s, d2x);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2];  // The components of the tying strain
@@ -408,44 +418,45 @@ void TACSBeamElement<quadrature, basis, director, model>::computeEnergies(
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2];
-    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+    e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+    e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
     // Compute the set of strain components
     TacsScalar e[6];  // The components of the strain
-    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+    model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x),
+                      A2D::get_data(d2x), e0ty, e);
 
     // Compute the corresponding stresses
     TacsScalar s[6];
-    con->evalStress(elemIndex, pt, X0.x, e, s);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
 
-    Ue += 0.5 * detXd.value *
+    Ue += 0.5 * detXd *
           (s[0] * e[0] + s[1] * e[1] + s[2] * e[2] + s[3] * e[3] + s[4] * e[4] +
            s[5] * e[5]);
 
     // Evaluate the velocities
-    A2D::Vec3 u0dot, d01dot, d02dot;
-    basis::template interpFields<vars_per_node, 3>(pt, dvars, u0dot.x);
-    basis::template interpFields<3, 3>(pt, d1dot, d01dot.x);
-    basis::template interpFields<3, 3>(pt, d2dot, d02dot.x);
+    A2D::Vec<TacsScalar, 3> u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, dvars,
+                                                   A2D::get_data(u0dot));
+    basis::template interpFields<3, 3>(pt, d1dot, A2D::get_data(d01dot));
+    basis::template interpFields<3, 3>(pt, d2dot, A2D::get_data(d02dot));
 
     // dot{u} = \dot{u0} + z1 * dot{d1} + z2 * dot{d2}
-    A2D::Scalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
-    A2D::Vec3Dot u0ddot(u0dot, u0dot, u0d0);
-    A2D::Vec3Dot u0d1dot(u0dot, d01dot, u0d10);
-    A2D::Vec3Dot u0d2dot(u0dot, d02dot, u0d20);
-    A2D::Vec3Dot d1d1dot(d01dot, d01dot, d1d10);
-    A2D::Vec3Dot d2d2dot(d02dot, d02dot, d2d20);
-    A2D::Vec3Dot d2d1dot(d01dot, d02dot, d1d20);
+    TacsScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    A2D::VecDot(u0dot, u0dot, u0d0);
+    A2D::VecDot(u0dot, d01dot, u0d10);
+    A2D::VecDot(u0dot, d02dot, u0d20);
+    A2D::VecDot(d01dot, d01dot, d1d10);
+    A2D::VecDot(d02dot, d02dot, d2d20);
+    A2D::VecDot(d01dot, d02dot, d1d20);
 
     // Evaluate the mass moments
     TacsScalar rho[6];
-    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+    con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), rho);
 
-    Te += 0.5 * detXd.value *
-          (rho[0] * u0d0.value + 2.0 * rho[1] * u0d10.value +
-           2.0 * rho[2] * u0d20.value + rho[3] * d1d10.value +
-           rho[4] * d2d20.value + 2.0 * rho[5] * d1d20.value);
+    Te += 0.5 * detXd *
+          (rho[0] * u0d0 + 2.0 * rho[1] * u0d10 + 2.0 * rho[2] * u0d20 +
+           rho[3] * d1d10 + rho[4] * d2d20 + 2.0 * rho[5] * d1d20);
   }
 
   *Telem = Te;
@@ -463,7 +474,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -499,79 +510,84 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
     // The transformation to the local beam coordinates
-    A2D::Mat3x3 T;
+    A2D::Mat<TacsScalar, 3, 3> T;
 
     // Parametric location
-    A2D::Vec3 X0;
+    A2D::Vec<TacsScalar, 3> X0;
 
     // Tangent to the beam
-    A2D::Vec3 X0xi;
+    A2D::Vec<TacsScalar, 3> X0xi;
 
     // Interpolated normal directions
-    A2D::Vec3 n1, n2;
+    A2D::Vec<TacsScalar, 3> n1, n2;
 
     // Derivatives of the interpolated normal directions
-    A2D::Vec3 n1xi, n2xi;
+    A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
     // The values of the director fields and their derivatives
-    A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0xi, d01, d02, d01xi, d02xi;
 
     // Interpolate the solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-    basis::template interpFields<3, 3>(pt, d1, d01.x);
-    basis::template interpFields<3, 3>(pt, d2, d02.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                       A2D::get_data(u0xi));
+    basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+    basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+    basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
     // Interpolate the geometry fields
-    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-    basis::template interpFields<3, 3>(pt, fn1, n1.x);
-    basis::template interpFields<3, 3>(pt, fn2, n2.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+    basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+    basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
     // Compute the transformation at the quadrature point
-    transform->computeTransform(X0xi.x, T.A);
+    transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
     // Compute the inverse
-    A2D::Mat3x3 Xd, Xdinv;
-    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+    A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+    A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+    A2D::MatInv(Xd, Xdinv);
 
     // Compute the determinant of the transform
-    A2D::Scalar detXd;
-    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+    TacsScalar detXd;
+    A2D::MatDet(Xd, detXd);
+    detXd *= weight;
 
     // Compute XdinvT = Xdinv * T
-    A2D::Mat3x3 XdinvT;
-    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+    A2D::Mat<TacsScalar, 3, 3> XdinvT;
+    A2D::MatMatMult(Xdinv, T, XdinvT);
 
-    // Assemble u0d
-    A2D::ADMat3x3 u0d;
-    A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
+    // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+    // and sz2 = e1^{T} * Xdinv * n2xi
+    const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+    A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+    TacsScalar s0, sz1, sz2;
+    A2D::MatVecMult(XdinvT, e1, ts0);
+    A2D::VecDot(e1, ts0, s0);
+    A2D::MatVecMult(Xdinv, n1xi, tsz1);
+    A2D::VecDot(e1, tsz1, sz1);
+    A2D::MatVecMult(Xdinv, n2xi, tsz2);
+    A2D::VecDot(e1, tsz2, sz2);
 
-    // Compute u0x = T^{T} * u0d * XdinvT
-    A2D::ADMat3x3 u0dXdinvT, u0x;
-    A2D::ADMat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-    A2D::MatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
-
-    // Compute s0, sz1 and sz2
-    A2D::Scalar s0, sz1, sz2;
-    A2D::Vec3 e1(1.0, 0.0, 0.0);
-    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
-
-    // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-    A2D::ADVec3 d1t, d1x;
-    A2D::ADVec3ADVecScalarAxpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-    A2D::MatTrans3x3ADVecMultScale matmultd1x(s0, T, d1t, d1x);
-
-    // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-    A2D::ADVec3 d2t, d2x;
-    A2D::ADVec3ADVecScalarAxpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-    A2D::MatTrans3x3ADVecMultScale matmultd2x(s0, T, d2t, d2x);
+    // Assemble u0d and compute u0x = T^{T} * u0d * XdinvT,
+    // d1x = s0 * T^{T} * (d1xi - sz1 * u0xi) and
+    // d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> u0d, u0dXdinvT, u0x;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> d1t, d1s, d1x, d2t, d2s, d2x;
+    auto strain_stack = A2D::MakeStack(
+        A2D::MatFromThreeVec(u0xi, d01, d02, u0d),
+        A2D::MatMatMult(u0d, XdinvT, u0dXdinvT),
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                                   u0x),
+        A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s),
+        A2D::VecScale(s0, d1s, d1x),
+        A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s),
+        A2D::VecScale(s0, d2s, d2x));
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2];  // The components of the tying strain
@@ -579,84 +595,83 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
 
     // // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], de0ty[2];
-    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+    e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+    e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
     // Evaluate the strain
     TacsScalar e[6];
-    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+    model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x),
+                      A2D::get_data(d2x), e0ty, e);
 
     // Compute the corresponding stresses
     TacsScalar s[6];
-    con->evalStress(elemIndex, pt, X0.x, e, s);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
 
     // Evaluate the strain and strain derivatives from the
-    model::evalStrainSens(detXd.value, s, u0x.A, d1x.x, d2x.x, e0ty, u0x.Ad,
-                          d1x.xd, d2x.xd, de0ty);
+    model::evalStrainSens(detXd, s, A2D::get_data(u0x), A2D::get_data(d1x),
+                          A2D::get_data(d2x), e0ty, A2D::get_data(u0x.bvalue()),
+                          A2D::get_data(d1x.bvalue()),
+                          A2D::get_data(d2x.bvalue()), de0ty);
 
     // Convert the contributions to the tying strain
     TacsScalar dgty[2];
-    dgty[0] = 2.0 * XdinvT.A[0] * de0ty[0];
-    dgty[1] = 2.0 * XdinvT.A[0] * de0ty[1];
+    dgty[0] = 2.0 * A2D::get_data(XdinvT)[0] * de0ty[0];
+    dgty[1] = 2.0 * A2D::get_data(XdinvT)[0] * de0ty[1];
 
-    matmultd2x.reverse();
-    axpyd2t.reverse();
-    matmultd1x.reverse();
-    axpyd1t.reverse();
-    multu0x.reverse();
-    multu0d.reverse();
-    assembleu0d.reverse();
+    strain_stack.reverse();
 
     // Add the residual contributions back to the element
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, u0xi.xd,
-                                                                   res);
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(
+        pt, A2D::get_data(u0xi.bvalue()), res);
 
     // Add the constributions back to the derivative
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xd, d1d);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xd, d2d);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xd, d1d);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xd, d2d);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01.bvalue()), d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02.bvalue()), d2d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d01xi.bvalue()), d1d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d02xi.bvalue()), d2d);
 
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, dgty, dety);
 
     // Evaluate the accelerations
-    A2D::ADVec3 u0ddot, d01ddot, d02ddot;
-    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot.x);
-    basis::template interpFields<3, 3>(pt, d1ddot, d01ddot.x);
-    basis::template interpFields<3, 3>(pt, d2ddot, d02ddot.x);
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0ddot, d01ddot, d02ddot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars,
+                                                   A2D::get_data(u0ddot));
+    basis::template interpFields<3, 3>(pt, d1ddot, A2D::get_data(d01ddot));
+    basis::template interpFields<3, 3>(pt, d2ddot, A2D::get_data(d02ddot));
 
     // dot{u}(xi, z1, z2) = dot{u0} + z1 * dot{d1} + z2 * dot{d2}
-    A2D::ADScalar u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
-    A2D::ADVec3Dot u0ddot0(u0ddot, u0ddot, u0d0);
-    A2D::ADVec3Dot u0d1dot(u0ddot, d01ddot, u0d10);
-    A2D::ADVec3Dot u0d2dot(u0ddot, d02ddot, u0d20);
-    A2D::ADVec3Dot d1d1dot(d01ddot, d01ddot, d1d10);
-    A2D::ADVec3Dot d2d2dot(d02ddot, d02ddot, d2d20);
-    A2D::ADVec3Dot d2d1dot(d01ddot, d02ddot, d1d20);
+    A2D::ADObj<TacsScalar> u0d0, u0d10, u0d20, d1d10, d2d20, d1d20;
+    auto accel_stack = A2D::MakeStack(A2D::VecDot(u0ddot, u0ddot, u0d0),
+                                      A2D::VecDot(u0ddot, d01ddot, u0d10),
+                                      A2D::VecDot(u0ddot, d02ddot, u0d20),
+                                      A2D::VecDot(d01ddot, d01ddot, d1d10),
+                                      A2D::VecDot(d02ddot, d02ddot, d2d20),
+                                      A2D::VecDot(d01ddot, d02ddot, d1d20));
 
     // Evaluate the mass moments
     TacsScalar rho[6];
-    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+    con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), rho);
 
-    u0d0.valued = 0.5 * rho[0] * detXd.value;
-    u0d10.valued = rho[1] * detXd.value;
-    u0d20.valued = rho[2] * detXd.value;
-    d1d10.valued = 0.5 * rho[3] * detXd.value;
-    d2d20.valued = 0.5 * rho[4] * detXd.value;
-    d1d20.valued = rho[5] * detXd.value;
+    u0d0.bvalue() = 0.5 * rho[0] * detXd;
+    u0d10.bvalue() = rho[1] * detXd;
+    u0d20.bvalue() = rho[2] * detXd;
+    d1d10.bvalue() = 0.5 * rho[3] * detXd;
+    d2d20.bvalue() = 0.5 * rho[4] * detXd;
+    d1d20.bvalue() = rho[5] * detXd;
 
-    d2d1dot.reverse();
-    d2d2dot.reverse();
-    d1d1dot.reverse();
-    u0d2dot.reverse();
-    u0d1dot.reverse();
-    u0ddot0.reverse();
+    accel_stack.reverse();
 
-    basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, u0ddot.xd,
-                                                               res);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddot.xd, d1d);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddot.xd, d2d);
+    basis::template addInterpFieldsTranspose<vars_per_node, 3>(
+        pt, A2D::get_data(u0ddot.bvalue()), res);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01ddot.bvalue()), d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02ddot.bvalue()), d2d);
   }
 
   // Add the contributions from the tying strain
@@ -710,7 +725,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResProduct(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -738,103 +753,117 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResProduct(
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
     // The transformation to the local beam coordinates
-    A2D::Mat3x3 T;
+    A2D::Mat<TacsScalar, 3, 3> T;
 
     // Parametric location
-    A2D::Vec3 X0;
+    A2D::Vec<TacsScalar, 3> X0;
 
     // Tangent to the beam
-    A2D::Vec3 X0xi;
+    A2D::Vec<TacsScalar, 3> X0xi;
 
     // Interpolated normal directions
-    A2D::Vec3 n1, n2;
+    A2D::Vec<TacsScalar, 3> n1, n2;
 
     // Derivatives of the interpolated normal directions
-    A2D::Vec3 n1xi, n2xi;
+    A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
     // The values of the director fields and their derivatives
-    A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
-    A2D::Vec3 u0xipsi, d01psi, d02psi, d01xipsi, d02xipsi;
+    A2D::Vec<TacsScalar, 3> u0xi, d01, d02, d01xi, d02xi;
+    A2D::Vec<TacsScalar, 3> u0xipsi, d01psi, d02psi, d01xipsi, d02xipsi;
 
     // Interpolate the solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-    basis::template interpFields<3, 3>(pt, d1, d01.x);
-    basis::template interpFields<3, 3>(pt, d2, d02.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                       A2D::get_data(u0xi));
+    basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+    basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+    basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
     // Interpolate the adjoint solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi, u0xipsi.x);
-    basis::template interpFields<3, 3>(pt, d1psi, d01psi.x);
-    basis::template interpFields<3, 3>(pt, d2psi, d02psi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1psi, d01xipsi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2psi, d02xipsi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi,
+                                                       A2D::get_data(u0xipsi));
+    basis::template interpFields<3, 3>(pt, d1psi, A2D::get_data(d01psi));
+    basis::template interpFields<3, 3>(pt, d2psi, A2D::get_data(d02psi));
+    basis::template interpFieldsGrad<3, 3>(pt, d1psi, A2D::get_data(d01xipsi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2psi, A2D::get_data(d02xipsi));
 
     // Interpolate the geometry fields
-    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-    basis::template interpFields<3, 3>(pt, fn1, n1.x);
-    basis::template interpFields<3, 3>(pt, fn2, n2.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+    basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+    basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
     // Compute the transformation at the quadrature point
-    transform->computeTransform(X0xi.x, T.A);
+    transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
     // Compute the inverse
-    A2D::Mat3x3 Xd, Xdinv;
-    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+    A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+    A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+    A2D::MatInv(Xd, Xdinv);
 
     // Compute the determinant of the transform
-    A2D::Scalar detXd;
-    A2D::Mat3x3Det computedetXd(weight, Xd, detXd);
+    TacsScalar detXd;
+    A2D::MatDet(Xd, detXd);
+    detXd *= weight;
 
     // Compute XdinvT = Xdinv * T
-    A2D::Mat3x3 XdinvT;
-    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+    A2D::Mat<TacsScalar, 3, 3> XdinvT;
+    A2D::MatMatMult(Xdinv, T, XdinvT);
 
     // Assemble u0d and u0psi
-    A2D::Mat3x3 u0d, u0dpsi;
-    A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
-    A2D::Mat3x3FromThreeVec3 assembleu0dpsi(u0xipsi, d01psi, d02psi, u0dpsi);
+    A2D::Mat<TacsScalar, 3, 3> u0d, u0dpsi;
+    A2D::MatFromThreeVec(u0xi, d01, d02, u0d);
+    A2D::MatFromThreeVec(u0xipsi, d01psi, d02psi, u0dpsi);
 
     // Compute u0x = T^{T} * u0d * XdinvT
-    A2D::Mat3x3 u0dXdinvT, u0x;
-    A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-    A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+    A2D::Mat<TacsScalar, 3, 3> u0dXdinvT, u0x;
+    A2D::MatMatMult(u0d, XdinvT, u0dXdinvT);
+    A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                               u0x);
 
     // Compute u0xpsi = ^{T} * u0dpsi * XdinvT
-    A2D::Mat3x3 u0dXdinvTpsi, u0xpsi;
-    A2D::Mat3x3MatMult multu0dpsi(u0dpsi, XdinvT, u0dXdinvTpsi);
-    A2D::MatTrans3x3MatMult multu0xpsi(T, u0dXdinvTpsi, u0xpsi);
+    A2D::Mat<TacsScalar, 3, 3> u0dXdinvTpsi, u0xpsi;
+    A2D::MatMatMult(u0dpsi, XdinvT, u0dXdinvTpsi);
+    A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvTpsi,
+                                                               u0xpsi);
 
-    // Compute s0, sz1 and sz2
-    A2D::Scalar s0, sz1, sz2;
-    A2D::Vec3 e1(1.0, 0.0, 0.0);
-    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+    // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+    // and sz2 = e1^{T} * Xdinv * n2xi
+    const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+    A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+    TacsScalar s0, sz1, sz2;
+    A2D::MatVecMult(XdinvT, e1, ts0);
+    A2D::VecDot(e1, ts0, s0);
+    A2D::MatVecMult(Xdinv, n1xi, tsz1);
+    A2D::VecDot(e1, tsz1, sz1);
+    A2D::MatVecMult(Xdinv, n2xi, tsz2);
+    A2D::VecDot(e1, tsz2, sz2);
 
     // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-    A2D::Vec3 d1t, d1x;
-    A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-    A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+    A2D::Vec<TacsScalar, 3> d1t, d1s, d1x;
+    A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s);
+    A2D::VecScale(s0, d1s, d1x);
 
     // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-    A2D::Vec3 d2t, d2x;
-    A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-    A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+    A2D::Vec<TacsScalar, 3> d2t, d2s, d2x;
+    A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s);
+    A2D::VecScale(s0, d2s, d2x);
 
     // Compute d1xpsi = s0 * T^{T} * (d1xipsi - sz1 * u0xipsi)
-    A2D::Vec3 d1tpsi, d1xpsi;
-    A2D::Vec3Axpy axpyd1tpsi(-1.0, sz1, u0xipsi, d01xipsi, d1tpsi);
-    A2D::MatTrans3x3VecMultScale matmultd1xpsi(s0, T, d1tpsi, d1xpsi);
+    A2D::Vec<TacsScalar, 3> d1tpsi, d1spsi, d1xpsi;
+    A2D::VecSum(-sz1, u0xipsi, TacsScalar(1.0), d01xipsi, d1tpsi);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1tpsi, d1spsi);
+    A2D::VecScale(s0, d1spsi, d1xpsi);
 
     // Compute d2xpsi = s0 * T^{T} * (d2xipsi - sz2 * u0xipsi)
-    A2D::Vec3 d2tpsi, d2xpsi;
-    A2D::Vec3Axpy axpyd2tpsi(-1.0, sz2, u0xipsi, d02xipsi, d2tpsi);
-    A2D::MatTrans3x3VecMultScale matmultd2xpsi(s0, T, d2tpsi, d2xpsi);
+    A2D::Vec<TacsScalar, 3> d2tpsi, d2spsi, d2xpsi;
+    A2D::VecSum(-sz2, u0xipsi, TacsScalar(1.0), d02xipsi, d2tpsi);
+    A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2tpsi, d2spsi);
+    A2D::VecScale(s0, d2spsi, d2xpsi);
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2], gtypsi[2];  // The components of the tying strain
@@ -843,56 +872,61 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResProduct(
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], e0typsi[2];
-    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
-    e0typsi[0] = 2.0 * XdinvT.A[0] * gtypsi[0];
-    e0typsi[1] = 2.0 * XdinvT.A[0] * gtypsi[1];
+    e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+    e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
+    e0typsi[0] = 2.0 * A2D::get_data(XdinvT)[0] * gtypsi[0];
+    e0typsi[1] = 2.0 * A2D::get_data(XdinvT)[0] * gtypsi[1];
 
     // // Evaluate the strain and the adjoint strain
     TacsScalar e[6], epsi[6];
-    model::evalStrainDeriv(u0x.A, d1x.x, d2x.x, e0ty, u0xpsi.A, d1xpsi.x,
-                           d2xpsi.x, e0typsi, e, epsi);
+    model::evalStrainDeriv(A2D::get_data(u0x), A2D::get_data(d1x),
+                           A2D::get_data(d2x), e0ty, A2D::get_data(u0xpsi),
+                           A2D::get_data(d1xpsi), A2D::get_data(d2xpsi),
+                           e0typsi, e, epsi);
 
     // Add the product of the derivative of the stress
-    con->addStressDVSens(elemIndex, scale * detXd.value, pt, X0.x, e, epsi,
-                         dvLen, dfdx);
+    con->addStressDVSens(elemIndex, scale * detXd, pt, A2D::get_data(X0), e,
+                         epsi, dvLen, dfdx);
 
     // Evaluate the accelerations
-    A2D::Vec3 u0dot, d01dot, d02dot;
-    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0dot.x);
-    basis::template interpFields<3, 3>(pt, d1ddot, d01dot.x);
-    basis::template interpFields<3, 3>(pt, d2ddot, d02dot.x);
+    A2D::Vec<TacsScalar, 3> u0dot, d01dot, d02dot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars,
+                                                   A2D::get_data(u0dot));
+    basis::template interpFields<3, 3>(pt, d1ddot, A2D::get_data(d01dot));
+    basis::template interpFields<3, 3>(pt, d2ddot, A2D::get_data(d02dot));
 
-    A2D::Vec3 u0dotpsi, d01dotpsi, d02dotpsi;
-    basis::template interpFields<vars_per_node, 3>(pt, psi, u0dotpsi.x);
-    basis::template interpFields<3, 3>(pt, d1psi, d01dotpsi.x);
-    basis::template interpFields<3, 3>(pt, d2psi, d02dotpsi.x);
+    A2D::Vec<TacsScalar, 3> u0dotpsi, d01dotpsi, d02dotpsi;
+    basis::template interpFields<vars_per_node, 3>(pt, psi,
+                                                   A2D::get_data(u0dotpsi));
+    basis::template interpFields<3, 3>(pt, d1psi, A2D::get_data(d01dotpsi));
+    basis::template interpFields<3, 3>(pt, d2psi, A2D::get_data(d02dotpsi));
 
     // Compute the dot-products
-    A2D::Scalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
-    A2D::Vec3Dot dot1(u0dot, u0dotpsi, u0psi);
-    A2D::Vec3Dot dot2(u0dotpsi, d01dot, u0psid1);
-    A2D::Vec3Dot dot3(u0dot, d01dotpsi, u0d1psi);
-    A2D::Vec3Dot dot4(u0dotpsi, d02dot, u0psid2);
-    A2D::Vec3Dot dot5(u0dot, d02dotpsi, u0d2psi);
+    TacsScalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
+    A2D::VecDot(u0dot, u0dotpsi, u0psi);
+    A2D::VecDot(u0dotpsi, d01dot, u0psid1);
+    A2D::VecDot(u0dot, d01dotpsi, u0d1psi);
+    A2D::VecDot(u0dotpsi, d02dot, u0psid2);
+    A2D::VecDot(u0dot, d02dotpsi, u0d2psi);
 
-    A2D::Scalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
-    A2D::Vec3Dot dot7(d01dot, d01dotpsi, d1d1psi);
-    A2D::Vec3Dot dot8(d02dot, d02dotpsi, d2d2psi);
-    A2D::Vec3Dot dot9(d01dotpsi, d02dot, d1psid2);
-    A2D::Vec3Dot dot10(d01dot, d02dotpsi, d1d2psi);
+    TacsScalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
+    A2D::VecDot(d01dot, d01dotpsi, d1d1psi);
+    A2D::VecDot(d02dot, d02dotpsi, d2d2psi);
+    A2D::VecDot(d01dotpsi, d02dot, d1psid2);
+    A2D::VecDot(d01dot, d02dotpsi, d1d2psi);
 
     // Add derivatives from the mass moments
     TacsScalar rho[6];
-    TacsScalar alpha = scale * detXd.value;
-    rho[0] = alpha * u0psi.value;
-    rho[1] = alpha * (u0psid1.value + u0d1psi.value);
-    rho[2] = alpha * (u0psid2.value + u0d2psi.value);
-    rho[3] = alpha * d1d1psi.value;
-    rho[4] = alpha * d2d2psi.value;
-    rho[5] = alpha * (d1psid2.value + d1d2psi.value);
+    TacsScalar alpha = scale * detXd;
+    rho[0] = alpha * u0psi;
+    rho[1] = alpha * (u0psid1 + u0d1psi);
+    rho[2] = alpha * (u0psid2 + u0d2psi);
+    rho[3] = alpha * d1d1psi;
+    rho[4] = alpha * d2d2psi;
+    rho[5] = alpha * (d1psid2 + d1d2psi);
 
-    con->addMassMomentsDVSens(elemIndex, pt, X0.x, rho, dvLen, dfdx);
+    con->addMassMomentsDVSens(elemIndex, pt, A2D::get_data(X0), rho, dvLen,
+                              dfdx);
   }
 }
 
@@ -905,7 +939,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
   const int nquad = quadrature::getNumQuadraturePoints();
 
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -950,104 +984,99 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
     double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
     // The transformation to the local beam coordinates
-    A2D::ADMat3x3 T;
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> T;
 
     // Parametric location
-    A2D::ADVec3 X0;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> X0;
 
     // Tangent to the beam
-    A2D::ADVec3 X0xi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> X0xi;
 
     // Interpolated normal directions
-    A2D::ADVec3 n1, n2;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> n1, n2;
 
     // Derivatives of the interpolated normal directions
-    A2D::ADVec3 n1xi, n2xi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> n1xi, n2xi;
 
     // The values of the director fields and their derivatives
-    A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
-    A2D::ADVec3 u0xipsi, d01psi, d02psi, d01xipsi, d02xipsi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0xi, d01, d02, d01xi, d02xi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0xipsi, d01psi, d02psi, d01xipsi,
+        d02xipsi;
 
     // Interpolate the solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-    basis::template interpFields<3, 3>(pt, d1, d01.x);
-    basis::template interpFields<3, 3>(pt, d2, d02.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                       A2D::get_data(u0xi));
+    basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+    basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+    basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
     // Interpolate the adjoint solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi, u0xipsi.x);
-    basis::template interpFields<3, 3>(pt, d1psi, d01psi.x);
-    basis::template interpFields<3, 3>(pt, d2psi, d02psi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1psi, d01xipsi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2psi, d02xipsi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, psi,
+                                                       A2D::get_data(u0xipsi));
+    basis::template interpFields<3, 3>(pt, d1psi, A2D::get_data(d01psi));
+    basis::template interpFields<3, 3>(pt, d2psi, A2D::get_data(d02psi));
+    basis::template interpFieldsGrad<3, 3>(pt, d1psi, A2D::get_data(d01xipsi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2psi, A2D::get_data(d02xipsi));
 
     // Interpolate the geometry fields
-    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-    basis::template interpFields<3, 3>(pt, fn1, n1.x);
-    basis::template interpFields<3, 3>(pt, fn2, n2.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+    basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+    basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
     // Compute the transformation at the quadrature point
-    transform->computeTransform(X0xi.x, T.A);
+    transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
-    // Compute the inverse
-    A2D::ADMat3x3 Xd, Xdinv;
-    A2D::ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
-    A2D::ADMat3x3Inverse invXd(Xd, Xdinv);
+    // Assemble Xd, compute its inverse and (weighted) determinant, compute
+    // XdinvT = Xdinv * T, u0x = T^{T} * u0d * XdinvT (and the psi
+    // counterpart), the scale factors s0 = e1^{T} * XdinvT * e1,
+    // sz1 = e1^{T} * Xdinv * n1xi and sz2 = e1^{T} * Xdinv * n2xi, and
+    // dkx = s0 * T^{T} * (dkxi - szk * u0xi) for k = 1, 2 (and the psi
+    // counterparts)
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> Xd, Xdinv, XdinvT;
+    A2D::ADObj<TacsScalar> detXd0, detXd;
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> u0d, u0dpsi, u0dXdinvT, u0x;
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> u0dXdinvTpsi, u0xpsi;
+    const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+    A2D::Vec<TacsScalar, 3> e1(e1_data);
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> ts0, tsz1, tsz2;
+    A2D::ADObj<TacsScalar> s0, sz1, sz2;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> w1, d1t, d1s, d1x;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> w2, d2t, d2s, d2x;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> w1psi, d1tpsi, d1spsi, d1xpsi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> w2psi, d2tpsi, d2spsi, d2xpsi;
 
-    // Compute the determinant of the transform
-    A2D::ADScalar detXd;
-    A2D::ADMat3x3Det computedetXd(weight, Xd, detXd);
-
-    // Compute XdinvT = Xdinv * T
-    A2D::ADMat3x3 XdinvT;
-    A2D::ADMat3x3ADMatMult multXdinvT(Xdinv, T, XdinvT);
-
-    // Assemble u0d and u0psi
-    A2D::ADMat3x3 u0d, u0dpsi;
-    A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
-    A2D::ADMat3x3FromThreeADVec3 assembleu0dpsi(u0xipsi, d01psi, d02psi,
-                                                u0dpsi);
-
-    // Compute u0x = T^{T} * u0d * XdinvT
-    A2D::ADMat3x3 u0dXdinvT, u0x;
-    A2D::ADMat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
-    A2D::ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
-
-    // Compute u0xpsi = ^{T} * u0dpsi * XdinvT
-    A2D::ADMat3x3 u0dXdinvTpsi, u0xpsi;
-    A2D::ADMat3x3ADMatMult multu0dpsi(u0dpsi, XdinvT, u0dXdinvTpsi);
-    A2D::ADMatTrans3x3ADMatMult multu0xpsi(T, u0dXdinvTpsi, u0xpsi);
-
-    // Compute s0, sz1 and sz2
-    A2D::ADScalar s0, sz1, sz2;
-    A2D::Vec3 e1(1.0, 0.0, 0.0);
-    A2D::ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::ADMat3x3VecADVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
-
-    // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-    A2D::ADVec3 d1t, d1x;
-    A2D::ADVec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-    A2D::ADMatTrans3x3ADVecMultADScale matmultd1x(s0, T, d1t, d1x);
-
-    // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-    A2D::ADVec3 d2t, d2x;
-    A2D::ADVec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-    A2D::ADMatTrans3x3ADVecMultADScale matmultd2x(s0, T, d2t, d2x);
-
-    // Compute d1xpsi = s0 * T^{T} * (d1xipsi - sz1 * u0xipsi)
-    A2D::ADVec3 d1tpsi, d1xpsi;
-    A2D::ADVec3Axpy axpyd1tpsi(-1.0, sz1, u0xipsi, d01xipsi, d1tpsi);
-    A2D::ADMatTrans3x3ADVecMultADScale matmultd1xpsi(s0, T, d1tpsi, d1xpsi);
-
-    // Compute d2xpsi = s0 * T^{T} * (d2xipsi - sz2 * u0xipsi)
-    A2D::ADVec3 d2tpsi, d2xpsi;
-    A2D::ADVec3Axpy axpyd2tpsi(-1.0, sz2, u0xipsi, d02xipsi, d2tpsi);
-    A2D::ADMatTrans3x3ADVecMultADScale matmultd2xpsi(s0, T, d2tpsi, d2xpsi);
+    auto strain_stack = A2D::MakeStack(
+        A2D::MatFromThreeVec(X0xi, n1, n2, Xd), A2D::MatInv(Xd, Xdinv),
+        A2D::MatDet(Xd, detXd0), A2D::Eval(detXd0 * weight, detXd),
+        A2D::MatMatMult(Xdinv, T, XdinvT),
+        A2D::MatFromThreeVec(u0xi, d01, d02, u0d),
+        A2D::MatFromThreeVec(u0xipsi, d01psi, d02psi, u0dpsi),
+        A2D::MatMatMult(u0d, XdinvT, u0dXdinvT),
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                                   u0x),
+        A2D::MatMatMult(u0dpsi, XdinvT, u0dXdinvTpsi),
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(
+            T, u0dXdinvTpsi, u0xpsi),
+        A2D::MatVecMult(XdinvT, e1, ts0), A2D::VecDot(e1, ts0, s0),
+        A2D::MatVecMult(Xdinv, n1xi, tsz1), A2D::VecDot(e1, tsz1, sz1),
+        A2D::MatVecMult(Xdinv, n2xi, tsz2), A2D::VecDot(e1, tsz2, sz2),
+        A2D::VecScale(sz1, u0xi, w1),
+        A2D::VecSum(TacsScalar(1.0), d01xi, TacsScalar(-1.0), w1, d1t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s),
+        A2D::VecScale(s0, d1s, d1x), A2D::VecScale(sz2, u0xi, w2),
+        A2D::VecSum(TacsScalar(1.0), d02xi, TacsScalar(-1.0), w2, d2t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s),
+        A2D::VecScale(s0, d2s, d2x), A2D::VecScale(sz1, u0xipsi, w1psi),
+        A2D::VecSum(TacsScalar(1.0), d01xipsi, TacsScalar(-1.0), w1psi, d1tpsi),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1tpsi, d1spsi),
+        A2D::VecScale(s0, d1spsi, d1xpsi), A2D::VecScale(sz2, u0xipsi, w2psi),
+        A2D::VecSum(TacsScalar(1.0), d02xipsi, TacsScalar(-1.0), w2psi, d2tpsi),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2tpsi, d2spsi),
+        A2D::VecScale(s0, d2spsi, d2xpsi));
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2], gtypsi[2];  // The components of the tying strain
@@ -1056,155 +1085,156 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
 
     // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2], e0typsi[2];
-    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
-    e0typsi[0] = 2.0 * XdinvT.A[0] * gtypsi[0];
-    e0typsi[1] = 2.0 * XdinvT.A[0] * gtypsi[1];
+    e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+    e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
+    e0typsi[0] = 2.0 * A2D::get_data(XdinvT)[0] * gtypsi[0];
+    e0typsi[1] = 2.0 * A2D::get_data(XdinvT)[0] * gtypsi[1];
 
     // // Evaluate the strain and the adjoint strain
     TacsScalar e[6], epsi[6];
-    model::evalStrainDeriv(u0x.A, d1x.x, d2x.x, e0ty, u0xpsi.A, d1xpsi.x,
-                           d2xpsi.x, e0typsi, e, epsi);
+    model::evalStrainDeriv(A2D::get_data(u0x), A2D::get_data(d1x),
+                           A2D::get_data(d2x), e0ty, A2D::get_data(u0xpsi),
+                           A2D::get_data(d1xpsi), A2D::get_data(d2xpsi),
+                           e0typsi, e, epsi);
 
     // Compute the stress due to the strain
     TacsScalar s[6];
-    con->evalStress(elemIndex, pt, X0.x, e, s);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
 
     // Compute the psioint stress - assuming a linear relationship for
     // stress/strain
     TacsScalar spsi[6];
-    con->evalStress(elemIndex, pt, X0.x, epsi, spsi);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), epsi, spsi);
 
     // Evaluate the sensitivities
     TacsScalar e0tyd[2], e0typsid[2];
-    model::evalStrainSens(scale * detXd.value, spsi, u0x.A, d1x.x, d2x.x, e0ty,
-                          u0x.Ad, d1x.xd, d2x.xd, e0tyd);
-    model::evalStrainSens(scale * detXd.value, s, u0x.A, d1x.x, d2x.x, e0ty,
-                          u0xpsi.Ad, d1xpsi.xd, d2xpsi.xd, e0typsid);
-    detXd.valued = scale * (e[0] * spsi[0] + e[1] * spsi[1] + e[2] * spsi[2] +
-                            e[3] * spsi[3] + e[4] * spsi[4] + e[5] * spsi[5]);
+    model::evalStrainSens(
+        scale * detXd.value(), spsi, A2D::get_data(u0x), A2D::get_data(d1x),
+        A2D::get_data(d2x), e0ty, A2D::get_data(u0x.bvalue()),
+        A2D::get_data(d1x.bvalue()), A2D::get_data(d2x.bvalue()), e0tyd);
+    model::evalStrainSens(scale * detXd.value(), s, A2D::get_data(u0x),
+                          A2D::get_data(d1x), A2D::get_data(d2x), e0ty,
+                          A2D::get_data(u0xpsi.bvalue()),
+                          A2D::get_data(d1xpsi.bvalue()),
+                          A2D::get_data(d2xpsi.bvalue()), e0typsid);
+    detXd.bvalue() = scale * (e[0] * spsi[0] + e[1] * spsi[1] + e[2] * spsi[2] +
+                              e[3] * spsi[3] + e[4] * spsi[4] + e[5] * spsi[5]);
 
     // Apply the tying strain transformation
     TacsScalar gtyd[2], gtypsid[2];
-    gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
-    gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
-    gtypsid[0] = 2.0 * XdinvT.A[0] * e0typsid[0];
-    gtypsid[1] = 2.0 * XdinvT.A[0] * e0typsid[1];
+    gtyd[0] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[0];
+    gtyd[1] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[1];
+    gtypsid[0] = 2.0 * A2D::get_data(XdinvT)[0] * e0typsid[0];
+    gtypsid[1] = 2.0 * A2D::get_data(XdinvT)[0] * e0typsid[1];
 
-    XdinvT.Ad[0] += 2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1] +
-                           e0typsid[0] * gtypsi[0] + e0typsid[1] * gtypsi[1]);
+    A2D::get_data(XdinvT.bvalue())[0] +=
+        2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1] + e0typsid[0] * gtypsi[0] +
+               e0typsid[1] * gtypsi[1]);
 
     // Evaluate the accelerations
-    A2D::ADVec3 u0ddot, d01ddot, d02ddot;
-    basis::template interpFields<vars_per_node, 3>(pt, ddvars, u0ddot.x);
-    basis::template interpFields<3, 3>(pt, d1ddot, d01ddot.x);
-    basis::template interpFields<3, 3>(pt, d2ddot, d02ddot.x);
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0ddot, d01ddot, d02ddot;
+    basis::template interpFields<vars_per_node, 3>(pt, ddvars,
+                                                   A2D::get_data(u0ddot));
+    basis::template interpFields<3, 3>(pt, d1ddot, A2D::get_data(d01ddot));
+    basis::template interpFields<3, 3>(pt, d2ddot, A2D::get_data(d02ddot));
 
-    A2D::ADVec3 u0ddotpsi, d01ddotpsi, d02ddotpsi;
-    basis::template interpFields<vars_per_node, 3>(pt, psi, u0ddotpsi.x);
-    basis::template interpFields<3, 3>(pt, d1psi, d01ddotpsi.x);
-    basis::template interpFields<3, 3>(pt, d2psi, d02ddotpsi.x);
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0ddotpsi, d01ddotpsi, d02ddotpsi;
+    basis::template interpFields<vars_per_node, 3>(pt, psi,
+                                                   A2D::get_data(u0ddotpsi));
+    basis::template interpFields<3, 3>(pt, d1psi, A2D::get_data(d01ddotpsi));
+    basis::template interpFields<3, 3>(pt, d2psi, A2D::get_data(d02ddotpsi));
 
     // Compute the dot-products
-    A2D::ADScalar u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
-    A2D::ADVec3Dot dot1(u0ddot, u0ddotpsi, u0psi);
-    A2D::ADVec3Dot dot2(u0ddotpsi, d01ddot, u0psid1);
-    A2D::ADVec3Dot dot3(u0ddot, d01ddotpsi, u0d1psi);
-    A2D::ADVec3Dot dot4(u0ddotpsi, d02ddot, u0psid2);
-    A2D::ADVec3Dot dot5(u0ddot, d02ddotpsi, u0d2psi);
-
-    A2D::ADScalar d1d1psi, d2d2psi, d1psid2, d1d2psi;
-    A2D::ADVec3Dot dot6(d01ddot, d01ddotpsi, d1d1psi);
-    A2D::ADVec3Dot dot7(d02ddot, d02ddotpsi, d2d2psi);
-    A2D::ADVec3Dot dot8(d01ddotpsi, d02ddot, d1psid2);
-    A2D::ADVec3Dot dot9(d01ddot, d02ddotpsi, d1d2psi);
+    A2D::ADObj<TacsScalar> u0psi, u0psid1, u0psid2, u0d1psi, u0d2psi;
+    A2D::ADObj<TacsScalar> d1d1psi, d2d2psi, d1psid2, d1d2psi;
+    auto accel_stack =
+        A2D::MakeStack(A2D::VecDot(u0ddot, u0ddotpsi, u0psi),
+                       A2D::VecDot(u0ddotpsi, d01ddot, u0psid1),
+                       A2D::VecDot(u0ddot, d01ddotpsi, u0d1psi),
+                       A2D::VecDot(u0ddotpsi, d02ddot, u0psid2),
+                       A2D::VecDot(u0ddot, d02ddotpsi, u0d2psi),
+                       A2D::VecDot(d01ddot, d01ddotpsi, d1d1psi),
+                       A2D::VecDot(d02ddot, d02ddotpsi, d2d2psi),
+                       A2D::VecDot(d01ddotpsi, d02ddot, d1psid2),
+                       A2D::VecDot(d01ddot, d02ddotpsi, d1d2psi));
 
     // Evaluate the mass moments
     TacsScalar rho[6];
-    con->evalMassMoments(elemIndex, pt, X0.x, rho);
+    con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), rho);
 
     // Add the contribution from the adjoint-residual product from the
     // dynamics
-    detXd.valued +=
+    detXd.bvalue() +=
         scale *
-        (rho[0] * u0psi.value + rho[1] * (u0psid1.value + u0d1psi.value) +
-         rho[2] * (u0psid2.value + u0d2psi.value) + rho[3] * d1d1psi.value +
-         rho[4] * d2d2psi.value + rho[5] * (d1psid2.value + d1d2psi.value));
+        (rho[0] * u0psi.value() + rho[1] * (u0psid1.value() + u0d1psi.value()) +
+         rho[2] * (u0psid2.value() + u0d2psi.value()) +
+         rho[3] * d1d1psi.value() + rho[4] * d2d2psi.value() +
+         rho[5] * (d1psid2.value() + d1d2psi.value()));
 
     // Set the seeds for the dot-products
-    TacsScalar alpha = scale * detXd.value;
-    u0psi.valued = alpha * rho[0];
-    u0psid1.valued = alpha * rho[1];
-    u0d1psi.valued = alpha * rho[1];
+    TacsScalar alpha = scale * detXd.value();
+    u0psi.bvalue() = alpha * rho[0];
+    u0psid1.bvalue() = alpha * rho[1];
+    u0d1psi.bvalue() = alpha * rho[1];
 
-    u0psid2.valued = alpha * rho[2];
-    u0d2psi.valued = alpha * rho[2];
-    d1d1psi.valued = alpha * rho[3];
-    d2d2psi.valued = alpha * rho[4];
-    d1psid2.valued = alpha * rho[5];
-    d1d2psi.valued = alpha * rho[5];
+    u0psid2.bvalue() = alpha * rho[2];
+    u0d2psi.bvalue() = alpha * rho[2];
+    d1d1psi.bvalue() = alpha * rho[3];
+    d2d2psi.bvalue() = alpha * rho[4];
+    d1psid2.bvalue() = alpha * rho[5];
+    d1d2psi.bvalue() = alpha * rho[5];
 
-    // Reverse the dot-products
-    dot9.reverse();
-    dot8.reverse();
-    dot7.reverse();
-    dot6.reverse();
-    dot5.reverse();
-    dot4.reverse();
-    dot3.reverse();
-    dot2.reverse();
-    dot1.reverse();
-
-    matmultd2xpsi.reverse();
-    axpyd2tpsi.reverse();
-    matmultd1xpsi.reverse();
-    axpyd1tpsi.reverse();
-    matmultd2x.reverse();
-    axpyd2t.reverse();
-    matmultd1x.reverse();
-    axpyd1t.reverse();
-    innersz2.reverse();
-    innersz1.reverse();
-    inners0.reverse();
-    multu0xpsi.reverse();
-    multu0dpsi.reverse();
-    assembleu0dpsi.reverse();
-    multu0x.reverse();
-    multu0d.reverse();
-    assembleu0d.reverse();
-    multXdinvT.reverse();
-    computedetXd.reverse();
-    invXd.reverse();
-    assembleXd.reverse();
+    // Reverse the dot-products, then the strain expressions
+    accel_stack.reverse();
+    strain_stack.reverse();
 
     // Reverse the transformation sensitivities
-    transform->addTransformSens(X0xi.x, T.Ad, X0xi.xd);
+    transform->addTransformSens(A2D::get_data(X0xi), A2D::get_data(T.bvalue()),
+                                A2D::get_data(X0xi.bvalue()));
 
     // Add the sensitivities to the input fields...
-    basis::template addInterpFieldsTranspose<3, 3>(pt, X0.xd, dfdXpts);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, X0xi.xd, dfdXpts);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(X0.bvalue()), dfdXpts);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(X0xi.bvalue()), dfdXpts);
 
-    basis::template addInterpFieldsTranspose<3, 3>(pt, n1.xd, dfn1);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, n2.xd, dfn2);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, n1xi.xd, dfn1);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, n2xi.xd, dfn2);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(n1.bvalue()), dfn1);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(n2.bvalue()), dfn2);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(n1xi.bvalue()), dfn1);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(n2xi.bvalue()), dfn2);
 
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xd, dd1);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xd, dd2);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xd, dd1);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xd, dd2);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01.bvalue()), dd1);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02.bvalue()), dd2);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d01xi.bvalue()), dd1);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d02xi.bvalue()), dd2);
 
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01psi.xd, dd1psi);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02psi.xd, dd2psi);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xipsi.xd, dd1psi);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xipsi.xd, dd2psi);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01psi.bvalue()), dd1psi);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02psi.bvalue()), dd2psi);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d01xipsi.bvalue()), dd1psi);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d02xipsi.bvalue()), dd2psi);
 
     // Add the contributions from the dynamics
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddot.xd, dd1);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddot.xd, dd2);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01ddot.bvalue()), dd1);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02ddot.bvalue()), dd2);
 
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01ddotpsi.xd, dd1psi);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02ddotpsi.xd, dd2psi);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01ddotpsi.bvalue()), dd1psi);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02ddotpsi.bvalue()), dd2psi);
 
     // Add the contributions to the tying strain
     basis::addInterpTyingStrainTranspose(pt, gtyd, etyd);
@@ -1234,7 +1264,7 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
     const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
     const TacsScalar ddvars[], TacsScalar *detXdval, TacsScalar *quantity) {
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1255,57 +1285,58 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
                                                            d1, d2, ety);
 
   // The transformation to the local beam coordinates
-  A2D::Mat3x3 T;
+  A2D::Mat<TacsScalar, 3, 3> T;
 
   // Parametric location
-  A2D::Vec3 X0;
+  A2D::Vec<TacsScalar, 3> X0;
 
   // Tangent to the beam
-  A2D::Vec3 X0xi;
+  A2D::Vec<TacsScalar, 3> X0xi;
 
   // Interpolated normal directions
-  A2D::Vec3 n1, n2;
+  A2D::Vec<TacsScalar, 3> n1, n2;
 
   // Derivatives of the interpolated normal directions
-  A2D::Vec3 n1xi, n2xi;
+  A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
   // The values of the director fields and their derivatives
-  A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
+  A2D::Vec<TacsScalar, 3> u0xi, d01, d02, d01xi, d02xi;
 
   // Interpolate the solution fields
-  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-  basis::template interpFields<3, 3>(pt, d1, d01.x);
-  basis::template interpFields<3, 3>(pt, d2, d02.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                     A2D::get_data(u0xi));
+  basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+  basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+  basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+  basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
   // Compute X, X,xi and the interpolated normal
-  basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-  basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-  basis::template interpFields<3, 3>(pt, fn1, n1.x);
-  basis::template interpFields<3, 3>(pt, fn2, n2.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+  basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+  basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+  basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+  basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+  basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+  basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
   // Compute the transformation at the quadrature point
-  transform->computeTransform(X0xi.x, T.A);
+  transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
   // Compute the inverse
-  A2D::Mat3x3 Xd, Xdinv;
-  A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-  A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+  A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+  A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+  A2D::MatInv(Xd, Xdinv);
 
   // Compute the determinant of the transform
-  A2D::Scalar detXd;
-  A2D::Mat3x3Det computedetXd(Xd, detXd);
+  TacsScalar detXd;
+  A2D::MatDet(Xd, detXd);
 
   if (detXdval) {
-    *detXdval = detXd.value;
+    *detXdval = detXd;
   }
 
   if (quantityType == TACS_ELEMENT_DENSITY) {
     if (quantity) {
-      *quantity = con->evalDensity(elemIndex, pt, X0.x);
+      *quantity = con->evalDensity(elemIndex, pt, A2D::get_data(X0));
     }
     return 1;
   } else if (quantityType == TACS_ELEMENT_DISPLACEMENT) {
@@ -1317,12 +1348,13 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
     if (quantity) {
       TacsScalar mass_moment[6];
-      con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+      con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), mass_moment);
       TacsScalar density = mass_moment[0];
 
       for (int i = 0; i < 3; i++) {
-        quantity[i] = density * X0.x[i] - mass_moment[1] * n1.x[i] -
-                      mass_moment[2] * n2.x[i];
+        quantity[i] = density * A2D::get_data(X0)[i] -
+                      mass_moment[1] * A2D::get_data(n1)[i] -
+                      mass_moment[2] * A2D::get_data(n2)[i];
       }
     }
 
@@ -1333,17 +1365,18 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
 
       // Evaluate the self MOI
       TacsScalar moments[6];
-      con->evalMassMoments(elemIndex, pt, X0.x, moments);
+      con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), moments);
       TacsScalar density = moments[0];
       I0[3] = moments[4] - moments[2] * moments[2] / density;
       I0[4] = -moments[5] + moments[1] * moments[2] / density;
       I0[5] = moments[3] - moments[1] * moments[1] / density;
       // Compute T*I0*T^{T}
-      mat3x3SymmTransform(T.A, I0, quantity);
+      mat3x3SymmTransform(A2D::get_data(T), I0, quantity);
       TacsScalar dXcg[3];
       for (int i = 0; i < 3; i++) {
-        dXcg[i] =
-            X0.x[i] - (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density;
+        dXcg[i] = A2D::get_data(X0)[i] - (moments[1] * A2D::get_data(n1)[i] +
+                                          moments[2] * A2D::get_data(n2)[i]) /
+                                             density;
       }
 
       // Use parallel axis theorem to move MOI to origin
@@ -1359,34 +1392,41 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
   }
 
   // Compute XdinvT = Xdinv * T
-  A2D::Mat3x3 XdinvT;
-  A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+  A2D::Mat<TacsScalar, 3, 3> XdinvT;
+  A2D::MatMatMult(Xdinv, T, XdinvT);
 
   // Assemble u0d
-  A2D::Mat3x3 u0d;
-  A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
+  A2D::Mat<TacsScalar, 3, 3> u0d;
+  A2D::MatFromThreeVec(u0xi, d01, d02, u0d);
 
   // Compute u0x = T^{T} * u0d * XdinvT
-  A2D::Mat3x3 u0dXdinvT, u0x;
-  A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-  A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+  A2D::Mat<TacsScalar, 3, 3> u0dXdinvT, u0x;
+  A2D::MatMatMult(u0d, XdinvT, u0dXdinvT);
+  A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT, u0x);
 
-  // Compute s0, sz1 and sz2
-  A2D::Scalar s0, sz1, sz2;
-  A2D::Vec3 e1(1.0, 0.0, 0.0);
-  A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-  A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-  A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+  // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+  // and sz2 = e1^{T} * Xdinv * n2xi
+  const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+  A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+  TacsScalar s0, sz1, sz2;
+  A2D::MatVecMult(XdinvT, e1, ts0);
+  A2D::VecDot(e1, ts0, s0);
+  A2D::MatVecMult(Xdinv, n1xi, tsz1);
+  A2D::VecDot(e1, tsz1, sz1);
+  A2D::MatVecMult(Xdinv, n2xi, tsz2);
+  A2D::VecDot(e1, tsz2, sz2);
 
   // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-  A2D::Vec3 d1t, d1x;
-  A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-  A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+  A2D::Vec<TacsScalar, 3> d1t, d1s, d1x;
+  A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t);
+  A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s);
+  A2D::VecScale(s0, d1s, d1x);
 
   // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-  A2D::Vec3 d2t, d2x;
-  A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-  A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+  A2D::Vec<TacsScalar, 3> d2t, d2s, d2x;
+  A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t);
+  A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s);
+  A2D::VecScale(s0, d2s, d2x);
 
   // Evaluate the tying components of the strain
   TacsScalar gty[2];  // The components of the tying strain
@@ -1394,16 +1434,17 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+  e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+  e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6];  // The components of the strain
-  model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+  model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x), A2D::get_data(d2x),
+                    e0ty, e);
 
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
-      *quantity = con->evalFailure(elemIndex, pt, X0.x, e);
+      *quantity = con->evalFailure(elemIndex, pt, A2D::get_data(X0), e);
     }
     return 1;
   }
@@ -1411,7 +1452,7 @@ int TACSBeamElement<quadrature, basis, director, model>::evalPointQuantity(
   if (quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     if (quantity) {
       TacsScalar s[6];
-      con->evalStress(elemIndex, pt, X0.x, e, s);
+      con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
       *quantity = 0.0;
       for (int i = 0; i < 6; i++) {
         *quantity += e[i] * s[i];
@@ -1432,7 +1473,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                            const TacsScalar dfdq[], int dvLen,
                            TacsScalar dfdx[]) {
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1453,84 +1494,93 @@ void TACSBeamElement<quadrature, basis, director, model>::
                                                            d1, d2, ety);
 
   // The transformation to the local beam coordinates
-  A2D::Mat3x3 T;
+  A2D::Mat<TacsScalar, 3, 3> T;
 
   // Parametric location
-  A2D::Vec3 X0;
+  A2D::Vec<TacsScalar, 3> X0;
 
   // Tangent to the beam
-  A2D::Vec3 X0xi;
+  A2D::Vec<TacsScalar, 3> X0xi;
 
   // Interpolated normal directions
-  A2D::Vec3 n1, n2;
+  A2D::Vec<TacsScalar, 3> n1, n2;
 
   // Derivatives of the interpolated normal directions
-  A2D::Vec3 n1xi, n2xi;
+  A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
   // The values of the director fields and their derivatives
-  A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
+  A2D::Vec<TacsScalar, 3> u0xi, d01, d02, d01xi, d02xi;
 
   // Interpolate the solution fields
-  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-  basis::template interpFields<3, 3>(pt, d1, d01.x);
-  basis::template interpFields<3, 3>(pt, d2, d02.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                     A2D::get_data(u0xi));
+  basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+  basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+  basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+  basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
   // Compute X, X,xi and the interpolated normal
-  basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-  basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-  basis::template interpFields<3, 3>(pt, fn1, n1.x);
-  basis::template interpFields<3, 3>(pt, fn2, n2.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+  basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+  basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+  basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+  basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+  basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+  basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
   // Compute the transformation at the quadrature point
-  transform->computeTransform(X0xi.x, T.A);
+  transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
   // Compute the inverse
-  A2D::Mat3x3 Xd, Xdinv;
-  A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-  A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+  A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+  A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+  A2D::MatInv(Xd, Xdinv);
 
   // Compute the determinant of the transform
-  A2D::Scalar detXd;
-  A2D::Mat3x3Det computedetXd(Xd, detXd);
+  TacsScalar detXd;
+  A2D::MatDet(Xd, detXd);
 
   if (quantityType == TACS_ELEMENT_DENSITY) {
-    con->addDensityDVSens(elemIndex, scale * dfdq[0], pt, X0.x, dvLen, dfdx);
+    con->addDensityDVSens(elemIndex, scale * dfdq[0], pt, A2D::get_data(X0),
+                          dvLen, dfdx);
     return;
   }
 
   // Compute XdinvT = Xdinv * T
-  A2D::Mat3x3 XdinvT;
-  A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+  A2D::Mat<TacsScalar, 3, 3> XdinvT;
+  A2D::MatMatMult(Xdinv, T, XdinvT);
 
   // Assemble u0d
-  A2D::Mat3x3 u0d;
-  A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
+  A2D::Mat<TacsScalar, 3, 3> u0d;
+  A2D::MatFromThreeVec(u0xi, d01, d02, u0d);
 
   // Compute u0x = T^{T} * u0d * XdinvT
-  A2D::Mat3x3 u0dXdinvT, u0x;
-  A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-  A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+  A2D::Mat<TacsScalar, 3, 3> u0dXdinvT, u0x;
+  A2D::MatMatMult(u0d, XdinvT, u0dXdinvT);
+  A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT, u0x);
 
-  // Compute s0, sz1 and sz2
-  A2D::Scalar s0, sz1, sz2;
-  A2D::Vec3 e1(1.0, 0.0, 0.0);
-  A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-  A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-  A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+  // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+  // and sz2 = e1^{T} * Xdinv * n2xi
+  const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+  A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+  TacsScalar s0, sz1, sz2;
+  A2D::MatVecMult(XdinvT, e1, ts0);
+  A2D::VecDot(e1, ts0, s0);
+  A2D::MatVecMult(Xdinv, n1xi, tsz1);
+  A2D::VecDot(e1, tsz1, sz1);
+  A2D::MatVecMult(Xdinv, n2xi, tsz2);
+  A2D::VecDot(e1, tsz2, sz2);
 
   // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-  A2D::Vec3 d1t, d1x;
-  A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-  A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+  A2D::Vec<TacsScalar, 3> d1t, d1s, d1x;
+  A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t);
+  A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s);
+  A2D::VecScale(s0, d1s, d1x);
 
   // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-  A2D::Vec3 d2t, d2x;
-  A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-  A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+  A2D::Vec<TacsScalar, 3> d2t, d2s, d2x;
+  A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t);
+  A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s);
+  A2D::VecScale(s0, d2s, d2x);
 
   // Evaluate the tying components of the strain
   TacsScalar gty[2];  // The components of the tying strain
@@ -1538,41 +1588,44 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+  e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+  e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6];  // The components of the strain
-  model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+  model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x), A2D::get_data(d2x),
+                    e0ty, e);
 
   if (quantityType == TACS_FAILURE_INDEX) {
     // Add the sensitivity contribution from the design variables
-    con->addFailureDVSens(elemIndex, dfdq[0] * scale, pt, X0.x, e, dvLen, dfdx);
+    con->addFailureDVSens(elemIndex, dfdq[0] * scale, pt, A2D::get_data(X0), e,
+                          dvLen, dfdx);
   } else if (quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     TacsScalar s[6];
-    con->evalStress(elemIndex, pt, X0.x, e, s);
-    con->addStressDVSens(elemIndex, scale * dfdq[0], pt, X0.x, e, e, dvLen,
-                         dfdx);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
+    con->addStressDVSens(elemIndex, scale * dfdq[0], pt, A2D::get_data(X0), e,
+                         e, dvLen, dfdx);
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
     TacsScalar dfdmom[6] = {0.0};
 
     for (int i = 0; i < 3; i++) {
-      dfdmom[0] += scale * dfdq[i] * X0.x[i];
-      dfdmom[1] += -scale * dfdq[i] * n1.x[i];
-      dfdmom[2] += -scale * dfdq[i] * n2.x[i];
+      dfdmom[0] += scale * dfdq[i] * A2D::get_data(X0)[i];
+      dfdmom[1] += -scale * dfdq[i] * A2D::get_data(n1)[i];
+      dfdmom[2] += -scale * dfdq[i] * A2D::get_data(n2)[i];
     }
 
-    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmom, dvLen, dfdx);
+    con->addMassMomentsDVSens(elemIndex, pt, A2D::get_data(X0), dfdmom, dvLen,
+                              dfdx);
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
     TacsScalar dfdI0[6] = {0.0};
 
     // Evaluate the self MOI
     TacsScalar moments[6];
-    con->evalMassMoments(elemIndex, pt, X0.x, moments);
+    con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), moments);
     TacsScalar density = moments[0];
 
     TacsScalar dfdmoments[6] = {0.0};
-    mat3x3SymmTransformSens(T.A, dfdq, dfdI0);
+    mat3x3SymmTransformSens(A2D::get_data(T), dfdq, dfdI0);
     dfdmoments[0] = scale *
                     (moments[2] * moments[2] * dfdI0[3] +
                      -moments[1] * moments[2] * dfdI0[4] +
@@ -1590,12 +1643,14 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     TacsScalar dXcg[3], dXcgdrho[3], dXcgdmom1[3], dXcgdmom2[3];
     for (int i = 0; i < 3; i++) {
-      dXcg[i] =
-          X0.x[i] - (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density;
-      dXcgdrho[i] =
-          (moments[1] * n1.x[i] + moments[2] * n2.x[i]) / density / density;
-      dXcgdmom2[i] = -n2.x[i] / density;
-      dXcgdmom1[i] = -n1.x[i] / density;
+      dXcg[i] = A2D::get_data(X0)[i] - (moments[1] * A2D::get_data(n1)[i] +
+                                        moments[2] * A2D::get_data(n2)[i]) /
+                                           density;
+      dXcgdrho[i] = (moments[1] * A2D::get_data(n1)[i] +
+                     moments[2] * A2D::get_data(n2)[i]) /
+                    density / density;
+      dXcgdmom2[i] = -A2D::get_data(n2)[i] / density;
+      dXcgdmom1[i] = -A2D::get_data(n1)[i] / density;
     }
 
     // Use parallel axis theorem to move MOI to origin
@@ -1647,7 +1702,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
     dfdmoments[2] += scale * dfdq[5] * density * 2.0 *
                      (dXcg[0] * dXcgdmom2[0] + dXcg[1] * dXcgdmom2[1]);
 
-    con->addMassMomentsDVSens(elemIndex, pt, X0.x, dfdmoments, dvLen, dfdx);
+    con->addMassMomentsDVSens(elemIndex, pt, A2D::get_data(X0), dfdmoments,
+                              dvLen, dfdx);
   }
 }
 
@@ -1662,7 +1718,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
   if (quantityType == TACS_FAILURE_INDEX ||
       quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     // Get the reference axis
-    const A2D::Vec3 &axis = transform->getRefAxis();
+    const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1691,79 +1747,83 @@ void TACSBeamElement<quadrature, basis, director, model>::
     memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
 
     // The transformation to the local beam coordinates
-    A2D::Mat3x3 T;
+    A2D::Mat<TacsScalar, 3, 3> T;
 
     // Parametric location
-    A2D::Vec3 X0;
+    A2D::Vec<TacsScalar, 3> X0;
 
     // Tangent to the beam
-    A2D::Vec3 X0xi;
+    A2D::Vec<TacsScalar, 3> X0xi;
 
     // Interpolated normal directions
-    A2D::Vec3 n1, n2;
+    A2D::Vec<TacsScalar, 3> n1, n2;
 
     // Derivatives of the interpolated normal directions
-    A2D::Vec3 n1xi, n2xi;
+    A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
     // The values of the director fields and their derivatives
-    A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0xi, d01, d02, d01xi, d02xi;
 
     // Interpolate the solution fields
-    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-    basis::template interpFields<3, 3>(pt, d1, d01.x);
-    basis::template interpFields<3, 3>(pt, d2, d02.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+    basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                       A2D::get_data(u0xi));
+    basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+    basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+    basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+    basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
     // Interpolate the geometry fields
-    basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-    basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-    basis::template interpFields<3, 3>(pt, fn1, n1.x);
-    basis::template interpFields<3, 3>(pt, fn2, n2.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-    basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+    basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+    basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+    basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+    basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+    basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+    basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
     // Compute the transformation at the quadrature point
-    transform->computeTransform(X0xi.x, T.A);
+    transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
     // Compute the inverse
-    A2D::Mat3x3 Xd, Xdinv;
-    A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-    A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+    A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+    A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+    A2D::MatInv(Xd, Xdinv);
 
     // Compute the determinant of the transform
-    A2D::Scalar detXd;
-    A2D::Mat3x3Det computedetXd(Xd, detXd);
+    TacsScalar detXd;
+    A2D::MatDet(Xd, detXd);
 
     // Compute XdinvT = Xdinv * T
-    A2D::Mat3x3 XdinvT;
-    A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+    A2D::Mat<TacsScalar, 3, 3> XdinvT;
+    A2D::MatMatMult(Xdinv, T, XdinvT);
 
-    // Assemble u0d
-    A2D::ADMat3x3 u0d;
-    A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
+    // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+    // and sz2 = e1^{T} * Xdinv * n2xi
+    const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+    A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+    TacsScalar s0, sz1, sz2;
+    A2D::MatVecMult(XdinvT, e1, ts0);
+    A2D::VecDot(e1, ts0, s0);
+    A2D::MatVecMult(Xdinv, n1xi, tsz1);
+    A2D::VecDot(e1, tsz1, sz1);
+    A2D::MatVecMult(Xdinv, n2xi, tsz2);
+    A2D::VecDot(e1, tsz2, sz2);
 
-    // Compute u0x = T^{T} * u0d * XdinvT
-    A2D::ADMat3x3 u0dXdinvT, u0x;
-    A2D::ADMat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-    A2D::MatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
-
-    // Compute s0, sz1 and sz2
-    A2D::Scalar s0, sz1, sz2;
-    A2D::Vec3 e1(1.0, 0.0, 0.0);
-    A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-    A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-    A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
-
-    // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-    A2D::ADVec3 d1t, d1x;
-    A2D::ADVec3ADVecScalarAxpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-    A2D::MatTrans3x3ADVecMultScale matmultd1x(s0, T, d1t, d1x);
-
-    // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-    A2D::ADVec3 d2t, d2x;
-    A2D::ADVec3ADVecScalarAxpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-    A2D::MatTrans3x3ADVecMultScale matmultd2x(s0, T, d2t, d2x);
+    // Assemble u0d and compute u0x = T^{T} * u0d * XdinvT,
+    // d1x = s0 * T^{T} * (d1xi - sz1 * u0xi) and
+    // d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
+    A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> u0d, u0dXdinvT, u0x;
+    A2D::ADObj<A2D::Vec<TacsScalar, 3>> d1t, d1s, d1x, d2t, d2s, d2x;
+    auto strain_stack = A2D::MakeStack(
+        A2D::MatFromThreeVec(u0xi, d01, d02, u0d),
+        A2D::MatMatMult(u0d, XdinvT, u0dXdinvT),
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                                   u0x),
+        A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s),
+        A2D::VecScale(s0, d1s, d1x),
+        A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t),
+        A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s),
+        A2D::VecScale(s0, d2s, d2x));
 
     // Evaluate the tying components of the strain
     TacsScalar gty[2];  // The components of the tying strain
@@ -1771,20 +1831,21 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // // Transform the tying strain to the local coordinates
     TacsScalar e0ty[2];
-    e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-    e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+    e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+    e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
     // Evaluate the strain
     TacsScalar e[6];
-    model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+    model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x),
+                      A2D::get_data(d2x), e0ty, e);
 
     TacsScalar esens[6];
     if (quantityType == TACS_FAILURE_INDEX) {
       // Compute the sensitivity of the failure index w.r.t. the strain
-      con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
+      con->evalFailureStrainSens(elemIndex, pt, A2D::get_data(X0), e, esens);
     } else {  // quantityType == TACS_STRAIN_ENERGY_DENSITY
       // Compute the sensitivity of the strain energy density w.r.t. the strain
-      con->evalStress(elemIndex, pt, X0.x, e, esens);
+      con->evalStress(elemIndex, pt, A2D::get_data(X0), e, esens);
       for (int i = 0; i < 6; i++) {
         esens[i] *= 2.0;
       }
@@ -1792,31 +1853,31 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Evaluate the strain and strain derivatives from the
     TacsScalar e0tyd[2];
-    model::evalStrainSens(alpha * dfdq[0], esens, u0x.A, d1x.x, d2x.x, e0ty,
-                          u0x.Ad, d1x.xd, d2x.xd, e0tyd);
+    model::evalStrainSens(
+        alpha * dfdq[0], esens, A2D::get_data(u0x), A2D::get_data(d1x),
+        A2D::get_data(d2x), e0ty, A2D::get_data(u0x.bvalue()),
+        A2D::get_data(d1x.bvalue()), A2D::get_data(d2x.bvalue()), e0tyd);
 
     // Convert the contributions to the tying strain
     TacsScalar gtyd[2];
-    gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
-    gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
+    gtyd[0] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[0];
+    gtyd[1] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[1];
 
-    matmultd2x.reverse();
-    axpyd2t.reverse();
-    matmultd1x.reverse();
-    axpyd1t.reverse();
-    multu0x.reverse();
-    multu0d.reverse();
-    assembleu0d.reverse();
+    strain_stack.reverse();
 
     // Add the residual contributions back to the element
-    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(pt, u0xi.xd,
-                                                                   dfdu);
+    basis::template addInterpFieldsGradTranspose<vars_per_node, 3>(
+        pt, A2D::get_data(u0xi.bvalue()), dfdu);
 
     // Add the constributions back to the derivative
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xd, d1d);
-    basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xd, d2d);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xd, d1d);
-    basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xd, d2d);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d01.bvalue()), d1d);
+    basis::template addInterpFieldsTranspose<3, 3>(
+        pt, A2D::get_data(d02.bvalue()), d2d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d01xi.bvalue()), d1d);
+    basis::template addInterpFieldsGradTranspose<3, 3>(
+        pt, A2D::get_data(d02xi.bvalue()), d2d);
 
     // Evaluate the tying strain
     basis::addInterpTyingStrainTranspose(pt, gtyd, dety);
@@ -1849,7 +1910,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                             const TacsScalar dfddetXd, const TacsScalar dfdq[],
                             TacsScalar dfdXpts[]) {
   // Get the reference axis
-  const A2D::Vec3 &axis = transform->getRefAxis();
+  const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
   // Compute the normal directions
   TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -1883,77 +1944,72 @@ void TACSBeamElement<quadrature, basis, director, model>::
   memset(etyd, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
 
   // The transformation to the local beam coordinates
-  A2D::ADMat3x3 T;
+  A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> T;
 
   // Parametric location
-  A2D::ADVec3 X0;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> X0;
 
   // Tangent to the beam
-  A2D::ADVec3 X0xi;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> X0xi;
 
   // Interpolated normal directions
-  A2D::ADVec3 n1, n2;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> n1, n2;
 
   // Derivatives of the interpolated normal directions
-  A2D::ADVec3 n1xi, n2xi;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> n1xi, n2xi;
 
   // The values of the director fields and their derivatives
-  A2D::ADVec3 u0xi, d01, d02, d01xi, d02xi;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> u0xi, d01, d02, d01xi, d02xi;
 
   // Compute X, X,xi and the interpolated normal
-  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-  basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-  basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-  basis::template interpFields<3, 3>(pt, fn1, n1.x);
-  basis::template interpFields<3, 3>(pt, fn2, n2.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
-  basis::template interpFields<3, 3>(pt, d1, d01.x);
-  basis::template interpFields<3, 3>(pt, d2, d02.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-  basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+  basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                     A2D::get_data(u0xi));
+  basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+  basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+  basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+  basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+  basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+  basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
+  basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+  basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+  basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+  basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
   // Compute the transformation at the quadrature point
-  transform->computeTransform(X0xi.x, T.A);
+  transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
-  // Compute the inverse
-  A2D::ADMat3x3 Xd, Xdinv;
-  A2D::ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
-  A2D::ADMat3x3Inverse invXd(Xd, Xdinv);
+  // Assemble Xd, compute its inverse and determinant, compute
+  // XdinvT = Xdinv * T, u0x = T^{T} * u0d * XdinvT, the scale factors
+  // s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi and
+  // sz2 = e1^{T} * Xdinv * n2xi, and dkx = s0 * T^{T} * (dkxi - szk * u0xi)
+  // for k = 1, 2
+  A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> Xd, Xdinv, XdinvT;
+  A2D::ADObj<TacsScalar> detXd;
+  A2D::ADObj<A2D::Mat<TacsScalar, 3, 3>> u0d, u0dXdinvT, u0x;
+  const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+  A2D::Vec<TacsScalar, 3> e1(e1_data);
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> ts0, tsz1, tsz2;
+  A2D::ADObj<TacsScalar> s0, sz1, sz2;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> w1, d1t, d1s, d1x;
+  A2D::ADObj<A2D::Vec<TacsScalar, 3>> w2, d2t, d2s, d2x;
 
-  // Compute the determinant of the transform
-  A2D::ADScalar detXd;
-  A2D::ADMat3x3Det computedetXd(Xd, detXd);
-
-  // Compute XdinvT = Xdinv * T
-  A2D::ADMat3x3 XdinvT;
-  A2D::ADMat3x3ADMatMult multXdinvT(Xdinv, T, XdinvT);
-
-  // Assemble u0d
-  A2D::ADMat3x3 u0d;
-  A2D::ADMat3x3FromThreeADVec3 assembleu0d(u0xi, d01, d02, u0d);
-
-  // Compute u0x = T^{T} * u0d * XdinvT
-  A2D::ADMat3x3 u0dXdinvT, u0x;
-  A2D::ADMat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
-  A2D::ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
-
-  // Compute s0, sz1 and sz2
-  A2D::ADScalar s0, sz1, sz2;
-  A2D::Vec3 e1(1.0, 0.0, 0.0);
-  A2D::ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-  A2D::ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-  A2D::ADMat3x3VecADVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
-
-  // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-  A2D::ADVec3 d1t, d1x;
-  A2D::ADVec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-  A2D::ADMatTrans3x3ADVecMultADScale matmultd1x(s0, T, d1t, d1x);
-
-  // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-  A2D::ADVec3 d2t, d2x;
-  A2D::ADVec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-  A2D::ADMatTrans3x3ADVecMultADScale matmultd2x(s0, T, d2t, d2x);
+  auto strain_stack = A2D::MakeStack(
+      A2D::MatFromThreeVec(X0xi, n1, n2, Xd), A2D::MatInv(Xd, Xdinv),
+      A2D::MatDet(Xd, detXd), A2D::MatMatMult(Xdinv, T, XdinvT),
+      A2D::MatFromThreeVec(u0xi, d01, d02, u0d),
+      A2D::MatMatMult(u0d, XdinvT, u0dXdinvT),
+      A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                                 u0x),
+      A2D::MatVecMult(XdinvT, e1, ts0), A2D::VecDot(e1, ts0, s0),
+      A2D::MatVecMult(Xdinv, n1xi, tsz1), A2D::VecDot(e1, tsz1, sz1),
+      A2D::MatVecMult(Xdinv, n2xi, tsz2), A2D::VecDot(e1, tsz2, sz2),
+      A2D::VecScale(sz1, u0xi, w1),
+      A2D::VecSum(TacsScalar(1.0), d01xi, TacsScalar(-1.0), w1, d1t),
+      A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s),
+      A2D::VecScale(s0, d1s, d1x), A2D::VecScale(sz2, u0xi, w2),
+      A2D::VecSum(TacsScalar(1.0), d02xi, TacsScalar(-1.0), w2, d2t),
+      A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s),
+      A2D::VecScale(s0, d2s, d2x));
 
   // Evaluate the tying components of the strain
   TacsScalar gty[2];  // The components of the tying strain
@@ -1961,34 +2017,35 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Transform the tying strain to the local coordinates
   TacsScalar e0ty[2];
-  e0ty[0] = 2.0 * XdinvT.A[0] * gty[0];
-  e0ty[1] = 2.0 * XdinvT.A[0] * gty[1];
+  e0ty[0] = 2.0 * A2D::get_data(XdinvT)[0] * gty[0];
+  e0ty[1] = 2.0 * A2D::get_data(XdinvT)[0] * gty[1];
 
   // Compute the set of strain components
   TacsScalar e[6];  // The components of the strain
-  model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+  model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x), A2D::get_data(d2x),
+                    e0ty, e);
 
   // Evaluate the failure sensitivity contribution
   TacsScalar esens[6] = {0.0};
   if (quantityType == TACS_FAILURE_INDEX) {
     // Compute the sensitivity of the failure index w.r.t. the strain
-    con->evalFailureStrainSens(elemIndex, pt, X0.x, e, esens);
+    con->evalFailureStrainSens(elemIndex, pt, A2D::get_data(X0), e, esens);
   } else if (quantityType == TACS_STRAIN_ENERGY_DENSITY) {
     // Compute the sensitivity of the strain energy density w.r.t. the strain
-    con->evalStress(elemIndex, pt, X0.x, e, esens);
+    con->evalStress(elemIndex, pt, A2D::get_data(X0), e, esens);
     for (int i = 0; i < 6; i++) {
       esens[i] *= 2.0;
     }
   } else if (quantityType == TACS_ELEMENT_DENSITY_MOMENT) {
     // Compute the sensitivity of the strain energy density w.r.t. the strain
     TacsScalar mass_moment[6];
-    con->evalMassMoments(elemIndex, pt, X0.x, mass_moment);
+    con->evalMassMoments(elemIndex, pt, A2D::get_data(X0), mass_moment);
     TacsScalar density = mass_moment[0];
 
     for (int i = 0; i < 3; i++) {
-      X0.xd[i] = density * dfdq[i];
-      n1.xd[i] = mass_moment[2] * dfdq[i];
-      n2.xd[i] = -mass_moment[1] * dfdq[i];
+      A2D::get_data(X0.bvalue())[i] = density * dfdq[i];
+      A2D::get_data(n1.bvalue())[i] = mass_moment[2] * dfdq[i];
+      A2D::get_data(n2.bvalue())[i] = -mass_moment[1] * dfdq[i];
     }
   } else if (quantityType == TACS_ELEMENT_MOMENT_OF_INERTIA) {
     TACSElement::addPointQuantityXptSens(elemIndex, quantityType, time, scale,
@@ -1999,46 +2056,47 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Evaluate the strain and strain derivatives from the
   TacsScalar e0tyd[2];
-  model::evalStrainSens(scale * dfdq[0], esens, u0x.A, d1x.x, d2x.x, e0ty,
-                        u0x.Ad, d1x.xd, d2x.xd, e0tyd);
-  detXd.valued = scale * dfddetXd;
+  model::evalStrainSens(
+      scale * dfdq[0], esens, A2D::get_data(u0x), A2D::get_data(d1x),
+      A2D::get_data(d2x), e0ty, A2D::get_data(u0x.bvalue()),
+      A2D::get_data(d1x.bvalue()), A2D::get_data(d2x.bvalue()), e0tyd);
+  detXd.bvalue() = scale * dfddetXd;
 
   // Apply the tying strain transformation
   TacsScalar gtyd[2];
-  gtyd[0] = 2.0 * XdinvT.A[0] * e0tyd[0];
-  gtyd[1] = 2.0 * XdinvT.A[0] * e0tyd[1];
+  gtyd[0] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[0];
+  gtyd[1] = 2.0 * A2D::get_data(XdinvT)[0] * e0tyd[1];
 
-  XdinvT.Ad[0] += 2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1]);
+  A2D::get_data(XdinvT.bvalue())[0] +=
+      2.0 * (gty[0] * e0tyd[0] + gty[1] * e0tyd[1]);
 
-  matmultd2x.reverse();
-  axpyd2t.reverse();
-  matmultd1x.reverse();
-  axpyd1t.reverse();
-  innersz2.reverse();
-  innersz1.reverse();
-  inners0.reverse();
-  multu0x.reverse();
-  multu0d.reverse();
-  assembleu0d.reverse();
-  multXdinvT.reverse();
-  computedetXd.reverse();
-  invXd.reverse();
-  assembleXd.reverse();
+  strain_stack.reverse();
 
   // Reverse the transformation sensitivities
-  transform->addTransformSens(X0xi.x, T.Ad, X0xi.xd);
+  transform->addTransformSens(A2D::get_data(X0xi), A2D::get_data(T.bvalue()),
+                              A2D::get_data(X0xi.bvalue()));
 
   // Add the sensitivities to the input fields...
-  basis::template addInterpFieldsTranspose<3, 3>(pt, X0.xd, dfdXpts);
-  basis::template addInterpFieldsGradTranspose<3, 3>(pt, X0xi.xd, dfdXpts);
-  basis::template addInterpFieldsTranspose<3, 3>(pt, n1.xd, dfn1);
-  basis::template addInterpFieldsTranspose<3, 3>(pt, n2.xd, dfn2);
-  basis::template addInterpFieldsGradTranspose<3, 3>(pt, n1xi.xd, dfn1);
-  basis::template addInterpFieldsGradTranspose<3, 3>(pt, n2xi.xd, dfn2);
-  basis::template addInterpFieldsTranspose<3, 3>(pt, d01.xd, dd1);
-  basis::template addInterpFieldsTranspose<3, 3>(pt, d02.xd, dd2);
-  basis::template addInterpFieldsGradTranspose<3, 3>(pt, d01xi.xd, dd1);
-  basis::template addInterpFieldsGradTranspose<3, 3>(pt, d02xi.xd, dd2);
+  basis::template addInterpFieldsTranspose<3, 3>(pt, A2D::get_data(X0.bvalue()),
+                                                 dfdXpts);
+  basis::template addInterpFieldsGradTranspose<3, 3>(
+      pt, A2D::get_data(X0xi.bvalue()), dfdXpts);
+  basis::template addInterpFieldsTranspose<3, 3>(pt, A2D::get_data(n1.bvalue()),
+                                                 dfn1);
+  basis::template addInterpFieldsTranspose<3, 3>(pt, A2D::get_data(n2.bvalue()),
+                                                 dfn2);
+  basis::template addInterpFieldsGradTranspose<3, 3>(
+      pt, A2D::get_data(n1xi.bvalue()), dfn1);
+  basis::template addInterpFieldsGradTranspose<3, 3>(
+      pt, A2D::get_data(n2xi.bvalue()), dfn2);
+  basis::template addInterpFieldsTranspose<3, 3>(
+      pt, A2D::get_data(d01.bvalue()), dd1);
+  basis::template addInterpFieldsTranspose<3, 3>(
+      pt, A2D::get_data(d02.bvalue()), dd2);
+  basis::template addInterpFieldsGradTranspose<3, 3>(
+      pt, A2D::get_data(d01xi.bvalue()), dd1);
+  basis::template addInterpFieldsGradTranspose<3, 3>(
+      pt, A2D::get_data(d02xi.bvalue()), dd2);
 
   // Add the derivative contributions to the tying strain
   basis::addInterpTyingStrainTranspose(pt, gtyd, etyd);
@@ -2072,7 +2130,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
     int num_vis_nodes = TacsGetNumVisNodes(basis::getLayoutType());
 
     // Get the reference axis
-    const A2D::Vec3 &axis = transform->getRefAxis();
+    const A2D::Vec<TacsScalar, 3> &axis = transform->getRefAxis();
 
     // Compute the normal directions
     TacsScalar fn1[3 * basis::NUM_NODES], fn2[3 * basis::NUM_NODES];
@@ -2099,79 +2157,88 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
       basis::getNodePoint(index, pt);
 
       // The transformation to the local beam coordinates
-      A2D::Mat3x3 T;
+      A2D::Mat<TacsScalar, 3, 3> T;
 
       // Parametric location
-      A2D::Vec3 X0;
+      A2D::Vec<TacsScalar, 3> X0;
 
       // Tangent to the beam
-      A2D::Vec3 X0xi;
+      A2D::Vec<TacsScalar, 3> X0xi;
 
       // Interpolated normal directions
-      A2D::Vec3 n1, n2;
+      A2D::Vec<TacsScalar, 3> n1, n2;
 
       // Derivatives of the interpolated normal directions
-      A2D::Vec3 n1xi, n2xi;
+      A2D::Vec<TacsScalar, 3> n1xi, n2xi;
 
       // The values of the director fields and their derivatives
-      A2D::Vec3 u0xi, d01, d02, d01xi, d02xi;
+      A2D::Vec<TacsScalar, 3> u0xi, d01, d02, d01xi, d02xi;
 
       // Interpolate the solution fields
-      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars, u0xi.x);
-      basis::template interpFields<3, 3>(pt, d1, d01.x);
-      basis::template interpFields<3, 3>(pt, d2, d02.x);
-      basis::template interpFieldsGrad<3, 3>(pt, d1, d01xi.x);
-      basis::template interpFieldsGrad<3, 3>(pt, d2, d02xi.x);
+      basis::template interpFieldsGrad<vars_per_node, 3>(pt, vars,
+                                                         A2D::get_data(u0xi));
+      basis::template interpFields<3, 3>(pt, d1, A2D::get_data(d01));
+      basis::template interpFields<3, 3>(pt, d2, A2D::get_data(d02));
+      basis::template interpFieldsGrad<3, 3>(pt, d1, A2D::get_data(d01xi));
+      basis::template interpFieldsGrad<3, 3>(pt, d2, A2D::get_data(d02xi));
 
       // Interpolate the geometry fields
-      basis::template interpFields<3, 3>(pt, Xpts, X0.x);
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
-      basis::template interpFields<3, 3>(pt, fn1, n1.x);
-      basis::template interpFields<3, 3>(pt, fn2, n2.x);
-      basis::template interpFieldsGrad<3, 3>(pt, fn1, n1xi.x);
-      basis::template interpFieldsGrad<3, 3>(pt, fn2, n2xi.x);
+      basis::template interpFields<3, 3>(pt, Xpts, A2D::get_data(X0));
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
+      basis::template interpFields<3, 3>(pt, fn1, A2D::get_data(n1));
+      basis::template interpFields<3, 3>(pt, fn2, A2D::get_data(n2));
+      basis::template interpFieldsGrad<3, 3>(pt, fn1, A2D::get_data(n1xi));
+      basis::template interpFieldsGrad<3, 3>(pt, fn2, A2D::get_data(n2xi));
 
       // Compute the transformation at the quadrature point
-      transform->computeTransform(X0xi.x, T.A);
+      transform->computeTransform(A2D::get_data(X0xi), A2D::get_data(T));
 
       // Compute the inverse
-      A2D::Mat3x3 Xd, Xdinv;
-      A2D::Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
-      A2D::Mat3x3Inverse invXd(Xd, Xdinv);
+      A2D::Mat<TacsScalar, 3, 3> Xd, Xdinv;
+      A2D::MatFromThreeVec(X0xi, n1, n2, Xd);
+      A2D::MatInv(Xd, Xdinv);
 
       // Compute the determinant of the transform
-      A2D::Scalar detXd;
-      A2D::Mat3x3Det computedetXd(Xd, detXd);
+      TacsScalar detXd;
+      A2D::MatDet(Xd, detXd);
 
       // Compute XdinvT = Xdinv * T
-      A2D::Mat3x3 XdinvT;
-      A2D::Mat3x3MatMult multXdinvT(Xdinv, T, XdinvT);
+      A2D::Mat<TacsScalar, 3, 3> XdinvT;
+      A2D::MatMatMult(Xdinv, T, XdinvT);
 
       // Assemble u0d
-      A2D::Mat3x3 u0d;
-      A2D::Mat3x3FromThreeVec3 assembleu0d(u0xi, d01, d02, u0d);
+      A2D::Mat<TacsScalar, 3, 3> u0d;
+      A2D::MatFromThreeVec(u0xi, d01, d02, u0d);
 
       // Compute u0x = T^{T} * u0d * XdinvT
-      A2D::Mat3x3 u0dXdinvT, u0x;
-      A2D::Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
-      A2D::MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+      A2D::Mat<TacsScalar, 3, 3> u0dXdinvT, u0x;
+      A2D::MatMatMult(u0d, XdinvT, u0dXdinvT);
+      A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(T, u0dXdinvT,
+                                                                 u0x);
 
-      // Compute s0, sz1 and sz2
-      A2D::Scalar s0, sz1, sz2;
-      A2D::Vec3 e1(1.0, 0.0, 0.0);
-      A2D::Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
-      A2D::Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-      A2D::Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+      // Compute s0 = e1^{T} * XdinvT * e1, sz1 = e1^{T} * Xdinv * n1xi
+      // and sz2 = e1^{T} * Xdinv * n2xi
+      const TacsScalar e1_data[3] = {1.0, 0.0, 0.0};
+      A2D::Vec<TacsScalar, 3> e1(e1_data), ts0, tsz1, tsz2;
+      TacsScalar s0, sz1, sz2;
+      A2D::MatVecMult(XdinvT, e1, ts0);
+      A2D::VecDot(e1, ts0, s0);
+      A2D::MatVecMult(Xdinv, n1xi, tsz1);
+      A2D::VecDot(e1, tsz1, sz1);
+      A2D::MatVecMult(Xdinv, n2xi, tsz2);
+      A2D::VecDot(e1, tsz2, sz2);
 
       // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-      A2D::Vec3 d1t, d1x;
-      A2D::Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d01xi, d1t);
-      A2D::MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
+      A2D::Vec<TacsScalar, 3> d1t, d1s, d1x;
+      A2D::VecSum(-sz1, u0xi, TacsScalar(1.0), d01xi, d1t);
+      A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d1t, d1s);
+      A2D::VecScale(s0, d1s, d1x);
 
       // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-      A2D::Vec3 d2t, d2x;
-      A2D::Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d02xi, d2t);
-      A2D::MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+      A2D::Vec<TacsScalar, 3> d2t, d2s, d2x;
+      A2D::VecSum(-sz2, u0xi, TacsScalar(1.0), d02xi, d2t);
+      A2D::MatVecMult<A2D::MatOp::TRANSPOSE>(T, d2t, d2s);
+      A2D::VecScale(s0, d2s, d2x);
 
       // Evaluate the tying components of the strain
       TacsScalar gty[2];  // The components of the tying strain
@@ -2184,16 +2251,17 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
 
       // Compute the set of strain components
       TacsScalar e[6];  // The components of the strain
-      model::evalStrain(u0x.A, d1x.x, d2x.x, e0ty, e);
+      model::evalStrain(A2D::get_data(u0x), A2D::get_data(d1x),
+                        A2D::get_data(d2x), e0ty, e);
 
       // Compute the corresponding stresses
       TacsScalar s[6];
-      con->evalStress(elemIndex, pt, X0.x, e, s);
+      con->evalStress(elemIndex, pt, A2D::get_data(X0), e, s);
 
       if (write_flag & TACS_OUTPUT_NODES) {
-        data[0] = X0.x[0];
-        data[1] = X0.x[1];
-        data[2] = X0.x[2];
+        data[0] = A2D::get_data(X0)[0];
+        data[1] = A2D::get_data(X0)[1];
+        data[2] = A2D::get_data(X0)[2];
         data += 3;
       }
       if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
@@ -2223,27 +2291,27 @@ void TACSBeamElement<quadrature, basis, director, model>::getOutputData(
       }
       if (write_flag & TACS_OUTPUT_EXTRAS) {
         for (int failInd = 0; failInd < 7; failInd++) {
-          data[failInd] =
-              con->evalFailureFieldValue(elemIndex, pt, X0.x, e, failInd);
+          data[failInd] = con->evalFailureFieldValue(
+              elemIndex, pt, A2D::get_data(X0), e, failInd);
         }
         for (int dvInd = 0; dvInd < 7; dvInd++) {
-          data[dvInd + 7] =
-              con->evalDesignFieldValue(elemIndex, pt, X0.x, dvInd);
+          data[dvInd + 7] = con->evalDesignFieldValue(elemIndex, pt,
+                                                      A2D::get_data(X0), dvInd);
         }
         data += 14;
       }
       if (write_flag & TACS_OUTPUT_COORDINATE_FRAME) {
-        data[0] = T.A[0];
-        data[1] = T.A[3];
-        data[2] = T.A[6];
+        data[0] = A2D::get_data(T)[0];
+        data[1] = A2D::get_data(T)[3];
+        data[2] = A2D::get_data(T)[6];
 
-        data[3] = T.A[1];
-        data[4] = T.A[4];
-        data[5] = T.A[7];
+        data[3] = A2D::get_data(T)[1];
+        data[4] = A2D::get_data(T)[4];
+        data[5] = A2D::get_data(T)[7];
 
-        data[6] = T.A[2];
-        data[7] = T.A[5];
-        data[8] = T.A[8];
+        data[6] = A2D::get_data(T)[2];
+        data[7] = A2D::get_data(T)[5];
+        data[8] = A2D::get_data(T)[8];
         data += 9;
       }
     }

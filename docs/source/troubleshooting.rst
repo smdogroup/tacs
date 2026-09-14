@@ -40,6 +40,19 @@ Installation Issues
 - Check MPI compiler in Makefile.in: ``CXX = mpicxx``
 - For Intel MPI: ``CXX = icpc -lmpi``
 
+**"WARNING: A2D headers not found" or "a2dcore.h: No such file or directory"**
+
+*Cause*: The A2D git submodule at ``extern/a2d`` has not been initialized (e.g. TACS was cloned without ``--recurse-submodules``).
+
+*Solutions*:
+
+.. code-block:: bash
+
+   # From the root TACS directory
+   git submodule update --init
+
+- Alternatively, set ``A2D_DIR`` (or ``A2D_INCLUDE``) in ``Makefile.in`` to point to an existing checkout of `A2D <https://github.com/smdogroup/a2d>`_
+
 Analysis Issues
 ---------------
 

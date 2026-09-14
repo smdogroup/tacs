@@ -1,5 +1,5 @@
 import os
-from subprocess import check_output
+from subprocess import check_call, check_output
 import sys
 
 # Numpy/mpi4py must be installed prior to installing TACS
@@ -54,7 +54,6 @@ rel_inc_dirs = [
     "src/elements/dynamics",
     "src/elements/shell",
     "src/elements/basis",
-    "src/elements/a2d",
     "src/constitutive",
     "src/functions",
     "src/io",
@@ -68,8 +67,28 @@ lib_dirs.extend(get_global_dir(rel_lib_dirs))
 
 # This should be made more general so that you can specify alternate
 # locations for the installation of AMD/METIS
-default_ext_inc = ["extern/AMD/Include", "extern/UFconfig", "extern/metis/include"]
+default_ext_inc = [
+    "extern/AMD/Include",
+    "extern/UFconfig",
+    "extern/metis/include",
+    "extern/a2d/include",
+]
 inc_dirs.extend(get_global_dir(default_ext_inc))
+
+# A2D is a header-only library bundled as a git submodule at extern/a2d;
+# fetch it if it hasn't been initialized (e.g. a non-recursive clone)
+if not os.path.exists(get_global_dir(["extern/a2d/include/a2dcore.h"])[0]):
+    tacs_root = os.path.abspath(os.path.dirname(__file__))
+    if os.path.exists(os.path.join(tacs_root, ".git")):
+        check_call(
+            ["git", "submodule", "update", "--init", "extern/a2d"], cwd=tacs_root
+        )
+    else:
+        raise RuntimeError(
+            "A2D headers not found at extern/a2d/include and this is not a git "
+            "checkout, so the submodule cannot be fetched automatically. Download "
+            "https://github.com/smdogroup/a2d into extern/a2d."
+        )
 
 # Add the numpy/mpi4py directories
 inc_dirs.extend([numpy.get_include(), mpi4py.get_include()])
@@ -84,7 +103,7 @@ for mod in ["TACS", "elements", "constitutive", "functions"]:
             libraries=libs,
             library_dirs=lib_dirs,
             runtime_library_dirs=runtime_lib_dirs,
-            extra_compile_args=["-std=c++11"],
+            extra_compile_args=["-std=c++17"],
         )
     )
 
