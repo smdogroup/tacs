@@ -3,7 +3,8 @@
 TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
     TACSMaterialProperties *properties, TacsScalar inner_init,
     TacsScalar wall_init, int inner_dv, int wall_dv, TacsScalar inner_lb,
-    TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub) {
+    TacsScalar inner_ub, TacsScalar wall_lb, TacsScalar wall_ub,
+    TacsScalar _nsm) {
   props = properties;
   props->incref();
 
@@ -15,6 +16,7 @@ TACSIsoTubeBeamConstitutive::TACSIsoTubeBeamConstitutive(
   innerUb = inner_ub;
   wallLb = wall_lb;
   wallUb = wall_ub;
+  setNonStructuralMass(_nsm);
 }
 
 TACSIsoTubeBeamConstitutive::~TACSIsoTubeBeamConstitutive() { props->decref(); }
@@ -93,7 +95,8 @@ void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
   TacsScalar const Ia =
       M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
-  moments[0] = rho * A;
+  // Tube is centered on the reference axis; NSM contributes only to moments[0]
+  moments[0] = rho * A + nsm;
   moments[1] = 0.0;
   moments[2] = 0.0;
   moments[3] = rho * Ia;
@@ -142,7 +145,7 @@ TacsScalar TACSIsoTubeBeamConstitutive::evalDensity(int elemIndex,
   TacsScalar const rho = props->getDensity();
   TacsScalar const A = M_PI * ((d0 * d0) - (d1 * d1)) / 4.0;
 
-  return rho * A;
+  return rho * A + nsm;
 }
 
 void TACSIsoTubeBeamConstitutive::addDensityDVSens(
@@ -164,6 +167,17 @@ void TACSIsoTubeBeamConstitutive::addDensityDVSens(
   }
 }
 
+// NOTE (transverse shear correction factor): the methods below use
+//   kcorr = 2(1+nu) / (4 + 3*nu)
+// which is the shear-correction factor for a *thin-walled* circular tube. It is
+// only accurate in the thin-wall limit (inner/outer radius -> 1).
+//
+// FUTURE IDEA: generalise to Cowper's (1966) hollow-circular shear coefficient,
+//   m = d1/d0 (inner/outer diameter ratio),
+//   kcorr = 6(1+nu)(1+m^2)^2
+//           / [ (7+6*nu)(1+m^2)^2 + (20+12*nu)*m^2 ],
+// which reduces to the thin-wall expression above as m -> 1 and to the solid
+// value 6(1+nu)/(7+6*nu) as m -> 0.
 void TACSIsoTubeBeamConstitutive::evalStress(int elemIndex, const double pt[],
                                              const TacsScalar X[],
                                              const TacsScalar e[],
