@@ -134,7 +134,14 @@ bool TacsAssertAllClose(TacsScalar *testVals, TacsScalar *refVals, int size,
   for (int i = 0; i < size; i++) {
     double absError = fabs(TacsRealPart(testVals[i] - refVals[i]));
     double combinedTol = atol + rtol * fabs(TacsRealPart(refVals[i]));
-    if (absError > combinedTol) {
+    // Written as the negation of the "close" condition (rather than
+    // "if (absError > combinedTol) all_close = false;") so that a NaN in
+    // testVals/refVals correctly fails the test: every IEEE 754 comparison
+    // against NaN (including "absError > combinedTol") evaluates to false,
+    // so the original ">"-based check silently let NaN results through as
+    // "all_close". Negating "<=" catches that case, since
+    // "!(NaN <= combinedTol)" is true.
+    if (!(absError <= combinedTol)) {
       all_close = false;
       break;
     }

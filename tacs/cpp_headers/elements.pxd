@@ -32,6 +32,9 @@ cdef extern from "TACSElementTypes.h":
     const int TACS_ELEMENT_DISPLACEMENT
     const int TACS_ELEMENT_STRAIN
     const int TACS_ELEMENT_STRESS
+    const int TACS_ELEMENT_DENSITY_MOMENT
+    const int TACS_ELEMENT_MOMENT_OF_INERTIA
+    const int TACS_ELEMENT_ENCLOSED_VOLUME
 
 cdef extern from "TACSElementVerification.h":
     int TacsTestElementBasisFunctions(TACSElementBasis*, double, int, double, double)
@@ -61,6 +64,8 @@ cdef extern from "TACSElementVerification.h":
                                   double, int, double, double)
     int TacsTestElementMatSVSens(TACSElement*, ElementMatrixType, int, double, const TacsScalar*, const TacsScalar*,
                                  double, int, double, double)
+    int TacsTestElementQuantityXptSens(TACSElement*, int, int, double, const TacsScalar*, const TacsScalar*,
+                                       const TacsScalar*, const TacsScalar*, double, int, double, double)
     int TacsSeedRandomGenerator(int)
 
 cdef extern from "TACSTetrahedralBasis.h":
