@@ -1247,6 +1247,80 @@ int TACSGPBladeStiffenedShellConstitutive::getDesignVarRange(int elemIndex,
   return this->numDesignVars;
 }
 
+// Get the number of design variable groups: all parent groups plus panelWidth
+int TACSGPBladeStiffenedShellConstitutive::getNumDesignVarGroups() {
+  return TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups() + 1;
+}
+
+// Get the name of each design variable group; the panelWidth group is
+// appended after the parent class groups, matching the DV registration order
+const char *TACSGPBladeStiffenedShellConstitutive::getDesignVarGroupName(
+    int groupIndex) {
+  int numParentGroups =
+      TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups();
+  if (groupIndex < numParentGroups) {
+    return TACSBladeStiffenedShellConstitutive::getDesignVarGroupName(
+        groupIndex);
+  }
+  if (groupIndex == numParentGroups) {
+    return "panelWidth";
+  }
+  return NULL;
+}
+
+// Get the number of entries in each design variable group
+int TACSGPBladeStiffenedShellConstitutive::getDesignVarGroupSize(
+    int groupIndex) {
+  int numParentGroups =
+      TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups();
+  if (groupIndex < numParentGroups) {
+    return TACSBladeStiffenedShellConstitutive::getDesignVarGroupSize(
+        groupIndex);
+  }
+  if (groupIndex == numParentGroups) {
+    return 1;
+  }
+  return 0;
+}
+
+// Is the design variable group a scalar quantity?
+bool TACSGPBladeStiffenedShellConstitutive::isDesignVarGroupScalar(
+    int groupIndex) {
+  int numParentGroups =
+      TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups();
+  if (groupIndex < numParentGroups) {
+    return TACSBladeStiffenedShellConstitutive::isDesignVarGroupScalar(
+        groupIndex);
+  }
+  return true;
+}
+
+// Get the values of a design variable group, whether active or not
+void TACSGPBladeStiffenedShellConstitutive::getDesignVarGroupValues(
+    int groupIndex, TacsScalar values[]) {
+  int numParentGroups =
+      TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups();
+  if (groupIndex < numParentGroups) {
+    TACSBladeStiffenedShellConstitutive::getDesignVarGroupValues(groupIndex,
+                                                                 values);
+  } else if (groupIndex == numParentGroups) {
+    values[0] = this->panelWidth;
+  }
+}
+
+// Get the design variable numbers of a design variable group
+void TACSGPBladeStiffenedShellConstitutive::getDesignVarGroupNums(
+    int groupIndex, int dvNums[]) {
+  int numParentGroups =
+      TACSBladeStiffenedShellConstitutive::getNumDesignVarGroups();
+  if (groupIndex < numParentGroups) {
+    TACSBladeStiffenedShellConstitutive::getDesignVarGroupNums(groupIndex,
+                                                               dvNums);
+  } else if (groupIndex == numParentGroups) {
+    dvNums[0] = this->panelWidthNum;
+  }
+}
+
 // ==============================================================================
 // Buckling functions
 // ==============================================================================

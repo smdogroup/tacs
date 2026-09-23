@@ -283,3 +283,98 @@ void TACSPointMassConstitutive::addMassMatrixDVSensInnerProduct(
     index++;
   }
 }
+
+// Get the number of design variable groups
+int TACSPointMassConstitutive::getNumDesignVarGroups() { return 7; }
+
+// Get the name of each design variable group; group names match the Python
+// constructor keyword arguments
+const char *TACSPointMassConstitutive::getDesignVarGroupName(int groupIndex) {
+  switch (groupIndex) {
+    case 0:
+      return "m";
+    case 1:
+      return "I11";
+    case 2:
+      return "I22";
+    case 3:
+      return "I33";
+    case 4:
+      return "I12";
+    case 5:
+      return "I13";
+    case 6:
+      return "I23";
+    default:
+      return NULL;
+  }
+}
+
+// Get the number of entries in each design variable group
+int TACSPointMassConstitutive::getDesignVarGroupSize(int groupIndex) {
+  if (groupIndex >= 0 && groupIndex < 7) {
+    return 1;
+  }
+  return 0;
+}
+
+// Is the design variable group a scalar quantity?
+bool TACSPointMassConstitutive::isDesignVarGroupScalar(int groupIndex) {
+  return true;
+}
+
+// Get the values of a design variable group, whether active or not
+void TACSPointMassConstitutive::getDesignVarGroupValues(int groupIndex,
+                                                        TacsScalar values[]) {
+  switch (groupIndex) {
+    case 0:
+      values[0] = m;
+      break;
+    case 1:
+      values[0] = I11;
+      break;
+    case 2:
+      values[0] = I22;
+      break;
+    case 3:
+      values[0] = I33;
+      break;
+    case 4:
+      values[0] = I12;
+      break;
+    case 5:
+      values[0] = I13;
+      break;
+    case 6:
+      values[0] = I23;
+      break;
+  }
+}
+
+// Get the design variable numbers of a design variable group
+void TACSPointMassConstitutive::getDesignVarGroupNums(int groupIndex,
+                                                      int dvNums[]) {
+  switch (groupIndex) {
+    case 0:
+      dvNums[0] = mNum;
+      break;
+    case 1:
+      dvNums[0] = I11Num;
+      break;
+    case 2:
+      dvNums[0] = I22Num;
+      break;
+    case 3:
+      dvNums[0] = I33Num;
+      break;
+    case 4:
+      dvNums[0] = I12Num;
+      break;
+    case 5:
+      dvNums[0] = I13Num;
+      break;
+    case 6:
+      dvNums[0] = I23Num;
+      break;
+  }
+}

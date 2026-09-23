@@ -46,6 +46,14 @@ class TACSSmearedCompositeShellConstitutive : public TACSShellConstitutive {
   int getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
                         TacsScalar ub[]);
 
+  // Design variable group API
+  int getNumDesignVarGroups();
+  const char *getDesignVarGroupName(int groupIndex);
+  int getDesignVarGroupSize(int groupIndex);
+  bool isDesignVarGroupScalar(int groupIndex);
+  void getDesignVarGroupValues(int groupIndex, TacsScalar values[]);
+  void getDesignVarGroupNums(int groupIndex, int dvNums[]);
+
   // Retrieve the design variable for plotting purposes
   TacsScalar evalDesignFieldValue(int elemIndex, const double pt[],
                                   const TacsScalar X[], int index);

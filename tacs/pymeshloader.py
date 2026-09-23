@@ -151,7 +151,7 @@ class pyMeshLoader(BaseUI):
             # Patran format
             elif "$ Elements and Element Properties for region" in propComment:
                 # The component name is after the colon
-                propName = propComment.split(":")[1]
+                propName = propComment.split(":")[1].strip()
                 self.compDescripts.append(propName)
 
             # No format, default component name

@@ -82,6 +82,57 @@ int TACSIsoTubeBeamConstitutive::getDesignVarRange(int elemIndex, int dvLen,
   return index;
 }
 
+// Get the number of design variable groups
+int TACSIsoTubeBeamConstitutive::getNumDesignVarGroups() { return 2; }
+
+// Get the name of each design variable group. Group names match the Python
+// constructor keyword arguments, which differ from the C++ member names here
+// ("d" is the inner diameter member `inner`, "t" is the wall thickness
+// member `wall`)
+const char *TACSIsoTubeBeamConstitutive::getDesignVarGroupName(int groupIndex) {
+  switch (groupIndex) {
+    case 0:
+      return "d";
+    case 1:
+      return "t";
+    default:
+      return NULL;
+  }
+}
+
+// Get the number of entries in each design variable group
+int TACSIsoTubeBeamConstitutive::getDesignVarGroupSize(int groupIndex) {
+  if (groupIndex == 0 || groupIndex == 1) {
+    return 1;
+  }
+  return 0;
+}
+
+// Is the design variable group a scalar quantity?
+bool TACSIsoTubeBeamConstitutive::isDesignVarGroupScalar(int groupIndex) {
+  return true;
+}
+
+// Get the values of a design variable group, whether active or not
+void TACSIsoTubeBeamConstitutive::getDesignVarGroupValues(int groupIndex,
+                                                          TacsScalar values[]) {
+  if (groupIndex == 0) {
+    values[0] = inner;
+  } else if (groupIndex == 1) {
+    values[0] = wall;
+  }
+}
+
+// Get the design variable numbers of a design variable group
+void TACSIsoTubeBeamConstitutive::getDesignVarGroupNums(int groupIndex,
+                                                        int dvNums[]) {
+  if (groupIndex == 0) {
+    dvNums[0] = innerDV;
+  } else if (groupIndex == 1) {
+    dvNums[0] = wallDV;
+  }
+}
+
 void TACSIsoTubeBeamConstitutive::evalMassMoments(int elemIndex,
                                                   const double pt[],
                                                   const TacsScalar X[],
