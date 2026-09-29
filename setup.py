@@ -107,6 +107,7 @@ optional_dependencies = {
     "mphys": ["mphys>=2.0.0,<3.0.0", "openmdao>=3.28.0"],
     "caps2tacs": ["imageio>=2.16.1"],
     "mach": ["mdolab-baseclasses"],
+    "postprocess": ["matplotlib"],
 }
 
 # Add an optional dependency that concatenates all others

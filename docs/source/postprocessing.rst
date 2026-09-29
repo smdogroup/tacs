@@ -109,6 +109,9 @@ The following output flags control what data is written to the f5 file. The tabl
    * - ``TACS_OUTPUT_LOADS``
      - ``writeLoads``
      - Applied loads - helpful for load verification and visualization
+   * - ``TACS_OUTPUT_REACTIONS``
+     - ``writeReactions``
+     - Support reactions at constrained nodes - useful for load-path checks and shear/moment diagrams
    * - ``TACS_OUTPUT_COORDINATE_FRAME``
      - ``writeCoordinateFrame``
      - Element coordinate frames - useful for composite material analysis
@@ -217,6 +220,12 @@ Beam/Shell Elements (TACS_BEAM_OR_SHELL_ELEMENT)
    * -
      - mx, my, mz
      - Applied moments
+   * - Reactions
+     - rfx, rfy, rfz
+     - Reaction forces at constrained nodes
+   * -
+     - rmx, rmy, rmz
+     - Reaction moments at constrained nodes
    * - Coordinate Frame
      - t0x, t0y, t0z
      - First element reference frame vector (i.e. reference axis) components
@@ -351,6 +360,52 @@ PCM Elements (TACS_PCM_ELEMENT)
    * - Loads
      - Q
      - Applied heat source
+
+Shear, Bending Moment and Torque Diagrams
+-----------------------------------------
+
+For wing-like structures the nodal loads and reactions stored in an f5 file can be reduced to shear (``V``),
+bending moment (``M``) and torque (``T``) diagrams along a user-defined, piecewise-linear beam axis with the
+:mod:`tacs.postprocess.vmt` module. The result is a single figure showing the planform silhouette with the beam
+axis highlighted above the three stacked diagrams. matplotlib is required for plotting and can be installed with
+``pip install tacs[postprocess]``.
+
+.. code-block:: bash
+
+   python -m tacs.postprocess.vmt solution_000.f5 --axis 0 0 0  0 10 0 --num-stations 30 --output vmt.pdf
+
+.. code-block:: python
+
+   from tacs.postprocess import computeVMTFromF5, loadF5, plotVMT
+
+   data = loadF5("solution_000.f5")
+   result = computeVMTFromF5(data, axisPts=[[0, 0, 0], [0, 10, 0]], numStations=30)
+   plotVMT(result, data, fileName="vmt.pdf")
+
+Several f5 files of the same model are treated as load cases. They are evaluated on the same axis and stations,
+and a station-wise min/max envelope is produced. With a ``.pdf`` output the result is a multi-page report: the
+envelope first, then one page per load case.
+
+.. code-block:: bash
+
+   python -m tacs.postprocess.vmt pullup_000.f5 pushover_000.f5 gust_000.f5 --axis 0 0 0  0 10 0 \
+       --output vmt_report.pdf --csv vmt.csv
+
+.. code-block:: python
+
+   from tacs.postprocess import computeEnvelope, computeVMTCases, plotVMTReport
+
+   results = computeVMTCases(["pullup_000.f5", "pushover_000.f5"], axisPts=[[0, 0, 0], [0, 10, 0]])
+   envelope = computeEnvelope(results)
+   plotVMTReport(results, "vmt_report.pdf", data=data)
+
+The f5 file must contain nodal coordinates and loads (``writeNodes`` and ``writeLoads``, both on by default);
+reactions (``writeReactions``) are included when present.
+
+.. toctree::
+   :maxdepth: 1
+
+   postprocess/vmt
 
 Visualization Tips
 ------------------
