@@ -172,10 +172,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         with self.subTest(name="adjacency_as_expected"):
             expectedAdjacency = [(0, 1), (0, 3), (1, 2), (2, 3)]
-            adjacencyAsExpected = None
-            if adjCon.comm.rank == 0:
-                adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
-                    adjCon.adjacentComps
+            self.assertEqual(adjCon.constraintList["ALL"].compPairs, expectedAdjacency)
+
+        expectedAdjacentCompIDs = {0: [1, 3], 1: [0, 2], 2: [1, 3], 3: [0, 2]}
+        for compID, expected in expectedAdjacentCompIDs.items():
+            with self.subTest(name="pytacs_adjacent_comp_ids", compID=compID):
+                self.assertEqual(
+                    self.fea_assembler.getAdjacentCompIDs(compID), expected
                 )
-            adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
-            self.assertTrue(adjacencyAsExpected)

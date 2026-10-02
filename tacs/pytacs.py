@@ -673,6 +673,26 @@ class pyTACS(BaseUI):
 
         return compDescripts
 
+    def getAdjacentCompIDs(self, compID: int) -> list[int]:
+        """
+        Return the IDs of the components that are adjacent to the given component.
+
+        Shell components are adjacent when they share an element edge.
+        1D components (e.g. beams, rods) are adjacent when they share an element end node.
+
+        Parameters
+        ----------
+        compID : int
+            Component ID number. This should come from a call to selectCompIDs.
+
+        Returns
+        -------
+        adjacentCompIDs : list[int]
+            Sorted list of the IDs of the components adjacent to this component.
+            Empty if no other components are adjacent to it.
+        """
+        return self.meshLoader.getAdjacentCompIDs(compID)
+
     def getGlobalNodeIDsForComps(self, compIDs, nastranOrdering=False):
         """
         Return the global (non-partitioned) node IDs belonging to a given list of component IDs
