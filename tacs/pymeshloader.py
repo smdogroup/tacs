@@ -1066,9 +1066,13 @@ class pyMeshLoader(BaseUI):
         """
         edgeToComps = {}
         for elemInfo in self.bdfInfo.elements.values():
+            # The element's property ID tells us which component it belongs to
             compID = self.nastranToTACSCompIDDict[elemInfo.pid]
             for edgeKey in self._getElementEdgeKeys(elemInfo):
+                # Get the list of components already found on this edge, creating an empty one if this is the
+                # first element we've seen with this edge
                 edgeCompIDs = edgeToComps.setdefault(edgeKey, [])
+                # Neighbouring elements in the same component share edges too, so only record each component once
                 if compID not in edgeCompIDs:
                     edgeCompIDs.append(compID)
         return edgeToComps
