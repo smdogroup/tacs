@@ -178,5 +178,6 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         for compID, expected in expectedAdjacentCompIDs.items():
             with self.subTest(name="pytacs_adjacent_comp_ids", compID=compID):
                 self.assertEqual(
-                    self.fea_assembler.getAdjacentCompIDs(compID), expected
+                    sorted(self.fea_assembler.selectCompIDs(adjacentTo=compID)[0]),
+                    expected,
                 )
