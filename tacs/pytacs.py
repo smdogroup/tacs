@@ -539,9 +539,13 @@ class pyTACS(BaseUI):
         element end node.
         The argument is matched against the component descriptions in the
         same way as 'include'.
-        The matched components themselves are not added to the selection,
-        they are only used to find their neighbours, so use 'exclude' if
-        they also match 'include' and should be left out.
+        If 'include' is not given, every neighbour of the matched components
+        is selected, otherwise only the 'include' components that are also
+        neighbours are selected.
+        A matched component is not selected on account of being matched, but
+        it will be selected if it is itself adjacent to another matched
+        component (e.g. when 'adjacentTo' matches several skin panels that
+        touch each other). Use 'exclude' to leave such components out.
 
         For example::
 
@@ -549,9 +553,10 @@ class pyTACS(BaseUI):
             # 'USkin_03' component.
             selectCompIDs(include=["SPAR", "RIB"], adjacentTo="USkin_03")
 
-            # This will select every component that is adjacent to either
-            # 'RIB.01' or 'RIB.02', except the ribs themselves.
-            selectCompIDs(adjacentTo=["RIB.01", "RIB.02"], exclude="RIB")
+            # This will select every component that is adjacent to any of
+            # the upper skin panels, except the upper skin panels themselves
+            # (which are adjacent to each other).
+            selectCompIDs(adjacentTo="USkin", exclude="USkin")
 
         includeOp, str: 'and' or 'or'.
         Selects the logical operation
