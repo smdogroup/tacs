@@ -17,11 +17,23 @@ import itertools as it
 import numpy as np
 import pyNastran.bdf.bdf as pn
 from mpi4py import MPI
+from pyNastran.bdf.cards.elements.shell import ShellElement
 
 import tacs.TACS
 import tacs.constitutive
 import tacs.elements
 from tacs.utilities import BaseUI, postinitialize_method
+
+# 1D element cards that are considered connected to other components through their end nodes
+ONE_D_ELEMENT_TYPES = (
+    pn.CROD,
+    pn.CONROD,
+    pn.CBEND,
+    pn.CBAR,
+    pn.CBEAM,
+    pn.CGAP,
+    pn.CTUBE,
+)
 
 
 class pyMeshLoader(BaseUI):
@@ -31,6 +43,8 @@ class pyMeshLoader(BaseUI):
         # Debug printing flag
         self.printDebug = printDebug
         self.bdfInfo = None
+        # Map from each component ID to the set of adjacent component IDs, computed on first request
+        self._adjacentCompMap = None
 
     def scanBdfFile(self, bdf):
         """
@@ -64,6 +78,9 @@ class pyMeshLoader(BaseUI):
 
         # Set flag letting us know model is not xrefed yet
         self.bdfInfo.is_xrefed = False
+
+        # Any previously computed component adjacency belongs to the old model
+        self._adjacentCompMap = None
 
         # If any property cards are missing in the bdf, we have to add dummy cards
         # so pynastran doesn't through errors when cross-referencing
@@ -383,6 +400,34 @@ class pyMeshLoader(BaseUI):
                 # Append element connectivity to list for component
                 compConn.append(tacsConn)
         return compConn
+
+    def getAdjacentCompIDs(self, componentID: int) -> list[int]:
+        """
+        Get the IDs of the components that are adjacent to the specified component.
+
+        Shell components are adjacent when they share an element edge.
+        1D components (e.g. beams, rods) are adjacent when they share an element end node.
+
+        Parameters
+        ----------
+        componentID : int
+            Component ID number.
+
+        Returns
+        -------
+        adjacentCompIDs : list[int]
+            Sorted list of the IDs of the components adjacent to this component.
+            Empty if no other components are adjacent to it.
+        """
+        numComps = self.getNumComponents()
+        if componentID < 0 or componentID >= numComps:
+            raise self._TACSError(
+                f"Component ID {componentID} is out of range, the model has {numComps} components."
+            )
+
+        if self._adjacentCompMap is None:
+            self._adjacentCompMap = self._computeAdjacentCompMap()
+        return sorted(self._adjacentCompMap[componentID])
 
     def getElementObjectNumsForComp(self, componentID):
         """
@@ -989,6 +1034,80 @@ class pyMeshLoader(BaseUI):
         self.ownedMultiplierNodeIDs = [localID for localID in localIDs if localID >= 0]
 
         return self.assembler
+
+    def _computeAdjacentCompMap(self) -> dict[int, set[int]]:
+        """
+        Find the components adjacent to every component in the model.
+
+        Two components are adjacent when they share at least one element edge (see :meth:`_getElementEdgeKeys`).
+
+        Returns
+        -------
+        adjacentCompMap : dict[int, set[int]]
+            Dictionary whose keys are every component ID in the model and whose entries are
+            the sets of IDs of the components adjacent to that component.
+        """
+        adjacentCompMap = {compID: set() for compID in range(self.getNumComponents())}
+        for edgeCompIDs in self._getEdgeToCompsMap().values():
+            for iComp, jComp in it.combinations(edgeCompIDs, 2):
+                adjacentCompMap[iComp].add(jComp)
+                adjacentCompMap[jComp].add(iComp)
+        return adjacentCompMap
+
+    def _getEdgeToCompsMap(self) -> dict:
+        """
+        Map each element edge in the model to the components whose elements contain it.
+
+        Returns
+        -------
+        edgeToComps : dict
+            Dictionary whose keys are edge keys (see :meth:`_getElementEdgeKeys`) and whose entries are
+            lists of the unique component IDs containing that edge.
+        """
+        edgeToComps = {}
+        for elemInfo in self.bdfInfo.elements.values():
+            # The element's property ID tells us which component it belongs to
+            compID = self.nastranToTACSCompIDDict[elemInfo.pid]
+            for edgeKey in self._getElementEdgeKeys(elemInfo):
+                # Get the list of components already found on this edge, creating an empty one if this is the
+                # first element we've seen with this edge
+                edgeCompIDs = edgeToComps.setdefault(edgeKey, [])
+                # Neighbouring elements in the same component share edges too, so only record each component once
+                if compID not in edgeCompIDs:
+                    edgeCompIDs.append(compID)
+        return edgeToComps
+
+    @staticmethod
+    def _getElementEdgeKeys(elemInfo) -> list:
+        """
+        Get the keys of the edges through which an element can connect to other components.
+
+        Parameters
+        ----------
+        elemInfo : pyNastran.bdf.cards.base_card.Element
+            pyNastran element card.
+
+        Returns
+        -------
+        edgeKeys : list
+            For shell elements, a ``(nodeID1, nodeID2)`` tuple of NASTRAN node IDs for each edge,
+            with ``nodeID1 < nodeID2`` so the key doesn't depend on the edge direction.
+            For 1D elements, the NASTRAN node IDs of the element's two end nodes.
+            Empty for any other element type.
+        """
+        elemConn = elemInfo.nodes
+        if isinstance(elemInfo, ShellElement):
+            numNodes = len(elemConn)
+            edgeKeys = []
+            for ii in range(numNodes):
+                nodeID1 = elemConn[ii]
+                nodeID2 = elemConn[(ii + 1) % numNodes]
+                edgeKeys.append((min(nodeID1, nodeID2), max(nodeID1, nodeID2)))
+            return edgeKeys
+        if isinstance(elemInfo, ONE_D_ELEMENT_TYPES):
+            # A 1D element's "edges" are just its end nodes
+            return [elemConn[0], elemConn[-1]]
+        return []
 
     def _isDOFInString(self, constrained_dofs, dof):
         """
