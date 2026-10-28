@@ -127,7 +127,7 @@
 <li><p><strong>FEAAssembler</strong> (<a class="reference internal" href="../pytacs/pytacs_module.html#tacs.pytacs.pyTACS" title="tacs.pytacs.pyTACS"><em>tacs.pytacs.pyTACS</em></a>) -- pyTACS assembler object.</p></li>
 <li><p><strong>DVGeo</strong> (<em>pygeo.DVGeometry</em><em>, </em><em>optional</em>) -- Object responsible for manipulating the geometry design variables.
 If None, no geometric design variables will be used.</p></li>
-<li><p><strong>loadFile</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Filename of the (static) external load file. Should be
+<li><p><strong>loadFile</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- Filename of the (static) external load file. Should be
 generated from pyAerostructure.</p></li>
 </ul>
 </dd>
@@ -141,21 +141,21 @@ generated from pyAerostructure.</p></li>
 <dd class="field-odd"><p>Name of the structural problem.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.callCounter">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">callCounter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.callCounter" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">callCounter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></em><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.callCounter" title="Link to this definition">¶</a></dt>
 <dd><p>Get the call counter for the underlying static problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Number of times the static problem's solve method has been called.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -287,7 +287,7 @@ if more than 1 pytacs object is used in an optimization</p>
 <dd class="field-odd"><p><strong>varName</strong> -- Name of the design variables used in setDesignVars() dict.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -304,7 +304,7 @@ changes is desired, then it is required.</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>dvGeo</strong> (<em>A DVGeometry object.</em>) -- Object responsible for manipulating the constraints that
 this object is responsible for.</p></li>
-<li><p><strong>pointSetKwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Keyword arguments to be passed to the DVGeo addPointSet call.
+<li><p><strong>pointSetKwargs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Keyword arguments to be passed to the DVGeo addPointSet call.
 Useful for DVGeometryMulti, specifying FFD projection tolerances, etc</p></li>
 </ul>
 </dd>
@@ -335,7 +335,7 @@ Useful for DVGeometryMulti, specifying FFD projection tolerances, etc</p></li>
 <dd><p>Set the variables in the x-dict for this object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary of variables which may or may not contain the
+<dd class="field-odd"><p><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary of variables which may or may not contain the
 design variable names this object needs</p>
 </dd>
 </dl>
@@ -371,10 +371,10 @@ the specified pyOpt problem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>optProb</strong> (<a class="reference external" href="https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/api/optimization.html#pyoptsparse.pyOpt_optimization.Optimization" title="(in pyOptSparse v2.16.1)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimization</span></code></a> instance) -- Optimization problem object to add constraints to</p></li>
-<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
-<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
-<li><p><strong>excludeWRT</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Additional DV names to remove from the <code class="docutils literal notranslate"><span class="pre">wrt</span></code> list for every
+<li><p><strong>optProb</strong> (<a class="reference external" href="https://mdolab-pyoptsparse.readthedocs-hosted.com/en/latest/api/optimization.html#pyoptsparse.pyOpt_optimization.Optimization" title="(in pyOptSparse v2.16.2.dev5+gb6a74f8d6)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimization</span></code></a> instance) -- Optimization problem object to add constraints to</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+<li><p><strong>excludeWRT</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- Additional DV names to remove from the <code class="docutils literal notranslate"><span class="pre">wrt</span></code> list for every
 constraint.  Useful for DVs whose structural sensitivity is
 analytically zero and should not contribute a Jacobian block,
 e.g. geometric DVs when a DVGeo is attached to the StructProblem
@@ -407,10 +407,10 @@ forces must already be set.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Value to use to damp the solution update.</p></li>
-<li><p><strong>useAitkenAcceleration</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to use aitkenAcceleration. Only applicable for aerostructural problems</p></li>
-<li><p><strong>dampLB</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Lower bound for the damping parameter used in Aitken acceleration.</p></li>
-<li><p><strong>loadScale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- Value to scale external loads by. Only useful for load step approach on nonlinear problems.</p></li>
+<li><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) -- Value to use to damp the solution update.</p></li>
+<li><p><strong>useAitkenAcceleration</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to use aitkenAcceleration. Only applicable for aerostructural problems</p></li>
+<li><p><strong>dampLB</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) -- Lower bound for the damping parameter used in Aitken acceleration.</p></li>
+<li><p><strong>loadScale</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) -- Value to scale external loads by. Only useful for load step approach on nonlinear problems.</p></li>
 </ul>
 </dd>
 </dl>
@@ -418,11 +418,11 @@ forces must already be set.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tacs.mach.struct_problem.StructProblem.checkSolutionFailure">
-<span class="sig-name descname"><span class="pre">checkSolutionFailure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.checkSolutionFailure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.checkSolutionFailure" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">checkSolutionFailure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/tacs/mach/struct_problem.html#StructProblem.checkSolutionFailure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tacs.mach.struct_problem.StructProblem.checkSolutionFailure" title="Link to this definition">¶</a></dt>
 <dd><p>Check whether the last structural solve failed and accumulate into funcs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary of functions. A <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> key is set (or OR-ed) with the
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary of functions. A <code class="docutils literal notranslate"><span class="pre">&quot;fail&quot;</span></code> key is set (or OR-ed) with the
 failure flag from the most recent call to <a class="reference internal" href="#tacs.mach.struct_problem.StructProblem.solve" title="tacs.mach.struct_problem.StructProblem.solve"><code class="xref py py-meth docutils literal notranslate"><span class="pre">solve()</span></code></a>.</p>
 </dd>
 </dl>
@@ -435,7 +435,7 @@ failure flag from the most recent call to <a class="reference internal" href="#t
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the functions are save</p></li>
+<li><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary into which the functions are save</p></li>
 <li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions that the user wants evaluated</p></li>
 </ul>
 </dd>
@@ -451,12 +451,12 @@ dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fcon</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the constraints are saved.</p></li>
+<li><p><strong>fcon</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary into which the constraints are saved.</p></li>
 <li><p><strong>evalCons</strong> (<em>iterable object containing strings.</em>) -- If not none, use these constraints to evaluate.</p></li>
-<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to supress checking for a valid constraint. Please use
+<li><p><strong>ignoreMissing</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to supress checking for a valid constraint. Please use
 this option with caution.</p></li>
-<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
-<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
 </ul>
 </dd>
 </dl>
@@ -469,7 +469,7 @@ this option with caution.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the function sensitivities are saved</p></li>
+<li><p><strong>funcsSens</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary into which the function sensitivities are saved</p></li>
 <li><p><strong>evalFuncs</strong> (<em>iterable object containing strings</em>) -- The functions that the user wants evaluated</p></li>
 </ul>
 </dd>
@@ -487,10 +487,10 @@ respect to all design variables and node locations are computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fconSens</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
+<li><p><strong>fconSens</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary into which the derivatives are saved.</p></li>
 <li><p><strong>evalCons</strong> (<em>iterable object containing strings</em>) -- The constraints the user wants returned</p></li>
-<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
-<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
+<li><p><strong>nonLinear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include non-linear constraints.</p></li>
+<li><p><strong>linear</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a>) -- Flag to include linear constraints.</p></li>
 </ul>
 </dd>
 </dl>
@@ -505,7 +505,7 @@ respect to all design variables and node locations are computed.</p>
 <dd class="field-odd"><p>Number of degrees of freedom of each node in the domain.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -519,7 +519,7 @@ respect to all design variables and node locations are computed.</p>
 <dd class="field-odd"><p>Number of nodes on this processor.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -549,7 +549,7 @@ in the form needed by pyoptsparse.</p>
 <dd class="field-odd"><p>Lower and upper bounds for the design variables.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)">tuple</a> of <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.5)">numpy.ndarray</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -579,7 +579,7 @@ method.</p>
 <dd class="field-odd"><p>Total number of structural design variables.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)">int</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -649,7 +649,7 @@ method.</p>
 <dd class="field-odd"><p>Norm of the current state vector.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -680,7 +680,7 @@ computations.</p>
 <dd class="field-odd"><p>Initial, starting, and final residual norms.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a> of <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)">tuple</a> of <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)">float</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -693,9 +693,9 @@ This is typically only used with aerostructural analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>initNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Initial residual norm to set.</p></li>
-<li><p><strong>startNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Starting residual norm to set.</p></li>
-<li><p><strong>finalNorm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) -- Final residual norm to set.</p></li>
+<li><p><strong>initNorm</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) -- Initial residual norm to set.</p></li>
+<li><p><strong>startNorm</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) -- Starting residual norm to set.</p></li>
+<li><p><strong>finalNorm</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>optional</em>) -- Final residual norm to set.</p></li>
 </ul>
 </dd>
 </dl>
@@ -716,7 +716,7 @@ This is typically only used with aerostructural analysis.</p>
 <dd class="field-odd"><p>List of function names that can be evaluated.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)">list</a> of <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -727,7 +727,7 @@ This is typically only used with aerostructural analysis.</p>
 <dd><p>Return the adjoint values for func if they exist. Otherwise just return zeros.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function.</p>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Name of the function.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Adjoint values for the specified function.</p>
@@ -745,9 +745,9 @@ This is typically only used with aerostructural analysis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>numpy array</em>) -- An array of size getStateSize() to
+<li><p><strong>adjoint</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>, </em><em>numpy array</em>) -- An array of size getStateSize() to
 be copied to the structural adjoint variables</p></li>
-<li><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of function to set adjoint for</p></li>
+<li><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Name of function to set adjoint for</p></li>
 </ul>
 </dd>
 </dl>
@@ -759,7 +759,7 @@ be copied to the structural adjoint variables</p></li>
 <dd><p>Set the adjoint right-hand side for given function.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to set adjoint RHS for.</p>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Name of the function to set adjoint RHS for.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -806,7 +806,7 @@ with respect to all structural nodes for the current
 structProblem.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Derivative vector with respect to structural nodes.</p>
@@ -824,7 +824,7 @@ structProblem.</p>
 with respect to all structural design variables.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
+<dd class="field-odd"><p><strong>func</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Name of the function to compute derivatives for.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Derivative vector with respect to structural design variables.</p>
@@ -844,8 +844,8 @@ return a TACS vector. The result is stored locally.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
-<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
+<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -868,15 +868,15 @@ names are contained in evalFuncs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
-<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
+<li><p><strong>vecT</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) -- Dictionary containing transpose vector values.</p></li>
+<li><p><strong>evalFuncs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- List of function names to evaluate.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Dictionary containing transpose matrix-vector product results.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -952,7 +952,7 @@ Adjoint RHS should be: dIdu - dAdu^T*psi - dSdu^T*phi</p>
 <dd><p>Solve the structural adjoint.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) -- A damping variable for adjoint update. Typically only used
+<dd class="field-odd"><p><strong>damp</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) -- A damping variable for adjoint update. Typically only used
 in multidisciplinary analysis</p>
 </dd>
 </dl>
@@ -965,13 +965,13 @@ in multidisciplinary analysis</p>
 <p>This is the total sensitivity calculation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- List of function names.</p>
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- List of function names.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of sensitivity products for each function.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of tacs.TACS.Vec</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)">list</a> of tacs.TACS.Vec</p>
 </dd>
 </dl>
 </dd></dl>
@@ -982,13 +982,13 @@ in multidisciplinary analysis</p>
 <dd><p>Get the result of <span class="math notranslate nohighlight">\([dR/dX_{dv}]^T \phi\)</span> for the total sensitivity calculation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- List of function names.</p>
+<dd class="field-odd"><p><strong>funcs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- List of function names.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>List of sensitivity products for each function.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a> of tacs.TACS.Vec</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)">list</a> of tacs.TACS.Vec</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1003,7 +1003,7 @@ returned as a dict of numpy arrays.</p>
 <dd class="field-odd"><p>Dictionary containing transpose matrix-vector product results.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1020,7 +1020,7 @@ returned as a dict of numpy arrays.</p>
 <dd class="field-even"><p>Dictionary containing the design vector with variable name as key.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1037,10 +1037,10 @@ determine the desired writing procedure</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
-<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> or </em><em>None</em>) -- Use the supplied output directory</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> or </em><em>None</em>) -- Use this supplied string for the base filename. Typically
 only used from an external solver.</p></li>
-<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em> or </em><em>None</em>) -- Use the user supplied number to index solution. Again, only
 typically used from an external solver</p></li>
 </ul>
 </dd>
@@ -1055,9 +1055,9 @@ This is typically used to save aero loads from an aerostructural run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Output directory for the force file.</p></li>
-<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) -- Base name for the force file. If None, uses problem name + &quot;_external_forces&quot;.</p></li>
-<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>optional</em>) -- Number to append to the filename.</p></li>
+<li><p><strong>outputDir</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- Output directory for the force file.</p></li>
+<li><p><strong>baseName</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>optional</em>) -- Base name for the force file. If None, uses problem name + &quot;_external_forces&quot;.</p></li>
+<li><p><strong>number</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>optional</em>) -- Number to append to the filename.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1070,7 +1070,7 @@ This is typically used to save aero loads from an aerostructural run.</p>
 This is typically used to read in loads saved from an aerostructural run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>fileName</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) -- Filename for force file. Should have .dat or .bdf extension.</p>
+<dd class="field-odd"><p><strong>fileName</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) -- Filename for force file. Should have .dat or .bdf extension.</p>
 </dd>
 </dl>
 </dd></dl>

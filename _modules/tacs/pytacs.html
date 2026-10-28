@@ -480,6 +480,7 @@
         <span class="n">includeOp</span><span class="o">=</span><span class="s2">"or"</span><span class="p">,</span>
         <span class="n">excludeOp</span><span class="o">=</span><span class="s2">"or"</span><span class="p">,</span>
         <span class="n">projectVector</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">adjacentTo</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -589,6 +590,33 @@
 <span class="sd">            # group to each one.</span>
 <span class="sd">            selectCompIDs(nGroup=-1)</span>
 
+<span class="sd">        5. adjacentTo, integer, string, list of integers and/or strings:</span>
+<span class="sd">        Restrict the selection to components that are adjacent to any of</span>
+<span class="sd">        the components matched by this argument.</span>
+<span class="sd">        Shell components are adjacent when they share an element edge and</span>
+<span class="sd">        1D components (e.g. beams, rods) are adjacent when they share an</span>
+<span class="sd">        element end node.</span>
+<span class="sd">        The argument is matched against the component descriptions in the</span>
+<span class="sd">        same way as 'include'.</span>
+<span class="sd">        If 'include' is not given, every neighbour of the matched components</span>
+<span class="sd">        is selected, otherwise only the 'include' components that are also</span>
+<span class="sd">        neighbours are selected.</span>
+<span class="sd">        A matched component is not selected on account of being matched, but</span>
+<span class="sd">        it will be selected if it is itself adjacent to another matched</span>
+<span class="sd">        component (e.g. when 'adjacentTo' matches several skin panels that</span>
+<span class="sd">        touch each other). Use 'exclude' to leave such components out.</span>
+
+<span class="sd">        For example::</span>
+
+<span class="sd">            # This will select the ribs and spars that are adjacent to the</span>
+<span class="sd">            # 'USkin_03' component.</span>
+<span class="sd">            selectCompIDs(include=["SPAR", "RIB"], adjacentTo="USkin_03")</span>
+
+<span class="sd">            # This will select every component that is adjacent to any of</span>
+<span class="sd">            # the upper skin panels, except the upper skin panels themselves</span>
+<span class="sd">            # (which are adjacent to each other).</span>
+<span class="sd">            selectCompIDs(adjacentTo="USkin", exclude="USkin")</span>
+
 <span class="sd">        includeOp, str: 'and' or 'or'.</span>
 <span class="sd">        Selects the logical operation</span>
 <span class="sd">        used for item in 'include' option.</span>
@@ -604,7 +632,7 @@
 <span class="sd">        """</span>
 
         <span class="c1"># Defaults</span>
-        <span class="n">includeIDs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">)</span>
+        <span class="n">includeIDs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">))</span>
         <span class="n">excludeIDs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">includeBoundIDs</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -616,6 +644,13 @@
 
         <span class="n">iSet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">includeIDs</span><span class="p">)</span>
         <span class="n">eSet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">excludeIDs</span><span class="p">)</span>
+
+        <span class="c1"># Keep only the components that neighbour any of the 'adjacentTo' components</span>
+        <span class="k">if</span> <span class="n">adjacentTo</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">adjacentIDs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">compID</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getCompIDs</span><span class="p">(</span><span class="s2">"or"</span><span class="p">,</span> <span class="n">adjacentTo</span><span class="p">):</span>
+                <span class="n">adjacentIDs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meshLoader</span><span class="o">.</span><span class="n">getAdjacentCompIDs</span><span class="p">(</span><span class="n">compID</span><span class="p">))</span>
+            <span class="n">iSet</span> <span class="o">=</span> <span class="n">iSet</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">adjacentIDs</span><span class="p">)</span>
 
         <span class="c1"># First take the intersection of iSet and ibSet</span>
         <span class="k">if</span> <span class="n">includeBoundIDs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2617,7 +2652,11 @@
 <span class="sd">        information in inList</span>
 <span class="sd">        """</span>
 
-        <span class="c1"># First recursively flatten the inList in case it was nested:</span>
+        <span class="c1"># Convert any numpy arrays of component IDs to lists of python ints,</span>
+        <span class="c1"># then recursively flatten the inList in case it was nested:</span>
+        <span class="n">inList</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">item</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inList</span>
+        <span class="p">]</span>
         <span class="n">inList</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flatten</span><span class="p">(</span><span class="n">inList</span><span class="p">)</span>
 
         <span class="c1"># Neste list container for compIDs</span>
@@ -2626,10 +2665,10 @@
         <span class="c1"># Look at each item in list (which is a list because of the *)</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">inList</span><span class="p">:</span>
             <span class="n">compIDs</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
                 <span class="c1"># Integers are easy, just check if in bounds and add:</span>
                 <span class="k">if</span> <span class="n">item</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">item</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">nComp</span><span class="p">:</span>
-                    <span class="n">compIDs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                    <span class="n">compIDs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_TACSWarning</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">"Trying to add component ID of </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">, which</span><span class="se">\</span>
