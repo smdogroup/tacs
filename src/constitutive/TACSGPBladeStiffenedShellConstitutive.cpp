@@ -812,14 +812,8 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     TacsScalar dfdx[]) {
   if (CPTstiffenerCrippling) {  // use predictions for Sean's paper
 
-    // The caller (addFailureDVSens) passes a pointer to the start of the
-    // stiffener DV block because the base-class crippling model only depends
-    // on stiffener DVs. The CPT crippling load also depends on the panel
-    // length (through the affine aspect ratio), so recover the full DV array
-    // here and index it with the absolute local DV numbers below.
-    TacsScalar *const dfdxFull = dfdx - this->stiffenerDVStartNum;
-
-    // DVsens format [0 - panel length, 1 - stiff pitch, 2 - panel thick,
+    // previous section writes directly into dfdx, this section writes into
+    // DVsens DVsens format [0 - panel length, 1 - stiff pitch, 2 - panel thick,
     //                3 - stiff height, 4 - stiff thick, 5 - panel width]
     TacsScalar DVsens[6];
     memset(DVsens, 0, 6 * sizeof(TacsScalar));
@@ -871,7 +865,6 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
 
     // backpropagate from fail index to N1 stiffener in plane load
     TacsScalar stiffN1sens = 1.0 / N1CritCrippling;
-    // (expects the stiffener DV block, which is what dfdx already points to)
     this->computeStiffenerInPlaneLoadSens(scale, stiffenerStrain, stiffN1sens,
                                           dfdx);
 
@@ -906,14 +899,13 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
       for (int ii = 0; ii < this->numStiffenerPlies; ii++) {
         TacsScalar *Q = &(this->stiffenerQMats[ii * NUM_Q_ENTRIES]);
         // backpropagate through the D matrix
-        dfdxFull[dvNum] += scale * dDfactor_dthick *
-                           this->stiffenerPlyFracs[ii] *
-                           (Ds_sens[0] * Q[0] + Ds_sens[2] * Q[3] +
-                            Ds_sens[1] * Q[1] + Ds_sens[3] * Q[5]);
+        dfdx[dvNum] += scale * dDfactor_dthick * this->stiffenerPlyFracs[ii] *
+                       (Ds_sens[0] * Q[0] + Ds_sens[2] * Q[3] +
+                        Ds_sens[1] * Q[1] + Ds_sens[3] * Q[5]);
         // backpropagate through the A matrix
-        dfdxFull[dvNum] += scale * this->stiffenerPlyFracs[ii] *
-                           (As_sens[0] * Q[0] + As_sens[2] * Q[3] +
-                            As_sens[1] * Q[1] + As_sens[3] * Q[5]);
+        dfdx[dvNum] += scale * this->stiffenerPlyFracs[ii] *
+                       (As_sens[0] * Q[0] + As_sens[2] * Q[3] +
+                        As_sens[1] * Q[1] + As_sens[3] * Q[5]);
       }
     }
 
@@ -923,12 +915,12 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
       int dvNum = this->stiffenerPlyFracLocalNums[plyNum];
       if (dvNum >= 0) {
         const TacsScalar *Q = &(this->stiffenerQMats[plyNum * NUM_Q_ENTRIES]);
-        dfdxFull[dvNum] += scale * (t_s * t_s * t_s / 12.0) *
-                           (Ds_sens[0] * Q[0] + Ds_sens[2] * Q[3] +
-                            Ds_sens[1] * Q[1] + Ds_sens[3] * Q[5]);
-        dfdxFull[dvNum] += scale * t_s *
-                           (As_sens[0] * Q[0] + As_sens[2] * Q[3] +
-                            As_sens[1] * Q[1] + As_sens[3] * Q[5]);
+        dfdx[dvNum] += scale * (t_s * t_s * t_s / 12.0) *
+                       (Ds_sens[0] * Q[0] + Ds_sens[2] * Q[3] +
+                        Ds_sens[1] * Q[1] + Ds_sens[3] * Q[5]);
+        dfdx[dvNum] += scale * t_s *
+                       (As_sens[0] * Q[0] + As_sens[2] * Q[3] +
+                        As_sens[1] * Q[1] + As_sens[3] * Q[5]);
       }
     }
 
@@ -939,22 +931,22 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     //                 3 - stiff height, 4 - stiff thick, 5 - panel width]
 
     if (this->panelLengthLocalNum >= 0) {
-      dfdxFull[this->panelLengthLocalNum] += scale * DVsens[0];
+      dfdx[this->panelLengthLocalNum] += scale * DVsens[0];
     }
     if (this->stiffenerPitchLocalNum >= 0) {
-      dfdxFull[this->stiffenerPitchLocalNum] += scale * DVsens[1];
+      dfdx[this->stiffenerPitchLocalNum] += scale * DVsens[1];
     }
     if (this->panelThickLocalNum >= 0) {
-      dfdxFull[this->panelThickLocalNum] += scale * DVsens[2];
+      dfdx[this->panelThickLocalNum] += scale * DVsens[2];
     }
     if (this->stiffenerHeightLocalNum >= 0) {
-      dfdxFull[this->stiffenerHeightLocalNum] += scale * DVsens[3];
+      dfdx[this->stiffenerHeightLocalNum] += scale * DVsens[3];
     }
     if (this->stiffenerThickLocalNum >= 0) {
-      dfdxFull[this->stiffenerThickLocalNum] += scale * DVsens[4];
+      dfdx[this->stiffenerThickLocalNum] += scale * DVsens[4];
     }
     if (this->panelWidthLocalNum >= 0) {
-      dfdxFull[this->panelWidthLocalNum] += scale * DVsens[5];
+      dfdx[this->panelWidthLocalNum] += scale * DVsens[5];
     }
 
   } else {  // CPTstiffenerCrippling = false
@@ -1170,8 +1162,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerInPlaneLoadSens(
   // derivatives through E the effective modulus
   //    includes stiffener ply fraction DVs only
   for (int plyNum = 0; plyNum < this->numStiffenerPlies; plyNum++) {
-    int dvNum =
-        this->stiffenerPlyFracLocalNums[plyNum] - this->stiffenerDVStartNum;
+    int dvNum = this->stiffenerPlyFracLocalNums[plyNum];
     if (dvNum >= 0) {
       const TacsScalar *Q = &(this->stiffenerQMats[plyNum * NUM_Q_ENTRIES]);
       TacsScalar ply_frac_jac =
@@ -1184,7 +1175,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerInPlaneLoadSens(
   // derivatives through A11s but not effective modulus part
   //    includes stiffener thick (height cancels out b.c. in-plane load)
   if (this->stiffenerThickLocalNum >= 0) {
-    int dvNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
+    int dvNum = this->stiffenerThickLocalNum;
     // use power-series rule since N11_stiff propto sthick^1
     // if f = A * x, then df/dx = A = f / x (useful trick for fewer steps)
     TacsScalar sthick_jac = N11_stiff / this->stiffenerThick;

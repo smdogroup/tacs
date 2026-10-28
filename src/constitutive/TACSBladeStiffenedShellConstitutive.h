@@ -1294,6 +1294,14 @@ class TACSBladeStiffenedShellConstitutive : public TACSShellConstitutive {
   virtual TacsScalar evalStiffenerCripplingStrainSens(
       const TacsScalar stiffenerStrain[], TacsScalar sens[]);
 
+  /**
+   * @brief Add the derivative of the stiffener crippling strength ratio w.r.t
+   * the design variables
+   *
+   * @param scale The scale factor to apply to the derivatives
+   * @param stiffenerStrain Stiffener centroid beam strains
+   * @param dfdx The array to add the derivative to, indexed by local DV number
+   */
   virtual void addStiffenerCripplingDVSens(const TacsScalar scale,
                                            const TacsScalar stiffenerStrain[],
                                            TacsScalar dfdx[]);
