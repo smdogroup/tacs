@@ -21,8 +21,6 @@ import os
 
 import numpy as np
 import scipy as sp
-from pyNastran.bdf.cards.elements.shell import ShellElement
-from pyNastran.bdf.bdf import CROD, CONROD, CBEND, CBAR, CBEAM, CGAP, CTUBE
 
 from tacs.constraints.base import TACSConstraint, SparseLinearConstraint
 
@@ -82,79 +80,8 @@ class AdjacencyConstraint(TACSConstraint):
             self, assembler, comm, options, outputViewer, meshLoader
         )
 
-        # Create a list of all adjacent components on root proc
-        self._initializeAdjacencyList()
-
         # Set call counter
         self.callCounter = -1
-
-    def _initializeAdjacencyList(self):
-        """
-        Create a list of all components with common edges.
-        """
-
-        if self.comm.rank == 0:
-            # First, create a dictionary of common edges shared by components
-            edgeToFace = {}
-            for elemID in self.bdfInfo.elements:
-                elemInfo = self.bdfInfo.elements[elemID]
-                elemConn = elemInfo.nodes
-                compID = self.meshLoader.nastranToTACSCompIDDict[elemInfo.pid]
-                nnodes = len(elemConn)
-                # This checks specifically for adjacency between 2D elements
-                if isinstance(elemInfo, ShellElement):
-                    for j in range(nnodes):
-                        nodeID1 = elemConn[j]
-                        nodeID2 = elemConn[(j + 1) % nnodes]
-
-                        if nodeID1 < nodeID2:
-                            key = (nodeID1, nodeID2)
-                        else:
-                            key = (nodeID2, nodeID1)
-
-                        if key not in edgeToFace:
-                            edgeToFace[key] = [compID]
-                        elif compID not in edgeToFace[key]:
-                            edgeToFace[key].append(compID)
-
-                # This checks specifically for adjacency between 1D elements
-                elif isinstance(
-                    elemInfo, (CROD, CONROD, CBEND, CBAR, CBEAM, CGAP, CTUBE)
-                ):
-                    # In this case our "edge" is 0D (just a node)
-                    nodeID1 = elemConn[0]
-                    nodeID2 = elemConn[-1]
-                    if nodeID1 not in edgeToFace:
-                        edgeToFace[nodeID1] = [compID]
-                    elif compID not in edgeToFace[nodeID1]:
-                        edgeToFace[nodeID1].append(compID)
-                    if nodeID2 not in edgeToFace:
-                        edgeToFace[nodeID2] = [compID]
-                    elif compID not in edgeToFace[nodeID2]:
-                        edgeToFace[nodeID2].append(compID)
-
-            # Now we loop back over each element and each edge. By
-            # using the edgeToFace dictionary, we can now determine
-            # which components IDs (jComp) are connected to the
-            # current component ID (iComp).
-            self.adjacentComps = []
-
-            for edgeKey in edgeToFace:
-                if len(edgeToFace[edgeKey]) >= 2:
-                    for i, iComp in enumerate(edgeToFace[edgeKey][:-1]):
-                        for jComp in edgeToFace[edgeKey][i + 1 :]:
-                            if iComp < jComp:
-                                dvKey = (iComp, jComp)
-                            else:
-                                dvKey = (jComp, iComp)
-                            if dvKey not in self.adjacentComps:
-                                self.adjacentComps.append(dvKey)
-
-        else:
-            self.adjacentComps = None
-
-        # Wait for root
-        self.comm.barrier()
 
     def addConstraint(self, conName, compIDs=None, lower=-1e20, upper=1e20, dvIndex=0):
         """
@@ -224,6 +151,8 @@ class AdjacencyConstraint(TACSConstraint):
         """
         size = self.comm.size
         rank = self.comm.rank
+        # Find the adjacent component pairs to constrain, these are the same on every proc
+        compPairs = self._getConstrainedCompPairs(compIDs)
         # Gather the dv mapping from each proc
         globalToLocalDVNumsOnProc = self.comm.gather(self.globalToLocalDVNums, root=0)
         # Assemble constraint info on root proc
@@ -233,41 +162,35 @@ class AdjacencyConstraint(TACSConstraint):
             colsOnProc = [[] for _ in range(size)]
             valsOnProc = [[] for _ in range(size)]
             conCount = 0
-            foundCompPairs = []
             # Loop through all adjacent component pairs
-            for compPair in self.adjacentComps:
-                # Check if they are in the user provided compIDs
-                if compPair[0] in compIDs and compPair[1] in compIDs:
-                    # Add comp pair to list
-                    foundCompPairs.append(compPair)
-                    # We found a new constraint
-                    for i, comp in enumerate(compPair):
-                        # Get the TACS element object associated with this compID
-                        elemObj = self.meshLoader.getElementObject(comp, 0)
-                        elemIndex = 0
-                        # Get the dvs owned by this element
-                        globalDvNums = elemObj.getDesignVarNums(elemIndex)
-                        # Check if specified dv num is owned by each proc
-                        for proc_i in range(size):
-                            globalToLocalDVNums = globalToLocalDVNumsOnProc[proc_i]
-                            if globalDvNums[dvIndex] in globalToLocalDVNums:
-                                globalDVNum = globalDvNums[dvIndex]
-                                localDVNum = globalToLocalDVNums[globalDVNum]
-                                rowsOnProc[proc_i].append(conCount)
-                                colsOnProc[proc_i].append(localDVNum)
-                                if i == 0:
-                                    valsOnProc[proc_i].append(1.0)
-                                else:
-                                    valsOnProc[proc_i].append(-1.0)
-                                break
-                    conCount += 1
+            for compPair in compPairs:
+                # We found a new constraint
+                for i, comp in enumerate(compPair):
+                    # Get the TACS element object associated with this compID
+                    elemObj = self.meshLoader.getElementObject(comp, 0)
+                    elemIndex = 0
+                    # Get the dvs owned by this element
+                    globalDvNums = elemObj.getDesignVarNums(elemIndex)
+                    # Check if specified dv num is owned by each proc
+                    for proc_i in range(size):
+                        globalToLocalDVNums = globalToLocalDVNumsOnProc[proc_i]
+                        if globalDvNums[dvIndex] in globalToLocalDVNums:
+                            globalDVNum = globalDvNums[dvIndex]
+                            localDVNum = globalToLocalDVNums[globalDVNum]
+                            rowsOnProc[proc_i].append(conCount)
+                            colsOnProc[proc_i].append(localDVNum)
+                            if i == 0:
+                                valsOnProc[proc_i].append(1.0)
+                            else:
+                                valsOnProc[proc_i].append(-1.0)
+                            break
+                conCount += 1
 
         else:
             rowsOnProc = None
             colsOnProc = None
             valsOnProc = None
             conCount = 0
-            foundCompPairs = None
 
         # Scatter local sparse indices/values to remaining procs
         rows = self.comm.scatter(rowsOnProc, root=0)
@@ -275,17 +198,39 @@ class AdjacencyConstraint(TACSConstraint):
         vals = self.comm.scatter(valsOnProc, root=0)
 
         # Get local sparse matrix dimensions
-        foundCompPairs = self.comm.bcast(foundCompPairs, root=0)
         conCount = self.comm.bcast(conCount, root=0)
         nLocalDVs = self.getNumDesignVars()
 
         constrObj = SparseLinearConstraint(
             self.comm, rows, cols, vals, conCount, nLocalDVs, lbound, ubound
         )
-        constrObj.compPairs = foundCompPairs
+        constrObj.compPairs = compPairs
 
         # Create linear constraint object
         return constrObj
+
+    def _getConstrainedCompPairs(self, compIDs: list[int]) -> list[tuple[int, int]]:
+        """
+        Find the pairs of adjacent components that are both in the selected components.
+
+        Parameters
+        ----------
+        compIDs: list[int]
+            List of compIDs to select.
+
+        Returns
+        -------
+        compPairs : list[tuple[int, int]]
+            List of adjacent component ID pairs ``(iComp, jComp)``, with ``iComp < jComp``,
+            sorted by ``iComp`` and then ``jComp``.
+        """
+        compIDSet = set(compIDs)
+        compPairs = []
+        for iComp in sorted(compIDSet):
+            for jComp in self.meshLoader.getAdjacentCompIDs(iComp):
+                if jComp > iComp and jComp in compIDSet:
+                    compPairs.append((iComp, jComp))
+        return compPairs
 
     def evalConstraints(self, funcs, evalCons=None, ignoreMissing=False):
         """
