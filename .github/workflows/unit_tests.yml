@@ -22,9 +22,14 @@ jobs:
     # Run on Ubuntu
     runs-on: ${{ matrix.OS }}
     timeout-minutes: 40
-    # Necessary to prevent mpi tests failing due to lack of slots
     env:
-      OMPI_MCA_btl: self,tcp
+      # Force the ob1 point-to-point layer so the btl setting below is honoured.
+      # Open MPI otherwise selects the UCX layer, which on some GitHub-hosted
+      # Azure runners fails to open the network adapter as a verbs device and
+      # then hangs every multi-process test until the testflo timeout.
+      OMPI_MCA_pml: ob1
+      OMPI_MCA_btl: self,sm,tcp
+      # Necessary to prevent mpi tests failing due to lack of slots
       OMPI_MCA_rmaps_base_oversubscribe: 1
     # Ensures conda environment is initialized for all steps
     defaults:
