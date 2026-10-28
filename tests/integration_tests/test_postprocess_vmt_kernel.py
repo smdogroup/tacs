@@ -24,6 +24,7 @@ from tacs.postprocess.vmt import (
     buildSilhouette,
     computeEnvelope,
     computeVMT,
+    deduceElasticAxis,
     plotVMTEnvelope,
     plotVMTReport,
     scaleVMTResult,
@@ -268,6 +269,138 @@ class TestComputeVMT(unittest.TestCase):
             computeVMT(
                 [[1.0, 0.0, 0.0]], [[0.0, 0.0, 1.0]], STRAIGHT_AXIS, stationMode="nope"
             )
+
+
+def taperedPlanform(rows=11):
+    """
+    Nodes of a swept, tapered box: span along y from 0 to 10, leading edge
+    x = 0.2 y, trailing edge x = 2 + 0.1 y, two skins at z = -0.1 and 0.1.
+    """
+    X = []
+    for y in np.linspace(0.0, 10.0, rows):
+        for x in np.linspace(0.2 * y, 2.0 + 0.1 * y, 5):
+            for z in (-0.1, 0.1):
+                X.append([x, y, z])
+    return np.array(X)
+
+
+class TestDeduceElasticAxis(unittest.TestCase):
+    N_PROCS = 1
+
+    def setUp(self):
+        warnings.simplefilter("ignore", UserWarning)
+        self.X = taperedPlanform()
+
+    def test_default_directions_and_fraction(self):
+        # Default span y and shear -z put the chord along +x; the stations
+        # coincide with the node rows so the local chord is exact
+        axisPts, stations = deduceElasticAxis(self.X, numStations=11)
+        y = np.linspace(0.0, 10.0, 11)
+        expected = np.column_stack([0.2 * y + 0.5 * (2.0 - 0.1 * y), y, 0.0 * y])
+        np.testing.assert_allclose(axisPts, expected, atol=1e-12)
+        arc = np.concatenate(
+            [[0.0], np.cumsum(np.linalg.norm(np.diff(axisPts, axis=0), axis=1))]
+        )
+        np.testing.assert_allclose(stations, arc)
+
+    def test_quarter_chord_and_span_direction(self):
+        axisPts, _ = deduceElasticAxis(self.X, chordFraction=0.25, numStations=11)
+        y = np.linspace(0.0, 10.0, 11)
+        np.testing.assert_allclose(axisPts[:, 0], 0.2 * y + 0.25 * (2.0 - 0.1 * y))
+        # Reversing the span direction swaps root and tip and the chord sign,
+        # so the fraction is now measured from the trailing edge
+        flipped, _ = deduceElasticAxis(
+            self.X, spanDir=(0.0, -1.0, 0.0), chordFraction=0.25, numStations=11
+        )
+        np.testing.assert_allclose(flipped[:, 1], y[::-1])
+        np.testing.assert_allclose(
+            flipped[:, 0], (2.0 + 0.1 * y - 0.25 * (2.0 - 0.1 * y))[::-1]
+        )
+        # The span direction need not be perpendicular to the shear direction
+        skew, _ = deduceElasticAxis(
+            self.X, spanDir=(0.0, 1.0, 0.3), chordFraction=0.25, numStations=11
+        )
+        np.testing.assert_allclose(skew[:, 0], axisPts[:, 0], atol=0.05)
+
+    def test_midpoint_mode_extends_to_root_and_tip(self):
+        axisPts, stations = deduceElasticAxis(
+            self.X, numStations=5, stationMode="midpoint"
+        )
+        self.assertEqual(axisPts.shape, (7, 3))
+        np.testing.assert_allclose(axisPts[:, 1], [0.0, 1.0, 3.0, 5.0, 7.0, 9.0, 10.0])
+        self.assertEqual(stations.shape, (5,))
+        self.assertGreater(stations[0], 0.0)
+        self.assertLess(
+            stations[-1], np.linalg.norm(np.diff(axisPts, axis=0), axis=1).sum()
+        )
+        single, stations = deduceElasticAxis(self.X, numStations=1)
+        self.assertEqual(single.shape, (2, 3))
+        np.testing.assert_allclose(stations, [0.0])
+
+    def test_empty_bins_are_widened(self):
+        rows = self.X[(self.X[:, 1] == 0.0) | (self.X[:, 1] == 10.0)]
+        axisPts, _ = deduceElasticAxis(rows, numStations=5)
+        self.assertTrue(np.all(np.isfinite(axisPts)))
+        np.testing.assert_allclose(axisPts[:, 1], np.linspace(0.0, 10.0, 5))
+        self.assertTrue(np.all(axisPts[:, 0] >= 1.0))
+        self.assertTrue(np.all(axisPts[:, 0] <= 2.5))
+
+    def test_node_mask(self):
+        mask = self.X[:, 1] <= 5.0
+        masked, _ = deduceElasticAxis(self.X, numStations=6, nodeMask=mask)
+        direct, _ = deduceElasticAxis(self.X[mask], numStations=6)
+        np.testing.assert_allclose(masked, direct)
+        self.assertAlmostEqual(masked[-1, 1], 5.0)
+
+    def test_compute_vmt_without_axis(self):
+        F = np.zeros_like(self.X)
+        F[:, 2] = 1.0
+        auto = computeVMT(self.X, F, numStations=11, chordFraction=0.25)
+        axisPts, stations = deduceElasticAxis(
+            self.X, chordFraction=0.25, numStations=11
+        )
+        explicit = computeVMT(self.X, F, axisPts, stations=stations)
+        np.testing.assert_array_equal(auto.s, explicit.s)
+        np.testing.assert_array_equal(auto.V, explicit.V)
+        np.testing.assert_array_equal(auto.M, explicit.M)
+        np.testing.assert_array_equal(auto.T, explicit.T)
+        np.testing.assert_array_equal(auto.axisPoints, axisPts)
+        # Root shear is the load of every node projecting outboard of the root
+        # (on the swept axis the trailing-edge root nodes project to s > 0)
+        np.testing.assert_allclose(auto.V[0], -F[auto.nodeS > 0.0, 2].sum())
+        # Explicit stations still apply along the deduced axis
+        custom = computeVMT(
+            self.X, F, numStations=11, stations=[0.0, 1.0], chordFraction=0.25
+        )
+        np.testing.assert_array_equal(custom.axisPoints, auto.axisPoints)
+        np.testing.assert_allclose(custom.s, [0.0, 1.0])
+        # The mask restricts the nodes that define the axis
+        mask = self.X[:, 1] <= 5.0
+        partial = computeVMT(self.X, F, numStations=6, nodeMask=mask)
+        self.assertAlmostEqual(partial.axisPoints[-1, 1], 5.0)
+
+    def test_invalid_input(self):
+        X = self.X
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, spanDir=(0.0, 0.0, 1.0))
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, spanDir=(0.0, 0.0, 0.0))
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, chordFraction="abc")
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, chordFraction=np.nan)
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, numStations=0)
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, stationMode="nope")
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X[X[:, 1] == 0.0])
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(X, nodeMask=np.zeros(X.shape[0], dtype=bool))
+        with self.assertRaises(ValueError):
+            deduceElasticAxis(np.full((3, 3), np.nan))
+        with self.assertRaises(ValueError):
+            computeVMT(X, np.zeros_like(X), spanDir=(0.0, 0.0, -1.0))
 
 
 class TestSelectionAndSilhouette(unittest.TestCase):

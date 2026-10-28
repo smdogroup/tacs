@@ -382,6 +382,15 @@ axis highlighted above the three stacked diagrams. matplotlib is required for pl
    result = computeVMTFromF5(data, axisPts=[[0, 0, 0], [0, 10, 0]], numStations=30)
    plotVMT(result, data, fileName="vmt.pdf")
 
+Without an axis, one is deduced from the mesh: the span direction (``--span-dir`` / ``spanDir``, default ``y``)
+and the shear direction fix the chord direction as their cross product, and at every station the axis passes
+through a fixed fraction of the local chord (``--chord-fraction`` / ``chordFraction``, default ``0.5``) at
+mid-depth, see :func:`tacs.postprocess.vmt.deduceElasticAxis`.
+
+.. code-block:: bash
+
+   python -m tacs.postprocess.vmt solution_000.f5 --span-dir 0 1 0 --chord-fraction 0.25 --output vmt.pdf
+
 Several f5 files of the same model are treated as load cases. They are evaluated on the same axis and stations,
 and a station-wise min/max envelope is produced. With a ``.pdf`` output the result is a multi-page report: the
 envelope first, then one page per load case.

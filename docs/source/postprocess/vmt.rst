@@ -15,6 +15,8 @@ API Reference
 
 .. autofunction:: tacs.postprocess.vmt.computeVMT
 
+.. autofunction:: tacs.postprocess.vmt.deduceElasticAxis
+
 .. autoclass:: tacs.postprocess.vmt.VMTResult
   :members:
 

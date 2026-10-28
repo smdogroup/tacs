@@ -316,6 +316,52 @@ class TestWingboxVMT(unittest.TestCase):
         )
         np.testing.assert_allclose(extended.V[0], 0.0, atol=1e-6 * abs(result.V[0]))
 
+    def test_deduced_axis(self):
+        result = computeVMTFromF5(
+            self.data, shearDir=self.shearDir, spanDir=(0.0, 0.0, 1.0), numStations=20
+        )
+        explicit = computeVMTFromF5(
+            self.data, self.axis, shearDir=self.shearDir, numStations=20
+        )
+        # The root shear does not depend on the axis, the torque does
+        np.testing.assert_allclose(result.V[0], explicit.V[0], rtol=1e-10)
+        self.assertNotAlmostEqual(result.T[0], explicit.T[0])
+        # One vertex per station, stations exactly at the vertices
+        self.assertEqual(result.axisPoints.shape, (20, 3))
+        arc = np.concatenate(
+            [
+                [0.0],
+                np.cumsum(np.linalg.norm(np.diff(result.axisPoints, axis=0), axis=1)),
+            ]
+        )
+        np.testing.assert_allclose(result.s, arc)
+        # Mid-chord of the unswept root section (spars at x = 1.25 and 4.0),
+        # mid-chord of the tip (spars at x = 7.725 and 8.625), mid-depth y = 0
+        np.testing.assert_allclose(result.axisPoints[0], [2.625, 0.0, 0.0], atol=1e-4)
+        np.testing.assert_allclose(result.axisPoints[-1], [8.175, 0.0, 13.8], atol=1e-3)
+        np.testing.assert_allclose(result.axisPoints[:, 1], 0.0, atol=1e-3)
+        self.assertTrue(np.all(np.diff(result.axisPoints[:, 2]) > 0.0))
+        # The shear axis x span axis points along -x, so a fraction of 0.0
+        # follows the trailing spar and 1.0 the leading spar
+        rear = computeVMTFromF5(
+            self.data,
+            shearDir=self.shearDir,
+            spanDir=(0.0, 0.0, 1.0),
+            chordFraction=0.0,
+            numStations=20,
+        )
+        np.testing.assert_allclose(rear.axisPoints[[0, -1], 0], [4.0, 8.625], atol=1e-3)
+        # The envelope of several cases works on the shared deduced axis
+        results = computeVMTCases(
+            [self.f5, self.f5Pushover],
+            shearDir=self.shearDir,
+            spanDir=(0.0, 0.0, 1.0),
+            numStations=20,
+        )
+        env = computeEnvelope(results)
+        np.testing.assert_allclose(env.axisPoints, result.axisPoints)
+        np.testing.assert_allclose(env.Vmax, result.V)
+
     def test_component_globs_and_rbe(self):
         names = listComponents(self.data)
         self.assertGreaterEqual(len(names), 90)
@@ -543,6 +589,49 @@ class TestWingboxVMT(unittest.TestCase):
             fp.write(b"\x07" * 100)
         self.assertEqual(main([junk, "--axis", "0", "0", "0", "1", "0", "0"]), 2)
         self.assertEqual(main([self.f5, "--axis", "0", "0", "0"]), 2)
+
+    def test_cli_deduced_axis(self):
+        csv = os.path.join(self.tmp.name, "deduced.csv")
+        argv = [
+            self.f5,
+            "--shear-dir",
+            "0",
+            "-1",
+            "0",
+            "--span-dir",
+            "0",
+            "0",
+            "1",
+            "--chord-fraction",
+            "0.25",
+            "--csv",
+            csv,
+        ]
+        self.assertEqual(main(argv), 0)
+        with open(csv) as fp:
+            lines = fp.read().splitlines()
+        meta = [line for line in lines if line.startswith("#")]
+        self.assertIn("# chordFraction=0.25", meta)
+        self.assertIn("# spanDir=[0.0, 0.0, 1.0]", meta)
+        table = np.loadtxt(csv, delimiter=",", comments="#", skiprows=len(meta) + 1)
+        result = computeVMTFromF5(
+            self.data,
+            shearDir=self.shearDir,
+            spanDir=(0.0, 0.0, 1.0),
+            chordFraction=0.25,
+            numStations=20,
+        )
+        np.testing.assert_allclose(table[:, 1], result.V)
+        np.testing.assert_allclose(table[:, 3], result.T)
+        np.testing.assert_allclose(table[:, 10:13], result.stationPoints)
+        # A span direction parallel to the shear direction is a user error
+        self.assertEqual(
+            main([self.f5, "--shear-dir", "0", "-1", "0", "--span-dir", "0", "1", "0"]),
+            2,
+        )
+        for bad in ("nan", "abc"):
+            with self.assertRaises(SystemExit):
+                main([self.f5, "--chord-fraction", bad])
 
 
 if __name__ == "__main__":

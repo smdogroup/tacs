@@ -36,6 +36,19 @@ With this convention :math:`(\hat{t}, \hat{b}, \hat{s})` is right-handed and
 ``P`` in ``+z`` and the default shear direction ``(0, 0, -1)`` gives
 ``V = -P`` and ``M = +P (L - s)``.
 
+Deduced beam axis
+^^^^^^^^^^^^^^^^^
+When no axis is given, one is deduced from the nodal coordinates by
+:func:`deduceElasticAxis`. A span direction :math:`\hat{\eta}` (root to tip,
+default ``(0, 1, 0)``) fixes the chord direction
+:math:`\hat{c} = \hat{s} \times \hat{\eta}`, so the default shear and span
+directions give the chord along ``+x``. The stations are spread along the
+span and, at each one, the nodes within half a station spacing collectively
+define the local section: the axis vertex sits at ``chordFraction`` (default
+``0.5``) of their chordwise extent, measured from the end with the smallest
+coordinate along :math:`\hat{c}`, and at the mid-depth of their extent along
+the shear direction. The resulting polyline passes through every station.
+
 Notes
 -----
 * The loads written to the f5 file (pyTACS option ``writeLoads``) are the
@@ -81,10 +94,21 @@ Several load cases with an envelope, written as a multi-page PDF::
     )
     plotVMTReport(results, "vmt_report.pdf", data=data)
 
+Let the axis be deduced from the mesh instead, here at the quarter chord of
+a wing whose span runs along ``z`` and whose chord therefore runs along
+``-x`` (``shearDir x spanDir``), so the fraction is measured from the trailing
+edge::
+
+    result = computeVMTFromF5(
+        data, shearDir=[0, -1, 0], spanDir=[0, 0, 1], chordFraction=0.75
+    )
+
 Command line::
 
     python -m tacs.postprocess.vmt pullup_000.f5 pushover_000.f5 --axis 4 0 0  4 0 13.8 \
         --shear-dir 0 -1 0 --num-stations 30 --output vmt_report.pdf
+    python -m tacs.postprocess.vmt pullup_000.f5 --shear-dir 0 -1 0 --span-dir 0 0 1 \
+        --chord-fraction 0.75 --output vmt.pdf
 
 Label the plot axes with units, or convert the plotted numbers first (here
 from N and m to kN and mm)::
@@ -707,6 +731,16 @@ def _makeStations(axisLength, numStations, stations, stationMode):
     )
 
 
+def _checkDirection(name, value):
+    """Return ``value`` as a finite, non-zero float64 3-vector."""
+    vec = np.asarray(value, dtype=np.float64).ravel()
+    if vec.shape != (3,) or not np.all(np.isfinite(vec)):
+        raise ValueError(f"{name} must be a finite 3-vector")
+    if np.linalg.norm(vec) == 0.0:
+        raise ValueError(f"{name} must be non-zero")
+    return vec
+
+
 def _localFrame(shearDir, tangent, segmentIndex):
     """Return the unit shear and bending axes for one station."""
     sh = shearDir - np.dot(shearDir, tangent) * tangent
@@ -721,10 +755,156 @@ def _localFrame(shearDir, tangent, segmentIndex):
     return sh, b
 
 
+def deduceElasticAxis(
+    X,
+    shearDir=(0.0, 0.0, -1.0),
+    spanDir=(0.0, 1.0, 0.0),
+    chordFraction=0.5,
+    numStations=20,
+    stationMode="endpoint",
+    nodeMask=None,
+):
+    r"""
+    Deduce a beam (elastic) axis from the nodal coordinates of a wing-like structure.
+
+    The chord direction is :math:`\hat{c} = \hat{s} \times \hat{\eta}` with
+    :math:`\hat{s}` the shear direction and :math:`\hat{\eta}` the span
+    direction (root to tip). Stations are spread between the inboard-most and
+    outboard-most node along the span following ``numStations`` and
+    ``stationMode``. At every station the nodes within half a station spacing
+    along the span form the local section, and the axis vertex is placed at
+    the station's span coordinate, at ``chordFraction`` of the section's
+    chordwise extent measured from the end with the smallest coordinate along
+    :math:`\hat{c}`, and at the mid-point of the section's extent along the
+    shear direction. A station bin without any node is widened until it
+    contains one, so coarse meshes work at the cost of a local averaging of
+    the taper. The axis always extends to the root and tip of the structure,
+    so in ``"midpoint"`` mode (or with a single station) extra vertices are
+    added at both ends.
+
+    Parameters
+    ----------
+    X : array_like
+        Nodal coordinates, shape ``(n, 3)``.
+    shearDir : array_like
+        Shear direction, default ``(0, 0, -1)``.
+    spanDir : array_like
+        Span direction from root to tip, default ``(0, 1, 0)``. Must not be
+        parallel to ``shearDir``. With the default shear and span directions
+        the chord runs along ``+x`` and the fraction is measured from the
+        leading edge of a conventional (``x`` aft) aircraft model.
+    chordFraction : float
+        Chordwise position of the axis as a fraction of the local chord,
+        default ``0.5``. Values outside ``[0, 1]`` extrapolate beyond the
+        modelled section.
+    numStations : int
+        Number of stations, default 20.
+    stationMode : {"endpoint", "midpoint"}
+        Station placement rule, see :func:`computeVMT`.
+    nodeMask : array_like of bool, optional
+        Only nodes where the mask is True define the axis.
+
+    Returns
+    -------
+    axisPts : numpy.ndarray
+        Axis vertices from root to tip, shape ``(npts, 3)``.
+    stations : numpy.ndarray
+        Arc length along ``axisPts`` of the station vertices, shape
+        ``(numStations,)``. Pass both to :func:`computeVMT` to evaluate the
+        loads exactly at the deduced vertices.
+
+    Raises
+    ------
+    ValueError
+        On invalid input, a span direction parallel to the shear direction, or
+        nodes without any extent along the span.
+    """
+    X = np.asarray(X, dtype=np.float64)
+    if X.ndim != 2 or X.shape[1] != 3:
+        raise ValueError(f"X must have shape (n, 3), got {X.shape}")
+    if nodeMask is not None:
+        nodeMask = np.asarray(nodeMask, dtype=bool)
+        if nodeMask.shape != (X.shape[0],):
+            raise ValueError(
+                f"nodeMask must have shape ({X.shape[0]},), got {nodeMask.shape}"
+            )
+        X = X[nodeMask]
+    if X.shape[0] == 0:
+        raise ValueError("no nodes selected")
+    if not np.all(np.isfinite(X)):
+        raise ValueError("X must be finite")
+    try:
+        chordFraction = float(chordFraction)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"chordFraction must be a number, got {chordFraction!r}"
+        ) from exc
+    if not np.isfinite(chordFraction):
+        raise ValueError(f"chordFraction must be finite, got {chordFraction!r}")
+
+    shearHat = _checkDirection("shearDir", shearDir)
+    spanHat = _checkDirection("spanDir", spanDir)
+    chordDir = np.cross(shearHat, spanHat)
+    if np.linalg.norm(chordDir) <= 1e-8 * np.linalg.norm(shearHat) * np.linalg.norm(
+        spanHat
+    ):
+        raise ValueError(
+            f"spanDir {spanHat.tolist()} is parallel to shearDir "
+            f"{shearHat.tolist()}; choose a span direction perpendicular to the "
+            "shear direction"
+        )
+    # Orthonormal section frame: span, chord and depth (the shear direction
+    # with its span component removed)
+    spanHat = spanHat / np.linalg.norm(spanHat)
+    chordHat = chordDir / np.linalg.norm(chordDir)
+    depthHat = np.cross(spanHat, chordHat)
+
+    eta = X @ spanHat
+    chi = X @ chordHat
+    zeta = X @ depthHat
+    etaMin, etaMax = float(eta.min()), float(eta.max())
+    spanLength = etaMax - etaMin
+    if spanLength <= 1e-12 * max(1.0, float(np.abs(X).max())):
+        raise ValueError(
+            "all nodes have the same coordinate along spanDir; the structure has "
+            "no span to deduce a beam axis from"
+        )
+
+    etaStations = etaMin + _makeStations(spanLength, numStations, None, stationMode)
+    halfWidth = 0.5 * (
+        float(np.diff(etaStations).min()) if etaStations.size > 1 else spanLength
+    )
+    # The axis always runs from the root to the tip of the structure
+    tol = 1e-9 * spanLength
+    etaVerts = list(etaStations)
+    first = 0
+    if etaStations[0] - etaMin > tol:
+        etaVerts.insert(0, etaMin)
+        first = 1
+    if etaMax - etaStations[-1] > tol:
+        etaVerts.append(etaMax)
+    stationIdx = first + np.arange(etaStations.size)
+
+    axisPts = np.empty((len(etaVerts), 3))
+    for i, e in enumerate(etaVerts):
+        width = halfWidth
+        inBin = np.abs(eta - e) <= width
+        while not inBin.any():
+            width *= 2.0
+            inBin = np.abs(eta - e) <= width
+        chiMin, chiMax = chi[inBin].min(), chi[inBin].max()
+        c = chiMin + chordFraction * (chiMax - chiMin)
+        z = 0.5 * (zeta[inBin].min() + zeta[inBin].max())
+        axisPts[i] = e * spanHat + c * chordHat + z * depthHat
+
+    sAxis = _prepareAxis(axisPts)[4]
+    return axisPts, sAxis[stationIdx]
+
+
 def computeVMT(
     X,
     F,
-    axisPts,
+    axisPts=None,
     M=None,
     shearDir=(0.0, 0.0, -1.0),
     numStations=20,
@@ -732,6 +912,8 @@ def computeVMT(
     nodeMask=None,
     stationMode="endpoint",
     stationTol=1e-6,
+    spanDir=(0.0, 1.0, 0.0),
+    chordFraction=0.5,
 ):
     """
     Compute shear, bending moment and torque along a piecewise-linear axis.
@@ -742,8 +924,11 @@ def computeVMT(
         Nodal coordinates, shape ``(n, 3)``.
     F : array_like
         External nodal forces, shape ``(n, 3)``.
-    axisPts : array_like
+    axisPts : array_like, optional
         Beam axis vertices from root to tip, shape ``(npts, 3)``, ``npts >= 2``.
+        ``None`` (default) deduces the axis from the selected nodes with
+        :func:`deduceElasticAxis` and, unless ``stations`` is given, places
+        the stations at its vertices.
     M : array_like, optional
         External nodal moments, shape ``(n, 3)``. Defaults to zero.
     shearDir : array_like
@@ -763,6 +948,13 @@ def computeVMT(
         A node contributes to a station when ``sNode > s + stationTol * scale``
         with ``scale = max(axisLength, max|X|)``. Absorbs the ``float32``
         round-off of coordinates stored in f5 files.
+    spanDir : array_like
+        Span direction (root to tip) used to deduce the axis when ``axisPts``
+        is ``None``, default ``(0, 1, 0)``. Ignored otherwise.
+    chordFraction : float
+        Chordwise position of the deduced axis as a fraction of the local
+        chord, default ``0.5``. See :func:`deduceElasticAxis`. Ignored when
+        ``axisPts`` is given.
 
     Returns
     -------
@@ -797,11 +989,19 @@ def computeVMT(
     ):
         raise ValueError("X, F and M must be finite")
 
-    shearDir = np.asarray(shearDir, dtype=np.float64).ravel()
-    if shearDir.shape != (3,) or not np.all(np.isfinite(shearDir)):
-        raise ValueError("shearDir must be a finite 3-vector")
-    if np.linalg.norm(shearDir) == 0.0:
-        raise ValueError("shearDir must be non-zero")
+    shearDir = _checkDirection("shearDir", shearDir)
+
+    if axisPts is None:
+        axisPts, deducedStations = deduceElasticAxis(
+            X,
+            shearDir=shearDir,
+            spanDir=spanDir,
+            chordFraction=chordFraction,
+            numStations=numStations,
+            stationMode=stationMode,
+        )
+        if stations is None:
+            stations = deducedStations
 
     starts, d, segLen, tangents, sAxis, cleanPts = _prepareAxis(axisPts)
     axisLength = float(sAxis[-1])
@@ -868,7 +1068,7 @@ def computeVMT(
 
 def computeVMTFromF5(
     source,
-    axisPts,
+    axisPts=None,
     shearDir=(0.0, 0.0, -1.0),
     numStations=20,
     components=None,
@@ -882,8 +1082,10 @@ def computeVMTFromF5(
     ----------
     source : str or F5Data
         Path of an f5 file, or data already read with :func:`loadF5`.
-    axisPts : array_like
-        Beam axis vertices from root to tip, shape ``(npts, 3)``.
+    axisPts : array_like, optional
+        Beam axis vertices from root to tip, shape ``(npts, 3)``. ``None``
+        (default) deduces the axis from the selected nodes, see
+        :func:`deduceElasticAxis`.
     shearDir : array_like
         Shear direction, default ``(0, 0, -1)``.
     numStations : int
@@ -894,7 +1096,7 @@ def computeVMTFromF5(
         Whether to add support reactions, see :func:`nodalLoads`.
     **kwargs
         Passed to :func:`computeVMT` (``stations``, ``stationMode``,
-        ``stationTol``).
+        ``stationTol``, ``spanDir``, ``chordFraction``).
 
     Returns
     -------
@@ -1552,7 +1754,7 @@ def _caseNames(sources, names=None):
 
 def computeVMTCases(
     sources,
-    axisPts,
+    axisPts=None,
     names=None,
     shearDir=(0.0, 0.0, -1.0),
     numStations=20,
@@ -1567,8 +1769,11 @@ def computeVMTCases(
     ----------
     sources : sequence of str or F5Data
         One f5 file (or loaded data set) per load case.
-    axisPts : array_like
-        Beam axis vertices from root to tip, shape ``(npts, 3)``.
+    axisPts : array_like, optional
+        Beam axis vertices from root to tip, shape ``(npts, 3)``. ``None``
+        (default) deduces the axis from the mesh, see
+        :func:`deduceElasticAxis`; all cases share the same model and
+        therefore the same deduced axis.
     names : sequence of str, optional
         Case names; default to the file names without extension. Duplicates
         get a numeric suffix.
@@ -1946,7 +2151,8 @@ def buildParser():
         metavar="COORD",
         help=(
             "beam axis vertices from root to tip as a flat list of x y z triplets "
-            "(at least two points), e.g. --axis 0 0 0  0 10 0"
+            "(at least two points), e.g. --axis 0 0 0  0 10 0 (default: deduce "
+            "the axis from the mesh, see --span-dir and --chord-fraction)"
         ),
     )
     parser.add_argument(
@@ -1956,6 +2162,29 @@ def buildParser():
         default=[0.0, 0.0, -1.0],
         metavar=("X", "Y", "Z"),
         help="shear direction (default: 0 0 -1)",
+    )
+    parser.add_argument(
+        "--span-dir",
+        type=float,
+        nargs=3,
+        default=[0.0, 1.0, 0.0],
+        metavar=("X", "Y", "Z"),
+        help=(
+            "span direction from root to tip used to deduce the beam axis when "
+            "--axis is not given; the chord then runs along shear-dir x span-dir "
+            "(default: 0 1 0)"
+        ),
+    )
+    parser.add_argument(
+        "--chord-fraction",
+        type=_finiteFloat,
+        default=0.5,
+        metavar="FRACTION",
+        help=(
+            "chordwise position of the deduced beam axis as a fraction of the "
+            "local chord, measured from the edge with the smallest coordinate "
+            "along shear-dir x span-dir; ignored with --axis (default 0.5)"
+        ),
     )
     parser.add_argument(
         "--num-stations", type=int, default=20, help="number of stations (default 20)"
@@ -2046,6 +2275,17 @@ def _positiveFloat(text):
         raise argparse.ArgumentTypeError(str(exc)) from exc
 
 
+def _finiteFloat(text):
+    """Parse an argparse value as a finite float."""
+    try:
+        value = float(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(f"expected a number, got {text!r}") from exc
+    if not np.isfinite(value):
+        raise argparse.ArgumentTypeError(f"expected a finite number, got {text!r}")
+    return value
+
+
 def _parseComponents(tokens):
     if tokens is None:
         return None
@@ -2093,16 +2333,20 @@ def main(argv=None):
             for name, count in listComponents(datas[0]):
                 sys.stdout.write(f"{name}\t{count} elements\n")
             return 0
-        if args.axis is None:
-            raise ValueError("--axis is required")
-        if len(args.axis) % 3 != 0 or len(args.axis) < 6:
-            raise ValueError(
-                "--axis expects a flat list of x y z triplets with at least two points"
-            )
-        axisPts = np.asarray(args.axis, dtype=np.float64).reshape(-1, 3)
         components = _parseComponents(args.components)
         includeReactions = False if args.no_reactions else None
         meta = {"shearDir": list(args.shear_dir), "components": components}
+        if args.axis is None:
+            axisPts = None
+            meta["spanDir"] = list(args.span_dir)
+            meta["chordFraction"] = args.chord_fraction
+        else:
+            if len(args.axis) % 3 != 0 or len(args.axis) < 6:
+                raise ValueError(
+                    "--axis expects a flat list of x y z triplets with at least "
+                    "two points"
+                )
+            axisPts = np.asarray(args.axis, dtype=np.float64).reshape(-1, 3)
 
         results = computeVMTCases(
             datas,
@@ -2113,6 +2357,8 @@ def main(argv=None):
             components=components,
             includeReactions=includeReactions,
             stationMode=args.station_mode,
+            spanDir=args.span_dir,
+            chordFraction=args.chord_fraction,
         )
         multi = len(results) > 1
         envelope = computeEnvelope(results) if multi else None
