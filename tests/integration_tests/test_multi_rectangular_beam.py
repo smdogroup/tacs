@@ -202,13 +202,7 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         adjCon = self.tacs_probs[-1]
 
         expectedAdjacency = [(0, 1), (1, 2)]
-        adjacencyAsExpected = None
-        if adjCon.comm.rank == 0:
-            adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
-                adjCon.adjacentComps
-            )
-        adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
-        self.assertTrue(adjacencyAsExpected)
+        self.assertEqual(adjCon.constraintList["beam"].compPairs, expectedAdjacency)
 
 
 if __name__ == "__main__":
