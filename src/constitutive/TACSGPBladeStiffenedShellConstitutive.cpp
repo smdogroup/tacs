@@ -1108,7 +1108,7 @@ void TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingStiffness(
                                 this->stiffenerAbarMats,
                                 this->stiffenerPlyFracs, QStiff, ABarStiff);
 
-  // Add the panel's contributions to the A and D matrices
+  // Add the stiffener's contributions to the A and D matrices
   TacsScalar t = this->stiffenerThick;
   TacsScalar DFactor = t * t * t / 12.0;
 
@@ -1117,9 +1117,9 @@ void TACSGPBladeStiffenedShellConstitutive::computeStiffenerCripplingStiffness(
     D[ii] += DFactor * QStiff[ii];
   }
 
-  // Add the pane;'s contribution to the transverse shear matrix
+  // Add the stiffener's contribution to the transverse shear matrix
   for (int ii = 0; ii < NUM_ABAR_ENTRIES; ii++) {
-    As[ii] += t * QStiff[ii] * this->kcorr;
+    As[ii] += t * ABarStiff[ii] * this->kcorr;
   }
 
   // Add the drill stiffness
