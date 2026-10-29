@@ -232,15 +232,15 @@ TacsScalar TACSGPBladeStiffenedShellConstitutive::evalStiffenerCrippling(
     // compute D matrix of the stiffener (treating it like a panel for
     // crippling)
     TacsScalar stiffenerCripplingStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
-    const TacsScalar *As_crippling, *Ds_crippling;
+    const TacsScalar *A_crippling, *D_crippling;
     this->computeStiffenerCripplingStiffness(stiffenerCripplingStiffness);
-    this->extractTangentStiffness(stiffenerCripplingStiffness, &As_crippling,
-                                  NULL, &Ds_crippling, NULL, NULL);
+    this->extractTangentStiffness(stiffenerCripplingStiffness, &A_crippling,
+                                  NULL, &D_crippling, NULL, NULL);
 
     // get stiffener material props and dimensions
-    TacsScalar A11s = As_crippling[0], A66s = As_crippling[5];
-    TacsScalar D11s = Ds_crippling[0], D12s = Ds_crippling[1];
-    TacsScalar D22s = Ds_crippling[3], D66s = Ds_crippling[5];
+    TacsScalar A11s = A_crippling[0], A66s = A_crippling[5];
+    TacsScalar D11s = D_crippling[0], D12s = D_crippling[1];
+    TacsScalar D22s = D_crippling[3], D66s = D_crippling[5];
     TacsScalar bStiff = this->stiffenerHeight;
     TacsScalar hStiff = this->stiffenerThick;
     TacsScalar a = this->panelLength;
@@ -393,15 +393,15 @@ TACSGPBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
     // compute D matrix of the stiffener (treating it like a panel for
     // crippling)
     TacsScalar stiffenerCripplingStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
-    const TacsScalar *As_crippling, *Ds_crippling;
+    const TacsScalar *A_crippling, *D_crippling;
     this->computeStiffenerCripplingStiffness(stiffenerCripplingStiffness);
-    this->extractTangentStiffness(stiffenerCripplingStiffness, &As_crippling,
-                                  NULL, &Ds_crippling, NULL, NULL);
+    this->extractTangentStiffness(stiffenerCripplingStiffness, &A_crippling,
+                                  NULL, &D_crippling, NULL, NULL);
 
     // get stiffener material props and dimensions
-    TacsScalar A11s = As_crippling[0], A66s = As_crippling[5];
-    TacsScalar D11s = Ds_crippling[0], D12s = Ds_crippling[1];
-    TacsScalar D22s = Ds_crippling[3], D66s = Ds_crippling[5];
+    TacsScalar A11s = A_crippling[0], A66s = A_crippling[5];
+    TacsScalar D11s = D_crippling[0], D12s = D_crippling[1];
+    TacsScalar D22s = D_crippling[3], D66s = D_crippling[5];
     TacsScalar bStiff = this->stiffenerHeight;
     TacsScalar hStiff = this->stiffenerThick;
     TacsScalar a = this->panelLength;
@@ -833,15 +833,15 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     // compute D matrix of the stiffener (treating it like a panel for
     // crippling)
     TacsScalar stiffenerCripplingStiffness[NUM_TANGENT_STIFFNESS_ENTRIES];
-    const TacsScalar *As_crippling, *Ds_crippling;
+    const TacsScalar *A_crippling, *D_crippling;
     this->computeStiffenerCripplingStiffness(stiffenerCripplingStiffness);
-    this->extractTangentStiffness(stiffenerCripplingStiffness, &As_crippling,
-                                  NULL, &Ds_crippling, NULL, NULL);
+    this->extractTangentStiffness(stiffenerCripplingStiffness, &A_crippling,
+                                  NULL, &D_crippling, NULL, NULL);
 
     // temporarily modify
-    TacsScalar A11s = As_crippling[0], A66s = As_crippling[5];
-    TacsScalar D11s = Ds_crippling[0], D12s = Ds_crippling[1];
-    TacsScalar D22s = Ds_crippling[3], D66s = Ds_crippling[5];
+    TacsScalar A11s = A_crippling[0], A66s = A_crippling[5];
+    TacsScalar D11s = D_crippling[0], D12s = D_crippling[1];
+    TacsScalar D22s = D_crippling[3], D66s = D_crippling[5];
     TacsScalar bStiff = this->stiffenerHeight;
     TacsScalar hStiff = this->stiffenerThick;
     TacsScalar a = this->panelLength;
