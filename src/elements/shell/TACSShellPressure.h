@@ -141,6 +141,48 @@ class TACSShellPressure : public TACSElement {
     }
   }
 
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]) {
+    if (pressureDVNum < 0 || dvLen < 1) {
+      return;
+    }
+
+    // Compute the number of quadrature points
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    // Compute the node normal directions
+    TacsScalar fn[3 * basis::NUM_NODES];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      // Get the quadrature weight
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      TacsScalar Xxi[6], n[3];
+      basis::template interpFields<3, 3>(pt, fn, n);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+
+      // Assemble the terms Xd = [Xxi; n] and Xdz
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n, Xd);
+
+      TacsScalar detXd = det3x3(Xd);
+      detXd *= weight;
+
+      // Interpolate the translational adjoint components
+      TacsScalar psiTrans[3];
+      basis::template interpFields<vars_per_node, 3>(pt, psi, psiTrans);
+
+      // psi^T R = -pressure * detXd * n . psiTrans, and the pressure DV sets
+      // the pressure at every node, so d(psi^T R)/dp = -detXd * n . psiTrans
+      dfdx[0] -= scale * detXd * vec3Dot(n, psiTrans);
+    }
+  }
+
  private:
   TacsScalar p[basis::NUM_NODES];
   int pressureDVNum;

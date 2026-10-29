@@ -141,6 +141,39 @@ static inline TacsScalar vec3Dot(const TacsScalar x[], const TacsScalar y[]) {
 }
 
 /*
+  Compute the derivatives of dot(ac, b) with respect to omega and r, where
+  ac = omega x (omega x r) is a centrifugal acceleration
+
+  d/d(omega) = (omega x r) x b + r x (b x omega)
+  d/d(r) = omega x (omega x b)
+
+  The second expression holds because the map v -> omega x (omega x v) is
+  symmetric.
+
+  input:
+  omega:  the angular velocity
+  r:      the position relative to the center of rotation
+  b:      the vector that multiplies the acceleration
+
+  output:
+  dOmega: the derivative with respect to omega
+  dr:     the derivative with respect to r
+*/
+static inline void centrifugalAccelDotSens(const TacsScalar omega[],
+                                           const TacsScalar r[],
+                                           const TacsScalar b[],
+                                           TacsScalar dOmega[],
+                                           TacsScalar dr[]) {
+  TacsScalar wxr[3], bxw[3], wxb[3];
+  crossProduct(omega, r, wxr);
+  crossProduct(wxr, b, dOmega);
+  crossProduct(b, omega, bxw);
+  crossProductAdd(1.0, r, bxw, dOmega);
+  crossProduct(omega, b, wxb);
+  crossProduct(omega, wxb, dr);
+}
+
+/*
   Add the product using an AXPY operation
 
   y <- y + alpha*x

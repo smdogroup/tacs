@@ -157,6 +157,51 @@ class TACSBeamTraction : public TACSElement {
     }
   }
 
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]) {
+    // Compute the number of quadrature points
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    // psi^T R = sum_q -detXd * weight * dot(t(pt), Psi(pt)), and traction dv
+    // i sets component i of t at every node, so d(psi^T R)/d(t_i) is
+    // sum_q -detXd * weight * Psi_i(pt)
+    TacsScalar dt[3] = {0.0, 0.0, 0.0};
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      // Get the quadrature weight
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      // Tangent to the beam
+      A2D::Vec3 X0xi;
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+
+      // Compute the determinant of the transform
+      A2D::Scalar detXd;
+      A2D::Vec3Norm(X0xi, detXd);
+
+      // Interpolate the adjoint displacements
+      TacsScalar Psi[3];
+      basis::template interpFields<vars_per_node, 3>(pt, psi, Psi);
+
+      for (int i = 0; i < 3; i++) {
+        dt[i] -= detXd.value * weight * Psi[i];
+      }
+    }
+
+    int index = 0;
+    for (int i = 0; i < 3; i++) {
+      if (tDVNums[i] >= 0) {
+        if (index < dvLen) {
+          dfdx[index] += scale * dt[i];
+        }
+        index++;
+      }
+    }
+  }
+
  private:
   TacsScalar t[3 * basis::NUM_NODES];
   int tDVNums[3];

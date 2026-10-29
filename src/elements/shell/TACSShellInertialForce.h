@@ -158,6 +158,74 @@ class TACSShellInertialForce : public TACSElement {
     }
   }
 
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]) {
+    // The inertial vector DVs are appended after the constitutive DVs
+    const int numConDVs = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
+    // Compute the number of quadrature points
+    const int nquad = quadrature::getNumQuadraturePoints();
+
+    // Compute the node normal directions
+    TacsScalar fn[3 * basis::NUM_NODES];
+    TacsShellComputeNodeNormals<basis>(Xpts, fn);
+
+    for (int quad_index = 0; quad_index < nquad; quad_index++) {
+      // Get the quadrature weight
+      double pt[3];
+      double weight = quadrature::getQuadraturePoint(quad_index, pt);
+
+      TacsScalar Xxi[6], n[3], X[3];
+      basis::template interpFields<3, 3>(pt, Xpts, X);
+      basis::template interpFields<3, 3>(pt, fn, n);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, Xxi);
+
+      // Assemble the terms Xd = [Xxi; n] and Xdz
+      TacsScalar Xd[9];
+      TacsShellAssembleFrame(Xxi, n, Xd);
+
+      TacsScalar detXd = det3x3(Xd);
+      detXd *= weight;
+
+      TacsScalar moments[3];
+      con->evalMassMoments(elemIndex, pt, X, moments);
+
+      // Interpolate the adjoint, Psi[0:3] pairs with the translational
+      // traction and Psi[3:6] with the rotational (offset moment) traction
+      TacsScalar Psi[vars_per_node];
+      basis::template interpFields<vars_per_node, vars_per_node>(pt, psi, Psi);
+      const TacsScalar *psiTrans = &Psi[0];
+      const TacsScalar *psiRot = &Psi[3];
+
+      // psi^T R = detXd * (-m0 * g . psiTrans + m1 * (n x g) . psiRot)
+      //         = detXd * g . (-m0 * psiTrans + m1 * (psiRot x n))
+      TacsScalar nxg[3];
+      crossProduct(n, inertiaVec, nxg);
+      TacsScalar momentSens[3];
+      momentSens[0] = -scale * detXd * vec3Dot(inertiaVec, psiTrans);
+      momentSens[1] = scale * detXd * vec3Dot(nxg, psiRot);
+      momentSens[2] = 0.0;
+      con->addMassMomentsDVSens(elemIndex, pt, X, momentSens, dvLen, dfdx);
+
+      TacsScalar psiRotxn[3];
+      crossProduct(psiRot, n, psiRotxn);
+      int index = numConDVs;
+      for (int i = 0; i < 3; i++) {
+        if (inertiaVecDVNums[i] >= 0) {
+          if (index < dvLen) {
+            dfdx[index] +=
+                scale * detXd *
+                (-moments[0] * psiTrans[i] + moments[1] * psiRotxn[i]);
+          }
+          index++;
+        }
+      }
+    }
+  }
+
  private:
   TacsScalar inertiaVec[3];
   int inertiaVecDVNums[3];

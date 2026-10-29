@@ -225,3 +225,64 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     }
   }
 }
+
+/*
+  Add the derivative of the adjoint-residual product psi^T R with respect to
+  the element design variables
+
+  The residual at each quadrature point is R_k = -volume * density *
+  inertiaVec[k] * N, so psi^T R = -sum(volume * density * dot(inertiaVec,
+  Psi)), where Psi is the adjoint interpolated to the quadrature point. The
+  derivative with respect to the constitutive design variables enters through
+  the density, while the derivative with respect to inertiaVec[k] is
+  -volume * density * Psi[k].
+*/
+void TACSInertialForce2D::addAdjResProduct(
+    int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
+  // The inertial vector design variables follow the constitutive ones
+  const int numConDVs = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+
+  // Loop over each quadrature point and add the product contribution
+  for (int n = 0; n < nquad; n++) {
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the quadrature point location and the Jacobian transformation
+    TacsScalar X[3], Xd[6], J[4];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
+    TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
+
+    // Multiply the quadrature weight by the quadrature point
+    TacsScalar volume = weight * detXd;
+
+    // Interpolate the adjoint variables to the quadrature point
+    TacsScalar Psi[TACSElement2D::MAX_VARS_PER_NODE];
+    basis->interpFields(n, pt, varsPerNode, psi, 1, Psi);
+
+    // Add the derivative with respect to the density
+    TacsScalar inertiaDotPsi = 0.0;
+    for (int k = 0; k < 2; k++) {
+      inertiaDotPsi += inertiaVec[k] * Psi[k];
+    }
+    con->addDensityDVSens(elemIndex, -scale * volume * inertiaDotPsi, pt, X,
+                          dvLen, dfdx);
+
+    // Add the derivative with respect to the inertial vector components
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
+    int index = numConDVs;
+    for (int k = 0; k < 2; k++) {
+      if (inertiaVecDVNums[k] >= 0) {
+        if (index < dvLen) {
+          dfdx[index] -= scale * volume * density * Psi[k];
+        }
+        index++;
+      }
+    }
+  }
+}

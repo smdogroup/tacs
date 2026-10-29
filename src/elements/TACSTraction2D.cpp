@@ -264,3 +264,60 @@ void TACSTraction2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
     }
   }
 }
+
+/*
+  Add the derivative of the adjoint-residual product with respect to the
+  traction design variables
+
+  The residual is the sum over the face quadrature points of
+  area * N^T DUt, so psi^T R = sum area * sum_k DUt[3k] * Psi[k], where Psi
+  is the adjoint interpolated to the quadrature point. Design variable i sets
+  trac[i]. With coordinate components, DUt[3k] = -trac[k], so the derivative
+  is -area * Psi[i]. Otherwise trac stores one 2-vector per field and
+  DUt[3k] = -dot(trac[2k:2k+2], normal), so the derivative is
+  -area * normal[i % 2] * Psi[i / 2].
+*/
+void TACSTraction2D::addAdjResProduct(
+    int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
+  // Tractions from a user-supplied callback are never design variables
+  if (getTractionComponents) {
+    return;
+  }
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
+
+  // Loop over each quadrature point and add the derivative contribution
+  for (int n = 0; n < nquad; n++) {
+    // Get the quadrature weight
+    double pt[3], tangent[6];
+    double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
+
+    // Get the face normal
+    TacsScalar X[3], Xd[6], normal[3];
+    TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
+
+    // Multiply the weight by the quadrature point
+    area *= weight;
+
+    // Interpolate the adjoint to the quadrature point
+    TacsScalar Psi[TACSElement2D::MAX_VARS_PER_NODE];
+    basis->interpFields(n, pt, varsPerNode, psi, 1, Psi);
+
+    int index = 0;
+    for (int i = 0; i < varsPerNode; i++) {
+      if (tracDVNums[i] >= 0) {
+        if (index < dvLen) {
+          if (tractionCoordinateComponent) {
+            dfdx[index] -= scale * area * Psi[i];
+          } else {
+            dfdx[index] -= scale * area * normal[i % 2] * Psi[i / 2];
+          }
+        }
+        index++;
+      }
+    }
+  }
+}

@@ -169,3 +169,50 @@ void TACSPressure2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
     addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   }
 }
+
+/*
+  Add the derivative of the adjoint-residual product with respect to the
+  pressure design variable
+
+  The residual is the sum over the face quadrature points of
+  area * N^T DUt with DUt[3k] = -p * normal[k] for the first 2 fields, so
+  d(psi^T R)/dp = -sum area * sum_k normal[k] * Psi[k], where Psi is the
+  adjoint interpolated to the quadrature point.
+*/
+void TACSPressure2D::addAdjResProduct(
+    int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
+  if (pressureDVNum < 0 || dvLen < 1) {
+    return;
+  }
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumFaceQuadraturePoints(faceIndex);
+
+  // Loop over each quadrature point and accumulate the derivative
+  TacsScalar dpsiRdp = 0.0;
+  for (int n = 0; n < nquad; n++) {
+    // Get the quadrature weight
+    double pt[3], tangent[6];
+    double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
+
+    // Get the face normal
+    TacsScalar X[3], Xd[6], normal[3];
+    TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
+
+    // Multiply the weight by the quadrature point
+    area *= weight;
+
+    // Interpolate the adjoint to the quadrature point
+    TacsScalar Psi[TACSElement2D::MAX_VARS_PER_NODE];
+    basis->interpFields(n, pt, varsPerNode, psi, 1, Psi);
+
+    // Only the first 2 fields (or fewer) carry the pressure load
+    for (int k = 0; k < 2 && k < varsPerNode; k++) {
+      dpsiRdp -= area * normal[k] * Psi[k];
+    }
+  }
+
+  dfdx[0] += scale * dpsiRdp;
+}

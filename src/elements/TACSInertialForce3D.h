@@ -74,6 +74,16 @@ class TACSInertialForce3D : public TACSElement {
                    const TacsScalar *vars, const TacsScalar *dvars,
                    const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
+  /**
+    Add the derivative of the adjoint-residual product with respect to the
+    element design variables
+  */
+  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
+                        const TacsScalar psi[], const TacsScalar Xpts[],
+                        const TacsScalar vars[], const TacsScalar dvars[],
+                        const TacsScalar ddvars[], int dvLen,
+                        TacsScalar dfdx[]);
+
  private:
   int varsPerNode;
   TACSConstitutive *con;

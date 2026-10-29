@@ -293,3 +293,83 @@ void TACSCentrifugalForce3D::addJacobian(
     }
   }
 }
+
+/*
+  Add the derivative of the adjoint-residual product psi^T R with respect to
+  the element design variables
+
+  The residual at each quadrature point is R_k = volume * density * ac[k] * N,
+  where ac = omega x (omega x r) and r = X - rotCenter, so psi^T R =
+  sum(volume * dot(ac, b)) with b = density * Psi and Psi the adjoint
+  interpolated to the quadrature point. The derivative with respect to the
+  constitutive design variables enters through the density. The derivatives
+  of dot(ac, b) with respect to omega and r come from centrifugalAccelDotSens,
+  and d(r)/d(rotCenter) = -I.
+*/
+void TACSCentrifugalForce3D::addAdjResProduct(
+    int elemIndex, double time, TacsScalar scale, const TacsScalar psi[],
+    const TacsScalar Xpts[], const TacsScalar vars[], const TacsScalar dvars[],
+    const TacsScalar ddvars[], int dvLen, TacsScalar dfdx[]) {
+  // The omega and rotCenter design variables follow the constitutive ones
+  const int numConDVs = con->getDesignVarNums(elemIndex, dvLen, NULL);
+
+  // Compute the number of quadrature points
+  const int nquad = basis->getNumQuadraturePoints();
+
+  // Loop over each quadrature point and add the product contribution
+  for (int n = 0; n < nquad; n++) {
+    // Get the quadrature weight
+    double pt[3];
+    double weight = basis->getQuadraturePoint(n, pt);
+
+    // Get the quadrature point location and the Jacobian transformation
+    TacsScalar X[3], Xd[9], J[9];
+    basis->interpFields(n, pt, 3, Xpts, 1, X);
+    TacsScalar detXd = basis->getJacobianTransform(n, pt, Xpts, Xd, J);
+
+    // Multiply the quadrature weight by the quadrature point
+    TacsScalar volume = weight * detXd;
+
+    // Interpolate the adjoint variables to the quadrature point
+    TacsScalar Psi[TACSElement3D::MAX_VARS_PER_NODE];
+    basis->interpFields(n, pt, varsPerNode, psi, 1, Psi);
+
+    // Compute the centrifugal acceleration, ac = omega x (omega x r)
+    TacsScalar r[3], wxr[3], ac[3];
+    r[0] = X[0] - rotCenter[0];
+    r[1] = X[1] - rotCenter[1];
+    r[2] = X[2] - rotCenter[2];
+    crossProduct(omegaVec, r, wxr);
+    crossProduct(omegaVec, wxr, ac);
+
+    // Add the derivative with respect to the density
+    con->addDensityDVSens(elemIndex, scale * volume * vec3Dot(ac, Psi), pt, X,
+                          dvLen, dfdx);
+
+    // Compute the derivatives of dot(ac, b) with respect to omega and r
+    TacsScalar density = con->evalDensity(elemIndex, pt, X);
+    TacsScalar b[3], dOmega[3], dr[3];
+    b[0] = density * Psi[0];
+    b[1] = density * Psi[1];
+    b[2] = density * Psi[2];
+    centrifugalAccelDotSens(omegaVec, r, b, dOmega, dr);
+
+    int index = numConDVs;
+    for (int i = 0; i < 3; i++) {
+      if (omegaDVNums[i] >= 0) {
+        if (index < dvLen) {
+          dfdx[index] += scale * volume * dOmega[i];
+        }
+        index++;
+      }
+    }
+    for (int i = 0; i < 3; i++) {
+      if (rotCenterDVNums[i] >= 0) {
+        if (index < dvLen) {
+          dfdx[index] -= scale * volume * dr[i];
+        }
+        index++;
+      }
+    }
+  }
+}
