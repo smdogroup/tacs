@@ -1044,8 +1044,7 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
   // --- Stiffener crippling ---
   if (this->includeStiffenerCrippling) {
     // Direct dependence of the stiffener crippling on the DVs
-    this->addStiffenerCripplingDVSens(scale * dKSdf[5], stiffenerStrain,
-                                      &dfdx[this->stiffenerDVStartNum]);
+    this->addStiffenerCripplingDVSens(scale * dKSdf[5], stiffenerStrain, dfdx);
     // Sensitivity of the stiffener crippling due to effect of DVs on the
     // stiffener strains
     TacsScalar stiffenerCripplingStrainSens[TACSBeamConstitutive::NUM_STRESSES];
@@ -3459,8 +3458,8 @@ void TACSBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
   TacsScalar *plyFailValues = this->stiffenerPlyFailValues;
   const TacsScalar *plyAngles = this->stiffenerPlyAngles;
   TacsScalar *dKSdFail = this->stiffenerPlyFailSens;
-  const int hNum = this->stiffenerHeightLocalNum - this->stiffenerDVStartNum;
-  const int tNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
+  const int hNum = this->stiffenerHeightLocalNum;
+  const int tNum = this->stiffenerThickLocalNum;
   const int numPlies = this->numStiffenerPlies;
   const bool computeThicknessSens = (this->stiffenerThickNum >= 0);
   const bool computeHeightSens = (this->stiffenerHeightNum >= 0);

@@ -156,13 +156,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     def test_adjacency(self):
         adjCon = self.tacs_probs[-1]
         expectedAdjacency = [(0, 1), (0, 3), (1, 2), (1, 3)]
-        adjacencyAsExpected = None
-        if adjCon.comm.rank == 0:
-            adjacencyAsExpected = sorted(expectedAdjacency) == sorted(
-                adjCon.adjacentComps
-            )
-        adjacencyAsExpected = adjCon.comm.bcast(adjacencyAsExpected, root=0)
-        self.assertTrue(adjacencyAsExpected)
+        for conName in ["beamThicknessAdjCon", "beamThicknessWidthCon"]:
+            with self.subTest(conName=conName):
+                self.assertEqual(
+                    adjCon.constraintList[conName].compPairs, expectedAdjacency
+                )
 
 
 if __name__ == "__main__":

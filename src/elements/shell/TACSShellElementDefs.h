@@ -67,7 +67,7 @@ typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellQuadBasis<4>,
                          TACSLinearizedRotation, TACSShellNonlinearModel>
     TACSQuad16NonlinearShell;
 
-typedef TACSShellElement<TACSQuadCubicQuadrature, TACSShellTriLinearBasis,
+typedef TACSShellElement<TACSTriLinearQuadrature, TACSShellTriLinearBasis,
                          TACSLinearizedRotation, TACSShellInplaneNonlinearModel>
     TACSTri3NonlinearShell;
 

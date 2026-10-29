@@ -105,7 +105,7 @@ void TACSInertialForce2D::addResidual(
   // Loop over each quadrature point and add the residual contribution
   for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
-    double pt[3];
+    double pt[3] = {0.0, 0.0, 0.0};
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
@@ -150,7 +150,7 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
   // Loop over each quadrature point and add the residual contribution
   for (int n = 0; n < nquad; n++) {
     // Get the quadrature weight
-    double pt[3];
+    double pt[3] = {0.0, 0.0, 0.0};
     double weight = basis->getQuadraturePoint(n, pt);
 
     // Get the face normal
