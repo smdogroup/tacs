@@ -1078,7 +1078,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
 
   if (alpha == 1.0) {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -1219,7 +1221,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
             c[35] += a[30] * b0 + a[31] * b1 + a[32] * b2 + a[33] * b3 +
                      a[34] * b4 + a[35] * b5;
 
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
           b += 36;
         }
@@ -1228,7 +1232,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     TacsAddFlops(2 * 36 * 6 * nz);
   } else if (alpha == -1.0) {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -1368,7 +1374,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
                      a[28] * b4 + a[29] * b5;
             c[35] -= a[30] * b0 + a[31] * b1 + a[32] * b2 + a[33] * b3 +
                      a[34] * b4 + a[35] * b5;
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
 
           b += 36;
@@ -1378,7 +1386,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     TacsAddFlops(2 * 36 * 6 * nz);
   } else {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -1518,7 +1528,9 @@ void BCSRMatMatMultAdd6(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
                               a[27] * b3 + a[28] * b4 + a[29] * b5);
             c[35] += alpha * (a[30] * b0 + a[31] * b1 + a[32] * b2 +
                               a[33] * b3 + a[34] * b4 + a[35] * b5);
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
 
           b += 36;

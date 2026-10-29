@@ -41,7 +41,6 @@
 #define LAPACKdggev dggev_
 
 #ifdef TACS_USE_COMPLEX
-#define BLASdot zdotu_
 #define BLASaxpy zaxpy_
 #define BLASscal zscal_
 #define BLASnrm2 dznrm2_
@@ -84,8 +83,13 @@
 
 extern "C" {
 // Level 1 BLAS routines
+#ifndef TACS_USE_COMPLEX
+// BLASdot is only available in real mode: its complex counterpart, zdotu_,
+// returns a Fortran complex value, which cannot be declared with C linkage as
+// returning std::complex. Complex code computes dot products directly instead.
 extern TacsScalar BLASdot(int *n, TacsScalar *x, int *incx, TacsScalar *y,
                           int *incy);
+#endif
 extern double BLASnrm2(int *n, TacsScalar *x, int *incx);
 extern void BLASaxpy(int *n, TacsScalar *a, TacsScalar *x, int *incx,
                      TacsScalar *y, int *incy);

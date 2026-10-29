@@ -318,8 +318,8 @@ class TACSOrthotropicPly : public TACSObject {
   TacsScalar F11, F12, F22, F66;
 
   // The material properties for the Cuntze failure criterion
-  TacsScalar b_tt, b_tl;
-  TacsScalar muWF, mu3W, mu3F;
+  TacsScalar b_tl;
+  TacsScalar muWF;
   TacsScalar m;
 
   double Cuntze_IFF3_ksWeight;

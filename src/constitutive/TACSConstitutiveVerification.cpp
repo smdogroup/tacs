@@ -23,8 +23,10 @@ int TacsTestConstitutiveDensity(TACSConstitutive *con, int elemIndex,
                                 double test_fail_rtol) {
   con->setDesignVars(elemIndex, ndvs, dvs);
 
-  // Sensitivity w.r.t. the density
+#ifndef TACS_USE_COMPLEX
+  // Reference density for the finite-difference approximation
   TacsScalar rho = con->evalDensity(elemIndex, pt, X);
+#endif
 
   // Compute the sensitivity w.r.t. the density
   TacsScalar *xtemp = new TacsScalar[ndvs];
@@ -119,8 +121,10 @@ int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
   TacsZeroArray(dfdx, ndvs);
   con->addSpecificHeatDVSens(elemIndex, scale, pt, X, ndvs, dfdx);
 
+#ifndef TACS_USE_COMPLEX
   // Evaluate the specific heat
   TacsScalar c = con->evalSpecificHeat(elemIndex, pt, X);
+#endif
 
   // Compute the approximate derivative
   for (int i = 0; i < ndvs; i++) {
@@ -488,7 +492,9 @@ int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
   TacsZeroArray(dfdx, ndvs);
   con->addFailureDVSens(elemIndex, scale, pt, X, e, ndvs, dfdx);
 
+#ifndef TACS_USE_COMPLEX
   TacsScalar failure = con->evalFailure(elemIndex, pt, X, e);
+#endif
 
   // Compute the approximate derivative
   for (int i = 0; i < ndvs; i++) {
@@ -562,7 +568,9 @@ int TacsTestConstitutiveFailureStrainSens(TACSConstitutive *con, int elemIndex,
   // Evaluate the derivatives
   con->evalFailureStrainSens(elemIndex, pt, X, e, dfde);
 
+#ifndef TACS_USE_COMPLEX
   TacsScalar failure = con->evalFailure(elemIndex, pt, X, e);
+#endif
 
   // Compute the approximate derivative
   for (int i = 0; i < nstress; i++) {

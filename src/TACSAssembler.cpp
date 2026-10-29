@@ -5299,11 +5299,6 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
   getDataPointers(elementData, &elemVars, &elemPsi, &elemPhi, NULL, &elemXpts,
                   &xptSens, NULL, NULL);
 
-  // Get the design variables from the elements on this process
-  const int maxDVs = maxElementDesignVars;
-  TacsScalar *fdvSens = elementSensData;
-  int *dvNums = elementSensIData;
-
   // Go through each element in the domain and compute the derivative
   // of the residuals with respect to each design variable and multiply by
   // the adjoint variables
@@ -5627,9 +5622,9 @@ void TACSAssembler::addMatrixFreeVecProduct(
   x->endDistributeValues();
 
   // Retrieve pointers to temporary storage
-  TacsScalar *xvars, *yvars;
-  getDataPointers(elementData, &xvars, &yvars, NULL, NULL, NULL, NULL, NULL,
-                  NULL);
+  TacsScalar *xvars, *yvars, *aux_yvars;
+  getDataPointers(elementData, &xvars, &yvars, &aux_yvars, NULL, NULL, NULL,
+                  NULL, NULL);
 
   // Set the data for the auxiliary elements - if there are any
   int naux = 0, aux_count = 0;
@@ -5671,14 +5666,11 @@ void TACSAssembler::addMatrixFreeVecProduct(
         aux_count++;
       }
     } else {
-      TacsScalar aux_yvars[nvars];
-      for (int kk = 0; kk < nvars; kk++) {
-        aux_yvars[kk] = 0.0;
-      }
+      TacsZeroArray(aux_yvars, nvars);
       while (aux_count < naux && aux[aux_count].num == i) {
         aux[aux_count].elem->getMatVecDataSizes(matType, i, &dsize, &tsize);
         aux[aux_count].elem->addMatVecProduct(matType, i, data, temp, xvars,
-                                              yvars);
+                                              aux_yvars);
         data += dsize;
         aux_count++;
       }
@@ -6091,7 +6083,6 @@ void TACSAssembler::getAverageStresses(ElementType elem_type,
                                        int componentNum) {
   // TacsScalar *avgStresses = new TacsScalar[9];
   // memset(avgStresses, 0, 9);
-  int nvals;
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemXpts, *vars, *dvars, *ddvars;

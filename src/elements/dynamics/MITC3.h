@@ -118,7 +118,8 @@ class MITC3 : public TACSElement {
   int evalPointQuantity(int elemIndex, int quantityType, double time, int n,
                         double pt[], const TacsScalar Xpts[],
                         const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], TacsScalar *quantity);
+                        const TacsScalar ddvars[], TacsScalar *detXd,
+                        TacsScalar *quantity);
 
   // Add the derivative of the point quantity w.r.t. the design variables
   // --------------------------------------------------------------------
@@ -140,14 +141,8 @@ class MITC3 : public TACSElement {
                               const TacsScalar ddvars[],
                               const TacsScalar dfdq[], TacsScalar dfdu[]);
 
-  // Add the derivative of the point quantity w.r.t. the node locations
-  // ------------------------------------------------------------------
-  void addPointQuantityXptSens(int elemIndex, int quantityType, double time,
-                               TacsScalar scale, int n, double pt[],
-                               const TacsScalar Xpts[], const TacsScalar vars[],
-                               const TacsScalar dvars[],
-                               const TacsScalar ddvars[],
-                               const TacsScalar dfdq[], TacsScalar dfdXpts[]);
+  // The derivative of the point quantity w.r.t. the node locations is
+  // computed by the finite-difference default in TACSElement
 
   // Member functions for evaluating global functions of interest
   // ------------------------------------------------------------

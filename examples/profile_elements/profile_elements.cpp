@@ -76,13 +76,6 @@ int main(int argc, char *argv[]) {
   // Initialize MPI
   MPI_Init(&argc, &argv);
 
-  // Test only the input element type - if specified, otherwise
-  // test everything
-  const char *ename = NULL;
-  if (argc > 1) {
-    ename = argv[1];
-  }
-
   const int MAX_NODES = 64;
   const int MAX_VARS_PER_NODE = 8;
   const int MAX_VARS = MAX_NODES * MAX_VARS_PER_NODE;

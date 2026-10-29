@@ -240,13 +240,14 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   // Evaluate the derivative w.r.t. dot{q}
   for (int i = 0; i < nvars; i++) {
     // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
+    TacsScalar T1, P1;
     TacsScalar dqtmp = dq[i];
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1)) / dh;
 #else
+    TacsScalar T2, P2;
     dq[i] = dqtmp + dh;
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
 
@@ -266,13 +267,14 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   // Evaluate the derivative w.r.t. dot{q}
   for (int i = 0; i < nvars; i++) {
     // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
+    TacsScalar T1, P1;
     TacsScalar dqtmp = dq[i];
 #ifdef TACS_USE_COMPLEX
     dq[i] = dqtmp + TacsScalar(0.0, dh);
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
     res2[i] = TacsImagPart((T1 - P1)) / dh;
 #else
+    TacsScalar T2, P2;
     dq[i] = dqtmp + dh;
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
 
@@ -300,7 +302,7 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   // Compute the contribution from dL/dq^{T}
   for (int i = 0; i < nvars; i++) {
     // Evaluate the finite-difference for component i
-    TacsScalar T1, P1, T2, P2;
+    TacsScalar T1, P1;
     TacsScalar qtmp = q[i];
 
 #ifdef TACS_USE_COMPLEX
@@ -308,6 +310,7 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
     res1[i] = TacsImagPart((T1 - P1)) / dh;
 #else
+    TacsScalar T2, P2;
     q[i] = qtmp + dh;
     element->computeEnergies(elemIndex, time, Xpts, q, dq, &T1, &P1);
 
@@ -970,16 +973,16 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar psi[nvars];
-  TacsScalar phi[nvars];
+  TacsScalar *psi = new TacsScalar[nvars];
+  TacsScalar *phi = new TacsScalar[nvars];
 
   int nnodes = element->getNumNodes();
 
-  TacsScalar dfdX[3 * nnodes];
-  TacsScalar dfdX_approx[3 * nnodes];
-  TacsScalar xPert[3 * nnodes];  // perturbation for nodes
-  TacsScalar Xp[3 * nnodes];
-  TacsScalar mat[nvars * nvars];
+  TacsScalar *dfdX = new TacsScalar[3 * nnodes];
+  TacsScalar *dfdX_approx = new TacsScalar[3 * nnodes];
+  TacsScalar *xPert = new TacsScalar[3 * nnodes];  // perturbation for nodes
+  TacsScalar *Xp = new TacsScalar[3 * nnodes];
+  TacsScalar *mat = new TacsScalar[nvars * nvars];
 
   // Generate a perturbation vector
   TacsZeroArray(xPert, 3 * nnodes);
@@ -1058,6 +1061,14 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   bool allClose = TacsAssertAllClose(dfdX, dfdX_approx, 3 * nnodes,
                                      test_fail_atol, test_fail_rtol);
 
+  delete[] psi;
+  delete[] phi;
+  delete[] dfdX;
+  delete[] dfdX_approx;
+  delete[] xPert;
+  delete[] Xp;
+  delete[] mat;
+
   return !allClose;
 }
 
@@ -1069,13 +1080,13 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
   // Retrieve the number of variables
   int nvars = element->getNumVariables();
 
-  TacsScalar result[nvars];
-  TacsScalar psi[nvars];
-  TacsScalar phi[nvars];
+  TacsScalar *result = new TacsScalar[nvars];
+  TacsScalar *psi = new TacsScalar[nvars];
+  TacsScalar *phi = new TacsScalar[nvars];
 
-  TacsScalar pert[nvars];  // perturbation for vars
-  TacsScalar q[nvars];
-  TacsScalar mat[nvars * nvars];
+  TacsScalar *pert = new TacsScalar[nvars];  // perturbation for vars
+  TacsScalar *q = new TacsScalar[nvars];
+  TacsScalar *mat = new TacsScalar[nvars * nvars];
 
   // Generate a perturbation vector
   TacsGenerateRandomArray(pert, nvars);
@@ -1145,6 +1156,13 @@ int TacsTestElementMatSVSens(TACSElement *element, ElementMatrixType matType,
 
   bool allClose =
       TacsAssertAllClose(&res, &fd, 1, test_fail_atol, test_fail_rtol);
+
+  delete[] result;
+  delete[] psi;
+  delete[] phi;
+  delete[] pert;
+  delete[] q;
+  delete[] mat;
 
   return !allClose;
 }

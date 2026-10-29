@@ -197,12 +197,11 @@ TacsScalar TACSKSFailure::computeAverageFailure(
 
   for (int i = 0; i < numQuadPoints; i++) {
     double pt[3];
-    double weight = element->getQuadraturePoint(i, pt);
+    element->getQuadraturePoint(i, pt);
 
     TacsScalar fail = 0.0, detXd = 0.0;
-    int count =
-        element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX, time, i, pt,
-                                   Xpts, vars, dvars, ddvars, &detXd, &fail);
+    element->evalPointQuantity(elemIndex, TACS_FAILURE_INDEX, time, i, pt, Xpts,
+                               vars, dvars, ddvars, &detXd, &fail);
 
     // Scale failure value by safety factor
     fail *= safetyFactor;

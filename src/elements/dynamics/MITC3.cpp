@@ -199,33 +199,6 @@ static inline void computeFrameRateNormals(const double Na[],
 }
 
 /*
-  Compute the derivative of the frame normal
-*/
-static inline void addFrameNormalSens(const TacsScalar n1d[],
-                                      const TacsScalar n2d[], const double N[],
-                                      TacsScalar Xrd[]) {
-  Xrd[1] += N[0] * n1d[0];
-  Xrd[4] += N[0] * n1d[1];
-  Xrd[7] += N[0] * n1d[2];
-  Xrd[10] += N[1] * n1d[0];
-  Xrd[13] += N[1] * n1d[1];
-  Xrd[16] += N[1] * n1d[2];
-  Xrd[19] += N[2] * n1d[0];
-  Xrd[22] += N[2] * n1d[1];
-  Xrd[25] += N[2] * n1d[2];
-
-  Xrd[2] += N[0] * n2d[0];
-  Xrd[5] += N[0] * n2d[1];
-  Xrd[8] += N[0] * n2d[2];
-  Xrd[11] += N[1] * n2d[0];
-  Xrd[14] += N[1] * n2d[1];
-  Xrd[17] += N[1] * n2d[2];
-  Xrd[20] += N[2] * n2d[0];
-  Xrd[23] += N[2] * n2d[1];
-  Xrd[26] += N[2] * n2d[2];
-}
-
-/*
   Compute the tying shape functions for the element for the
   out-of-plane shear components.
 
@@ -1257,7 +1230,6 @@ void MITC3::addAdjResProduct(int elemIndex, double time, TacsScalar scale,
 
     // Add the contribution to the residual
     const TacsScalar *r = psi;
-    const TacsScalar *q = vars, *dq = dvars;
     for (int ii = 0; ii < NUM_NODES; ii++) {
       // Add the contributions from the rectilinear velocity
       drho[0] +=
@@ -1280,8 +1252,6 @@ void MITC3::addAdjResProduct(int elemIndex, double time, TacsScalar scale,
                            &r[3], &r[4]);
       */
       r += 8;
-      q += 8;
-      dq += 8;
     }
 
     // Compute d(Xdinv)/dz1 and d(Xdinv)/dz2
@@ -2643,7 +2613,10 @@ void MITC3::addTyingGmat(TacsScalar J[], const TacsScalar w12[],
 int MITC3::evalPointQuantity(int elemIndex, int quantityType, double time,
                              int n, double pt[], const TacsScalar Xpts[],
                              const TacsScalar vars[], const TacsScalar dvars[],
-                             const TacsScalar ddvars[], TacsScalar *quantity) {
+                             const TacsScalar ddvars[], TacsScalar *detXd,
+                             TacsScalar *quantity) {
+  *detXd = getDetJacobian(pt, Xpts);
+
   if (quantityType == TACS_FAILURE_INDEX) {
     if (quantity) {
       TacsScalar X[3] = {0.0, 0.0, 0.0};
@@ -2703,15 +2676,6 @@ void MITC3::addPointQuantitySVSens(
 }
 
 /*
-  Add the derivative of the point quantity w.r.t. the node locations
-*/
-void MITC3::addPointQuantityXptSens(
-    int elemIndex, int quantityType, double time, TacsScalar scale, int n,
-    double pt[], const TacsScalar Xpts[], const TacsScalar vars[],
-    const TacsScalar dvars[], const TacsScalar ddvars[],
-    const TacsScalar dfdq[], TacsScalar dfdXpts[]) {}
-
-/*
   Get the constitutive object
 */
 TACSConstitutive *MITC3::getConstitutive() { return stiff; }
@@ -2740,7 +2704,24 @@ void MITC3::getShapeFunctions(const double pt[], double N[]) {
   Retrieve the determinant of the Jacobian transformation matrix
 */
 TacsScalar MITC3::getDetJacobian(const double pt[], const TacsScalar X[]) {
-  return 0.0;
+  // Compute the reference frames at the nodes
+  TacsScalar Xr[9 * NUM_NODES];
+  computeFrames(Xr, X);
+
+  // Evaluate the shape functions
+  double N[NUM_NODES], Na[NUM_NODES];
+  computeShapeFunc(pt[0], N, Na);
+
+  // Use the local frame to compute the normals
+  TacsScalar n1[3], n2[3];
+  computeFrameNormals(N, Xr, n1, n2);
+
+  // Assemble the frame at the current point
+  TacsScalar Xa[3], Xd[9];
+  innerProduct(Na, X, Xa);
+  assembleFrame(Xa, n1, n2, Xd);
+
+  return det3x3(Xd);
 }
 
 /*

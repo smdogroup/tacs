@@ -1113,7 +1113,7 @@ void TACSMatDistribute::setValues(TACSParallelMat *mat, int nvars,
         int r_ext = item - ext_rows;
 
         int end = rowp[i + 1];
-        for (int j = rowp[i], k = 0; j < end; j++, k++) {
+        for (int j = rowp[i]; j < end; j++) {
           int c = cols[j];
           if (c >= 0 && c < nvars) {
             int col = ext_vars[c];

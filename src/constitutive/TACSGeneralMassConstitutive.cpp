@@ -33,9 +33,7 @@ TACSGeneralMassConstitutive::TACSGeneralMassConstitutive(
 /*
   Default constructor
 */
-TACSGeneralMassConstitutive::TACSGeneralMassConstitutive() {
-  memset(M, 0, 21 * sizeof(TacsScalar));
-}
+TACSGeneralMassConstitutive::TACSGeneralMassConstitutive() { TacsZeroArray(M); }
 
 int TACSGeneralMassConstitutive::getNumStresses() { return NUM_STRESSES; }
 

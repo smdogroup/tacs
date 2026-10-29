@@ -681,8 +681,7 @@ void TACSLamParamSmearedShellConstitutive::addFailureDVSens(
 
   computeFailure(strain, fvals, &max);
 
-  const TacsScalar ksFail =
-      ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
+  ksAggregationSens(fvals, max, 2 * NUM_FAIL_ANGLES, ksWeight, weights);
 
   int index = 0;
   if (tNum >= 0) {

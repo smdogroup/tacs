@@ -19,6 +19,10 @@
 #include "TACSMg.h"
 #include "tacslapack.h"
 
+// Space reserved in the output file name buffers for the text appended to the
+// output prefix, the longest of which is "/mode_freq_<int>.f5"
+static const int MAX_FILE_NAME_SUFFIX_LENGTH = 32;
+
 /*
   Base class constructor for integration schemes.
 
@@ -352,7 +356,14 @@ void TACSIntegrator::setFunctions(int _num_funcs, TACSFunction **_funcs,
   Set the output directory prefix
 */
 void TACSIntegrator::setOutputPrefix(const char *_prefix) {
-  strncpy(prefix, _prefix, sizeof(prefix));
+  if (strlen(_prefix) >= sizeof(prefix)) {
+    fprintf(stderr,
+            "TACSIntegrator: Output prefix \"%s\" is longer than the maximum "
+            "of %zu characters, the prefix has not been changed\n",
+            _prefix, sizeof(prefix) - 1);
+    return;
+  }
+  snprintf(prefix, sizeof(prefix), "%s", _prefix);
 }
 
 /*
@@ -483,7 +494,7 @@ void TACSIntegrator::writeStepToF5(int step_num) {
 
   // Write the f5 file
   if (f5) {
-    char fname[256];
+    char fname[sizeof(prefix) + MAX_FILE_NAME_SUFFIX_LENGTH];
     snprintf(fname, sizeof(fname), "%s/output_%06d.f5", prefix, step_num);
     f5->writeToFile(fname);
   }
@@ -926,7 +937,7 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
           // Write the mode to disk as f5
           assembler->setVariables(mode, mode, mode);
           if (f5) {
-            char fname[256];
+            char fname[sizeof(prefix) + MAX_FILE_NAME_SUFFIX_LENGTH];
             snprintf(fname, sizeof(fname), "%s/mode_freq_%d.f5", prefix, index);
             f5->writeToFile(fname);
           }
@@ -991,7 +1002,7 @@ int TACSIntegrator::lapackNaturalFrequencies(int use_gyroscopic, TACSBVec *q,
           // Write the mode to disk as f5
           assembler->setVariables(mode, mode, mode);
           if (f5) {
-            char fname[256];
+            char fname[sizeof(prefix) + MAX_FILE_NAME_SUFFIX_LENGTH];
             snprintf(fname, sizeof(fname), "%s/mode_freq_%d.f5", prefix, index);
             f5->writeToFile(fname);
           }

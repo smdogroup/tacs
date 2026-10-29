@@ -1674,7 +1674,9 @@ void BCSRMatFactor8(BCSRMatData *data) {
       int pend = rowp[cj + 1];
 
       // Keep track of the number of block matrix products
+#ifdef TACS_LOG_FLOPS
       int nz = 0;
+#endif
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for (; (p < pend) && (k < kend); p++) {
@@ -1870,7 +1872,9 @@ void BCSRMatFactor8(BCSRMatData *data) {
           a[63] -= d70 * b0 + d71 * b1 + d72 * b2 + d73 * b3 + d74 * b4 +
                    d75 * b5 + d76 * b6 + d77 * b7;
 
+#ifdef TACS_LOG_FLOPS
           nz++;
+#endif
         }
 
         b += 64;
@@ -2044,7 +2048,9 @@ void BCSRMatFactorLower8(BCSRMatData *data, BCSRMatData *Edata) {
   const int *ecols = Edata->cols;
 
   // Keep track of the number of block matrix products
+#ifdef TACS_LOG_FLOPS
   int nz = 0;
+#endif
 
   for (int i = 0; i < nrows; i++) {
     // Scan from the first entry in the current row, towards the
@@ -2274,7 +2280,9 @@ void BCSRMatFactorLower8(BCSRMatData *data, BCSRMatData *Edata) {
           a[63] -= d[56] * b0 + d[57] * b1 + d[58] * b2 + d[59] * b3 +
                    d[60] * b4 + d[61] * b5 + d[62] * b6 + d[63] * b7;
 
+#ifdef TACS_LOG_FLOPS
           nz++;
+#endif
         }
         b += 64;
       }
@@ -2527,7 +2535,9 @@ void BCSRMatFactorUpper8(BCSRMatData *data, BCSRMatData *Fdata) {
       b = &(data->A[64 * p]);
 
       // Keep track of the number of block matrix-matrix products
+#ifdef TACS_LOG_FLOPS
       int nz = 0;
+#endif
 
       // Now, scan through row cj starting at the first entry past the diagonal
       for (; (p < p_end) && (k < k_end); p++) {
@@ -2722,7 +2732,9 @@ void BCSRMatFactorUpper8(BCSRMatData *data, BCSRMatData *Fdata) {
           a[63] -= d70 * b0 + d71 * b1 + d72 * b2 + d73 * b3 + d74 * b4 +
                    d75 * b5 + d76 * b6 + d77 * b7;
 
+#ifdef TACS_LOG_FLOPS
           nz++;
+#endif
         }
         b += 64;
       }

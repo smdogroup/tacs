@@ -205,8 +205,6 @@ class TACSBeamBasis {
     double na[order], dna[order];
     TacsLagrangeLobattoShapeFuncDerivative<order>(pt[0], na, dna);
 
-    const int ncols = NUM_NODES * nbcols;
-
     // if (jac && jacT){
     //   for ( int jx = 0; jx < order; jx++ ){
     //     const TacsScalar *jac1 = jac;

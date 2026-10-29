@@ -1293,8 +1293,14 @@ class TACSShellInplaneNonlinearModel {
         const TacsScalar value = d2ety[basis::NUM_TYING_POINTS * i1 + i2];
         const TacsScalar valued = d2etypsi[basis::NUM_TYING_POINTS * i1 + i2];
 
+        // The in-plane tying strain components are zero for this model, so
+        // only the g23 and g13 components contribute
         TacsScalar dUxi2[6], dd02[3];
+        TacsZeroArray(dUxi2);
+        TacsZeroArray(dd02);
         TacsScalar dUxi2d[6], dd02d[3];
+        TacsZeroArray(dUxi2d);
+        TacsZeroArray(dd02d);
         if (f2 == TACS_SHELL_G23_COMPONENT) {
           // Compute g23 = e2^{T}*G*e3
           dUxi2[0] = 0.0;
@@ -1370,16 +1376,22 @@ class TACSShellInplaneNonlinearModel {
       TacsZeroArray(du1d);
       TacsZeroArray(dd1d);
 
-      // Store the the derivative information for the first point
+      // Store the the derivative information for the first point. The
+      // in-plane tying strain components are zero for this model, so only the
+      // g23 and g13 components contribute
       TacsScalar dUxi1[6], d2Uxi[36];
-      memset(d2Uxi, 0, 36 * sizeof(TacsScalar));
+      TacsZeroArray(dUxi1);
+      TacsZeroArray(d2Uxi);
       TacsScalar dUxi1d[6], d2Uxid[36];
-      memset(d2Uxid, 0, 36 * sizeof(TacsScalar));
+      TacsZeroArray(dUxi1d);
+      TacsZeroArray(d2Uxid);
 
       TacsScalar dd01[3], d2dUxi[18];
-      memset(d2dUxi, 0, 18 * sizeof(TacsScalar));
+      TacsZeroArray(dd01);
+      TacsZeroArray(d2dUxi);
       TacsScalar dd01d[3], d2dUxid[18];
-      memset(d2dUxid, 0, 18 * sizeof(TacsScalar));
+      TacsZeroArray(dd01d);
+      TacsZeroArray(d2dUxid);
 
       if (f1 == TACS_SHELL_G23_COMPONENT) {
         // Compute g23 = e2^{T}*G*e3

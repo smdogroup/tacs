@@ -148,13 +148,8 @@ void TACSIsoRectangleBeamConstitutive::addMassMomentsDVSens(
     const TacsScalar scale[], int dvLen, TacsScalar dfdx[]) {
   TacsScalar rho = props->getDensity();
   TacsScalar A = evalArea();
-  TacsScalar I[3];
-  evalMomentsOfInertia(I);
-  TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar delta_y = t_offset * thickness;
   TacsScalar delta_z = w_offset * width;
-  TacsScalar t3 = thickness * thickness * thickness;
-  TacsScalar w3 = width * width * width;
 
   int index = 0;
   if (width_num >= 0) {

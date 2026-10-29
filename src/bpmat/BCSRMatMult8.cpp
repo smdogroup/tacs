@@ -1500,7 +1500,9 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
 
   if (alpha == 1.0) {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -1735,7 +1737,9 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
             c[63] += a[56] * b0 + a[57] * b1 + a[58] * b2 + a[59] * b3 +
                      a[60] * b4 + a[61] * b5 + a[62] * b6 + a[63] * b7;
 
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
           b += 64;
         }
@@ -1744,7 +1748,9 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     TacsAddFlops(2 * 64 * 8 * nz);
   } else if (alpha == -1.0) {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -1979,7 +1985,9 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
             c[63] -= a[56] * b0 + a[57] * b1 + a[58] * b2 + a[59] * b3 +
                      a[60] * b4 + a[61] * b5 + a[62] * b6 + a[63] * b7;
 
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
 
           b += 64;
@@ -1989,7 +1997,9 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
     TacsAddFlops(2 * 64 * 8 * nz);
   } else {
     // C_{ik} = A_{ij} B_{jk}
+#ifdef TACS_LOG_FLOPS
     int nz = 0;
+#endif
     for (int i = 0; i < nrows_a; i++) {
       for (int jp = arowp[i]; jp < arowp[i + 1]; jp++) {
         int j = acols[jp];
@@ -2277,7 +2287,10 @@ void BCSRMatMatMultAdd8(double alpha, BCSRMatData *Adata, BCSRMatData *Bdata,
             c[63] +=
                 alpha * (a[56] * b0 + a[57] * b1 + a[58] * b2 + a[59] * b3 +
                          a[60] * b4 + a[61] * b5 + a[62] * b6 + a[63] * b7);
+
+#ifdef TACS_LOG_FLOPS
             nz++;
+#endif
           }
           b += 64;
         }

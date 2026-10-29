@@ -790,8 +790,8 @@ void TACSBladeStiffenedShellConstitutive::addStressDVSens(
   // correct)
   if (this->stiffenerPitchLocalNum >= 0) {
     int index = this->stiffenerPitchLocalNum;
-    TacsScalar panelStress[this->NUM_STRESSES];
-    TacsScalar stress[this->NUM_STRESSES];
+    TacsScalar panelStress[NUM_STRESSES];
+    TacsScalar stress[NUM_STRESSES];
 
     this->computePanelStress(strain, panelStress);
     this->evalStress(elemIndex, pt, X, strain, stress);
@@ -839,7 +839,7 @@ void TACSBladeStiffenedShellConstitutive::evalTangentStiffness(
 TacsScalar TACSBladeStiffenedShellConstitutive::evalFailure(
     int elemIndex, const double pt[], const TacsScalar X[],
     const TacsScalar e[]) {
-  TacsScalar fails[this->NUM_FAILURES];
+  TacsScalar fails[NUM_FAILURES];
   TacsScalar aggFail = this->computeFailureValues(e, fails);
   return aggFail;
 }
@@ -896,7 +896,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
     const TacsScalar e[], TacsScalar sens[]) {
   TacsZeroArray(sens, this->NUM_STRESSES);
 
-  TacsScalar fails[this->NUM_FAILURES], dKSdf[this->NUM_FAILURES];
+  TacsScalar fails[NUM_FAILURES], dKSdf[NUM_FAILURES];
 
   // Initialize the failure values to some very large and negative that won't
   // contribute to the KS aggregate
@@ -905,18 +905,17 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
   }
 
   // --- Material failure ---
-  TacsScalar panelFailSens[this->NUM_STRESSES];
-  memset(panelFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  TacsScalar panelFailSens[NUM_STRESSES];
+  TacsZeroArray(panelFailSens, this->NUM_STRESSES);
   if (this->includePanelMaterialFailure) {
     // First compute the sensitivity of the panel failure value
     fails[0] = this->evalPanelFailureStrainSens(e, panelFailSens);
   }
 
   TacsScalar stiffenerStrainSens[TACSBeamConstitutive::NUM_STRESSES],
-      stiffenerMatFailSens[this->NUM_STRESSES];
-  memset(stiffenerStrainSens, 0,
-         TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
-  memset(stiffenerMatFailSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+      stiffenerMatFailSens[NUM_STRESSES];
+  TacsZeroArray(stiffenerStrainSens);
+  TacsZeroArray(stiffenerMatFailSens, this->NUM_STRESSES);
 
   TacsScalar stiffenerStrain[TACSBeamConstitutive::NUM_STRESSES];
   this->transformStrain(e, stiffenerStrain);
@@ -929,22 +928,22 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
   }
 
   // --- Local panel buckling ---
-  TacsScalar localBucklingSens[this->NUM_STRESSES];
-  memset(localBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  TacsScalar localBucklingSens[NUM_STRESSES];
+  TacsZeroArray(localBucklingSens, this->NUM_STRESSES);
   if (this->includeLocalBuckling) {
     fails[2] = this->evalLocalPanelBucklingStrainSens(e, localBucklingSens);
   }
 
   // --- Global buckling ---
-  TacsScalar globalBucklingSens[this->NUM_STRESSES];
-  memset(globalBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  TacsScalar globalBucklingSens[NUM_STRESSES];
+  TacsZeroArray(globalBucklingSens, this->NUM_STRESSES);
   if (this->includeGlobalBuckling) {
     fails[3] = this->evalGlobalPanelBucklingStrainSens(e, globalBucklingSens);
   }
 
   // --- Stiffener column buckling ---
-  TacsScalar stiffenerBucklingSens[this->NUM_STRESSES];
-  memset(stiffenerBucklingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  TacsScalar stiffenerBucklingSens[NUM_STRESSES];
+  TacsZeroArray(stiffenerBucklingSens, this->NUM_STRESSES);
   if (this->includeStiffenerColumnBuckling) {
     fails[4] = evalStiffenerColumnBucklingStrainSens(stiffenerStrain,
                                                      stiffenerStrainSens);
@@ -952,8 +951,8 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureStrainSens(
   }
 
   // --- Stiffener crippling ---
-  TacsScalar stiffenerCripplingSens[this->NUM_STRESSES];
-  memset(stiffenerCripplingSens, 0, this->NUM_STRESSES * sizeof(TacsScalar));
+  TacsScalar stiffenerCripplingSens[NUM_STRESSES];
+  TacsZeroArray(stiffenerCripplingSens, this->NUM_STRESSES);
   if (this->includeStiffenerCrippling) {
     fails[5] =
         evalStiffenerCripplingStrainSens(stiffenerStrain, stiffenerStrainSens);
@@ -989,7 +988,7 @@ void TACSBladeStiffenedShellConstitutive::addFailureDVSens(
 
   // Compute the failure values and then compute the
   // sensitivity of the aggregate failure value w.r.t. them
-  TacsScalar fails[this->NUM_FAILURES], dKSdf[this->NUM_FAILURES];
+  TacsScalar fails[NUM_FAILURES], dKSdf[NUM_FAILURES];
   this->computeFailureValues(strain, fails);
   ksAggregationSens(fails, this->NUM_FAILURES, this->ksWeight, dKSdf);
 
@@ -1086,7 +1085,7 @@ TacsScalar TACSBladeStiffenedShellConstitutive::evalFailureFieldValue(
   if (failIndex == 0) {
     return this->evalFailure(elemIndex, pt, X, strain);
   } else if (failIndex >= 1 && failIndex <= this->NUM_FAILURES) {
-    TacsScalar fails[this->NUM_FAILURES];
+    TacsScalar fails[NUM_FAILURES];
     computeFailureValues(strain, fails);
     TacsScalar failVal = fails[failIndex - 1];
     if (TacsRealPart(failVal) == TacsRealPart(this->DUMMY_FAIL_VALUE)) {
@@ -1308,7 +1307,7 @@ void TACSBladeStiffenedShellConstitutive::addStrainTransformProductDVsens(
 // Compute the panel stress given the panel strains
 void TACSBladeStiffenedShellConstitutive::computePanelStress(
     const TacsScalar strain[], TacsScalar stress[]) {
-  TacsScalar C[this->NUM_TANGENT_STIFFNESS_ENTRIES];
+  TacsScalar C[NUM_TANGENT_STIFFNESS_ENTRIES];
   this->computePanelStiffness(C);
 
   TacsScalar *A = &C[0];
@@ -1357,8 +1356,8 @@ void TACSBladeStiffenedShellConstitutive::addPanelStressDVSens(
     TacsScalar t24 = this->panelThick * this->panelThick / 4.0;
     TacsScalar AMatProd, DMatProd, AsMatProd, drillProd;
 
-    TacsScalar QPanel[this->NUM_Q_ENTRIES];
-    TacsScalar AbarPanel[this->NUM_ABAR_ENTRIES];
+    TacsScalar QPanel[NUM_Q_ENTRIES];
+    TacsScalar AbarPanel[NUM_ABAR_ENTRIES];
     this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
                                   this->panelAbarMats, this->panelPlyFracs,
                                   QPanel, AbarPanel);
@@ -1429,7 +1428,7 @@ void TACSBladeStiffenedShellConstitutive::computePanelStiffness(
   TacsZeroArray(C, this->NUM_TANGENT_STIFFNESS_ENTRIES);
 
   // Compute the smeared laminate properties
-  TacsScalar QPanel[this->NUM_Q_ENTRIES], ABarPanel[this->NUM_ABAR_ENTRIES];
+  TacsScalar QPanel[NUM_Q_ENTRIES], ABarPanel[NUM_ABAR_ENTRIES];
 
   this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
                                 this->panelAbarMats, this->panelPlyFracs,
@@ -1627,9 +1626,9 @@ void TACSBladeStiffenedShellConstitutive::addPanelFailureDVSens(
 // Compute the beam stresses in the stiffener
 void TACSBladeStiffenedShellConstitutive::computeStiffenerStress(
     const TacsScalar stiffenerStrain[], TacsScalar stiffenerStress[]) {
-  int n = TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES;
+  const int n = TACSBeamConstitutive::NUM_TANGENT_STIFFNESS_ENTRIES;
   TacsScalar C[n];
-  TacsZeroArray(C, n);
+  TacsZeroArray(C);
   this->computeStiffenerStiffness(C);
   TACSBeamConstitutive::computeStress(C, stiffenerStrain, stiffenerStress);
 }
@@ -2047,7 +2046,7 @@ void TACSBladeStiffenedShellConstitutive::
                                            TacsScalar *const D2,
                                            TacsScalar *const D3) {
   // Compute the Q matrices for the panel and stiffener
-  TacsScalar QPanel[this->NUM_Q_ENTRIES], QStiffener[this->NUM_Q_ENTRIES];
+  TacsScalar QPanel[NUM_Q_ENTRIES], QStiffener[NUM_Q_ENTRIES];
   this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
                                 this->panelPlyFracs, QPanel);
   this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,
@@ -2252,7 +2251,7 @@ void TACSBladeStiffenedShellConstitutive::
   TacsZeroArray(QpanelSens, NUM_Q_ENTRIES);
 
   // Compute the Q matrices for the panel and stiffener
-  TacsScalar QPanel[this->NUM_Q_ENTRIES], QStiffener[this->NUM_Q_ENTRIES];
+  TacsScalar QPanel[NUM_Q_ENTRIES], QStiffener[NUM_Q_ENTRIES];
   this->computeSmearedStiffness(this->numPanelPlies, this->panelQMats,
                                 this->panelPlyFracs, QPanel);
   this->computeSmearedStiffness(this->numStiffenerPlies, this->stiffenerQMats,

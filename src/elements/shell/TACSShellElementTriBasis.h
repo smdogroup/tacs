@@ -21,7 +21,7 @@ class TACSShellTriLinearBasis {
     } else if (n == 1) {
       pt[0] = 1.0;
       pt[1] = 0.0;
-    } else if (n == 2) {
+    } else {  // n == 2
       pt[0] = 0.0;
       pt[1] = 1.0;
     }
@@ -431,7 +431,7 @@ class TACSShellTriQuadraticBasis {
     } else if (n == 4) {
       pt[0] = 0.5;
       pt[1] = 0.5;
-    } else if (n == 5) {
+    } else {  // n == 5
       pt[0] = 0.0;
       pt[1] = 0.5;
     }

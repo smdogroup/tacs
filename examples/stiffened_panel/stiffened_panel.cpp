@@ -179,7 +179,6 @@
 
   dh:     the step length size
   shear:  use the input file for shear
-  lapack: use LAPACK routines for the TACSPanelAnalysis
 
   Note:
 
@@ -197,15 +196,9 @@ int main(int argc, char *argv[]) {
 
   // Interpret the input flags
   double dh = 1e-6;
-  int shear_flag = 0;
-  int use_lapack = 0;
   for (int k = 0; k < argc; k++) {
     if (strcmp(argv[k], "shear") == 0) {
       bdf_file = shear_file;
-      shear_flag = 1;
-    }
-    if (strcmp(argv[k], "lapack") == 0) {
-      use_lapack = 1;
     }
     if (sscanf(argv[k], "fd=%le", &dh) == 1) {
       if (dh > 0.1) {
@@ -251,14 +244,6 @@ int main(int argc, char *argv[]) {
   base = TacsCreateShellByName("TACSQuad16Shell", transform, stiff_base);
   stiffener =
       TacsCreateShellByName("TACSQuad16Shell", transform, stiff_stiffener);
-
-  // Set the loading conditions which depends on whether or not a
-  // shear flag is used
-  TacsScalar Nx = -1.0, Nxy = 0.0;
-  if (shear_flag) {
-    Nx = 0.0;
-    Nxy = 1.0;
-  }
 
   //   // When using complex mode, we cannot use the tacs panel analysis
   // #ifndef TACS_USE_COMPLEX
@@ -338,8 +323,8 @@ int main(int argc, char *argv[]) {
   linear_buckling->checkEigenvector(0);
 
   // Extract the eigenvalue
-  TacsScalar error = 0.0, eigvalue = 0.0;
-  eigvalue = linear_buckling->extractEigenvalue(0, &error);
+  TacsScalar error = 0.0;
+  linear_buckling->extractEigenvalue(0, &error);
 
   //   // Compute the derivative of the eigenvalue
   //   TacsScalar *fdvSens = new TacsScalar[ ndvs ];

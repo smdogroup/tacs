@@ -75,7 +75,7 @@ void *TACSAssembler::assembleRes_thread(void *t) {
   }
   // To avoid allocating memory inside the element loop, make the aux element
   // contribution array big enough for the largest element
-  TacsScalar *auxElemRes;
+  TacsScalar *auxElemRes = NULL;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemRes = new TacsScalar[s];
@@ -290,7 +290,7 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
   if (assembler->auxElements) {
     naux = assembler->auxElements->getAuxElements(&aux);
   }
-  TacsScalar *auxElemMat;
+  TacsScalar *auxElemMat = NULL;
   bool scaleAux = lambda != TacsScalar(1.0) && naux > 0;
   if (scaleAux) {
     auxElemMat = new TacsScalar[s * s];

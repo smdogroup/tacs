@@ -196,7 +196,7 @@ int TACSToFH5::writeToFile(const char *filename) {
     char *var_names = new char[str_len];
     var_names[0] = '\0';
     if (write_flag & TACS_OUTPUT_NODES) {
-      snprintf(var_names, sizeof(var_names), "X,Y,Z");
+      snprintf(var_names, str_len, "X,Y,Z");
     }
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
       nd = TacsGetOutputComponentCount(elem_type, TACS_OUTPUT_DISPLACEMENTS);

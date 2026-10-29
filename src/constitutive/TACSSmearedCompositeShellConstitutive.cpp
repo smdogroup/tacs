@@ -467,8 +467,7 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
 
     // plate bottom stress
     getLaminaStrain(strain, tb, lamStrain);
-    TacsScalar fval_bot =
-        ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
+    ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
     dfvals[2 * i + 0][0] = phi[0];
     dfvals[2 * i + 0][1] = phi[1];
     dfvals[2 * i + 0][2] = phi[2];
@@ -479,8 +478,7 @@ TacsScalar TACSSmearedCompositeShellConstitutive::evalFailureStrainSens(
 
     // plate top stress
     getLaminaStrain(strain, tt, lamStrain);
-    TacsScalar fval_top =
-        ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
+    ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
     dfvals[2 * i + 1][0] = phi[0];
     dfvals[2 * i + 1][1] = phi[1];
     dfvals[2 * i + 1][2] = phi[2];
@@ -507,22 +505,20 @@ void TACSSmearedCompositeShellConstitutive::addFailureDVSens(
     TacsScalar tt = (0.5 - t_offset) * thickness;
 
     evalPlyTopBottomFailure(e, fvals);
-    TacsScalar ks_val = ksAggregationSens(fvals, nfvals, ks_weight, dks_vals);
+    ksAggregationSens(fvals, nfvals, ks_weight, dks_vals);
 
     for (int i = 0; i < num_plies; i++) {
       TacsScalar lamStrain[3], phi[3];
 
       // plate bottom stress
       getLaminaStrain(e, tb, lamStrain);
-      TacsScalar fval_bot =
-          ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
+      ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
       dfdx[index] += (-0.5 - t_offset) * scale * dks_vals[2 * i + 0] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
 
       // plate top stress
       getLaminaStrain(e, tt, lamStrain);
-      TacsScalar fval_top =
-          ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
+      ply_props[i]->failureStrainSens(ply_angles[i], lamStrain, phi);
       dfdx[index] += (0.5 - t_offset) * scale * dks_vals[2 * i + 1] *
                      (phi[0] * e[3] + phi[1] * e[4] + phi[2] * e[5]);
     }

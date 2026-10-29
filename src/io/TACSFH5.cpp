@@ -107,6 +107,7 @@ int TACSFH5File::createFile(const char *file_name, int num_components,
         } else {
           // Create a default zone name
           char zone_name[128];
+          snprintf(zone_name, sizeof(zone_name), "Component %d", k);
           header_len += (strlen(zone_name) + 1) * sizeof(char);
         }
       }
@@ -121,6 +122,7 @@ int TACSFH5File::createFile(const char *file_name, int num_components,
           int slen = 0;
           // Create a default zone name
           char zone_name[128];
+          snprintf(zone_name, sizeof(zone_name), "Component %d", k);
 
           // Copy the size of the string
           if (component_names[k]) {

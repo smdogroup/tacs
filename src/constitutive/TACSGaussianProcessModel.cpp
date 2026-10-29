@@ -105,7 +105,7 @@ TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
   }
 
   TacsScalar gam_term = Xtest[2] * Xtrain[2];
-  TacsScalar sum_sq;
+  TacsScalar sum_sq = 0.0;
   for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
     if (i == 1 && affine) {
@@ -150,7 +150,7 @@ void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
   jacobian[2] += theta[1] * Xtrain[2];
 
   // RQ term
-  TacsScalar sum_sq;
+  TacsScalar sum_sq = 0.0;
   for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
     if (i == 1 && affine) {
@@ -219,7 +219,10 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   // _eps/epsilon) generate random input perturbation and output perturbation
   // test vectors
   const int n_input = this->n_param;
-  TacsScalar p_input[n_input], x0[n_input], x[n_input], input_sens[n_input];
+  TacsScalar *p_input = new TacsScalar[n_input];
+  TacsScalar *x0 = new TacsScalar[n_input];
+  TacsScalar *x = new TacsScalar[n_input];
+  TacsScalar *input_sens = new TacsScalar[n_input];
   for (int ii = 0; ii < n_input; ii++) {
     p_input[ii] = ((double)rand() / (RAND_MAX));
   }
@@ -231,7 +234,7 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   }
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
-  TacsScalar f0, f1, f2;
+  TacsScalar f0, f2;
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
@@ -256,6 +259,11 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
     adjTD += input_sens[j] * p_input[j];
   }
   adjTD = TacsRealPart(adjTD);
+
+  delete[] p_input;
+  delete[] x0;
+  delete[] x;
+  delete[] input_sens;
 
   // compute relative error
   TacsScalar relError = abs((adjTD - centralDiff) / centralDiff);
@@ -294,7 +302,7 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   x0[3] = 0.53432;  // log(zeta)
 
   // perform central difference over rho_0 function on [D11,D22,a,b]
-  TacsScalar f0, f1, f2;
+  TacsScalar f0, f2;
 
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i] - p_input[i] * epsilon;
@@ -307,7 +315,6 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   }
   f2 = kernel(x, Xtrain);
 
-  TacsScalar temp = p_output * (f2 - f0);
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity

@@ -1066,9 +1066,7 @@ MPI_Comm BCSCMat::getMPIComm() { return comm; }
 /*
   Zero all the entries in the matrix
 */
-void BCSCMat::zeroEntries() {
-  memset(A, 0, aptr[nblock_cols] * sizeof(TacsScalar));
-}
+void BCSCMat::zeroEntries() { TacsZeroArray(A, aptr[nblock_cols]); }
 
 /*
   Add the values into the matrix corresponding to the blocked entries

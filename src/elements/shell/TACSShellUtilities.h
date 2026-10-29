@@ -895,9 +895,7 @@ void TacsShellAddDrillStrainHessian(
   // Add the contributions to the Jacobian
   for (int i = 0; i < num_nodes; i++) {
     TacsScalar t[size];
-    memset(
-        t, 0,
-        size * sizeof(TacsScalar));  // *const TacsScalar *t1 = &drot[i*size];
+    TacsZeroArray(t);  // *const TacsScalar *t1 = &drot[i*size];
 
     for (int j = 0; j < num_nodes; j++) {
       const TacsScalar *t1 = &drot[j * size];
