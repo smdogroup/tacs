@@ -1,3 +1,6 @@
+import os
+import subprocess
+import sys
 import unittest
 
 import numpy as np
@@ -6,6 +9,13 @@ from tacs import TACS, constitutive, elements
 
 DEG2RAD = np.pi / 180.0
 np.random.seed(1234567)
+
+# glibc settings that disable the per-thread allocation cache and fill freed memory
+# with a fixed byte, so using a C++ object after it has been freed reliably crashes
+# instead of silently reading its stale values
+POISON_FREED_MEMORY_ENV = {
+    "GLIBC_TUNABLES": "glibc.malloc.tcache_count=0:glibc.malloc.perturb=165"
+}
 
 
 class GPConstitutiveMLTest(unittest.TestCase):
@@ -388,6 +398,58 @@ class GPConstitutiveMLTest(unittest.TestCase):
         if self.print_level != 0:
             print("All internal tests pass!")
 
+    def _rebuild_con_with_shared_panel_gps(self):
+        """
+        Destroy the only constitutive object holding the PanelGPs, then check that another
+        constitutive object built with it predicts the same buckling load from the axial GP
+        """
+        ply = self.ply_list[0]
+        con = self.get_con(ply)
+        firstLoad = con.nondimCriticalGlobalAxialLoad(rho_0=0.5, xi=0.3, gamma=0.2)
+        del con
+        con = self.get_con(ply)
+        rebuiltLoad = con.nondimCriticalGlobalAxialLoad(rho_0=0.5, xi=0.3, gamma=0.2)
+        self.assertEqual(rebuiltLoad, firstLoad)
+
+    def _predict_after_panel_gps_deleted(self):
+        """Delete the only PanelGPs holding the axial GP, then make a prediction with the GP"""
+        del self.panelGPs
+        Xtest = np.random.rand(constitutive.BucklingGP.n_param).astype(self.dtype)
+        self.axialGP.predict_mean_test_data(Xtest)
+
+
+class GPObjectLifetimeTest(unittest.TestCase):
+    """
+    Use-after-free checks for the Python GP wrappers. Each check runs in a child process
+    with freed memory poisoned, so a dangling C++ pointer crashes that process.
+    """
+
+    def _run_case_in_poisoned_process(self, case):
+        result = subprocess.run(
+            [sys.executable, __file__, "--case", case],
+            env=os.environ | POISON_FREED_MEMORY_ENV,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stdout + result.stderr)
+
+    def test_panel_gps_outlives_constitutive(self):
+        """
+        Given a PanelGPs whose only constitutive object has been destroyed,
+        when a new constitutive object is built with it,
+        then the new object predicts the same axial buckling load from the GP and the process does not crash,
+        because the Python PanelGPs still owns its C++ object.
+        """
+        self._run_case_in_poisoned_process("reusePanelGPs")
+
+    def test_buckling_gp_outlives_panel_gps(self):
+        """
+        Given a BucklingGP whose only PanelGPs has been deleted,
+        when the BucklingGP makes a prediction,
+        then the process does not crash, because the Python BucklingGP still owns its C++ object.
+        """
+        self._run_case_in_poisoned_process("reuseBucklingGP")
+
 
 class GPConstitutiveCFTest(GPConstitutiveMLTest):
     """
@@ -436,6 +498,7 @@ if __name__ == "__main__":
     cases = ["CF", "ML", "full"]
     cases += ["failStrain-CF", "failStrain-ML"]
     cases += ["failDV-CF", "failDV-ML"]
+    cases += ["reusePanelGPs", "reuseBucklingGP"]
 
     assert args.case in cases
 
@@ -473,5 +536,13 @@ if __name__ == "__main__":
         tester._my_debug = True
         tester.setUp()
         tester.test_constitutive_failure_dv_sens()
+    elif args.case == "reusePanelGPs":
+        tester = GPConstitutiveMLTest()
+        tester.setUp()
+        tester._rebuild_con_with_shared_panel_gps()
+    elif args.case == "reuseBucklingGP":
+        tester = GPConstitutiveMLTest()
+        tester.setUp()
+        tester._predict_after_panel_gps_deleted()
     elif args.case == "full":
         unittest.main()
