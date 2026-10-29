@@ -206,7 +206,7 @@ cdef extern from "TACSBladeStiffenedShellConstitutive.h":
         void setPanelPlyFractionBounds(TacsScalar[] lowerBound, TacsScalar[] upperBound)
 
 cdef extern from "TACSGaussianProcessModel.h":
-    cdef cppclass TACSGaussianProcessModel:
+    cdef cppclass TACSGaussianProcessModel(TACSObject):
         TACSGaussianProcessModel(
             int, # n_train
             int, # n_param
@@ -236,7 +236,7 @@ cdef extern from "TACSGaussianProcessModel.h":
         )
 
 cdef extern from "TACSPanelGPs.h":
-    cdef cppclass TACSPanelGPs:
+    cdef cppclass TACSPanelGPs(TACSObject):
         TACSPanelGPs(
             TACSBucklingGaussianProcessModel*, # axial GP
             TACSBucklingGaussianProcessModel*, # shear GP
