@@ -59,8 +59,8 @@ TACSPanelGPs::~TACSPanelGPs() {
 
 void TACSPanelGPs::resetSavedData() {
   // goal here is to reset the saved data
-  memset(savedYtest, 0.0, n_save * sizeof(TacsScalar));
-  memset(savedJacobians, 0.0, n_save_adj * sizeof(TacsScalar));
+  TacsZeroArray(savedYtest, n_save);
+  TacsZeroArray(savedJacobians, n_save_adj);
   for (int i = 0; i < n_save; i++) {
     savedForward[i] = false;
     savedAdjoint[i] = false;

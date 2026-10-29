@@ -35,6 +35,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "TacsComplexStep.h"
 #include "mpi.h"
 
@@ -57,6 +59,30 @@ typedef TacsComplex TacsScalar;
 #define TACS_MPI_TYPE MPI_DOUBLE
 typedef double TacsScalar;
 #endif
+
+/**
+  Set every entry of an array of TacsScalar values to zero.
+
+  Use this instead of memset: in complex mode TacsScalar is
+  std::complex<double>, a non-trivial type that should not be cleared with
+  raw memory functions.
+
+  @param array The array to zero
+  @param size The number of entries in the array
+*/
+inline void TacsZeroArray(TacsScalar *array, int size) {
+  std::fill_n(array, size, TacsScalar(0.0));
+}
+
+/**
+  Set every entry of a fixed-size TacsScalar array to zero.
+
+  @param array The array to zero, its size is deduced from its type
+*/
+template <int size>
+inline void TacsZeroArray(TacsScalar (&array)[size]) {
+  TacsZeroArray(array, size);
+}
 
 /*
   Define the macro to add flop counts. This does not work for threaded

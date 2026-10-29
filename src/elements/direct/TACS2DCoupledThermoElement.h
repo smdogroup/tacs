@@ -987,12 +987,12 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addResidual(
       stiff->calculateThermal(pt, phi, stress);
       // Get the derivative of the strain with respect to the nodal
       // displacements [NUM_STRESSESx2*NUM_NODES]
-      memset(B, 0.0, NUM_STRESSES * 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(B, NUM_STRESSES * 2 * NUM_NODES);
       getBmat(B, J, Na, Nb, vars);
       b = NULL;
       b = B;
       TacsScalar q[2 * NUM_NODES];
-      memset(q, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(q, 2 * NUM_NODES);
       // Compute B^{T}*D*alpha*phi [2xNUM_NODESx1]
       for (int i = 0; i < 2 * NUM_NODES; i++) {
         q[i] += (b[0] * stress[0] + b[1] * stress[1]);
@@ -1122,9 +1122,9 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian(
     // [NUM_NODESxNUM_NODES]
     if (conduction) {
       // Compute the nonsymmetric part of the Jacobian i.e. matrix L
-      memset(B, 0.0, NUM_STRESSES * 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(B, NUM_STRESSES * 2 * NUM_NODES);
       TacsScalar s[NUM_STRESSES], BDs[2 * NUM_NODES];
-      memset(BDs, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(BDs, 2 * NUM_NODES);
       // Get the coefficient of thermal expansion
       TacsScalar phi[] = {1.0, 1.0, 0.0};
       // Get B [NUM_STRESSESx2*NUM_NODES];
@@ -1149,7 +1149,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addJacobian(
       }
       // Get the B matrix [2xNUM_NODES] associated with the heat transfer
       // problem
-      memset(B, 0.0, 2 * NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(B, 2 * NUM_NODES);
       getBmatTemp(B, J, Na, Nb, vars);
       bj = B;
       for (int j = 0; j < NUM_NODES; j++) {
@@ -1238,7 +1238,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct(
 
     // Compute the product of psi_u^{T}*B^{T}
     TacsScalar bpsi[NUM_STRESSES];
-    memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
+    TacsZeroArray(bpsi, NUM_STRESSES);
 
     TacsScalar *b = B;
     TacsScalar *ps = psi_u;
@@ -1270,7 +1270,7 @@ void TACS2DCoupledThermoElement<NUM_NODES>::addAdjResProduct(
     // transfer problem
     getBmatTemp(B, J, Na, Nb, vars);
     // Initialize the term psi_t^{T}*B^{T}
-    memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
+    TacsZeroArray(bpsi, NUM_STRESSES);
     b = NULL;
     b = B;
     ps = NULL;
@@ -1368,7 +1368,7 @@ template <int NUM_NODES>
 void TACS2DCoupledThermoElement<NUM_NODES>::getMatType(
     ElementMatrixType matType, TacsScalar mat[], const TacsScalar Xpts[],
     const TacsScalar vars[]) {
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
   // The mass matrix
   if (matType == MASS_MATRIX) {

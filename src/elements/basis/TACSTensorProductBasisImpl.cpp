@@ -17,7 +17,7 @@
 void TACSInterpAllTensor3DInterp5(const int m, const double N[],
                                   const double Nx[], const TacsScalar values[],
                                   TacsScalar out[]) {
-  memset(out, 0, 4 * m * 125 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * m * 125);
 
   for (int n = 0; n < 125; n++) {
     const double *n1 = &N[5 * (n % 5)];
@@ -59,7 +59,7 @@ void TACSInterpAllTensor3DInterp5VarsPerNode1(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 125 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 125);
 
   for (int n = 0; n < 125; n++) {
     const double *n1 = &N[5 * (n % 5)];
@@ -95,7 +95,7 @@ void TACSInterpAllTensor3DInterp5VarsPerNode3(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 3 * 125 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 3 * 125);
 
   for (int n = 0; n < 125; n++) {
     const double *n1 = &N[5 * (n % 5)];
@@ -148,7 +148,7 @@ void TACSInterpAllTensor3DInterp5VarsPerNode4(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 4 * 125 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 4 * 125);
 
   for (int n = 0; n < 125; n++) {
     const double *n1 = &N[5 * (n % 5)];
@@ -401,7 +401,7 @@ void TacsAddAllTransTensor3DInterp5VarsPerNode4(const double N[],
 void TACSInterpAllTensor3DInterp6(const int m, const double N[],
                                   const double Nx[], const TacsScalar values[],
                                   TacsScalar out[]) {
-  memset(out, 0, 4 * m * 216 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * m * 216);
   for (int n = 0; n < 216; n++) {
     const double *n1 = &N[6 * (n % 6)];
     const double *n2 = &N[6 * ((n % 36) / 6)];
@@ -444,7 +444,7 @@ void TACSInterpAllTensor3DInterp6VarsPerNode1(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 216 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 216);
 
   for (int n = 0; n < 36; n++) {
     const double *n11 = &N[0];
@@ -533,7 +533,7 @@ void TACSInterpAllTensor3DInterp6VarsPerNode3(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 3 * 216 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 3 * 216);
 
   for (int n = 0; n < 216; n++) {
     const double *n1 = &N[6 * (n % 6)];
@@ -587,7 +587,7 @@ void TACSInterpAllTensor3DInterp6VarsPerNode4(const double N[],
                                               const double Nx[],
                                               const TacsScalar values[],
                                               TacsScalar out[]) {
-  memset(out, 0, 4 * 4 * 216 * sizeof(TacsScalar));
+  TacsZeroArray(out, 4 * 4 * 216);
 
   for (int n = 0; n < 216; n++) {
     const double *n1 = &N[6 * (n % 6)];

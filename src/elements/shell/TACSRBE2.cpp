@@ -254,7 +254,7 @@ void TACSRBE2::addJacobian(int elemIndex, double time, TacsScalar alpha,
   const TacsScalar *Xn, *X0;
   int col, row;
   TacsScalar *mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
   // Store the last 6*N variables (Lagrange multipliers) as a force and moment
   int ii = NUM_DISPS * (1 + NUM_DEP_NODES);
@@ -402,7 +402,7 @@ void TACSRBE2::addAdjResXptProduct(
   TacsScalar *sXpts, *sXn, *sX0, *maskedLM;
 
   TacsScalar *residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
-  memset(residual, 0, NUM_NODES * 3 * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(residual, NUM_NODES * 3 * NUM_VARIABLES);
   sXpts = new TacsScalar[(NUM_DEP_NODES + 1) * 3];
 
   // Store the last 6*NUM_DEP_NODES variables (Lagrange multipliers) as a force
@@ -417,7 +417,7 @@ void TACSRBE2::addAdjResXptProduct(
   TacsScalar *res = residual;
 
   for (int k = 0; k < 3 * (NUM_DEP_NODES + 1); k++) {
-    memset(sXpts, 0, sizeof(TacsScalar) * (NUM_DEP_NODES + 1) * 3);
+    TacsZeroArray(sXpts, (NUM_DEP_NODES + 1) * 3);
     sXpts[k] = 1.0;
 
     sX0 = &sXpts[0];
@@ -524,7 +524,7 @@ void TACSRBE2::getMaskedMultipliers(TacsScalar maskedLM[],
       // Compute residual to find distributed force on each node
       TacsScalar* res;
       res = new TacsScalar[NUM_VARIABLES];
-      memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
+      TacsZeroArray(res, NUM_VARIABLES);
       addResidual(0, 0.0, Xpts, vars, NULL, NULL, res);
       for ( int n = 0; n < NUM_DEP_NODES+1; n++ ){
         int index = 0;

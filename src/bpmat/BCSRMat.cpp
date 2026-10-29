@@ -161,7 +161,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *mat, int levFill, double fill,
   length *= bsize * bsize;
 
   data->A = new TacsScalar[length];
-  memset(data->A, 0, length * sizeof(TacsScalar));
+  TacsZeroArray(data->A, length);
 
   // Go through and print out the nz-pattern of the matrix
   if (fname) {
@@ -233,7 +233,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, TACSThreadInfo *_thread_info, int bsize,
     // Find the size of the array
     int length = bsize * bsize * data->rowp[nrows];
     data->A = new TacsScalar[length];
-    memset(data->A, 0, length * sizeof(TacsScalar));
+    TacsZeroArray(data->A, length);
   }
 }
 
@@ -300,7 +300,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *Bmat, BCSRMat *Emat, BCSRMat *Fmat,
   int length = data->rowp[data->nrows];
   length *= bsize * bsize;
   data->A = new TacsScalar[length];
-  memset(data->A, 0, length * sizeof(TacsScalar));
+  TacsZeroArray(data->A, length);
 }
 
 /*!
@@ -451,7 +451,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *smat, int *alevs, BCSRMat *amat,
   length *= bsize * bsize;
 
   data->A = new TacsScalar[length];
-  memset(data->A, 0, length * sizeof(TacsScalar));
+  TacsZeroArray(data->A, length);
 }
 
 /*
@@ -581,7 +581,7 @@ BCSRMat::BCSRMat(MPI_Comm _comm, BCSRMat *B, double fill) {
   length *= bsize * bsize;
 
   data->A = new TacsScalar[length];
-  memset(data->A, 0, length * sizeof(TacsScalar));
+  TacsZeroArray(data->A, length);
 }
 
 BCSRMat::~BCSRMat() {
@@ -1234,7 +1234,7 @@ void BCSRMat::mult(TacsScalar *xvec, TacsScalar *yvec) {
     tdata->init_mat_mult_sched();
     tdata->input = xvec;
     tdata->output = yvec;
-    memset(yvec, 0, data->bsize * data->nrows * sizeof(TacsScalar));
+    TacsZeroArray(yvec, data->bsize * data->nrows);
 
     // Create the joinable attribute
     pthread_attr_t attr;
@@ -1304,7 +1304,7 @@ void BCSRMat::multAdd(TacsScalar *xvec, TacsScalar *zvec, TacsScalar *yvec) {
   Compute y = A^{T}*x
 */
 void BCSRMat::multTranspose(TacsScalar *xvec, TacsScalar *yvec) {
-  memset(yvec, 0, data->bsize * data->ncols * sizeof(TacsScalar));
+  TacsZeroArray(yvec, data->bsize * data->ncols);
   bmulttrans(data, xvec, yvec);
 }
 
@@ -1769,7 +1769,7 @@ void BCSRMat::zeroEntries() {
   int length = data->rowp[data->nrows];
   length *= bsize * bsize;
 
-  memset(data->A, 0, length * sizeof(TacsScalar));
+  TacsZeroArray(data->A, length);
 }
 
 /*!
@@ -2365,7 +2365,7 @@ void BCSRMat::getDenseColumnMajor(TacsScalar *D) {
   const TacsScalar *A = data->A;
 
   // Zero the array first and fill the non-zeros alone
-  memset(D, 0, bsize * bsize * nrows * nrows * sizeof(TacsScalar));
+  TacsZeroArray(D, bsize * bsize * nrows * nrows);
 
   // The leading dimension of the dense column matrix
   const int ldd = bsize * nrows;
@@ -2675,7 +2675,7 @@ void BCSRMat::getBandedMatrix(TacsScalar *A, int size, int symm_flag) {
     int mat_size = data->nrows * data->bsize * (bu + 1);
 
     if (mat_size >= size) {
-      memset(A, 0, mat_size * sizeof(TacsScalar));
+      TacsZeroArray(A, mat_size);
 
       // Set the block size
       int bsize = data->bsize;
@@ -2709,7 +2709,7 @@ void BCSRMat::getBandedMatrix(TacsScalar *A, int size, int symm_flag) {
     int mat_size = data->nrows * data->bsize * (bl + bu + 1);
 
     if (mat_size >= size) {
-      memset(A, 0, mat_size * sizeof(TacsScalar));
+      TacsZeroArray(A, mat_size);
 
       // Set the block size
       int bsize = data->bsize;

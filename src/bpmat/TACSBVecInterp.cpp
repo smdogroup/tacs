@@ -788,10 +788,10 @@ void TACSBVecInterp::initialize() {
   // Allocate space for the weights. Initialize the weight values
   // to zero
   weights = new TacsScalar[rowp[N]];
-  memset(weights, 0, rowp[N] * sizeof(TacsScalar));
+  TacsZeroArray(weights, rowp[N]);
 
   ext_weights = new TacsScalar[ext_rowp[N]];
-  memset(ext_weights, 0, ext_rowp[N] * sizeof(TacsScalar));
+  TacsZeroArray(ext_weights, ext_rowp[N]);
 
   // Add the weight values themselves to the CSR data structure
   for (int i = 0; i < on_size; i++) {
@@ -1011,10 +1011,10 @@ void TACSBVecInterp::initialize() {
 
   // Allocate the transpose weights
   transpose_weights = new TacsScalar[M];
-  memset(transpose_weights, 0, M * sizeof(TacsScalar));
+  TacsZeroArray(transpose_weights, M);
 
   // Zero the external contribution and begin
-  memset(x_ext, 0, num_ext_vars * sizeof(TacsScalar));
+  TacsZeroArray(x_ext, num_ext_vars);
   for (int i = 0; i < N; i++) {
     for (int jp = ext_rowp[i]; jp < ext_rowp[i + 1]; jp++) {
       x_ext[ext_cols[jp]] += ext_weights[jp];
@@ -1046,7 +1046,7 @@ void TACSBVecInterp::initialize() {
   }
 
   // Zero the external vector
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  TacsZeroArray(x_ext, bsize * num_ext_vars);
 }
 
 /*
@@ -1161,7 +1161,7 @@ void TACSBVecInterp::multTranspose(TACSBVec *inVec, TACSBVec *outVec) {
   outVec->getArray(&out);
 
   // Zero the off-processor contribution
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  TacsZeroArray(x_ext, bsize * num_ext_vars);
 
   // Multiply the off-processor part first
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);
@@ -1208,7 +1208,7 @@ void TACSBVecInterp::multTransposeAdd(TACSBVec *inVec, TACSBVec *addVec,
   outVec->getArray(&out);
 
   // Zero the off-processor contribution
-  memset(x_ext, 0, bsize * num_ext_vars * sizeof(TacsScalar));
+  TacsZeroArray(x_ext, bsize * num_ext_vars);
 
   // Multiply the off-processor part first
   multtransadd(bsize, N, ext_rowp, ext_cols, ext_weights, in, x_ext);

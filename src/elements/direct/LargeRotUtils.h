@@ -1175,9 +1175,9 @@ void add_lr_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
   TacsScalar h11[order * order * (order * order + 1) / 2];
   TacsScalar h22[order * order * (order * order + 1) / 2];
   TacsScalar h12[order * order * (order * order + 1) / 2];
-  memset(h11, 0, sizeof(h11));
-  memset(h22, 0, sizeof(h22));
-  memset(h12, 0, sizeof(h12));
+  TacsZeroArray(h11);
+  TacsZeroArray(h22);
+  TacsZeroArray(h12);
   shellutils::nonlinear_tying_nmat<order, tying_order>(h11, h22, h12, N11, N22,
                                                        N12, knots, pknots);
 
@@ -1185,8 +1185,8 @@ void add_lr_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
   // There are 2*9 + 6 = 24 second derivative components per point
   TacsScalar h13[12 * (order * order * (order * order + 1))];
   TacsScalar h23[12 * (order * order * (order * order + 1))];
-  memset(h13, 0, sizeof(h13));
-  memset(h23, 0, sizeof(h23));
+  TacsZeroArray(h13);
+  TacsZeroArray(h23);
 
   // Loop over each tying-point in the element
   for (int i = 0; i < tying_order * (tying_order - 1); i++) {

@@ -1003,7 +1003,7 @@ TacsScalar ksAggregationSens(const TacsScalar f[], const TacsScalar maxVal,
                              const int numVals, const double ksWeight,
                              TacsScalar dKSdf[]) {
   TacsScalar sum = 0.0;
-  memset(dKSdf, 0, numVals * sizeof(TacsScalar));
+  TacsZeroArray(dKSdf, numVals);
   for (int ii = 0; ii < numVals; ii++) {
     TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
     sum += val;
@@ -1026,7 +1026,7 @@ TacsScalar ksAggregationSensProduct(const TacsScalar f[], const int numVals,
     }
   }
   TacsScalar sum = 0.0;
-  memset(dKSdx, 0, numVars * sizeof(TacsScalar));
+  TacsZeroArray(dKSdx, numVars);
   for (int ii = 0; ii < numVals; ii++) {
     TacsScalar val = exp(ksWeight * (f[ii] - maxVal));
     sum += val;

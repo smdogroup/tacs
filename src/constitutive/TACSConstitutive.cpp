@@ -64,7 +64,7 @@ void TACSConstitutive::getFailureEnvelope(
   TacsScalar *C = new TacsScalar[nstress * nstress];
 
   for (int i = 0; i < nstress; i++) {
-    memset(e, 0, nstress * sizeof(TacsScalar));
+    TacsZeroArray(e, nstress);
     e[i] = 1.0;
     evalStress(elemIndex, pt, X, e, &C[i * nstress]);
   }

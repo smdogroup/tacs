@@ -99,7 +99,7 @@ void TACSBcMap::addBC(int node, int nvals, const int *bc_vars,
 
   // Set the new variable information
   nodes[nbcs] = node;
-  memset(&values[bsize * nbcs], 0, bsize * sizeof(TacsScalar));
+  TacsZeroArray(&values[bsize * nbcs], bsize);
   vars[nbcs] = 0;
 
   if (bc_vars && bc_vals) {
@@ -160,7 +160,7 @@ void TACSBcMap::addBinaryFlagBC(int node, int _vars) {
 
   // Set the new variable information
   nodes[nbcs] = node;
-  memset(&values[bsize * nbcs], 0, bsize * sizeof(TacsScalar));
+  TacsZeroArray(&values[bsize * nbcs], bsize);
   vars[nbcs] = _vars;
   nbcs++;
 }
@@ -627,16 +627,16 @@ void GMRES::init(TACSMat *_mat, TACSPc *_pc, int _m, int _nrestart,
   H = new TacsScalar[size];        // The Hessenberg matrix
   res = new TacsScalar[msub + 1];  // The residual
 
-  memset(H, 0, size * sizeof(TacsScalar));
-  memset(res, 0, (msub + 1) * sizeof(TacsScalar));
+  TacsZeroArray(H, size);
+  TacsZeroArray(res, msub + 1);
 
   // Allocate the terms that represent the unitary Q matrix
   // in the QR factorixation of H
   Qsin = new TacsScalar[msub];
   Qcos = new TacsScalar[msub];
 
-  memset(Qsin, 0, msub * sizeof(TacsScalar));
-  memset(Qcos, 0, msub * sizeof(TacsScalar));
+  TacsZeroArray(Qsin, msub);
+  TacsZeroArray(Qcos, msub);
 }
 
 /*
@@ -1063,17 +1063,17 @@ void GCROT::init(TACSMat *_mat, TACSPc *_pc, int _outer, int _max_outer,
   res = new TacsScalar[msub + 1];  // The residual
   B = new TacsScalar[msub * outer];
 
-  memset(H, 0, size * sizeof(TacsScalar));
-  memset(res, 0, (msub + 1) * sizeof(TacsScalar));
-  memset(B, 0, msub * outer * sizeof(TacsScalar));
+  TacsZeroArray(H, size);
+  TacsZeroArray(res, msub + 1);
+  TacsZeroArray(B, msub * outer);
 
   // Allocate the terms that represent the unitary Q matrix
   // in the QR factorixation of H
   Qsin = new TacsScalar[msub];
   Qcos = new TacsScalar[msub];
 
-  memset(Qsin, 0, msub * sizeof(TacsScalar));
-  memset(Qcos, 0, msub * sizeof(TacsScalar));
+  TacsZeroArray(Qsin, msub);
+  TacsZeroArray(Qcos, msub);
 }
 
 /*

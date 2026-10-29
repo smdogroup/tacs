@@ -221,7 +221,7 @@ void TACSIsoShellConstitutive::evalTangentStiffness(int elemIndex,
 
     C[21] = 0.5 * DRILLING_REGULARIZATION * (As[0] + As[2]);
   } else {
-    memset(C, 0, 22 * sizeof(TacsScalar));
+    TacsZeroArray(C, 22);
   }
 }
 

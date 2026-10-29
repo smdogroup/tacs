@@ -680,7 +680,7 @@ void TACSBVecDistribute::beginReverse(TACSBVecDistCtx *ctx, TacsScalar *local,
   if (!sorted_flag) {
     // Copy over the values from the sorted to the unsorted array
     int len = bsize * next_vars;
-    memset(ext_sorted_vals, 0, len * sizeof(TacsScalar));
+    TacsZeroArray(ext_sorted_vals, len);
     bsetvars(bsize, nvars_unsorted, ext_unsorted_index, 0, local,
              ext_sorted_vals, op);
     local = ext_sorted_vals;

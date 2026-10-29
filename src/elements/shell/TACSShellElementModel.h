@@ -189,8 +189,8 @@ class TACSShellLinearModel {
       basis::getTyingPoint(i1, pt1);
 
       TacsScalar du2[3 * basis::NUM_NODES], dd2[3 * basis::NUM_NODES];
-      memset(du2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du2);
+      TacsZeroArray(dd2);
 
       TacsScalar *n02 = n0ty, *Xxi2 = Xxity;
       for (int i2 = 0; i2 < basis::NUM_TYING_POINTS;
@@ -264,7 +264,7 @@ class TACSShellLinearModel {
       }
 
       TacsScalar du1[3 * basis::NUM_NODES];
-      memset(du1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du1);
 
       // Store the the derivative information for the first point
       TacsScalar dUxi1[6];
@@ -295,7 +295,7 @@ class TACSShellLinearModel {
         dUxi1[5] = 0.5 * Xxi1[4];
       } else {
         TacsScalar dd1[3 * basis::NUM_NODES];
-        memset(dd1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(dd1);
 
         TacsScalar dd01[3];
         if (f1 == TACS_SHELL_G23_COMPONENT) {
@@ -403,12 +403,12 @@ class TACSShellLinearModel {
       basis::getTyingPoint(i1, pt1);
 
       TacsScalar du2[3 * basis::NUM_NODES], dd2[3 * basis::NUM_NODES];
-      memset(du2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du2);
+      TacsZeroArray(dd2);
 
       TacsScalar du2d[3 * basis::NUM_NODES], dd2d[3 * basis::NUM_NODES];
-      memset(du2d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du2d);
+      TacsZeroArray(dd2d);
 
       TacsScalar *n02 = n0ty, *Xxi2 = Xxity;
       for (int i2 = 0; i2 < basis::NUM_TYING_POINTS;
@@ -530,7 +530,7 @@ class TACSShellLinearModel {
       }
 
       TacsScalar du1[3 * basis::NUM_NODES];
-      memset(du1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du1);
 
       // Store the the derivative information for the first point
       TacsScalar dUxi1[6];
@@ -561,7 +561,7 @@ class TACSShellLinearModel {
         dUxi1[5] = 0.5 * Xxi1[4];
       } else {
         TacsScalar dd1[3 * basis::NUM_NODES];
-        memset(dd1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(dd1);
 
         TacsScalar dd01[3];
         if (f1 == TACS_SHELL_G23_COMPONENT) {
@@ -874,12 +874,12 @@ class TACSShellLinearModel {
     const TacsScalar *A, *B, *D, *As;
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
-    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
-    memset(d2u1x, 0, 81 * sizeof(TacsScalar));
-    memset(d2u0xu1x, 0, 81 * sizeof(TacsScalar));
-    memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
-    memset(d2e0tyu0x, 0, 54 * sizeof(TacsScalar));
-    memset(d2e0tyu1x, 0, 54 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0x, 81);
+    TacsZeroArray(d2u1x, 81);
+    TacsZeroArray(d2u0xu1x, 81);
+    TacsZeroArray(d2e0ty, 36);
+    TacsZeroArray(d2e0tyu0x, 54);
+    TacsZeroArray(d2e0tyu1x, 54);
 
     // Compute the second derivatives
     // e[3] = u1x[0];
@@ -972,18 +972,18 @@ class TACSShellLinearModel {
     const TacsScalar *A, *B, *D, *As;
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
-    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
-    memset(d2u1x, 0, 81 * sizeof(TacsScalar));
-    memset(d2u0xu1x, 0, 81 * sizeof(TacsScalar));
-    memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
-    memset(d2e0tyu0x, 0, 54 * sizeof(TacsScalar));
-    memset(d2e0tyu1x, 0, 54 * sizeof(TacsScalar));
-    memset(d2u0xd, 0, 81 * sizeof(TacsScalar));
-    memset(d2u1xd, 0, 81 * sizeof(TacsScalar));
-    memset(d2u0xu1xd, 0, 81 * sizeof(TacsScalar));
-    memset(d2e0tyd, 0, 36 * sizeof(TacsScalar));
-    memset(d2e0tyu0xd, 0, 54 * sizeof(TacsScalar));
-    memset(d2e0tyu1xd, 0, 54 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0x, 81);
+    TacsZeroArray(d2u1x, 81);
+    TacsZeroArray(d2u0xu1x, 81);
+    TacsZeroArray(d2e0ty, 36);
+    TacsZeroArray(d2e0tyu0x, 54);
+    TacsZeroArray(d2e0tyu1x, 54);
+    TacsZeroArray(d2u0xd, 81);
+    TacsZeroArray(d2u1xd, 81);
+    TacsZeroArray(d2u0xu1xd, 81);
+    TacsZeroArray(d2e0tyd, 36);
+    TacsZeroArray(d2e0tyu0xd, 54);
+    TacsZeroArray(d2e0tyu1xd, 54);
 
     // Compute the second derivatives
     // e[3] = u1x[0];
@@ -1264,8 +1264,8 @@ class TACSShellNonlinearModel {
       basis::getTyingPoint(i1, pt1);
 
       TacsScalar du2[3 * basis::NUM_NODES], dd2[3 * basis::NUM_NODES];
-      memset(du2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du2);
+      TacsZeroArray(dd2);
 
       TacsScalar *n02 = n0ty, *Xxi2 = Xxity, *d02 = d0ty, *Uxi2 = Uxity;
       for (int i2 = 0; i2 < basis::NUM_TYING_POINTS;
@@ -1339,12 +1339,12 @@ class TACSShellNonlinearModel {
       }
 
       TacsScalar du1[3 * basis::NUM_NODES];
-      memset(du1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du1);
 
       // Store the the derivative information for the first point
       TacsScalar dUxi1[6];
       TacsScalar d2Uxi[36];
-      memset(d2Uxi, 0, 36 * sizeof(TacsScalar));
+      TacsZeroArray(d2Uxi);
 
       if (f1 == TACS_SHELL_G11_COMPONENT) {
         // Compute g11 = e1^{T}*G*e1
@@ -1387,11 +1387,11 @@ class TACSShellNonlinearModel {
         d2Uxi[34] = 0.5 * alpha * dety[i1];
       } else {
         TacsScalar dd1[3 * basis::NUM_NODES];
-        memset(dd1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(dd1);
 
         TacsScalar dd01[3];
         TacsScalar d2dUxi[18];
-        memset(d2dUxi, 0, 18 * sizeof(TacsScalar));
+        TacsZeroArray(d2dUxi);
 
         if (f1 == TACS_SHELL_G23_COMPONENT) {
           // Compute g23 = e2^{T}*G*e3
@@ -1531,10 +1531,10 @@ class TACSShellNonlinearModel {
 
       TacsScalar du2[3 * basis::NUM_NODES], dd2[3 * basis::NUM_NODES];
       TacsScalar du2d[3 * basis::NUM_NODES], dd2d[3 * basis::NUM_NODES];
-      memset(du2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(du2d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-      memset(dd2d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du2);
+      TacsZeroArray(dd2);
+      TacsZeroArray(du2d);
+      TacsZeroArray(dd2d);
 
       TacsScalar *n02 = n0ty, *Xxi2 = Xxity, *d02 = d0ty, *Uxi2 = Uxity;
       TacsScalar *d02d = d0tyd, *Uxi2d = Uxityd;
@@ -1676,17 +1676,17 @@ class TACSShellNonlinearModel {
       }
 
       TacsScalar du1[3 * basis::NUM_NODES];
-      memset(du1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du1);
       TacsScalar du1d[3 * basis::NUM_NODES];
-      memset(du1d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+      TacsZeroArray(du1d);
 
       // Store the the derivative information for the first point
       TacsScalar dUxi1[6];
       TacsScalar d2Uxi[36];
-      memset(d2Uxi, 0, 36 * sizeof(TacsScalar));
+      TacsZeroArray(d2Uxi);
       TacsScalar dUxi1d[6];
       TacsScalar d2Uxid[36];
-      memset(d2Uxid, 0, 36 * sizeof(TacsScalar));
+      TacsZeroArray(d2Uxid);
 
       if (f1 == TACS_SHELL_G11_COMPONENT) {
         // Compute g11 = e1^{T}*G*e1
@@ -1765,16 +1765,16 @@ class TACSShellNonlinearModel {
         d2Uxid[34] = 0.5 * alpha * detypsi[i1];
       } else {
         TacsScalar dd1[3 * basis::NUM_NODES];
-        memset(dd1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(dd1);
         TacsScalar dd1d[3 * basis::NUM_NODES];
-        memset(dd1d, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(dd1d);
 
         TacsScalar dd01[3];
         TacsScalar d2dUxi[18];
-        memset(d2dUxi, 0, 18 * sizeof(TacsScalar));
+        TacsZeroArray(d2dUxi);
         TacsScalar dd01d[3];
         TacsScalar d2dUxid[18];
-        memset(d2dUxid, 0, 18 * sizeof(TacsScalar));
+        TacsZeroArray(d2dUxid);
 
         if (f1 == TACS_SHELL_G23_COMPONENT) {
           // Compute g23 = e2^{T}*G*e3
@@ -2182,7 +2182,7 @@ class TACSShellNonlinearModel {
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
     // Compute the second derivatives
-    memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
+    TacsZeroArray(d2e0ty, 36);
 
     TacsScalar *d2 = &d2e0ty[0];
     d2[0] = scale * A[0];
@@ -2693,8 +2693,8 @@ class TACSShellNonlinearModel {
     TACSShellConstitutive::extractTangentStiffness(Cs, &A, &B, &D, &As, &drill);
 
     // Compute the second derivatives
-    memset(d2e0ty, 0, 36 * sizeof(TacsScalar));
-    memset(d2e0tyd, 0, 36 * sizeof(TacsScalar));
+    TacsZeroArray(d2e0ty, 36);
+    TacsZeroArray(d2e0tyd, 36);
 
     TacsScalar *d2 = &d2e0ty[0];
     d2[0] = scale * A[0];

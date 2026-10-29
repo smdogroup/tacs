@@ -67,8 +67,8 @@ void TACSNeohookean3D::evalWeakIntegrand(
   TacsScalar dI1, dJ;
   evalStrainEnergyDeriv(I1, J, &dI1, &dJ);
 
-  memset(DUt, 0, 9 * sizeof(TacsScalar));
-  memset(DUx, 0, 9 * sizeof(TacsScalar));
+  TacsZeroArray(DUt, 9);
+  TacsZeroArray(DUx, 9);
 
   // Add dU0/dJ*dJ/dUx
   addDet3x3Sens(dJ, F, DUx);
@@ -135,8 +135,8 @@ void TACSNeohookean3D::evalWeakMatrix(ElementMatrixType matType, int elemIndex,
     TacsScalar dI1, dJ;
     evalStrainEnergyDeriv(I1, J, &dI1, &dJ);
 
-    memset(DUt, 0, 9 * sizeof(TacsScalar));
-    memset(DUx, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 9);
+    TacsZeroArray(DUx, 9);
 
     // Add dU0/dJ*dJ/dUx
     addDet3x3Sens(dJ, F, DUx);

@@ -249,7 +249,7 @@ void TACSIsoRectangleBeamConstitutive::evalTangentStiffness(
   TacsScalar Iy = I[0], Iz = I[1], Iyz = I[2];
   TacsScalar J = evalTorsionalConstant();
 
-  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
+  TacsZeroArray(C, NUM_TANGENT_STIFFNESS_ENTRIES);
 
   C[0] = E * A;
   C[2] = -E * delta_y * A;
@@ -402,8 +402,8 @@ TacsScalar TACSIsoRectangleBeamConstitutive::evalFailureStrainSens(
                         (0.5 - t_offset) * thickness};
   TacsScalar z_lim[] = {-(0.5 + w_offset) * width, (0.5 - w_offset) * width};
 
-  memset(sens, 0, 6 * sizeof(TacsScalar));
-  memset(fail_checks_sens, 0, 6 * 6 * sizeof(TacsScalar));
+  TacsZeroArray(sens, 6);
+  TacsZeroArray(&fail_checks_sens[0][0], 6 * 6);
 
   int count = 0;
   for (int i = 0; i < 2; i++) {

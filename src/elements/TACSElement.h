@@ -340,9 +340,9 @@ class TACSElement : public TACSObject {
                                  TacsScalar vars[], TacsScalar dvars[],
                                  TacsScalar ddvars[]) {
     int num_vars = getNumNodes() * getVarsPerNode();
-    memset(vars, 0, num_vars * sizeof(TacsScalar));
-    memset(dvars, 0, num_vars * sizeof(TacsScalar));
-    memset(ddvars, 0, num_vars * sizeof(TacsScalar));
+    TacsZeroArray(vars, num_vars);
+    TacsZeroArray(dvars, num_vars);
+    TacsZeroArray(ddvars, num_vars);
   }
 
   /**
@@ -380,7 +380,7 @@ class TACSElement : public TACSObject {
                                                 const TacsScalar adjDVars[],
                                                 const TacsScalar adjDDVars[],
                                                 TacsScalar fXptSens[]) {
-    memset(fXptSens, 0, 3 * getNumNodes() * sizeof(TacsScalar));
+    TacsZeroArray(fXptSens, 3 * getNumNodes());
   }
 
   /**

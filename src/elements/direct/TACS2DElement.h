@@ -1090,7 +1090,7 @@ void TACS2DElement<NUM_NODES>::addAdjResProduct(
 
     // Compute the product of psi^{T}*B^{T}
     TacsScalar bpsi[NUM_STRESSES];
-    memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
+    TacsZeroArray(bpsi, NUM_STRESSES);
 
     TacsScalar *b = B;
     const TacsScalar *ps = psi;
@@ -1193,7 +1193,7 @@ void TACS2DElement<NUM_NODES>::getMatType(ElementMatrixType matType,
                                           TacsScalar mat[],
                                           const TacsScalar Xpts[],
                                           const TacsScalar vars[]) {
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
   // The mass matrix
   if (matType == MASS_MATRIX) {
@@ -1420,8 +1420,8 @@ void TACS2DElement<NUM_NODES>::addMatDVSensInnerProduct(
 
       // Compute the product of psi^{T}*B^{T}
       TacsScalar bpsi[NUM_STRESSES], bphi[NUM_STRESSES];
-      memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
-      memset(bphi, 0, NUM_STRESSES * sizeof(TacsScalar));
+      TacsZeroArray(bpsi, NUM_STRESSES);
+      TacsZeroArray(bphi, NUM_STRESSES);
 
       TacsScalar *b = B;
       const TacsScalar *ps = psi, *ph = phi;
@@ -1475,8 +1475,8 @@ void TACS2DElement<NUM_NODES>::addMatDVSensInnerProduct(
       // Compute dN/dx*phi
       // Compute the product of psi^{T}*G^{T} and G*phi
       TacsScalar gpsi[4], gphi[4];
-      memset(gpsi, 0, 4 * sizeof(TacsScalar));
-      memset(gphi, 0, 4 * sizeof(TacsScalar));
+      TacsZeroArray(gpsi, 4);
+      TacsZeroArray(gphi, 4);
       for (int j = 0; j < NUM_NODES; j++) {
         TacsScalar Dx = Na[j] * J[0] + Nb[j] * J[2];
         TacsScalar Dy = Na[j] * J[1] + Nb[j] * J[3];
@@ -1493,7 +1493,7 @@ void TACS2DElement<NUM_NODES>::addMatDVSensInnerProduct(
       }
 
       TacsScalar sumN[NUM_STRESSES];
-      memset(sumN, 0, NUM_STRESSES * sizeof(TacsScalar));
+      TacsZeroArray(sumN, NUM_STRESSES);
 
       TacsScalar *gs = gpsi, *gh = gphi;
       for (int j = 0; j < 2; j++) {
@@ -1623,8 +1623,8 @@ void TACS2DElement<NUM_NODES>::getMatSVSensInnerProduct(
       // Compute dN/dx*phi
       // Compute the product of psi^{T}*G^{T} and G*phi
       TacsScalar gpsi[4], gphi[4];
-      memset(gpsi, 0, 4 * sizeof(TacsScalar));
-      memset(gphi, 0, 4 * sizeof(TacsScalar));
+      TacsZeroArray(gpsi, 4);
+      TacsZeroArray(gphi, 4);
       for (int j = 0; j < NUM_NODES; j++) {
         TacsScalar Dx = Na[j] * J[0] + Nb[j] * J[2];
         TacsScalar Dy = Na[j] * J[1] + Nb[j] * J[3];
@@ -1641,7 +1641,7 @@ void TACS2DElement<NUM_NODES>::getMatSVSensInnerProduct(
       }
 
       TacsScalar sumN[NUM_STRESSES];
-      memset(sumN, 0, NUM_STRESSES * sizeof(TacsScalar));
+      TacsZeroArray(sumN, NUM_STRESSES);
       TacsScalar *gs = gpsi, *gh = gphi;
       for (int j = 0; j < 2; j++) {
         sumN[j] = gs[0] * gh[0] + gs[1] * gh[1];

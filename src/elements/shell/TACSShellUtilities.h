@@ -846,7 +846,7 @@ void TacsShellAddDrillStrainHessian(
   const int num_nodes = basis::NUM_NODES;
 
   TacsScalar drot[num_nodes * size];
-  memset(drot, 0, num_nodes * size * sizeof(TacsScalar));
+  TacsZeroArray(drot);
 
   for (int i = 0; i < num_nodes; i++) {
     // Set the
@@ -1007,8 +1007,8 @@ void TacsShellAddTyingDispCoupling(const double pt[], const TacsScalar T[],
   }
 
   TacsScalar d2gtyu[6 * usize], d2gtyd[6 * dsize];
-  memset(d2gtyu, 0, 6 * usize * sizeof(TacsScalar));
-  memset(d2gtyd, 0, 6 * dsize * sizeof(TacsScalar));
+  TacsZeroArray(d2gtyu);
+  TacsZeroArray(d2gtyd);
 
   for (int k = 0; k < 6; k++) {
     // du0d = [du0xi; dd0]
@@ -1030,7 +1030,7 @@ void TacsShellAddTyingDispCoupling(const double pt[], const TacsScalar T[],
   // Add the values into d2etyu and d2etyd
   for (int k = 0; k < usize; k++) {
     TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-    memset(t2, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+    TacsZeroArray(t2);
 
     for (int kk = 0; kk < 6; kk++) {
       t1[kk] = d2gtyu[usize * kk + k];
@@ -1045,7 +1045,7 @@ void TacsShellAddTyingDispCoupling(const double pt[], const TacsScalar T[],
 
   for (int k = 0; k < dsize; k++) {
     TacsScalar t1[6], t2[basis::NUM_TYING_POINTS];
-    memset(t2, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+    TacsZeroArray(t2);
 
     for (int kk = 0; kk < 6; kk++) {
       t1[kk] = d2gtyd[dsize * kk + k];
@@ -1109,13 +1109,13 @@ int TacsTestShellUtilities(double dh = 1e-7, int test_print_level = 2,
   }
 
   TacsScalar res[size], mat[size * size];
-  memset(res, 0, size * sizeof(TacsScalar));
-  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsZeroArray(res, size);
+  TacsZeroArray(mat, size * size);
 
   TacsScalar dd[dsize], d2d[dsize * dsize], d2du[usize * dsize];
-  memset(dd, 0, dsize * sizeof(TacsScalar));
-  memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
+  TacsZeroArray(dd, dsize);
+  TacsZeroArray(d2d, dsize * dsize);
+  TacsZeroArray(d2du, usize * dsize);
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9];
@@ -1162,8 +1162,8 @@ int TacsTestShellUtilities(double dh = 1e-7, int test_print_level = 2,
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size * sizeof(TacsScalar));
-    memset(ddt, 0, dsize * sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
+    TacsZeroArray(ddt, dsize);
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 
@@ -1273,8 +1273,8 @@ int TacsTestShellUtilities(double dh = 1e-7, int test_print_level = 2,
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size * sizeof(TacsScalar));
-    memset(ddt, 0, dsize * sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
+    TacsZeroArray(ddt, dsize);
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 

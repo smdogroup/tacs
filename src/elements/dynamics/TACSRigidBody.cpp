@@ -482,12 +482,12 @@ void TACSRefFrame::testRotation(double dh) {
   setDesignVars(elemIndex, numDVs, x);
 
   // Compute the derivative and store it in fdvSens
-  memset(product, 0, numDVs * sizeof(TacsScalar));
+  TacsZeroArray(product, numDVs);
   addRotationAdjResProduct(psi, phi, numDVs, product);
 
   // Set the vectors to zero
   TacsScalar fd[9];
-  memset(fd, 0, sizeof(fd));
+  TacsZeroArray(fd);
 
   // Set the vectors
   for (int i = 0; i < numDVs; i++) {
@@ -819,8 +819,8 @@ void TACSRigidBody::getInitConditions(int elemIndex, const TacsScalar X[],
                                       TacsScalar vars[], TacsScalar dvars[],
                                       TacsScalar ddvars[]) {
   // Set everything to zero first
-  memset(vars, 0, 8 * sizeof(TacsScalar));
-  memset(dvars, 0, 8 * sizeof(TacsScalar));
+  TacsZeroArray(vars, 8);
+  TacsZeroArray(dvars, 8);
 
   // Set eta = 1.0
   vars[3] = 1.0;
@@ -1398,7 +1398,7 @@ void TACSRigidBody::testResidual(double dh) {
   }
 
   // Evaluate the residual using the code
-  memset(res1, 0, 8 * sizeof(TacsScalar));
+  TacsZeroArray(res1);
   addResidual(0, time, X, vars, dvars, ddvars, res1);
 
   // Write out the error components
@@ -1451,7 +1451,7 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
   }
 
   for (int ii = 0; ii < 8; ii++) {
-    memset(perb, 0, 8 * sizeof(TacsScalar));
+    TacsZeroArray(perb);
     perb[ii] = 1.0;
 
 #ifdef TACS_USE_COMPLEX
@@ -1466,7 +1466,7 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(fd, 0, 8 * sizeof(TacsScalar));
+    TacsZeroArray(fd);
     addResidual(0, time, X, q, dq, ddq, fd);
 
     // Form the finite-difference matrix-vector approximation
@@ -1482,7 +1482,7 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(fd, 0, 8 * sizeof(TacsScalar));
+    TacsZeroArray(fd);
     addResidual(0, time, X, q, dq, ddq, fd);
 
     // Set the values for the first evaluation
@@ -1493,7 +1493,7 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
     }
 
     // Get the residual at vars + alpha*perb, ... etc.
-    memset(res, 0, 8 * sizeof(TacsScalar));
+    TacsZeroArray(res);
     addResidual(0, time, X, q, dq, ddq, res);
 
     // Form the finite-difference matrix-vector approximation
@@ -1503,12 +1503,12 @@ void TACSRigidBody::testJacobian(double dh, TacsScalar alpha, TacsScalar beta,
 #endif  // TACS_USE_COMPLEX
 
     // Get the Jacobian computed by the element
-    memset(mat, 0, 64 * sizeof(TacsScalar));
+    TacsZeroArray(mat);
     addJacobian(0, time, alpha, beta, gamma, X, vars, dvars, ddvars, res, mat);
 
     // Compute the product: res = J*perb
     // Recall that the Jacobian matrix is stored in row-major order
-    memset(res, 0, 8 * sizeof(TacsScalar));
+    TacsZeroArray(res);
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
         res[i] += mat[8 * i + j] * perb[j];

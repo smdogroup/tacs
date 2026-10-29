@@ -173,7 +173,7 @@ void TACSSolidConstitutive::evalTangentStiffness(int elemIndex,
       C[i] *= t;
     }
   } else {
-    memset(C, 0, 21 * sizeof(TacsScalar));
+    TacsZeroArray(C, 21);
   }
 }
 

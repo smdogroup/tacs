@@ -248,7 +248,7 @@ void TACSCreator::setBoundaryConditions(int _num_bcs, const int *_bc_nodes,
     if (_bc_vals) {
       memcpy(bc_vals, _bc_vals, bc_ptr[num_bcs] * sizeof(TacsScalar));
     } else {
-      memset(bc_vals, 0, bc_ptr[num_bcs] * sizeof(TacsScalar));
+      TacsZeroArray(bc_vals, bc_ptr[num_bcs]);
     }
   } else {
     // Since the bc_vars array is input as NULL, assume that
@@ -266,7 +266,7 @@ void TACSCreator::setBoundaryConditions(int _num_bcs, const int *_bc_nodes,
 
     // Allocate the values array and set it equal to zero
     bc_vals = new TacsScalar[bc_ptr[num_bcs]];
-    memset(bc_vals, 0, bc_ptr[num_bcs] * sizeof(TacsScalar));
+    TacsZeroArray(bc_vals, bc_ptr[num_bcs]);
   }
 }
 

@@ -103,8 +103,8 @@ void TACSConvectiveTraction3D::addResidual(
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     // Compute the contribution to the right-hand-side
     DUt[3 * fieldIndex] = -alpha * (U[fieldIndex] - refValue);
@@ -149,8 +149,8 @@ void TACSConvectiveTraction3D::addJacobian(
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     // Compute the contribution to the right-hand-side
     DUt[3 * fieldIndex] = -alpha * (U[fieldIndex] - refValue);

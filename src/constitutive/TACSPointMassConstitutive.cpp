@@ -231,7 +231,7 @@ int TACSPointMassConstitutive::getDesignVarRange(int elemIndex, int dvLen,
 void TACSPointMassConstitutive::evalMassMatrix(int elemIndex, const double pt[],
                                                const TacsScalar X[],
                                                TacsScalar M[]) {
-  memset(M, 0, 21 * sizeof(TacsScalar));
+  TacsZeroArray(M, 21);
   M[0] = M[6] = M[11] = m;
   M[15] = I11;
   M[18] = I22;

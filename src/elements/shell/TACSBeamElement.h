@@ -481,8 +481,8 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
 
   // Add the contributions to the derivative
   TacsScalar d1d[dsize], d2d[dsize];
-  memset(d1d, 0, dsize * sizeof(TacsScalar));
-  memset(d2d, 0, dsize * sizeof(TacsScalar));
+  TacsZeroArray(d1d);
+  TacsZeroArray(d2d);
 
   // Compute the tying strain values
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -490,7 +490,7 @@ void TACSBeamElement<quadrature, basis, director, model>::addResidual(
                                                            d1, d2, ety);
 
   TacsScalar dety[basis::NUM_TYING_POINTS];
-  memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  TacsZeroArray(dety);
 
   // Loop over each quadrature point and add the residual contribution
   for (int quad_index = 0; quad_index < nquad; quad_index++) {
@@ -679,9 +679,7 @@ template <class quadrature, class basis, class director, class model>
 void TACSBeamElement<quadrature, basis, director, model>::getMatType(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], TacsScalar mat[]) {
-  memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+  TacsZeroArray(mat, vars_per_node * num_nodes * vars_per_node * num_nodes);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -695,7 +693,7 @@ void TACSBeamElement<quadrature, basis, director, model>::getMatType(
   }
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  TacsZeroArray(res);
   // Add appropriate Jacobian to matrix
   addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
               mat);
@@ -913,8 +911,8 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
 
   // Derivatives w.r.t. the frame normals
   TacsScalar dfn1[3 * basis::NUM_NODES], dfn2[3 * basis::NUM_NODES];
-  memset(dfn1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-  memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(dfn1);
+  TacsZeroArray(dfn2);
 
   // Compute the frame normal and directors at each node
   TacsScalar d1[dsize], d1dot[dsize], d1ddot[dsize], d1psi[dsize];
@@ -929,10 +927,10 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
   // Derivatives of the adjoint-residual product w.r.t. d1/d2 and d1psi/d2psi
   TacsScalar dd1[dsize], dd1psi[dsize];
   TacsScalar dd2[dsize], dd2psi[dsize];
-  memset(dd1, 0, dsize * sizeof(TacsScalar));
-  memset(dd2, 0, dsize * sizeof(TacsScalar));
-  memset(dd1psi, 0, dsize * sizeof(TacsScalar));
-  memset(dd2psi, 0, dsize * sizeof(TacsScalar));
+  TacsZeroArray(dd1);
+  TacsZeroArray(dd2);
+  TacsZeroArray(dd1psi);
+  TacsZeroArray(dd2psi);
 
   // Compute the tying strain values
   TacsScalar ety[basis::NUM_TYING_POINTS], etypsi[basis::NUM_TYING_POINTS];
@@ -940,8 +938,8 @@ void TACSBeamElement<quadrature, basis, director, model>::addAdjResXptProduct(
       Xpts, fn1, fn2, vars, d1, d2, psi, d1psi, d2psi, ety, etypsi);
 
   TacsScalar etyd[basis::NUM_TYING_POINTS], etypsid[basis::NUM_TYING_POINTS];
-  memset(etyd, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
-  memset(etypsid, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  TacsZeroArray(etyd);
+  TacsZeroArray(etypsid);
 
   // Loop over each quadrature point and add the residual contribution
   for (int quad_index = 0; quad_index < nquad; quad_index++) {
@@ -1679,8 +1677,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
     // Add the contributions to the derivative
     TacsScalar d1d[dsize], d2d[dsize];
-    memset(d1d, 0, dsize * sizeof(TacsScalar));
-    memset(d2d, 0, dsize * sizeof(TacsScalar));
+    TacsZeroArray(d1d);
+    TacsZeroArray(d2d);
 
     // Compute the tying strain values
     TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -1688,7 +1686,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                                                              vars, d1, d2, ety);
 
     TacsScalar dety[basis::NUM_TYING_POINTS];
-    memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+    TacsZeroArray(dety);
 
     // The transformation to the local beam coordinates
     A2D::Mat3x3 T;
@@ -1857,8 +1855,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Derivatives w.r.t. the frame normals
   TacsScalar dfn1[3 * basis::NUM_NODES], dfn2[3 * basis::NUM_NODES];
-  memset(dfn1, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
-  memset(dfn2, 0, 3 * basis::NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(dfn1);
+  TacsZeroArray(dfn2);
 
   // Compute the frame normal and directors at each node
   TacsScalar d1[dsize], d2[dsize], d1dot[dsize], d2dot[dsize];
@@ -1871,8 +1869,8 @@ void TACSBeamElement<quadrature, basis, director, model>::
 
   // Derivatives w.r.t. the d1 and d2 fields
   TacsScalar dd1[dsize], dd2[dsize];
-  memset(dd1, 0, dsize * sizeof(TacsScalar));
-  memset(dd2, 0, dsize * sizeof(TacsScalar));
+  TacsZeroArray(dd1);
+  TacsZeroArray(dd2);
 
   // Set the total number of tying points needed for this element
   TacsScalar ety[basis::NUM_TYING_POINTS];
@@ -1880,7 +1878,7 @@ void TACSBeamElement<quadrature, basis, director, model>::
                                                            d1, d2, ety);
 
   TacsScalar etyd[basis::NUM_TYING_POINTS];
-  memset(etyd, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  TacsZeroArray(etyd);
 
   // The transformation to the local beam coordinates
   A2D::ADMat3x3 T;

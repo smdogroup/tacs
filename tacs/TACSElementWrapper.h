@@ -76,9 +76,9 @@ class TACSElementWrapper : public TACSElement {
   void getInitConditions(int elem_index, const TacsScalar Xpts[],
                          TacsScalar vars[], TacsScalar dvars[],
                          TacsScalar ddvars[]) {
-    memset(vars, 0, getNumVariables() * sizeof(TacsScalar));
-    memset(dvars, 0, getNumVariables() * sizeof(TacsScalar));
-    memset(ddvars, 0, getNumVariables() * sizeof(TacsScalar));
+    TacsZeroArray(vars, getNumVariables());
+    TacsZeroArray(dvars, getNumVariables());
+    TacsZeroArray(ddvars, getNumVariables());
     if (self_ptr && getinitconditions) {
       int num_vars = num_nodes * vars_per_node;
       getinitconditions(self_ptr, elem_index, num_nodes, Xpts, num_vars, vars,

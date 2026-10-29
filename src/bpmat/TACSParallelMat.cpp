@@ -132,7 +132,7 @@ void TACSParallelMat::init(TACSNodeMap *_rmap, BCSRMat *_Aloc, BCSRMat *_Bext,
   // Allocate the external array
   int len = bsize * ext_dist->getNumNodes();
   x_ext = new TacsScalar[len];
-  memset(x_ext, 0, len * sizeof(TacsScalar));
+  TacsZeroArray(x_ext, len);
   ext_offset = bsize * Np;
 }
 
@@ -663,7 +663,7 @@ void TACSGaussSeidel::factor() {
 
     // Allocate space for the diagonal entries
     diag = new TacsScalar[bsize * N];
-    memset(diag, 0, bsize * N * sizeof(TacsScalar));
+    TacsZeroArray(diag, bsize * N);
 
     // Sum up the entries in the off diagonal part of the matrix
     BCSRMatData *Bdata = B->getMatData();
@@ -772,7 +772,7 @@ void TACSGaussSeidel::applyFactor(TACSVec *txvec, TACSVec *tyvec) {
         Aloc->applySOR(x, y, omega, 1);
 
         int ysize = bsize * ext_dist->getNumNodes();
-        memset(yext, 0, ysize * sizeof(TacsScalar));
+        TacsZeroArray(yext, ysize);
       } else {
         // Begin sending the external-interface values
         ext_dist->beginForward(ctx, y, yext);

@@ -93,7 +93,7 @@ TACSBVec::TACSBVec(TACSNodeMap *map, int _bsize, TACSBVecDistribute *_ext_dist,
 
   // Allocate the array of owned unknowns
   x = new TacsScalar[size];
-  memset(x, 0, size * sizeof(TacsScalar));
+  TacsZeroArray(x, size);
 
   // Set the external data
   ext_dist = _ext_dist;
@@ -103,7 +103,7 @@ TACSBVec::TACSBVec(TACSNodeMap *map, int _bsize, TACSBVecDistribute *_ext_dist,
     ext_indices->incref();
     ext_size = bsize * ext_dist->getNumNodes();
     x_ext = new TacsScalar[ext_size];
-    memset(x_ext, 0, ext_size * sizeof(TacsScalar));
+    TacsZeroArray(x_ext, ext_size);
 
     // Create the communicator context
     ext_ctx = ext_dist->createCtx(bsize);
@@ -121,7 +121,7 @@ TACSBVec::TACSBVec(TACSNodeMap *map, int _bsize, TACSBVecDistribute *_ext_dist,
     dep_nodes->incref();
     dep_size = bsize * dep_nodes->getDepNodes(NULL, NULL, NULL);
     x_dep = new TacsScalar[dep_size];
-    memset(x_dep, 0, dep_size * sizeof(TacsScalar));
+    TacsZeroArray(x_dep, dep_size);
   } else {
     dep_size = 0;
     x_dep = NULL;
@@ -144,7 +144,7 @@ TACSBVec::TACSBVec(MPI_Comm _comm, int _size, int _bsize) {
   node_map = NULL;
 
   x = new TacsScalar[size];
-  memset(x, 0, size * sizeof(TacsScalar));
+  TacsZeroArray(x, size);
 
   // Zero/NULL the external data
   ext_size = 0;
@@ -416,14 +416,14 @@ void TACSBVec::copyValues(TACSVec *tvec) {
   Zero all the entries in the vector
 */
 void TACSBVec::zeroEntries() {
-  memset(x, 0, size * sizeof(TacsScalar));
+  TacsZeroArray(x, size);
 
   // Also zero the external and dependent nodes
   if (x_ext) {
-    memset(x_ext, 0, ext_size * sizeof(TacsScalar));
+    TacsZeroArray(x_ext, ext_size);
   }
   if (x_dep) {
-    memset(x_dep, 0, dep_size * sizeof(TacsScalar));
+    TacsZeroArray(x_dep, dep_size);
   }
 }
 
@@ -729,7 +729,7 @@ int TACSBVec::readFromFile(const char *filename) {
               "[%d] Cannot read TACSBVec from file, incorrect "
               "size %d != %d\n",
               mpi_rank, range[mpi_size], len);
-      memset(x, 0, size * sizeof(TacsScalar));
+      TacsZeroArray(x, size);
 
       // Mark this as a failure
       fail = 1;
@@ -902,10 +902,10 @@ void TACSBVec::endSetValues(TACSBVecOperation op) {
 
   // Zero the external part and dependent parts
   if (x_ext) {
-    memset(x_ext, 0, ext_size * sizeof(TacsScalar));
+    TacsZeroArray(x_ext, ext_size);
   }
   if (x_dep) {
-    memset(x_dep, 0, dep_size * sizeof(TacsScalar));
+    TacsZeroArray(x_dep, dep_size);
   }
 }
 

@@ -326,7 +326,7 @@ int TacsTestElementResidual(TACSElement *element, int elemIndex, double time,
   }
 
   // Evaluate the residual using the code
-  memset(res1, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res1, nvars);
   element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res1);
 
   // Compute the error
@@ -394,7 +394,7 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
   if (col >= 0 && col < nvars) {
-    memset(pert, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(pert, nvars);
     pert[col] = 1.0;
   } else {
     TacsGenerateRandomArray(pert, nvars);
@@ -405,7 +405,7 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   double beta = (1.0 * rand()) / RAND_MAX;
   double gamma = (1.0 * rand()) / RAND_MAX;
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
   element->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, dvars,
                        ddvars, res, mat);
 
@@ -418,14 +418,14 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
   TacsForwardDiffPerturb(q, nvars, vars, pert, alpha * dh);
   TacsForwardDiffPerturb(dq, nvars, dvars, pert, beta * dh);
   TacsForwardDiffPerturb(ddq, nvars, ddvars, pert, gamma * dh);
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   element->addResidual(elemIndex, time, Xpts, q, dq, ddq, res);
 
   // Perturb the variables in the backward sens
   TacsBackwardDiffPerturb(q, nvars, vars, pert, alpha * dh);
   TacsBackwardDiffPerturb(dq, nvars, dvars, pert, beta * dh);
   TacsBackwardDiffPerturb(ddq, nvars, ddvars, pert, gamma * dh);
-  memset(temp, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(temp, nvars);
   element->addResidual(elemIndex, time, Xpts, q, dq, ddq, temp);
 
   // Form the FD/CS approximate
@@ -470,8 +470,8 @@ int TacsTestElementJacobian(TACSElement *element, int elemIndex, double time,
 
   // Test residual computed through addJacobian, make sure it's consistent with
   // addResidual
-  memset(temp, 0, nvars * sizeof(TacsScalar));
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(temp, nvars);
+  TacsZeroArray(res, nvars);
 
   element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, temp);
   element->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, dvars,
@@ -539,7 +539,7 @@ int TacsTestElementMatFreeJacobian(
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
   if (col >= 0 && col < nvars) {
-    memset(pert, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(pert, nvars);
     pert[col] = 1.0;
   } else {
     TacsGenerateRandomArray(pert, nvars);
@@ -550,7 +550,7 @@ int TacsTestElementMatFreeJacobian(
   double beta = (1.0 * rand()) / RAND_MAX;
   double gamma = (1.0 * rand()) / RAND_MAX;
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
   element->addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, dvars,
                        ddvars, res, mat);
 
@@ -569,7 +569,7 @@ int TacsTestElementMatFreeJacobian(
   element->getMatVecProductData(TACS_JACOBIAN_MATRIX, elemIndex, time, alpha,
                                 beta, gamma, Xpts, vars, dvars, ddvars, data);
 
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   element->addMatVecProduct(TACS_JACOBIAN_MATRIX, elemIndex, data, tarray, pert,
                             res);
 
@@ -625,7 +625,7 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
   // Create an array to store the values of the adjoint-residual
   // product
   TacsScalar *result = new TacsScalar[num_dvs];
-  memset(result, 0, num_dvs * sizeof(TacsScalar));
+  TacsZeroArray(result, num_dvs);
 
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[nvars];
@@ -665,7 +665,7 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
   element->setDesignVars(elemIndex, dvLen, xpert);
 
   TacsScalar p1 = 0.0;
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   for (int k = 0; k < nvars; k++) {
     p1 += scale * res[k] * adjoint[k];
@@ -683,7 +683,7 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
   }
   element->setDesignVars(elemIndex, dvLen, xpert);
 
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
 
   TacsScalar p1 = 0.0;
@@ -702,7 +702,7 @@ int TacsTestAdjResProduct(TACSElement *element, int elemIndex, double time,
   element->setDesignVars(elemIndex, dvLen, xpert);
 
   // Compute the residual again
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   element->addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
   TacsScalar p2 = 0.0;
   for (int k = 0; k < nvars; k++) {
@@ -765,7 +765,7 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
   // Create an array to store the values of the adjoint-residual
   // product
   TacsScalar *result = new TacsScalar[3 * nnodes];
-  memset(result, 0, 3 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(result, 3 * nnodes);
 
   // Generate a random array of values
   TacsScalar *adjoint = new TacsScalar[nvars];
@@ -788,7 +788,7 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
     // Perturb the nodes in the forward sense
     TacsScalar one = 1.0;
     TacsForwardDiffPerturb(&X[k], 1, &Xpts[k], &one, dh);
-    memset(res, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(res, nvars);
     element->addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
     TacsScalar p1 = 0.0;
     for (int i = 0; i < nvars; i++) {
@@ -797,7 +797,7 @@ int TacsTestAdjResXptProduct(TACSElement *element, int elemIndex, double time,
 
     // Perturb the nodes in the reverse sense
     TacsBackwardDiffPerturb(&X[k], 1, &Xpts[k], &one, dh);
-    memset(res, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(res, nvars);
     element->addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
     TacsScalar p2 = 0.0;
     for (int i = 0; i < nvars; i++) {
@@ -863,7 +863,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   TacsScalar *xcopy = new TacsScalar[num_dvs];
   TacsScalar *result = new TacsScalar[num_dvs];
   TacsScalar *fd = new TacsScalar[num_dvs];
-  memset(result, 0, num_dvs * sizeof(TacsScalar));
+  TacsZeroArray(result, num_dvs);
 
   // Generate a random array of values
   TacsScalar *mat = new TacsScalar[nvars * nvars];
@@ -876,7 +876,7 @@ int TacsTestElementMatDVSens(TACSElement *element, ElementMatrixType matType,
   double scale = 1.0 * rand() / RAND_MAX;
 
   element->setDesignVars(elemIndex, dvLen, x);
-  memset(result, 0, num_dvs * sizeof(TacsScalar));
+  TacsZeroArray(result, num_dvs);
   element->addMatDVSensInnerProduct(matType, elemIndex, time, scale, psi, phi,
                                     Xpts, vars, dvLen, result);
 
@@ -982,10 +982,10 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   TacsScalar mat[nvars * nvars];
 
   // Generate a perturbation vector
-  memset(xPert, 0, 3 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(xPert, 3 * nnodes);
   TacsGenerateRandomArray(psi, nvars);
   TacsGenerateRandomArray(phi, nvars);
-  memset(dfdX, 0, 3 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(dfdX, 3 * nnodes);
   memcpy(Xp, Xpts, 3 * nnodes * sizeof(TacsScalar));
 
   double scale = 1.0 * rand() / RAND_MAX;
@@ -997,7 +997,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
   for (int kk = 0; kk < 3 * nnodes; kk++) {
     xPert[kk] = 1.0;
     // Perturb the nodes in the forward sense
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(mat, nvars * nvars);
     TacsForwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
     element->getMatType(matType, elemIndex, time, Xp, vars, mat);
     TacsScalar forward = 0.0;
@@ -1010,7 +1010,7 @@ int TacsTestElementMatXptSens(TACSElement *element, ElementMatrixType matType,
     TacsScalar backward = 0.0;
 #ifndef TACS_USE_COMPLEX
     // Perturb the nodes in the reverse sense
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(mat, nvars * nvars);
     TacsBackwardDiffPerturb(Xp, 3 * nnodes, Xpts, xPert, dh);
     element->getMatType(matType, elemIndex, time, Xp, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -1253,7 +1253,7 @@ int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
     for (int n = 0; n < basis->getNumFaceQuadraturePoints(face); n++) {
       TacsScalar X[3], Xd[9], normal[3];
       TacsScalar A = basis->getFaceNormal(face, n, Xpts, X, Xd, normal);
-      memset(dfdXpts, 0, 3 * nnodes * sizeof(TacsScalar));
+      TacsZeroArray(dfdXpts, 3 * nnodes);
 
       basis->addFaceNormalXptSens(face, n, A, Xd, normal, dfdA, dfdX, dfdXd,
                                   dfdn, dfdXpts);
@@ -1267,18 +1267,18 @@ int TacsTestElementBasisFaceNormals(TACSElementBasis *basis, double dh,
       TacsForwardDiffPerturb(Xpts_pert, 3 * nnodes, Xpts, pert, dh);
 
       TacsScalar forward_X[3], forward_Xd[9], forward_normal[3];
-      memset(forward_X, 0, 3 * sizeof(TacsScalar));
-      memset(forward_Xd, 0, 9 * sizeof(TacsScalar));
-      memset(forward_normal, 0, 3 * sizeof(TacsScalar));
+      TacsZeroArray(forward_X);
+      TacsZeroArray(forward_Xd);
+      TacsZeroArray(forward_normal);
       TacsScalar forward_A = basis->getFaceNormal(face, n, Xpts_pert, forward_X,
                                                   forward_Xd, forward_normal);
 
       TacsBackwardDiffPerturb(Xpts_pert, 3 * nnodes, Xpts, pert, dh);
 
       TacsScalar backward_X[3], backward_Xd[9], backward_normal[3];
-      memset(backward_X, 0, 3 * sizeof(TacsScalar));
-      memset(backward_Xd, 0, 9 * sizeof(TacsScalar));
-      memset(backward_normal, 0, 3 * sizeof(TacsScalar));
+      TacsZeroArray(backward_X);
+      TacsZeroArray(backward_Xd);
+      TacsZeroArray(backward_normal);
       TacsScalar backward_A = basis->getFaceNormal(
           face, n, Xpts_pert, backward_X, backward_Xd, backward_normal);
 
@@ -1367,7 +1367,7 @@ int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
 
     TacsScalar Xd[9], J[9];
     basis->getJacobianTransform(n, pt, Xpts, Xd, J);
-    memset(dfdXpts, 0, 3 * nnodes * sizeof(TacsScalar));
+    TacsZeroArray(dfdXpts, 3 * nnodes);
 
     basis->addJacobianTransformXptSens(n, pt, Xd, J, dfddetJ, dfdXd, dfdJ,
                                        dfdXpts);
@@ -1381,16 +1381,16 @@ int TacsTestElementBasisJacobianTransform(TACSElementBasis *basis, double dh,
     TacsForwardDiffPerturb(Xpts_pert, 3 * nnodes, Xpts, pert, dh);
 
     TacsScalar forward_Xd[9], forward_J[9];
-    memset(forward_Xd, 0, 9 * sizeof(TacsScalar));
-    memset(forward_J, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(forward_Xd);
+    TacsZeroArray(forward_J);
     TacsScalar forward_detJ =
         basis->getJacobianTransform(n, pt, Xpts_pert, forward_Xd, forward_J);
 
     TacsBackwardDiffPerturb(Xpts_pert, 3 * nnodes, Xpts, pert, dh);
 
     TacsScalar backward_Xd[9], backward_J[9];
-    memset(backward_Xd, 0, 9 * sizeof(TacsScalar));
-    memset(backward_J, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(backward_Xd);
+    TacsZeroArray(backward_J);
     TacsScalar backward_detJ =
         basis->getJacobianTransform(n, pt, Xpts_pert, backward_Xd, backward_J);
 
@@ -1460,8 +1460,8 @@ int TacsTestElementQuantityDVSens(
   // product
   TacsScalar *result = new TacsScalar[num_dvs];
   TacsScalar *fd = new TacsScalar[num_dvs];
-  memset(result, 0, num_dvs * sizeof(TacsScalar));
-  memset(fd, 0, num_dvs * sizeof(TacsScalar));
+  TacsZeroArray(result, num_dvs);
+  TacsZeroArray(fd, num_dvs);
 
   // Generate a random array
   TacsScalar f0[9], dfdq[9];
@@ -1557,7 +1557,7 @@ int TacsTestElementQuantitySVSens(
   TacsScalar *q = new TacsScalar[nvars];
   TacsScalar *qdot = new TacsScalar[nvars];
   TacsScalar *qddot = new TacsScalar[nvars];
-  memset(result, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(result, nvars);
 
   // Generate a random array
   TacsScalar f0[9], dfdq[9];
@@ -1654,8 +1654,8 @@ int TacsTestElementQuantityXptSens(
   // Create an array to store the result
   TacsScalar *result = new TacsScalar[3 * nnodes];
   TacsScalar *fd = new TacsScalar[3 * nnodes];
-  memset(result, 0, 3 * nnodes * sizeof(TacsScalar));
-  memset(fd, 0, 3 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(result, 3 * nnodes);
+  TacsZeroArray(fd, 3 * nnodes);
 
   TacsScalar *Xt = new TacsScalar[3 * nnodes];
 

@@ -229,7 +229,7 @@ class TACSFunction : public TACSObject {
                                 const TacsScalar dvars[],
                                 const TacsScalar ddvars[], TacsScalar dfdu[]) {
     int numVars = element->getNumVariables();
-    memset(dfdu, 0, numVars * sizeof(TacsScalar));
+    TacsZeroArray(dfdu, numVars);
   }
 
   /**
@@ -275,7 +275,7 @@ class TACSFunction : public TACSObject {
                                  const TacsScalar ddvars[],
                                  TacsScalar dfdXpts[]) {
     int numNodes = element->getNumNodes();
-    memset(dfdXpts, 0, 3 * numNodes * sizeof(TacsScalar));
+    TacsZeroArray(dfdXpts, 3 * numNodes);
   }
 
  protected:

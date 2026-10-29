@@ -185,8 +185,8 @@ TACSContinuation::TACSContinuation(TACSAssembler *_assembler,
   lambda_history = new TacsScalar[max_continuation_iters];
   dlambda_ds_history = new TacsScalar[max_continuation_iters];
 
-  memset(lambda_history, 0, max_continuation_iters * sizeof(TacsScalar));
-  memset(dlambda_ds_history, 0, max_continuation_iters * sizeof(TacsScalar));
+  TacsZeroArray(lambda_history, max_continuation_iters);
+  TacsZeroArray(dlambda_ds_history, max_continuation_iters);
 
   // Set the default termination information
   term_function = NULL;

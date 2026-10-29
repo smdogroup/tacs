@@ -3845,9 +3845,9 @@ void TACSAssembler::getInitConditions(TACSBVec *vars, TACSBVec *dvars,
 
       // Get the initial condition values
       int nvars = elements[i]->getNumVariables();
-      memset(elemVars, 0, nvars * sizeof(TacsScalar));
-      memset(elemDVars, 0, nvars * sizeof(TacsScalar));
-      memset(elemDDVars, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(elemVars, nvars);
+      TacsZeroArray(elemDVars, nvars);
+      TacsZeroArray(elemDDVars, nvars);
       elements[i]->getInitConditions(i, elemXpts, elemVars, elemDVars,
                                      elemDDVars);
 
@@ -4198,7 +4198,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
 
       // Add the residual from the working element
       int nvars = elements[i]->getNumVariables();
-      memset(elemRes, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(elemRes, nvars);
       elements[i]->addResidual(i, time, elemXpts, vars, dvars, ddvars, elemRes);
 
       // Add the residual from any auxiliary elements, if the load factor is 1
@@ -4211,7 +4211,7 @@ void TACSAssembler::assembleRes(TACSBVec *residual, const TacsScalar lambda,
           aux_count++;
         }
       } else {
-        memset(auxElemRes, 0, maxNVar * sizeof(TacsScalar));
+        TacsZeroArray(auxElemRes, maxNVar);
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->addResidual(i, time, elemXpts, vars, dvars,
                                            ddvars, auxElemRes);
@@ -4362,8 +4362,8 @@ void TACSAssembler::assembleJacobian(TacsScalar alpha, TacsScalar beta,
       int nvars = elements[i]->getNumVariables();
 
       // Compute and add the contributions to the Jacobian
-      memset(elemRes, 0, nvars * sizeof(TacsScalar));
-      memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
+      TacsZeroArray(elemRes, nvars);
+      TacsZeroArray(elemMat, nvars * nvars);
       elements[i]->addJacobian(i, time, alpha, beta, gamma, elemXpts, vars,
                                dvars, ddvars, elemRes, elemMat);
 
@@ -4567,7 +4567,7 @@ void TACSAssembler::assembleMatCombo(ElementMatrixType matTypes[],
           aux_count++;
         }
       } else {
-        memset(auxElemMat, 0, maxNVar * maxNVar * sizeof(TacsScalar));
+        TacsZeroArray(auxElemMat, maxNVar * maxNVar);
         while (aux_count < naux && aux[aux_count].num == i) {
           aux[aux_count].elem->getMatType(matTypes[j], i, time, elemXpts, vars,
                                           auxElemMat);
@@ -4801,7 +4801,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
               elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          TacsZeroArray(fdvSens, numDVs * designVarsPerNode);
           funcs[k]->addElementDVSens(elemNum, elements[elemNum], time, coef,
                                      elemXpts, vars, dvars, ddvars, maxDVs,
                                      fdvSens);
@@ -4825,7 +4825,7 @@ void TACSAssembler::addDVSens(TacsScalar coef, int numFuncs,
               elements[elemNum]->getDesignVarNums(elemNum, maxDVs, dvNums);
 
           // Evaluate the element-wise sensitivity of the function
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          TacsZeroArray(fdvSens, numDVs * designVarsPerNode);
           funcs[k]->addElementDVSens(elemNum, elements[elemNum], time, coef,
                                      elemXpts, vars, dvars, ddvars, maxDVs,
                                      fdvSens);
@@ -5080,7 +5080,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 
     // Get the adjoint variables
     for (int k = 0; k < numAdjoints; k++) {
-      memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+      TacsZeroArray(fdvSens, numDVs * designVarsPerNode);
 
       // Get the element adjoint vector
       adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -5100,7 +5100,7 @@ void TACSAssembler::addAdjointResProducts(TacsScalar scale, int numAdjoints,
 
         // Get the adjoint variables
         for (int k = 0; k < numAdjoints; k++) {
-          memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+          TacsZeroArray(fdvSens, numDVs * designVarsPerNode);
 
           // Get the element adjoint vector
           adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -5176,7 +5176,7 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
 
     // Get the adjoint variables
     for (int k = 0; k < numAdjoints; k++) {
-      memset(xptSens, 0, TACS_SPATIAL_DIM * len * sizeof(TacsScalar));
+      TacsZeroArray(xptSens, TACS_SPATIAL_DIM * len);
       adjoint[k]->getValues(len, nodes, elemAdjoint);
       elements[i]->addAdjResXptProduct(i, time, scale, elemAdjoint, elemXpts,
                                        vars, dvars, ddvars, xptSens);
@@ -5189,7 +5189,7 @@ void TACSAssembler::addAdjointResXptSensProducts(TacsScalar scale,
       while (aux_count < naux && aux[aux_count].num == i) {
         // Get the adjoint variables
         for (int k = 0; k < numAdjoints; k++) {
-          memset(xptSens, 0, TACS_SPATIAL_DIM * len * sizeof(TacsScalar));
+          TacsZeroArray(xptSens, TACS_SPATIAL_DIM * len);
 
           // Get the element adjoint vector
           adjoint[k]->getValues(len, nodes, elemAdjoint);
@@ -5257,7 +5257,7 @@ void TACSAssembler::addMatDVSensInnerProduct(TacsScalar scale,
 
     // Get the design variables for this element
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    memset(fdvSens, 0, numDVs * designVarsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(fdvSens, numDVs * designVarsPerNode);
 
     // Add the contribution to the design variable vector
     elements[i]->addMatDVSensInnerProduct(matType, i, time, scale, elemPsi,
@@ -5317,7 +5317,7 @@ void TACSAssembler::addMatXptSensInnerProduct(TacsScalar scale,
     psi->getValues(len, nodes, elemPsi);
     phi->getValues(len, nodes, elemPhi);
 
-    memset(xptSens, 0, TACS_SPATIAL_DIM * len * sizeof(TacsScalar));
+    TacsZeroArray(xptSens, TACS_SPATIAL_DIM * len);
 
     // Add the contribution to the design variable vector
     elements[i]->addMatXptSensInnerProduct(
@@ -5449,7 +5449,7 @@ void TACSAssembler::addJacobianVecProduct(TacsScalar scale, TacsScalar alpha,
     int nvars = elements[i]->getNumVariables();
 
     // Compute and add the contributions to the Jacobian
-    memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(elemMat, nvars * nvars);
     elements[i]->addJacobian(i, time, alpha, beta, gamma, elemXpts, vars, dvars,
                              ddvars, yvars, elemMat);
 
@@ -5651,7 +5651,7 @@ void TACSAssembler::addMatrixFreeVecProduct(
     x->getValues(len, nodes, xvars);
 
     // Compute and add the contributions to the Jacobian
-    memset(yvars, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(yvars, nvars);
 
     // Get the size of the data array
     int dsize, tsize;
@@ -6057,7 +6057,7 @@ void TACSAssembler::getElementOutputData(ElementType elem_type, int write_flag,
     len += elements[i]->getNumNodes();
   }
   TacsScalar *data = new TacsScalar[len * nvals];
-  memset(data, 0, len * nvals * sizeof(TacsScalar));
+  TacsZeroArray(data, len * nvals);
 
   // Retrieve pointers to temporary storage
   TacsScalar *elemXpts, *vars, *dvars, *ddvars;

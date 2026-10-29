@@ -240,7 +240,7 @@ void TACSSpringElement::addResidual(int elemIndex, double time,
   TacsScalar t[9];
   double pt[3] = {0.0, 0.0, 0.0};
 
-  memset(elemRes, 0, NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(elemRes);
 
   transform->computeTransform(Xpts, t);
 
@@ -285,8 +285,8 @@ void TACSSpringElement::addJacobian(int elemIndex, double time,
   TacsScalar BiStress[NUM_STRESSES];
   TacsScalar t[9];
   double pt[3] = {0.0, 0.0, 0.0};
-  memset(elemRes, 0, NUM_VARIABLES * sizeof(TacsScalar));
-  memset(elemMat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(elemRes);
+  TacsZeroArray(elemMat);
 
   transform->computeTransform(Xpts, t);
 
@@ -336,7 +336,7 @@ void TACSSpringElement::addJacobian(int elemIndex, double time,
 void TACSSpringElement::getMatType(ElementMatrixType matType, int elemIndex,
                                    double time, const TacsScalar Xpts[],
                                    const TacsScalar vars[], TacsScalar mat[]) {
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
   if (matType == TACS_STIFFNESS_MATRIX) {
     TacsScalar stress[NUM_STRESSES], strain[NUM_STRESSES];
     TacsScalar elemVars[NUM_VARIABLES];
@@ -344,7 +344,7 @@ void TACSSpringElement::getMatType(ElementMatrixType matType, int elemIndex,
     TacsScalar BiStress[NUM_STRESSES];
     TacsScalar t[9];
     double pt[3] = {0.0, 0.0, 0.0};
-    memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+    TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
     transform->computeTransform(Xpts, t);
 
@@ -406,8 +406,8 @@ void TACSSpringElement::addAdjResXptProduct(
   evalBmat(B);
 
   for (int k = 0; k < 3 * NUM_NODES; k++) {
-    memset(elemRes, 0, NUM_VARIABLES * sizeof(TacsScalar));
-    memset(resSens, 0, NUM_VARIABLES * sizeof(TacsScalar));
+    TacsZeroArray(elemRes);
+    TacsZeroArray(resSens);
 
     transform->computeTransformXptSens(Xpts, k, t, tSens);
 
@@ -479,7 +479,7 @@ void TACSSpringElement::evalStrain(const TacsScalar vars[],
   freedom.
 */
 void TACSSpringElement::evalBmat(TacsScalar B[]) {
-  memset(B, 0, NUM_STRESSES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(B, NUM_STRESSES * NUM_VARIABLES);
 
   for (int i = 0; i < NUM_STRESSES; i++) {
     B[i] = 1.0;

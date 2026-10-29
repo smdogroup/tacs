@@ -437,10 +437,10 @@ TACSMatDistribute::~TACSMatDistribute() {
 
 void TACSMatDistribute::zeroEntries() {
   int ext_len = bsize * bsize * ext_rowp[num_ext_rows];
-  memset(ext_A, 0, ext_len * sizeof(TacsScalar));
+  TacsZeroArray(ext_A, ext_len);
 
   int in_len = bsize * bsize * in_rowp[num_in_rows];
-  memset(in_A, 0, in_len * sizeof(TacsScalar));
+  TacsZeroArray(in_A, in_len);
 }
 
 /*!

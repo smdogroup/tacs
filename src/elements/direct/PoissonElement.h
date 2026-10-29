@@ -27,7 +27,7 @@ class PoissonQuad : public TACSElement {
   PoissonQuad(void *_self, TacsScalar (*_evalf)(void *, const TacsScalar *)) {
     self = _self;
     evalf = _evalf;
-    memset(f, 0, order * order * sizeof(TacsScalar));
+    TacsZeroArray(f, order * order);
     setUpKnots();
   }
   PoissonQuad(const TacsScalar _f[]) {

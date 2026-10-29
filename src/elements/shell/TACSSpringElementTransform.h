@@ -22,7 +22,7 @@ class TACSSpringTransform : public TACSObject {
   */
   virtual void computeTransformXptSens(const TacsScalar Xpts[], int component,
                                        TacsScalar t[], TacsScalar tSens[]) {
-    memset(tSens, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(tSens, 9);
     computeTransform(Xpts, t);
   }
 };
@@ -32,7 +32,7 @@ class TACSSpringIdentityTransform : public TACSSpringTransform {
   TACSSpringIdentityTransform() {}
 
   void computeTransform(const TacsScalar Xpts[], TacsScalar T[]) {
-    memset(T, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(T, 9);
     T[0] = T[4] = T[8] = 1.0;
   }
 };

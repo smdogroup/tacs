@@ -1315,18 +1315,18 @@ void add_tying_bmat_sens(const int is_linear, TacsScalar fXptSens[],
   TacsScalar DB13[18 * order * order * order * order];
 
   // Zero the b-matrices
-  memset(B22, 0, 3 * order * order * sizeof(TacsScalar));
-  memset(B23, 0, 6 * order * order * sizeof(TacsScalar));
-  memset(B12, 0, 3 * order * order * sizeof(TacsScalar));
-  memset(B11, 0, 3 * order * order * sizeof(TacsScalar));
-  memset(B13, 0, 6 * order * order * sizeof(TacsScalar));
+  TacsZeroArray(B22, 3 * order * order);
+  TacsZeroArray(B23, 6 * order * order);
+  TacsZeroArray(B12, 3 * order * order);
+  TacsZeroArray(B11, 3 * order * order);
+  TacsZeroArray(B13, 6 * order * order);
 
   // Zero the derivatives of the b-matrices
-  memset(DB22, 0, 9 * order * order * order * order * sizeof(TacsScalar));
-  memset(DB23, 0, 18 * order * order * order * order * sizeof(TacsScalar));
-  memset(DB12, 0, 9 * order * order * order * order * sizeof(TacsScalar));
-  memset(DB11, 0, 9 * order * order * order * order * sizeof(TacsScalar));
-  memset(DB13, 0, 18 * order * order * order * order * sizeof(TacsScalar));
+  TacsZeroArray(DB22, 9 * order * order * order * order);
+  TacsZeroArray(DB23, 18 * order * order * order * order);
+  TacsZeroArray(DB12, 9 * order * order * order * order);
+  TacsZeroArray(DB11, 9 * order * order * order * order);
+  TacsZeroArray(DB13, 18 * order * order * order * order);
 
   double N[order * order], Na[order * order], Nb[order * order];
 
@@ -1868,9 +1868,9 @@ void add_nonlinear_tying_stress_nmat(TacsScalar matrix[], TacsScalar scale,
   const int size = (order * order * (order * order + 1)) / 2;
 
   TacsScalar n11[size], n22[size], n12[size];
-  memset(n11, 0, size * sizeof(TacsScalar));
-  memset(n22, 0, size * sizeof(TacsScalar));
-  memset(n12, 0, size * sizeof(TacsScalar));
+  TacsZeroArray(n11, size);
+  TacsZeroArray(n22, size);
+  TacsZeroArray(n12, size);
 
   nonlinear_tying_nmat<order, tying_order>(n11, n22, n12, N11, N22, N12, knots,
                                            pknots);
@@ -1939,7 +1939,7 @@ void add_nonlinear_tying_inner_nmat(TacsScalar bstrain[],
   double N[order * order], Na[order * order], Nb[order * order];
 
   // Zero the components of the tensorial strain
-  memset(g, 0, 6 * sizeof(TacsScalar));
+  TacsZeroArray(g, 6);
 
   // Evaluate g11
   for (int m = 0; m < tying_order; m++) {
@@ -2178,7 +2178,7 @@ void add_tying_strain_sens(TacsScalar strain[], TacsScalar dstrain[],
 
   // The number of derivatives in each of dg11, dg22, dg12 etc.
   const int nc = 3 * tying_order * tying_order;
-  memset(_dg, 0, 18 * tying_order * tying_order * sizeof(TacsScalar));
+  TacsZeroArray(_dg, 18 * tying_order * tying_order);
 
   for (int k = 0; k < tying_order * (tying_order - 1); k++) {
     for (int j = 0; j < nc; j++) {

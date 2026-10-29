@@ -32,14 +32,14 @@ EBStiffness::EBStiffness(TacsScalar rho, TacsScalar E, TacsScalar G,
   ref_dir[2] = _ref_dir[2];
 
   // Set the values of C
-  memset(C, 0, sizeof(C));
+  TacsZeroArray(C);
   C[0] = E * A;
   C[4] = E * Ix;
   C[7] = E * Iy;
   C[9] = G * J;
 
   // Set the values of the mass moments
-  memset(mass, 0, sizeof(mass));
+  TacsZeroArray(mass);
   mass[0] = rho * A;
   mass[3] = rho * Ix;
   mass[5] = rho * Iy;

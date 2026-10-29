@@ -153,7 +153,7 @@ void computeCoefficients(TacsScalar *U, TacsScalar *V, TacsScalar *W,
   rhs[2] = -load;
 
   TacsScalar B[8 * 5];
-  memset(B, 0, sizeof(B));
+  TacsZeroArray(B);
   TacsScalar *b = B;
 
   // Assign the columns for u

@@ -457,7 +457,7 @@ void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
 
   // The maximum size of the Jacobi--Davidson subspace
   const int m = max_jd_size;
-  memset(M, 0, m * m * sizeof(TacsScalar));
+  TacsZeroArray(M, m * m);
 
   // Allocate the space for the real work vector
   int lwork = 16 * max_jd_size;
@@ -689,7 +689,7 @@ void TACSJacobiDavidson::solve(KSMPrint *ksm_print, int print_level) {
       }
 
       // Reset the matrix to zero
-      memset(M, 0, m * m * sizeof(TacsScalar));
+      TacsZeroArray(M, m * m);
 
       // Set the vectors that will be used
       for (int i = 0; i < new_subspace_vecs; i++) {

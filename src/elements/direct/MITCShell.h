@@ -833,7 +833,7 @@ void MITCShell<order, tying_order>::getMatType(ElementMatrixType matType,
                                                TacsScalar *mat,
                                                const TacsScalar Xpts[],
                                                const TacsScalar vars[]) {
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
   if (matType == STIFFNESS_MATRIX) {
     // Geometric data
@@ -1308,7 +1308,7 @@ void MITCShell<order, tying_order>::addAdjResProduct(
 
       // Compute the product of psi^{T}*B^{T}
       TacsScalar bpsi[NUM_STRESSES], brot = 0.0;
-      memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
+      TacsZeroArray(bpsi, NUM_STRESSES);
 
       TacsScalar *b = B, *dr = drot;
       const TacsScalar *ps = psi;
@@ -1702,8 +1702,8 @@ void MITCShell<order, tying_order>::addMatDVSensInnerProduct(
 
         // Compute the product of psi^{T}*B^{T}
         TacsScalar bpsi[NUM_STRESSES], bphi[NUM_STRESSES];
-        memset(bpsi, 0, NUM_STRESSES * sizeof(TacsScalar));
-        memset(bphi, 0, NUM_STRESSES * sizeof(TacsScalar));
+        TacsZeroArray(bpsi, NUM_STRESSES);
+        TacsZeroArray(bphi, NUM_STRESSES);
 
         TacsScalar brpsi = 0.0, brphi = 0.0;
         TacsScalar *b = B, *dr = drot;
@@ -2294,7 +2294,7 @@ void MITCShell<order, tying_order>::addStrainXptSens(
   TacsScalar strainXptSens[3 * NUM_STRESSES * NUM_NODES];
 
   // Zero out the strain sensitivity
-  memset(strainXptSens, 0, 3 * NUM_STRESSES * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(strainXptSens, 3 * NUM_STRESSES * NUM_NODES);
 
   // Evaluate the tying interpolation
   tying_interpolation<tying_order>(pt, N11, N22, N12, knots, pknots);

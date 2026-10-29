@@ -39,7 +39,7 @@ int TacsTestConstitutiveDensity(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&scale, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addDensityDVSens(elemIndex, scale, pt, X, ndvs, dfdx);
 
   // Compute the approximate derivative
@@ -116,7 +116,7 @@ int TacsTestConstitutiveSpecificHeat(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&scale, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addSpecificHeatDVSens(elemIndex, scale, pt, X, ndvs, dfdx);
 
   // Evaluate the specific heat
@@ -199,7 +199,7 @@ int TacsTestConstitutiveHeatFlux(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&scale, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addHeatFluxDVSens(elemIndex, scale, pt, X, grad, psi, ndvs, dfdx);
 
   flux[0] = flux[1] = flux[2] = 0.0;
@@ -295,7 +295,7 @@ int TacsTestConstitutiveStress(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&scale, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addStressDVSens(elemIndex, scale, pt, X, e, psi, ndvs, dfdx);
 
   con->evalStress(elemIndex, pt, X, e, s);
@@ -391,7 +391,7 @@ int TacsTestConstitutiveThermalStrain(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&theta, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addThermalStrainDVSens(elemIndex, pt, X, theta, psi, ndvs, dfdx);
 
   con->evalThermalStrain(elemIndex, pt, X, theta, e);
@@ -485,7 +485,7 @@ int TacsTestConstitutiveFailure(TACSConstitutive *con, int elemIndex,
   TacsGenerateRandomArray(&scale, 1);
 
   // Evaluate the derivatives
-  memset(dfdx, 0, ndvs * sizeof(TacsScalar));
+  TacsZeroArray(dfdx, ndvs);
   con->addFailureDVSens(elemIndex, scale, pt, X, e, ndvs, dfdx);
 
   TacsScalar failure = con->evalFailure(elemIndex, pt, X, e);

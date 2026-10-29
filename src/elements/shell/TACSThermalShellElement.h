@@ -279,11 +279,11 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addResidual(
 
   // Derivative of the director field and matrix at each point
   TacsScalar dd[dsize];
-  memset(dd, 0, 3 * num_nodes * sizeof(TacsScalar));
+  TacsZeroArray(dd);
 
   // Zero the contributions to the tying strain derivatives
   TacsScalar dety[basis::NUM_TYING_POINTS];
-  memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+  TacsZeroArray(dety);
 
   // Compute the node normal directions
   TacsScalar fn[3 * num_nodes], Xdn[9 * num_nodes];
@@ -291,7 +291,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addResidual(
 
   // Compute the drill strain penalty at each node
   TacsScalar etn[num_nodes], detn[num_nodes];
-  memset(detn, 0, num_nodes * sizeof(TacsScalar));
+  TacsZeroArray(detn);
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
@@ -455,27 +455,25 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
 
   // Derivative of the director field
   TacsScalar dd[dsize];
-  memset(dd, 0, dsize * sizeof(TacsScalar));
+  TacsZeroArray(dd);
 
   // Second derivatives required for the director
   TacsScalar d2d[dsize * dsize], d2du[usize * dsize];
   TacsScalar d2Tdotd[dsize * dsize], d2Tdotu[usize * dsize];
-  memset(d2d, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2du, 0, usize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotd, 0, dsize * dsize * sizeof(TacsScalar));
-  memset(d2Tdotu, 0, usize * dsize * sizeof(TacsScalar));
+  TacsZeroArray(d2d);
+  TacsZeroArray(d2du);
+  TacsZeroArray(d2Tdotd);
+  TacsZeroArray(d2Tdotu);
 
   // Zero the contributions to the tying strain derivatives
   TacsScalar dety[basis::NUM_TYING_POINTS];
   TacsScalar d2ety[basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS];
   TacsScalar d2etyu[basis::NUM_TYING_POINTS * usize];
   TacsScalar d2etyd[basis::NUM_TYING_POINTS * dsize];
-  memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
-  memset(
-      d2ety, 0,
-      basis::NUM_TYING_POINTS * basis::NUM_TYING_POINTS * sizeof(TacsScalar));
-  memset(d2etyu, 0, basis::NUM_TYING_POINTS * usize * sizeof(TacsScalar));
-  memset(d2etyd, 0, basis::NUM_TYING_POINTS * dsize * sizeof(TacsScalar));
+  TacsZeroArray(dety);
+  TacsZeroArray(d2ety);
+  TacsZeroArray(d2etyu);
+  TacsZeroArray(d2etyd);
 
   // Compute the node normal directions
   TacsScalar fn[3 * num_nodes], Xdn[9 * num_nodes];
@@ -484,8 +482,8 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
   // Compute the drill strain penalty at each node
   TacsScalar etn[num_nodes], detn[num_nodes];
   TacsScalar d2etn[num_nodes * num_nodes];
-  memset(detn, 0, num_nodes * sizeof(TacsScalar));
-  memset(d2etn, 0, num_nodes * num_nodes * sizeof(TacsScalar));
+  TacsZeroArray(detn);
+  TacsZeroArray(d2etn);
 
   // Store information about the transformation and derivatives at each node for
   // the drilling degrees of freedom
@@ -607,11 +605,11 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
 
     {
       TacsScalar tmp[size], ddth[dsize];
-      memset(tmp, 0, size * sizeof(TacsScalar));
-      memset(ddth, 0, dsize * sizeof(TacsScalar));
+      TacsZeroArray(tmp);
+      TacsZeroArray(ddth);
 
       TacsScalar dthety[basis::NUM_TYING_POINTS];
-      memset(dthety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+      TacsZeroArray(dthety);
 
       // Compute the thermal strain
       TacsScalar sth[9];
@@ -644,7 +642,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
           vars, dvars, ddvars, fn, ddth, tmp);
 
       TacsScalar N[num_nodes], one = 1.0;
-      memset(N, 0, num_nodes * sizeof(TacsScalar));
+      TacsZeroArray(N);
       basis::template addInterpFieldsTranspose<1, 1>(pt, &one, N);
 
       for (int j = 0; j < num_nodes; j++) {
@@ -716,13 +714,13 @@ void TACSThermalShellElement<quadrature, basis, director, model>::addJacobian(
     basis::template addInterpFieldsTranspose<3, 3>(pt, dd0dot, dd);
 
     TacsScalar d2u0dot[9];
-    memset(d2u0dot, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0dot);
     d2u0dot[0] = d2u0dot[4] = d2u0dot[8] = gamma * detXd * moments[0];
     basis::template addInterpFieldsOuterProduct<vars_per_node, vars_per_node, 3,
                                                 3>(pt, d2u0dot, mat);
 
     TacsScalar d2Td[9];
-    memset(d2Td, 0, 9 * sizeof(TacsScalar));
+    TacsZeroArray(d2Td);
     d2Td[0] = d2Td[4] = d2Td[8] = detXd * moments[2];
     basis::template addInterpFieldsOuterProduct<3, 3, 3, 3>(pt, d2Td, d2Tdotd);
 
@@ -757,9 +755,7 @@ template <class quadrature, class basis, class director, class model>
 void TACSThermalShellElement<quadrature, basis, director, model>::getMatType(
     ElementMatrixType matType, int elemIndex, double time,
     const TacsScalar Xpts[], const TacsScalar vars[], TacsScalar mat[]) {
-  memset(mat, 0,
-         vars_per_node * num_nodes * vars_per_node * num_nodes *
-             sizeof(TacsScalar));
+  TacsZeroArray(mat, vars_per_node * num_nodes * vars_per_node * num_nodes);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -773,7 +769,7 @@ void TACSThermalShellElement<quadrature, basis, director, model>::getMatType(
   }
   // Create dummy residual vector
   TacsScalar res[vars_per_node * num_nodes];
-  memset(res, 0, vars_per_node * num_nodes * sizeof(TacsScalar));
+  TacsZeroArray(res);
   // Add appropriate Jacobian to matrix
   addJacobian(elemIndex, time, alpha, beta, gamma, Xpts, vars, vars, vars, res,
               mat);
@@ -1193,11 +1189,11 @@ void TACSThermalShellElement<quadrature, basis, director, model>::
       quantityType == TACS_TOTAL_STRAIN_ENERGY_DENSITY) {
     // Derivative of the director field
     TacsScalar dd[dsize];
-    memset(dd, 0, 3 * num_nodes * sizeof(TacsScalar));
+    TacsZeroArray(dd);
 
     // Zero the contributions to the tying strain derivatives
     TacsScalar dety[basis::NUM_TYING_POINTS];
-    memset(dety, 0, basis::NUM_TYING_POINTS * sizeof(TacsScalar));
+    TacsZeroArray(dety);
 
     // Compute the node normal directions
     TacsScalar fn[3 * num_nodes], Xdn[9 * num_nodes];

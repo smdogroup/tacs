@@ -76,7 +76,7 @@ TacsScalar TACSGaussianProcessModel::predictMeanTestDataSens(
 
   // iterate over each training data point, get the cross-term covariance and
   // add the coefficient alpha for it
-  memset(Xtestsens, 0, n_param * sizeof(TacsScalar));
+  TacsZeroArray(Xtestsens, n_param);
 
   for (int itrain = 0; itrain < n_train; itrain++) {
     TacsScalar *loc_Xtrain = &Xtrain[n_param * itrain];
@@ -133,7 +133,7 @@ void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
   // training point the entries are [log(1+xi), log(rho_0), log(1+gamma),
   // log(1+10^3*zeta)]
   TacsScalar jacobian[4];
-  memset(jacobian, 0.0, 4 * sizeof(TacsScalar));
+  TacsZeroArray(jacobian);
 
   // relu term contributions, differentiate through the Xtest only
   if (affine) {
@@ -246,7 +246,7 @@ TacsScalar TACSGaussianProcessModel::testPredictMeanTestData(TacsScalar epsilon,
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  memset(input_sens, 0, n_input * sizeof(TacsScalar));
+  TacsZeroArray(input_sens, n_input);
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }
@@ -311,7 +311,7 @@ TacsScalar TACSBucklingGaussianProcessModel::testKernelSens(TacsScalar epsilon,
   TacsScalar centralDiff = p_output * (f2 - f0) / 2.0 / epsilon;
 
   // now perform the adjoint sensitivity
-  memset(input_sens, 0, n_input * sizeof(TacsScalar));
+  TacsZeroArray(input_sens);
   for (int i = 0; i < n_input; i++) {
     x[i] = x0[i];
   }

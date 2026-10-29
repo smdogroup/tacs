@@ -37,7 +37,7 @@ class SquareSection : public TACSTimoshenkoConstitutive {
     TacsScalar Iyz = 0.0;
 
     // Set the entries of the stiffness matrix
-    memset(C, 0, 36 * sizeof(TacsScalar));
+    TacsZeroArray(C, 36);
     C[0] = E * A;
     C[7] = G * J;
     C[14] = E * Iy;
@@ -107,7 +107,7 @@ class SquareSection : public TACSTimoshenkoConstitutive {
   TacsScalar evalFailureStrainSens(int elemIndex, const double pt[],
                                    const TacsScalar X[], const TacsScalar e[],
                                    TacsScalar sens[]) {
-    memset(sens, 0, 6 * sizeof(TacsScalar));
+    TacsZeroArray(sens, 6);
     if (TacsRealPart(e[0]) >= 0.0) {
       sens[0] = E * w * w / 10e3;
     } else {
@@ -223,7 +223,7 @@ TACSAssembler *four_bar_mechanism(int nA, int nB, int nC) {
 
   // Create the connectivities
   TacsScalar *X = new TacsScalar[3 * nnodes];
-  memset(X, 0, 3 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(X, 3 * nnodes);
 
   int *ptr = new int[nelems + 1];
   int *conn = new int[3 * nelems];

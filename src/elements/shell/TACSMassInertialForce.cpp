@@ -18,7 +18,7 @@ TACSMassInertialForce::TACSMassInertialForce(TACSGeneralMassConstitutive *_con,
                                              const TacsScalar _inertiaVec[]) {
   con = _con;
   con->incref();
-  memset(inertiaVec, 0, NUM_DISPS * sizeof(TacsScalar));
+  TacsZeroArray(inertiaVec);
   memcpy(inertiaVec, _inertiaVec, 3 * sizeof(TacsScalar));
 }
 

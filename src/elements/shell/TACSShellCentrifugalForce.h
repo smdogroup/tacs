@@ -88,7 +88,7 @@ class TACSShellCentrifugalForce : public TACSElement {
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
       TacsScalar Xxi[6], n[3], X[3], U[3];
-      memset(U, 0, 3 * sizeof(TacsScalar));
+      TacsZeroArray(U);
       basis::template interpFields<3, 3>(pt, Xpts, X);
       if (first_order) {
         basis::template interpFields<vars_per_node, 3>(pt, vars, U);
@@ -164,7 +164,7 @@ class TACSShellCentrifugalForce : public TACSElement {
         double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
         TacsScalar Xxi[6], n[3], X[3], U[3];
-        memset(U, 0, 3 * sizeof(TacsScalar));
+        TacsZeroArray(U);
         basis::template interpFields<3, 3>(pt, Xpts, X);
         if (first_order) {
           basis::template interpFields<vars_per_node, 3>(pt, vars, U);

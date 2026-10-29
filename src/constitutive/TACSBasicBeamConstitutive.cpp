@@ -37,7 +37,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   props = NULL;
 
   // Set the entries of the stiffness matrix
-  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
+  TacsZeroArray(C, NUM_TANGENT_STIFFNESS_ENTRIES);
 
   // row 1 for axial force
   C[0] = EA;
@@ -83,7 +83,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   props = NULL;
 
   // Set the entries of the stiffness matrix
-  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
+  TacsZeroArray(C, NUM_TANGENT_STIFFNESS_ENTRIES);
   C[0] = EA;
   C[6] = GJ;
   C[11] = EIz;
@@ -118,7 +118,7 @@ TACSBasicBeamConstitutive::TACSBasicBeamConstitutive(
   TacsScalar density = props->getDensity();
 
   // Set the entries of the stiffness matrix
-  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
+  TacsZeroArray(C, NUM_TANGENT_STIFFNESS_ENTRIES);
   C[0] = E * A;
   C[6] = G * J;
   C[11] = E * Iz;

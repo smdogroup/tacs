@@ -148,7 +148,7 @@ void TACSRBE3::addResidual(int elemIndex, double time, const TacsScalar Xpts[],
   TacsScalar *maskedVars;
 
   TacsScalar *res = new TacsScalar[NUM_VARIABLES];
-  memset(res, 0, NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(res, NUM_VARIABLES);
 
   // Store the last 6 variables (Lagrange multipliers) as a force and moment
   int ii = NUM_DISPS * (NUM_NODES - 1);
@@ -436,7 +436,7 @@ void TACSRBE3::addJacobian(int elemIndex, double time, TacsScalar alpha,
   const TacsScalar *Xn, *X0;
   int col, row;
   TacsScalar *mat = new TacsScalar[NUM_VARIABLES * NUM_VARIABLES];
-  memset(mat, 0, NUM_VARIABLES * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(mat, NUM_VARIABLES * NUM_VARIABLES);
 
   // Store the last 6 variables (Lagrange multipliers) as a force and moment
   int ii = NUM_DISPS * (NUM_NODES - 1);
@@ -707,7 +707,7 @@ void TACSRBE3::addAdjResXptProduct(
   TacsScalar *maskedVars;
 
   TacsScalar *residual = new TacsScalar[NUM_NODES * 3 * NUM_VARIABLES];
-  memset(residual, 0, NUM_NODES * 3 * NUM_VARIABLES * sizeof(TacsScalar));
+  TacsZeroArray(residual, NUM_NODES * 3 * NUM_VARIABLES);
   sXpts = new TacsScalar[(NUM_NODES - 1) * 3];
 
   // Store the last 6 variables (Lagrange multipliers) as a force and moment
@@ -722,7 +722,7 @@ void TACSRBE3::addAdjResXptProduct(
   TacsScalar *res = residual;
 
   for (int k = 0; k < 3 * (NUM_NODES - 1); k++) {
-    memset(sXpts, 0, sizeof(TacsScalar) * (NUM_NODES - 1) * 3);
+    TacsZeroArray(sXpts, (NUM_NODES - 1) * 3);
     sXpts[k] = 1.0;
     // Compute the centroid location and moments of inertia
     getCGSens(sXcg, Xcg, W, w, Xpts, k);
@@ -1470,7 +1470,7 @@ void TACSRBE3::getMaskedVars(TacsScalar maskedVars[], const TacsScalar vars[]) {
       // Compute residual to find distributed force on each node
       TacsScalar* res;
       res = new TacsScalar[NUM_VARIABLES];
-      memset(res, 0, NUM_VARIABLES*sizeof(TacsScalar));
+      TacsZeroArray(res, NUM_VARIABLES);
       addResidual(0, 0.0, Xpts, vars, NULL, NULL, res);
       for ( int n = 0; n < NUM_NODES-1; n++ ){
         int index = 0;

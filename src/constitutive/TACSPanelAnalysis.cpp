@@ -179,7 +179,7 @@ TACSPanelAnalysis::TACSPanelAnalysis(int _nnodes, int _nsegments, int _nbeams,
 
   memset(panels, 0, nsegments * sizeof(FSDTStiffness *));
   memset(beams, 0, nbeams * sizeof(EBStiffness *));
-  memset(Xpts, 0, 2 * nnodes * sizeof(TacsScalar));
+  TacsZeroArray(Xpts, 2 * nnodes);
 
   // 4*nmodes variables for each node
   nvars = nnodes * (4 * nmodes);
@@ -384,8 +384,8 @@ void TACSPanelAnalysis::setGeoDesignDependence(TacsScalar *_XptConst,
     memcpy(XptConst, _XptConst, 2 * nnodes * sizeof(TacsScalar));
     memcpy(XptLin, _XptLin, 2 * nnodes * nDvGeo * sizeof(TacsScalar));
     memcpy(geoDvs, _geoDvs, nDvGeo * sizeof(TacsScalar));
-    memset(geoLb, 0, nDvGeo * sizeof(TacsScalar));
-    memset(geoUb, 0, nDvGeo * sizeof(TacsScalar));
+    TacsZeroArray(geoLb, nDvGeo);
+    TacsZeroArray(geoUb, nDvGeo);
   }
 }
 
@@ -1625,8 +1625,8 @@ int TACSPanelAnalysis::computePressureLoad(TacsScalar p,
   TacsScalar *K = new TacsScalar[nentries];
   TacsScalar *f = new TacsScalar[nvars];
 
-  memset(K, 0, nentries * sizeof(TacsScalar));
-  memset(f, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(K, nentries);
+  TacsZeroArray(f, nvars);
 
   for (int k = 0; k < nsegments; k++) {
     // Compute the stiffness matrix and geometric stiffness matrix
@@ -1830,8 +1830,8 @@ int TACSPanelAnalysis::computeBucklingLoads(const TacsScalar segmentLoads[],
   TacsScalar *K = new TacsScalar[nentries];
   TacsScalar *G = new TacsScalar[nentries];
 
-  memset(K, 0, nentries * sizeof(TacsScalar));
-  memset(G, 0, nentries * sizeof(TacsScalar));
+  TacsZeroArray(K, nentries);
+  TacsZeroArray(G, nentries);
 
   for (int k = 0; k < nsegments; k++) {
     // Compute the stiffness matrix and geometric stiffness matrix
@@ -2035,11 +2035,11 @@ int TACSPanelAnalysis::computeBucklingLoadsDVSens( TacsScalar Nx,
   for ( int n = 0; n < numDesignVars; n++ ){
     int dvNum = designVarNums[n];
 
-    memset(posKSens, 0, nloads*sizeof(TacsScalar));
-    memset(posGSens, 0, nloads*sizeof(TacsScalar));
+    TacsZeroArray(posKSens, nloads);
+    TacsZeroArray(posGSens, nloads);
 
-    memset(negKSens, 0, nloads*sizeof(TacsScalar));
-    memset(negGSens, 0, nloads*sizeof(TacsScalar));
+    TacsZeroArray(negKSens, nloads);
+    TacsZeroArray(negGSens, nloads);
 
     if (designVarTypes[n] == 1){
       // Determine the index of the geometric design variable
@@ -2209,8 +2209,8 @@ int TACSPanelAnalysis::computeFrequencies(int neigs, TacsScalar eigvals[],
   TacsScalar *K = new TacsScalar[nentries];
   TacsScalar *M = new TacsScalar[nentries];
 
-  memset(K, 0, nentries * sizeof(TacsScalar));
-  memset(M, 0, nentries * sizeof(TacsScalar));
+  TacsZeroArray(K, nentries);
+  TacsZeroArray(M, nentries);
 
   for (int k = 0; k < nsegments; k++) {
     // Compute the stiffness matrix and geometric stiffness matrix
@@ -2332,8 +2332,8 @@ int TACSPanelAnalysis::computeFrequenciesDVSens( TacsScalar freq[],
   for ( int n = 0; n < numDesignVars; n++ ){
     int dvNum = designVarNums[n];
 
-    memset(KSens, 0, nfreq*sizeof(TacsScalar));
-    memset(MSens, 0, nfreq*sizeof(TacsScalar));
+    TacsZeroArray(KSens, nfreq);
+    TacsZeroArray(MSens, nfreq);
 
     if (designVarTypes[n] == 1){
       // Determine the index of the geometric design variable
@@ -2420,8 +2420,8 @@ void TACSPanelAnalysis::addStiffMat(TacsScalar mat[], int n1, int n2,
 
   TacsScalar stress[6];
   TacsScalar Bs[24 * NUM_NODES], Bc[24 * NUM_NODES];
-  memset(Bs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(Bc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(Bs, 24 * NUM_NODES);
+  TacsZeroArray(Bc, 24 * NUM_NODES);
 
   TacsScalar Ks[16 * NUM_NODES * NUM_NODES];
 
@@ -2443,7 +2443,7 @@ void TACSPanelAnalysis::addStiffMat(TacsScalar mat[], int n1, int n2,
   // The variables for the n-th and m-th modes
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -2496,7 +2496,7 @@ void TACSPanelAnalysis::addStiffMat(TacsScalar mat[], int n1, int n2,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -2559,7 +2559,7 @@ void TACSPanelAnalysis::addPressureLoad(TacsScalar F[], int n1, int n2,
   // The variables for the n-th and m-th modes
   int m_vars[4 * NUM_NODES];
   for (int m = 1; m <= nmodes; m += 2) {
-    memset(Fs, 0, 4 * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Fs, 4 * NUM_NODES);
 
     TacsScalar scale = (2.0 * p) / (M_PI * m);
 
@@ -2605,8 +2605,8 @@ void TACSPanelAnalysis::addStiffMatBeam(TacsScalar mat[], int n1,
   TacsScalar stress[4];
   TacsScalar Bs[16], Bc[16];
 
-  memset(Bs, 0, 16 * sizeof(TacsScalar));
-  memset(Bc, 0, 16 * sizeof(TacsScalar));
+  TacsZeroArray(Bs, 16);
+  TacsZeroArray(Bc, 16);
 
   TacsScalar Ks[16];
 
@@ -2614,7 +2614,7 @@ void TACSPanelAnalysis::addStiffMatBeam(TacsScalar mat[], int n1,
   int n_vars[4], m_vars[4];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ks, 0, 16 * sizeof(TacsScalar));
+    TacsZeroArray(Ks, 16);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -2651,7 +2651,7 @@ void TACSPanelAnalysis::addStiffMatBeam(TacsScalar mat[], int n1,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ks, 0, 16 * sizeof(TacsScalar));
+        TacsZeroArray(Ks, 16);
 
         computeBeamBsin(Bs, lambda_n);
         computeBeamBcos(Bc, lambda_m);
@@ -2682,8 +2682,8 @@ void TACSPanelAnalysis::addMassMat(TacsScalar mat[], int n1, int n2,
   double Nhp[2 * NUM_NODES], Nahp[2 * NUM_NODES], Naahp[2 * NUM_NODES];
 
   TacsScalar ks[5 * 4 * NUM_NODES], kc[5 * 4 * NUM_NODES];
-  memset(ks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(kc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(ks, 20 * NUM_NODES);
+  TacsZeroArray(kc, 20 * NUM_NODES);
 
   TacsScalar Ms[16 * NUM_NODES * NUM_NODES];
 
@@ -2706,7 +2706,7 @@ void TACSPanelAnalysis::addMassMat(TacsScalar mat[], int n1, int n2,
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -2757,7 +2757,7 @@ void TACSPanelAnalysis::addMassMat(TacsScalar mat[], int n1, int n2,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -2799,8 +2799,8 @@ void TACSPanelAnalysis::addMassMat(TacsScalar mat[], int n1, int n2,
 void TACSPanelAnalysis::addMassMatBeam(TacsScalar mat[], int n1,
                                        const TacsScalar mass[]) {
   TacsScalar ks[20], kc[20];
-  memset(ks, 0, 20 * sizeof(TacsScalar));
-  memset(kc, 0, 20 * sizeof(TacsScalar));
+  TacsZeroArray(ks, 20);
+  TacsZeroArray(kc, 20);
 
   TacsScalar Ms[16];
 
@@ -2808,7 +2808,7 @@ void TACSPanelAnalysis::addMassMatBeam(TacsScalar mat[], int n1,
   int n_vars[4], m_vars[4];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ms, 0, 16 * sizeof(TacsScalar));
+    TacsZeroArray(Ms, 16);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -2845,7 +2845,7 @@ void TACSPanelAnalysis::addMassMatBeam(TacsScalar mat[], int n1,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ms, 0, 16 * sizeof(TacsScalar));
+        TacsZeroArray(Ms, 16);
 
         computeBeamMsin(ks, lambda_n);
         computeBeamMcos(kc, lambda_m);
@@ -2897,7 +2897,7 @@ void TACSPanelAnalysis::addGeoStiffMat(TacsScalar mat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -2933,7 +2933,7 @@ void TACSPanelAnalysis::addGeoStiffMat(TacsScalar mat[],
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
         for (int k = 0; k < numGauss; k++) {
           // Evaluate the shape functions
@@ -2976,8 +2976,8 @@ void TACSPanelAnalysis::addStiffMatDVSens(
 
   TacsScalar stress[6];
   TacsScalar Bs[24 * NUM_NODES], Bc[24 * NUM_NODES];
-  memset(Bs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(Bc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(Bs, 24 * NUM_NODES);
+  TacsZeroArray(Bc, 24 * NUM_NODES);
 
   TacsScalar Ks[16 * NUM_NODES * NUM_NODES];
 
@@ -3000,7 +3000,7 @@ void TACSPanelAnalysis::addStiffMatDVSens(
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3054,7 +3054,7 @@ void TACSPanelAnalysis::addStiffMatDVSens(
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -3102,8 +3102,8 @@ void TACSPanelAnalysis::addMassMatDVSens(TacsScalar smat[],
   double Nhp[2 * NUM_NODES], Nahp[2 * NUM_NODES], Naahp[2 * NUM_NODES];
 
   TacsScalar ks[5 * 4 * NUM_NODES], kc[5 * 4 * NUM_NODES];
-  memset(ks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(kc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(ks, 20 * NUM_NODES);
+  TacsZeroArray(kc, 20 * NUM_NODES);
 
   TacsScalar Ms[16 * NUM_NODES * NUM_NODES];
 
@@ -3126,7 +3126,7 @@ void TACSPanelAnalysis::addMassMatDVSens(TacsScalar smat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3178,7 +3178,7 @@ void TACSPanelAnalysis::addMassMatDVSens(TacsScalar smat[],
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -3246,7 +3246,7 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens(TacsScalar smat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3283,7 +3283,7 @@ void TACSPanelAnalysis::addGeoStiffMatDVSens(TacsScalar smat[],
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
         for (int k = 0; k < numGauss; k++) {
           // Evaluate the shape functions
@@ -3327,10 +3327,10 @@ void TACSPanelAnalysis::addStiffMatGeoSens(TacsScalar smat[], int dv,
   TacsScalar Bs[24 * NUM_NODES], Bc[24 * NUM_NODES];
   TacsScalar sBs[24 * NUM_NODES], sBc[24 * NUM_NODES];
 
-  memset(Bs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(Bc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(sBs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(sBc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(Bs, 24 * NUM_NODES);
+  TacsZeroArray(Bc, 24 * NUM_NODES);
+  TacsZeroArray(sBs, 24 * NUM_NODES);
+  TacsZeroArray(sBc, 24 * NUM_NODES);
 
   TacsScalar Ks[16 * NUM_NODES * NUM_NODES];
   TacsScalar sKs[16 * NUM_NODES * NUM_NODES];
@@ -3365,8 +3365,8 @@ void TACSPanelAnalysis::addStiffMatGeoSens(TacsScalar smat[], int dv,
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-    memset(sKs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
+    TacsZeroArray(sKs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3435,8 +3435,8 @@ void TACSPanelAnalysis::addStiffMatGeoSens(TacsScalar smat[], int dv,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ks, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-        memset(sKs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ks, 16 * NUM_NODES * NUM_NODES);
+        TacsZeroArray(sKs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -3498,10 +3498,10 @@ void TACSPanelAnalysis::addMassMatGeoSens(TacsScalar smat[], int dv,
 
   TacsScalar ks[5 * 4 * NUM_NODES], kc[5 * 4 * NUM_NODES];
   TacsScalar sks[5 * 4 * NUM_NODES], skc[5 * 4 * NUM_NODES];
-  memset(ks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(kc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(sks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(skc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(ks, 20 * NUM_NODES);
+  TacsZeroArray(kc, 20 * NUM_NODES);
+  TacsZeroArray(sks, 20 * NUM_NODES);
+  TacsZeroArray(skc, 20 * NUM_NODES);
 
   TacsScalar Ms[16 * NUM_NODES * NUM_NODES];
   TacsScalar sMs[16 * NUM_NODES * NUM_NODES];
@@ -3536,8 +3536,8 @@ void TACSPanelAnalysis::addMassMatGeoSens(TacsScalar smat[], int dv,
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-    memset(sMs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
+    TacsZeroArray(sMs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3599,8 +3599,8 @@ void TACSPanelAnalysis::addMassMatGeoSens(TacsScalar smat[], int dv,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Ms, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-        memset(sMs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Ms, 16 * NUM_NODES * NUM_NODES);
+        TacsZeroArray(sMs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -3689,8 +3689,8 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens(TacsScalar smat[], int dv,
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-    memset(sGs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
+    TacsZeroArray(sGs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
 
@@ -3732,8 +3732,8 @@ void TACSPanelAnalysis::addGeoStiffMatGeoSens(TacsScalar smat[], int dv,
         TacsScalar lambda_n = (M_PI * n) / Lx;
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
-        memset(sGs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
+        TacsZeroArray(sGs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute int_{0}^{1} sin(n*pi*x) * cos(m*pi*x) dx term
         for (int k = 0; k < numGauss; k++) {
@@ -3784,10 +3784,10 @@ void TACSPanelAnalysis::addStiffMatLxSens(TacsScalar smat[],
   TacsScalar Bs[24 * NUM_NODES], Bc[24 * NUM_NODES];
   TacsScalar sBs[24 * NUM_NODES], sBc[24 * NUM_NODES];
 
-  memset(Bs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(Bc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(sBs, 0, 24 * NUM_NODES * sizeof(TacsScalar));
-  memset(sBc, 0, 24 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(Bs, 24 * NUM_NODES);
+  TacsZeroArray(Bc, 24 * NUM_NODES);
+  TacsZeroArray(sBs, 24 * NUM_NODES);
+  TacsZeroArray(sBc, 24 * NUM_NODES);
 
   TacsScalar sKs[16 * NUM_NODES * NUM_NODES];
 
@@ -3810,7 +3810,7 @@ void TACSPanelAnalysis::addStiffMatLxSens(TacsScalar smat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(sKs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(sKs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
     TacsScalar slambda_m = -(M_PI * m) / (Lx * Lx);
@@ -3880,7 +3880,7 @@ void TACSPanelAnalysis::addStiffMatLxSens(TacsScalar smat[],
         TacsScalar slambda_n = -(M_PI * n) / (Lx * Lx);
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(sKs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(sKs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -3942,10 +3942,10 @@ void TACSPanelAnalysis::addMassMatLxSens(TacsScalar smat[],
   TacsScalar ks[5 * 4 * NUM_NODES], kc[5 * 4 * NUM_NODES];
   TacsScalar sks[5 * 4 * NUM_NODES], skc[5 * 4 * NUM_NODES];
 
-  memset(ks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(kc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(sks, 0, 20 * NUM_NODES * sizeof(TacsScalar));
-  memset(skc, 0, 20 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(ks, 20 * NUM_NODES);
+  TacsZeroArray(kc, 20 * NUM_NODES);
+  TacsZeroArray(sks, 20 * NUM_NODES);
+  TacsZeroArray(skc, 20 * NUM_NODES);
 
   TacsScalar sMs[16 * NUM_NODES * NUM_NODES];
 
@@ -3968,7 +3968,7 @@ void TACSPanelAnalysis::addMassMatLxSens(TacsScalar smat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(sMs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(sMs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
     TacsScalar slambda_m = -(M_PI * m) / (Lx * Lx);
@@ -4029,7 +4029,7 @@ void TACSPanelAnalysis::addMassMatLxSens(TacsScalar smat[],
         TacsScalar slambda_n = -(M_PI * n) / (Lx * Lx);
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(sMs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(sMs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute sin(n) * cos(m) term
         for (int k = 0; k < numGauss; k++) {
@@ -4103,7 +4103,7 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens(TacsScalar smat[],
   int n_vars[4 * NUM_NODES], m_vars[4 * NUM_NODES];
 
   for (int m = 1; m <= nmodes; m++) {
-    memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+    TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
     TacsScalar lambda_m = (M_PI * m) / Lx;
     TacsScalar slambda_m = -(M_PI * m) / (Lx * Lx);
@@ -4144,7 +4144,7 @@ void TACSPanelAnalysis::addGeoStiffMatLxSens(TacsScalar smat[],
         TacsScalar slambda_n = -(M_PI * n) / (Lx * Lx);
         TacsScalar sc = (2.0 * n) / (M_PI * (n * n - m * m));
 
-        memset(Gs, 0, 16 * NUM_NODES * NUM_NODES * sizeof(TacsScalar));
+        TacsZeroArray(Gs, 16 * NUM_NODES * NUM_NODES);
 
         // Compute int_{0}^{1} sin(n*pi*x) * cos(m*pi*x) dx term
         for (int k = 0; k < numGauss; k++) {
@@ -5098,8 +5098,8 @@ void TACSPanelAnalysis::computeSegmentLoads(TacsScalar Nx, TacsScalar Nxy,
                                             TacsScalar beamLoads[]) {
   double pt[3] = {0.0, 0.0, 0.0};
 
-  memset(segmentLoads, 0, 3 * nsegments * sizeof(TacsScalar));
-  memset(beamLoads, 0, nbeams * sizeof(TacsScalar));
+  TacsZeroArray(segmentLoads, 3 * nsegments);
+  TacsZeroArray(beamLoads, nbeams);
 
   TacsScalar cy = Xpts[2 * last_node] - Xpts[2 * first_node];
   TacsScalar sy = Xpts[2 * last_node + 1] - Xpts[2 * first_node + 1];
@@ -5171,8 +5171,8 @@ void TACSPanelAnalysis::computeSegmentLoadsDVSens( int dvNum,
                                                    TacsScalar beamLoads[] ){
   double pt[3] = {0.0, 0.0, 0.0};
 
-  memset(segmentLoads, 0, 3*nsegments*sizeof(TacsScalar));
-  memset(beamLoads, 0, nbeams*sizeof(TacsScalar));
+  TacsZeroArray(segmentLoads, 3 * nsegments);
+  TacsZeroArray(beamLoads, nbeams);
 
   TacsScalar cy = Xpts[2*last_node] - Xpts[2*first_node];
   TacsScalar sy = Xpts[2*last_node+1] - Xpts[2*first_node+1];
@@ -5259,8 +5259,8 @@ void TACSPanelAnalysis::computeSegmentLoadsGeoSens(TacsScalar Nx,
                                                    TacsScalar beamLoads[]) {
   double pt[3] = {0.0, 0.0, 0.0};
 
-  memset(segmentLoads, 0, 3 * nsegments * sizeof(TacsScalar));
-  memset(beamLoads, 0, nbeams * sizeof(TacsScalar));
+  TacsZeroArray(segmentLoads, 3 * nsegments);
+  TacsZeroArray(beamLoads, nbeams);
 
   TacsScalar cy = Xpts[2 * last_node] - Xpts[2 * first_node];
   TacsScalar sy = Xpts[2 * last_node + 1] - Xpts[2 * first_node + 1];
@@ -5497,7 +5497,7 @@ void TACSPanelAnalysis::testStiffnessDVSens( double dh ){
   ndvs++;
 
   TacsScalar * x = new TacsScalar[ ndvs ];
-  memset(x, 0, ndvs*sizeof(TacsScalar));
+  TacsZeroArray(x, ndvs);
   getDesignVars(x, ndvs);
 
   // Check the sensitivity of the stiffness calculations
@@ -5589,7 +5589,7 @@ void TACSPanelAnalysis::testFailureSens( double dh,
   ndvs++;
 
   TacsScalar * x = new TacsScalar[ ndvs ];
-  memset(x, 0, ndvs*sizeof(TacsScalar));
+  TacsZeroArray(x, ndvs);
   getDesignVars(x, ndvs);
 
   TacsScalar * fail = new TacsScalar[nfail];
@@ -5691,7 +5691,7 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
   ndvs++;
 
   TacsScalar * x = new TacsScalar[ ndvs ];
-  memset(x, 0, ndvs*sizeof(TacsScalar));
+  TacsZeroArray(x, ndvs);
   getDesignVars(x, ndvs);
 
   TacsScalar * fposLoads = new TacsScalar[nloads];
@@ -5725,7 +5725,7 @@ void TACSPanelAnalysis::testBucklingDVSens( double dh,
            dvNum, designVarTypes[k]);
 
     computeSegmentLoads(Nx, Nxy, fsegLoads, beamLoads);
-    memset(segLoadDVSens, 0, 3*nsegments*sizeof(TacsScalar));
+    TacsZeroArray(segLoadDVSens, 3 * nsegments);
 
     if (designVarTypes[k] == 1){
       int dv = 0;

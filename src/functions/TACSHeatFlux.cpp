@@ -136,7 +136,7 @@ void TACSHeatFlux::getElementSVSens(
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->getNumVariables();
-  memset(dfdu, 0, numVars * sizeof(TacsScalar));
+  TacsZeroArray(dfdu, numVars);
 
   // Get the element basis class
   TACSElementBasis *basis = element->getElementBasis();
@@ -199,7 +199,7 @@ void TACSHeatFlux::getElementXptSens(
   // Zero the derivative of the function w.r.t. the element node
   // locations
   int numNodes = element->getNumNodes();
-  memset(dfdXpts, 0, 3 * numNodes * sizeof(TacsScalar));
+  TacsZeroArray(dfdXpts, 3 * numNodes);
 
   // Get the element basis class
   TACSElementBasis *basis = element->getElementBasis();

@@ -621,7 +621,7 @@ BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int _nrows, int _ncols, int **_colp,
     // Allocate space for the matrix data
     int mat_size = bsize * colp[ncols];
     A = new TacsScalar[mat_size];
-    memset(A, 0, mat_size * sizeof(TacsScalar));
+    TacsZeroArray(A, mat_size);
   }
 }
 
@@ -675,7 +675,7 @@ BCSCMat::BCSCMat(MPI_Comm _comm, int bsize, int num_block_rows,
   // Allocate space for the matrix data
   int mat_size = aptr[nblock_cols];
   A = new TacsScalar[mat_size];
-  memset(A, 0, mat_size * sizeof(TacsScalar));
+  TacsZeroArray(A, mat_size);
 }
 
 /*
@@ -740,7 +740,7 @@ BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
   // Allocate space for the matrix data
   int mat_size = aptr[nblock_cols];
   A = new TacsScalar[mat_size];
-  memset(A, 0, mat_size * sizeof(TacsScalar));
+  TacsZeroArray(A, mat_size);
 }
 
 /*
@@ -837,7 +837,7 @@ BCSCMat::BCSCMat(MPI_Comm _comm, const int bsize[], int num_block_rows,
   // Allocate space for the matrix data
   int mat_size = aptr[nblock_cols];
   A = new TacsScalar[mat_size];
-  memset(A, 0, mat_size * sizeof(TacsScalar));
+  TacsZeroArray(A, mat_size);
 }
 
 /*
@@ -1359,7 +1359,7 @@ void BCSCMat::addMatBlockValues(int num_rows, const int brows[], int num_cols,
   Y:           the dense output data of size (nrows, bsize)
 */
 void BCSCMat::mult(TacsScalar *X, TacsScalar *Y, int vec_bsize) {
-  memset(Y, 0, nrows * vec_bsize * sizeof(TacsScalar));
+  TacsZeroArray(Y, nrows * vec_bsize);
   multAdd(X, Y, Y, vec_bsize);
 }
 
@@ -2191,7 +2191,7 @@ double BCSCMatPivot::factor(double _fill) {
 
   // Initialize the sparse accumulator object
   TacsScalar *column = temp_column;
-  memset(column, 0, nrows * max_block_size * sizeof(TacsScalar));
+  TacsZeroArray(column, nrows * max_block_size);
 
   // Allocate temporary arrays for data used during the factorization
   int *node_stack = &temp_iarray[0];
@@ -2309,7 +2309,7 @@ double BCSCMatPivot::factor(double _fill) {
         lu += node_dim;
 
         // Zero the corresponding row in the dense column
-        memset(&column[node_dim * row], 0, node_dim * sizeof(TacsScalar));
+        TacsZeroArray(&column[node_dim * row], node_dim);
 
         // Set the row index
         lu_row[0] = row;
@@ -2328,7 +2328,7 @@ double BCSCMatPivot::factor(double _fill) {
       lu += node_dim;
 
       // Zero the corresponding row in 'column'
-      memset(&column[node_dim * row], 0, node_dim * sizeof(TacsScalar));
+      TacsZeroArray(&column[node_dim * row], node_dim);
 
       // Set the row index and increment the pointer
       lu_row[0] = row;

@@ -1031,7 +1031,7 @@ void TACSRevoluteConstraint::addJacobian(
 
     // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
     TacsScalar gA[4];
-    memset(gA, 0, sizeof(gA));
+    TacsZeroArray(gA);
     addEMatTransProduct(alpha, eA, eB1, etaA, epsA, &gA[0], &gA[1]);
 
     // Add the constraint terms to the matrix
@@ -1041,7 +1041,7 @@ void TACSRevoluteConstraint::addJacobian(
     }
 
     // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-    memset(gA, 0, sizeof(gA));
+    TacsZeroArray(gA);
     addEMatTransProduct(alpha, eA, eB2, etaA, epsA, &gA[0], &gA[1]);
 
     for (int i = 0; i < 4; i++) {
@@ -1084,7 +1084,7 @@ void TACSRevoluteConstraint::addJacobian(
 
       // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
       TacsScalar gA[4];
-      memset(gA, 0, sizeof(gA));
+      TacsZeroArray(gA);
       addEMatTransProduct(alpha, eA, eB1, etaA, epsA, &gA[0], &gA[1]);
 
       // Add the constraint terms to the matrix
@@ -1094,7 +1094,7 @@ void TACSRevoluteConstraint::addJacobian(
       }
 
       // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-      memset(gA, 0, sizeof(gA));
+      TacsZeroArray(gA);
       addEMatTransProduct(alpha, eA, eB2, etaA, epsA, &gA[0], &gA[1]);
 
       for (int i = 0; i < 4; i++) {
@@ -1116,7 +1116,7 @@ void TACSRevoluteConstraint::addJacobian(
 
       // Add the derivative (d(CB^{T}*eA)/dqB)*tB1 = E(eA)*tB
       TacsScalar gB[4];
-      memset(gB, 0, sizeof(gB));
+      TacsZeroArray(gB);
       addEMatTransProduct(alpha, eA, eB1, etaB, epsB, &gB[0], &gB[1]);
 
       // Add the constraint terms to the matrix
@@ -1126,7 +1126,7 @@ void TACSRevoluteConstraint::addJacobian(
       }
 
       // Add the derivative (d(CB^{T}*eA)/dqB)*tB2 = E(eA)*tB2
-      memset(gB, 0, sizeof(gB));
+      TacsZeroArray(gB);
       addEMatTransProduct(alpha, eA, eB2, etaB, epsB, &gB[0], &gB[1]);
 
       for (int i = 0; i < 4; i++) {
@@ -1154,10 +1154,10 @@ void TACSRevoluteConstraint::addJacobian(
       TacsScalar gA[4], gB[4];
 
       // Add the derivative (d(CA^{T}*eA)/dqA)*tB1 = E(eA)*tB
-      memset(gA, 0, sizeof(gA));
+      TacsZeroArray(gA);
       addEMatTransProduct(alpha, eA, tB1, etaA, epsA, &gA[0], &gA[1]);
       // Add the derivative d(CB^{T}*eB1)/dqB)*tA = E(eB1)*tA
-      memset(gB, 0, sizeof(gB));
+      TacsZeroArray(gB);
       addEMatTransProduct(alpha, eB1, tA, etaB, epsB, &gB[0], &gB[1]);
 
       // Add the constraint terms to the matrix
@@ -1169,10 +1169,10 @@ void TACSRevoluteConstraint::addJacobian(
       }
 
       // Add the derivative (d(CA^{T}*eA)/dqA)*tB2 = E(eA)*tB2
-      memset(gA, 0, sizeof(gA));
+      TacsZeroArray(gA);
       addEMatTransProduct(alpha, eA, tB2, etaA, epsA, &gA[0], &gA[1]);
       // Add the derivative d(CB^{T}*eB2)/dqB)*tA = E(eB2)*tA
-      memset(gB, 0, sizeof(gB));
+      TacsZeroArray(gB);
       addEMatTransProduct(alpha, eB2, tA, etaB, epsB, &gB[0], &gB[1]);
 
       // Add the constraint terms to the matrix

@@ -124,8 +124,8 @@ void TACSCentrifugalForce3D::addResidual(
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
@@ -182,8 +182,8 @@ void TACSCentrifugalForce3D::addJacobian(
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);

@@ -202,7 +202,7 @@ void TACSIsoTubeBeamConstitutive::evalTangentStiffness(int elemIndex,
   TacsScalar const Ia =
       M_PI * ((d0 * d0 * d0 * d0) - (d1 * d1 * d1 * d1)) / 64.0;
 
-  memset(C, 0, NUM_TANGENT_STIFFNESS_ENTRIES * sizeof(TacsScalar));
+  TacsZeroArray(C, NUM_TANGENT_STIFFNESS_ENTRIES);
 
   C[0] = E * A;
   C[6] = 2.0 * G * Ia;

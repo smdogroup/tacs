@@ -405,7 +405,7 @@ void BCSRMatVecMult(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 
   TacsScalar *a = data->A;
   for (int i = 0; i < nrows; i++) {
-    memset(y, 0, bsize * sizeof(TacsScalar));
+    TacsZeroArray(y, bsize);
 
     int end = rowp[i + 1];
     for (int k = rowp[i]; k < end; k++) {

@@ -158,7 +158,7 @@ void computeCoefficients(TacsScalar *U, TacsScalar *V, TacsScalar *W,
   rhs[2] = -load;
 
   TacsScalar B[8 * 5];
-  memset(B, 0, sizeof(B));
+  TacsZeroArray(B);
   TacsScalar *b = B;
 
   // Assign the columns for u
@@ -378,7 +378,7 @@ void createAssembler(MPI_Comm comm, int order, int nx, int ny,
     }
 
     TacsScalar *bc_vals = new TacsScalar[bc_ptr[numBcs]];
-    memset(bc_vals, 0, bc_ptr[numBcs] * sizeof(TacsScalar));
+    TacsZeroArray(bc_vals, bc_ptr[numBcs]);
 
     // Set the boundary conditions
     creator->setBoundaryConditions(numBcs, bcNodes, bc_ptr, bc_vars, bc_vals);
@@ -616,7 +616,7 @@ void createTriAssembler(MPI_Comm comm, int order, int nx, int ny,
     }
 
     TacsScalar *bc_vals = new TacsScalar[bc_ptr[numBcs]];
-    memset(bc_vals, 0, bc_ptr[numBcs] * sizeof(TacsScalar));
+    TacsZeroArray(bc_vals, bc_ptr[numBcs]);
 
     // Set the boundary conditions
     creator->setBoundaryConditions(numBcs, bcNodes, bc_ptr, bc_vars, bc_vals);

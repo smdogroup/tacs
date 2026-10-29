@@ -121,7 +121,7 @@ void TACSEnclosedVolume::getElementXptSens(
     const TacsScalar ddvars[], TacsScalar dfdXpts[]) {
   // Zero the derivative of the function w.r.t. the node locations
   int numNodes = element->getNumNodes();
-  memset(dfdXpts, 0, 3 * numNodes * sizeof(TacsScalar));
+  TacsZeroArray(dfdXpts, 3 * numNodes);
 
   for (int i = 0; i < element->getNumQuadraturePoints(); i++) {
     double pt[3];

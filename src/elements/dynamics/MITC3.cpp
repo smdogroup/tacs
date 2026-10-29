@@ -431,9 +431,9 @@ int MITC3::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
 void MITC3::getInitConditions(int elemIndex, const TacsScalar X[],
                               TacsScalar vars[], TacsScalar dvars[],
                               TacsScalar ddvars[]) {
-  memset(vars, 0, 8 * NUM_NODES * sizeof(TacsScalar));
-  memset(dvars, 0, 8 * NUM_NODES * sizeof(TacsScalar));
-  memset(ddvars, 0, 8 * NUM_NODES * sizeof(TacsScalar));
+  TacsZeroArray(vars, 8 * NUM_NODES);
+  TacsZeroArray(dvars, 8 * NUM_NODES);
+  TacsZeroArray(ddvars, 8 * NUM_NODES);
 
   // The initial quaternions are eta = 1.0, eps = 0
   for (int i = 0; i < NUM_NODES; i++) {
@@ -940,8 +940,8 @@ void MITC3::addJacobian(int elemIndex, double time, TacsScalar alpha,
   // The weights that are used for the geometric stiffness from
   // the tying strain
   TacsScalar w12[2], w13[2];
-  memset(w12, 0, 2 * sizeof(TacsScalar));
-  memset(w13, 0, 2 * sizeof(TacsScalar));
+  TacsZeroArray(w12);
+  TacsZeroArray(w13);
 
   // Evaluate the kinetic energy of the element
   for (int i = 0; i < ORDER; i++) {
@@ -2970,7 +2970,7 @@ void MITC3::getOutputData(int elemIndex, ElementType etype, int write_flag,
 */
 void MITC3::testStrain(const TacsScalar X[]) {
   TacsScalar vars[8 * NUM_NODES];
-  memset(vars, 0, sizeof(vars));
+  TacsZeroArray(vars);
 
   // Pick a random set of values for the quaternions
   TacsScalar q[4];

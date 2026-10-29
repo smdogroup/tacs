@@ -111,8 +111,8 @@ void TACSTraction3D::addResidual(int elemIndex, double time,
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     if (getTractionComponents) {
       getTractionComponents(elemIndex, time, faceIndex, X, normal, trac);
@@ -168,8 +168,8 @@ void TACSTraction3D::addJacobian(int elemIndex, double time, TacsScalar alpha,
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement3D::MAX_VARS_PER_NODE];
     TacsScalar DUx[3 * TACSElement3D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 3 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 3 * varsPerNode);
 
     if (getTractionComponents) {
       getTractionComponents(elemIndex, time, faceIndex, X, normal, trac);

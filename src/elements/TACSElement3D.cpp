@@ -318,7 +318,7 @@ void TACSElement3D::getMatType(ElementMatrixType matType, int elemIndex,
                                const TacsScalar vars[], TacsScalar mat[]) {
   // Zero the element matrix
   const int nvars = getNumVariables();
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
 
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();
@@ -490,7 +490,7 @@ void TACSElement3D::getMatSVSensInnerProduct(
     const TacsScalar vars[], TacsScalar dfdu[]) {
   // Set the sensitivity to zero
   const int nvars = getNumVariables();
-  memset(dfdu, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(dfdu, nvars);
 
   // Compute the number of quadrature points
   const int nquad = basis->getNumQuadraturePoints();

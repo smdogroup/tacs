@@ -119,8 +119,8 @@ void TACSInertialForce2D::addResidual(
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
     TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 2 * varsPerNode);
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);
@@ -164,8 +164,8 @@ void TACSInertialForce2D::addJacobian(int elemIndex, double time,
     // Evaluate the weak form of the model
     TacsScalar DUt[3 * TACSElement2D::MAX_VARS_PER_NODE];
     TacsScalar DUx[2 * TACSElement2D::MAX_VARS_PER_NODE];
-    memset(DUt, 0, 3 * varsPerNode * sizeof(TacsScalar));
-    memset(DUx, 0, 2 * varsPerNode * sizeof(TacsScalar));
+    TacsZeroArray(DUt, 3 * varsPerNode);
+    TacsZeroArray(DUx, 2 * varsPerNode);
 
     // Get the element density
     TacsScalar density = con->evalDensity(elemIndex, pt, X);

@@ -119,7 +119,7 @@ void *TACSAssembler::assembleRes_thread(void *t) {
           aux_count++;
         }
       } else {
-        memset(auxElemRes, 0, s * sizeof(TacsScalar));
+        TacsZeroArray(auxElemRes, s);
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->addResidual(elemIndex, assembler->time, elemXpts,
                                            vars, dvars, ddvars, auxElemRes);
@@ -211,8 +211,8 @@ void *TACSAssembler::assembleJacobian_thread(void *t) {
 
       // Retrieve the number of element variables
       int nvars = element->getNumVariables();
-      memset(elemRes, 0, nvars * sizeof(TacsScalar));
-      memset(elemMat, 0, nvars * nvars * sizeof(TacsScalar));
+      TacsZeroArray(elemRes, nvars);
+      TacsZeroArray(elemMat, nvars * nvars);
 
       // Generate the Jacobian of the element
       element->addJacobian(elemIndex, assembler->time, alpha, beta, gamma,
@@ -333,7 +333,7 @@ void *TACSAssembler::assembleMatType_thread(void *t) {
           aux_count++;
         }
       } else {
-        memset(auxElemMat, 0, s * s * sizeof(TacsScalar));
+        TacsZeroArray(auxElemMat, s * s);
         while (aux_count < naux && aux[aux_count].num == elemIndex) {
           aux[aux_count].elem->getMatType(matType, elemIndex, assembler->time,
                                           elemXpts, vars, auxElemMat);

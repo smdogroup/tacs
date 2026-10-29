@@ -48,7 +48,7 @@ void TACSMassCentrifugalForce::addResidual(
 
   TacsScalar r[3], wxr[3];
   TacsScalar ac[NUM_DISPS], f[NUM_DISPS];
-  memset(ac, 0, NUM_DISPS * sizeof(TacsScalar));
+  TacsZeroArray(ac);
 
   // Create vector pointing from rotation center to element gpt
   r[0] = X[0] - rotCenter[0];
@@ -88,7 +88,7 @@ void TACSMassCentrifugalForce::addAdjResProduct(
   double pt[3] = {0.0, 0.0, 0.0};
   TacsScalar r[3], wxr[3];
   TacsScalar ac[NUM_DISPS];
-  memset(ac, 0, NUM_DISPS * sizeof(TacsScalar));
+  TacsZeroArray(ac);
 
   // Create vector pointing from rotation center to element gpt
   r[0] = X[0] - rotCenter[0];

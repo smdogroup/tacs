@@ -881,7 +881,7 @@ void TACSBlockCyclicMat::init_nz_arrays() {
   // Allocate the diagonal values
   dval_size = dval_offset[nrows];
   Dvals = new TacsScalar[dval_size];
-  memset(Dvals, 0, dval_size * sizeof(TacsScalar));
+  TacsZeroArray(Dvals, dval_size);
 
   // Calculate the off-diagonal offsets
   max_ubuff_size = 0;
@@ -907,7 +907,7 @@ void TACSBlockCyclicMat::init_nz_arrays() {
   // Allocate the upper triangular components
   uval_size = uval_offset[Urowp[nrows]];
   Uvals = new TacsScalar[uval_size];
-  memset(Uvals, 0, uval_size * sizeof(TacsScalar));
+  TacsZeroArray(Uvals, uval_size);
 
   // Calculate the lower triangular size
   lval_offset[0] = 0;
@@ -933,7 +933,7 @@ void TACSBlockCyclicMat::init_nz_arrays() {
   // Allocate space for the lower triangular components
   lval_size = lval_offset[Lcolp[ncols]];
   Lvals = new TacsScalar[lval_size];
-  memset(Lvals, 0, lval_size * sizeof(TacsScalar));
+  TacsZeroArray(Lvals, lval_size);
 
   int max_buff[2], max_buff_all[2];
   max_buff[0] = max_lbuff_size;
@@ -949,9 +949,9 @@ void TACSBlockCyclicMat::init_nz_arrays() {
   Zero all the matrix entries.
 */
 void TACSBlockCyclicMat::zeroEntries() {
-  memset(Dvals, 0, dval_size * sizeof(TacsScalar));
-  memset(Lvals, 0, lval_size * sizeof(TacsScalar));
-  memset(Uvals, 0, uval_size * sizeof(TacsScalar));
+  TacsZeroArray(Dvals, dval_size);
+  TacsZeroArray(Lvals, lval_size);
+  TacsZeroArray(Uvals, uval_size);
 }
 
 /*
@@ -1504,12 +1504,12 @@ void TACSBlockCyclicMat::mult(TacsScalar *x, TacsScalar *y) {
   int proc_row = -1, proc_col = -1;
   get_proc_row_column(rank, &proc_row, &proc_col);
 
-  memset(y, 0, xbptr[nrows] * sizeof(TacsScalar));
+  TacsZeroArray(y, xbptr[nrows]);
 
   // Allocate temporary space (if needed)
   TacsScalar *tx = new TacsScalar[cbptr[ncols]];
   TacsScalar *ty = new TacsScalar[rbptr[nrows]];
-  memset(ty, 0, rbptr[nrows] * sizeof(TacsScalar));
+  TacsZeroArray(ty, rbptr[nrows]);
 
   if (proc_row >= 0) {
     // Allocate an array of requests
@@ -1860,11 +1860,11 @@ void TACSBlockCyclicMat::applyFactor(TacsScalar *x) {
 
     // Temporary vector of x-values on this processor
     tx = new TacsScalar[cbptr[nrows]];
-    memset(tx, 0, cbptr[nrows] * sizeof(TacsScalar));
+    TacsZeroArray(tx, cbptr[nrows]);
 
     // The locally stored sum of the products of L[i:0:i]*x[0:i]
     xsum = new TacsScalar[rbptr[nrows]];
-    memset(xsum, 0, rbptr[nrows] * sizeof(TacsScalar));
+    TacsZeroArray(xsum, rbptr[nrows]);
 
     // Allocate space for the counters
     row_sum_count = new int[nrows];
@@ -1941,7 +1941,7 @@ void TACSBlockCyclicMat::applyFactor(TacsScalar *x) {
 
   if (proc_row >= 0) {
     // Set the partial row sums to zero again
-    memset(xsum, 0, rbptr[nrows] * sizeof(TacsScalar));
+    TacsZeroArray(xsum, rbptr[nrows]);
 
     // Now, apply the upper factorization
     memset(row_sum_count, 0, nrows * sizeof(int));

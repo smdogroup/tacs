@@ -80,7 +80,7 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qTmp[i] = vars[i] + TacsScalar(0.0, dh);
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Find the approximated jacobian
@@ -92,14 +92,14 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qTmp[i] = vars[i] + dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Perturb the i-th variable
       qTmp[i] = vars[i] - dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp2, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp2, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
       // Find the approximated jacobian
@@ -119,7 +119,7 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qdotTmp[i] = dvars[i] + TacsScalar(0.0, dh);
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Find the approximated jacobian
@@ -131,14 +131,14 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qdotTmp[i] = dvars[i] + dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Perturb the i-th variable
       qdotTmp[i] = dvars[i] - dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp2, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp2, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
       // Find the approximated jacobian
@@ -158,7 +158,7 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qddotTmp[i] = ddvars[i] + TacsScalar(0.0, dh);
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Find the approximated jacobian
@@ -170,14 +170,14 @@ void TACSElement::addJacobian(int elemIndex, double time, TacsScalar alpha,
       qddotTmp[i] = ddvars[i] + dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp1, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp1, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp1);
 
       // Perturb the i-th variable
       qddotTmp[i] = ddvars[i] - dh;
 
       // Assemble the unperturbed residual
-      memset(Rtmp2, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(Rtmp2, nvars);
       addResidual(elemIndex, time, Xpts, qTmp, qdotTmp, qddotTmp, Rtmp2);
 
       // Find the approximated jacobian
@@ -215,7 +215,7 @@ void TACSElement::addAdjResProduct(
   TacsScalar *res = new TacsScalar[nvars];
   TacsScalar *tmp = new TacsScalar[nvars];
 
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
 
   for (int k = 0; k < dvLen; k++) {
@@ -228,7 +228,7 @@ void TACSElement::addAdjResProduct(
 #endif  // TACS_USE_COMPLEX
     setDesignVars(elemIndex, dvLen, x);
 
-    memset(tmp, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(tmp, nvars);
     addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, tmp);
 
     TacsScalar product = 0.0;
@@ -246,7 +246,7 @@ void TACSElement::addAdjResProduct(
       // Use second-order central differencing
       x[k] = xt - dh;  //  backward step
       setDesignVars(elemIndex, dvLen, x);
-      memset(res, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(res, nvars);
       addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
       // Central difference
       for (int i = 0; i < nvars; i++) {
@@ -286,7 +286,7 @@ void TACSElement::addAdjResXptProduct(
   TacsScalar *res = new TacsScalar[nvars];
   TacsScalar *tmp = new TacsScalar[nvars];
 
-  memset(res, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(res, nvars);
   addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
 
   for (int k = 0; k < 3 * nnodes; k++) {
@@ -295,7 +295,7 @@ void TACSElement::addAdjResXptProduct(
 #else
     X[k] = Xpts[k] + dh;
 #endif  // TACS_USE_COMPLEX
-    memset(tmp, 0, nvars * sizeof(TacsScalar));
+    TacsZeroArray(tmp, nvars);
     addResidual(elemIndex, time, X, vars, dvars, ddvars, tmp);
 
     TacsScalar product = 0.0;
@@ -312,7 +312,7 @@ void TACSElement::addAdjResXptProduct(
     } else {
       // Use second-order central differencing
       X[k] = Xpts[k] - dh;  //  backward step
-      memset(res, 0, nvars * sizeof(TacsScalar));
+      TacsZeroArray(res, nvars);
       addResidual(elemIndex, time, X, vars, dvars, ddvars, res);
       // Central difference
       for (int i = 0; i < nvars; i++) {
@@ -335,7 +335,7 @@ void TACSElement::getMatType(ElementMatrixType matType, int elemIndex,
                              double time, const TacsScalar Xpts[],
                              const TacsScalar vars[], TacsScalar mat[]) {
   int size = getNumNodes() * getVarsPerNode();
-  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsZeroArray(mat, size * size);
   TacsScalar alpha, beta, gamma;
   alpha = beta = gamma = 0.0;
   // Set alpha or gamma based on if this is a stiffness or mass matrix
@@ -369,7 +369,7 @@ void TACSElement::addMatDVSensInnerProduct(
   int nvars = getNumVariables();
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -388,7 +388,7 @@ void TACSElement::addMatDVSensInnerProduct(
 #endif  // TACS_USE_COMPLEX
     setDesignVars(elemIndex, dvLen, x);
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(mat, nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, Xpts, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -449,7 +449,7 @@ void TACSElement::addMatXptSensInnerProduct(
   int nvars = getNumVariables();
   TacsScalar *mat = new TacsScalar[nvars * nvars];
 
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -467,7 +467,7 @@ void TACSElement::addMatXptSensInnerProduct(
     X[k] = xt + dh;
 #endif  // TACS_USE_COMPLEX
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(mat, nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, X, vars, mat);
     for (int i = 0; i < nvars; i++) {
@@ -518,12 +518,12 @@ void TACSElement::getMatSVSensInnerProduct(
 #endif  // TACS_USE_COMPLEX
 
   int nvars = getNumVariables();
-  memset(dfdu, 0, nvars * sizeof(TacsScalar));
+  TacsZeroArray(dfdu, nvars);
   TacsScalar *mat = new TacsScalar[nvars * nvars];
   TacsScalar *vars1 = new TacsScalar[nvars];
 
   memcpy(vars1, vars, nvars * sizeof(TacsScalar));
-  memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+  TacsZeroArray(mat, nvars * nvars);
   TacsScalar p1 = 0.0;
   getMatType(matType, elemIndex, time, Xpts, vars, mat);
   for (int i = 0; i < nvars; i++) {
@@ -541,7 +541,7 @@ void TACSElement::getMatSVSensInnerProduct(
     vars1[k] = vt + dh;
 #endif  // TACS_USE_COMPLEX
 
-    memset(mat, 0, nvars * nvars * sizeof(TacsScalar));
+    TacsZeroArray(mat, nvars * nvars);
     TacsScalar p2 = 0.0;
     getMatType(matType, elemIndex, time, Xpts, vars1, mat);
     for (int i = 0; i < nvars; i++) {

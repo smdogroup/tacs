@@ -197,7 +197,7 @@ void TACSSerialPivotMat::applyBCs(TACSBcMap *bcmap) {
             TacsScalar *a = &A[aptr[col] + bsize * (item - col_rows)];
 
             // Zero the row
-            memset(a, 0, bsize * sizeof(TacsScalar));
+            TacsZeroArray(a, bsize);
 
             // Set the diagonal to the identity matrix
             if (node == col) {

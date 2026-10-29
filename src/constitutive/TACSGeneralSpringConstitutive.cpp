@@ -22,7 +22,7 @@ TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive(TacsScalar _C[]) {
 
 TACSGeneralSpringConstitutive::TACSGeneralSpringConstitutive() {
   // Spring has zero stiffness
-  memset(C, 0, 21 * sizeof(TacsScalar));
+  TacsZeroArray(C);
 }
 
 int TACSGeneralSpringConstitutive::getNumStresses() { return NUM_STRESSES; }

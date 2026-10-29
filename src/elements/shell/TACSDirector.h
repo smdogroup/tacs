@@ -603,9 +603,9 @@ class TACSLinearizedRotation {
   static void evalDrillStrainHessian(TacsScalar d2et, const TacsScalar u0x[],
                                      const TacsScalar Ct[], TacsScalar d2u0x[],
                                      TacsScalar d2Ct[], TacsScalar d2Ctu0x[]) {
-    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ct, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ctu0x, 0, 81 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0x, 81);
+    TacsZeroArray(d2Ct, 81);
+    TacsZeroArray(d2Ctu0x, 81);
   }
 };
 
@@ -1472,9 +1472,9 @@ class TACSQuadraticRotation {
   static void evalDrillStrainHessian(TacsScalar d2et, const TacsScalar u0x[],
                                      const TacsScalar Ct[], TacsScalar d2u0x[],
                                      TacsScalar d2Ct[], TacsScalar d2Ctu0x[]) {
-    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ct, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ctu0x, 0, 81 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0x, 81);
+    TacsZeroArray(d2Ct, 81);
+    TacsZeroArray(d2Ctu0x, 81);
   }
 };
 
@@ -2636,9 +2636,9 @@ class TACSQuaternionRotation {
   static void evalDrillStrainHessian(TacsScalar det, const TacsScalar u0x[],
                                      const TacsScalar Ct[], TacsScalar d2u0x[],
                                      TacsScalar d2Ct[], TacsScalar d2Ctu0x[]) {
-    memset(d2u0x, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ct, 0, 81 * sizeof(TacsScalar));
-    memset(d2Ctu0x, 0, 81 * sizeof(TacsScalar));
+    TacsZeroArray(d2u0x, 81);
+    TacsZeroArray(d2Ct, 81);
+    TacsZeroArray(d2Ctu0x, 81);
 
     // d2Ctu0x[0] = det*(0);
     // d2Ctu0x[1] = det*(-1);
@@ -2949,8 +2949,8 @@ int TacsTestDirector(double dh = 1e-7, int test_print_level = 2,
 
   // Compute the Jacobian and residual
   TacsScalar res[size], mat[size * size];
-  memset(res, 0, size * sizeof(TacsScalar));
-  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsZeroArray(res, size);
+  TacsZeroArray(mat, size * size);
   director::template addRotationMatJacobian<vars_per_node, offset, num_nodes>(
       1.0, vars, dC, d2C, res, mat);
 
@@ -3089,7 +3089,7 @@ int TacsTestDirector(double dh = 1e-7, int test_print_level = 2,
     }
 
     TacsScalar rest[size];
-    memset(rest, 0, size * sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
     director::template addRotationMatResidual<vars_per_node, offset, num_nodes>(
         varst, dCt, rest);
 
@@ -3282,8 +3282,8 @@ int TacsTestDirector(double dh = 1e-7, int test_print_level = 2,
       vars, dvars, ddvars, t, d, ddot, dddot);
 
   // Compute the director Jacobian matrix
-  memset(res, 0, size * sizeof(TacsScalar));
-  memset(mat, 0, size * size * sizeof(TacsScalar));
+  TacsZeroArray(res, size);
+  TacsZeroArray(mat, size * size);
 
   for (int i = 0; i < dsize * dsize; i++) {
     d2d[i] *= alpha;
@@ -3323,7 +3323,7 @@ int TacsTestDirector(double dh = 1e-7, int test_print_level = 2,
         varst, dvarst, ddvarst, t, dt, ddott, dddott);
 
     TacsScalar rest[size];
-    memset(rest, 0, size * sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
 
     // Add the change in coefficient
     TacsScalar dTdott[dsize], ddt[dsize];
@@ -3474,7 +3474,7 @@ int TacsTestDirectorResidual(double dh = 1e-5, int test_print_level = 2,
 
   // Compute the residual
   TacsScalar res[size];
-  memset(res, 0, size * sizeof(TacsScalar));
+  TacsZeroArray(res, size);
   director::template addDirectorResidual<vars_per_node, offset, num_nodes>(
       vars, dvars, ddvars, t, dTdot, dd, res);
 

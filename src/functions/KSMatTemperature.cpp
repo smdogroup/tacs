@@ -197,7 +197,7 @@ void TACSKSMatTemperature::elementWiseEval(
     const int numDisps = element->numDisplacements();
     const int numNodes = element->numNodes();
     TacsScalar *dT = new TacsScalar[nmats];
-    memset(dT, 0.0, nmats * sizeof(TacsScalar));
+    TacsZeroArray(dT, nmats);
     if (ftype == TACSFunction::INITIALIZE) {
       // With the first iteration, find the maximum over the domain
       for (int i = 0; i < numGauss; i++) {
@@ -348,9 +348,9 @@ void TACSKSMatTemperature::getElementSVSens(
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->numVariables();
-  memset(elemSVSens, 0, numVars * sizeof(TacsScalar));
+  TacsZeroArray(elemSVSens, numVars);
   TacsScalar *dT = new TacsScalar[nmats];
-  memset(dT, 0.0, nmats * sizeof(TacsScalar));
+  TacsZeroArray(dT, nmats);
   if (ctx) {
     // Get the number of quadrature points for this element
     const int numGauss = element->getNumGaussPts();
@@ -495,7 +495,7 @@ void TACSKSMatTemperature::addElementDVSens(
   // Get the constitutive object for this element
   TACSConstitutive *constitutive = element->getConstitutive();
   TacsScalar *dT = new TacsScalar[nmats];
-  memset(dT, 0.0, nmats * sizeof(TacsScalar));
+  TacsZeroArray(dT, nmats);
   if (ctx) {
     // Get the number of quadrature points for this element
     const int numGauss = element->getNumGaussPts();

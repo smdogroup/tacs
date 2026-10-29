@@ -395,8 +395,8 @@ void TACSSchurMat::init(TACSNodeMap *_rmap, BCSRMat *_B, BCSRMat *_E,
 
   xlocal = new TacsScalar[local_size];
   ylocal = new TacsScalar[local_size];
-  memset(xlocal, 0, local_size * sizeof(TacsScalar));
-  memset(ylocal, 0, local_size * sizeof(TacsScalar));
+  TacsZeroArray(xlocal, local_size);
+  TacsZeroArray(ylocal, local_size);
 }
 
 /*
@@ -1306,8 +1306,8 @@ TACSSchurPc::TACSSchurPc(TACSSchurMat *_mat, int levFill, double fill,
   xlocal = new TacsScalar[xsize];
   yinterface = new TacsScalar[ysize];
 
-  memset(xlocal, 0, xsize * sizeof(TacsScalar));
-  memset(yinterface, 0, ysize * sizeof(TacsScalar));
+  TacsZeroArray(xlocal, xsize);
+  TacsZeroArray(yinterface, ysize);
 
   // Allocate the Schur complement vectors
   yschur = new TACSBVec(schur_map, bsize);

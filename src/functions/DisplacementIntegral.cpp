@@ -172,7 +172,7 @@ void TACSDisplacementIntegral::getElementSVSens(
   // Zero the derivative of the function w.r.t. the element state
   // variables
   int numVars = element->numVariables();
-  memset(elemSVSens, 0, numVars * sizeof(TacsScalar));
+  TacsZeroArray(elemSVSens, numVars);
 
   if (ctx) {
     // Get the number of quadrature points for this element

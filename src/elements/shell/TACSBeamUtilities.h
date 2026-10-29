@@ -284,13 +284,13 @@ int TacsTestBeamUtilities(double dh = 1e-7, int test_print_level = 2,
   }
 
   TacsScalar res[size], mat[size*size];
-  memset(res, 0, size*sizeof(TacsScalar));
-  memset(mat, 0, size*size*sizeof(TacsScalar));
+  TacsZeroArray(res, size);
+  TacsZeroArray(mat, size * size);
 
   TacsScalar dd[dsize], d2d[dsize*dsize], d2du[usize*dsize];
-  memset(dd, 0, dsize*sizeof(TacsScalar));
-  memset(d2d, 0, dsize*dsize*sizeof(TacsScalar));
-  memset(d2du, 0, usize*dsize*sizeof(TacsScalar));
+  TacsZeroArray(dd, dsize);
+  TacsZeroArray(d2d, dsize * dsize);
+  TacsZeroArray(d2du, usize * dsize);
 
   TacsScalar XdinvT[9], XdinvzT[9];
   TacsScalar u0x[9], u1x[9];
@@ -338,8 +338,8 @@ n0, T, XdinvT, XdinvzT, u0xt, u1xt);
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
+    TacsZeroArray(ddt, dsize);
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 
@@ -445,8 +445,8 @@ n0, T, XdinvT, XdinvzT, u0xt, u1xt);
     }
 
     TacsScalar rest[size], ddt[dsize];
-    memset(rest, 0, size*sizeof(TacsScalar));
-    memset(ddt, 0, dsize*sizeof(TacsScalar));
+    TacsZeroArray(rest, size);
+    TacsZeroArray(ddt, dsize);
     TacsShellAddDispGradSens<vars_per_node, basis>(pt, T, XdinvT, XdinvzT,
                                                    du0xt, du1xt, rest, ddt);
 

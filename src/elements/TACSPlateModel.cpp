@@ -134,7 +134,7 @@ void TACSPlateModel::evalWeakIntegrand(int elemIndex, const double time, int n,
   const TacsScalar *Q = &s[6];
 
   // Set the coefficients
-  memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
+  TacsZeroArray(DUt, 5 * 3);
   DUt[2] = rho * Ut[2];
   DUt[5] = rho * Ut[5];
   DUt[8] = rho * Ut[8];
@@ -202,7 +202,7 @@ void TACSPlateModel::evalWeakMatrix(ElementMatrixType matType, int elemIndex,
   const TacsScalar *Q = &s[6];
 
   // Set the coefficients
-  memset(DUt, 0, 5 * 3 * sizeof(TacsScalar));
+  TacsZeroArray(DUt, 5 * 3);
   DUt[2] = rho * Ut[2];
   DUt[5] = rho * Ut[5];
   DUt[8] = rho * Ut[8];

@@ -496,7 +496,7 @@ void TACSElementBasis::addFieldGradientXptSens(
     } else if (dfdUx) {
       // dfdJ = dfdUx*dUx/dJ, where dUx/dJ = Ud
       TacsScalar df[9];
-      memset(df, 0, 9 * sizeof(TacsScalar));
+      TacsZeroArray(df);
       for (int k = 0; k < vars_per_node; k++) {
         df[0] += Ud[3 * k] * dfdUx[3 * k];
         df[1] += Ud[3 * k] * dfdUx[3 * k + 1];
@@ -569,7 +569,7 @@ void TACSElementBasis::addFieldGradientXptSens(
       }
     } else if (dfdUx) {
       TacsScalar df[4];
-      memset(df, 0, 4 * sizeof(TacsScalar));
+      TacsZeroArray(df);
       for (int k = 0; k < vars_per_node; k++) {
         df[0] += Ud[2 * k] * dfdUx[2 * k];
         df[1] += Ud[2 * k] * dfdUx[2 * k + 1];
@@ -661,7 +661,7 @@ void TACSElementBasis::addFieldGradientXptSens(
     } else if (dfdUx && dfdPsix) {
       // dfdJ = dfdUx*dUx/dJ, where dUx/dJ = Ud
       TacsScalar df[9];
-      memset(df, 0, 9 * sizeof(TacsScalar));
+      TacsZeroArray(df);
       for (int k = 0; k < vars_per_node; k++) {
         df[0] += Ud[3 * k] * dfdUx[3 * k];
         df[1] += Ud[3 * k] * dfdUx[3 * k + 1];
@@ -756,7 +756,7 @@ void TACSElementBasis::addFieldGradientXptSens(
       }
     } else if (dfdUx && dfdPsix) {
       TacsScalar df[4];
-      memset(df, 0, 4 * sizeof(TacsScalar));
+      TacsZeroArray(df);
       for (int k = 0; k < vars_per_node; k++) {
         df[0] += Ud[2 * k] * dfdUx[2 * k];
         df[1] += Ud[2 * k] * dfdUx[2 * k + 1];
@@ -991,8 +991,8 @@ void TACSElementBasis::addMatVecProduct(const int vars_per_node,
     TacsScalar *DUx =
         &temp[(n + 1) * vars_per_node * (1 + num_params) + vars_per_node];
 
-    memset(DU, 0, vars_per_node * sizeof(TacsScalar));
-    memset(DUx, 0, num_params * vars_per_node * sizeof(TacsScalar));
+    TacsZeroArray(DU, vars_per_node);
+    TacsZeroArray(DUx, num_params * vars_per_node);
 
     // Compute the output based on the Jacobian input
     for (int ii = 0; ii < Jac_nnz; ii++) {

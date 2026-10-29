@@ -1153,7 +1153,7 @@ void TACSQuarticHexaBasis::interpFieldsGrad(const int n, const double pt[],
     const double *n2x = &Nfxi[5 * ((n % 25) / 5)];
     const double *n3x = &Nfxi[5 * (n / 25)];
 
-    memset(grad, 0, 3 * m * sizeof(TacsScalar));
+    TacsZeroArray(grad, 3 * m);
 
     for (int k = 0; k < 5; k++) {
       for (int j = 0; j < 5; j++) {
@@ -1508,7 +1508,7 @@ void TACSQuinticHexaBasis::interpFieldsGrad(const int n, const double pt[],
     const double *n2x = &Nfxi[6 * ((n % 36) / 6)];
     const double *n3x = &Nfxi[6 * (n / 36)];
 
-    memset(grad, 0, 3 * m * sizeof(TacsScalar));
+    TacsZeroArray(grad, 3 * m);
 
     for (int k = 0; k < 6; k++) {
       for (int j = 0; j < 6; j++) {

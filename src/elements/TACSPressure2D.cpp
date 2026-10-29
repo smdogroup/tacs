@@ -93,8 +93,8 @@ void TACSPressure2D::addResidual(int elemIndex, double time,
     const int duxSize = 2 * TACSElement2D::MAX_VARS_PER_NODE;
     TacsScalar DUt[dutSize];
     TacsScalar DUx[duxSize];
-    memset(DUt, 0, dutSize * sizeof(TacsScalar));
-    memset(DUx, 0, duxSize * sizeof(TacsScalar));
+    TacsZeroArray(DUt);
+    TacsZeroArray(DUx);
 
     for (int k = 0; k < 2; k++) {
       DUt[3 * k] = -p * normal[k];

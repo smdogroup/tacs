@@ -408,7 +408,7 @@ class TACSConstitutive : public TACSObject {
   virtual void evalThermalStrain(int elemIndex, const double pt[],
                                  const TacsScalar X[], TacsScalar theta,
                                  TacsScalar strain[]) {
-    memset(strain, 0, getNumStresses() * sizeof(TacsScalar));
+    TacsZeroArray(strain, getNumStresses());
   }
 
   /**
@@ -544,7 +544,7 @@ class TACSConstitutive : public TACSObject {
                                            const TacsScalar X[],
                                            const TacsScalar strain[],
                                            TacsScalar sens[]) {
-    memset(sens, 0, getNumStresses() * sizeof(TacsScalar));
+    TacsZeroArray(sens, getNumStresses());
     return 0.0;
   }
 
