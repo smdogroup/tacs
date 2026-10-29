@@ -78,16 +78,6 @@ class TACSTraction2D : public TACSElement {
                    const TacsScalar *vars, const TacsScalar *dvars,
                    const TacsScalar *ddvars, TacsScalar *res, TacsScalar *mat);
 
-  /**
-    Add the derivative of the adjoint-residual product with respect to the
-    design variables
-  */
-  void addAdjResProduct(int elemIndex, double time, TacsScalar scale,
-                        const TacsScalar psi[], const TacsScalar Xpts[],
-                        const TacsScalar vars[], const TacsScalar dvars[],
-                        const TacsScalar ddvars[], int dvLen,
-                        TacsScalar dfdx[]);
-
  private:
   /**
     Copy the traction design variable numbers, defaulting to -1 (not a design
