@@ -1340,7 +1340,7 @@ class TACSShellInplaneNonlinearModel {
               0.5 * value * (d02d[1]) + 0.5 * valued * (n02[1] + d02[1]);
           dUxi2d[3] = 0.0;
           dUxi2d[4] =
-              0.5 * value * (d02d[2]) + 0.5 * valued * (n02[2] + d02d[2]);
+              0.5 * value * (d02d[2]) + 0.5 * valued * (n02[2] + d02[2]);
           dUxi2d[5] = 0.0;
 
           dd02[0] = 0.5 * value * (Xxi2[0] + Uxi2[0]);
