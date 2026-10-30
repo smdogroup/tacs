@@ -37,14 +37,16 @@ ElementType TACSMassElement::getElementType() { return TACS_MASS_ELEMENT; }
 const char *TACSMassElement::elemName = "TACSMassElement";
 
 TACSElement *TACSMassElement::createElementInertialForce(
-    const TacsScalar inertiaVec[]) {
-  return new TACSMassInertialForce(con, inertiaVec);
+    const TacsScalar inertiaVec[], const int *inertiaVecDVNums) {
+  return new TACSMassInertialForce(con, inertiaVec, inertiaVecDVNums);
 }
 
 TACSElement *TACSMassElement::createElementCentrifugalForce(
     const TacsScalar omegaVec[], const TacsScalar rotCenter[],
-    const bool first_order) {
-  return new TACSMassCentrifugalForce(con, omegaVec, rotCenter);
+    const bool first_order, const int *omegaDVNums,
+    const int *rotCenterDVNums) {
+  return new TACSMassCentrifugalForce(con, omegaVec, rotCenter, omegaDVNums,
+                                      rotCenterDVNums);
 }
 
 void TACSMassElement::computeEnergies(int elemIndex, double time,

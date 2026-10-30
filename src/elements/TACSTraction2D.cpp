@@ -14,12 +14,15 @@
 
 #include "TACSTraction2D.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 TACSTraction2D::TACSTraction2D(int _varsPerNode, int _faceIndex,
                                TACSElementBasis *_basis,
                                const TacsScalar _trac[],
-                               int _tractionCoordinateComponent) {
+                               int _tractionCoordinateComponent,
+                               const int *_tracDVNums) {
   varsPerNode = _varsPerNode;
   faceIndex = _faceIndex;
   basis = _basis;
@@ -27,10 +30,11 @@ TACSTraction2D::TACSTraction2D(int _varsPerNode, int _faceIndex,
   tractionCoordinateComponent = _tractionCoordinateComponent;
   getTractionComponents = NULL;
   if (tractionCoordinateComponent) {
-    memcpy(trac, _trac, varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, varsPerNode, trac);
   } else {
-    memcpy(trac, _trac, 2 * varsPerNode * sizeof(TacsScalar));
+    std::copy_n(_trac, 2 * varsPerNode, trac);
   }
+  initTracDVNums(_tracDVNums);
 }
 
 TACSTraction2D::TACSTraction2D(
@@ -43,6 +47,17 @@ TACSTraction2D::TACSTraction2D(
   basis->incref();
   tractionCoordinateComponent = 0;
   getTractionComponents = _getTractionComponents;
+  initTracDVNums(NULL);
+}
+
+void TACSTraction2D::initTracDVNums(const int *_tracDVNums) {
+  if (_tracDVNums) {
+    std::copy_n(_tracDVNums, varsPerNode, tracDVNums);
+  } else {
+    for (int i = 0; i < varsPerNode; i++) {
+      tracDVNums[i] = -1;
+    }
+  }
 }
 
 TACSTraction2D::~TACSTraction2D() { basis->decref(); }
@@ -81,6 +96,61 @@ double TACSTraction2D::getFaceQuadraturePoint(int face, int n, double pt[],
   return basis->getFaceQuadraturePoint(face, n, pt, tangent);
 }
 
+int TACSTraction2D::getDesignVarNums(int elemIndex, int dvLen, int dvNums[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvNums && num < dvLen) {
+        dvNums[num] = tracDVNums[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction2D::setDesignVars(int elemIndex, int dvLen,
+                                  const TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        trac[i] = dvs[num];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction2D::getDesignVars(int elemIndex, int dvLen, TacsScalar dvs[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (dvs && num < dvLen) {
+        dvs[num] = trac[i];
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
+int TACSTraction2D::getDesignVarRange(int elemIndex, int dvLen, TacsScalar lb[],
+                                      TacsScalar ub[]) {
+  int num = 0;
+  for (int i = 0; i < varsPerNode; i++) {
+    if (tracDVNums[i] >= 0) {
+      if (num < dvLen) {
+        lb[num] = -TACS_LARGE_DV_BOUND;
+        ub[num] = TACS_LARGE_DV_BOUND;
+      }
+      num++;
+    }
+  }
+  return num;
+}
+
 /*
   Add the residual to the provided vector
 */
@@ -98,7 +168,7 @@ void TACSTraction2D::addResidual(int elemIndex, double time,
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar X[3], Xd[6], normal[3];
     TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
 
     // Compute the inverse of the transformation
@@ -155,7 +225,7 @@ void TACSTraction2D::addJacobian(int elemIndex, double time, TacsScalar alpha,
     double weight = basis->getFaceQuadraturePoint(faceIndex, n, pt, tangent);
 
     // Get the face normal
-    TacsScalar X[3], Xd[4], normal[3];
+    TacsScalar X[3], Xd[6], normal[3];
     TacsScalar area = basis->getFaceNormal(faceIndex, n, Xpts, X, Xd, normal);
 
     // Compute the inverse of the transformation

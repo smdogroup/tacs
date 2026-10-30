@@ -6,6 +6,8 @@ pySystem
 # Imports
 # =============================================================================
 
+import numpy as np
+
 from tacs.utilities import BaseUI
 
 
@@ -49,6 +51,12 @@ class TACSSystem(BaseUI):
         self.x = self.assembler.createDesignVec()
         self.assembler.getDesignVars(self.x)
         self.varName = "struct"
+        # Design variable bounds, populated by pyTACS through
+        # setDesignVarRange so that they include any bounds the user supplied to
+        # pyTACS.addGlobalDV. Left as None if this object was not created by
+        # pyTACS, in which case getDesignVarRange falls back to the assembler.
+        self.xlb = None
+        self.xub = None
         # Create Nodal coordinate vector
         self.Xpts = self.assembler.createNodeVec()
         self.assembler.getNodes(self.Xpts)
@@ -125,6 +133,28 @@ class TACSSystem(BaseUI):
         # Set the variables in tacs
         self.assembler.setDesignVars(self.x)
 
+    def setDesignVarRange(self, xlb, xub):
+        """
+        Set the lower/upper bounds reported for the design variables.
+
+        This is called by pyTACS when it creates this object, so that the bounds
+        reported here match the ones pyTACS computed. Querying the assembler
+        directly is not equivalent: bounds supplied through
+        :meth:`pyTACS.addGlobalDV <tacs.pytacs.pyTACS.addGlobalDV>` are not
+        stored in any element, and the auxiliary elements that consume load
+        design variables report an unbounded range, so an assembler query would
+        discard the user's bounds once auxiliary loads are attached.
+
+        Parameters
+        ----------
+        xlb : numpy.ndarray
+            The design variable lower bound.
+        xub : numpy.ndarray
+            The design variable upper bound.
+        """
+        self.xlb = np.array(xlb).copy()
+        self.xub = np.array(xub).copy()
+
     def getDesignVarRange(self):
         """
         Get the lower/upper bounds for the design variables.
@@ -137,6 +167,8 @@ class TACSSystem(BaseUI):
             The design variable upper bound.
 
         """
+        if self.xlb is not None and self.xub is not None:
+            return self.xlb.copy(), self.xub.copy()
         xlb = self.assembler.createDesignVec()
         xub = self.assembler.createDesignVec()
         self.assembler.getDesignVarRange(xlb, xub)

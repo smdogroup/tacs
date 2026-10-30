@@ -41,6 +41,7 @@ class ElementTest(unittest.TestCase):
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.trac_vec = np.random.rand(3).astype(self.dtype)
         self.faceIndex = 0
+        self.tracDVNums = np.array([1, 2, 3], dtype=np.intc)
 
         # Create the isotropic material
         rho = 2700.0
@@ -95,7 +96,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         fail = elements.TestElementJacobian(
                             traction,
@@ -121,9 +122,9 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
-                        dvs = element.getDesignVars(self.elem_index)
+                        dvs = traction.getDesignVars(self.elem_index)
                         fail = elements.TestAdjResProduct(
                             traction,
                             self.elem_index,
@@ -148,7 +149,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         fail = elements.TestAdjResXptProduct(
                             traction,
@@ -173,9 +174,9 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
-                        dvs = element.getDesignVars(self.elem_index)
+                        dvs = traction.getDesignVars(self.elem_index)
                         for matrix_type in self.matrix_types:
                             with self.subTest(matrix_type=matrix_type):
                                 fail = elements.TestElementMatDVSens(
@@ -201,7 +202,7 @@ class ElementTest(unittest.TestCase):
                     with self.subTest(element=element_handle):
                         element = element_handle(transform, self.con)
                         traction = element.createElementTraction(
-                            self.faceIndex, self.trac_vec
+                            self.faceIndex, self.trac_vec, self.tracDVNums
                         )
                         fail = elements.TestElementMatSVSens(
                             traction,

@@ -110,6 +110,8 @@ cdef extern from "TACSObject.h":
 
     cdef MPI_Datatype TACS_MPI_TYPE
 
+    const double TACS_LARGE_DV_BOUND
+
 cdef extern from "KSM.h":
     cdef cppclass TACSVec(TACSObject):
         TacsScalar norm()
@@ -279,10 +281,10 @@ cdef extern from "TACSElement.h":
         TACSElementBasis* getElementBasis()
         TACSElementModel* getElementModel()
         ElementType getElementType()
-        TACSElement* createElementTraction(int, const TacsScalar*)
-        TACSElement* createElementPressure(int, TacsScalar)
-        TACSElement* createElementInertialForce(const TacsScalar*)
-        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool)
+        TACSElement* createElementTraction(int, const TacsScalar*, const int*)
+        TACSElement* createElementPressure(int, TacsScalar, int)
+        TACSElement* createElementInertialForce(const TacsScalar*, const int*)
+        TACSElement* createElementCentrifugalForce(const TacsScalar*, const TacsScalar*, const bool, const int*, const int*)
 
 cdef extern from "TACSFunction.h":
     cdef cppclass TACSFunction(TACSObject):
@@ -300,9 +302,15 @@ cdef extern from "TACSConstitutive.h":
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
 
 cdef extern from "TACSAuxElements.h":
+    cdef cppclass TACSAuxElem:
+        TACSElement *elem
+        int num
+
     cdef cppclass TACSAuxElements(TACSObject):
         TACSAuxElements(int)
         void addElement(int, TACSElement*)
+        int getAuxElements(TACSAuxElem **elems)
+        void setDesignVars(TACSBVec*)
 
 cdef extern from "TACSAssembler.h":
     enum OrderingType"TACSAssembler::OrderingType":
@@ -329,6 +337,9 @@ cdef extern from "TACSAssembler.h":
                               double *depNodeWeights)
         void setDesignNodeMap(int _designVarsPerNode,
                               TACSNodeMap *_designVarMap)
+        void setGlobalDVIndices(int n, const int *dvNums)
+        int getGlobalDVIndices(const int **dvNums)
+        int getDesignVarsPerNode()
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)
         void addInitBCs(int nnodes, int *nodes,
@@ -568,6 +579,7 @@ cdef extern from "TACSCreator.h":
         void setNodes(TacsScalar *_Xpts)
         void setReorderingType(OrderingType _order_type,
                                MatrixOrderingType _mat_type)
+        void setGlobalDVIndices(int n, const int *dvNums)
         void partitionMesh(int split_size, int *part)
         int getElementPartition(const int **)
         TACSAssembler *createTACS()
