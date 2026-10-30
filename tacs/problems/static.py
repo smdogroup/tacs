@@ -1746,8 +1746,20 @@ class StaticProblem(TACSProblem):
 
         # Solve Linear System
         self.linearSolver.solve(self.adjRHS, self.phi)
+
+        # The BCs zero the rows of K but not its columns, so in K^T the bc
+        # entries of phi couple to the free ones: phi_bc = rhs_bc - (K^T phi_free)_bc.
+        # Setting phi_bc = rhs_bc alone leaves the free entries right but a
+        # residual on the bc rows that an outer solver checking K^T phi = rhs
+        # (MPhys's coupled adjoint) can never reduce. res and adjRHS are scratch here.
+        self.K.multTranspose(self.phi, self.res)
+        self.adjRHS.copyValues(self.res)
+        self.assembler.applyBCs(self.adjRHS)
+        self.res.axpy(-1.0, self.adjRHS)
+
         # Add bc terms back in
         self.phi.axpy(1.0, bcTerms)
+        self.phi.axpy(-1.0, self.res)
 
         # Copy output values back to user vectors
         self.copyFromTACSVec(self.phi, phi)
