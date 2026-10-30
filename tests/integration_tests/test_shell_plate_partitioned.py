@@ -70,11 +70,11 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Overwrite default check values
         if self.dtype == complex:
-            self.rtol = 1e-8
-            self.atol = 1e-8
+            self.rtol = 1e-11
+            self.atol = 1e-9
             self.dh = 1e-50
         else:
-            self.rtol = 2e-1
+            self.rtol = 1e-5
             self.atol = 1e-4
             self.dh = 1e-6
 
@@ -182,6 +182,17 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         tacs_probs.append(constraint)
 
         return tacs_probs, fea_assembler
+
+    def setup_tacs_vecs(self, fea_assembler, dv_pert_vec, xpts_pert_vec):
+        """
+        Perturb every DV and node in proportion to its own value.
+
+        The DVs span 0.005 m thicknesses to 1e7 Pa pressures, so a uniform
+        perturbation leaves the load DVs effectively unperturbed and the check
+        would not exercise their sensitivities.
+        """
+        dv_pert_vec[:] = fea_assembler.getOrigDesignVars()
+        xpts_pert_vec[:] = fea_assembler.getOrigNodes()
 
     def test_adjacency(self):
         adjCon = self.tacs_probs[-1]
