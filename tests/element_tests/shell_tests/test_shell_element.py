@@ -122,6 +122,17 @@ class ElementTest(unittest.TestCase):
             TACS.GEOMETRIC_STIFFNESS_MATRIX,
         ]
 
+        # Set quantity types
+        self.quantity_types = [
+            elements.FAILURE_INDEX,
+            elements.STRAIN_ENERGY_DENSITY,
+            elements.ELEMENT_DENSITY,
+            elements.ELEMENT_DISPLACEMENT,
+            elements.ELEMENT_DENSITY_MOMENT,
+            elements.ELEMENT_MOMENT_OF_INERTIA,
+            elements.ELEMENT_ENCLOSED_VOLUME,
+        ]
+
         # Seed random number generator in tacs for consistent test results
         elements.SeedRandomGenerator(0)
 
@@ -299,6 +310,38 @@ class ElementTest(unittest.TestCase):
                                             element=element,
                                             transform=transform,
                                             matType=matrix_type,
+                                        ),
+                                    )
+
+    def test_point_quantity_xpt_sens(self):
+        # Loop through every combination of transform type and shell element class and
+        # test the point quantity output node coordinate sensitivities
+        for transform in self.transforms:
+            with self.subTest(transform=transform):
+                for element_handle in self.elements:
+                    with self.subTest(element=element_handle):
+                        if element_handle not in self.thermal_elements:
+                            element = element_handle(transform, self.con)
+                            for quantity_type in self.quantity_types:
+                                with self.subTest(quantity_type=quantity_type):
+                                    fail = elements.TestElementQuantityXptSens(
+                                        element,
+                                        self.elem_index,
+                                        quantity_type,
+                                        self.time,
+                                        self.xpts,
+                                        self.vars,
+                                        self.dvars,
+                                        self.ddvars,
+                                        self.dh,
+                                        self.print_level,
+                                        self.atol,
+                                        self.rtol,
+                                    )
+                                    self.assertFalse(
+                                        fail,
+                                        msg=generateTestFailMessage(
+                                            element=element, transform=transform
                                         ),
                                     )
 

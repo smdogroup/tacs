@@ -105,7 +105,7 @@ TacsScalar TACSBucklingGaussianProcessModel::kernel(const TacsScalar *Xtest,
   }
 
   TacsScalar gam_term = Xtest[2] * Xtrain[2];
-  TacsScalar sum_sq;
+  TacsScalar sum_sq = 0.0;
   for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
     if (i == 1 && affine) {
@@ -150,7 +150,7 @@ void TACSBucklingGaussianProcessModel::kernelSens(const TacsScalar ksens,
   jacobian[2] += theta[1] * Xtrain[2];
 
   // RQ term
-  TacsScalar sum_sq;
+  TacsScalar sum_sq = 0.0;
   for (int i = 0; i < 4; i++) {
     TacsScalar Xdiff = Xtest[i] - Xtrain[i];
     if (i == 1 && affine) {
