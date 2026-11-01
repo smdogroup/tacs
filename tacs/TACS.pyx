@@ -2494,6 +2494,18 @@ cdef class Assembler:
                                           phi.getBVecPtr(), dfdx.getBVecPtr())
         return
 
+    def addMatXptSensInnerProduct(self, double scale,
+                                  ElementMatrixType matType,
+                                  Vec psi, Vec phi, Vec dfdXpts):
+        """
+        Add the derivative of the inner product of the specified
+        matrix with the input vectors to the nodal sensitivity
+        vector dfdXpts.
+        """
+        self.ptr.addMatXptSensInnerProduct(scale, matType, psi.getBVecPtr(),
+                                           phi.getBVecPtr(), dfdXpts.getBVecPtr())
+        return
+
     def evalMatSVSensInnerProduct(self, ElementMatrixType matType,
                                   Vec psi, Vec phi, Vec res, bool applyBCs=True):
         """
