@@ -93,11 +93,13 @@ class TACSAuxElements : public TACSObject {
   // The auxiliary elements
   TACSAuxElem *aux;
 
-  // Scratch arrays used by setDesignVars, grown on demand so that repeated
-  // calls (e.g. once per time step) do not allocate
-  int dv_buffer_size;
-  int *dv_nums;
-  TacsScalar *dv_vals;
+  // Set the design variables from a design vector whose non-local values have
+  // already been distributed. TACSAssembler::setDesignVars calls this after its
+  // own distribution, so that it does not distribute the vector twice. It must
+  // not be collective, because the assembler only calls it on ranks that have
+  // an auxiliary element object attached.
+  void setDistributedDesignVars(TACSBVec *dvs);
+  friend class TACSAssembler;
 
   // The auxiliary object name
   static const char *auxName;

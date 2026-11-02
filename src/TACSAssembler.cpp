@@ -3326,22 +3326,18 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   dvs->beginDistributeValues();
   dvs->endDistributeValues();
 
-  // Get the design variables from the elements on this process
+  // Set the design variables in the auxiliary elements. The values were
+  // distributed above, so this does not distribute them again. Do not call
+  // auxElements->setDesignVars here: it is collective, and ranks without an
+  // auxiliary element object would skip it.
+  if (auxElements) {
+    auxElements->setDistributedDesignVars(dvs);
+  }
+
+  // Set the design variables in the elements on this process
   const int maxDVs = maxElementDesignVars;
   TacsScalar *dvVals = elementSensData;
   int *dvNums = elementSensIData;
-
-  // Get the design variables from the auxiliary elements
-  if (auxElements) {
-    TACSAuxElem *aux = NULL;
-    int naux = auxElements->getAuxElements(&aux);
-    for (int i = 0; i < naux; i++) {
-      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
-      dvs->getValues(numDVs, dvNums, dvVals);
-      aux[i].elem->setDesignVars(aux[i].num, maxDVs, dvVals);
-    }
-  }
-
   for (int i = 0; i < numElements; i++) {
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
     dvs->getValues(numDVs, dvNums, dvVals);

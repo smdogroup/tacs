@@ -986,11 +986,12 @@ cdef class AuxElements:
     def setDesignVars(self, Vec dvs):
         """Update the design variables held by every auxiliary element.
 
-        This does the same work as ``Assembler.setDesignVars`` does for the
-        auxiliary elements currently attached to the assembler, but for this
-        object alone. It is needed by problems that own more than one
-        AuxElements object, such as transient problems which keep one per time
-        step.
+        ``Assembler.setDesignVars`` uses the same C++ implementation for the
+        auxiliary elements currently attached to the assembler. This method
+        updates this object alone. It is needed by problems that own more than
+        one AuxElements object, such as transient problems which keep one per
+        time step. This call is collective: every rank must make it, even a
+        rank with no auxiliary elements.
 
         Parameters
         ----------
@@ -1948,8 +1949,8 @@ cdef class Assembler:
         Set the design variables.
 
         The design variable values provided must be the same on all
-        processes for consistency. This call however, is not
-        collective.
+        processes for consistency. This call is collective: every
+        process must make it.
         """
         self.ptr.setDesignVars(x.getBVecPtr())
         return
@@ -1961,6 +1962,13 @@ cdef class Assembler:
         Must be called before initialize(). Indicates the number of
         design variables per node and optionally the NodeMap describing
         ownership of design variable nodes across processes.
+
+        The auxiliary load elements (pressure, traction, inertial and
+        centrifugal forces) use one value per design variable. With more than
+        one design variable per node, a load element with a single design
+        variable gets the first value of its block, and its sensitivity goes
+        into the first value. Load elements with several design variables are
+        not supported with more than one design variable per node.
 
         Args:
             designVarsPerNode: Number of design variables per design node.
