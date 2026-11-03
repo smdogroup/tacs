@@ -94,6 +94,47 @@ int TACSPlaneStressConstitutive::getDesignVarRange(int elemIndex, int dvLen,
   return 0;
 }
 
+// Get the number of design variable groups
+int TACSPlaneStressConstitutive::getNumDesignVarGroups() { return 1; }
+
+// Get the name of each design variable group; group names match the Python
+// constructor keyword arguments
+const char *TACSPlaneStressConstitutive::getDesignVarGroupName(int groupIndex) {
+  if (groupIndex == 0) {
+    return "t";
+  }
+  return NULL;
+}
+
+// Get the number of entries in each design variable group
+int TACSPlaneStressConstitutive::getDesignVarGroupSize(int groupIndex) {
+  if (groupIndex == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+// Is the design variable group a scalar quantity?
+bool TACSPlaneStressConstitutive::isDesignVarGroupScalar(int groupIndex) {
+  return true;
+}
+
+// Get the values of a design variable group, whether active or not
+void TACSPlaneStressConstitutive::getDesignVarGroupValues(int groupIndex,
+                                                          TacsScalar values[]) {
+  if (groupIndex == 0) {
+    values[0] = t;
+  }
+}
+
+// Get the design variable numbers of a design variable group
+void TACSPlaneStressConstitutive::getDesignVarGroupNums(int groupIndex,
+                                                        int dvNums[]) {
+  if (groupIndex == 0) {
+    dvNums[0] = tNum;
+  }
+}
+
 // Evaluate the material density
 TacsScalar TACSPlaneStressConstitutive::evalDensity(int elemIndex,
                                                     const double pt[],
