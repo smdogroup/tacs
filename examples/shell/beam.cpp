@@ -24,7 +24,25 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
-  TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>, TACSBeamLinearModel>();
+  int model_deriv_fail = 0;
+  model_deriv_fail +=
+      TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>, TACSBeamLinearModel>();
+  // Exercises TACSBeamNonlinearModel: the regression check for
+  // evalStrain/evalStrainSens/evalStrainDeriv/evalStrainSensDeriv/
+  // evalStrainHessian/evalStrainHessianDeriv. The "Deriv" family in
+  // particular is what TACSBeamElement::getMatType's
+  // TACS_GEOMETRIC_STIFFNESS_MATRIX branch depends on. This is a standalone
+  // manual example, so run the executable directly to exercise it.
+  model_deriv_fail += TacsTestBeamModelDerivatives<6, TACSBeamBasis<3>,
+                                                   TACSBeamNonlinearModel>();
+  // Covers the "...Deriv"-suffixed family (evalStrainDeriv,
+  // evalStrainSensDeriv, evalStrainHessianDeriv) the call above does not
+  // -- see that function's own header comment for why it is separate
+  // rather than folded into TacsTestBeamModelDerivatives.
+  model_deriv_fail += TacsTestBeamNonlinearModelDerivFamily();
+  if (model_deriv_fail) {
+    fprintf(stderr, "TacsTestBeamModelDerivatives FAILED\n");
+  }
 
   TacsScalar axis[] = {0.0, 1.0, 0.0};
   TACSBeamRefAxisTransform *transform = new TACSBeamRefAxisTransform(axis);
