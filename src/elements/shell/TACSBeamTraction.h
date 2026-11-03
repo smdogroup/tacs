@@ -1,6 +1,7 @@
 #ifndef TACS_BEAM_TRACTION_H
 #define TACS_BEAM_TRACTION_H
 
+#include "TACSA2DUtilities.h"
 #include "TACSBeamConstitutive.h"
 #include "TACSBeamElementBasis.h"
 #include "TACSBeamElementQuadrature.h"
@@ -9,7 +10,6 @@
 #include "TACSElementAlgebra.h"
 #include "TACSElementTypes.h"
 #include "TACSGaussQuadrature.h"
-#include "a2d.h"
 
 template <int vars_per_node, class quadrature, class basis>
 class TACSBeamTraction : public TACSElement {
@@ -72,21 +72,21 @@ class TACSBeamTraction : public TACSElement {
       double weight = quadrature::getQuadraturePoint(quad_index, pt);
 
       // Tangent to the beam
-      A2D::Vec3 X0xi;
+      A2D::Vec<TacsScalar, 3> X0xi;
 
       // Compute X, X,xi and the interpolated normal
-      basis::template interpFieldsGrad<3, 3>(pt, Xpts, X0xi.x);
+      basis::template interpFieldsGrad<3, 3>(pt, Xpts, A2D::get_data(X0xi));
 
       // Compute the determinant of the transform
-      A2D::Scalar detXd;
-      A2D::Vec3Norm(X0xi, detXd);
+      TacsScalar detXd;
+      A2D::VecNorm(X0xi, detXd);
 
       // Compute the traction
       TacsScalar tr[3];
       basis::template interpFields<3, 3>(pt, t, tr);
-      tr[0] *= -detXd.value * weight;
-      tr[1] *= -detXd.value * weight;
-      tr[2] *= -detXd.value * weight;
+      tr[0] *= -detXd * weight;
+      tr[1] *= -detXd * weight;
+      tr[2] *= -detXd * weight;
 
       basis::template addInterpFieldsTranspose<vars_per_node, 3>(pt, tr, res);
     }
