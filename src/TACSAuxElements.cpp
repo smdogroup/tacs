@@ -197,7 +197,14 @@ void TACSAuxElements::setDistributedDesignVars(TACSBVec *dvs) {
       dvNums.resize(numDVs);
       dvVals.resize(valuesPerDV * numDVs);
       elem->getDesignVarNums(elemNum, numDVs, dvNums.data());
-      dvs->getValues(numDVs, dvNums.data(), dvVals.data());
+      const int fail = dvs->getValues(numDVs, dvNums.data(), dvVals.data());
+      if (fail != 0) {
+        fprintf(stderr,
+                "TACSAuxElements: aux element %d uses a design variable that "
+                "is not in the external design variable list of this rank\n",
+                elemNum);
+        continue;
+      }
       elem->setDesignVars(elemNum, numDVs, dvVals.data());
     }
   }
