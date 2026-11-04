@@ -250,7 +250,7 @@ class pyTACS(BaseUI):
         return self._isNonlinear
 
     @preinitialize_method
-    def addGlobalDV(self, descript, value, lower=None, upper=None, scale=1.0):
+    def addGlobalDV(self, descript, value, lower=None, upper=None, scale=None):
         """
         Add a global design variable that can affect multiple components.
 
@@ -286,6 +286,9 @@ class pyTACS(BaseUI):
             An int if `value` was a scalar, an array of consecutive dv nums if
             `value` was array-like.
         """
+        if scale is None:
+            scale = 1.0
+
         isArrayDV = np.ndim(value) > 0
         if isArrayDV:
             value = np.atleast_1d(np.asarray(value))
