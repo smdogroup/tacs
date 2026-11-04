@@ -752,6 +752,23 @@ int TACSBVec::readFromFile(const char *filename) {
 }
 
 /*
+  Apply the operation op to combine the bsize values in vals into y
+*/
+static void applyBVecOperation(TACSBVecOperation op, int bsize,
+                               const TacsScalar *vals, TacsScalar *y) {
+  for (int k = 0; k < bsize; k++) {
+    if (op == TACS_INSERT_VALUES) {
+      y[k] = vals[k];
+    } else if (op == TACS_ADD_VALUES) {
+      y[k] += vals[k];
+    } else if (TacsRealPart(vals[k]) != 0.0) {
+      // Insert only the non-zero values
+      y[k] = vals[k];
+    }
+  }
+}
+
+/*
   Add values to the local entries of the array
 */
 void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
@@ -763,81 +780,29 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
   // Get the ownership range
   const int *owner_range;
   node_map->getOwnerRange(&owner_range);
+  const int owner_range_start = owner_range[rank];
+  const int owner_range_end = owner_range[rank + 1];
 
   // Loop over the values
   for (int i = 0; i < n; i++) {
     // Three different options: 1. The variable is locally
     // owned, 2. the variable is dependent, 3. the variable
     // is external
-    if (index[i] >= owner_range[rank] && index[i] < owner_range[rank + 1]) {
+    const bool is_local =
+        (index[i] >= owner_range_start && index[i] < owner_range_end);
+    TacsScalar *target_block;
+    if (is_local) {
       // Find the offset into the local array
-      int x_index = bsize * (index[i] - owner_range[rank]);
-      TacsScalar *y = &x[x_index];
-
-      if (op == TACS_INSERT_VALUES) {
-        // Set the values into the array
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] = vals[0];
-        }
-      } else if (op == TACS_ADD_VALUES) {
-        // Add the values to the array
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] += vals[0];
-        }
-      } else {
-        // Insert only the non-zero values
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          if (TacsRealPart(vals[0]) != 0.0) {
-            y[0] = vals[0];
-          }
-        }
-      }
+      target_block = &x[bsize * (index[i] - owner_range_start)];
     } else if (index[i] < 0) {
       // Compute the dependent node
-      int dep_index = -bsize * (index[i] + 1);
-      TacsScalar *y = &x_dep[dep_index];
-
-      if (op == TACS_INSERT_VALUES) {
-        // Insert the values
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] = vals[0];
-        }
-      } else if (op == TACS_ADD_VALUES) {
-        // Add the values to the array
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] += vals[0];
-        }
-      } else {
-        // Insert only the non-zero values
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          if (TacsRealPart(vals[0]) != 0.0) {
-            y[0] = vals[0];
-          }
-        }
-      }
+      target_block = &x_dep[-bsize * (index[i] + 1)];
     } else {
-      int ext_index = bsize * ext_indices->findIndex(index[i]);
-      TacsScalar *y = &x_ext[ext_index];
-
-      if (op == TACS_INSERT_VALUES) {
-        // Insert the values into the array
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] = vals[0];
-        }
-      } else if (op == TACS_ADD_VALUES) {
-        // Add the values into the array
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          y[0] += vals[0];
-        }
-      } else {
-        // Insert only the non-zero values
-        for (int k = 0; k < bsize; k++, vals++, y++) {
-          if (TacsRealPart(vals[0]) != 0.0) {
-            y[0] = vals[0];
-          }
-        }
-      }
+      target_block = &x_ext[bsize * ext_indices->findIndex(index[i])];
     }
+
+    applyBVecOperation(op, bsize, vals, target_block);
+    vals += bsize;
   }
 }
 
@@ -988,6 +953,8 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
   // Get the ownership range
   const int *owner_range;
   node_map->getOwnerRange(&owner_range);
+  const int owner_range_start = owner_range[rank];
+  const int owner_range_end = owner_range[rank + 1];
 
   // Fail flag
   int fail = 0;
@@ -997,7 +964,9 @@ int TACSBVec::getValues(int n, const int *index, TacsScalar *vals) {
     // Three different options: 1. The variable is locally
     // owned, 2. the variable is dependent, 3. the variable
     // is external
-    if (index[i] >= owner_range[rank] && index[i] < owner_range[rank + 1]) {
+    const bool is_local =
+        (index[i] >= owner_range_start && index[i] < owner_range_end);
+    if (is_local) {
       // Find the offset into the local array
       int x_index = bsize * (index[i] - owner_range[rank]);
       TacsScalar *y = &x[x_index];
