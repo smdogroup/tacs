@@ -3122,6 +3122,12 @@ void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
   @param dvNums Array of global DV indices (length n)
 */
 void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
+  if (meshInitializedFlag) {
+    fprintf(stderr,
+            "[%d] Cannot call setGlobalDVIndices() after initialize()\n",
+            mpiRank);
+    return;
+  }
   delete[] globalDVNums;
   numGlobalDVs = n;
   globalDVNums = new int[n];
