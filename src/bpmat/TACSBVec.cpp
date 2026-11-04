@@ -790,7 +790,7 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
     // is external
     const bool is_local =
         (index[i] >= owner_range_start && index[i] < owner_range_end);
-    TacsScalar *target_block;
+    TacsScalar *target_block = NULL;
     if (is_local) {
       // Find the offset into the local array
       target_block = &x[bsize * (index[i] - owner_range_start)];
@@ -798,10 +798,20 @@ void TACSBVec::setValues(int n, const int *index, const TacsScalar *vals,
       // Compute the dependent node
       target_block = &x_dep[-bsize * (index[i] + 1)];
     } else {
-      target_block = &x_ext[bsize * ext_indices->findIndex(index[i])];
+      const int ext_index = ext_indices->findIndex(index[i]);
+      if (ext_index >= 0) {
+        target_block = &x_ext[bsize * ext_index];
+      } else {
+        fprintf(stderr,
+                "[%d] TACSBVec::setValues: index %d is not owned by this rank "
+                "or in its external index list, value skipped\n",
+                rank, index[i]);
+      }
     }
 
-    applyBVecOperation(op, bsize, vals, target_block);
+    if (target_block != NULL) {
+      applyBVecOperation(op, bsize, vals, target_block);
+    }
     vals += bsize;
   }
 }
