@@ -3346,7 +3346,14 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   int *dvNums = elementSensIData;
   for (int i = 0; i < numElements; i++) {
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    dvs->getValues(numDVs, dvNums, dvVals);
+    const int fail = dvs->getValues(numDVs, dvNums, dvVals);
+    if (fail != 0) {
+      fprintf(stderr,
+              "[%d] Element %d uses a design variable that is not in the "
+              "external design variable list of this rank\n",
+              mpiRank, i);
+      continue;
+    }
     elements[i]->setDesignVars(i, numDVs, dvVals);
   }
 }
