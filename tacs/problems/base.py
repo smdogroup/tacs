@@ -561,6 +561,11 @@ class TACSProblem(TACSSystem):
                     tractionDVNums.shape[0], numElems
                 )
             )
+        if tractionDVNums.shape[1] != tracLen:
+            raise self._TACSError(
+                f"Number of columns in tractionDVNums must match the number of traction components, "
+                f"you supplied {tractionDVNums=} and {tractionDVNums=}."
+            )
         self._checkDVNums(tractionDVNums.ravel())
 
         # First find the corresponding local element ID on each processor
