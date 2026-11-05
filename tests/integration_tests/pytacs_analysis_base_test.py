@@ -239,6 +239,40 @@ class PyTACSTestCase:
                                     atol=self.atol,
                                 )
 
+        def test_static_adjoint_consistency(self):
+            """
+            Test that the solution returned by solveAdjoint actually satisfies K^T phi = rhs
+            """
+            # Initial solve
+            self.run_solve()
+            for prob in self.tacs_probs:
+                if isinstance(prob, problems.StaticProblem):
+                    with self.subTest(problem=prob.name):
+                        mask = self.fea_assembler.createVec()
+                        mask[:] = 1.0
+                        self.fea_assembler.applyBCsToVec(mask)
+                        bc_rows = mask == 0.0
+                        n = prob.getVariables().size
+                        rhs = np.random.default_rng(0).standard_normal(n)
+
+                        phi = np.zeros(n)
+                        prob.solveAdjoint(rhs, phi)
+                        # Compute K^T phi
+                        product = np.zeros(n)
+                        prob.addJacVecProduct(phi, product, transpose=True)
+                        np.testing.assert_allclose(
+                            product[~bc_rows],
+                            rhs[~bc_rows],
+                            rtol=self.rtol,
+                            atol=self.atol,
+                        )
+                        np.testing.assert_allclose(
+                            product[bc_rows],
+                            rhs[bc_rows],
+                            rtol=self.rtol,
+                            atol=self.atol,
+                        )
+
         def test_total_xpt_sensitivities(self):
             """
             Test total xpt sensitivity through adjoint against fd/cs
