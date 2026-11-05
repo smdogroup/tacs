@@ -20,6 +20,9 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
+#include <cmath>
+
 #include "tacslapack.h"
 
 /*
@@ -224,7 +227,11 @@ void TACSElement::addAdjResProduct(
 #ifdef TACS_USE_COMPLEX
     x[k] = xt + TacsScalar(0.0, dh);
 #else
-    x[k] = xt + dh;
+    // Scale the finite-difference step with the design variable magnitude.
+    // A fixed step is lost to round-off for large values, such as load
+    // design variables. The complex step needs no scaling.
+    const double dhk = dh * std::max(1.0, std::fabs(xt));
+    x[k] = xt + dhk;
 #endif  // TACS_USE_COMPLEX
     setDesignVars(elemIndex, dvLen, x);
 
@@ -240,17 +247,17 @@ void TACSElement::addAdjResProduct(
     if (fdOrder < 2) {
       // Use first-order forward differencing
       for (int i = 0; i < nvars; i++) {
-        product += psi[i] * (tmp[i] - res[i]) / dh;
+        product += psi[i] * (tmp[i] - res[i]) / dhk;
       }
     } else {
       // Use second-order central differencing
-      x[k] = xt - dh;  //  backward step
+      x[k] = xt - dhk;  //  backward step
       setDesignVars(elemIndex, dvLen, x);
       memset(res, 0, nvars * sizeof(TacsScalar));
       addResidual(elemIndex, time, Xpts, vars, dvars, ddvars, res);
       // Central difference
       for (int i = 0; i < nvars; i++) {
-        product += psi[i] * (tmp[i] - res[i]) / (2.0 * dh);
+        product += psi[i] * (tmp[i] - res[i]) / (2.0 * dhk);
       }
     }
 #endif  // TACS_USE_COMPLEX

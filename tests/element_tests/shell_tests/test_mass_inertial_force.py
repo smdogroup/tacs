@@ -30,6 +30,11 @@ class ElementTest(unittest.TestCase):
         # Set the simulation time
         self.time = 0.0
 
+        # Set design vars numbers
+        self.gDVNums = np.array([0, 1, 2], dtype=np.intc)
+        self.mDVNum = 3
+        self.IDVNum = np.array([4, 5, 6, 7, 8, 9], dtype=np.intc)
+
         # Set the variable arrays
         np.random.seed(30)  # Seed random numbers for deterministic/repeatable tests
         self.vars = np.random.rand(num_vars).astype(self.dtype)
@@ -57,13 +62,13 @@ class ElementTest(unittest.TestCase):
                 I12=I12,
                 I13=I13,
                 I23=I23,
-                mNum=0,
-                I11Num=1,
-                I22Num=2,
-                I33Num=3,
-                I12Num=4,
-                I13Num=5,
-                I23Num=6,
+                mNum=self.mDVNum,
+                I11Num=self.IDVNum[0],
+                I22Num=self.IDVNum[1],
+                I33Num=self.IDVNum[2],
+                I12Num=self.IDVNum[3],
+                I13Num=self.IDVNum[4],
+                I23Num=self.IDVNum[5],
             ),
         ]
 
@@ -82,7 +87,7 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestElementJacobian(
                     force,
                     self.elem_index,
@@ -104,7 +109,7 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 dvs = force.getDesignVars(self.elem_index)
                 fail = elements.TestAdjResProduct(
                     force,
@@ -127,7 +132,7 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestAdjResXptProduct(
                     force,
                     self.elem_index,
@@ -148,7 +153,7 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 dvs = force.getDesignVars(self.elem_index)
                 for matrix_type in self.matrix_types:
                     with self.subTest(matrix_type=matrix_type):
@@ -172,7 +177,7 @@ class ElementTest(unittest.TestCase):
         for con in self.con_objects:
             with self.subTest(con=con.getObjectName()):
                 element = elements.MassElement(con)
-                force = element.createElementInertialForce(self.g)
+                force = element.createElementInertialForce(self.g, self.gDVNums)
                 fail = elements.TestElementMatSVSens(
                     force,
                     TACS.GEOMETRIC_STIFFNESS_MATRIX,

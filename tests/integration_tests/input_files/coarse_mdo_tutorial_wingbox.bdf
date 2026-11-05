@@ -16,9 +16,9 @@ $ ***************************************************************************
 $   Written by : Femap
 $   Version    : 2506.0
 $   Translator : Simcenter Nastran
-$   From Model : C:\Mac\Home\Documents\test_wing.modfem
-$   Date       : Tue Oct 28 16:52:44 2025
-$   Output To  : C:\Mac\Home\Documents\
+$   From Model : \\Mac\Home\Documents\test_wing.modfem
+$   Date       : Mon Apr 13 14:02:59 2026
+$   Output To  : \\Mac\Home\Documents\
 $ ***************************************************************************
 $
 PARAM,PRGPST,NO
@@ -517,6 +517,7 @@ GRID          73       08.624966.041912213.79991       0
 GRID          74       07.724953.090095713.79991       0
 GRID          75       07.724953-.09009613.79991       0
 GRID          76       08.624966-.04191213.79991       0
+GRID          77       02.838576-.1962981.526666       0
 CQUAD4         1      38       1       4       3       2                
 CQUAD4         2      56       5       8       7       6                
 CQUAD4         3       1       9      10       1       5                
@@ -608,4 +609,8 @@ CQUAD4        88      75       8       4       3       7
 CQUAD4        89      73       9      10      12      11                
 CQUAD4        90      55      11       9       5       6                
 CQUAD4        91      74       5       1       2       6                
-ENDDATA e5cb220a
+RBE3          92              77  123456      1.     123       2       3+       
++              6       7      11      12      15      16      19      20
+$ Femap Element 9999 : fuelMass
+CONM2       9999      77       0    500.      0.      0.      0.                
+ENDDATA

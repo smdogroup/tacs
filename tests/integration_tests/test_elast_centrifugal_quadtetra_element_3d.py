@@ -43,12 +43,18 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
         else:
             self.rtol = 5e-6
             self.atol = 1e-2
-            self.dh = 1e-6
+            # The functions depend quadratically on the omega dvs,
+            # so a smaller fd step is needed to keep truncation error below rtol
+            self.dh = 1e-7
 
         # Instantiate FEA Assembler
         struct_options = {}
 
         fea_assembler = pytacs.pyTACS(bdf_file, comm, options=struct_options)
+
+        # Register rotational velocity and rotation center as global DVs
+        omegaDV = fea_assembler.addGlobalDV("omega", omega)
+        rotCenterDV = fea_assembler.addGlobalDV("rotCenter", rotCenter)
 
         def elem_call_back(
             dv_num, comp_id, comp_descript, elem_descripts, special_dvs, **kwargs
@@ -76,7 +82,9 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
 
         # Add centrifugal load case
         static_prob = fea_assembler.createStaticProblem("Centrifugal")
-        static_prob.addCentrifugalLoad(omega, rotCenter)
+        static_prob.addCentrifugalLoad(
+            omega, rotCenter, omegaDVNums=omegaDV, rotCenterDVNums=rotCenterDV
+        )
 
         # Add Functions
         static_prob.addFunction("mass", functions.StructuralMass)

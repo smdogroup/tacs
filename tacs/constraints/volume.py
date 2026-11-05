@@ -152,7 +152,7 @@ class VolumeConstraint(TACSConstraint):
         # Wait for root
         self.comm.barrier()
 
-    def addConstraint(self, conName, compIDs=None, lower=0, upper=1e20):
+    def addConstraint(self, conName, compIDs=None, lower=0.0, upper=1e20):
         """
         Generic method to adding a new constraint set for TACS.
 
