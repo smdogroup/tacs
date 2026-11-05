@@ -1877,17 +1877,42 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">copyToTACSVec</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
 
-        <span class="c1"># Tacs doesn't actually transpose the matrix here so keep track of</span>
-        <span class="c1"># RHS entries that TACS zeros out for BCs.</span>
+        <span class="c1"># The adjoint equation being solved is:</span>
+        <span class="c1"># [K_ff K_fc]^T * [phi_f] = [rhs_f]</span>
+        <span class="c1"># [ 0    I  ]     [phi_c]   [rhs_c]</span>
+        <span class="c1"># Where subscripts f and c denote free and constrained degrees of freedom, respectively.</span>
+        <span class="c1"># The true solution of this system is:</span>
+        <span class="c1"># [phi_f] = [K_ff^-T rhs_f]</span>
+        <span class="c1"># [phi_c] = [rhs_c - K_fc^T phi_f]</span>
+
+        <span class="c1"># Tacs doesn't actually transpose the matrix here so we need to make some modifications to the adjoint solution</span>
+        <span class="c1"># process:</span>
+        <span class="c1"># 1. Remove the constrained DOF terms from the RHS and save them in bcTerms</span>
         <span class="n">bcTerms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update</span>
         <span class="n">bcTerms</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
         <span class="n">bcTerms</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
 
-        <span class="c1"># Solve Linear System</span>
+        <span class="c1"># 2. Solve Linear System:</span>
+        <span class="c1"># [K_ff K_fc] * [phi_f] = [rhs_f]</span>
+        <span class="c1"># [ 0    I  ]   [phi_c]   [  0  ]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">linearSolver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">)</span>
-        <span class="c1"># Add bc terms back in</span>
+
+        <span class="c1"># 3. Now we have</span>
+        <span class="c1"># [phi_f] = [K_ff^-1 rhs_f]</span>
+        <span class="c1"># [phi_c] = [0]</span>
+        <span class="c1"># So we need to add the missing phi_c terms back to the RHS</span>
+        <span class="c1"># First the -K_fc^T phi_f term</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">K</span><span class="o">.</span><span class="n">multTranspose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="o">.</span><span class="n">copyValues</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assembler</span><span class="o">.</span><span class="n">applyBCs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjRHS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+
+        <span class="c1"># Finally the rhs_c terms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="o">.</span><span class="n">axpy</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">bcTerms</span><span class="p">)</span>
+
+        <span class="c1"># The solution is now correct, as long as K_ff is symmetric</span>
 
         <span class="c1"># Copy output values back to user vectors</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">copyFromTACSVec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span></div>
