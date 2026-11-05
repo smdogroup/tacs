@@ -1737,29 +1737,42 @@ class StaticProblem(TACSProblem):
         self.copyToTACSVec(phi, self.phi)
         self.copyToTACSVec(rhs, self.adjRHS)
 
-        # Tacs doesn't actually transpose the matrix here so keep track of
-        # RHS entries that TACS zeros out for BCs.
+        # The adjoint equation being solved is:
+        # [K_ff K_fc]^T * [phi_f] = [rhs_f]
+        # [ 0    I  ]     [phi_c]   [rhs_c]
+        # Where subscripts f and c denote free and constrained degrees of freedom, respectively.
+        # The true solution of this system is:
+        # [phi_f] = [K_ff^-T rhs_f]
+        # [phi_c] = [rhs_c - K_fc^T phi_f]
+
+        # Tacs doesn't actually transpose the matrix here so we need to make some modifications to the adjoint solution
+        # process:
+        # 1. Remove the constrained DOF terms from the RHS and save them in bcTerms
         bcTerms = self.update
         bcTerms.copyValues(self.adjRHS)
         self.assembler.applyBCs(self.adjRHS)
         bcTerms.axpy(-1.0, self.adjRHS)
 
-        # Solve Linear System
+        # 2. Solve Linear System:
+        # [K_ff K_fc] * [phi_f] = [rhs_f]
+        # [ 0    I  ]   [phi_c]   [  0  ]
         self.linearSolver.solve(self.adjRHS, self.phi)
 
-        # The BCs zero the rows of K but not its columns, so in K^T the bc
-        # entries of phi couple to the free ones: phi_bc = rhs_bc - (K^T phi_free)_bc.
-        # Setting phi_bc = rhs_bc alone leaves the free entries right but a
-        # residual on the bc rows that an outer solver checking K^T phi = rhs
-        # (MPhys's coupled adjoint) can never reduce. res and adjRHS are scratch here.
+        # 3. Now we have
+        # [phi_f] = [K_ff^-1 rhs_f]
+        # [phi_c] = [0]
+        # So we need to add the missing phi_c terms back to the RHS
+        # First the -K_fc^T phi_f term
         self.K.multTranspose(self.phi, self.res)
         self.adjRHS.copyValues(self.res)
         self.assembler.applyBCs(self.adjRHS)
         self.res.axpy(-1.0, self.adjRHS)
-
-        # Add bc terms back in
-        self.phi.axpy(1.0, bcTerms)
         self.phi.axpy(-1.0, self.res)
+
+        # Finally the rhs_c terms
+        self.phi.axpy(1.0, bcTerms)
+
+        # The solution is now correct, as long as K_ff is symmetric
 
         # Copy output values back to user vectors
         self.copyFromTACSVec(self.phi, phi)
