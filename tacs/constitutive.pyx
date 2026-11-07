@@ -1582,7 +1582,11 @@ cdef class GaussianProcess:
     Base class for constructing Gaussian Process ML models to predict buckling loads.
     This is an abstract base class and hence has no constructor, only methods used by its subclasses.
     """
-    # base class so no constructor here
+    # base class so no constructor here, subclasses must incref base_gp
+    def __dealloc__(self):
+        if self.base_gp:
+            self.base_gp.decref()
+
     def predict_mean_test_data(
         self,
         np.ndarray[TacsScalar, ndim=1, mode='c'] Xtest,
@@ -1847,6 +1851,7 @@ cdef class BucklingGP(GaussianProcess):
             <TacsScalar*>theta.data,
         )
         self.base_gp = self.buckling_gp
+        self.base_gp.incref()
 
 cdef class PanelGPs:
     """
@@ -1907,6 +1912,11 @@ cdef class PanelGPs:
             crippling_gp_ptr,
             saveData,
         )
+        self.gptr.incref()
+
+    def __dealloc__(self):
+        if self.gptr:
+            self.gptr.decref()
 
     @classmethod
     def component_dict(
