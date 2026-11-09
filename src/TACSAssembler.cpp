@@ -3122,6 +3122,12 @@ void TACSAssembler::setDesignNodeMap(int _designVarsPerNode,
   @param dvNums Array of global DV indices (length n)
 */
 void TACSAssembler::setGlobalDVIndices(int n, const int *dvNums) {
+  if (meshInitializedFlag) {
+    fprintf(stderr,
+            "[%d] Cannot call setGlobalDVIndices() after initialize()\n",
+            mpiRank);
+    return;
+  }
   delete[] globalDVNums;
   numGlobalDVs = n;
   globalDVNums = new int[n];
@@ -3326,25 +3332,28 @@ void TACSAssembler::setDesignVars(TACSBVec *dvs) {
   dvs->beginDistributeValues();
   dvs->endDistributeValues();
 
-  // Get the design variables from the elements on this process
+  // Set the design variables in the auxiliary elements. The values were
+  // distributed above, so this does not distribute them again. Do not call
+  // auxElements->setDesignVars here: it is collective, and ranks without an
+  // auxiliary element object would skip it.
+  if (auxElements) {
+    auxElements->setDistributedDesignVars(dvs);
+  }
+
+  // Set the design variables in the elements on this process
   const int maxDVs = maxElementDesignVars;
   TacsScalar *dvVals = elementSensData;
   int *dvNums = elementSensIData;
-
-  // Get the design variables from the auxiliary elements
-  if (auxElements) {
-    TACSAuxElem *aux = NULL;
-    int naux = auxElements->getAuxElements(&aux);
-    for (int i = 0; i < naux; i++) {
-      int numDVs = aux[i].elem->getDesignVarNums(aux[i].num, maxDVs, dvNums);
-      dvs->getValues(numDVs, dvNums, dvVals);
-      aux[i].elem->setDesignVars(aux[i].num, maxDVs, dvVals);
-    }
-  }
-
   for (int i = 0; i < numElements; i++) {
     int numDVs = elements[i]->getDesignVarNums(i, maxDVs, dvNums);
-    dvs->getValues(numDVs, dvNums, dvVals);
+    const int fail = dvs->getValues(numDVs, dvNums, dvVals);
+    if (fail != 0) {
+      fprintf(stderr,
+              "[%d] Element %d uses a design variable that is not in the "
+              "external design variable list of this rank\n",
+              mpiRank, i);
+      continue;
+    }
     elements[i]->setDesignVars(i, numDVs, dvVals);
   }
 }
