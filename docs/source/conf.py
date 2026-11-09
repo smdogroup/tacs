@@ -221,7 +221,7 @@ intersphinx_mapping = {
     "adflow": ("https://mdolab-adflow.readthedocs-hosted.com/en/latest/", None),
 }
 
-autodoc_mock_imports = ["mphys", "pygeo", "pyoptsparse"]
+autodoc_mock_imports = ["mphys", "pygeo", "pyoptsparse", "matplotlib"]
 
 # -----------------------------------------------------------------------------
 # Document both class docstring and init docstring
