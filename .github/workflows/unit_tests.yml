@@ -93,7 +93,7 @@ jobs:
         with:
           auto-update-conda: true
           channels: conda-forge
-          python-version: "3.10"
+          python-version: "3.11"
           conda-remove-defaults: true
 
       - name: Install TACS
