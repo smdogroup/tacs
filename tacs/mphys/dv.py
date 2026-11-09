@@ -44,8 +44,7 @@ class TacsDVComp(om.ExplicitComponent):
                 if dv_dict["isMassDV"]:
                     dv_num = dv_dict["num"]
                     mass_val = vals[dv_num]
-                    # Store mass dv num with user-defined dv name. It is stored as a length-1 index list so that
-                    # indexing the full dv array gives a shape (1,) slice matching the shape (1,) input
+                    # Store mass dv num with user-defined dv name.
                     self.mass_dvs[f"dv_mass_{dv_name}"] = [dv_num]
                     # Remove mass dv from struct list
                     self.struct_dvs.remove(dv_num)
