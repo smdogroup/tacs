@@ -138,10 +138,10 @@ jobs:
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
            if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
-            if wget --tries=2 --timeout 60 https://acdl.mit.edu/ESP/archive/ESP122Lin.tgz; then
-              tar -xvf ESP122Lin.tgz
-              export ESP_ROOT=${TACS_DIR}/extern/ESP122/EngSketchPad
-              export CASROOT=${TACS_DIR}/extern/ESP122/OpenCASCADE-7.6.0
+            if wget --tries=2 --timeout 60 https://acdl.mit.edu/ESP/archive/ESP123Lin.tgz; then
+              tar -xvf ESP123Lin.tgz
+              export ESP_ROOT=${TACS_DIR}/extern/ESP123/EngSketchPad
+              export CASROOT=${TACS_DIR}/extern/ESP123/OpenCASCADE-7.6.0
               export CASARCH=
               export PATH=$PATH:$CASROOT/bin
               export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CASROOT/lib
@@ -150,7 +150,7 @@ jobs:
               source $ESP_ROOT/../ESPenv.sh
               cd ./src/CAPS/aim
               make
-              cd $TACS_DIR/extern/ESP122/
+              cd $TACS_DIR/extern/ESP123/
               # remove all ESP/CAPS unit test files with recursive delete
               find . -name "test*" -type f -delete
               cd $TACS_DIR
@@ -161,8 +161,8 @@ jobs:
       - name: Run unit tests
         run: |
           # Reload ESP/CAPS environment variables if in real mode and ESP was installed
-          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]] && [[ -f ${TACS_DIR}/extern/ESP122/ESPenv.sh ]]; then
-            source ${TACS_DIR}/extern/ESP122/ESPenv.sh
+          if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]] && [[ -f ${TACS_DIR}/extern/ESP123/ESPenv.sh ]]; then
+            source ${TACS_DIR}/extern/ESP123/ESPenv.sh
           fi
           testflo -v --timeout 420 .;
       - name: Build docs
