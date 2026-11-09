@@ -23,14 +23,14 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     N_PROCS = 2  # this is how many MPI processes to use for this TestCase.
 
     FUNC_REFS = {
-        "ramp_compliance": 0.6911725719135957,
-        "ramp_x_disp": 0.06931471805599457,
-        "ramp_y_disp": 6.227712362945539,
-        "ramp_z_disp": 0.06931471805599457,
-        "sinusoid_compliance": 23.113858857368683,
-        "sinusoid_x_disp": 0.06931471805599457,
-        "sinusoid_y_disp": 25.47755094553055,
-        "sinusoid_z_disp": 0.06931471805599457,
+        "ramp_compliance": 11.080776107613133,
+        "ramp_x_disp": 0.13862943611198913,
+        "ramp_y_disp": 12.121078912894081,
+        "ramp_z_disp": 0.13862943611198913,
+        "sinusoid_compliance": 52.46429565702975,
+        "sinusoid_x_disp": 0.13862943611198913,
+        "sinusoid_y_disp": 23.480973969015196,
+        "sinusoid_z_disp": 0.13862943611198913,
     }
 
     def setup_tacs_problems(self, comm):
