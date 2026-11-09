@@ -26,13 +26,26 @@ class TACSBeamConstitutive : public TACSConstitutive {
   static const int NUM_STRESSES = 6;
   static const int NUM_TANGENT_STIFFNESS_ENTRIES = 21;
 
-  TACSBeamConstitutive() {}
+  TACSBeamConstitutive() : nsm(0.0) {}
+
+  /**
+    Set the nonstructural mass per unit length. Subclass evalMassMoments
+    implementations read this->nsm and add the appropriate parallel-axis
+    contributions to the moments array.
+
+    @param _nsm Nonstructural mass per unit length
+  */
+  void setNonStructuralMass(TacsScalar _nsm) { nsm = _nsm; }
 
   /**
     Get the cross-sectional mass per unit area and the second moments
-    of mass for the cross section
+    of mass for the cross section.
 
     moments = [rho * A, cz1, cz2, Iz1z1, Iz2z2, Iz1z2 ]
+
+    where cz1/cz2 are first moments and Iz1z1/Iz2z2/Iz1z2 are second moments
+    about the reference axis. Subclasses are responsible for including
+    nonstructural mass (this->nsm) with the correct parallel-axis contributions.
 
     @param elemIndex The local element index
     @param pt The parametric location
@@ -85,6 +98,10 @@ class TACSBeamConstitutive : public TACSConstitutive {
     s[5] = C[5] * e[0] + C[10] * e[1] + C[14] * e[2] + C[17] * e[3] +
            C[19] * e[4] + C[20] * e[5];
   }
+
+ protected:
+  // Nonstructural mass per unit length; read by each subclass's evalMassMoments
+  TacsScalar nsm;
 
  private:
   // Set the constitutive name
