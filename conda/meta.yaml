@@ -96,6 +96,8 @@ test:
 
     - test -f $PREFIX/bin/f5tovtk
     - test -f $PREFIX/bin/f5totec
+    - test -f $PREFIX/include/a2d/a2dcore.h
+    - test -d $PREFIX/include/a2d/ad
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
     # The mpich variants use the UCX netmod, which aborts MPI_Init if it finds an

@@ -32,6 +32,11 @@ mv ${TACS_DIR}/lib/libtacs.${SO_EXT} ${PREFIX}/lib;
 mkdir ${PREFIX}/include/tacs;
 find ${TACS_DIR}/src/ -name '*.h' -exec cp -prv '{}' ${PREFIX}/include/tacs ';'
 
+# Copy the A2D headers (git submodule at extern/a2d), preserving the
+# directory structure since A2D uses #include "ad/..." internally
+mkdir -p ${PREFIX}/include/a2d;
+cp -r ${TACS_DIR}/extern/a2d/include/. ${PREFIX}/include/a2d/;
+
 CPPFLAGS=${PIP_FLAGS} ${PYTHON} -m pip install --no-deps --prefix=${PREFIX} . -vv;
 
 cd ${TACS_DIR}/extern/f5tovtk;
