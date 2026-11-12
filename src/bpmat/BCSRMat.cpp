@@ -2346,7 +2346,7 @@ void BCSRMat::copyValues(BCSRMat *mat) {
     int mat_end = mat->data->rowp[i + 1];
 
     for (int j = mat->data->rowp[i]; (j < mat_end) && (p < end); j++) {
-      while (cols[p] < mat->data->cols[j] && p < end) {
+      while (p < end && cols[p] < mat->data->cols[j]) {
         p++;
       }
 
@@ -2399,7 +2399,7 @@ void BCSRMat::axpy(TacsScalar alpha, BCSRMat *mat) {
     int mat_end = mat->data->rowp[i + 1];
 
     for (int j = mat->data->rowp[i]; (j < mat_end) && (p < end); j++) {
-      while (cols[p] < mat->data->cols[j] && p < end) {
+      while (p < end && cols[p] < mat->data->cols[j]) {
         p++;
       }
 
@@ -2436,48 +2436,52 @@ void BCSRMat::axpy(TacsScalar alpha, BCSRMat *mat) {
   patterns are static.
 */
 void BCSRMat::axpby(TacsScalar alpha, TacsScalar beta, BCSRMat *mat) {
-  if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols) {
+  if (mat->data->nrows != data->nrows || mat->data->ncols != data->ncols ||
+      mat->data->bsize != data->bsize) {
     fprintf(stderr,
             "BCSRMat: Matrices are not the same "
             "size cannot apply axpby\n");
+    return;
   }
 
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
+  const int *mat_rowp = mat->data->rowp;
+  const int *mat_cols = mat->data->cols;
   const int bsize = data->bsize;
   const int b2 = bsize * bsize;
 
   for (int i = 0; i < nrows; i++) {
-    int p = rowp[i];
-    int end = rowp[i + 1];
-    int mat_end = mat->data->rowp[i + 1];
+    int j = mat_rowp[i];
+    const int mat_end = mat_rowp[i + 1];
+    const int end = rowp[i + 1];
 
-    for (int j = mat->data->rowp[i]; (j < mat_end) && (p < end); j++) {
-      while (cols[p] < mat->data->cols[j] && p < end) {
-        int last = b2 * cols[p + 1];
-        for (int n = b2 * cols[p]; n < last; n++) {
-          data->A[n] = beta * data->A[n];
-        }
-
-        p++;
+    for (int p = rowp[i]; p < end; p++) {
+      // Skip the entries of x that have no counterpart in this matrix
+      while ((j < mat_end) && (mat_cols[j] < cols[p])) {
+        fprintf(stderr, "BCSRMat: NZ-pattern error cannot apply axpby\n");
+        j++;
       }
 
-      // Copy the matrix if the two entries are equal
-      // and the size of both block--matrices is the same
-      if (p < end) {
-        if (cols[p] == mat->data->cols[j]) {
-          int n = b2 * p;
-          int m = b2 * j;
-
-          int last = b2 * (p + 1);
-          for (; n < last; n++, m++) {
-            data->A[n] = beta * data->A[n] + alpha * mat->data->A[m];
-          }
-        } else {
-          fprintf(stderr, "BCSRMat: NZ-pattern error cannot apply axpy\n");
+      TacsScalar *y = &data->A[b2 * p];
+      if ((j < mat_end) && (mat_cols[j] == cols[p])) {
+        // Combine the matching blocks
+        const TacsScalar *x = &mat->data->A[b2 * j];
+        for (int n = 0; n < b2; n++) {
+          y[n] = beta * y[n] + alpha * x[n];
+        }
+        j++;
+      } else {
+        // No corresponding entry in x: only scale this block
+        for (int n = 0; n < b2; n++) {
+          y[n] = beta * y[n];
         }
       }
+    }
+
+    if (j < mat_end) {
+      fprintf(stderr, "BCSRMat: NZ-pattern error cannot apply axpby\n");
     }
   }
 }

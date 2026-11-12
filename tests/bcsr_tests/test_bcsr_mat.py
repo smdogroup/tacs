@@ -687,15 +687,12 @@ class TestBCSRMatKernels(unittest.TestCase):
                 matY.zeroEntries()
                 self.assertEqual(np.abs(getDense(matY)).max(), 0.0)
 
-    @unittest.expectedFailure
     def test_axpby(self):
         """
         Given two random matrices X and Y on the same pattern,
         when Y.axpby(alpha, beta, X) is called,
         then Y equals the dense alpha*X + beta*Y.
         """
-        # Pre-existing bug in BCSRMat::axpby (not a kernel): after a matching entry the row cursor is not
-        # advanced, so the next entry is scaled through a mis-indexed loop instead of being combined.
         alpha = 0.37
         beta = -1.3
         for bsize in self.BLOCK_SIZES:
@@ -704,6 +701,24 @@ class TestBCSRMatKernels(unittest.TestCase):
                 mask = makeSquareMask(rng, self.NUM_ROWS)
                 matX, denseX = makeMatrix(rng, bsize, mask, numThreads=self.NUM_THREADS)
                 matY, denseY = makeMatrix(rng, bsize, mask, numThreads=self.NUM_THREADS)
+                matY.axpby(alpha, beta, matX)
+                self.assertClose(getDense(matY), alpha * denseX + beta * denseY)
+
+    def test_axpby_larger_pattern(self):
+        """
+        Given a matrix Y whose pattern contains the pattern of X plus extra blocks,
+        when Y.axpby(alpha, beta, X) is called,
+        then Y equals the dense alpha*X + beta*Y, so the extra blocks are only scaled by beta.
+        """
+        alpha = 0.37
+        beta = -1.3
+        for bsize in self.BLOCK_SIZES:
+            with self.subTest(bsize=bsize):
+                rng = self.makeRng(bsize)
+                maskY = makeSquareMask(rng, self.NUM_ROWS)
+                maskX = maskY & (rng.random(maskY.shape) < 0.5)
+                matX, denseX = makeMatrix(rng, bsize, maskX, numThreads=self.NUM_THREADS)
+                matY, denseY = makeMatrix(rng, bsize, maskY, numThreads=self.NUM_THREADS)
                 matY.axpby(alpha, beta, matX)
                 self.assertClose(getDense(matY), alpha * denseX + beta * denseY)
 
