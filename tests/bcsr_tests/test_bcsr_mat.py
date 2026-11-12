@@ -19,12 +19,6 @@ IS_COMPLEX = np.issubdtype(TACS.dtype, np.complexfloating)
 FULL_LEV_FILL = 1000
 FILL_ESTIMATE = 10.0
 
-# (operation, block size) pairs whose current kernel writes out of bounds and aborts the interpreter.
-# BCSRMatApplyFactorSchur8 starts at x[6*(var_offset-1)] but steps back by 8, so it writes before x.
-# Remove an entry once its kernel is fixed.
-MEMORY_UNSAFE_KERNELS = {("applyFactorSchur", 8)}
-
-
 def makeRandomArray(
     rng: np.random.Generator, shape: int | tuple[int, ...]
 ) -> np.ndarray:
@@ -407,10 +401,6 @@ class TestBCSRMatKernels(unittest.TestCase):
         for bsize in self.BLOCK_SIZES:
             for varOffset in (1, 4, self.NUM_ROWS):
                 with self.subTest(bsize=bsize, varOffset=varOffset):
-                    if ("applyFactorSchur", bsize) in MEMORY_UNSAFE_KERNELS:
-                        self.skipTest(
-                            "kernel writes out of bounds, see MEMORY_UNSAFE_KERNELS"
-                        )
                     rng = self.makeRng(bsize)
                     factor, _, _ = self.makeFactored(rng, bsize, 1)
                     _, upper = splitStoredFactor(getDense(factor), bsize)

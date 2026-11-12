@@ -11,20 +11,6 @@ CXX_OBJS = AMDInterface.o \
 	BCSRMat.o \
 	BCSRMatFact.o \
 	BCSRMatMult.o \
-	BCSRMatFact1.o \
-	BCSRMatMult1.o \
-	BCSRMatFact2.o \
-	BCSRMatMult2.o \
-	BCSRMatFact3.o \
-	BCSRMatMult3.o \
-	BCSRMatFact4.o \
-	BCSRMatMult4.o \
-	BCSRMatFact5.o \
-	BCSRMatMult5.o \
-	BCSRMatFact6.o \
-	BCSRMatMult6.o \
-	BCSRMatFact8.o \
-	BCSRMatMult8.o \
 	BCSCMatPivot.o \
 	TACSNodeMap.o \
 	TACSBVec.o \

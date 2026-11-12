@@ -147,6 +147,12 @@ class BCSRMat : public TACSObject {
   void initBlockImpl();
 
  private:
+  // Select the kernels templated on the block size
+  template <int N>
+  void setBlockImpl();
+  template <int N>
+  void setBlockThreadImpl();
+
   void setUpDiag();  // Set up the diagonal entry pointer 'diag'
   void computeILUk(BCSRMat *mat, int levFill, double fill, int **_levs);
   BCSRMat *computeILUkEpc(BCSRMat *EMat, const int *levs, int levFill,

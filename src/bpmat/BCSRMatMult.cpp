@@ -300,95 +300,6 @@ void BCSRMatThread::apply_upper_mark_completed(const int group_size, int index,
 }
 
 /*!
-  Compute the inverse of a matrix.
-
-  A == A row-major ordered matrix of (bsize)x(bsize)
-  w == A work array of size (bsize*bsize)
-*/
-int BMatComputeInverse(TacsScalar *Ainv, TacsScalar *A, int *ipiv, int n) {
-  int fail = 0;
-
-  for (int k = 0; k < n - 1; k++) {
-    int nk = n * k;
-
-    // Find the maximum value and use it as the pivot
-    int r = k;
-    double maxv = fabs(TacsRealPart(A[nk + k]));
-    for (int j = k + 1; j < n; j++) {
-      double t = fabs(TacsRealPart(A[n * j + k]));
-      if (t > maxv) {
-        maxv = t;
-        r = j;
-      }
-    }
-
-    ipiv[k] = r;
-
-    // If a swap is required, swap the rows
-    if (r != k) {
-      int nr = n * r;
-      for (int j = 0; j < n; j++) {
-        TacsScalar t = A[nk + j];
-        A[nk + j] = A[nr + j];
-        A[nr + j] = t;
-      }
-    }
-
-    if (A[nk + k] == 0.0) {
-      fail = k + 1;
-      return fail;
-    }
-
-    for (int i = k + 1; i < n; i++) {
-      A[n * i + k] = A[n * i + k] / A[nk + k];
-    }
-
-    for (int i = k + 1; i < n; i++) {
-      int ni = n * i;
-      for (int j = k + 1; j < n; j++) {
-        A[ni + j] -= A[ni + k] * A[nk + j];
-      }
-    }
-  }
-
-  // Now, compute the matrix-inverse
-  for (int k = 0; k < n; k++) {
-    int ip = k;
-    for (int i = 0; i < n - 1; i++) {
-      if (ip == ipiv[i]) {
-        ip = i;
-      } else if (ip == i) {
-        ip = ipiv[i];
-      }
-    }
-
-    for (int i = 0; i < ip; i++) {
-      Ainv[n * i + k] = 0.0;
-    }
-
-    Ainv[n * ip + k] = 1.0;
-
-    for (int i = ip + 1; i < n; i++) {
-      int ni = n * i;
-      Ainv[ni + k] = 0.0;
-      for (int j = ip; j < i; j++) {
-        Ainv[ni + k] -= A[ni + j] * Ainv[n * j + k];
-      }
-    }
-
-    for (int i = n - 1; i >= 0; i--) {
-      int ni = n * i;
-      for (int j = i + 1; j < n; j++) {
-        Ainv[ni + k] -= A[ni + j] * Ainv[n * j + k];
-      }
-      Ainv[ni + k] = Ainv[ni + k] / A[ni + i];
-    }
-  }
-
-  return fail;
-}
-
-/*!
   Compute the matrix-vector product: y = A * x
 */
 
@@ -421,7 +332,7 @@ void BCSRMatVecMult(BCSRMatData *data, TacsScalar *x, TacsScalar *y) {
 }
 
 /*!
-  Compute the matrix vector product plus addition: z = A * x + y
+  Compute the matrix vector product plus addition: y = A * x + z
 */
 
 void BCSRMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
@@ -438,7 +349,7 @@ void BCSRMatVecMultAdd(BCSRMatData *data, TacsScalar *x, TacsScalar *y,
 
   for (int i = 0; i < nrows; i++) {
     if (z != y) {
-      memcpy(z, y, bsize * sizeof(TacsScalar));
+      memcpy(y, z, bsize * sizeof(TacsScalar));
     }
 
     int end = rowp[i + 1];
@@ -814,7 +725,7 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
         const int row = i - var_offset;
 
         // Set the pointer to the row in B
-        a = &Bdata->A[36 * Browp[row]];
+        a = &Bdata->A[b2 * Browp[row]];
         end = Browp[row + 1];
 
         for (int k = Browp[row]; k < end; k++) {
@@ -850,8 +761,8 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
       }
     }
   } else {
-    // Go through the matrix with the forward ordering
-    for (int i = start; i < end; i++) {
+    // Go through the matrix with the reverse ordering
+    for (int i = start - 1; i >= end; i--) {
       int bi = bsize * i;
 
       // Copy the right-hand-side to the temporary vector
@@ -888,7 +799,7 @@ void BCSRMatApplySOR(BCSRMatData *Adata, BCSRMatData *Bdata, const int start,
         const int row = i - var_offset;
 
         // Set the pointer to the row in B
-        a = &Bdata->A[36 * Browp[row]];
+        a = &Bdata->A[b2 * Browp[row]];
         end = Browp[row + 1];
 
         for (int k = Browp[row]; k < end; k++) {

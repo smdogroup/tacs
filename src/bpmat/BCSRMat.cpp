@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 
+#include "BCSRMatBlockImpl.h"
 #include "BCSRMatImpl.h"
 #include "TacsUtilities.h"
 #include "tacslapack.h"
@@ -1022,6 +1023,43 @@ void BCSRMat::initGenericImpl() {
 }
 
 /*
+  Use the kernels templated on the block size N for every operation
+*/
+template <int N>
+void BCSRMat::setBlockImpl() {
+  // The serial versions
+  bfactor = BCSRBlockMatFactor<N>;
+  applylower = BCSRBlockMatApplyLower<N>;
+  applyupper = BCSRBlockMatApplyUpper<N>;
+  bmult = BCSRBlockMatVecMult<N>;
+  bmultadd = BCSRBlockMatVecMultAdd<N>;
+  bmulttrans = BCSRBlockMatVecMultTranspose<N>;
+  bmulttransadd = BCSRBlockMatVecMultTransposeAdd<N>;
+  bmatmult = BCSRBlockMatMatMultAdd<N>;
+  bfactorlower = BCSRBlockMatFactorLower<N>;
+  bfactorupper = BCSRBlockMatFactorUpper<N>;
+  bmatmatmultnormal = BCSRBlockMatMatMultNormal<N>;
+  applypartiallower = BCSRBlockMatApplyPartialLower<N>;
+  applypartialupper = BCSRBlockMatApplyPartialUpper<N>;
+  applyschur = BCSRBlockMatApplyFactorSchur<N>;
+  applysor = BCSRBlockMatApplySOR<N>;
+}
+
+/*
+  Use the threaded kernels templated on the block size N
+*/
+template <int N>
+void BCSRMat::setBlockThreadImpl() {
+  bmultadd_thread = BCSRBlockMatVecMultAdd_thread<N>;
+  bfactor_thread = BCSRBlockMatFactor_thread<N>;
+  applylower_thread = BCSRBlockMatApplyLower_thread<N>;
+  applyupper_thread = BCSRBlockMatApplyUpper_thread<N>;
+  bmatmult_thread = BCSRBlockMatMatMultAdd_thread<N>;
+  bfactorlower_thread = BCSRBlockMatFactorLower_thread<N>;
+  bfactorupper_thread = BCSRBlockMatFactorUpper_thread<N>;
+}
+
+/*
   Initialize the block-specific implementations of each low-level
   routine
 */
@@ -1033,145 +1071,36 @@ void BCSRMat::initBlockImpl() {
 
   switch (data->bsize) {
     case 1:
-      bfactor = BCSRMatFactor1;
-      applylower = BCSRMatApplyLower1;
-      applyupper = BCSRMatApplyUpper1;
-      bmult = BCSRMatVecMult1;
-      bmultadd = BCSRMatVecMultAdd1;
-      bmulttrans = BCSRBlockMatVecMultTranspose<1>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<1>;
-      bmatmult = BCSRMatMatMultAdd1;
-      bfactorlower = BCSRMatFactorLower1;
-      bfactorupper = BCSRMatFactorUpper1;
-      applypartiallower = BCSRMatApplyPartialLower1;
-      applypartialupper = BCSRMatApplyPartialUpper1;
-      applyschur = BCSRMatApplyFactorSchur1;
-      bmatmatmultnormal = BCSRMatMatMultNormal1;
-      applysor = BCSRMatApplySOR1;
+      setBlockImpl<1>();
       break;
     case 2:
-      bfactor = BCSRMatFactor2;
-      applylower = BCSRMatApplyLower2;
-      applyupper = BCSRMatApplyUpper2;
-      bmult = BCSRMatVecMult2;
-      bmultadd = BCSRMatVecMultAdd2;
-      bmulttrans = BCSRBlockMatVecMultTranspose<2>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<2>;
-      bmatmult = BCSRMatMatMultAdd2;
-      bfactorlower = BCSRMatFactorLower2;
-      bfactorupper = BCSRMatFactorUpper2;
-      applypartiallower = BCSRMatApplyPartialLower2;
-      applypartialupper = BCSRMatApplyPartialUpper2;
-      applyschur = BCSRMatApplyFactorSchur2;
-      applysor = BCSRMatApplySOR2;
+      setBlockImpl<2>();
       break;
     case 3:
-      bfactor = BCSRMatFactor3;
-      applylower = BCSRMatApplyLower3;
-      applyupper = BCSRMatApplyUpper3;
-      bmult = BCSRMatVecMult3;
-      bmultadd = BCSRMatVecMultAdd3;
-      bmulttrans = BCSRBlockMatVecMultTranspose<3>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<3>;
-      bmatmult = BCSRMatMatMultAdd3;
-      bfactorlower = BCSRMatFactorLower3;
-      bfactorupper = BCSRMatFactorUpper3;
-      applypartiallower = BCSRMatApplyPartialLower3;
-      applypartialupper = BCSRMatApplyPartialUpper3;
-      applyschur = BCSRMatApplyFactorSchur3;
-      applysor = BCSRMatApplySOR3;
+      setBlockImpl<3>();
       break;
     case 4:
-      bfactor = BCSRMatFactor4;
-      applylower = BCSRMatApplyLower4;
-      applyupper = BCSRMatApplyUpper4;
-      bmult = BCSRMatVecMult4;
-      bmultadd = BCSRMatVecMultAdd4;
-      bmulttrans = BCSRBlockMatVecMultTranspose<4>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<4>;
-      bmatmult = BCSRMatMatMultAdd4;
-      bfactorlower = BCSRMatFactorLower4;
-      bfactorupper = BCSRMatFactorUpper4;
-      applypartiallower = BCSRMatApplyPartialLower4;
-      applypartialupper = BCSRMatApplyPartialUpper4;
-      applyschur = BCSRMatApplyFactorSchur4;
-      applysor = BCSRMatApplySOR4;
+      setBlockImpl<4>();
       break;
     case 5:
-      bfactor = BCSRMatFactor5;
-      applylower = BCSRMatApplyLower5;
-      applyupper = BCSRMatApplyUpper5;
-      bmult = BCSRMatVecMult5;
-      bmultadd = BCSRMatVecMultAdd5;
-      bmulttrans = BCSRBlockMatVecMultTranspose<5>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<5>;
-      bmatmult = BCSRMatMatMultAdd5;
-      bfactorlower = BCSRMatFactorLower5;
-      bfactorupper = BCSRMatFactorUpper5;
-      applypartiallower = BCSRMatApplyPartialLower5;
-      applypartialupper = BCSRMatApplyPartialUpper5;
-      applyschur = BCSRMatApplyFactorSchur5;
-      applysor = BCSRMatApplySOR5;
+      setBlockImpl<5>();
       break;
     case 6:
       // These are tuning parameters
       data->matvec_group_size = 16;
       data->matmat_group_size = 4;
-
-      // The serial versions
-      bfactor = BCSRMatFactor6;
-      applylower = BCSRMatApplyLower6;
-      applyupper = BCSRMatApplyUpper6;
-      bmult = BCSRMatVecMult6;
-      bmultadd = BCSRMatVecMultAdd6;
-      bmulttrans = BCSRBlockMatVecMultTranspose<6>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<6>;
-      bmatmult = BCSRMatMatMultAdd6;
-      bfactorlower = BCSRMatFactorLower6;
-      bfactorupper = BCSRMatFactorUpper6;
-      applypartiallower = BCSRMatApplyPartialLower6;
-      applypartialupper = BCSRMatApplyPartialUpper6;
-      applyschur = BCSRMatApplyFactorSchur6;
-      applysor = BCSRMatApplySOR6;
-
-      // The threaded versions
-      bmultadd_thread = BCSRMatVecMultAdd6_thread;
-      bfactor_thread = BCSRMatFactor6_thread;
-      applylower_thread = BCSRMatApplyLower6_thread;
-      applyupper_thread = BCSRMatApplyUpper6_thread;
-      bmatmult_thread = BCSRMatMatMultAdd6_thread;
-      bfactorlower_thread = BCSRMatFactorLower6_thread;
-      bfactorupper_thread = BCSRMatFactorUpper6_thread;
+      setBlockImpl<6>();
+      setBlockThreadImpl<6>();
+      break;
+    case 7:
+      setBlockImpl<7>();
       break;
     case 8:
       // These are tuning parameters
       data->matvec_group_size = 16;
       data->matmat_group_size = 4;
-
-      // The serial versions
-      bfactor = BCSRMatFactor8;
-      applylower = BCSRMatApplyLower8;
-      applyupper = BCSRMatApplyUpper8;
-      bmult = BCSRMatVecMult8;
-      bmultadd = BCSRMatVecMultAdd8;
-      bmulttrans = BCSRBlockMatVecMultTranspose<8>;
-      bmulttransadd = BCSRBlockMatVecMultTransposeAdd<8>;
-      bmatmult = BCSRMatMatMultAdd8;
-      bfactorlower = BCSRMatFactorLower8;
-      bfactorupper = BCSRMatFactorUpper8;
-      applypartiallower = BCSRMatApplyPartialLower8;
-      applypartialupper = BCSRMatApplyPartialUpper8;
-      applyschur = BCSRMatApplyFactorSchur8;
-      applysor = BCSRMatApplySOR8;
-
-      // The threaded versions
-      bmultadd_thread = BCSRMatVecMultAdd8_thread;
-      bfactor_thread = BCSRMatFactor8_thread;
-      applylower_thread = BCSRMatApplyLower8_thread;
-      applyupper_thread = BCSRMatApplyUpper8_thread;
-      bmatmult_thread = BCSRMatMatMultAdd8_thread;
-      bfactorlower_thread = BCSRMatFactorLower8_thread;
-      bfactorupper_thread = BCSRMatFactorUpper8_thread;
+      setBlockImpl<8>();
+      setBlockThreadImpl<8>();
       break;
     default:
       break;
