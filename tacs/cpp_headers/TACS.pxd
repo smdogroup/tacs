@@ -108,6 +108,11 @@ cdef extern from "TACSObject.h":
         void decref()
         const char* getObjectName()
 
+    cdef cppclass TACSThreadInfo(TACSObject):
+        TACSThreadInfo(int)
+        void setNumThreads(int)
+        int getNumThreads()
+
     cdef MPI_Datatype TACS_MPI_TYPE
 
 cdef extern from "KSM.h":
@@ -208,6 +213,42 @@ cdef extern from "TACSBVecInterp.h":
 
 cdef extern from "BCSRMat.h":
     cdef cppclass BCSRMat(TACSObject):
+        BCSRMat(MPI_Comm, BCSRMat*, int, double)
+        BCSRMat(MPI_Comm, TACSThreadInfo*, int, int, int, int**, int**, TacsScalar**)
+        BCSRMat(MPI_Comm, BCSRMat*, int*, BCSRMat*, int*, BCSRMat*, int, double)
+        BCSRMat(MPI_Comm, BCSRMat*, BCSRMat*, BCSRMat*, BCSRMat*, int, double,
+                BCSRMat**, BCSRMat**, BCSRMat**, int)
+        BCSRMat(MPI_Comm, BCSRMat*, double)
+        void zeroEntries()
+        void copyValues(BCSRMat*)
+        void scale(TacsScalar)
+        void axpy(TacsScalar, BCSRMat*)
+        void axpby(TacsScalar, TacsScalar, BCSRMat*)
+        void addDiag(TacsScalar)
+        void factor()
+        void mult(TacsScalar*, TacsScalar*)
+        void multAdd(TacsScalar*, TacsScalar*, TacsScalar*)
+        void multTranspose(TacsScalar*, TacsScalar*)
+        void multTransposeAdd(TacsScalar*, TacsScalar*, TacsScalar*)
+        void applyFactor(TacsScalar*, TacsScalar*)
+        void applyFactor(TacsScalar*)
+        void applyUpper(TacsScalar*, TacsScalar*)
+        void applyLower(TacsScalar*, TacsScalar*)
+        void applyPartialLower(TacsScalar*, int)
+        void applyPartialUpper(TacsScalar*, int)
+        void applyFactorSchur(TacsScalar*, int)
+        void factorDiag(const TacsScalar*)
+        void applySOR(TacsScalar*, TacsScalar*, TacsScalar, int)
+        void applySOR(BCSRMat*, int, int, int, TacsScalar, const TacsScalar*,
+                      const TacsScalar*, TacsScalar*)
+        void matMultAdd(double, BCSRMat*, BCSRMat*)
+        void applyLowerFactor(BCSRMat*)
+        void applyUpperFactor(BCSRMat*)
+        void matMultNormal(TacsScalar*, BCSRMat*)
+        int isEqual(BCSRMat*, double)
+        void partition(int, BCSRMat**, BCSRMat**, BCSRMat**, BCSRMat**)
+        void initGenericImpl()
+        void initBlockImpl()
         int getBlockSize()
         int getRowDim()
         int getColDim()

@@ -1102,6 +1102,522 @@ cdef class Mat:
 
         return None
 
+cdef extern from *:
+    """
+    static int *tacsNewIntArray(int len) { return new int[len]; }
+    static TacsScalar *tacsNewScalarArray(int len) { return new TacsScalar[len]; }
+    """
+    # Cython cannot express new[]; BCSRMat frees the arrays it steals with delete[]
+    int *tacsNewIntArray(int len)
+    TacsScalar *tacsNewScalarArray(int len)
+
+cdef int _checkBCSRVecLen(np.ndarray vec, int expectedLen, str name) except -1:
+    """Raise ValueError unless the 1-D array `vec` has exactly `expectedLen` entries."""
+    if vec.shape[0] != expectedLen:
+        raise ValueError(f"BCSRMatrix: '{name}' must have length {expectedLen}, got {vec.shape[0]}")
+    return 0
+
+cdef class BCSRMatrix:
+    """
+    Serial block compressed sparse row matrix (wrapper of the C++ ``BCSRMat``).
+
+    Parameters
+    ----------
+    bsize : int
+        Block size.
+    rowp : array_like of int, shape (nrows + 1,)
+        Block-row pointer.
+    cols : array_like of int, shape (nnz,)
+        Block-column indices, strictly increasing within each row.
+    ncols : int, optional
+        Number of block columns; defaults to the number of block rows.
+    A : array_like, shape (nnz, bsize, bsize), optional
+        Row-major block values; zero if omitted.
+    num_threads : int, optional
+        Number of pthreads used by the threaded kernels (block sizes 6 and 8).
+
+    Notes
+    -----
+    All vector arguments are 1-D C-contiguous arrays of ``TACS.dtype`` whose
+    lengths are validated; a ``ValueError`` is raised on mismatch.
+    """
+    cdef BCSRMat *ptr
+    cdef int diagState  # -1: not checked, 0: a row lacks a diagonal block, 1: all present
+
+    def __cinit__(self, *args, **kwargs):
+        self.ptr = NULL
+        self.diagState = -1
+
+    def __init__(self, int bsize, rowp, cols, int ncols=-1, A=None, int num_threads=1):
+        rowpArr = np.ascontiguousarray(rowp, dtype=np.intc)
+        colsArr = np.ascontiguousarray(cols, dtype=np.intc)
+        cdef int nrows = rowpArr.shape[0] - 1
+        if ncols < 0:
+            ncols = nrows
+        if bsize < 1 or rowpArr.ndim != 1 or colsArr.ndim != 1 or nrows < 0:
+            raise ValueError("BCSRMatrix: bsize must be >= 1 and rowp/cols must be 1-D with len(rowp) >= 1")
+        if num_threads < 1 or num_threads > 16:
+            raise ValueError("BCSRMatrix: num_threads must be between 1 and 16")
+        cdef int nnz = colsArr.shape[0]
+        if rowpArr[0] != 0 or rowpArr[nrows] != nnz or np.any(np.diff(rowpArr) < 0):
+            raise ValueError("BCSRMatrix: rowp must start at 0, be non-decreasing and end at len(cols)")
+        if nnz > 0:
+            if colsArr.min() < 0 or colsArr.max() >= ncols:
+                raise ValueError("BCSRMatrix: column indices must lie in [0, ncols)")
+            isRowStart = np.zeros(nnz, dtype=np.bool_)
+            isRowStart[rowpArr[:-1][rowpArr[:-1] < nnz]] = True
+            if np.any((np.diff(colsArr) <= 0) & ~isRowStart[1:]):
+                raise ValueError("BCSRMatrix: column indices must be strictly increasing within each row")
+        valsArr = None
+        if A is not None:
+            valsArr = np.ascontiguousarray(A, dtype=dtype)
+            if valsArr.shape != (nnz, bsize, bsize):
+                raise ValueError(f"BCSRMatrix: A must have shape ({nnz}, {bsize}, {bsize})")
+            valsArr = valsArr.ravel()
+
+        # The C++ constructor steals these new[]-allocated arrays
+        cdef int *crowp = tacsNewIntArray(nrows + 1)
+        cdef int *ccols = tacsNewIntArray(max(nnz, 1))
+        cdef TacsScalar *cvals = tacsNewScalarArray(max(nnz * bsize * bsize, 1))
+        cdef int ii
+        for ii in range(nrows + 1):
+            crowp[ii] = rowpArr[ii]
+        for ii in range(nnz):
+            ccols[ii] = colsArr[ii]
+        for ii in range(nnz * bsize * bsize):
+            cvals[ii] = valsArr[ii] if valsArr is not None else 0.0
+
+        cdef TACSThreadInfo *threadInfo = new TACSThreadInfo(num_threads)
+        threadInfo.incref()
+        self.ptr = new BCSRMat(MPI_COMM_SELF, threadInfo, bsize, nrows, ncols, &crowp, &ccols, &cvals)
+        self.ptr.incref()
+        threadInfo.decref()
+
+    def __dealloc__(self):
+        if self.ptr:
+            self.ptr.decref()
+
+    @staticmethod
+    cdef BCSRMatrix _wrap(BCSRMat *ptr):
+        """Wrap (and take a reference to) an existing C++ matrix."""
+        cdef BCSRMatrix mat = BCSRMatrix.__new__(BCSRMatrix)
+        mat.ptr = ptr
+        mat.ptr.incref()
+        return mat
+
+    cdef int _checkSameBlockSize(self, BCSRMatrix other) except -1:
+        if other.ptr.getBlockSize() != self.ptr.getBlockSize():
+            raise ValueError("BCSRMatrix: block sizes do not match")
+        return 0
+
+    cdef int _checkSameShape(self, BCSRMatrix other) except -1:
+        self._checkSameBlockSize(other)
+        if other.ptr.getRowDim() != self.ptr.getRowDim() or other.ptr.getColDim() != self.ptr.getColDim():
+            raise ValueError("BCSRMatrix: matrix dimensions do not match")
+        return 0
+
+    cdef int _checkSquareWithDiag(self) except -1:
+        """Raise ValueError unless the matrix is square with a diagonal block in every row."""
+        cdef int bsize = 0, nrows = 0, ncols = 0, ii, jj
+        cdef const int *rowp = NULL
+        cdef const int *cols = NULL
+        cdef TacsScalar *vals = NULL
+        cdef bint isFound
+        if self.diagState < 0:
+            self.ptr.getArrays(&bsize, &nrows, &ncols, &rowp, &cols, &vals)
+            self.diagState = 1 if nrows == ncols else 0
+            for ii in range(nrows):
+                isFound = False
+                for jj in range(rowp[ii], rowp[ii + 1]):
+                    if cols[jj] == ii:
+                        isFound = True
+                        break
+                if not isFound:
+                    self.diagState = 0
+                    break
+        if self.diagState == 0:
+            raise ValueError("BCSRMatrix: operation needs a square matrix with a diagonal block in every row")
+        return 0
+
+    @classmethod
+    def createILU(cls, BCSRMatrix mat, int levFill=0, double fill=10.0):
+        """
+        Create the zeroed ILU(levFill) non-zero pattern of a square matrix.
+
+        Parameters
+        ----------
+        mat : BCSRMatrix
+            Square matrix whose pattern is factored symbolically.
+        levFill : int
+            Level of fill.
+        fill : float
+            Expected fill ratio (>= 1), only a sizing estimate.
+
+        Returns
+        -------
+        BCSRMatrix
+            Matrix with the fill pattern; use ``copyValues(mat)`` then ``factor()``.
+        """
+        if mat.ptr.getRowDim() != mat.ptr.getColDim():
+            raise ValueError("BCSRMatrix.createILU: matrix must be square")
+        return BCSRMatrix._wrap(new BCSRMat(MPI_COMM_SELF, mat.ptr, levFill, fill))
+
+    @classmethod
+    def createMatMultPattern(cls, BCSRMatrix S, BCSRMatrix A, BCSRMatrix B, double fill=2.0):
+        """
+        Create the zeroed pattern of ``C = S + A*B`` (all fill retained).
+
+        The C++ constructor requires ``A.nrows == B.ncols`` in addition to
+        ``A.ncols == B.nrows`` and S having shape (A.nrows, B.ncols).
+
+        Returns
+        -------
+        BCSRMatrix
+        """
+        A._checkSameBlockSize(B)
+        A._checkSameBlockSize(S)
+        if (A.ptr.getColDim() != B.ptr.getRowDim() or A.ptr.getRowDim() != B.ptr.getColDim()
+                or S.ptr.getRowDim() != A.ptr.getRowDim() or S.ptr.getColDim() != B.ptr.getColDim()):
+            raise ValueError("BCSRMatrix.createMatMultPattern: incompatible matrix dimensions")
+        return BCSRMatrix._wrap(new BCSRMat(MPI_COMM_SELF, S.ptr, NULL, A.ptr, NULL, B.ptr, 0, fill))
+
+    @classmethod
+    def createSchur(cls, BCSRMatrix B, BCSRMatrix E, BCSRMatrix F, BCSRMatrix C,
+                    int levFill=0, double fill=10.0, bint use_full_schur=True):
+        """
+        Symbolic Schur-complement set-up for ``[[B, E], [F, C]]``.
+
+        Returns
+        -------
+        tuple of BCSRMatrix
+            ``(Bpc, Epc, Fpc, Sc)``: the ILU pattern of B, the patterns of
+            ``L^{-1} E`` and ``F U^{-1}`` and of ``C - Fpc*Epc``; all values zero.
+        """
+        cdef BCSRMat *Epc = NULL
+        cdef BCSRMat *Fpc = NULL
+        cdef BCSRMat *Sc = NULL
+        cdef BCSRMat *Bpc = NULL
+        B._checkSameBlockSize(E)
+        B._checkSameBlockSize(F)
+        B._checkSameBlockSize(C)
+        if (B.ptr.getRowDim() != B.ptr.getColDim() or E.ptr.getRowDim() != B.ptr.getRowDim()
+                or F.ptr.getColDim() != B.ptr.getColDim() or C.ptr.getRowDim() != F.ptr.getRowDim()
+                or C.ptr.getColDim() != E.ptr.getColDim() or C.ptr.getRowDim() != C.ptr.getColDim()):
+            raise ValueError("BCSRMatrix.createSchur: incompatible matrix dimensions")
+        Bpc = new BCSRMat(MPI_COMM_SELF, B.ptr, E.ptr, F.ptr, C.ptr, levFill, fill,
+                          &Epc, &Fpc, &Sc, use_full_schur)
+        return (BCSRMatrix._wrap(Bpc), BCSRMatrix._wrap(Epc), BCSRMatrix._wrap(Fpc), BCSRMatrix._wrap(Sc))
+
+    @classmethod
+    def createNormal(cls, BCSRMatrix B, double fill=2.0):
+        """
+        Create the zeroed pattern of the normal equations ``B^T B``.
+
+        Requires ``B.nrows >= B.ncols`` (the C++ sizing estimate reads ``rowp[ncols]``).
+
+        Returns
+        -------
+        BCSRMatrix
+        """
+        if B.ptr.getRowDim() < B.ptr.getColDim():
+            raise ValueError("BCSRMatrix.createNormal: B must have at least as many rows as columns")
+        return BCSRMatrix._wrap(new BCSRMat(MPI_COMM_SELF, B.ptr, fill))
+
+    def partition(self, int Np):
+        """
+        Split the matrix into ``[[B, E], [F, C]]`` with B the leading Np x Np block.
+
+        Returns
+        -------
+        tuple of BCSRMatrix
+            ``(B, E, F, C)`` holding copies of the values.
+        """
+        cdef BCSRMat *B = NULL
+        cdef BCSRMat *E = NULL
+        cdef BCSRMat *F = NULL
+        cdef BCSRMat *C = NULL
+        if Np < 0 or Np > self.ptr.getRowDim() or Np > self.ptr.getColDim():
+            raise ValueError("BCSRMatrix.partition: Np must lie in [0, min(nrows, ncols)]")
+        self.ptr.partition(Np, &B, &E, &F, &C)
+        return (BCSRMatrix._wrap(B), BCSRMatrix._wrap(E), BCSRMatrix._wrap(F), BCSRMatrix._wrap(C))
+
+    def getBlockSize(self):
+        """Return the block size."""
+        return self.ptr.getBlockSize()
+
+    def getRowDim(self):
+        """Return the number of block rows."""
+        return self.ptr.getRowDim()
+
+    def getColDim(self):
+        """Return the number of block columns."""
+        return self.ptr.getColDim()
+
+    def getArrays(self):
+        """
+        Return the matrix as a ``scipy.sparse.bsr_matrix``.
+
+        The ``data`` array is a view of the C++ storage (not a copy), so it
+        reflects later in-place operations such as ``factor()``.
+        """
+        mat = _convertBCSRMat(self.ptr, <PyObject*>self)
+        Py_INCREF(self)
+        return mat
+
+    def setValues(self, A):
+        """
+        Overwrite all block values.
+
+        Parameters
+        ----------
+        A : array_like, shape (nnz, bsize, bsize)
+            Row-major blocks in storage order.
+        """
+        cdef int bsize = 0, nrows = 0, ncols = 0, ii
+        cdef const int *rowp = NULL
+        cdef const int *cols = NULL
+        cdef TacsScalar *vals = NULL
+        self.ptr.getArrays(&bsize, &nrows, &ncols, &rowp, &cols, &vals)
+        valsArr = np.ascontiguousarray(A, dtype=dtype)
+        if valsArr.shape != (rowp[nrows], bsize, bsize):
+            raise ValueError(f"BCSRMatrix.setValues: A must have shape ({rowp[nrows]}, {bsize}, {bsize})")
+        valsArr = valsArr.ravel()
+        for ii in range(rowp[nrows] * bsize * bsize):
+            vals[ii] = valsArr[ii]
+
+    def zeroEntries(self):
+        """Zero all values."""
+        self.ptr.zeroEntries()
+
+    def copyValues(self, BCSRMatrix mat):
+        """Zero this matrix, then copy the entries of `mat` that lie in this pattern."""
+        self._checkSameShape(mat)
+        self.ptr.copyValues(mat.ptr)
+
+    def scale(self, TacsScalar alpha):
+        """Scale all values by `alpha`."""
+        self.ptr.scale(alpha)
+
+    def axpy(self, TacsScalar alpha, BCSRMatrix x):
+        """Compute ``self += alpha*x`` for the entries of `x` in this pattern."""
+        self._checkSameShape(x)
+        self.ptr.axpy(alpha, x.ptr)
+
+    def axpby(self, TacsScalar alpha, TacsScalar beta, BCSRMatrix x):
+        """Compute ``self = alpha*x + beta*self`` for the entries of `x` in this pattern."""
+        self._checkSameShape(x)
+        self.ptr.axpby(alpha, beta, x.ptr)
+
+    def addDiag(self, TacsScalar alpha):
+        """
+        Add `alpha` to every diagonal entry.
+
+        Silently does nothing unless the diagonal index exists (i.e. after
+        ``factor()``/``factorDiag()`` or for a matrix from ``createILU``/``createSchur``).
+        """
+        self.ptr.addDiag(alpha)
+
+    def factor(self):
+        """
+        In-place block ILU on the existing pattern.
+
+        Afterwards strictly-lower blocks hold L (unit diagonal), diagonal
+        blocks hold the inverse of U's diagonal blocks, upper blocks hold U.
+        """
+        self._checkSquareWithDiag()
+        self.ptr.factor()
+
+    def mult(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = A x``; `x` and `y` must not overlap."""
+        cdef int bsize = self.ptr.getBlockSize()
+        _checkBCSRVecLen(x, bsize * self.ptr.getColDim(), "x")
+        _checkBCSRVecLen(y, bsize * self.ptr.getRowDim(), "y")
+        if np.may_share_memory(x, y):
+            raise ValueError("BCSRMatrix.mult: x and y must not overlap")
+        self.ptr.mult(<TacsScalar*>x.data, <TacsScalar*>y.data)
+
+    def multAdd(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] z,
+                np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = A x + z``; `z` may be the same array as `y`, `x` must not overlap `y`."""
+        cdef int bsize = self.ptr.getBlockSize()
+        _checkBCSRVecLen(x, bsize * self.ptr.getColDim(), "x")
+        _checkBCSRVecLen(z, bsize * self.ptr.getRowDim(), "z")
+        _checkBCSRVecLen(y, bsize * self.ptr.getRowDim(), "y")
+        if np.may_share_memory(x, y):
+            raise ValueError("BCSRMatrix.multAdd: x and y must not overlap")
+        self.ptr.multAdd(<TacsScalar*>x.data, <TacsScalar*>z.data, <TacsScalar*>y.data)
+
+    def multTranspose(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = A^T x``; `x` and `y` must not overlap."""
+        cdef int bsize = self.ptr.getBlockSize()
+        _checkBCSRVecLen(x, bsize * self.ptr.getRowDim(), "x")
+        _checkBCSRVecLen(y, bsize * self.ptr.getColDim(), "y")
+        if np.may_share_memory(x, y):
+            raise ValueError("BCSRMatrix.multTranspose: x and y must not overlap")
+        self.ptr.multTranspose(<TacsScalar*>x.data, <TacsScalar*>y.data)
+
+    def multTransposeAdd(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x,
+                         np.ndarray[TacsScalar, ndim=1, mode="c"] z,
+                         np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = A^T x + z``; `z` may be the same array as `y`, `x` must not overlap `y`."""
+        cdef int bsize = self.ptr.getBlockSize()
+        _checkBCSRVecLen(x, bsize * self.ptr.getRowDim(), "x")
+        _checkBCSRVecLen(z, bsize * self.ptr.getColDim(), "z")
+        _checkBCSRVecLen(y, bsize * self.ptr.getColDim(), "y")
+        if np.may_share_memory(x, y):
+            raise ValueError("BCSRMatrix.multTransposeAdd: x and y must not overlap")
+        self.ptr.multTransposeAdd(<TacsScalar*>x.data, <TacsScalar*>z.data, <TacsScalar*>y.data)
+
+    def applyFactor(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] y=None):
+        """Compute ``y = U^{-1} L^{-1} x`` on a factored matrix; in place on `x` if `y` is None."""
+        cdef int size = self.ptr.getBlockSize() * self.ptr.getRowDim()
+        _checkBCSRVecLen(x, size, "x")
+        if y is None or y is x:
+            self.ptr.applyFactor(<TacsScalar*>x.data)
+        else:
+            _checkBCSRVecLen(y, size, "y")
+            self.ptr.applyFactor(<TacsScalar*>x.data, <TacsScalar*>y.data)
+
+    def applyLower(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = L^{-1} x`` on a factored matrix; `y` may be the same array as `x`."""
+        cdef int size = self.ptr.getBlockSize() * self.ptr.getRowDim()
+        _checkBCSRVecLen(x, size, "x")
+        _checkBCSRVecLen(y, size, "y")
+        self.ptr.applyLower(<TacsScalar*>x.data, <TacsScalar*>y.data)
+
+    def applyUpper(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, np.ndarray[TacsScalar, ndim=1, mode="c"] y):
+        """Compute ``y = U^{-1} x`` on a factored matrix; `y` may be the same array as `x`."""
+        cdef int size = self.ptr.getBlockSize() * self.ptr.getRowDim()
+        _checkBCSRVecLen(x, size, "x")
+        _checkBCSRVecLen(y, size, "y")
+        self.ptr.applyUpper(<TacsScalar*>x.data, <TacsScalar*>y.data)
+
+    cdef int _checkPartial(self, np.ndarray x, int var_offset, bint isFullLength) except -1:
+        cdef int nrows = self.ptr.getRowDim()
+        if var_offset < 0 or var_offset > nrows:
+            raise ValueError("BCSRMatrix: var_offset must lie in [0, nrows]")
+        _checkBCSRVecLen(x, self.ptr.getBlockSize() * (nrows if isFullLength else nrows - var_offset), "x")
+        return 0
+
+    def applyPartialLower(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, int var_offset):
+        """In place ``x <- L[v:, v:]^{-1} x`` with ``v = var_offset``; `x` has ``(nrows - v)*bsize`` entries."""
+        self._checkPartial(x, var_offset, False)
+        self.ptr.applyPartialLower(<TacsScalar*>x.data, var_offset)
+
+    def applyPartialUpper(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, int var_offset):
+        """In place ``x <- U[v:, v:]^{-1} x`` with ``v = var_offset``; `x` has ``(nrows - v)*bsize`` entries."""
+        self._checkPartial(x, var_offset, False)
+        self.ptr.applyPartialUpper(<TacsScalar*>x.data, var_offset)
+
+    def applyFactorSchur(self, np.ndarray[TacsScalar, ndim=1, mode="c"] x, int var_offset):
+        """
+        In place ``x[:v] <- U[:v, :v]^{-1} (x[:v] - U[:v, v:] x[v:])`` with ``v = var_offset``.
+
+        `x` has full length ``nrows*bsize``; the trailing part is not modified.
+        """
+        self._checkPartial(x, var_offset, True)
+        self.ptr.applyFactorSchur(<TacsScalar*>x.data, var_offset)
+
+    def factorDiag(self, np.ndarray[TacsScalar, ndim=1, mode="c"] diag=None):
+        """Store the inverses of the diagonal blocks (plus the optional scalar diagonal `diag`) for SOR."""
+        self._checkSquareWithDiag()
+        if diag is None:
+            self.ptr.factorDiag(NULL)
+        else:
+            _checkBCSRVecLen(diag, self.ptr.getBlockSize() * self.ptr.getRowDim(), "diag")
+            self.ptr.factorDiag(<TacsScalar*>diag.data)
+
+    def applySOR(self, np.ndarray[TacsScalar, ndim=1, mode="c"] b, np.ndarray[TacsScalar, ndim=1, mode="c"] x,
+                 TacsScalar omega, int iters=1):
+        """Apply `iters` forward SOR sweeps to ``A x = b``, updating `x` in place (needs ``factorDiag()``)."""
+        cdef int size = self.ptr.getBlockSize() * self.ptr.getRowDim()
+        self._checkSquareWithDiag()
+        _checkBCSRVecLen(b, size, "b")
+        _checkBCSRVecLen(x, size, "x")
+        self.ptr.applySOR(<TacsScalar*>b.data, <TacsScalar*>x.data, omega, iters)
+
+    def applySORRange(self, BCSRMatrix B, int start, int end, int var_offset, TacsScalar omega,
+                      np.ndarray[TacsScalar, ndim=1, mode="c"] b,
+                      np.ndarray[TacsScalar, ndim=1, mode="c"] xext,
+                      np.ndarray[TacsScalar, ndim=1, mode="c"] x):
+        """
+        One SOR sweep over a row interval, updating `x` in place (needs ``factorDiag()``).
+
+        If ``start < end`` rows ``start, ..., end-1`` are swept forwards, otherwise
+        rows ``start-1, ..., end`` backwards. For each row i:
+        ``t = b_i - sum_{j != i} A_ij x_j - (B xext)_{i - var_offset}`` (the B term
+        only if `B` is given and ``i >= var_offset``), then
+        ``x_i = (1 - omega) x_i + omega D_i^{-1} t``.
+
+        Parameters
+        ----------
+        B : BCSRMatrix or None
+            Off-process coupling matrix with at least ``nrows - var_offset`` rows.
+        xext : numpy.ndarray or None
+            External values, length ``B.ncols*bsize``; required if `B` is given.
+        """
+        cdef int nrows = self.ptr.getRowDim()
+        cdef int size = self.ptr.getBlockSize() * nrows
+        cdef BCSRMat *Bptr = NULL
+        cdef TacsScalar *xextPtr = NULL
+        self._checkSquareWithDiag()
+        _checkBCSRVecLen(b, size, "b")
+        _checkBCSRVecLen(x, size, "x")
+        if start < 0 or start > nrows or end < 0 or end > nrows:
+            raise ValueError("BCSRMatrix.applySORRange: start and end must lie in [0, nrows]")
+        if B is not None:
+            self._checkSameBlockSize(B)
+            if var_offset < 0 or B.ptr.getRowDim() < nrows - var_offset or xext is None:
+                raise ValueError("BCSRMatrix.applySORRange: B needs nrows - var_offset rows and xext")
+            _checkBCSRVecLen(xext, self.ptr.getBlockSize() * B.ptr.getColDim(), "xext")
+            Bptr = B.ptr
+            xextPtr = <TacsScalar*>xext.data
+        self.ptr.applySOR(Bptr, start, end, var_offset, omega, <TacsScalar*>b.data, xextPtr, <TacsScalar*>x.data)
+
+    def matMultAdd(self, double alpha, BCSRMatrix A, BCSRMatrix B):
+        """Compute ``self += alpha*A*B`` restricted to this matrix's pattern."""
+        self._checkSameBlockSize(A)
+        self._checkSameBlockSize(B)
+        if (self.ptr.getRowDim() != A.ptr.getRowDim() or A.ptr.getColDim() != B.ptr.getRowDim()
+                or B.ptr.getColDim() != self.ptr.getColDim()):
+            raise ValueError("BCSRMatrix.matMultAdd: incompatible matrix dimensions")
+        self.ptr.matMultAdd(alpha, A.ptr, B.ptr)
+
+    def applyLowerFactor(self, BCSRMatrix E):
+        """Overwrite `E` with ``L^{-1} E`` restricted to E's pattern (this matrix must be factored)."""
+        self._checkSameBlockSize(E)
+        if E.ptr.getRowDim() != self.ptr.getRowDim():
+            raise ValueError("BCSRMatrix.applyLowerFactor: E must have the same number of rows")
+        self.ptr.applyLowerFactor(E.ptr)
+
+    def applyUpperFactor(self, BCSRMatrix F):
+        """Overwrite `F` with ``F U^{-1}`` restricted to F's pattern (this matrix must be factored)."""
+        self._checkSameBlockSize(F)
+        if F.ptr.getColDim() != self.ptr.getRowDim():
+            raise ValueError("BCSRMatrix.applyUpperFactor: F must have as many columns as this matrix has rows")
+        self.ptr.applyUpperFactor(F.ptr)
+
+    def matMultNormal(self, np.ndarray[TacsScalar, ndim=1, mode="c"] s, BCSRMatrix B):
+        """Compute ``self = B^T diag(s) B`` restricted to this pattern; `s` has ``B.nrows*bsize`` entries."""
+        self._checkSameBlockSize(B)
+        if self.ptr.getRowDim() != B.ptr.getColDim() or self.ptr.getColDim() != B.ptr.getColDim():
+            raise ValueError("BCSRMatrix.matMultNormal: this matrix must be B.ncols x B.ncols")
+        _checkBCSRVecLen(s, self.ptr.getBlockSize() * B.ptr.getRowDim(), "s")
+        self.ptr.matMultNormal(<TacsScalar*>s.data, B.ptr)
+
+    def isEqual(self, BCSRMatrix mat, double tol=1e-12):
+        """Return True if `mat` has the same pattern and values to within `tol`."""
+        self._checkSameBlockSize(mat)
+        return self.ptr.isEqual(mat.ptr, tol) != 0
+
+    def initGenericImpl(self):
+        """Use the generic runtime-block-size kernels (disables threaded kernels)."""
+        self.ptr.initGenericImpl()
+
+    def initBlockImpl(self):
+        """Use the block-size-specific kernels (the default)."""
+        self.ptr.initBlockImpl()
+
 # Create a generic preconditioner class
 cdef class Pc:
     def __cinit__(self, Mat mat=None, *args, **kwargs):
