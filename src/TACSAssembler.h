@@ -26,6 +26,8 @@
 
 class TACSAssembler;
 
+#include <pthread.h>
+
 // Basic analysis classes
 #include "TACSAuxElements.h"
 #include "TACSElement.h"

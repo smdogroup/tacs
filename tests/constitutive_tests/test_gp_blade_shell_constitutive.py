@@ -409,6 +409,18 @@ class GPConstitutiveCFTest(GPConstitutiveMLTest):
         )
 
 
+class GPConstitutiveCPTCripplingTest(GPConstitutiveCFTest):
+    """
+    third test with the closed-form CPT stiffener crippling model instead of
+    the experimental DOD crippling solution of the base class
+    """
+
+    def get_con(self, ply):
+        con = super(GPConstitutiveCPTCripplingTest, self).get_con(ply)
+        con.setCPTstiffenerCrippling(True)
+        return con
+
+
 if __name__ == "__main__":
     # current status of these tests
     # case == "CF" [runs internal tests] => all pass

@@ -421,6 +421,7 @@ class pyTACS(BaseUI):
         includeOp="or",
         excludeOp="or",
         projectVector=None,
+        adjacentTo=None,
         **kwargs,
     ):
         """
@@ -530,6 +531,33 @@ class pyTACS(BaseUI):
             # group to each one.
             selectCompIDs(nGroup=-1)
 
+        5. adjacentTo, integer, string, list of integers and/or strings:
+        Restrict the selection to components that are adjacent to any of
+        the components matched by this argument.
+        Shell components are adjacent when they share an element edge and
+        1D components (e.g. beams, rods) are adjacent when they share an
+        element end node.
+        The argument is matched against the component descriptions in the
+        same way as 'include'.
+        If 'include' is not given, every neighbour of the matched components
+        is selected, otherwise only the 'include' components that are also
+        neighbours are selected.
+        A matched component is not selected on account of being matched, but
+        it will be selected if it is itself adjacent to another matched
+        component (e.g. when 'adjacentTo' matches several skin panels that
+        touch each other). Use 'exclude' to leave such components out.
+
+        For example::
+
+            # This will select the ribs and spars that are adjacent to the
+            # 'USkin_03' component.
+            selectCompIDs(include=["SPAR", "RIB"], adjacentTo="USkin_03")
+
+            # This will select every component that is adjacent to any of
+            # the upper skin panels, except the upper skin panels themselves
+            # (which are adjacent to each other).
+            selectCompIDs(adjacentTo="USkin", exclude="USkin")
+
         includeOp, str: 'and' or 'or'.
         Selects the logical operation
         used for item in 'include' option.
@@ -545,7 +573,7 @@ class pyTACS(BaseUI):
         """
 
         # Defaults
-        includeIDs = np.arange(self.nComp)
+        includeIDs = list(range(self.nComp))
         excludeIDs = []
         includeBoundIDs = None
 
@@ -557,6 +585,13 @@ class pyTACS(BaseUI):
 
         iSet = set(includeIDs)
         eSet = set(excludeIDs)
+
+        # Keep only the components that neighbour any of the 'adjacentTo' components
+        if adjacentTo is not None:
+            adjacentIDs = set()
+            for compID in self._getCompIDs("or", adjacentTo):
+                adjacentIDs.update(self.meshLoader.getAdjacentCompIDs(compID))
+            iSet = iSet.intersection(adjacentIDs)
 
         # First take the intersection of iSet and ibSet
         if includeBoundIDs is not None:
@@ -2449,7 +2484,11 @@ class pyTACS(BaseUI):
         information in inList
         """
 
-        # First recursively flatten the inList in case it was nested:
+        # Convert any numpy arrays of component IDs to lists of python ints,
+        # then recursively flatten the inList in case it was nested:
+        inList = [
+            item.tolist() if isinstance(item, np.ndarray) else item for item in inList
+        ]
         inList = self._flatten(inList)
 
         # Neste list container for compIDs
@@ -2458,10 +2497,10 @@ class pyTACS(BaseUI):
         # Look at each item in list (which is a list because of the *)
         for item in inList:
             compIDs.append([])
-            if isinstance(item, int):
+            if isinstance(item, (int, np.integer)):
                 # Integers are easy, just check if in bounds and add:
                 if item >= 0 and item < self.nComp:
-                    compIDs[-1].append(item)
+                    compIDs[-1].append(int(item))
                 else:
                     self._TACSWarning(
                         f"Trying to add component ID of {item}, which\

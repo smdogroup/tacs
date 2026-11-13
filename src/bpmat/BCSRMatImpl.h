@@ -22,6 +22,8 @@
 /*
   Implementations of the various block-specific operations
 */
+#include <pthread.h>
+
 #include "TACSObject.h"
 
 class BCSRMatData : public TACSObject {
