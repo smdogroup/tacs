@@ -34,6 +34,7 @@ class TACSElement2D : public TACSElement {
   ElementType getElementType();
   TACSElementBasis *getElementBasis();
   TACSElementModel *getElementModel();
+  int getNumTractionComponents() { return getVarsPerNode(); }
   TACSElement *createElementTraction(int faceIndex, const TacsScalar t[],
                                      const int *tracDVNums = NULL);
   TACSElement *createElementPressure(int faceIndex, TacsScalar p,

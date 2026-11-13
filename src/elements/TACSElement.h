@@ -197,8 +197,22 @@ class TACSElement : public TACSObject {
   virtual TACSElementModel *getElementModel() { return NULL; }
 
   /**
+    Get the number of traction components the element reads in
+    createElementTraction()
+
+    @return The length of the traction and traction design variable number
+    arrays read by createElementTraction(), zero if the element has no
+    traction class.
+  */
+  virtual int getNumTractionComponents() { return 0; }
+
+  /**
     Create element traction class
 
+    @param faceIndex The face (side) of the element the traction acts on
+    @param t The traction components, of length getNumTractionComponents()
+    @param tracDVNums The design variable number of each traction component
+    (negative for none), of length getNumTractionComponents(). May be NULL.
     @return The TACSElement traction class associated with this element.
     Possibly NULL.
   */

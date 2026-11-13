@@ -121,6 +121,42 @@ class ElementTest(unittest.TestCase):
                         )
                         self.assertFalse(fail)
 
+    def test_short_traction_is_padded(self):
+        """
+        A traction with fewer entries than the element has variables per node
+        (e.g. a mechanical traction on a thermoelastic element) must behave as
+        if the missing entries were zero and not design variables, rather than
+        reading past the end of the arrays.
+        """
+        model = elements.LinearThermoelasticity3D(
+            constitutive.SolidConstitutive(self.props, t=1.0, tNum=0)
+        )
+        num_vars = model.getVarsPerNode()
+        self.assertEqual(num_vars, 4)
+        trac = self.trac_vec[:3].copy()
+        dv_nums = np.array([5, 6, 7], dtype=np.intc)
+        for basis in self.bases:
+            with self.subTest(basis=basis):
+                element = elements.Element3D(model, basis)
+                self.assertEqual(element.getNumTractionComponents(), num_vars)
+                # Repeat the call so that whatever happens to sit after the
+                # short arrays in memory varies
+                for _ in range(20):
+                    short = element.createElementTraction(self.faceIndex, trac, dv_nums)
+                    np.testing.assert_array_equal(
+                        short.getDesignVarNums(self.elem_index), dv_nums
+                    )
+                    np.testing.assert_array_equal(
+                        short.getDesignVars(self.elem_index), trac
+                    )
+
+    def test_traction_dv_nums_length_mismatch(self):
+        element = elements.Element3D(self.models[1], self.bases[0])
+        with self.assertRaises(ValueError):
+            element.createElementTraction(
+                self.faceIndex, self.trac_vec[:3], np.array([1, 2], dtype=np.intc)
+            )
+
     def test_adj_res_product(self):
         # Loop through every combination of model and basis class and test adjoint residual-dvsens product
         for model in self.models:

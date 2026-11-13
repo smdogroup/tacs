@@ -191,6 +191,8 @@ class TACSBeamElement : public TACSElement {
     return con->getDesignVarRange(elemIndex, dvLen, lb, ub);
   }
 
+  int getNumTractionComponents() { return 3; }
+
   TACSElement *createElementTraction(int faceIndex, const TacsScalar t[],
                                      const int *tracDVNums = NULL) {
     return new TACSBeamTraction<vars_per_node, quadrature, basis>(t, 1,

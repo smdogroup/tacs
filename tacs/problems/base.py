@@ -563,8 +563,10 @@ class TACSProblem(TACSSystem):
             )
         if tractionDVNums.shape[1] != tracLen:
             raise self._TACSError(
-                f"Number of columns in tractionDVNums must match the number of traction components, "
-                f"you supplied {tractionDVNums=} and {tractionDVNums=}."
+                "Number of columns in tractionDVNums must match the number of traction components,"
+                " {} columns were specified for {} traction components".format(
+                    tractionDVNums.shape[1], tracLen
+                )
             )
         self._checkDVNums(tractionDVNums.ravel())
 
@@ -575,6 +577,9 @@ class TACSProblem(TACSSystem):
 
         # Flag to make sure we find all user-specified elements
         elemFound = np.zeros(numElems, dtype=int)
+        # Number of traction components each element expects, for the elements
+        # that were given fewer
+        numTracExpected = np.zeros(numElems, dtype=int)
 
         # Loop through every element and if it's owned by this processor, add the traction
         for i, elemID in enumerate(localElemIDs):
@@ -586,6 +591,9 @@ class TACSProblem(TACSSystem):
                 elemObj = self.meshLoader.getElementObjectForElemID(
                     elemIDs[i], nastranOrdering=nastranOrdering
                 )
+                # The missing components of a short traction are set to zero
+                if elemObj.getNumTractionComponents() > tracLen:
+                    numTracExpected[i] = elemObj.getNumTractionComponents()
                 # Create an appropriate traction object for this element type
                 tracObj = elemObj.createElementTraction(
                     faceIndex,
@@ -620,6 +628,22 @@ class TACSProblem(TACSSystem):
                     "Can't add traction to element ID {} ({} ordering), element not found in model. "
                     "Double check BDF file.".format(elemIDs[i], orderString)
                 )
+
+        # Warn the user, once, if any tractions were shorter than their element expects
+        numTracExpected = np.max(self.comm.allgather(numTracExpected), axis=0)
+        numShort = np.count_nonzero(numTracExpected)
+        if numShort > 0:
+            self._TACSWarning(
+                "Tractions with {} components were added to {} elements that expect {} "
+                "components. The missing components were set to zero and are not "
+                "design variables.".format(
+                    tracLen,
+                    numShort,
+                    " or ".join(
+                        str(n) for n in np.unique(numTracExpected[numTracExpected > 0])
+                    ),
+                )
+            )
 
     def _addPressureToComponents(
         self, auxElems, compIDs, pressures, faceIndex=0, pressureDVNums=None
