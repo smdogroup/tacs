@@ -302,14 +302,9 @@ cdef extern from "TACSConstitutive.h":
                                 const TacsScalar*, TacsScalar*, TacsScalar*)
 
 cdef extern from "TACSAuxElements.h":
-    cdef cppclass TACSAuxElem:
-        TACSElement *elem
-        int num
-
     cdef cppclass TACSAuxElements(TACSObject):
         TACSAuxElements(int)
         void addElement(int, TACSElement*)
-        int getAuxElements(TACSAuxElem **elems)
         void setDesignVars(TACSBVec*)
 
 cdef extern from "TACSAssembler.h":
@@ -339,7 +334,6 @@ cdef extern from "TACSAssembler.h":
                               TACSNodeMap *_designVarMap)
         void setGlobalDVIndices(int n, const int *dvNums)
         int getGlobalDVIndices(const int **dvNums)
-        int getDesignVarsPerNode()
         void addBCs(int nnodes, int *nodes,
                     int nbcs, int *vars, TacsScalar *vals)
         void addInitBCs(int nnodes, int *nodes,

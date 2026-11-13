@@ -965,24 +965,6 @@ cdef class AuxElements:
         self.ptr.addElement(num, elem.ptr)
         return
 
-    def getAuxElements(self):
-        """Return a list of Element objects for all auxiliary elements."""
-        cdef TACSAuxElem *aux_elems = NULL
-        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
-        elems = []
-        for i in range(num_elems):
-            elems.append(_init_Element(aux_elems[i].elem))
-        return elems
-
-    def getAuxElementNums(self):
-        """Return a list of component numbers corresponding to each auxiliary element."""
-        cdef TACSAuxElem *aux_elems = NULL
-        cdef int num_elems = self.ptr.getAuxElements(&aux_elems)
-        nums = []
-        for i in range(num_elems):
-            nums.append(aux_elems[i].num)
-        return nums
-
     def setDesignVars(self, Vec dvs):
         """Update the design variables held by every auxiliary element.
 
@@ -2009,15 +1991,6 @@ cdef class Assembler:
         for i in range(n):
             result[i] = dv_nums[i]
         return result
-
-    def getDesignVarsPerNode(self):
-        """
-        Get the number of design variables per design node.
-
-        Returns:
-            int: Number of design variables at each design node.
-        """
-        return self.ptr.getDesignVarsPerNode()
 
     def getDesignVarRange(self, Vec lb, Vec ub):
         """
