@@ -16,6 +16,8 @@
 
 #include <string.h>
 
+#include <string>
+
 #include "TACSElementAlgebra.h"
 #include "tacslapack.h"
 

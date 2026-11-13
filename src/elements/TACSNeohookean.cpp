@@ -209,7 +209,7 @@ void TACSNeohookean3D::getOutputData(int elemIndex, const double time,
     if (write_flag & TACS_OUTPUT_DISPLACEMENTS) {
       data[0] = Ut[0];
       data[1] = Ut[3];
-      data[3] = Ut[6];
+      data[2] = Ut[6];
       data += 3;
     }
 

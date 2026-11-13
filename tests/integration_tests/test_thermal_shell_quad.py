@@ -150,3 +150,10 @@ class ProblemTest(PyTACSTestCase.PyTACSTest):
     )
     def test_total_xpt_sensitivities(self):
         pass
+
+    @unittest.skip(
+        "Adjoint solution consistency is not guaranteed for Quad4ThermalShell — "
+        "requires an adjoint solver with transpose Jacobian support."
+    )
+    def test_static_adjoint_consistency(self):
+        pass

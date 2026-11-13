@@ -20,6 +20,8 @@
 
 #include "TACSLamParamSmearedShellConstitutive.h"
 
+#include <algorithm>
+
 #include "TACSElementAlgebra.h"
 
 const char *TACSLamParamSmearedShellConstitutive::constName =

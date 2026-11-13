@@ -98,6 +98,11 @@ test:
     - test -f $PREFIX/bin/f5totec
     - export OMPI_MCA_btl=self,tcp
     - export OMPI_MCA_rmaps_base_oversubscribe=1
+    # The mpich variants use the UCX netmod, which aborts MPI_Init if it finds an
+    # RDMA device it can't open (e.g. Azure's mana_0 on some CI runners). Restrict
+    # UCX to loopback transports since these tests are single-node.
+    - export UCX_TLS=tcp,self,sm
+    - export UCX_NET_DEVICES=lo
     - rm tests/integration_tests/test_mphys*
     - testflo --pre_announce --timeout 120 tests/ # [linux64]
 

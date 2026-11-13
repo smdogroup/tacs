@@ -420,14 +420,18 @@ TACSGPBladeStiffenedShellConstitutive::evalStiffenerCripplingStrainSens(
     TacsScalar N1CritCrippling = computeStiffenerCripplingLoad(
         D11s, D22s, xiStiff, rho0Stiff, genPoiss, zetaStiff);
 
-    // applky stiffener strain sens through the in-plane load
+    // apply stiffener strain sens through the in-plane load
     // Sensitivity from stiffener crippling (ignores dKSdf[4] since that is
-    // applied in main evalFailureStrainSens here)
+    // applied in main evalFailureStrainSens here). The output array is fully
+    // defined here: callers either reuse it across failure modes or pass it
+    // uninitialized, so accumulating into it would leak other modes'
+    // sensitivities (or garbage) into the crippling sensitivity.
+    memset(sens, 0, TACSBeamConstitutive::NUM_STRESSES * sizeof(TacsScalar));
     TacsScalar N1stiffSens = 1.0 / N1CritCrippling;
-    sens[0] += N1stiffSens * -A11s_beam;
+    sens[0] = N1stiffSens * -A11s_beam;
     TacsScalar z = -1.0 * this->computeStiffenerCentroidHeight() -
                    0.5 * this->panelThick;  // stiffener downwards into wing
-    sens[3] += N1stiffSens * z * -A11s_beam;
+    sens[3] = N1stiffSens * z * -A11s_beam;
 
     // return the stiffener failure index
     return N1stiff / N1CritCrippling;
@@ -862,7 +866,7 @@ void TACSGPBladeStiffenedShellConstitutive::addStiffenerCripplingDVSens(
     // backpropagate from fail index to N1 stiffener in plane load
     TacsScalar stiffN1sens = 1.0 / N1CritCrippling;
     this->computeStiffenerInPlaneLoadSens(scale, stiffenerStrain, stiffN1sens,
-                                          &dfdx[this->stiffenerDVStartNum]);
+                                          dfdx);
 
     // backpropagate N1crit sens of stiffener to ND and material sensitivities
     TacsScalar stiffN1critsens = fail_index * -1.0 / N1CritCrippling;
@@ -1158,8 +1162,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerInPlaneLoadSens(
   // derivatives through E the effective modulus
   //    includes stiffener ply fraction DVs only
   for (int plyNum = 0; plyNum < this->numStiffenerPlies; plyNum++) {
-    int dvNum =
-        this->stiffenerPlyFracLocalNums[plyNum] - this->stiffenerDVStartNum;
+    int dvNum = this->stiffenerPlyFracLocalNums[plyNum];
     if (dvNum >= 0) {
       const TacsScalar *Q = &(this->stiffenerQMats[plyNum * NUM_Q_ENTRIES]);
       TacsScalar ply_frac_jac =
@@ -1172,7 +1175,7 @@ TACSGPBladeStiffenedShellConstitutive::computeStiffenerInPlaneLoadSens(
   // derivatives through A11s but not effective modulus part
   //    includes stiffener thick (height cancels out b.c. in-plane load)
   if (this->stiffenerThickLocalNum >= 0) {
-    int dvNum = this->stiffenerThickLocalNum - this->stiffenerDVStartNum;
+    int dvNum = this->stiffenerThickLocalNum;
     // use power-series rule since N11_stiff propto sthick^1
     // if f = A * x, then df/dx = A = f / x (useful trick for fewer steps)
     TacsScalar sthick_jac = N11_stiff / this->stiffenerThick;

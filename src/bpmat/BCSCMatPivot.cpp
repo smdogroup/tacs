@@ -14,6 +14,8 @@
 
 #include "BCSCMatPivot.h"
 
+#include <new>
+
 #include "TacsUtilities.h"
 #include "tacslapack.h"
 
