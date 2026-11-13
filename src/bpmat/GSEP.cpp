@@ -244,16 +244,17 @@ TacsScalar EPBucklingShiftInvert::convertEigenvalue(TacsScalar value) {
 }
 
 /*
-  The transform above has a pole at value == 1: the image of an infinite
-  eigenvalue of the pencil, i.e. a mode with no geometric stiffness such as a
-  constrained degree of freedom.
+  The shift-invert transform above has a pole at value == 1 . i.e an eigenvalue
+  of 1 in the shifted problem corresponds to a buckling load factor of lambda =
+  +- infinity. These eigenvalues can show up in some cases (e.g in-plan modes of
+  a flat plate) but should not be selected.
 
-  Any non-zero real part of (1 - value) makes |lambda| large, so those values
-  sort to the end and are never selected. The pole does not. Real arithmetic
-  gives +/-infinity, which also sorts away, but under complex step the
-  infinitesimal imaginary part leaves a finite value whose real part is exactly
-  sigma, which sorts ahead of every finite eigenvalue.
+  In real mode, value = 1 gives lambda = +- infinity, so these modes are
+  naturally sorted out of the selected modes. However, in complex mode, value =
+  1 + eps*i gives lambda = sigma + sigma/(eps*i), a finite value whose real part
+  is exactly sigma, which sorts ahead of every finite eigenvalue.
 
+  We therefore need a cutoff to explicitly catch eigenvalues close to the pole.
   The cutoff need only catch a denominator that is zero to working precision;
   1e-12 rejects |lambda| >= 1e12*sigma.
 */
