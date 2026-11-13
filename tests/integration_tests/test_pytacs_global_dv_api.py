@@ -3,7 +3,9 @@ import unittest
 
 import numpy as np
 
-from tacs import pytacs
+from mpi4py import MPI
+
+from tacs import pytacs, constitutive, elements
 from tacs.utilities import Error
 
 try:
@@ -15,12 +17,13 @@ except ImportError:
 """
 Unit tests for the pyTACS addGlobalDV/assignMassDV API, covering both the
 scalar and array-valued design variable paths (dv numbering, bounds/scale
-broadcasting, error handling, and the mphys mass dv split).
-No problems are solved.
+broadcasting, error handling, and the mphys mass dv split), and for how the
+global design variables are distributed across MPI ranks.
 """
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 bdf_file = os.path.join(base_dir, "./input_files/point_mass.bdf")
+plate_bdf_file = os.path.join(base_dir, "./input_files/partitioned_plate.bdf")
 
 
 class GlobalDVAPITest(unittest.TestCase):
@@ -241,6 +244,127 @@ class GlobalDVBoundsAfterInitializeTest(unittest.TestCase):
         vec.getArray()[:] = -1e20
         fea_assembler._setGlobalDVValues(vec, [dvNum], [0.0])
         self.assertEqual(np.real(vec.getArray()[dvNum]), 0.0)
+
+
+class GlobalDVDistributionTest(unittest.TestCase):
+    """
+    The classes above run on one rank, where rank 0 owns every design variable
+    and nothing is ever communicated. These tests run the same model on two
+    ranks, so that the global dv values and bounds have to be inserted into a
+    distributed design vector, and the load elements on the rank that does not
+    own a global dv have to receive its value through the external dv
+    distribution.
+
+    Every assertion is made on quantities that are reduced over all ranks, so
+    that a failure is raised on every rank.
+    """
+
+    N_PROCS = 2
+
+    P = 1e5
+
+    def setUp(self):
+        self.comm = MPI.COMM_WORLD
+        self.fea_assembler = pytacs.pyTACS(plate_bdf_file, self.comm)
+        # The zero entries are the ones an INSERT_NONZERO_VALUES insert drops
+        self.g_dv_nums = self.fea_assembler.addGlobalDV(
+            "g", [0.0, 0.0, -9.81], lower=[0.0, -1.0, -20.0], upper=[0.0, 1.0, 0.0]
+        )
+        self.p_dv_num = self.fea_assembler.addGlobalDV("pressure", self.P)
+
+        def elem_call_back(
+            dv_num, comp_id, comp_descript, elem_descripts, global_dvs, **kwargs
+        ):
+            prop = constitutive.MaterialProperties(
+                rho=2500.0, E=70e9, nu=0.3, ys=464.0e6
+            )
+            con = constitutive.IsoShellConstitutive(
+                prop, t=0.01, tNum=dv_num, tlb=0.001, tub=0.1
+            )
+            return elements.Quad4Shell(None, con)
+
+        self.fea_assembler.initialize(elem_call_back)
+        self.comp_ids = self.fea_assembler.selectCompIDs()
+
+    def gather(self, local_array):
+        """Assemble the global array from the entries owned by each rank"""
+        return np.concatenate(self.comm.allgather(np.real(local_array)))
+
+    def state_norm(self, local_states):
+        return np.sqrt(
+            self.comm.allreduce(np.sum(np.real(local_states) ** 2), op=MPI.SUM)
+        )
+
+    def double_pressure_dv(self, problem):
+        """Double the pressure dv, which is owned by rank 0 like every global dv"""
+        x = problem.getDesignVars()
+        if self.comm.rank == 0:
+            x[self.p_dv_num] *= 2.0
+        problem.setDesignVars(x)
+
+    def test_both_ranks_own_elements(self):
+        # Otherwise nothing below depends on the dv distribution
+        num_owned = self.comm.allgather(self.fea_assembler.assembler.getNumElements())
+        self.assertTrue(all(num > 0 for num in num_owned))
+
+    def test_values_and_bounds_are_inserted(self):
+        xlb, xub = self.fea_assembler.getDesignVarRange()
+        xlb = self.gather(xlb)
+        xub = self.gather(xub)
+        x0 = self.gather(self.fea_assembler.getOrigDesignVars())
+
+        num_dvs = self.fea_assembler.getTotalNumDesignVars()
+        self.assertEqual(len(x0), num_dvs)
+
+        np.testing.assert_array_equal(xlb[self.g_dv_nums], [0.0, -1.0, -20.0])
+        np.testing.assert_array_equal(xub[self.g_dv_nums], [0.0, 1.0, 0.0])
+        np.testing.assert_array_equal(x0[self.g_dv_nums], [0.0, 0.0, -9.81])
+        # The pressure dv has no bounds and is held by no regular element
+        self.assertEqual(xlb[self.p_dv_num], -1e20)
+        self.assertEqual(xub[self.p_dv_num], 1e20)
+        self.assertEqual(x0[self.p_dv_num], self.P)
+        # Inserting the global dvs must not disturb the element dvs, which are
+        # owned by both ranks
+        num_global_dvs = self.fea_assembler.getTotalNumGlobalDVs()
+        np.testing.assert_array_equal(xlb[num_global_dvs:], 0.001)
+        np.testing.assert_array_equal(xub[num_global_dvs:], 0.1)
+        np.testing.assert_array_equal(x0[num_global_dvs:], 0.01)
+
+    def test_static_load_dv_reaches_every_rank(self):
+        problem = self.fea_assembler.createStaticProblem("pressure")
+        problem.addPressureToComponents(
+            self.comp_ids, self.P, pressureDVNums=self.p_dv_num
+        )
+        problem.solve()
+        norm0 = self.state_norm(problem.getVariables())
+        self.assertGreater(norm0, 0.0)
+
+        # The response is linear in the pressure, and every element carries the
+        # load, so the norm only doubles if every rank received the new value
+        self.double_pressure_dv(problem)
+        problem.solve()
+        norm1 = self.state_norm(problem.getVariables())
+        np.testing.assert_allclose(norm1, 2.0 * norm0, rtol=1e-8)
+
+    def test_transient_load_dv_reaches_every_rank(self):
+        # A transient problem owns one set of load elements per time step, and
+        # updates them without going through the assembler
+        num_steps = 3
+        problem = self.fea_assembler.createTransientProblem(
+            "pressure", tInit=0.0, tFinal=1e-3, numSteps=num_steps
+        )
+        for step in range(num_steps + 1):
+            problem.addPressureToComponents(
+                step, self.comp_ids, self.P, pressureDVNums=self.p_dv_num
+            )
+        problem.solve()
+        norm0 = self.state_norm(problem.getVariables(num_steps)[1])
+        self.assertGreater(norm0, 0.0)
+
+        self.double_pressure_dv(problem)
+        problem.solve()
+        norm1 = self.state_norm(problem.getVariables(num_steps)[1])
+        np.testing.assert_allclose(norm1, 2.0 * norm0, rtol=1e-8)
 
 
 @unittest.skipIf(om is None, "openmdao is not installed")
