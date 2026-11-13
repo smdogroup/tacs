@@ -84,6 +84,17 @@ class StructProblemPyOptTest(unittest.TestCase):
         self.numComps = FEAAssembler.getNumComponents()
         return structProb
 
+    def test_var_names(self):
+        self.assertEqual(self.structProb.getVarName(), "struct")
+        self.assertEqual(
+            self.structProb.getPromotedDVNames(),
+            ["g_load", "pressure_load", "unused_load"],
+        )
+        self.assertEqual(
+            self.structProb.getVarNames(),
+            ["g_load", "pressure_load", "unused_load", "struct"],
+        )
+
     def test_design_var_dicts_are_float_arrays(self):
         """
         Every entry has to be a float64 array with the shape of the DV, whatever

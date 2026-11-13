@@ -494,6 +494,24 @@ class StructProblem(BaseStructProblem):
         """
         return list(self.promotedDVDict.keys())
 
+    def getVarNames(self):
+        """
+        Get the optimizer-level names of all design variable groups this
+        problem adds to an optimization, matching the ``getVarNames`` method of
+        the other MACH modules (e.g. pyGeo).
+
+        Returns
+        -------
+        list of str
+            The promoted global DV keys (``"{dvName}_{problemName}"``), followed
+            by the structural DV group name (``self.varName``) if any
+            structural DVs remain after promotion.
+        """
+        varNames = self.getPromotedDVNames()
+        if len(self.structDVList) > 0:
+            varNames.append(self.varName)
+        return varNames
+
     @staticmethod
     def _convertDictToFloat(dvDict):
         """
