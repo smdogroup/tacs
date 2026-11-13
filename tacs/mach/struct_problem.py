@@ -494,6 +494,17 @@ class StructProblem(BaseStructProblem):
         """
         return list(self.promotedDVDict.keys())
 
+    @staticmethod
+    def _convertDictToFloat(dvDict):
+        """
+        Convert every entry of a design variable dictionary to a real
+        float64 array (0d for scalar DVs), preserving its shape.
+        """
+        return {
+            dvKey: np.asarray(np.real(dvVal), dtype=np.float64)
+            for dvKey, dvVal in dvDict.items()
+        }
+
     def setDVGeo(self, DVGeo, pointSetKwargs=None):
         """
         Set the DVGeometry object that will manipulate 'geometry' in
@@ -1021,7 +1032,7 @@ class StructProblem(BaseStructProblem):
         """
         localDVs = self.FEAAssembler.getOrigDesignVars()
         dvDict = self.convertDesignVecToDict(localDVs)
-        dvDict = {dvKey: np.float64(dvVal) for dvKey, dvVal in dvDict.items()}
+        dvDict = self._convertDictToFloat(dvDict)
         return dvDict
 
     def getDesignVarRange(self):
@@ -1037,8 +1048,8 @@ class StructProblem(BaseStructProblem):
         localLB, localUB = self.FEAAssembler.getDesignVarRange()
         lbDict = self.convertDesignVecToDict(localLB)
         ubDict = self.convertDesignVecToDict(localUB)
-        lbDict = {dvKey: np.float64(dvVal) for dvKey, dvVal in lbDict.items()}
-        ubDict = {dvKey: np.float64(dvVal) for dvKey, dvVal in ubDict.items()}
+        lbDict = self._convertDictToFloat(lbDict)
+        ubDict = self._convertDictToFloat(ubDict)
         return lbDict, ubDict
 
     def getDesignVarScales(self):
@@ -1053,7 +1064,7 @@ class StructProblem(BaseStructProblem):
             Scaling values for design variables.
         """
         scaleDict = self.convertDesignVecToDict(np.array(self.FEAAssembler.scaleList))
-        scaleDict = {dvKey: np.float64(dvVal) for dvKey, dvVal in scaleDict.items()}
+        scaleDict = self._convertDictToFloat(scaleDict)
         return scaleDict
 
     def getNumDesignVars(self):
