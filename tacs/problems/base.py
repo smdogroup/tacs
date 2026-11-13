@@ -414,7 +414,7 @@ class TACSProblem(TACSSystem):
             if active.size == 0:
                 return dvNums
             # Check all dvs belong to the global dv nums
-            bad = active[np.array([v not in self.globalDVNums for v in active])]
+            bad = active[np.isin(active, list(self.globalDVNums), invert=True)]
             if bad.size > 0:
                 raise self._TACSError(
                     "Design variable numbers {} were not added as global DVs. "
