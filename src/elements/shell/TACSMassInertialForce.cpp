@@ -91,8 +91,10 @@ void TACSMassInertialForce::addAdjResProduct(
   TacsScalar g[NUM_DISPS];
   con->evalInertia(elemIndex, pt, Xpts, psi, g);
   for (int i = 0; i < 3; i++) {
-    if (inertiaVecDVNums[i] >= 0 && index < dvLen) {
-      dfdx[index] += -scale * g[i];
+    if (inertiaVecDVNums[i] >= 0) {
+      if (index < dvLen) {
+        dfdx[index] += -scale * g[i];
+      }
       index++;
     }
   }
