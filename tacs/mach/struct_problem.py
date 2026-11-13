@@ -45,6 +45,7 @@ class StructProblem(BaseStructProblem):
         DVGeo=None,
         loadFile=None,
         promotedGlobalDVs=None,
+        excludedDVs=None,
     ):
         """
         Initialize the StructProblem.
@@ -77,6 +78,21 @@ class StructProblem(BaseStructProblem):
             block.
 
             Pass ``None`` or ``[]`` (default) to promote nothing.
+
+        excludedDVs : list of str or None, optional
+            Design variable groups of this problem that are not variables of
+            the optimization, e.g. because they are held fixed.  Each entry is
+            either the name of a promoted global DV (as given in
+            ``promotedGlobalDVs``) or the name of the structural DV group
+            (``"struct"``).  Excluded groups are not registered by
+            :meth:`addVariablesPyOpt`, are left out of the sensitivities
+            returned by :meth:`evalFunctionsSens` and
+            :meth:`evalConstraintsSens` and of the constraint Jacobians
+            declared by :meth:`addConstraintsPyOpt`, and are not returned by
+            :meth:`getVarNames`.  Their values can still be set through
+            :meth:`setDesignVars`.
+
+            Pass ``None`` or ``[]`` (default) to exclude nothing.
         """
 
         self.staticProblem = staticProblem
@@ -115,6 +131,22 @@ class StructProblem(BaseStructProblem):
 
         self.promotedDVDict = {
             f"{dvName}_{self.name}": globalDVs[dvName] for dvName in namesToPromote
+        }
+
+        # excludedDVs holds the optimizer-level keys of the DV groups that are
+        # not variables of the optimization.
+        namesToExclude = list(excludedDVs) if excludedDVs else []
+        invalid = [
+            n for n in namesToExclude if n not in namesToPromote and n != self.varName
+        ]
+        if invalid:
+            raise ValueError(
+                f"The following names in excludedDVs are neither promoted global "
+                f"DVs nor the structural DV group '{self.varName}': {invalid}. "
+                f"Promoted global DVs: {namesToPromote}"
+            )
+        self.excludedDVs = {
+            n if n == self.varName else f"{n}_{self.name}" for n in namesToExclude
         }
 
         # structDVList holds the flat-vector indices of every DV that is NOT
@@ -505,12 +537,13 @@ class StructProblem(BaseStructProblem):
         list of str
             The promoted global DV keys (``"{dvName}_{problemName}"``), followed
             by the structural DV group name (``self.varName``) if any
-            structural DVs remain after promotion.
+            structural DVs remain after promotion.  Groups listed in
+            ``excludedDVs`` at construction are left out.
         """
         varNames = self.getPromotedDVNames()
         if len(self.structDVList) > 0:
             varNames.append(self.varName)
-        return varNames
+        return [name for name in varNames if name not in self.excludedDVs]
 
     @staticmethod
     def _convertDictToFloat(dvDict):
@@ -609,35 +642,27 @@ class StructProblem(BaseStructProblem):
         self.constraints.append(constr)
         self.constraintsAddToPyOpt.append(addToPyOpt)
 
-    def addVariablesPyOpt(self, optProb, excludeDVs=None):
+    def addVariablesPyOpt(self, optProb):
         """
         Register structural and mass design variables with a pyoptsparse problem.
 
         The flat TACS design vector is split into two groups (see class docstring):
 
-        * **Mass DVs** — each registered as a scalar variable group named
+        * **Promoted DVs** — each registered as its own variable group named
           ``"{dvName}_{problemName}"``.
         * **Structural DVs** — registered as a single vector variable group named
           ``self.varName`` (``"struct"``).  Skipped if the group already
           exists in ``optProb`` (prevents duplicate registration when multiple
           StructProblems share the same assembler).
 
-        Any DV name present in ``excludeDVs`` is silently skipped.  This is useful
-        when a mass DV is owned by another discipline and already registered in
-        ``optProb``, or when a particular DV should be held fixed.
+        Groups listed in ``excludedDVs`` when the StructProblem was created are
+        skipped.
 
         Parameters
         ----------
         optProb : pyoptsparse.Optimization
             Optimization problem to which variables are added.
-        excludeDVs : list of str or None, optional
-            DV names to skip.  Accepts both mass DV keys
-            (``"{dvName}_{problemName}"``) and the structural DV key
-            (``self.varName``).  Defaults to ``None`` (register everything).
         """
-        if excludeDVs is None:
-            excludeDVs = []
-
         # Convert the flat TACS arrays into the split dict format so each group
         # can be passed to addVarGroup with the correct bounds and scales.
         valueDict = self.getOrigDesignVars()
@@ -647,7 +672,7 @@ class StructProblem(BaseStructProblem):
         # Register each promoted DV as its own variable group so it can
         # be identified and shared with other disciplines in a coupled optimisation.
         for dvName in self.promotedDVDict:
-            if dvName not in excludeDVs:
+            if dvName not in self.excludedDVs:
                 optProb.addVarGroup(
                     dvName,
                     np.atleast_1d(valueDict[dvName]).size,
@@ -664,7 +689,7 @@ class StructProblem(BaseStructProblem):
         ndv = len(valueDict[self.varName])
         if (
             ndv > 0
-            and self.varName not in excludeDVs
+            and self.varName not in self.excludedDVs
             and self.varName not in optProb.variables
         ):
             optProb.addVarGroup(
@@ -738,6 +763,16 @@ class StructProblem(BaseStructProblem):
                         if name in wrt:
                             wrt.remove(name)
                             fconSens[conName].pop(name)
+
+                # A promoted DV that the constraint does not depend on would
+                # only add an empty Jacobian block. The excluded DVs are
+                # already left out by evalConstraintsSens
+                for name in list(wrt):
+                    if name in self.promotedDVDict and self._isZeroJacBlock(
+                        fconSens[conName][name], conIsLinear[conName]
+                    ):
+                        wrt.remove(name)
+                        fconSens[conName].pop(name)
 
                 optProb.addConGroup(
                     conName,
@@ -885,6 +920,34 @@ class StructProblem(BaseStructProblem):
                 if (linear and constr.isLinear) or (nonLinear and not constr.isLinear):
                     constr.evalConstraints(fcon, evalCons, ignoreMissing)
 
+    def _removeExcludedDVs(self, sensDict):
+        """
+        Remove the excluded DV groups from a dictionary of sensitivities.
+
+        The excluded groups are not variables of the optimization, and
+        pyoptsparse raises an error if the gradient of an objective has an
+        entry for a variable group it does not know.
+        """
+        return {
+            dvKey: dvSens
+            for dvKey, dvSens in sensDict.items()
+            if dvKey not in self.excludedDVs
+        }
+
+    @staticmethod
+    def _isZeroJacBlock(jacBlock, isLinear):
+        """
+        Check whether a constraint Jacobian block can never be nonzero.
+
+        A sparse block fixes the sparsity pattern pyoptsparse uses for the rest
+        of the optimization, so a sparse block with no nonzeros stays empty. A
+        dense block is only known to stay zero if the constraint is linear;
+        for a nonlinear constraint it may just be zero at the initial design.
+        """
+        if sp.sparse.issparse(jacBlock):
+            return jacBlock.count_nonzero() == 0
+        return isLinear and not np.any(jacBlock)
+
     @updateDVGeo
     def evalFunctionsSens(self, funcsSens, evalFuncs=None):
         """
@@ -931,7 +994,7 @@ class StructProblem(BaseStructProblem):
             if oldVarName in funcsSens[funcKey]:
                 sens = funcsSens[funcKey].pop(oldVarName)
                 newSens = self.convertDesignVecToDict(sens)
-                funcsSens[funcKey].update(newSens)
+                funcsSens[funcKey].update(self._removeExcludedDVs(newSens))
 
     @updateDVGeo
     def evalConstraintsSens(
@@ -1000,7 +1063,7 @@ class StructProblem(BaseStructProblem):
             if oldVarName in sens[conKey]:
                 oldSens = sens[conKey].pop(oldVarName)
                 newSens = self.convertDesignVecToDict(oldSens)
-                sens[conKey].update(newSens)
+                sens[conKey].update(self._removeExcludedDVs(newSens))
 
         fconSens.update(sens)
 
