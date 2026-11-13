@@ -90,7 +90,7 @@ class StructProblemPyOptTest(unittest.TestCase):
         return structProb
 
     def test_var_names(self):
-        self.assertEqual(self.structProb.getVarName(), "struct")
+        self.assertEqual(self.structProb.getStructDVName(), "struct")
         self.assertEqual(
             self.structProb.getPromotedDVNames(),
             ["g_load", "pressure_load", "unused_load"],
@@ -99,6 +99,11 @@ class StructProblemPyOptTest(unittest.TestCase):
             self.structProb.getVarNames(),
             ["g_load", "pressure_load", "unused_load", "struct"],
         )
+
+    def test_get_var_name_is_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            varName = self.structProb.getVarName()
+        self.assertEqual(varName, self.structProb.getStructDVName())
 
     def test_design_var_dicts_are_float_arrays(self):
         """

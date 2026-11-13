@@ -7,6 +7,7 @@ pyBase_problem
 # =============================================================================
 from functools import wraps
 import copy
+import warnings
 
 from baseclasses import StructProblem as BaseStructProblem
 
@@ -502,17 +503,38 @@ class StructProblem(BaseStructProblem):
             dvDict[self.varName] = dvVec[..., self.structDVList]
         return self.comm.bcast(dvDict, root=0)
 
-    def getVarName(self):
+    def getStructDVName(self):
         """
-        Get name for the struct design variables in pyOpt. Only needed
+        Get the name of the structural design variable group in pyOpt, i.e.
+        the key of the structural DVs in the setDesignVars() dict. Only needed
         if more than 1 pytacs object is used in an optimization
 
         Returns
         -------
-        varName : str
-            Name of the design variables used in setDesignVars() dict.
+        structDVName : str
+            Name of the structural design variable group.
         """
         return self.varName
+
+    def getVarName(self):
+        """
+        Get the name of the structural design variable group in pyOpt.
+
+        .. deprecated::
+            Use :meth:`getStructDVName` instead. This method will be removed
+            in a future release.
+
+        Returns
+        -------
+        varName : str
+            Name of the structural design variable group.
+        """
+        warnings.warn(
+            "StructProblem.getVarName is deprecated, use getStructDVName instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.getStructDVName()
 
     def getPromotedDVNames(self):
         """
