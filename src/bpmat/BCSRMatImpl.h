@@ -26,20 +26,6 @@
 
 #include "TACSObject.h"
 
-/*
-  For each column, the rows that have a block below the diagonal in that
-  column: the transpose of the strictly lower non-zero pattern. These are
-  the rows that wait for a given row in the factorization.
-*/
-class BCSRMatColumnRows {
- public:
-  BCSRMatColumnRows(int nrows, const int *rowp, const int *cols);
-  ~BCSRMatColumnRows();
-
-  int *colp;  // A pointer into rows for the start of each column
-  int *rows;  // The rows i > j with a block in column j, in increasing order
-};
-
 class BCSRMatData : public TACSObject {
  public:
   BCSRMatData(int _bsize, int _nrows, int _ncols);
@@ -59,13 +45,6 @@ class BCSRMatData : public TACSObject {
 
   // The storage space for each block - this can change
   TacsScalar *A;  // The vector of elements of each block
-
-  // The rows below the diagonal of each column, created on first use by
-  // the threaded factorization. Call this outside of a parallel region.
-  const BCSRMatColumnRows *getLowerColumnRows();
-
- private:
-  BCSRMatColumnRows *lower_column_rows;
 };
 
 #if defined(__GNUC__)

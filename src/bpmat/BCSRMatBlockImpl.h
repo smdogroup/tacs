@@ -48,6 +48,8 @@
 #include <stdio.h>   // fprintf, stderr
 #include <string.h>  // memcpy
 
+#include <atomic>  // std::atomic
+
 #include "BCSRMatImpl.h"  // BCSRMatData, BMatComputeInverse, TACS_BCSR_INLINE
 #include "TACSObject.h"   // TacsScalar, TacsAddFlops, TACS_USE_COMPLEX
 
@@ -71,16 +73,11 @@
   Work is measured in blocks times the cube of the block size. The
   factorization loop uses threads when the average block below the
   diagonal has a row of at least TACS_BCSR_MIN_BLOCK_WORK to combine with
-  its own, and runs a step on several threads when its rows hold at least
-  TACS_BCSR_MIN_PARALLEL_WORK. Before each step, up to
-  TACS_BCSR_LOOK_AHEAD rounds of rows that hold less than that are
-  finished on one thread. Dynamically scheduled loops hand out their rows
-  in TACS_BCSR_CHUNKS_PER_THREAD chunks per thread. The values were chosen
+  its own. Dynamically scheduled loops hand out their rows in
+  TACS_BCSR_CHUNKS_PER_THREAD chunks per thread. The values were chosen
   for block size 6 with GCC 15 on aarch64.
 */
 #define TACS_BCSR_MIN_BLOCK_WORK 500L
-#define TACS_BCSR_MIN_PARALLEL_WORK 200000L
-#define TACS_BCSR_LOOK_AHEAD 8
 #define TACS_BCSR_CHUNKS_PER_THREAD 8
 
 // ==============================================================================
@@ -436,10 +433,13 @@ static inline bool BCSRIsLowerLoopThreaded(const BCSRMatData *data,
  * therefore sees the same sequence of calls as in the serial loop of the
  * kernels, and the results do not depend on the number of threads.
  *
- * The work proceeds in steps: in each step every row that can advance
- * processes, in parallel with the others, all of its blocks whose columns
- * are finished. The rows that finish in a step release the rows below them
- * for the next step.
+ * The threads take whole rows in increasing order from a shared counter.
+ * Before each block, a thread waits until the row of the block's column is
+ * finished, so later rows eliminate their first blocks while earlier rows
+ * are still being finished. A thread only waits for rows that were taken
+ * before its own, and the earliest unfinished row never waits, so the loop
+ * cannot deadlock. Waiting threads spin, which assumes no more threads than
+ * cores.
  *
  * It is kept out of line, and the kernels call their per-block functions
  * directly in their serial loops: with the threaded loop inlined, or with
@@ -447,141 +447,38 @@ static inline bool BCSRIsLowerLoopThreaded(const BCSRMatData *data,
  * 5-7% slower (GCC 15, aarch64).
  *
  * @param data BCSR matrix data with its diagonal index
- * @param workData Matrix whose number of blocks in row i measures the work
- * of entryFunc on that row; steps with little work run on one thread
  * @param entryFunc Function of the row and the index of a block in it;
  * it may write to row i only, and read finished rows
  * @param finishFunc Function of the row
  */
 template <class EntryFunc, class FinishFunc>
 static TACS_BCSR_NOINLINE void BCSRForEachLowerBlockThreaded(
-    BCSRMatData *data, const BCSRMatData *workData, const EntryFunc &entryFunc,
+    BCSRMatData *data, const EntryFunc &entryFunc,
     const FinishFunc &finishFunc) {
   const int nrows = data->nrows;
   const int *rowp = data->rowp;
   const int *cols = data->cols;
   const int *diag = data->diag;
-  const int numThreads = data->num_threads;
-  const int *workRowp = workData->rowp;
-  const long blockWork = data->bsize * data->bsize * data->bsize;
 
-  const BCSRMatColumnRows *columnRows = data->getLowerColumnRows();
-  const int *colp = columnRows->colp;
-  const int *waitingRows = columnRows->rows;
-
-  int *next = new int[nrows];          // Next block to process in each row
-  char *isFinished = new char[nrows];  // Whether each row is finished
-  int *lastStep = new int[nrows];      // Last step that released each row
-  int *ready = new int[nrows];         // Rows that may advance in this step
-  int *nextReady = new int[nrows];     // Rows released for the next step
-  memcpy(next, rowp, nrows * sizeof(int));
-  memset(isFinished, 0, nrows * sizeof(char));
-
-  // Every row takes part in the first step, which finishes the rows
-  // without blocks below the diagonal
-  int step = 0;
-  int numReady = nrows;
-  long readyWork = blockWork * workRowp[nrows];
+  std::atomic<bool> *isFinished = new std::atomic<bool>[nrows];
   for (int i = 0; i < nrows; i++) {
-    ready[i] = i;
-    lastStep[i] = step;
+    isFinished[i].store(false, std::memory_order_relaxed);
   }
+  std::atomic<int> nextRow(0);
 
-  // Process the blocks of row i whose columns are finished
-  auto advanceRow = [&](const int i) {
-    int j = next[i];
-    for (; (j < diag[i]) && isFinished[cols[j]]; j++) {
+#pragma omp parallel num_threads(data->num_threads)
+  for (int i = nextRow.fetch_add(1); i < nrows; i = nextRow.fetch_add(1)) {
+    for (int j = rowp[i]; j < diag[i]; j++) {
+      // The acquire load makes the finished row's values visible
+      while (!isFinished[cols[j]].load(std::memory_order_acquire)) {
+      }
       entryFunc(i, j);
     }
-    next[i] = j;
-    if (j == diag[i]) {
-      finishFunc(i);
-    }
-  };
-
-  // Mark row i as finished and add the rows waiting for it to a list,
-  // unless they were already released in this step
-  auto releaseRows = [&](const int i, int *list, int *numList, long *work) {
-    isFinished[i] = 1;
-    for (int q = colp[i]; q < colp[i + 1]; q++) {
-      const int row = waitingRows[q];
-      if (lastStep[row] != step) {
-        lastStep[row] = step;
-        list[*numList] = row;
-        (*numList)++;
-        *work += blockWork * (workRowp[row + 1] - workRowp[row]);
-      }
-    }
-  };
-
-  while (numReady > 0) {
-    // Look ahead: while the rows that can finish hold little work, finish
-    // them on this thread and add the rows they release to this step. In
-    // a chain of rows that each wait for the previous one, the other rows
-    // of the step then process several blocks at once.
-    for (int look = 0; look < TACS_BCSR_LOOK_AHEAD; look++) {
-      int *finishing = nextReady;
-      int numFinishing = 0;
-      long finishingWork = 0;
-      for (int p = 0; p < numReady; p++) {
-        const int i = ready[p];
-        int j = next[i];
-        while ((j < diag[i]) && isFinished[cols[j]]) {
-          j++;
-        }
-        if (!isFinished[i] && j == diag[i]) {
-          finishing[numFinishing] = i;
-          numFinishing++;
-          finishingWork += blockWork * (workRowp[i + 1] - workRowp[i]);
-        }
-      }
-      if (numFinishing == 0 || finishingWork >= TACS_BCSR_MIN_PARALLEL_WORK) {
-        break;
-      }
-
-      for (int p = 0; p < numFinishing; p++) {
-        advanceRow(finishing[p]);
-      }
-      readyWork -= finishingWork;
-      for (int p = 0; p < numFinishing; p++) {
-        releaseRows(finishing[p], ready, &numReady, &readyWork);
-      }
-    }
-
-    const int chunk = 1 + numReady / (TACS_BCSR_CHUNKS_PER_THREAD * numThreads);
-    const int isParallel = (readyWork >= TACS_BCSR_MIN_PARALLEL_WORK);
-
-#pragma omp parallel for num_threads(numThreads) \
-    schedule(dynamic, chunk) if (isParallel)
-    for (int p = 0; p < numReady; p++) {
-      if (!isFinished[ready[p]]) {
-        advanceRow(ready[p]);
-      }
-    }
-
-    // Release the rows waiting for the rows that finished. isFinished only
-    // changes outside of the parallel loop.
-    step++;
-    int numReleased = 0;
-    readyWork = 0;
-    for (int p = 0; p < numReady; p++) {
-      const int i = ready[p];
-      if (!isFinished[i] && next[i] == diag[i]) {
-        releaseRows(i, nextReady, &numReleased, &readyWork);
-      }
-    }
-
-    int *released = nextReady;
-    nextReady = ready;
-    ready = released;
-    numReady = numReleased;
+    finishFunc(i);
+    isFinished[i].store(true, std::memory_order_release);
   }
 
-  delete[] next;
   delete[] isFinished;
-  delete[] lastStep;
-  delete[] ready;
-  delete[] nextReady;
 }
 
 // ==============================================================================
@@ -973,7 +870,7 @@ void BCSRBlockMatFactor(BCSRMatData *data) {
 
   if (BCSRIsLowerLoopThreaded(data, data)) {
     BCSRForEachLowerBlockThreaded(
-        data, data,
+        data,
         [=](const int i, const int j) { blockFactorEntry<N>(data, i, j); },
         [=](const int i) { blockFactorDiag<N>(data, i); });
   } else {
@@ -1033,7 +930,7 @@ template <int N>
 void BCSRBlockMatFactorLower(BCSRMatData *data, BCSRMatData *Edata) {
   if (BCSRIsLowerLoopThreaded(data, Edata)) {
     BCSRForEachLowerBlockThreaded(
-        data, Edata,
+        data,
         [=](const int i, const int j) {
           blockFactorLowerEntry<N>(data, Edata, i, j);
         },

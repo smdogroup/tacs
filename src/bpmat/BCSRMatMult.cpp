@@ -37,7 +37,6 @@ BCSRMatData::BCSRMatData(int _bsize, int _nrows, int _ncols) {
   A = NULL;
 
   num_threads = 1;
-  lower_column_rows = NULL;
 }
 
 BCSRMatData::~BCSRMatData() {
@@ -53,52 +52,6 @@ BCSRMatData::~BCSRMatData() {
   if (A) {
     delete[] A;
   }
-  if (lower_column_rows) {
-    delete lower_column_rows;
-  }
-}
-
-const BCSRMatColumnRows *BCSRMatData::getLowerColumnRows() {
-  if (!lower_column_rows) {
-    lower_column_rows = new BCSRMatColumnRows(nrows, rowp, cols);
-  }
-  return lower_column_rows;
-}
-
-/*
-  Find the rows with a block below the diagonal in each column
-*/
-BCSRMatColumnRows::BCSRMatColumnRows(int nrows, const int *rowp,
-                                     const int *cols) {
-  // Count the blocks below the diagonal in each column
-  colp = new int[nrows + 1];
-  memset(colp, 0, (nrows + 1) * sizeof(int));
-  for (int i = 0; i < nrows; i++) {
-    for (int k = rowp[i]; (k < rowp[i + 1]) && (cols[k] < i); k++) {
-      colp[cols[k] + 1]++;
-    }
-  }
-  for (int j = 0; j < nrows; j++) {
-    colp[j + 1] += colp[j];
-  }
-
-  // Place the rows, then restore the column pointer
-  rows = new int[colp[nrows]];
-  for (int i = 0; i < nrows; i++) {
-    for (int k = rowp[i]; (k < rowp[i + 1]) && (cols[k] < i); k++) {
-      rows[colp[cols[k]]] = i;
-      colp[cols[k]]++;
-    }
-  }
-  for (int j = nrows; j > 0; j--) {
-    colp[j] = colp[j - 1];
-  }
-  colp[0] = 0;
-}
-
-BCSRMatColumnRows::~BCSRMatColumnRows() {
-  delete[] colp;
-  delete[] rows;
 }
 
 /*!
