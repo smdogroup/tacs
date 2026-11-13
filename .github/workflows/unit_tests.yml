@@ -121,7 +121,43 @@ jobs:
       - name: Install f5totec/f5tovtk
         run: |
           # Sometimes needed for macos runner to prevent it from pulling numpy 2 when installing tecio later
-          mamba install -c smdogroup -c conda-forge tecio "numpy>=2" -q -y;
+          # DEBUG: run the install verbosely, report its exit code, and dump diagnostics if it fails
+          debug_mamba_install() {
+            echo "::group::DEBUG mamba install $*"
+            echo "DEBUG start: $(date -u +%FT%TZ)"
+            time mamba install "$@" -y
+            local status=$?
+            echo "DEBUG end: $(date -u +%FT%TZ), mamba exit code: ${status}"
+            echo "::endgroup::"
+            if [[ ${status} -ne 0 ]]; then
+              echo "::group::DEBUG diagnostics after failed mamba install"
+              which mamba conda; mamba --version; conda --version
+              mamba info
+              conda config --show-sources
+              conda config --show channels channel_priority subdir remote_connect_timeout_secs remote_read_timeout_secs remote_max_retries
+              local subdir=$(conda config --show subdir | awk '{print $2}')
+              for url in \
+                https://conda.anaconda.org/smdogroup/${subdir}/repodata.json \
+                https://conda.anaconda.org/smdogroup/noarch/repodata.json \
+                https://conda.anaconda.org/conda-forge/${subdir}/current_repodata.json \
+                https://api.anaconda.org/package/smdogroup/tecio; do
+                curl -sSL -o /dev/null --max-time 120 \
+                  -w "DEBUG curl ${url}: http=%{http_code} ip=%{remote_ip} bytes=%{size_download} dns=%{time_namelookup}s connect=%{time_connect}s tls=%{time_appconnect}s ttfb=%{time_starttransfer}s total=%{time_total}s\n" \
+                  ${url} || echo "DEBUG curl ${url} failed with exit code $?"
+              done
+              df -h; free -h || vm_stat
+              conda list
+              echo "::endgroup::"
+              echo "::group::DEBUG retry with full debug logging"
+              time mamba install "$@" -y -vvv
+              echo "DEBUG retry exit code: $?"
+              echo "::endgroup::"
+              echo "::error::mamba install $* failed with exit code ${status}"
+              exit ${status}
+            fi
+          }
+          debug_mamba_install -c smdogroup -c conda-forge tecio "numpy>=2";
+          ls -l ${CONDA_PREFIX}/include/TECIO.h ${CONDA_PREFIX}/lib/libtecio.a;
           # Compile f5totec/f5tovtk
           cd $TACS_DIR/extern/f5totec;
           make TACS_DIR=$TACS_DIR TECIO_INCLUDE=-I${CONDA_PREFIX}/include/ TECIO_LIB=${CONDA_PREFIX}/lib/libtecio.a\
@@ -132,9 +168,28 @@ jobs:
       - name: Install optional dependencies
         run: |
           # Install petsc for openmdao tests (there's a problem with 3.22.3 on mac runner)
-          mamba install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy>=2" -q -y;
+          # DEBUG: run the installs verbosely and stop at the first one that fails
+          debug_mamba_install() {
+            echo "::group::DEBUG mamba install $*"
+            echo "DEBUG start: $(date -u +%FT%TZ)"
+            time mamba install "$@" -y
+            local status=$?
+            echo "DEBUG end: $(date -u +%FT%TZ), mamba exit code: ${status}"
+            echo "::endgroup::"
+            if [[ ${status} -ne 0 ]]; then
+              echo "::group::DEBUG retry with full debug logging"
+              mamba info
+              time mamba install "$@" -y -vvv
+              echo "DEBUG retry exit code: $?"
+              conda list
+              echo "::endgroup::"
+              echo "::error::mamba install $* failed with exit code ${status}"
+              exit ${status}
+            fi
+          }
+          debug_mamba_install -c conda-forge "petsc>=3.19,!=3.22.3" petsc4py "numpy>=2";
           # Install pygeo for mach tests
-          mamba install -c smdogroup pygeo -q -y;
+          debug_mamba_install -c smdogroup pygeo;
           # Install ESP/CAPS prebuilt for shape derivatives, only in Real mode
            if [[ ${{ matrix.NAME }} == 'Real-Ubuntu' ]]; then
             cd $TACS_DIR/extern/
