@@ -416,6 +416,10 @@ cdef extern from "TACSAssembler.h":
                                       ElementMatrixType matType,
                                       TACSBVec *psi, TACSBVec *phi,
                                       TACSBVec *dfdx)
+        void addMatXptSensInnerProduct(double scale,
+                                       ElementMatrixType matType,
+                                       TACSBVec *psi, TACSBVec *phi,
+                                       TACSBVec *dfdXpts)
         void evalMatSVSensInnerProduct(ElementMatrixType matType,
                                        TACSBVec *psi, TACSBVec *phi,
                                        TACSBVec *res, bool applyBCs)
